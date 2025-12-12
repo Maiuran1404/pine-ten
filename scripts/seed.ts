@@ -1,16 +1,11 @@
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
-import { db } from "../src/db";
-import {
-  taskCategories,
-  styleReferences,
-  platformSettings,
-  users,
-} from "../src/db/schema";
-import { defaultTaskCategories, styleReferenceCategories } from "../src/lib/config";
-
 async function seed() {
+  // Dynamic imports to ensure env is loaded first
+  const { db } = await import("../src/db");
+  const { taskCategories, styleReferences, platformSettings, users } = await import("../src/db/schema");
+  const { defaultTaskCategories, styleReferenceCategories } = await import("../src/lib/config");
   console.log("Seeding database...");
 
   // Seed task categories
