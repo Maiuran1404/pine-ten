@@ -3,6 +3,27 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// Get the base domain for cookie sharing across subdomains
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+
+// Build trusted origins for all subdomains
+const trustedOrigins = isProduction
+  ? [
+      `https://app.${baseDomain}`,
+      `https://artist.${baseDomain}`,
+      `https://superadmin.${baseDomain}`,
+      `https://www.${baseDomain}`,
+      `https://${baseDomain}`,
+    ]
+  : [
+      "http://localhost:3000",
+      "http://app.localhost:3000",
+      "http://artist.localhost:3000",
+      "http://superadmin.localhost:3000",
+    ];
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -13,9 +34,13 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true in production
+    requireEmailVerification: isProduction,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
   },
   user: {
     additionalFields: {
@@ -58,9 +83,31 @@ export const auth = betterAuth({
       maxAge: 60 * 5, // 5 minutes
     },
   },
-  trustedOrigins: [
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  ],
+  advanced: {
+    cookiePrefix: "pine",
+    useSecureCookies: isProduction,
+    // In production, set cookie domain for cross-subdomain sharing
+    ...(isProduction && {
+      cookies: {
+        sessionToken: {
+          name: "pine.session_token",
+          options: {
+            domain: `.${baseDomain}`, // Leading dot for subdomain sharing
+            path: "/",
+            secure: true,
+            httpOnly: true,
+            sameSite: "lax" as const,
+          },
+        },
+      },
+    }),
+  },
+  trustedOrigins,
+  rateLimit: {
+    enabled: true,
+    window: 60, // 1 minute
+    max: 100, // max requests per window
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;
