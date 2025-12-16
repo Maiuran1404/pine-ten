@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const publicRoutes = ["/", "/login", "/register", "/api/auth"];
-const freelancerRoutes = ["/portal"];
-const adminRoutes = ["/admin"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
@@ -26,7 +24,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // For role-based access, we'll verify in the page components
-  // since middleware can't easily decode the session without a fetch
+  // since proxy can't easily decode the session without a fetch
 
   return NextResponse.next();
 }

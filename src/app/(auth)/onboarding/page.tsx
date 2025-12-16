@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { FullPageLoader } from "@/components/shared/loading";
 import { ClientOnboarding } from "@/components/onboarding/client-onboarding";
 import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, isPending } = useSession();
@@ -51,5 +51,13 @@ export default function OnboardingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

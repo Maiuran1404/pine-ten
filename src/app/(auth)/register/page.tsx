@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -27,7 +27,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoadingSpinner } from "@/components/shared/loading";
+import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
 import { signUp } from "@/lib/auth-client";
 
 const registerSchema = z.object({
@@ -39,7 +39,7 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultType = searchParams.get("type") === "freelancer" ? "freelancer" : "client";
@@ -207,5 +207,13 @@ export default function RegisterPage() {
         </div>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <RegisterContent />
+    </Suspense>
   );
 }
