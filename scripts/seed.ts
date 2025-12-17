@@ -1,6 +1,4 @@
 import * as dotenv from "dotenv";
-import * as bcrypt from "bcryptjs";
-import * as crypto from "crypto";
 
 // Load environment variables
 dotenv.config({ path: ".env" });
@@ -9,7 +7,7 @@ dotenv.config({ path: ".env.local" });
 async function seed() {
   // Dynamic imports to ensure env is loaded first
   const { db } = await import("../src/db");
-  const { taskCategories, styleReferences, platformSettings, users, accounts } = await import("../src/db/schema");
+  const { taskCategories, styleReferences, platformSettings, users } = await import("../src/db/schema");
   const { defaultTaskCategories, styleReferenceCategories } = await import("../src/lib/config");
   const { eq } = await import("drizzle-orm");
 
@@ -88,16 +86,17 @@ async function seed() {
       .onConflictDoNothing();
   }
 
-  // Create admin user with secure password
+  // Create admin user
   console.log("Creating admin user...");
 
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (!adminEmail || !adminPassword) {
     console.log("⚠️  ADMIN_EMAIL or ADMIN_PASSWORD not set in environment");
     console.log("   Skipping admin user creation");
-    console.log("   Set these in .env or .env.local to create admin user");
+    console.log("   Set these in .env to create admin user");
   } else {
     // Check if admin already exists
     const existingAdmin = await db
@@ -109,57 +108,69 @@ async function seed() {
     if (existingAdmin.length > 0) {
       console.log(`✓ Admin user already exists: ${adminEmail}`);
 
-      // Update to ensure ADMIN role
+      // Update to ensure ADMIN role and settings
       await db
         .update(users)
-        .set({ role: "ADMIN" })
+        .set({
+          role: "ADMIN",
+          onboardingCompleted: true,
+          credits: 1000,
+        })
         .where(eq(users.email, adminEmail));
-      console.log("✓ Ensured admin role is set");
+      console.log("✓ Ensured admin role and settings are set");
     } else {
-      // Hash password with bcrypt (same as Better Auth uses)
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(adminPassword, saltRounds);
+      // Create admin via Better Auth API (ensures correct password hashing)
+      console.log("Creating admin via Better Auth API...");
 
-      // Generate unique ID
-      const adminId = crypto.randomUUID();
+      try {
+        const signupResponse = await fetch(`${appUrl}/api/auth/sign-up/email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: adminEmail,
+            password: adminPassword,
+            name: "Super Admin",
+          }),
+        });
 
-      // Create the admin user
-      await db.insert(users).values({
-        id: adminId,
-        name: "Super Admin",
-        email: adminEmail,
-        emailVerified: true,
-        role: "ADMIN",
-        onboardingCompleted: true,
-        credits: 1000,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        if (!signupResponse.ok) {
+          const error = await signupResponse.text();
+          throw new Error(`Signup failed: ${error}`);
+        }
 
-      // Create the credential account (for email/password login)
-      await db.insert(accounts).values({
-        id: crypto.randomUUID(),
-        userId: adminId,
-        accountId: adminId,
-        providerId: "credential",
-        password: passwordHash,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        // Update the user role to ADMIN
+        await db
+          .update(users)
+          .set({
+            role: "ADMIN",
+            onboardingCompleted: true,
+            credits: 1000,
+            emailVerified: true,
+          })
+          .where(eq(users.email, adminEmail));
 
-      console.log("✓ Admin user created successfully!");
-      console.log("");
-      console.log("╔════════════════════════════════════════════════╗");
-      console.log("║           SUPERADMIN CREDENTIALS               ║");
-      console.log("╠════════════════════════════════════════════════╣");
-      console.log(`║  Email:    ${adminEmail.padEnd(35)}║`);
-      console.log(`║  Password: ${adminPassword.padEnd(35)}║`);
-      console.log("╠════════════════════════════════════════════════╣");
-      console.log("║  Login at: superadmin.craftedstudio.ai/login   ║");
-      console.log("╚════════════════════════════════════════════════╝");
-      console.log("");
-      console.log("⚠️  IMPORTANT: Store these credentials securely!");
-      console.log("   Change the password after first login.");
+        console.log("✓ Admin user created successfully!");
+        console.log("");
+        console.log("╔════════════════════════════════════════════════╗");
+        console.log("║           SUPERADMIN CREDENTIALS               ║");
+        console.log("╠════════════════════════════════════════════════╣");
+        console.log(`║  Email:    ${adminEmail.padEnd(35)}║`);
+        console.log(`║  Password: ${adminPassword.padEnd(35)}║`);
+        console.log("╠════════════════════════════════════════════════╣");
+        console.log("║  Login at: superadmin.craftedstudio.ai/login   ║");
+        console.log("╚════════════════════════════════════════════════╝");
+        console.log("");
+        console.log("⚠️  IMPORTANT: Store these credentials securely!");
+      } catch (error) {
+        console.error("Failed to create admin via API:", error);
+        console.log("");
+        console.log("To create admin manually:");
+        console.log("1. Start the dev server: pnpm dev");
+        console.log("2. Run this seed script again: pnpm db:seed");
+        console.log("   OR");
+        console.log("1. Register at /register with the admin email");
+        console.log("2. Update role in database: UPDATE users SET role = 'ADMIN' WHERE email = '" + adminEmail + "';");
+      }
     }
   }
 
