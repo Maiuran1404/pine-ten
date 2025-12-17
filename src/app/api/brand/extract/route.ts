@@ -53,6 +53,74 @@ interface BrandExtraction {
   keywords: string[];
 }
 
+// Extract social links from page links
+function extractSocialLinks(links: string[] | undefined): BrandExtraction["socialLinks"] {
+  const socialLinks: BrandExtraction["socialLinks"] = {};
+  if (!links) return socialLinks;
+
+  const linkStr = links.join(" ");
+
+  if (linkStr.includes("twitter.com") || linkStr.includes("x.com")) {
+    const link = links.find((l) => l.includes("twitter.com") || l.includes("x.com"));
+    if (link) socialLinks.twitter = link;
+  }
+  if (linkStr.includes("linkedin.com")) {
+    const link = links.find((l) => l.includes("linkedin.com"));
+    if (link) socialLinks.linkedin = link;
+  }
+  if (linkStr.includes("facebook.com")) {
+    const link = links.find((l) => l.includes("facebook.com"));
+    if (link) socialLinks.facebook = link;
+  }
+  if (linkStr.includes("instagram.com")) {
+    const link = links.find((l) => l.includes("instagram.com"));
+    if (link) socialLinks.instagram = link;
+  }
+  if (linkStr.includes("youtube.com")) {
+    const link = links.find((l) => l.includes("youtube.com"));
+    if (link) socialLinks.youtube = link;
+  }
+
+  return socialLinks;
+}
+
+// Create default brand data from metadata and Firecrawl branding
+function createDefaultBrandData(
+  metadata: { title?: string; description?: string; ogImage?: string; favicon?: string } | undefined,
+  branding: {
+    colors?: { primary?: string; secondary?: string; accent?: string; background?: string; textPrimary?: string; [key: string]: string | undefined };
+    typography?: { fontFamilies?: { primary?: string } };
+    fonts?: Array<{ family: string }>;
+    images?: { logo?: string | null; favicon?: string | null };
+  } | undefined,
+  links: string[] | undefined
+): BrandExtraction {
+  const brandColors: string[] = branding?.colors
+    ? Object.values(branding.colors).filter((c): c is string => typeof c === "string" && c.startsWith("#"))
+    : [];
+
+  return {
+    name: metadata?.title?.split("|")[0]?.split("-")[0]?.split("–")[0]?.trim() || "Unknown Company",
+    description: metadata?.description || "",
+    tagline: null,
+    industry: null,
+    logoUrl: branding?.images?.logo || metadata?.ogImage || null,
+    faviconUrl: branding?.images?.favicon || metadata?.favicon || null,
+    primaryColor: branding?.colors?.primary || "#6366f1",
+    secondaryColor: branding?.colors?.secondary || null,
+    accentColor: branding?.colors?.accent || null,
+    backgroundColor: branding?.colors?.background || "#ffffff",
+    textColor: branding?.colors?.textPrimary || "#1f2937",
+    brandColors,
+    primaryFont: branding?.typography?.fontFamilies?.primary || branding?.fonts?.[0]?.family || null,
+    secondaryFont: null,
+    socialLinks: extractSocialLinks(links),
+    contactEmail: null,
+    contactPhone: null,
+    keywords: [],
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -79,13 +147,13 @@ export async function POST(request: NextRequest) {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    // Scrape the website with Firecrawl including branding format
+    // Scrape the website with Firecrawl - use viewport-sized screenshot to avoid oversized images
     let scrapeResult;
     try {
       scrapeResult = await getFirecrawl().scrape(normalizedUrl, {
         formats: [
           "markdown",
-          { type: "screenshot", fullPage: true },
+          { type: "screenshot", fullPage: false }, // Use viewport screenshot to stay within Claude's size limits
           "links",
           "branding",
         ],
@@ -131,68 +199,42 @@ export async function POST(request: NextRequest) {
       };
     };
 
-    // If Firecrawl returned branding data, use it to enhance extraction
-    let firecrawlBrandColors: string[] = [];
-    let firecrawlPrimaryColor: string | null = null;
-    let firecrawlSecondaryColor: string | null = null;
-    let firecrawlAccentColor: string | null = null;
-    let firecrawlBackgroundColor: string | null = null;
-    let firecrawlTextColor: string | null = null;
-    let firecrawlPrimaryFont: string | null = null;
-    let firecrawlLogo: string | null = null;
-    let firecrawlFavicon: string | null = null;
+    // If Firecrawl returned good branding data, we can use it directly without Claude
+    const hasBrandingColors = branding?.colors && Object.keys(branding.colors).length > 2;
 
-    if (branding) {
-      if (branding.colors) {
-        firecrawlPrimaryColor = branding.colors.primary || null;
-        firecrawlSecondaryColor = branding.colors.secondary || null;
-        firecrawlAccentColor = branding.colors.accent || null;
-        firecrawlBackgroundColor = branding.colors.background || null;
-        firecrawlTextColor = branding.colors.textPrimary || null;
-        firecrawlBrandColors = Object.values(branding.colors)
-          .filter((c): c is string => typeof c === "string" && c.startsWith("#"));
-      }
-      if (branding.typography?.fontFamilies?.primary) {
-        firecrawlPrimaryFont = branding.typography.fontFamilies.primary;
-      } else if (branding.fonts && branding.fonts[0]?.family) {
-        firecrawlPrimaryFont = branding.fonts[0].family;
-      }
-      if (branding.images) {
-        firecrawlLogo = branding.images.logo || null;
-        firecrawlFavicon = branding.images.favicon || null;
-      }
-    }
+    if (hasBrandingColors) {
+      // Firecrawl's branding is sufficient, use it directly
+      const brandData = createDefaultBrandData(metadata, branding, links);
 
-    // Prepare content for Claude analysis
-    const contentParts: Anthropic.Messages.ContentBlockParam[] = [];
-
-    // Add screenshot if available for visual analysis
-    if (screenshot) {
-      contentParts.push({
-        type: "image",
-        source: {
-          type: "url",
-          url: screenshot,
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...brandData,
+          website: normalizedUrl,
+          screenshotUrl: screenshot || null,
         },
       });
     }
 
-    // Add text content for context
-    contentParts.push({
-      type: "text",
-      text: `Analyze this website and extract comprehensive brand information.
+    // Otherwise, use Claude for deeper analysis
+    const contentParts: Anthropic.Messages.ContentBlockParam[] = [];
+
+    // Add text content for context (always include this)
+    const textPrompt = `Analyze this website and extract comprehensive brand information.
 
 Website URL: ${normalizedUrl}
 Page Title: ${metadata?.title || "Unknown"}
 Page Description: ${metadata?.description || "Unknown"}
 
 Website Content (markdown):
-${markdown?.slice(0, 15000) || "No content available"}
+${markdown?.slice(0, 20000) || "No content available"}
 
 Links found on page:
 ${links?.slice(0, 50).join("\n") || "No links available"}
 
-Based on the screenshot and content above, extract the following brand information in JSON format:
+${screenshot ? "A screenshot of the website is also provided for visual analysis." : ""}
+
+Based on the content${screenshot ? " and screenshot" : ""} above, extract the following brand information in JSON format:
 
 1. **Company Name**: The company/brand name
 2. **Description**: A brief description of what the company does (2-3 sentences)
@@ -239,93 +281,121 @@ Return ONLY a valid JSON object with this exact structure:
   "contactEmail": "string or null",
   "contactPhone": "string or null",
   "keywords": ["keyword1", "keyword2"]
-}`,
-    });
+}`;
 
-    // Call Claude to analyze and extract brand information
-    const response = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2000,
-      messages: [
-        {
-          role: "user",
-          content: contentParts,
-        },
-      ],
-    });
+    // Try to include screenshot, but be prepared to retry without it if it fails
+    let useScreenshot = !!screenshot;
+    let brandData: BrandExtraction | null = null;
+    let lastError: Error | null = null;
 
-    // Extract JSON from Claude's response
-    const responseText = response.content
-      .filter((block): block is Anthropic.Messages.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("");
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        contentParts.length = 0; // Clear array
 
-    // Parse the JSON response
-    let brandData: BrandExtraction;
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("No JSON found in response");
+        // Only add screenshot on first attempt
+        if (useScreenshot && attempt === 0 && screenshot) {
+          contentParts.push({
+            type: "image",
+            source: {
+              type: "url",
+              url: screenshot,
+            },
+          });
+        }
+
+        contentParts.push({
+          type: "text",
+          text: textPrompt,
+        });
+
+        const response = await getAnthropic().messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [
+            {
+              role: "user",
+              content: contentParts,
+            },
+          ],
+        });
+
+        // Extract JSON from Claude's response
+        const responseText = response.content
+          .filter((block): block is Anthropic.Messages.TextBlock => block.type === "text")
+          .map((block) => block.text)
+          .join("");
+
+        // Parse the JSON response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error("No JSON found in response");
+        }
+        brandData = JSON.parse(jsonMatch[0]);
+        break; // Success, exit retry loop
+
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Claude analysis attempt ${attempt + 1} failed:`, error);
+
+        // Check if it's an image size error
+        const errorMessage = String(error);
+        if (errorMessage.includes("8000 pixels") || errorMessage.includes("image") || errorMessage.includes("dimension")) {
+          console.log("Image too large, retrying without screenshot...");
+          useScreenshot = false;
+          continue; // Retry without screenshot
+        }
+
+        // For other errors, don't retry
+        break;
       }
-      brandData = JSON.parse(jsonMatch[0]);
-    } catch {
-      console.error("Failed to parse brand data:", responseText);
-      // Return a default structure with what we know
-      brandData = {
-        name: metadata?.title?.split("|")[0]?.split("-")[0]?.trim() || "Unknown Company",
-        description: metadata?.description || "",
-        tagline: null,
-        industry: null,
-        logoUrl: firecrawlLogo || metadata?.ogImage || null,
-        faviconUrl: firecrawlFavicon || null,
-        primaryColor: firecrawlPrimaryColor || "#6366f1",
-        secondaryColor: firecrawlSecondaryColor || null,
-        accentColor: firecrawlAccentColor || null,
-        backgroundColor: firecrawlBackgroundColor || "#ffffff",
-        textColor: firecrawlTextColor || "#1f2937",
-        brandColors: firecrawlBrandColors,
-        primaryFont: firecrawlPrimaryFont || null,
-        secondaryFont: null,
-        socialLinks: {},
-        contactEmail: null,
-        contactPhone: null,
-        keywords: [],
-      };
     }
 
-    // Enhance Claude's results with Firecrawl branding data if available
-    if (firecrawlPrimaryColor && brandData.primaryColor === "#6366f1") {
-      brandData.primaryColor = firecrawlPrimaryColor;
-    }
-    if (firecrawlSecondaryColor && !brandData.secondaryColor) {
-      brandData.secondaryColor = firecrawlSecondaryColor;
-    }
-    if (firecrawlAccentColor && !brandData.accentColor) {
-      brandData.accentColor = firecrawlAccentColor;
-    }
-    if (firecrawlBackgroundColor && brandData.backgroundColor === "#ffffff") {
-      brandData.backgroundColor = firecrawlBackgroundColor;
-    }
-    if (firecrawlTextColor && brandData.textColor === "#1f2937") {
-      brandData.textColor = firecrawlTextColor;
-    }
-    if (firecrawlBrandColors.length > 0 && brandData.brandColors.length === 0) {
-      brandData.brandColors = firecrawlBrandColors;
-    }
-    if (firecrawlPrimaryFont && !brandData.primaryFont) {
-      brandData.primaryFont = firecrawlPrimaryFont;
+    // If Claude analysis failed entirely, use fallback data
+    if (!brandData) {
+      console.error("All Claude analysis attempts failed, using fallback data. Last error:", lastError);
+      brandData = createDefaultBrandData(metadata, branding, links);
     }
 
-    // Add favicon from metadata if available
-    if (!brandData.faviconUrl && (firecrawlFavicon || metadata?.favicon)) {
-      brandData.faviconUrl = firecrawlFavicon || metadata?.favicon || null;
+    // Enhance with Firecrawl branding data if available
+    if (branding?.colors) {
+      if (branding.colors.primary && brandData.primaryColor === "#6366f1") {
+        brandData.primaryColor = branding.colors.primary;
+      }
+      if (branding.colors.secondary && !brandData.secondaryColor) {
+        brandData.secondaryColor = branding.colors.secondary;
+      }
+      if (branding.colors.accent && !brandData.accentColor) {
+        brandData.accentColor = branding.colors.accent;
+      }
+      if (branding.colors.background && brandData.backgroundColor === "#ffffff") {
+        brandData.backgroundColor = branding.colors.background;
+      }
+      if (branding.colors.textPrimary && brandData.textColor === "#1f2937") {
+        brandData.textColor = branding.colors.textPrimary;
+      }
+      if (brandData.brandColors.length === 0) {
+        brandData.brandColors = Object.values(branding.colors)
+          .filter((c): c is string => typeof c === "string" && c.startsWith("#"));
+      }
     }
 
-    // Add logo from firecrawl or OG image if not found
-    if (!brandData.logoUrl && (firecrawlLogo || metadata?.ogImage)) {
-      brandData.logoUrl = firecrawlLogo || metadata?.ogImage || null;
+    if (branding?.typography?.fontFamilies?.primary && !brandData.primaryFont) {
+      brandData.primaryFont = branding.typography.fontFamilies.primary;
+    } else if (branding?.fonts?.[0]?.family && !brandData.primaryFont) {
+      brandData.primaryFont = branding.fonts[0].family;
     }
+
+    // Add favicon and logo from branding/metadata if not found
+    if (!brandData.faviconUrl) {
+      brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null;
+    }
+    if (!brandData.logoUrl) {
+      brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null;
+    }
+
+    // Merge social links
+    const extractedSocial = extractSocialLinks(links);
+    brandData.socialLinks = { ...extractedSocial, ...brandData.socialLinks };
 
     return NextResponse.json({
       success: true,
