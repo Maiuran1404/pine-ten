@@ -38,7 +38,8 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
+  // baseURL will be inferred from request headers by Better Auth
+  // This allows OAuth to work correctly on any subdomain
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
@@ -96,40 +97,22 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
-    // Configure cookies for cross-subdomain sharing
-    cookies: {
-      sessionToken: {
-        name: "pine.session_token",
-        attributes: {
-          domain: isProduction ? `.${baseDomain}` : ".localhost", // Leading dot for subdomain sharing
-          path: "/",
-          secure: isProduction,
-          httpOnly: true,
-          sameSite: "lax" as const,
+    // Configure cookies for cross-subdomain sharing (only in production)
+    // In development, localhost subdomains don't support cookie sharing properly
+    ...(isProduction && {
+      cookies: {
+        sessionToken: {
+          name: "pine.session_token",
+          attributes: {
+            domain: `.${baseDomain}`, // Leading dot for subdomain sharing
+            path: "/",
+            secure: true,
+            httpOnly: true,
+            sameSite: "lax" as const,
+          },
         },
       },
-      // Also configure state cookie for OAuth to work across subdomains
-      state: {
-        name: "pine.oauth_state",
-        attributes: {
-          domain: isProduction ? `.${baseDomain}` : ".localhost",
-          path: "/",
-          secure: isProduction,
-          httpOnly: true,
-          sameSite: "lax" as const,
-        },
-      },
-      pkceCodeVerifier: {
-        name: "pine.pkce_code_verifier",
-        attributes: {
-          domain: isProduction ? `.${baseDomain}` : ".localhost",
-          path: "/",
-          secure: isProduction,
-          httpOnly: true,
-          sameSite: "lax" as const,
-        },
-      },
-    },
+    }),
   },
   trustedOrigins,
   rateLimit: {

@@ -99,9 +99,11 @@ export default function LoginPage() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
+      // Use absolute URL so we redirect back to the correct subdomain after OAuth
+      const callbackURL = `${window.location.origin}${portal.defaultRedirect}`;
       await signIn.social({
         provider: "google",
-        callbackURL: portal.defaultRedirect,
+        callbackURL,
       });
     } catch {
       toast.error("Failed to sign in with Google");

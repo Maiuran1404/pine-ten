@@ -111,9 +111,11 @@ function RegisterContent() {
   async function handleGoogleSignUp() {
     setIsGoogleLoading(true);
     try {
-      const callbackURL = accountType === "freelancer"
+      // Use absolute URL so we redirect back to the correct subdomain after OAuth
+      const redirectPath = accountType === "freelancer"
         ? "/onboarding?type=freelancer"
         : "/onboarding";
+      const callbackURL = `${window.location.origin}${redirectPath}`;
 
       await signIn.social({
         provider: "google",
