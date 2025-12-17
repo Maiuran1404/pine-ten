@@ -47,6 +47,7 @@ export default function DatabasePage() {
   const [tableData, setTableData] = useState<TableData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const limit = 25;
 
@@ -61,14 +62,19 @@ export default function DatabasePage() {
   }, [selectedTable, page]);
 
   const fetchTables = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch("/api/admin/database");
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         setTables(data.tables || []);
+      } else {
+        setError(data.error || "Failed to fetch tables");
       }
-    } catch (error) {
-      console.error("Failed to fetch tables:", error);
+    } catch (err) {
+      console.error("Failed to fetch tables:", err);
+      setError("Failed to connect to the database API");
     } finally {
       setIsLoading(false);
     }
@@ -187,6 +193,17 @@ export default function DatabasePage() {
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button variant="outline" onClick={fetchTables}>
+                Try Again
+              </Button>
+            </div>
+          ) : tables.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">
+              No tables found in the database
+            </p>
           ) : (
             <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4">
               {tables.map((table) => (

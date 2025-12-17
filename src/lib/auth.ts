@@ -101,7 +101,7 @@ export const auth = betterAuth({
       cookies: {
         sessionToken: {
           name: "pine.session_token",
-          options: {
+          attributes: {
             domain: `.${baseDomain}`, // Leading dot for subdomain sharing
             path: "/",
             secure: true,

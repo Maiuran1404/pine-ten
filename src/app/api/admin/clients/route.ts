@@ -20,7 +20,7 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get all clients with their stats
+    // Get all clients
     const clients = await db
       .select({
         id: users.id,
@@ -34,38 +34,47 @@ export async function GET() {
       .where(eq(users.role, "CLIENT"))
       .orderBy(desc(users.createdAt));
 
-    // Get task counts for each client
-    const taskCounts = await db
+    // Get task counts for each client - use a safer approach
+    const taskCountsRaw = await db
       .select({
         clientId: tasks.clientId,
-        totalTasks: count(),
-        completedTasks: sql<number>`count(*) filter (where ${tasks.status} = 'COMPLETED')`,
+        count: count(),
       })
       .from(tasks)
       .groupBy(tasks.clientId);
 
+    // Get completed task counts
+    const completedTasksRaw = await db
+      .select({
+        clientId: tasks.clientId,
+        count: count(),
+      })
+      .from(tasks)
+      .where(eq(tasks.status, "COMPLETED"))
+      .groupBy(tasks.clientId);
+
     // Get total credits purchased for each client
-    const creditsPurchased = await db
+    const creditsPurchasedRaw = await db
       .select({
         userId: creditTransactions.userId,
-        totalPurchased: sum(creditTransactions.amount),
+        total: sum(creditTransactions.amount),
       })
       .from(creditTransactions)
       .where(eq(creditTransactions.type, "PURCHASE"))
       .groupBy(creditTransactions.userId);
 
-    // Combine data
-    const clientsWithStats = clients.map((client) => {
-      const taskCount = taskCounts.find((tc) => tc.clientId === client.id);
-      const credits = creditsPurchased.find((cp) => cp.userId === client.id);
+    // Create lookup maps
+    const taskCountMap = new Map(taskCountsRaw.map(tc => [tc.clientId, tc.count]));
+    const completedTaskMap = new Map(completedTasksRaw.map(tc => [tc.clientId, tc.count]));
+    const creditsMap = new Map(creditsPurchasedRaw.map(cp => [cp.userId, Number(cp.total) || 0]));
 
-      return {
-        ...client,
-        totalTasks: taskCount?.totalTasks || 0,
-        completedTasks: taskCount?.completedTasks || 0,
-        totalCreditsPurchased: credits?.totalPurchased ? Number(credits.totalPurchased) : 0,
-      };
-    });
+    // Combine data
+    const clientsWithStats = clients.map((client) => ({
+      ...client,
+      totalTasks: taskCountMap.get(client.id) || 0,
+      completedTasks: completedTaskMap.get(client.id) || 0,
+      totalCreditsPurchased: creditsMap.get(client.id) || 0,
+    }));
 
     return NextResponse.json({ clients: clientsWithStats });
   } catch (error) {

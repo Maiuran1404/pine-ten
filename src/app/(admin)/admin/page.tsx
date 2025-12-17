@@ -44,12 +44,15 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAdminData();
   }, []);
 
   const fetchAdminData = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const [statsRes, tasksRes] = await Promise.all([
         fetch("/api/admin/stats"),
@@ -59,14 +62,21 @@ export default function AdminDashboardPage() {
       if (statsRes.ok) {
         const data = await statsRes.json();
         setStats(data);
+      } else {
+        const errData = await statsRes.json();
+        console.error("Stats error:", errData);
       }
 
       if (tasksRes.ok) {
         const data = await tasksRes.json();
         setRecentTasks(data.tasks || []);
+      } else {
+        const errData = await tasksRes.json();
+        console.error("Tasks error:", errData);
       }
-    } catch (error) {
-      console.error("Failed to fetch admin data:", error);
+    } catch (err) {
+      console.error("Failed to fetch admin data:", err);
+      setError("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }

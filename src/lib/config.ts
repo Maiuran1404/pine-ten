@@ -21,6 +21,7 @@ export const config = {
   notifications: {
     email: {
       from: process.env.EMAIL_FROM || "Nameless <noreply@example.com>",
+      adminEmail: process.env.ADMIN_NOTIFICATION_EMAIL || "maiuran@craftedstudio.ai",
     },
     whatsapp: {
       number: process.env.TWILIO_WHATSAPP_NUMBER || "",

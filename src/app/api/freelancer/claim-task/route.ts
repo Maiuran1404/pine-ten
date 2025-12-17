@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, freelancerProfiles, users } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
+import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
@@ -91,6 +91,18 @@ export async function POST(request: NextRequest) {
           taskTitle: task[0].title,
         },
       });
+
+      // Send admin notification
+      try {
+        await adminNotifications.taskAssigned({
+          taskTitle: task[0].title,
+          freelancerName: session.user.name || "Unknown",
+          freelancerEmail: session.user.email || "",
+          clientName: client[0].name,
+        });
+      } catch (emailError) {
+        console.error("Failed to send task assigned notification:", emailError);
+      }
     }
 
     return NextResponse.json({ success: true });

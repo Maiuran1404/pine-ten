@@ -11,6 +11,7 @@ import {
   FolderOpen,
   CreditCard,
   Settings,
+  Palette,
   X,
 } from "lucide-react";
 
@@ -29,6 +30,11 @@ const navigation = [
     name: "My Tasks",
     href: "/dashboard/tasks",
     icon: FolderOpen,
+  },
+  {
+    name: "My Brand",
+    href: "/dashboard/brand",
+    icon: Palette,
   },
   {
     name: "Credits",

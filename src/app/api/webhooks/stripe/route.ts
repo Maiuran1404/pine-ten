@@ -3,6 +3,8 @@ import { handleWebhook } from "@/lib/stripe";
 import { db } from "@/db";
 import { users, creditTransactions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { adminNotifications, sendEmail, emailTemplates } from "@/lib/notifications";
+import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +46,39 @@ export async function POST(request: NextRequest) {
           type: "PURCHASE",
           description: `Purchased ${result.credits} credits`,
         });
+
+        // Get full user data for notifications
+        const fullUser = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, result.userId))
+          .limit(1);
+
+        if (fullUser.length) {
+          try {
+            // Send admin notification
+            await adminNotifications.creditPurchase({
+              clientName: fullUser[0].name,
+              clientEmail: fullUser[0].email,
+              credits: result.credits,
+              amount: result.credits * config.credits.pricePerCredit,
+            });
+
+            // Send confirmation email to user
+            const purchaseEmail = emailTemplates.creditsPurchased(
+              fullUser[0].name,
+              result.credits,
+              `${config.app.url}/dashboard`
+            );
+            await sendEmail({
+              to: fullUser[0].email,
+              subject: purchaseEmail.subject,
+              html: purchaseEmail.html,
+            });
+          } catch (emailError) {
+            console.error("Failed to send purchase notifications:", emailError);
+          }
+        }
       }
     }
 

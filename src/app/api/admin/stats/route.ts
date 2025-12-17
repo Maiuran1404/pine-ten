@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, tasks, freelancerProfiles, creditTransactions } from "@/db/schema";
-import { eq, count, sql } from "drizzle-orm";
+import { eq, count, sum, and, notInArray, inArray } from "drizzle-orm";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -20,43 +20,59 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get total clients
-    const clientsResult = await db
-      .select({ count: count() })
-      .from(users)
-      .where(eq(users.role, "CLIENT"));
+    // Helper for safe queries
+    const safeQuery = async <T>(name: string, query: Promise<T>, defaultValue: T): Promise<T> => {
+      try {
+        return await query;
+      } catch (err) {
+        console.error(`Failed to query ${name}:`, err);
+        return defaultValue;
+      }
+    };
 
-    // Get total freelancers
-    const freelancersResult = await db
-      .select({ count: count() })
-      .from(freelancerProfiles)
-      .where(eq(freelancerProfiles.status, "APPROVED"));
+    // Get total clients
+    const clientsResult = await safeQuery(
+      "clients",
+      db.select({ count: count() }).from(users).where(eq(users.role, "CLIENT")),
+      [{ count: 0 }]
+    );
+
+    // Get total approved freelancers
+    const freelancersResult = await safeQuery(
+      "freelancers",
+      db.select({ count: count() }).from(freelancerProfiles).where(eq(freelancerProfiles.status, "APPROVED")),
+      [{ count: 0 }]
+    );
 
     // Get pending approvals
-    const pendingResult = await db
-      .select({ count: count() })
-      .from(freelancerProfiles)
-      .where(eq(freelancerProfiles.status, "PENDING"));
+    const pendingResult = await safeQuery(
+      "pending",
+      db.select({ count: count() }).from(freelancerProfiles).where(eq(freelancerProfiles.status, "PENDING")),
+      [{ count: 0 }]
+    );
 
-    // Get task stats
-    const taskStatsResult = await db
-      .select({
-        activeTasks: count(
-          sql`CASE WHEN ${tasks.status} NOT IN ('COMPLETED', 'CANCELLED') THEN 1 END`
-        ),
-        completedTasks: count(
-          sql`CASE WHEN ${tasks.status} = 'COMPLETED' THEN 1 END`
-        ),
-      })
-      .from(tasks);
+    // Get active tasks (not completed or cancelled)
+    const activeTasksResult = await safeQuery(
+      "activeTasks",
+      db.select({ count: count() }).from(tasks).where(
+        notInArray(tasks.status, ["COMPLETED", "CANCELLED"])
+      ),
+      [{ count: 0 }]
+    );
+
+    // Get completed tasks
+    const completedTasksResult = await safeQuery(
+      "completedTasks",
+      db.select({ count: count() }).from(tasks).where(eq(tasks.status, "COMPLETED")),
+      [{ count: 0 }]
+    );
 
     // Get total revenue (sum of all credit purchases)
-    const revenueResult = await db
-      .select({
-        total: sql<number>`COALESCE(SUM(${creditTransactions.amount}), 0)`,
-      })
-      .from(creditTransactions)
-      .where(eq(creditTransactions.type, "PURCHASE"));
+    const revenueResult = await safeQuery(
+      "revenue",
+      db.select({ total: sum(creditTransactions.amount) }).from(creditTransactions).where(eq(creditTransactions.type, "PURCHASE")),
+      [{ total: "0" }]
+    );
 
     // $49 per credit
     const totalRevenue = (Number(revenueResult[0]?.total) || 0) * 49;
@@ -65,8 +81,8 @@ export async function GET(request: NextRequest) {
       totalClients: Number(clientsResult[0]?.count) || 0,
       totalFreelancers: Number(freelancersResult[0]?.count) || 0,
       pendingApprovals: Number(pendingResult[0]?.count) || 0,
-      activeTasks: Number(taskStatsResult[0]?.activeTasks) || 0,
-      completedTasks: Number(taskStatsResult[0]?.completedTasks) || 0,
+      activeTasks: Number(activeTasksResult[0]?.count) || 0,
+      completedTasks: Number(completedTasksResult[0]?.count) || 0,
       totalRevenue,
     });
   } catch (error) {

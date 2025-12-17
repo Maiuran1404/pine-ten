@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { FullPageLoader } from "@/components/shared/loading";
-import { ClientOnboarding } from "@/components/onboarding/client-onboarding";
+import { ClientBrandOnboarding } from "@/components/onboarding/client-brand-onboarding";
 import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
 
 function OnboardingContent() {
@@ -42,12 +42,12 @@ function OnboardingContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="w-full max-w-3xl">
         {type === "freelancer" ? (
           <FreelancerOnboarding onComplete={handleComplete} />
         ) : (
-          <ClientOnboarding onComplete={handleComplete} />
+          <ClientBrandOnboarding onComplete={handleComplete} />
         )}
       </div>
     </div>

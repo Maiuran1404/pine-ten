@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { freelancerProfiles, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
+import { notify, adminNotifications, sendEmail, emailTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (freelancerUser.length) {
+      // Notify the freelancer (in-app + email)
       await notify({
         userId: freelancerUser[0].id,
         type: "FREELANCER_APPROVED",
@@ -70,6 +71,16 @@ export async function POST(request: NextRequest) {
         content: "Congratulations! Your freelancer application has been approved. You can now start accepting tasks.",
         taskUrl: `${config.app.url}/portal`,
       });
+
+      // Send admin notification
+      try {
+        await adminNotifications.freelancerApproved({
+          name: freelancerUser[0].name,
+          email: freelancerUser[0].email,
+        });
+      } catch (emailError) {
+        console.error("Failed to send admin notification:", emailError);
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, users, taskCategories } from "@/db/schema";
 import { eq, desc, and, or, count, sql } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
+import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
 
 export async function GET(request: NextRequest) {
@@ -163,6 +163,20 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
+
+    // Send admin notification for new task
+    try {
+      await adminNotifications.newTaskCreated({
+        taskId: newTask.id,
+        taskTitle: title,
+        clientName: session.user.name || "Unknown",
+        clientEmail: session.user.email || "",
+        category: category || "General",
+        creditsUsed: creditsRequired,
+      });
+    } catch (emailError) {
+      console.error("Failed to send task creation notification:", emailError);
+    }
 
     return NextResponse.json({
       success: true,

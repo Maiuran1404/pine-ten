@@ -13,6 +13,11 @@ import { relations } from "drizzle-orm";
 
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["CLIENT", "FREELANCER", "ADMIN"]);
+export const onboardingStatusEnum = pgEnum("onboarding_status", [
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "COMPLETED",
+]);
 export const taskStatusEnum = pgEnum("task_status", [
   "PENDING",
   "ASSIGNED",
@@ -49,6 +54,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("CLIENT"),
   phone: text("phone"),
   credits: integer("credits").notNull().default(0),
+  companyId: uuid("company_id"),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   onboardingData: jsonb("onboarding_data"),
   notificationPreferences: jsonb("notification_preferences"),
@@ -95,6 +101,51 @@ export const verifications = pgTable("verifications", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Companies table (for brand information)
+export const companies = pgTable("companies", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  website: text("website"),
+  industry: text("industry"),
+  description: text("description"),
+  // Brand identity
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  primaryColor: text("primary_color"),
+  secondaryColor: text("secondary_color"),
+  accentColor: text("accent_color"),
+  backgroundColor: text("background_color"),
+  textColor: text("text_color"),
+  // Additional brand colors as array
+  brandColors: jsonb("brand_colors").$type<string[]>().default([]),
+  // Typography
+  primaryFont: text("primary_font"),
+  secondaryFont: text("secondary_font"),
+  // Social media & contact
+  socialLinks: jsonb("social_links").$type<{
+    twitter?: string;
+    linkedin?: string;
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+  }>(),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  // Brand assets
+  brandAssets: jsonb("brand_assets").$type<{
+    images?: string[];
+    documents?: string[];
+  }>(),
+  // Extracted metadata
+  tagline: text("tagline"),
+  keywords: jsonb("keywords").$type<string[]>().default([]),
+  // Onboarding status
+  onboardingStatus: onboardingStatusEnum("onboarding_status").notNull().default("NOT_STARTED"),
+  // Timestamps
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -247,12 +298,20 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [freelancerProfiles.userId],
   }),
+  company: one(companies, {
+    fields: [users.companyId],
+    references: [companies.id],
+  }),
   sessions: many(sessions),
   accounts: many(accounts),
   clientTasks: many(tasks, { relationName: "clientTasks" }),
   freelancerTasks: many(tasks, { relationName: "freelancerTasks" }),
   notifications: many(notifications),
   creditTransactions: many(creditTransactions),
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  members: many(users),
 }));
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
