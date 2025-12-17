@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -18,8 +19,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, CheckCircle, XCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, CheckCircle, XCircle, Coins, Plus } from "lucide-react";
 
 interface Client {
   id: string;
@@ -37,6 +49,12 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [grantDialogOpen, setGrantDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [grantCredits, setGrantCredits] = useState(5);
+  const [grantReason, setGrantReason] = useState("");
+  const [sendNotification, setSendNotification] = useState(true);
+  const [isGranting, setIsGranting] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -62,6 +80,53 @@ export default function ClientsPage() {
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const openGrantDialog = (client: Client) => {
+    setSelectedClient(client);
+    setGrantCredits(5);
+    setGrantReason("");
+    setSendNotification(true);
+    setGrantDialogOpen(true);
+  };
+
+  const handleGrantCredits = async () => {
+    if (!selectedClient || grantCredits <= 0) return;
+
+    setIsGranting(true);
+    try {
+      const response = await fetch("/api/admin/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedClient.id,
+          credits: grantCredits,
+          reason: grantReason || `Admin granted ${grantCredits} credits`,
+          sendNotification,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to grant credits");
+      }
+
+      const result = await response.json();
+      toast.success(`Successfully granted ${grantCredits} credits to ${selectedClient.name}`);
+
+      // Update local state
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === selectedClient.id ? { ...c, credits: result.newCredits } : c
+        )
+      );
+
+      setGrantDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to grant credits");
+    } finally {
+      setIsGranting(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -162,6 +227,7 @@ export default function ClientsPage() {
                   <TableHead>Tasks</TableHead>
                   <TableHead>Total Purchased</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,6 +266,17 @@ export default function ClientsPage() {
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(client.createdAt)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openGrantDialog(client)}
+                        className="cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Grant Credits
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -207,6 +284,86 @@ export default function ClientsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Grant Credits Dialog */}
+      <Dialog open={grantDialogOpen} onOpenChange={setGrantDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5" />
+              Grant Credits
+            </DialogTitle>
+            <DialogDescription>
+              Add credits to {selectedClient?.name}&apos;s account
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="credits">Number of Credits</Label>
+              <Input
+                id="credits"
+                type="number"
+                min="1"
+                value={grantCredits}
+                onChange={(e) => setGrantCredits(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason (optional)</Label>
+              <Input
+                id="reason"
+                placeholder="e.g., Compensation for delayed delivery"
+                value={grantReason}
+                onChange={(e) => setGrantReason(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="notify"
+                checked={sendNotification}
+                onCheckedChange={(checked) => setSendNotification(checked === true)}
+              />
+              <Label htmlFor="notify" className="text-sm font-normal cursor-pointer">
+                Send email notification to user
+              </Label>
+            </div>
+
+            {selectedClient && (
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <p>
+                  <span className="text-muted-foreground">Current balance:</span>{" "}
+                  <span className="font-medium">{selectedClient.credits} credits</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">After grant:</span>{" "}
+                  <span className="font-medium text-green-600">
+                    {selectedClient.credits + grantCredits} credits
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setGrantDialogOpen(false)}
+              disabled={isGranting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGrantCredits}
+              disabled={isGranting || grantCredits <= 0}
+            >
+              {isGranting ? "Granting..." : `Grant ${grantCredits} Credits`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

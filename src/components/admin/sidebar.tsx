@@ -14,6 +14,7 @@ import {
   Settings,
   Tags,
   Database,
+  Ticket,
   X,
 } from "lucide-react";
 
@@ -47,6 +48,11 @@ const navigation = [
     name: "Style Library",
     href: "/admin/styles",
     icon: Image,
+  },
+  {
+    name: "Coupons",
+    href: "/admin/coupons",
+    icon: Ticket,
   },
   {
     name: "Database",

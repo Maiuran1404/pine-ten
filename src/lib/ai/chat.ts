@@ -7,7 +7,33 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
+// Helper to get delivery date
+function getDeliveryDate(businessDays: number): string {
+  const date = new Date();
+  let daysAdded = 0;
+  while (daysAdded < businessDays) {
+    date.setDate(date.getDate() + 1);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
+      daysAdded++;
+    }
+  }
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayName = days[date.getDay()];
+  const dayNum = date.getDate();
+  const suffix = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' : dayNum === 2 || dayNum === 22 ? 'nd' : dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
+  const monthName = months[date.getMonth()];
+  return `${dayName} ${dayNum}${suffix} ${monthName}`;
+}
+
+function getSystemPrompt(): string {
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  return `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
+
+TODAY'S DATE: ${todayStr}
 
 IMPORTANT RULES:
 1. You already know the client's brand from their profile (provided below). NEVER ask about:
@@ -30,13 +56,13 @@ When offering format/style choices, use this format for clickable options:
 {"question": "What format do you need?", "options": ["Feed posts (1080x1080)", "Stories (1080x1920)", "Both formats"]}
 [/QUICK_OPTIONS]
 
-Credit guidelines:
-- Simple static ad (1 variation): 1 credit
-- Static ad set (3-5 variations): 2 credits
-- Complex static campaign (multiple formats): 3 credits
-- Short video/motion (15-30 sec): 3 credits
-- Longer video/motion (30-60 sec): 5 credits
-- Social media content pack: 2-3 credits
+Credit & delivery guidelines (business days from today):
+- Simple static ad (1 variation): 1 credit, 2 business days
+- Static ad set (3-5 variations): 2 credits, 3 business days
+- Complex static campaign (multiple formats): 3-4 credits, 3 business days
+- Short video/motion (15-30 sec): 3 credits, 5 business days
+- Longer video/motion (30-60 sec): 5 credits, 7 business days
+- Social media content pack: 2-3 credits, 3 business days
 
 When you're ready to create the task, output:
 [TASK_READY]
@@ -53,12 +79,16 @@ When you're ready to create the task, output:
     "additionalNotes": "..."
   },
   "estimatedHours": number,
+  "deliveryDays": number,
   "creditsRequired": number,
   "deadline": null
 }
 [/TASK_READY]
 
+IMPORTANT: When mentioning delivery time, calculate the actual delivery DATE based on today's date and business days. For example, if today is Monday and it takes 3 business days, delivery is Thursday. Show in format like "Thu 19th Dec".
+
 Be efficient. Most requests can be ready in 2-3 exchanges.`;
+}
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -106,7 +136,7 @@ CLIENT'S BRAND PROFILE:
 Use this information to personalize responses and DO NOT ask for any of this information again.`
     : "No brand profile available for this client.";
 
-  const enhancedSystemPrompt = `${SYSTEM_PROMPT}
+  const enhancedSystemPrompt = `${getSystemPrompt()}
 
 ${companyContext}
 
@@ -148,10 +178,10 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     }
   }
 
-  // Clean the content
+  // Clean the content (use global flag to remove ALL occurrences)
   let cleanContent = content
-    .replace(/\[STYLE_REFERENCES: [^\]]+\]/, "")
-    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/, "")
+    .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, "")
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();
 
   return {

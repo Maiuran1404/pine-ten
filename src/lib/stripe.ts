@@ -65,6 +65,7 @@ export async function createCheckoutSession(
       },
     ],
     mode: "payment",
+    allow_promotion_codes: true,
     success_url: `${config.app.url}/dashboard?payment=success&credits=${creditPackage.credits}`,
     cancel_url: `${config.app.url}/dashboard?payment=cancelled`,
     metadata: {

@@ -361,3 +361,42 @@ export const taskMessagesRelations = relations(taskMessages, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Chat drafts (in-progress task requests)
+export const chatDrafts = pgTable("chat_drafts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("New Request"),
+  messages: jsonb("messages").$type<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: string;
+    attachments?: {
+      fileName: string;
+      fileUrl: string;
+      fileType: string;
+      fileSize: number;
+    }[];
+  }[]>().default([]),
+  selectedStyles: jsonb("selected_styles").$type<string[]>().default([]),
+  pendingTask: jsonb("pending_task").$type<{
+    title: string;
+    description: string;
+    category: string;
+    estimatedHours: number;
+    deliveryDays?: number;
+    creditsRequired: number;
+  } | null>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const chatDraftsRelations = relations(chatDrafts, ({ one }) => ({
+  client: one(users, {
+    fields: [chatDrafts.clientId],
+    references: [users.id],
+  }),
+}));

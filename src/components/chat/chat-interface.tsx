@@ -10,8 +10,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
+import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
+import { useSession } from "@/lib/auth-client";
 import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
+
+interface ChatInterfaceProps {
+  draftId: string;
+  onDraftUpdate?: () => void;
+}
 
 interface UploadedFile {
   fileName: string;
@@ -47,29 +55,174 @@ interface TaskProposal {
   description: string;
   category: string;
   estimatedHours: number;
+  deliveryDays?: number;
   creditsRequired: number;
   deadline?: string;
 }
 
-export function ChatInterface() {
+// Helper to calculate delivery date from business days
+function getDeliveryDateString(businessDays: number): string {
+  const date = new Date();
+  let daysAdded = 0;
+  while (daysAdded < businessDays) {
+    date.setDate(date.getDate() + 1);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      daysAdded++;
+    }
+  }
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayName = days[date.getDay()];
+  const dayNum = date.getDate();
+  const suffix = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' : dayNum === 2 || dayNum === 22 ? 'nd' : dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
+  const monthName = months[date.getMonth()];
+  return `${dayName} ${dayNum}${suffix} ${monthName}`;
+}
+
+const DEFAULT_WELCOME_MESSAGE: Message = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Hey! Ready to create something awesome. What do you need?\n\nJust tell me what you're looking for - like \"Instagram posts for this week\" or \"a video ad for our new service\".",
+  timestamp: new Date(),
+};
+
+export function ChatInterface({ draftId, onDraftUpdate }: ChatInterfaceProps) {
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Hey! Ready to create something awesome. What do you need?\n\nJust tell me what you're looking for - like \"Instagram posts for this week\" or \"a video ad for our new service\".",
-      timestamp: new Date(),
-    },
-  ]);
+  const { data: session } = useSession();
+  const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track if we need to auto-continue
+  const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
+
+  // Load draft when draftId changes
+  useEffect(() => {
+    const draft = getDraft(draftId);
+    if (draft) {
+      // Load existing draft
+      const loadedMessages = draft.messages.map((m) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      }));
+      setMessages(loadedMessages);
+      setSelectedStyles(draft.selectedStyles);
+      setPendingTask(draft.pendingTask);
+
+      // Check if last message was from user - need to auto-continue
+      const lastMessage = loadedMessages[loadedMessages.length - 1];
+      if (lastMessage && lastMessage.role === "user") {
+        setNeedsAutoContinue(true);
+      }
+    } else {
+      // New draft - reset to default state
+      setMessages([DEFAULT_WELCOME_MESSAGE]);
+      setSelectedStyles([]);
+      setPendingTask(null);
+    }
+    setIsInitialized(true);
+  }, [draftId]);
+
+  // Auto-continue conversation if last message was from user
+  useEffect(() => {
+    if (!needsAutoContinue || isLoading || messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== "user") return;
+
+    setNeedsAutoContinue(false);
+
+    // Trigger AI response
+    const continueConversation = async () => {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: messages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            selectedStyles,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get response");
+        }
+
+        const data = await response.json();
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.content,
+          timestamp: new Date(),
+          styleReferences: data.styleReferences,
+          taskProposal: data.taskProposal,
+          quickOptions: data.quickOptions,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+
+        if (data.taskProposal) {
+          setPendingTask(data.taskProposal);
+        }
+      } catch {
+        toast.error("Failed to continue conversation. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    continueConversation();
+  }, [needsAutoContinue, isLoading, messages, selectedStyles]);
+
+  // Store callback in ref to avoid infinite loops
+  const onDraftUpdateRef = useRef(onDraftUpdate);
+  useEffect(() => {
+    onDraftUpdateRef.current = onDraftUpdate;
+  }, [onDraftUpdate]);
+
+  // Auto-save draft when messages change (after initial load)
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    // Don't save if only welcome message
+    if (messages.length <= 1 && messages[0]?.id === "welcome") return;
+
+    const draft: ChatDraft = {
+      id: draftId,
+      title: generateDraftTitle(messages),
+      messages: messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp.toISOString(),
+        attachments: m.attachments,
+      })),
+      selectedStyles,
+      pendingTask,
+      createdAt: getDraft(draftId)?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveDraft(draft);
+    // Use ref to call callback without causing re-renders
+    onDraftUpdateRef.current?.();
+  }, [messages, selectedStyles, pendingTask, draftId, isInitialized]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -242,8 +395,16 @@ export function ChatInterface() {
     }
   };
 
+  const userCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
+
   const handleConfirmTask = async () => {
     if (!pendingTask) return;
+
+    // Check if user has enough credits
+    if (userCredits < pendingTask.creditsRequired) {
+      setShowCreditDialog(true);
+      return;
+    }
 
     setIsLoading(true);
 
@@ -275,6 +436,9 @@ export function ChatInterface() {
       }
 
       const data = await response.json();
+      // Delete the draft since task was created
+      deleteDraft(draftId);
+      onDraftUpdate?.();
       toast.success("Task created successfully!");
       router.push(`/dashboard/tasks/${data.taskId}`);
     } catch (error) {
@@ -317,7 +481,12 @@ export function ChatInterface() {
                     : "bg-muted"
                 )}
               >
-                <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0">
+                <div className={cn(
+                  "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
+                  message.role === "user"
+                    ? "prose-invert [&>*]:text-white"
+                    : "dark:prose-invert"
+                )}>
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
 
@@ -367,20 +536,30 @@ export function ChatInterface() {
                     <p className="text-sm font-medium mb-2">
                       Select styles you prefer:
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {message.styleReferences.map((style) => (
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {message.styleReferences.slice(0, 3).map((style, idx) => (
                         <div
-                          key={style.name}
+                          key={`${style.name}-${idx}`}
                           className={cn(
-                            "rounded-lg border-2 p-2 cursor-pointer transition-all",
+                            "flex-shrink-0 w-32 rounded-lg border-2 p-2 cursor-pointer transition-all",
                             selectedStyles.includes(style.name)
                               ? "border-primary ring-2 ring-primary/20"
                               : "border-transparent bg-background/50 hover:border-muted-foreground/50"
                           )}
                           onClick={() => handleStyleSelect(style.name)}
                         >
-                          <div className="aspect-video bg-muted rounded flex items-center justify-center mb-1">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                          <div className="aspect-video bg-muted rounded overflow-hidden mb-1">
+                            {style.imageUrl ? (
+                              <img
+                                src={style.imageUrl}
+                                alt={style.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
                           </div>
                           <p className="text-xs font-medium text-center truncate">
                             {style.name}
@@ -406,7 +585,7 @@ export function ChatInterface() {
                         </Badge>
                         <Badge variant="outline" className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          ~{message.taskProposal.estimatedHours}h
+                          {getDeliveryDateString(message.taskProposal.deliveryDays || 3)}
                         </Badge>
                       </div>
                     </CardContent>
@@ -419,16 +598,15 @@ export function ChatInterface() {
                     <p className="text-sm font-medium mb-2">{message.quickOptions.question}</p>
                     <div className="flex flex-wrap gap-2">
                       {message.quickOptions.options.map((option, idx) => (
-                        <Button
+                        <button
                           key={idx}
-                          variant="outline"
-                          size="sm"
+                          type="button"
                           onClick={() => handleQuickOptionClick(option)}
                           disabled={isLoading}
-                          className="bg-background hover:bg-primary hover:text-primary-foreground transition-colors"
+                          className="px-4 py-2 text-sm font-medium rounded-full border border-border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {option}
-                        </Button>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -458,8 +636,20 @@ export function ChatInterface() {
             <div>
               <p className="font-medium">Ready to submit this task?</p>
               <p className="text-sm text-muted-foreground">
-                {pendingTask.creditsRequired} credits will be deducted from your
-                balance
+                {pendingTask.creditsRequired} credits required
+                {userCredits < pendingTask.creditsRequired ? (
+                  <span className="text-destructive ml-1">
+                    (You have {userCredits} credits -
+                    <button
+                      onClick={() => setShowCreditDialog(true)}
+                      className="underline ml-1 cursor-pointer hover:text-destructive/80"
+                    >
+                      buy more
+                    </button>)
+                  </span>
+                ) : (
+                  <span className="text-green-600 ml-1">(You have {userCredits} credits)</span>
+                )}
               </p>
             </div>
             <div className="flex gap-2">
@@ -467,17 +657,22 @@ export function ChatInterface() {
                 variant="outline"
                 onClick={handleRejectTask}
                 disabled={isLoading}
+                className="cursor-pointer"
               >
                 <X className="h-4 w-4 mr-2" />
                 Make Changes
               </Button>
-              <Button onClick={handleConfirmTask} disabled={isLoading}>
+              <Button
+                onClick={handleConfirmTask}
+                disabled={isLoading}
+                className="cursor-pointer"
+              >
                 {isLoading ? (
                   <LoadingSpinner size="sm" className="mr-2" />
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
                 )}
-                Confirm & Submit
+                {userCredits < pendingTask.creditsRequired ? "Buy Credits & Submit" : "Confirm & Submit"}
               </Button>
             </div>
           </div>
@@ -569,6 +764,14 @@ export function ChatInterface() {
           Press Enter to send, Shift+Enter for new line. Click <Paperclip className="h-3 w-3 inline" /> to attach files.
         </p>
       </div>
+
+      {/* Credit Purchase Dialog */}
+      <CreditPurchaseDialog
+        open={showCreditDialog}
+        onOpenChange={setShowCreditDialog}
+        requiredCredits={pendingTask?.creditsRequired || 0}
+        currentCredits={userCredits}
+      />
     </div>
   );
 }

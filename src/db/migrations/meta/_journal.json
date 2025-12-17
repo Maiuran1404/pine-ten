@@ -15,6 +15,13 @@
       "when": 1765985354295,
       "tag": "0001_eminent_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765992057921,
+      "tag": "0002_wealthy_vampiro",
+      "breakpoints": true
     }
   ]
 }
