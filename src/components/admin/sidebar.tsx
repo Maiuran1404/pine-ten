@@ -13,6 +13,7 @@ import {
   Image,
   Settings,
   Tags,
+  Database,
   X,
 } from "lucide-react";
 
@@ -46,6 +47,11 @@ const navigation = [
     name: "Style Library",
     href: "/admin/styles",
     icon: Image,
+  },
+  {
+    name: "Database",
+    href: "/admin/database",
+    icon: Database,
   },
   {
     name: "Settings",
