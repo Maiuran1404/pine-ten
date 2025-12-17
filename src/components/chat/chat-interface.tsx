@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,11 @@ interface UploadedFile {
   fileSize: number;
 }
 
+interface QuickOptions {
+  question: string;
+  options: string[];
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -27,6 +33,7 @@ interface Message {
   styleReferences?: StyleReference[];
   taskProposal?: TaskProposal;
   attachments?: UploadedFile[];
+  quickOptions?: QuickOptions;
 }
 
 interface StyleReference {
@@ -51,7 +58,7 @@ export function ChatInterface() {
       id: "welcome",
       role: "assistant",
       content:
-        "Hi! I'm here to help you create a design request. What kind of design do you need today? For example, you could say:\n\n- \"I need static ads for a 7-day Instagram campaign\"\n- \"Create a 30-second video ad for our product launch\"\n- \"Design social media content for our new brand\"",
+        "Hey! Ready to create something awesome. What do you need?\n\nJust tell me what you're looking for - like \"Instagram posts for this week\" or \"a video ad for our new service\".",
       timestamp: new Date(),
     },
   ]);
@@ -158,6 +165,7 @@ export function ChatInterface() {
         timestamp: new Date(),
         styleReferences: data.styleReferences,
         taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -178,6 +186,60 @@ export function ChatInterface() {
         ? prev.filter((s) => s !== styleName)
         : [...prev, styleName]
     );
+  };
+
+  const handleQuickOptionClick = async (option: string) => {
+    if (isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: option,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedStyles,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmTask = async () => {
@@ -255,7 +317,9 @@ export function ChatInterface() {
                     : "bg-muted"
                 )}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
 
                 {/* Attachments */}
                 {message.attachments && message.attachments.length > 0 && (
@@ -349,6 +413,27 @@ export function ChatInterface() {
                   </Card>
                 )}
 
+                {/* Quick Options */}
+                {message.quickOptions && message.quickOptions.options.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">{message.quickOptions.question}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {message.quickOptions.options.map((option, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickOptionClick(option)}
+                          disabled={isLoading}
+                          className="bg-background hover:bg-primary hover:text-primary-foreground transition-colors"
+                        >
+                          {option}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs opacity-70 mt-2">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -440,7 +525,7 @@ export function ChatInterface() {
             onChange={handleFileUpload}
             className="hidden"
             multiple
-            accept="image/*,video/*,.pdf,.zip,.pptx,.ppt,.ai,.eps"
+            accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
           />
 
           <Button

@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       taskProposal,
       styleReferences,
       selectedStyles,
+      quickOptions: response.quickOptions,
     });
   } catch (error) {
     console.error("Chat error:", error);

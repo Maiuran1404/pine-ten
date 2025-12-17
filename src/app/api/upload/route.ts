@@ -10,21 +10,36 @@ const supabase = createClient(
 );
 
 const ALLOWED_TYPES = [
+  // Images
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
   "image/svg+xml",
+  "image/tiff",
+  "image/bmp",
+  // Documents
   "application/pdf",
+  // Archives
   "application/zip",
   "application/x-zip-compressed",
+  "application/x-rar-compressed",
+  // Videos
   "video/mp4",
   "video/quicktime",
   "video/webm",
+  "video/x-msvideo",
+  // Office
   "application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
   "application/vnd.ms-powerpoint", // ppt
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+  "application/msword", // doc
+  // Design files
   "application/illustrator",
   "application/postscript", // ai, eps
+  "image/vnd.adobe.photoshop", // psd
+  "application/x-photoshop",
+  "application/octet-stream", // fallback for design files
 ];
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB

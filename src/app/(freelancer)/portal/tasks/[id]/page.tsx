@@ -585,7 +585,7 @@ export default function FreelancerTaskDetailPage() {
                     onChange={handleFileUpload}
                     className="hidden"
                     multiple
-                    accept="image/*,video/*,.pdf,.zip,.psd,.ai,.eps"
+                    accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
                   />
                   <Button
                     variant="outline"

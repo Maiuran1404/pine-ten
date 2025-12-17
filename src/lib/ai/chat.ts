@@ -1,33 +1,34 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
-import { styleReferences, taskCategories } from "@/db/schema";
+import { styleReferences, taskCategories, users, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a design project coordinator for a creative agency called Crafted. Your job is to gather complete requirements for design tasks from clients.
+const SYSTEM_PROMPT = `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
 
-Your personality:
-- Professional but friendly
-- Efficient and focused on gathering necessary information
-- Helpful in suggesting options when clients are unsure
+IMPORTANT RULES:
+1. You already know the client's brand from their profile (provided below). NEVER ask about:
+   - What business/company they are
+   - Brand colors, fonts, or logo (you have this)
+   - Brand guidelines (you have this)
 
-For each design request, you must collect the following information:
-1. Project type (static ads, video/motion graphics, or social media content)
-2. Specific deliverables needed (dimensions, formats, number of variations)
-3. Target platform(s) (Instagram, Facebook, LinkedIn, TikTok, Google Ads, etc.)
-4. Brand guidelines if available (colors, fonts, logos, existing assets)
-5. Key message or call-to-action
-6. Timeline/urgency level
-7. Style preferences
+2. When the platform is obvious from context (e.g., "Instagram posts"), DON'T ask:
+   - What platform (it's already mentioned)
+   - Target dimensions (infer from platform: Instagram feed = 1080x1080, Stories = 1080x1920)
 
-When you have gathered enough information, you should:
-1. Summarize the requirements
-2. Propose a credit cost based on complexity
-3. Propose an estimated delivery timeline
-4. Ask for confirmation
+3. Keep it simple and fast. Only ask what you TRULY need:
+   - For format choices, offer them as quick options with [QUICK_OPTIONS] tag
+   - Focus on the creative brief: key message, style preferences, any specific requirements
+
+4. Be concise - 2-3 sentences max, then options if needed.
+
+When offering format/style choices, use this format for clickable options:
+[QUICK_OPTIONS]
+{"question": "What format do you need?", "options": ["Feed posts (1080x1080)", "Stories (1080x1920)", "Both formats"]}
+[/QUICK_OPTIONS]
 
 Credit guidelines:
 - Simple static ad (1 variation): 1 credit
@@ -37,31 +38,27 @@ Credit guidelines:
 - Longer video/motion (30-60 sec): 5 credits
 - Social media content pack: 2-3 credits
 
-When showing style references, format them as:
-[STYLE_REFERENCES: category1, category2, ...]
-
 When you're ready to create the task, output:
 [TASK_READY]
 {
   "title": "Brief task title",
-  "description": "Full description",
+  "description": "Full description with all context",
   "category": "STATIC_ADS" | "VIDEO_MOTION" | "SOCIAL_MEDIA",
   "requirements": {
     "projectType": "...",
     "deliverables": [...],
     "platforms": [...],
     "dimensions": [...],
-    "brandGuidelines": {...},
     "keyMessage": "...",
     "additionalNotes": "..."
   },
   "estimatedHours": number,
   "creditsRequired": number,
-  "deadline": "ISO date or null"
+  "deadline": null
 }
 [/TASK_READY]
 
-Always be conversational and guide the user through the process. Ask one or two questions at a time, not all at once.`;
+Be efficient. Most requests can be ready in 2-3 exchanges.`;
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -71,7 +68,17 @@ export interface ChatMessage {
 export async function chat(
   messages: ChatMessage[],
   userId: string
-): Promise<{ content: string; styleReferences?: string[] }> {
+): Promise<{ content: string; styleReferences?: string[]; quickOptions?: { question: string; options: string[] } }> {
+  // Fetch user's company/brand data
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    with: {
+      company: true,
+    },
+  });
+
+  const company = user?.company;
+
   // Fetch available style categories for context
   const styles = await db
     .select()
@@ -83,7 +90,25 @@ export async function chat(
     .from(taskCategories)
     .where(eq(taskCategories.isActive, true));
 
+  // Build company context
+  const companyContext = company
+    ? `
+CLIENT'S BRAND PROFILE:
+- Company: ${company.name}
+- Industry: ${company.industry || "Not specified"}
+- Description: ${company.description || "Not specified"}
+- Tagline: ${company.tagline || "None"}
+- Website: ${company.website || "None"}
+- Brand Colors: Primary: ${company.primaryColor || "#6366f1"}, Secondary: ${company.secondaryColor || "None"}, Accent: ${company.accentColor || "None"}
+- Fonts: Primary: ${company.primaryFont || "Not specified"}, Secondary: ${company.secondaryFont || "Not specified"}
+- Logo URL: ${company.logoUrl || "Not provided"}
+
+Use this information to personalize responses and DO NOT ask for any of this information again.`
+    : "No brand profile available for this client.";
+
   const enhancedSystemPrompt = `${SYSTEM_PROMPT}
+
+${companyContext}
 
 Available task categories:
 ${categories
@@ -112,9 +137,27 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     ? styleMatch[1].split(",").map((s) => s.trim())
     : undefined;
 
+  // Extract quick options if present
+  const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/);
+  let quickOptions: { question: string; options: string[] } | undefined;
+  if (quickOptionsMatch) {
+    try {
+      quickOptions = JSON.parse(quickOptionsMatch[1].trim());
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  // Clean the content
+  let cleanContent = content
+    .replace(/\[STYLE_REFERENCES: [^\]]+\]/, "")
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/, "")
+    .trim();
+
   return {
-    content: content.replace(/\[STYLE_REFERENCES: [^\]]+\]/, "").trim(),
+    content: cleanContent,
     styleReferences: mentionedStyles,
+    quickOptions,
   };
 }
 
