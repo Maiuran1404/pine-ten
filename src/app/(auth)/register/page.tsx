@@ -7,17 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Eye, EyeOff, ArrowRight, Sparkles, Palette, Briefcase } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -26,9 +19,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
 import { signUp } from "@/lib/auth-client";
+import { useSubdomain } from "@/hooks/use-subdomain";
+import { cn } from "@/lib/utils";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -41,10 +35,14 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 function RegisterContent() {
   const router = useRouter();
+  const portal = useSubdomain();
   const searchParams = useSearchParams();
   const defaultType = searchParams.get("type") === "freelancer" ? "freelancer" : "client";
   const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"client" | "freelancer">(defaultType);
+  const [showPassword, setShowPassword] = useState(false);
+  const [accountType, setAccountType] = useState<"client" | "freelancer">(
+    portal.type === "artist" ? "freelancer" : defaultType
+  );
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -71,13 +69,9 @@ function RegisterContent() {
         return;
       }
 
-      // If freelancer, we'll need to update their role and create a profile
-      // This will be handled in the onboarding flow or via API
-
       toast.success("Account created successfully!");
 
       if (accountType === "freelancer") {
-        // Redirect to freelancer application flow
         router.push("/onboarding?type=freelancer");
       } else {
         router.push("/onboarding");
@@ -89,124 +83,228 @@ function RegisterContent() {
     }
   }
 
-  return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>
-          Choose how you want to use the platform
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={accountType} onValueChange={(v) => setAccountType(v as "client" | "freelancer")} className="mb-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="client">I need designs</TabsTrigger>
-            <TabsTrigger value="freelancer">I&apos;m a designer</TabsTrigger>
-          </TabsList>
-          <TabsContent value="client" className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              Get professional designs created by talented freelancers. Pay per project with credits.
-            </p>
-          </TabsContent>
-          <TabsContent value="freelancer" className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              Apply to join our network of freelance designers. Complete tasks and earn money.
-            </p>
-          </TabsContent>
-        </Tabs>
+  const gradientButtonClass = cn(
+    "w-full h-12 text-base font-medium transition-all duration-300",
+    "bg-gradient-to-r shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
+    portal.accentColor,
+    "text-white border-0"
+  );
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {accountType === "freelancer" && (
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>WhatsApp Number (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="tel"
-                        placeholder="+1 234 567 8900"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Creating account...
-                </>
-              ) : accountType === "freelancer" ? (
-                "Apply as Designer"
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
-        <div className="text-sm text-muted-foreground text-center">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
-          </Link>
+  // Hide account type selection for specific portals
+  const showAccountTypeSelector = portal.type === "default" || portal.type === "app";
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2 text-center lg:text-left">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 text-primary text-sm font-medium mb-4">
+          <Sparkles className="w-4 h-4" />
+          <span>{portal.description}</span>
         </div>
-      </CardFooter>
-    </Card>
+        <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+        <p className="text-muted-foreground">
+          {portal.type === "artist"
+            ? "Join our network of talented designers"
+            : "Start getting professional designs today"
+          }
+        </p>
+      </div>
+
+      {/* Account type selector */}
+      {showAccountTypeSelector && (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setAccountType("client")}
+            className={cn(
+              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+              accountType === "client"
+                ? "border-primary bg-primary/5 shadow-sm"
+                : "border-border/50 hover:border-border hover:bg-muted/50"
+            )}
+          >
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              accountType === "client" ? "bg-primary text-primary-foreground" : "bg-muted"
+            )}>
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-sm">I need designs</p>
+              <p className="text-xs text-muted-foreground">Get work done</p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType("freelancer")}
+            className={cn(
+              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+              accountType === "freelancer"
+                ? "border-primary bg-primary/5 shadow-sm"
+                : "border-border/50 hover:border-border hover:bg-muted/50"
+            )}
+          >
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              accountType === "freelancer" ? "bg-primary text-primary-foreground" : "bg-muted"
+            )}>
+              <Palette className="w-5 h-5" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-sm">I&apos;m a designer</p>
+              <p className="text-xs text-muted-foreground">Earn money</p>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Form */}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Full name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="John Doe"
+                    className="h-12 px-4 bg-background border-input/50 focus:border-primary transition-colors"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="h-12 px-4 bg-background border-input/50 focus:border-primary transition-colors"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a strong password"
+                      className="h-12 px-4 pr-12 bg-background border-input/50 focus:border-primary transition-colors"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </FormControl>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Must be at least 8 characters
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {accountType === "freelancer" && (
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">
+                    WhatsApp Number
+                    <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="tel"
+                      placeholder="+1 234 567 8900"
+                      className="h-12 px-4 bg-background border-input/50 focus:border-primary transition-colors"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <Button
+            type="submit"
+            className={gradientButtonClass}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Creating account...
+              </>
+            ) : (
+              <>
+                {accountType === "freelancer" ? "Apply as Designer" : "Create Account"}
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            By creating an account, you agree to our{" "}
+            <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
+            {" "}and{" "}
+            <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+          </p>
+        </form>
+      </Form>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border/50" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-4 text-muted-foreground">
+            Already have an account?
+          </span>
+        </div>
+      </div>
+
+      {/* Sign in link */}
+      <div className="text-center">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors group"
+        >
+          Sign in instead
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+    </div>
   );
 }
 

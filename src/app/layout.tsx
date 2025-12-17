@@ -15,10 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nameless - Design on Demand",
-    template: "%s | Nameless",
+    default: "Crafted - Design on Demand",
+    template: "%s | Crafted",
   },
-  description: "Professional design services on demand. Get static ads, video content, and social media graphics created by talented freelancers.",
+  description:
+    "Professional design services on demand. Get static ads, video content, and social media graphics created by talented freelancers.",
 };
 
 export default function RootLayout({

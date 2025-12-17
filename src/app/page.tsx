@@ -37,8 +37,9 @@ export default function HomePage() {
             <span className="text-muted-foreground">On Demand</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Get high-quality static ads, video content, and social media graphics
-            created by vetted freelance designers. Simply describe what you need.
+            Get high-quality static ads, video content, and social media
+            graphics created by vetted freelance designers. Simply describe what
+            you need.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild>
@@ -57,15 +58,15 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="py-20 px-4 bg-muted/50">
         <div className="container max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            How It Works
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
           <div className="grid gap-8 md:grid-cols-3">
             <div className="text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary mx-auto mb-4">
                 <MessageSquare className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">1. Describe Your Need</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                1. Describe Your Need
+              </h3>
               <p className="text-muted-foreground">
                 Chat with our AI assistant to create a detailed brief for your
                 design project.
@@ -75,7 +76,9 @@ export default function HomePage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary mx-auto mb-4">
                 <Users className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">2. Expert Assignment</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                2. Expert Assignment
+              </h3>
               <p className="text-muted-foreground">
                 Your task is matched to a skilled freelancer who specializes in
                 your project type.
@@ -100,9 +103,7 @@ export default function HomePage() {
         <div className="container max-w-5xl">
           <div className="grid gap-12 md:grid-cols-2 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-6">
-                Why Choose Us
-              </h2>
+              <h2 className="text-3xl font-bold mb-6">Why Choose Us</h2>
               <div className="space-y-4">
                 {[
                   {
@@ -141,7 +142,10 @@ export default function HomePage() {
             <div className="bg-muted rounded-lg p-8">
               <h3 className="text-2xl font-bold mb-4">Simple Pricing</h3>
               <p className="text-4xl font-bold mb-2">
-                $49 <span className="text-xl font-normal text-muted-foreground">/ credit</span>
+                $49{" "}
+                <span className="text-xl font-normal text-muted-foreground">
+                  / credit
+                </span>
               </p>
               <p className="text-muted-foreground mb-6">
                 Pay only for what you need. Volume discounts available.
@@ -191,7 +195,7 @@ export default function HomePage() {
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Nameless. All rights reserved.
+            &copy; {new Date().getFullYear()} Crafted. All rights reserved.
           </p>
         </div>
       </footer>

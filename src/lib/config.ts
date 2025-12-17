@@ -1,7 +1,7 @@
 // App configuration - easy to update
 export const config = {
   app: {
-    name: process.env.NEXT_PUBLIC_APP_NAME || "Nameless",
+    name: process.env.NEXT_PUBLIC_APP_NAME || "Crafted",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   },
   credits: {
@@ -33,7 +33,8 @@ export const defaultTaskCategories = [
   {
     name: "Static Ads",
     slug: "static-ads",
-    description: "Static image advertisements for social media, display, and print",
+    description:
+      "Static image advertisements for social media, display, and print",
     baseCredits: 1,
   },
   {

@@ -7,7 +7,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a design project coordinator for a creative agency called Nameless. Your job is to gather complete requirements for design tasks from clients.
+const SYSTEM_PROMPT = `You are a design project coordinator for a creative agency called Crafted. Your job is to gather complete requirements for design tasks from clients.
 
 Your personality:
 - Professional but friendly
@@ -86,7 +86,9 @@ export async function chat(
   const enhancedSystemPrompt = `${SYSTEM_PROMPT}
 
 Available task categories:
-${categories.map((c) => `- ${c.name}: ${c.description} (base: ${c.baseCredits} credits)`).join("\n")}
+${categories
+  .map((c) => `- ${c.name}: ${c.description} (base: ${c.baseCredits} credits)`)
+  .join("\n")}
 
 Available style reference categories:
 ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
@@ -140,8 +142,6 @@ export async function getStyleReferencesByCategory(
     .where(eq(styleReferences.isActive, true));
 
   return styles.filter((s) =>
-    categories.some(
-      (c) => s.category.toLowerCase().includes(c.toLowerCase())
-    )
+    categories.some((c) => s.category.toLowerCase().includes(c.toLowerCase()))
   );
 }
