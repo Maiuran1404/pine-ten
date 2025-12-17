@@ -97,22 +97,8 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
-    // Configure cookies for cross-subdomain sharing (only in production)
-    // In development, localhost subdomains don't support cookie sharing properly
-    ...(isProduction && {
-      cookies: {
-        sessionToken: {
-          name: "pine.session_token",
-          attributes: {
-            domain: `.${baseDomain}`, // Leading dot for subdomain sharing
-            path: "/",
-            secure: true,
-            httpOnly: true,
-            sameSite: "lax" as const,
-          },
-        },
-      },
-    }),
+    // Do NOT set cookie domain - this keeps sessions separate per subdomain
+    // This allows users to be logged in as different accounts on app vs artist portals
   },
   trustedOrigins,
   rateLimit: {
