@@ -16,6 +16,7 @@ import {
   notifications,
   creditTransactions,
   platformSettings,
+  companies,
 } from "@/db/schema";
 import { count, desc } from "drizzle-orm";
 
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
         safeCount("sessions", db.select({ count: count() }).from(sessions)),
         safeCount("accounts", db.select({ count: count() }).from(accounts)),
         safeCount("verifications", db.select({ count: count() }).from(verifications)),
+        safeCount("companies", db.select({ count: count() }).from(companies)),
         safeCount("freelancerProfiles", db.select({ count: count() }).from(freelancerProfiles)),
         safeCount("taskCategories", db.select({ count: count() }).from(taskCategories)),
         safeCount("tasks", db.select({ count: count() }).from(tasks)),
@@ -97,6 +99,12 @@ export async function GET(request: NextRequest) {
         const [countRes] = await db.select({ count: count() }).from(verifications);
         total = countRes.count;
         data = await db.select().from(verifications).orderBy(desc(verifications.createdAt)).limit(limit).offset(offset);
+        break;
+      }
+      case "companies": {
+        const [countRes] = await db.select({ count: count() }).from(companies);
+        total = countRes.count;
+        data = await db.select().from(companies).orderBy(desc(companies.createdAt)).limit(limit).offset(offset);
         break;
       }
       case "freelancerProfiles": {

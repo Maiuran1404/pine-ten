@@ -82,16 +82,22 @@ export default function DatabasePage() {
 
   const fetchTableData = async (tableName: string) => {
     setIsLoadingData(true);
+    setError(null);
     try {
       const response = await fetch(
         `/api/admin/database?table=${tableName}&limit=${limit}&offset=${page * limit}`
       );
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         setTableData(data);
+      } else {
+        setError(data.error || `Failed to fetch ${tableName} data`);
+        setTableData(null);
       }
-    } catch (error) {
-      console.error("Failed to fetch table data:", error);
+    } catch (err) {
+      console.error("Failed to fetch table data:", err);
+      setError("Failed to connect to the database API");
+      setTableData(null);
     } finally {
       setIsLoadingData(false);
     }
@@ -256,6 +262,13 @@ export default function DatabasePage() {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
+              </div>
+            ) : error && selectedTable ? (
+              <div className="text-center py-8">
+                <p className="text-destructive mb-4">{error}</p>
+                <Button variant="outline" onClick={() => fetchTableData(selectedTable)}>
+                  Try Again
+                </Button>
               </div>
             ) : !tableData || tableData.data.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground">

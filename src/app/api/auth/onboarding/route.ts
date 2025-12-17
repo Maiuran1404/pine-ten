@@ -64,26 +64,18 @@ export async function POST(request: NextRequest) {
         })
         .where(eq(users.id, session.user.id));
 
-      // Send admin notification for new client
-      try {
-        await adminNotifications.newClientSignup({
-          name: session.user.name || "Unknown",
-          email: session.user.email || "",
-        });
-
-        // Send welcome email to the client
-        const welcomeEmail = emailTemplates.welcomeClient(
-          session.user.name || "there",
-          `${config.app.url}/dashboard`
-        );
-        await sendEmail({
-          to: session.user.email || "",
-          subject: welcomeEmail.subject,
-          html: welcomeEmail.html,
-        });
-      } catch (emailError) {
-        console.error("Failed to send client onboarding notifications:", emailError);
-      }
+      // Fire-and-forget: Send notifications without blocking the response
+      const userName = session.user.name || "Unknown";
+      const userEmail = session.user.email || "";
+      Promise.resolve().then(async () => {
+        try {
+          await adminNotifications.newClientSignup({ name: userName, email: userEmail });
+          const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`);
+          await sendEmail({ to: userEmail, subject: welcomeEmail.subject, html: welcomeEmail.html });
+        } catch (emailError) {
+          console.error("Failed to send client onboarding notifications:", emailError);
+        }
+      });
 
       return NextResponse.json({ success: true, companyId: company.id });
     }
@@ -113,17 +105,23 @@ export async function POST(request: NextRequest) {
         whatsappNumber: data.whatsappNumber || null,
       });
 
-      // Send admin notification for new freelancer application
-      try {
-        await adminNotifications.newFreelancerApplication({
-          name: session.user.name || "Unknown",
-          email: session.user.email || "",
-          skills: data.skills || [],
-          portfolioUrls: data.portfolioUrls || [],
-        });
-      } catch (emailError) {
-        console.error("Failed to send freelancer application notification:", emailError);
-      }
+      // Fire-and-forget: Send notification without blocking the response
+      const freelancerName = session.user.name || "Unknown";
+      const freelancerEmail = session.user.email || "";
+      const freelancerSkills = data.skills || [];
+      const freelancerPortfolio = data.portfolioUrls || [];
+      Promise.resolve().then(async () => {
+        try {
+          await adminNotifications.newFreelancerApplication({
+            name: freelancerName,
+            email: freelancerEmail,
+            skills: freelancerSkills,
+            portfolioUrls: freelancerPortfolio,
+          });
+        } catch (emailError) {
+          console.error("Failed to send freelancer application notification:", emailError);
+        }
+      });
 
       return NextResponse.json({ success: true });
     }

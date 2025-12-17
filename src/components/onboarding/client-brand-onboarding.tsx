@@ -201,16 +201,17 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
       }
 
       setStep("complete");
+      setIsLoading(false);
 
-      // Refetch the session to get the updated onboardingCompleted status
-      await refetchSession();
+      // Refetch the session in background
+      refetchSession().catch(() => {});
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       toast.success("Welcome aboard!");
       onComplete();
-    } catch {
+    } catch (error) {
+      console.error("Onboarding error:", error);
       toast.error("Something went wrong. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
