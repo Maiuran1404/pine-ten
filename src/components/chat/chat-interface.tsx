@@ -9,8 +9,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Send, Coins, Clock, Check, X, Image as ImageIcon } from "lucide-react";
+import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface UploadedFile {
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+}
 
 interface Message {
   id: string;
@@ -19,6 +26,7 @@ interface Message {
   timestamp: Date;
   styleReferences?: StyleReference[];
   taskProposal?: TaskProposal;
+  attachments?: UploadedFile[];
 }
 
 interface StyleReference {
@@ -49,9 +57,12 @@ export function ChatInterface() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -60,18 +71,65 @@ export function ChatInterface() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
+    setIsUploading(true);
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "task-attachments");
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Upload failed");
+        }
+
+        const data = await response.json();
+        return data.file as UploadedFile;
+      });
+
+      const newFiles = await Promise.all(uploadPromises);
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} file(s) uploaded successfully`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload files");
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeFile = (fileUrl: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl));
+  };
+
+  const handleSend = async () => {
+    if ((!input.trim() && uploadedFiles.length === 0) || isLoading) return;
+
+    const currentFiles = [...uploadedFiles];
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: input || (currentFiles.length > 0 ? `Attached ${currentFiles.length} file(s)` : ""),
       timestamp: new Date(),
+      attachments: currentFiles.length > 0 ? currentFiles : undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setUploadedFiles([]);
     setIsLoading(true);
 
     try {
@@ -127,6 +185,11 @@ export function ChatInterface() {
 
     setIsLoading(true);
 
+    // Collect all attachments from messages
+    const allAttachments = messages
+      .filter((m) => m.attachments && m.attachments.length > 0)
+      .flatMap((m) => m.attachments || []);
+
     try {
       const response = await fetch("/api/tasks", {
         method: "POST",
@@ -137,8 +200,10 @@ export function ChatInterface() {
             role: m.role,
             content: m.content,
             timestamp: m.timestamp,
+            attachments: m.attachments,
           })),
           styleReferences: selectedStyles,
+          attachments: allAttachments,
         }),
       });
 
@@ -191,6 +256,46 @@ export function ChatInterface() {
                 )}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
+
+                {/* Attachments */}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {message.attachments.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 p-2 rounded bg-background/50"
+                      >
+                        {file.fileType.startsWith("image/") ? (
+                          <a
+                            href={file.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img
+                              src={file.fileUrl}
+                              alt={file.fileName}
+                              className="max-w-[200px] max-h-[150px] rounded object-cover"
+                            />
+                          </a>
+                        ) : (
+                          <a
+                            href={file.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm hover:underline"
+                          >
+                            <FileIcon className="h-4 w-4" />
+                            <span>{file.fileName}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({(file.fileSize / 1024).toFixed(1)} KB)
+                            </span>
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Style References */}
                 {message.styleReferences && message.styleReferences.length > 0 && (
@@ -296,7 +401,63 @@ export function ChatInterface() {
 
       {/* Input */}
       <div className="border-t pt-4">
+        {/* Pending uploads preview */}
+        {uploadedFiles.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {uploadedFiles.map((file) => (
+              <div
+                key={file.fileUrl}
+                className="relative group flex items-center gap-2 bg-muted px-3 py-2 rounded-lg"
+              >
+                {file.fileType.startsWith("image/") ? (
+                  <img
+                    src={file.fileUrl}
+                    alt={file.fileName}
+                    className="h-10 w-10 rounded object-cover"
+                  />
+                ) : (
+                  <FileIcon className="h-5 w-5 text-muted-foreground" />
+                )}
+                <span className="text-sm max-w-[100px] truncate">
+                  {file.fileName}
+                </span>
+                <button
+                  onClick={() => removeFile(file.fileUrl)}
+                  className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-2">
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
+            multiple
+            accept="image/*,video/*,.pdf,.zip,.pptx,.ppt,.ai,.eps"
+          />
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || isUploading}
+            className="h-[60px] w-[60px] shrink-0"
+            title="Attach files"
+          >
+            {isUploading ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <Paperclip className="h-5 w-5" />
+            )}
+          </Button>
+
           <Textarea
             placeholder="Describe your design needs..."
             value={input}
@@ -312,15 +473,15 @@ export function ChatInterface() {
           />
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
             size="icon"
-            className="h-[60px] w-[60px]"
+            className="h-[60px] w-[60px] shrink-0"
           >
             <Send className="h-5 w-5" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line
+          Press Enter to send, Shift+Enter for new line. Click <Paperclip className="h-3 w-3 inline" /> to attach files.
         </p>
       </div>
     </div>

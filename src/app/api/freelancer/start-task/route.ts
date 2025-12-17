@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@/db";
+import { tasks } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { taskId } = body;
+
+    if (!taskId) {
+      return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
+    }
+
+    // Verify the task exists and is assigned to this freelancer
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.freelancerId, session.user.id)
+        )
+      )
+      .limit(1);
+
+    if (!task) {
+      return NextResponse.json({ error: "Task not found or not assigned to you" }, { status: 404 });
+    }
+
+    // Check task is in ASSIGNED status
+    if (task.status !== "ASSIGNED") {
+      return NextResponse.json(
+        { error: "Task must be in ASSIGNED status to start" },
+        { status: 400 }
+      );
+    }
+
+    // Update task status to IN_PROGRESS
+    await db
+      .update(tasks)
+      .set({
+        status: "IN_PROGRESS",
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Start task error:", error);
+    return NextResponse.json(
+      { error: "Failed to start task" },
+      { status: 500 }
+    );
+  }
+}

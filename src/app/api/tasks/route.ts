@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks, users, taskCategories } from "@/db/schema";
+import { tasks, users, taskCategories, taskFiles } from "@/db/schema";
 import { eq, desc, and, or, count, sql } from "drizzle-orm";
 import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       deadline,
       chatHistory,
       styleReferences,
+      attachments,
     } = body;
 
     // Get user's current credits
@@ -163,6 +164,21 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
+
+    // Save attachments if provided
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      await db.insert(taskFiles).values(
+        attachments.map((file: { fileName: string; fileUrl: string; fileType: string; fileSize: number }) => ({
+          taskId: newTask.id,
+          uploadedBy: session.user.id,
+          fileName: file.fileName,
+          fileUrl: file.fileUrl,
+          fileType: file.fileType,
+          fileSize: file.fileSize,
+          isDeliverable: false,
+        }))
+      );
+    }
 
     // Send admin notification for new task
     try {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -26,12 +27,11 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
+  Download,
   Image as ImageIcon,
   FileIcon,
   ExternalLink,
-  Download,
 } from "lucide-react";
-import Image from "next/image";
 
 interface Task {
   id: string;
@@ -50,6 +50,7 @@ interface Task {
   assignedAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  clientId: string;
   category: {
     id: string;
     name: string;
@@ -121,7 +122,7 @@ const statusConfig: Record<
   },
 };
 
-export default function TaskDetailPage() {
+export default function AdminTaskDetailPage() {
   const params = useParams();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -151,6 +152,8 @@ export default function TaskDetailPage() {
       setIsLoading(false);
     }
   };
+
+  const isImage = (fileType: string) => fileType.startsWith("image/");
 
   if (isLoading) {
     return (
@@ -192,7 +195,7 @@ export default function TaskDetailPage() {
     return (
       <div className="space-y-6">
         <Button variant="ghost" asChild>
-          <Link href="/dashboard/tasks">
+          <Link href="/admin/tasks">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tasks
           </Link>
@@ -208,7 +211,7 @@ export default function TaskDetailPage() {
               don&apos;t have permission to view it.
             </p>
             <Button asChild>
-              <Link href="/dashboard/tasks">View All Tasks</Link>
+              <Link href="/admin/tasks">View All Tasks</Link>
             </Button>
           </CardContent>
         </Card>
@@ -218,13 +221,17 @@ export default function TaskDetailPage() {
 
   const status = statusConfig[task.status] || statusConfig.PENDING;
 
+  // Separate client attachments from deliverables
+  const clientAttachments = task.files.filter((f) => !f.isDeliverable);
+  const deliverables = task.files.filter((f) => f.isDeliverable);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard/tasks">
+            <Link href="/admin/tasks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -256,40 +263,26 @@ export default function TaskDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Requirements */}
-          {task.requirements && Object.keys(task.requirements).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto">
-                  {JSON.stringify(task.requirements, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Reference Files (Client Attachments) */}
-          {task.files.filter(f => !f.isDeliverable).length > 0 && (
+          {/* Client Attachments */}
+          {clientAttachments.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Your Attachments
+                  Client Attachments
                 </CardTitle>
                 <CardDescription>
-                  Reference files you provided
+                  Reference files provided by the client
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {task.files.filter(f => !f.isDeliverable).map((file) => (
+                  {clientAttachments.map((file) => (
                     <div
                       key={file.id}
                       className="group relative border rounded-lg overflow-hidden"
                     >
-                      {file.fileType.startsWith("image/") ? (
+                      {isImage(file.fileType) ? (
                         <a
                           href={file.fileUrl}
                           target="_blank"
@@ -332,8 +325,62 @@ export default function TaskDetailPage() {
             </Card>
           )}
 
+          {/* Chat History */}
+          {task.chatHistory && task.chatHistory.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Chat History
+                </CardTitle>
+                <CardDescription>
+                  Original conversation with the client
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {task.chatHistory.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                          msg.role === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {msg.attachments.map((att, attIdx) => (
+                              <a
+                                key={attIdx}
+                                href={att.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs underline"
+                              >
+                                <FileIcon className="h-3 w-3" />
+                                {att.fileName}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs opacity-70 mt-1">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Deliverables */}
-          {task.files.filter(f => f.isDeliverable).length > 0 && (
+          {deliverables.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -341,59 +388,41 @@ export default function TaskDetailPage() {
                   Deliverables
                 </CardTitle>
                 <CardDescription>
-                  Files delivered by the designer
+                  Final files delivered by the freelancer
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {task.files.filter(f => f.isDeliverable).map((file) => (
+                <div className="space-y-2">
+                  {deliverables.map((file) => (
                     <div
                       key={file.id}
-                      className="group relative border rounded-lg overflow-hidden"
+                      className="flex items-center justify-between p-3 border rounded-lg"
                     >
-                      {file.fileType.startsWith("image/") ? (
-                        <a
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block aspect-video relative bg-muted"
-                        >
+                      <div className="flex items-center gap-3">
+                        {isImage(file.fileType) ? (
                           <Image
                             src={file.fileUrl}
                             alt={file.fileName}
-                            fill
-                            className="object-cover"
+                            width={48}
+                            height={48}
+                            className="rounded object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <ExternalLink className="h-6 w-6 text-white" />
-                          </div>
-                        </a>
-                      ) : (
-                        <a
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
-                        >
-                          <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-xs text-center truncate w-full">
-                            {file.fileName}
-                          </p>
-                        </a>
-                      )}
-                      <div className="p-2 bg-background flex items-center justify-between">
+                        ) : (
+                          <FileText className="h-10 w-10 text-muted-foreground" />
+                        )}
                         <div>
-                          <p className="text-xs truncate">{file.fileName}</p>
+                          <p className="font-medium">{file.fileName}</p>
                           <p className="text-xs text-muted-foreground">
                             {(file.fileSize / 1024).toFixed(1)} KB
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
                       </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </a>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -532,7 +561,7 @@ export default function TaskDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Designer
+                  Assigned Artist
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -547,8 +576,7 @@ export default function TaskDetailPage() {
                     <p className="font-medium">{task.freelancer.name}</p>
                     {task.assignedAt && (
                       <p className="text-xs text-muted-foreground">
-                        Assigned{" "}
-                        {new Date(task.assignedAt).toLocaleDateString()}
+                        Assigned {new Date(task.assignedAt).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -564,7 +592,7 @@ export default function TaskDetailPage() {
                 <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="font-medium">Awaiting Assignment</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  A designer will be assigned to your task soon
+                  No artist has claimed this task yet
                 </p>
               </CardContent>
             </Card>
