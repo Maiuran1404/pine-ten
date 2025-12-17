@@ -1,11 +1,18 @@
 import * as dotenv from "dotenv";
+import * as bcrypt from "bcryptjs";
+import * as crypto from "crypto";
+
+// Load environment variables
+dotenv.config({ path: ".env" });
 dotenv.config({ path: ".env.local" });
 
 async function seed() {
   // Dynamic imports to ensure env is loaded first
   const { db } = await import("../src/db");
-  const { taskCategories, styleReferences, platformSettings, users } = await import("../src/db/schema");
+  const { taskCategories, styleReferences, platformSettings, users, accounts } = await import("../src/db/schema");
   const { defaultTaskCategories, styleReferenceCategories } = await import("../src/lib/config");
+  const { eq } = await import("drizzle-orm");
+
   console.log("Seeding database...");
 
   // Seed task categories
@@ -81,26 +88,82 @@ async function seed() {
       .onConflictDoNothing();
   }
 
-  // Create a default admin user (for development)
+  // Create admin user with secure password
   console.log("Creating admin user...");
-  const adminId = "admin-" + Date.now();
-  await db
-    .insert(users)
-    .values({
-      id: adminId,
-      name: "Admin User",
-      email: "admin@nameless.local",
-      emailVerified: true,
-      role: "ADMIN",
-      onboardingCompleted: true,
-      credits: 100,
-    })
-    .onConflictDoNothing();
 
-  console.log("Seed completed successfully!");
-  console.log("\nDefault admin account:");
-  console.log("  Email: admin@nameless.local");
-  console.log("  (Create password via the registration flow or reset)");
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    console.log("⚠️  ADMIN_EMAIL or ADMIN_PASSWORD not set in environment");
+    console.log("   Skipping admin user creation");
+    console.log("   Set these in .env or .env.local to create admin user");
+  } else {
+    // Check if admin already exists
+    const existingAdmin = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, adminEmail))
+      .limit(1);
+
+    if (existingAdmin.length > 0) {
+      console.log(`✓ Admin user already exists: ${adminEmail}`);
+
+      // Update to ensure ADMIN role
+      await db
+        .update(users)
+        .set({ role: "ADMIN" })
+        .where(eq(users.email, adminEmail));
+      console.log("✓ Ensured admin role is set");
+    } else {
+      // Hash password with bcrypt (same as Better Auth uses)
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(adminPassword, saltRounds);
+
+      // Generate unique ID
+      const adminId = crypto.randomUUID();
+
+      // Create the admin user
+      await db.insert(users).values({
+        id: adminId,
+        name: "Super Admin",
+        email: adminEmail,
+        emailVerified: true,
+        role: "ADMIN",
+        onboardingCompleted: true,
+        credits: 1000,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Create the credential account (for email/password login)
+      await db.insert(accounts).values({
+        id: crypto.randomUUID(),
+        userId: adminId,
+        accountId: adminId,
+        providerId: "credential",
+        password: passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      console.log("✓ Admin user created successfully!");
+      console.log("");
+      console.log("╔════════════════════════════════════════════════╗");
+      console.log("║           SUPERADMIN CREDENTIALS               ║");
+      console.log("╠════════════════════════════════════════════════╣");
+      console.log(`║  Email:    ${adminEmail.padEnd(35)}║`);
+      console.log(`║  Password: ${adminPassword.padEnd(35)}║`);
+      console.log("╠════════════════════════════════════════════════╣");
+      console.log("║  Login at: superadmin.craftedstudio.ai/login   ║");
+      console.log("╚════════════════════════════════════════════════╝");
+      console.log("");
+      console.log("⚠️  IMPORTANT: Store these credentials securely!");
+      console.log("   Change the password after first login.");
+    }
+  }
+
+  console.log("\nSeed completed successfully!");
 }
 
 seed()

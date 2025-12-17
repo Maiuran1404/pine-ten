@@ -53,14 +53,14 @@ export default function AuthLayout({
             </p>
           </div>
 
-          {/* Footer */}
+          {/* Footer - Using unique Unsplash headshots */}
           <div className="flex items-center gap-2 text-sm text-white/60">
             <div className="flex -space-x-2">
               {[
                 "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face",
-                "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&h=80&fit=crop&crop=face",
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=face",
-                "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=80&h=80&fit=crop&crop=face",
               ].map((src, i) => (
                 <img
                   key={i}
