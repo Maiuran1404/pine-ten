@@ -61,23 +61,32 @@ const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
 export function getPortalFromHostname(hostname: string): PortalType {
   const cleanHostname = hostname.split(":")[0]; // Remove port
 
-  if (cleanHostname.startsWith("app.") || cleanHostname === "app.localhost") {
-    return "app";
-  }
+  // Artist portal
   if (cleanHostname.startsWith("artist.") || cleanHostname === "artist.localhost") {
     return "artist";
   }
+  // Superadmin portal
   if (cleanHostname.startsWith("superadmin.") || cleanHostname === "superadmin.localhost") {
     return "superadmin";
   }
+  // App portal - default for localhost and app.* subdomains
+  if (
+    cleanHostname === "localhost" ||
+    cleanHostname.startsWith("app.") ||
+    cleanHostname === "app.localhost"
+  ) {
+    return "app";
+  }
 
-  return "default";
+  // Fallback to app for any unrecognized domain
+  return "app";
 }
 
 export function useSubdomain(): PortalConfig {
   const portalConfig = useMemo(() => {
     if (typeof window === "undefined") {
-      return PORTAL_CONFIGS.default;
+      // Default to app portal for SSR
+      return PORTAL_CONFIGS.app;
     }
 
     const hostname = window.location.hostname;
