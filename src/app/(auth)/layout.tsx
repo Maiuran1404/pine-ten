@@ -56,10 +56,18 @@ export default function AuthLayout({
           {/* Footer */}
           <div className="flex items-center gap-2 text-sm text-white/60">
             <div className="flex -space-x-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center text-xs font-medium">
-                  {["JD", "AK", "MR", "SL"][i]}
-                </div>
+              {[
+                "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=face",
+                "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face",
+              ].map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`User ${i + 1}`}
+                  className="w-8 h-8 rounded-full border-2 border-white/40 object-cover"
+                />
               ))}
             </div>
             <span className="ml-2">Trusted by 1,000+ users worldwide</span>

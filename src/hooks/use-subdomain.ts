@@ -62,11 +62,17 @@ export function getPortalFromHostname(hostname: string): PortalType {
   const cleanHostname = hostname.split(":")[0]; // Remove port
 
   // Artist portal
-  if (cleanHostname.startsWith("artist.") || cleanHostname === "artist.localhost") {
+  if (
+    cleanHostname.startsWith("artist.") ||
+    cleanHostname === "artist.localhost"
+  ) {
     return "artist";
   }
   // Superadmin portal
-  if (cleanHostname.startsWith("superadmin.") || cleanHostname === "superadmin.localhost") {
+  if (
+    cleanHostname.startsWith("superadmin.") ||
+    cleanHostname === "superadmin.localhost"
+  ) {
     return "superadmin";
   }
   // App portal - default for localhost and app.* subdomains

@@ -5,6 +5,10 @@ import * as schema from "@/db/schema";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Admin credentials from environment (hashed password comparison)
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+export const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+
 // Get the base domain for cookie sharing across subdomains
 const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
 
@@ -41,6 +45,12 @@ export const auth = betterAuth({
     requireEmailVerification: isProduction,
     minPasswordLength: 8,
     maxPasswordLength: 128,
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    },
   },
   user: {
     additionalFields: {
