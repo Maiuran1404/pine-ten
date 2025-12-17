@@ -96,21 +96,40 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
-    // In production, set cookie domain for cross-subdomain sharing
-    ...(isProduction && {
-      cookies: {
-        sessionToken: {
-          name: "pine.session_token",
-          attributes: {
-            domain: `.${baseDomain}`, // Leading dot for subdomain sharing
-            path: "/",
-            secure: true,
-            httpOnly: true,
-            sameSite: "lax" as const,
-          },
+    // Configure cookies for cross-subdomain sharing
+    cookies: {
+      sessionToken: {
+        name: "pine.session_token",
+        attributes: {
+          domain: isProduction ? `.${baseDomain}` : ".localhost", // Leading dot for subdomain sharing
+          path: "/",
+          secure: isProduction,
+          httpOnly: true,
+          sameSite: "lax" as const,
         },
       },
-    }),
+      // Also configure state cookie for OAuth to work across subdomains
+      state: {
+        name: "pine.oauth_state",
+        attributes: {
+          domain: isProduction ? `.${baseDomain}` : ".localhost",
+          path: "/",
+          secure: isProduction,
+          httpOnly: true,
+          sameSite: "lax" as const,
+        },
+      },
+      pkceCodeVerifier: {
+        name: "pine.pkce_code_verifier",
+        attributes: {
+          domain: isProduction ? `.${baseDomain}` : ".localhost",
+          path: "/",
+          secure: isProduction,
+          httpOnly: true,
+          sameSite: "lax" as const,
+        },
+      },
+    },
   },
   trustedOrigins,
   rateLimit: {

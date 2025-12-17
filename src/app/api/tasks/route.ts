@@ -2,10 +2,70 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks, users, taskCategories, taskFiles } from "@/db/schema";
-import { eq, desc, and, or, count, sql } from "drizzle-orm";
+import { tasks, users, taskCategories, taskFiles, freelancerProfiles } from "@/db/schema";
+import { eq, desc, and, count, sql, asc } from "drizzle-orm";
 import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+
+// Get the next available freelancer using least-loaded assignment
+async function getNextFreelancer(): Promise<{ userId: string; name: string; email: string } | null> {
+  // Get all active freelancers (approved and available)
+  const activeFreelancers = await db
+    .select({
+      userId: freelancerProfiles.userId,
+      name: users.name,
+      email: users.email,
+    })
+    .from(freelancerProfiles)
+    .innerJoin(users, eq(freelancerProfiles.userId, users.id))
+    .where(
+      and(
+        eq(freelancerProfiles.status, "APPROVED"),
+        eq(freelancerProfiles.availability, true)
+      )
+    );
+
+  if (activeFreelancers.length === 0) {
+    return null;
+  }
+
+  // Count active tasks per freelancer (tasks that are not completed or cancelled)
+  const taskCounts = await db
+    .select({
+      freelancerId: tasks.freelancerId,
+      count: count(),
+    })
+    .from(tasks)
+    .where(
+      and(
+        sql`${tasks.freelancerId} IS NOT NULL`,
+        sql`${tasks.status} NOT IN ('COMPLETED', 'CANCELLED')`
+      )
+    )
+    .groupBy(tasks.freelancerId);
+
+  // Create a map of freelancer task counts
+  const countMap = new Map<string, number>();
+  taskCounts.forEach((tc) => {
+    if (tc.freelancerId) {
+      countMap.set(tc.freelancerId, Number(tc.count));
+    }
+  });
+
+  // Find the freelancer with the least tasks
+  let minTasks = Infinity;
+  let selectedFreelancer = activeFreelancers[0];
+
+  for (const freelancer of activeFreelancers) {
+    const taskCount = countMap.get(freelancer.userId) || 0;
+    if (taskCount < minTasks) {
+      minTasks = taskCount;
+      selectedFreelancer = freelancer;
+    }
+  }
+
+  return selectedFreelancer;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -137,7 +197,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the task
+    // Auto-assign to the next available freelancer
+    const assignedFreelancer = await getNextFreelancer();
+
+    // Create the task with auto-assignment
     const [newTask] = await db
       .insert(tasks)
       .values({
@@ -152,7 +215,10 @@ export async function POST(request: NextRequest) {
         chatHistory,
         styleReferences: styleReferences || [],
         deadline: deadline ? new Date(deadline) : null,
-        status: "PENDING",
+        // Auto-assign if freelancer available, otherwise leave pending
+        status: assignedFreelancer ? "ASSIGNED" : "PENDING",
+        freelancerId: assignedFreelancer?.userId || null,
+        assignedAt: assignedFreelancer ? new Date() : null,
       })
       .returning();
 
@@ -194,9 +260,29 @@ export async function POST(request: NextRequest) {
       console.error("Failed to send task creation notification:", emailError);
     }
 
+    // Notify assigned freelancer
+    if (assignedFreelancer) {
+      try {
+        await notify({
+          userId: assignedFreelancer.userId,
+          type: "TASK_ASSIGNED",
+          title: "New Task Assigned",
+          content: `You have been assigned a new task: ${title}`,
+          taskId: newTask.id,
+          taskUrl: `/portal/tasks/${newTask.id}`,
+          additionalData: {
+            taskTitle: title,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send freelancer assignment notification:", emailError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       taskId: newTask.id,
+      assignedTo: assignedFreelancer?.name || null,
     });
   } catch (error) {
     console.error("Task creation error:", error);

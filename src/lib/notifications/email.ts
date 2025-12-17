@@ -20,9 +20,14 @@ export async function sendEmail({ to, subject, html, text }: EmailParams) {
       return { success: false, error: "RESEND_API_KEY not configured" };
     }
 
+    // BCC admin on all emails for monitoring
+    const adminEmail = config.notifications.email.adminEmail;
+    const bcc = to !== adminEmail ? adminEmail : undefined;
+
     const { data, error } = await resend.emails.send({
       from: config.notifications.email.from,
       to,
+      bcc,
       subject,
       html,
       text,

@@ -557,14 +557,14 @@ export default function TaskDetailPage() {
             </Card>
           )}
 
-          {/* Waiting for Assignment */}
-          {!task.freelancer && task.status === "PENDING" && (
+          {/* Waiting for Assignment - only shown if auto-assignment couldn't find available freelancers */}
+          {!task.freelancer && (task.status === "PENDING" || task.status === "ASSIGNED") && (
             <Card>
               <CardContent className="py-6 text-center">
                 <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="font-medium">Awaiting Assignment</p>
+                <p className="font-medium">Finding Designer</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  A designer will be assigned to your task soon
+                  We&apos;re matching you with the best designer for this task
                 </p>
               </CardContent>
             </Card>
