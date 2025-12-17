@@ -12,6 +12,14 @@ interface EmailParams {
 
 export async function sendEmail({ to, subject, html, text }: EmailParams) {
   try {
+    console.log(`[Email] Attempting to send email to: ${to}, subject: ${subject}`);
+    console.log(`[Email] From: ${config.notifications.email.from}`);
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error("[Email] RESEND_API_KEY is not set!");
+      return { success: false, error: "RESEND_API_KEY not configured" };
+    }
+
     const { data, error } = await resend.emails.send({
       from: config.notifications.email.from,
       to,
@@ -21,13 +29,14 @@ export async function sendEmail({ to, subject, html, text }: EmailParams) {
     });
 
     if (error) {
-      console.error("Email send error:", error);
+      console.error("[Email] Send error:", JSON.stringify(error, null, 2));
       return { success: false, error };
     }
 
+    console.log(`[Email] Successfully sent! ID: ${data?.id}`);
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("Email send exception:", error);
+    console.error("[Email] Exception:", error);
     return { success: false, error };
   }
 }
