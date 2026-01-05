@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface HeaderProps {
   credits?: number;
@@ -20,6 +21,7 @@ export function Header({ credits = 0 }: HeaderProps) {
       <div className="flex-1" />
 
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <Link href="/dashboard/billing">
           <Button
             size="sm"
