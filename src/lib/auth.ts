@@ -105,12 +105,17 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
+    // Enable cross-subdomain cookies for OAuth state to work across app/artist/superadmin subdomains
+    crossSubDomainCookies: isProduction
+      ? {
+          enabled: true,
+          domain: baseDomain, // craftedstudio.ai - allows cookies on all subdomains
+        }
+      : undefined,
     defaultCookieAttributes: {
       sameSite: "lax", // Required for OAuth redirects
       httpOnly: true,
       path: "/",
-      // Set domain for cookie sharing across subdomains in production
-      ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },
   trustedOrigins,
