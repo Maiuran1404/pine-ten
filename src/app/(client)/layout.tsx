@@ -11,6 +11,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 interface Task {
   id: string;
   title: string;
+  status?: string;
 }
 
 export default function ClientLayout({
@@ -35,11 +36,15 @@ export default function ClientLayout({
   // Fetch recent tasks for sidebar
   useEffect(() => {
     if (session) {
-      fetch("/api/tasks?limit=5")
+      fetch("/api/tasks?limit=10")
         .then((res) => res.json())
         .then((data) => {
           if (data.tasks) {
-            setRecentTasks(data.tasks.map((t: { id: string; title: string }) => ({ id: t.id, title: t.title })));
+            setRecentTasks(data.tasks.map((t: { id: string; title: string; status: string }) => ({
+              id: t.id,
+              title: t.title,
+              status: t.status,
+            })));
           }
         })
         .catch(console.error);

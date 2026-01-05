@@ -766,7 +766,7 @@ function DashboardContent() {
             className="absolute bottom-6 left-0 right-0 text-center z-10"
           >
             <p className="text-sm text-[#4a4a4a]">
-              Unlock a new era with Crafted. Crafted with love from Norway.
+              Unlock a new era with Crafted. Crafted with care from Norway.
             </p>
           </motion.div>
         )}

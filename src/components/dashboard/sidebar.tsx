@@ -18,13 +18,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  Home,
-  FileText,
-  Wand2,
-  Wallet,
-  Settings2,
-  History,
-  MessageSquare,
+  LayoutDashboard,
+  FolderKanban,
+  Palette,
+  CreditCard,
+  Settings,
+  Clock,
+  MessageCircle,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 
@@ -32,32 +34,32 @@ const navigation = [
   {
     name: "Home",
     href: "/dashboard",
-    icon: Home,
+    icon: LayoutDashboard,
   },
   {
     name: "My Tasks",
     href: "/dashboard/tasks",
-    icon: FileText,
+    icon: FolderKanban,
   },
   {
     name: "My Brand",
     href: "/dashboard/brand",
-    icon: Wand2,
+    icon: Palette,
   },
   {
     name: "Credits",
     href: "/dashboard/credits",
-    icon: Wallet,
+    icon: CreditCard,
   },
   {
     name: "Settings",
     href: "/dashboard/settings",
-    icon: Settings2,
+    icon: Settings,
   },
 ];
 
 interface AppSidebarProps {
-  recentTasks?: Array<{ id: string; title: string }>;
+  recentTasks?: Array<{ id: string; title: string; status?: string }>;
 }
 
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
@@ -100,7 +102,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     setOpenMobile(false);
   };
 
-  // Combine and sort recents - drafts first (ongoing), then submitted tasks
+  // Active statuses - where artists are working
+  const activeStatuses = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "REVISION_REQUESTED"];
+
+  // Separate active tasks from other tasks
+  const activeTasks = recentTasks.filter(t => t.status && activeStatuses.includes(t.status));
+  const otherTasks = recentTasks.filter(t => !t.status || !activeStatuses.includes(t.status));
+
+  // Combine drafts and non-active tasks for recents
   const allRecents = [
     ...chatDrafts.map(d => ({
       id: d.id,
@@ -108,7 +117,7 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
       type: "draft" as const,
       updatedAt: d.updatedAt,
     })),
-    ...recentTasks.map(t => ({
+    ...otherTasks.map(t => ({
       id: t.id,
       title: t.title,
       type: "task" as const,
@@ -161,9 +170,42 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Active Tasks - where artists are working */}
+        {activeTasks.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50 flex items-center gap-1.5">
+              <Zap className="h-3 w-3 text-amber-400" />
+              Active
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {activeTasks.slice(0, 3).map((task) => (
+                  <SidebarMenuItem key={`active-${task.id}`}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={task.title}
+                      className="rounded-xl"
+                    >
+                      <Link
+                        href={`/dashboard/tasks/${task.id}`}
+                        onClick={handleLinkClick}
+                      >
+                        <Sparkles className="h-4 w-4 text-amber-400" />
+                        <span className="truncate">{task.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Recents - drafts and completed/pending tasks */}
         {allRecents.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50">
+            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50 flex items-center gap-1.5">
+              <Clock className="h-3 w-3" />
               Recents
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -180,9 +222,9 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
                         onClick={handleLinkClick}
                       >
                         {item.type === "draft" ? (
-                          <MessageSquare className="h-4 w-4 text-emerald-400" />
+                          <MessageCircle className="h-4 w-4 text-emerald-400" />
                         ) : (
-                          <History className="h-4 w-4" />
+                          <FolderKanban className="h-4 w-4 text-[#6b6b6b]" />
                         )}
                         <span className="truncate">{item.title}</span>
                       </Link>
