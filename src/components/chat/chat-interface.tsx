@@ -97,7 +97,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hey! Ready to create something awesome. What do you need?\n\nJust tell me what you're looking for - like \"Instagram posts for this week\" or \"a video ad for our new service\".",
+    "Hi there! What design project can I help you get started with today?",
   timestamp: new Date(),
 };
 
@@ -264,13 +264,23 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   // Helper function to scroll to bottom
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      // ScrollArea uses a viewport inside, find it and scroll
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      } else {
+        // Fallback to the ref itself
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
     }
   };
 
   // Use useLayoutEffect for synchronous scroll before paint - prevents flash
   useLayoutEffect(() => {
-    scrollToBottom();
+    // Small delay to ensure content is rendered
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
   }, [messages]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -648,10 +658,10 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                     "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
                     message.role === "user"
                       ? seamlessTransition
-                        ? "[&>*]:text-black"
-                        : "prose-invert [&>*]:text-white"
+                        ? "[&_*]:text-black"
+                        : "prose-invert [&_*]:text-white"
                       : seamlessTransition
-                        ? "[&>*]:text-white"
+                        ? "prose-invert [&_*]:text-white [&_strong]:text-white [&_b]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-white"
                         : "dark:prose-invert"
                   )}>
                     <ReactMarkdown>{message.content}</ReactMarkdown>

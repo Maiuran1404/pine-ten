@@ -27,6 +27,7 @@ import {
   Database,
   Ticket,
   History,
+  MessageSquare,
 } from "lucide-react";
 
 const navigation = [
@@ -64,6 +65,11 @@ const navigation = [
     name: "Coupons",
     href: "/admin/coupons",
     icon: Ticket,
+  },
+  {
+    name: "Chat Setup",
+    href: "/admin/chat-setup",
+    icon: MessageSquare,
   },
   {
     name: "Database",
