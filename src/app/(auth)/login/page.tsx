@@ -143,23 +143,8 @@ function LoginContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session (but timeout after 3s to prevent infinite loading)
-  if (isPending && !sessionTimeout && !error) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  // Don't show login form if already logged in (redirect will happen)
-  if (session?.user) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  // If already logged in, redirect (but don't block rendering)
+  // The form will still show briefly while redirecting
 
   return (
     <div className="space-y-6">
