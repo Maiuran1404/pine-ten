@@ -113,7 +113,10 @@ export const auth = betterAuth({
         }
       : undefined,
     defaultCookieAttributes: {
-      sameSite: "lax", // Required for OAuth redirects
+      // Use "none" in production for OAuth callbacks (Google redirect is treated as cross-site)
+      // "none" requires secure: true which is set by useSecureCookies
+      // Use "lax" in development since localhost doesn't support SameSite=None properly
+      sameSite: isProduction ? "none" : "lax",
       httpOnly: true,
       path: "/",
     },
