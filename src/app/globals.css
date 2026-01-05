@@ -126,6 +126,38 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: transparent;
   --sidebar-ring: oklch(1 0 0);
+
+  /* Dashboard Design System */
+  /* Primary Accent - Emerald Green */
+  --ds-accent: #10b981;
+  --ds-accent-light: #34d399;
+  --ds-accent-dark: #059669;
+  --ds-accent-muted: rgba(16, 185, 129, 0.15);
+
+  /* Background Hierarchy */
+  --ds-bg-base: #0a0a0a;
+  --ds-bg-elevated: #0f0f12;
+  --ds-bg-card: #1a1a1f;
+  --ds-bg-card-hover: #222228;
+
+  /* Border Colors */
+  --ds-border: #2a2a30;
+  --ds-border-light: #3a3a40;
+  --ds-border-accent: rgba(16, 185, 129, 0.5);
+
+  /* Text Hierarchy */
+  --ds-text-primary: #ffffff;
+  --ds-text-secondary: #9a9a9a;
+  --ds-text-muted: #6b6b6b;
+  --ds-text-faint: #4a4a4a;
+
+  /* Status Colors */
+  --ds-success: #10b981;
+  --ds-success-muted: rgba(16, 185, 129, 0.15);
+  --ds-warning: #f59e0b;
+  --ds-warning-muted: rgba(245, 158, 11, 0.15);
+  --ds-error: #ef4444;
+  --ds-error-muted: rgba(239, 68, 68, 0.15);
 }
 
 @layer base {
