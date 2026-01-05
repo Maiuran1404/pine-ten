@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
+import { LoadingSpinner } from "@/components/shared/loading";
 import { signUp, signIn, useSession } from "@/lib/auth-client";
 import { useSubdomain } from "@/hooks/use-subdomain";
 import { cn } from "@/lib/utils";
@@ -57,25 +57,28 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function RegisterContent() {
-  const router = useRouter();
+function SearchParamsWrapper({ children }: { children: (redirect: string | null) => React.ReactNode }) {
   const searchParams = useSearchParams();
+  return <>{children(searchParams.get("redirect"))}</>;
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterContentWithRedirect redirect={null} />}>
+      <SearchParamsWrapper>
+        {(redirect) => <RegisterContentWithRedirect redirect={redirect} />}
+      </SearchParamsWrapper>
+    </Suspense>
+  );
+}
+
+function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) {
+  const router = useRouter();
   const portal = useSubdomain();
-  const { data: session, isPending, error } = useSession();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [sessionTimeout, setSessionTimeout] = useState(false);
-
-  // Add timeout to prevent infinite loading - show form after 3 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isPending) {
-        setSessionTimeout(true);
-      }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [isPending]);
 
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
@@ -84,10 +87,10 @@ function RegisterContent() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
+      const redirectTo = redirect || portal.defaultRedirect;
       router.push(redirectTo);
     }
-  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
+  }, [session, isPending, router, redirect, portal.defaultRedirect]);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -144,7 +147,6 @@ function RegisterContent() {
   async function handleGoogleSignUp() {
     setIsGoogleLoading(true);
     try {
-      // Use absolute URL so we redirect back to the correct subdomain after OAuth
       const redirectPath = accountType === "freelancer"
         ? "/onboarding?type=freelancer"
         : "/onboarding";
@@ -160,7 +162,6 @@ function RegisterContent() {
     }
   }
 
-  // Crafted design language button - teal to blue gradient
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -170,9 +171,6 @@ function RegisterContent() {
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
-
-  // If already logged in, redirect (but don't block rendering)
-  // The form will still show briefly while redirecting
 
   return (
     <div className="space-y-6">
@@ -367,13 +365,5 @@ function RegisterContent() {
         </Link>
       </div>
     </div>
-  );
-}
-
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={<FullPageLoader />}>
-      <RegisterContent />
-    </Suspense>
   );
 }
