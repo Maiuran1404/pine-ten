@@ -61,10 +61,21 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = useSubdomain();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionTimeout, setSessionTimeout] = useState(false);
+
+  // Add timeout to prevent infinite loading - show form after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isPending) {
+        setSessionTimeout(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [isPending]);
 
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
@@ -160,8 +171,8 @@ function RegisterContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session
-  if (isPending) {
+  // Show loading while checking session (but timeout after 3s to prevent infinite loading)
+  if (isPending && !sessionTimeout && !error) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
