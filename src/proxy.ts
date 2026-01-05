@@ -142,7 +142,10 @@ export function proxy(request: NextRequest) {
   // Protected routes - require authentication
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    // Don't set redirect param for root path - it causes issues
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("redirect", pathname);
+    }
     return NextResponse.redirect(loginUrl);
   }
 

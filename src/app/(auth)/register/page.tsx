@@ -73,7 +73,9 @@ function RegisterContent() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
+      const redirect = searchParams.get("redirect");
+      // Don't redirect to "/" - use portal default instead
+      const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
       router.push(redirectTo);
     }
   }, [session, isPending, router, searchParams, portal.defaultRedirect]);
