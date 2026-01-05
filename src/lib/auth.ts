@@ -109,7 +109,7 @@ export const auth = betterAuth({
     crossSubDomainCookies: isProduction
       ? {
           enabled: true,
-          domain: `.${baseDomain}`, // .craftedstudio.ai - leading dot for subdomain matching
+          domain: baseDomain, // craftedstudio.ai - Better Auth adds the dot internally
         }
       : undefined,
     defaultCookieAttributes: {
