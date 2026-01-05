@@ -392,7 +392,7 @@ function DashboardContent() {
     // Wait for animation to complete then navigate
     setTimeout(() => {
       router.push(`/dashboard/chat?message=${encodeURIComponent(message)}`);
-    }, 800);
+    }, 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 export type PortalType = "app" | "artist" | "superadmin" | "default";
 
@@ -89,15 +89,12 @@ export function getPortalFromHostname(hostname: string): PortalType {
 }
 
 export function useSubdomain(): PortalConfig {
-  const portalConfig = useMemo(() => {
-    if (typeof window === "undefined") {
-      // Default to app portal for SSR
-      return PORTAL_CONFIGS.app;
-    }
+  const [portalConfig, setPortalConfig] = useState<PortalConfig>(PORTAL_CONFIGS.app);
 
+  useEffect(() => {
     const hostname = window.location.hostname;
     const portalType = getPortalFromHostname(hostname);
-    return PORTAL_CONFIGS[portalType];
+    setPortalConfig(PORTAL_CONFIGS[portalType]);
   }, []);
 
   return portalConfig;

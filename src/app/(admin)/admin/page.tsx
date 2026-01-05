@@ -2,16 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 import {
   Users,
   UserCheck,
@@ -20,6 +13,9 @@ import {
   CheckCircle,
   AlertTriangle,
   DollarSign,
+  Tags,
+  Image,
+  ArrowRight,
 } from "lucide-react";
 
 interface AdminStats {
@@ -40,11 +36,45 @@ interface RecentTask {
   createdAt: string;
 }
 
+const QUICK_ACTIONS = [
+  {
+    id: "tasks",
+    href: "/admin/tasks",
+    icon: FolderOpen,
+    title: "All Tasks",
+    description: "View and manage all tasks",
+    gridClass: "col-span-1 md:col-span-3",
+  },
+  {
+    id: "freelancers",
+    href: "/admin/freelancers",
+    icon: UserCheck,
+    title: "Freelancers",
+    description: "Manage freelancer approvals",
+    gridClass: "col-span-1 md:col-span-3",
+  },
+  {
+    id: "categories",
+    href: "/admin/categories",
+    icon: Tags,
+    title: "Categories",
+    description: "Edit task categories",
+    gridClass: "col-span-1 md:col-span-3",
+  },
+  {
+    id: "styles",
+    href: "/admin/styles",
+    icon: Image,
+    title: "Style Library",
+    description: "Manage style references",
+    gridClass: "col-span-1 md:col-span-3",
+  },
+];
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAdminData();
@@ -52,7 +82,6 @@ export default function AdminDashboardPage() {
 
   const fetchAdminData = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const [statsRes, tasksRes] = await Promise.all([
         fetch("/api/admin/stats"),
@@ -62,229 +91,289 @@ export default function AdminDashboardPage() {
       if (statsRes.ok) {
         const data = await statsRes.json();
         setStats(data);
-      } else {
-        const errData = await statsRes.json();
-        console.error("Stats error:", errData);
       }
 
       if (tasksRes.ok) {
         const data = await tasksRes.json();
         setRecentTasks(data.tasks || []);
-      } else {
-        const errData = await tasksRes.json();
-        console.error("Tasks error:", errData);
       }
     } catch (err) {
       console.error("Failed to fetch admin data:", err);
-      setError("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
-      PENDING: { variant: "secondary", label: "Pending" },
-      ASSIGNED: { variant: "outline", label: "Assigned" },
-      IN_PROGRESS: { variant: "default", label: "In Progress" },
-      IN_REVIEW: { variant: "outline", label: "In Review" },
-      REVISION_REQUESTED: { variant: "destructive", label: "Revision" },
-      COMPLETED: { variant: "secondary", label: "Completed" },
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; color: string }> = {
+      PENDING: { variant: "secondary", label: "Pending", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+      ASSIGNED: { variant: "outline", label: "Assigned", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      IN_PROGRESS: { variant: "default", label: "In Progress", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+      IN_REVIEW: { variant: "outline", label: "In Review", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+      REVISION_REQUESTED: { variant: "destructive", label: "Revision", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+      COMPLETED: { variant: "secondary", label: "Completed", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
     };
-    const config = variants[status] || { variant: "secondary" as const, label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = variants[status] || { variant: "secondary" as const, label: status, color: "bg-gray-500/20 text-gray-400 border-gray-500/30" };
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
+        {config.label}
+      </span>
+    );
   };
 
+  const statsConfig = [
+    { key: "totalClients", label: "Clients", icon: Users, color: "text-blue-400", bgColor: "bg-blue-500/20" },
+    { key: "totalFreelancers", label: "Freelancers", icon: UserCheck, color: "text-emerald-400", bgColor: "bg-emerald-500/20" },
+    { key: "pendingApprovals", label: "Pending", icon: AlertTriangle, color: "text-yellow-400", bgColor: "bg-yellow-500/20", highlight: true },
+    { key: "activeTasks", label: "Active", icon: Clock, color: "text-purple-400", bgColor: "bg-purple-500/20" },
+    { key: "completedTasks", label: "Completed", icon: CheckCircle, color: "text-green-400", bgColor: "bg-green-500/20" },
+    { key: "totalRevenue", label: "Revenue", icon: DollarSign, color: "text-rose-400", bgColor: "bg-rose-500/20", isCurrency: true },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of platform activity and management
-        </p>
-      </div>
+    <div className="relative flex flex-col min-h-full px-4 sm:px-6 lg:px-8 pt-24 pb-20 bg-[#0a0a0a] overflow-auto">
+      {/* Curtain light from top - subtle ambient glow */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 70% 55% at 50% 0%,
+            rgba(244, 63, 94, 0.08) 0%,
+            rgba(244, 63, 94, 0.04) 20%,
+            rgba(244, 63, 94, 0.02) 40%,
+            rgba(244, 63, 94, 0.01) 60%,
+            transparent 100%
+          )`,
+          animation: "curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          filter: "blur(40px)",
+        }}
+      />
+      <style jsx>{`
+        @keyframes curtainPulse {
+          0%,
+          100% {
+            opacity: 0.7;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+      `}</style>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats?.totalClients || 0}</div>
-            )}
-          </CardContent>
-        </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+        className="relative z-10 space-y-8"
+      >
+        {/* Header */}
+        <div className="space-y-2">
+          <h1
+            className="text-3xl sm:text-4xl font-normal tracking-tight"
+            style={{
+              background: "linear-gradient(90deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Admin Dashboard
+          </h1>
+          <p className="text-[#6b7280] text-base">
+            Overview of platform activity and management
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Freelancers</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats?.totalFreelancers || 0}</div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Stats Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"
+        >
+          {statsConfig.map((stat, index) => {
+            const Icon = stat.icon;
+            const value = stats?.[stat.key as keyof AdminStats] || 0;
+            const displayValue = stat.isCurrency ? `$${value.toLocaleString()}` : value;
+            const shouldHighlight = stat.highlight && value > 0;
 
-        <Card className={stats?.pendingApprovals ? "border-yellow-500/50" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats?.pendingApprovals || 0}</div>
-            )}
-          </CardContent>
-        </Card>
+            return (
+              <motion.div
+                key={stat.key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+                className={`relative rounded-xl overflow-hidden border transition-all ${
+                  shouldHighlight
+                    ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+                    : "border-[#2a2a30]/50 hover:border-[#3a3a40]/80"
+                }`}
+                style={{
+                  background: "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                  backdropFilter: "blur(20px)",
+                }}
+              >
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium text-[#6b6b6b] uppercase tracking-wider">
+                      {stat.label}
+                    </span>
+                    <div className={`p-1.5 rounded-lg ${stat.bgColor}`}>
+                      <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
+                    </div>
+                  </div>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16 bg-[#1a1a1f]" />
+                  ) : (
+                    <div className={`text-2xl font-bold ${stat.color}`}>
+                      {displayValue}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats?.activeTasks || 0}</div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="space-y-4"
+        >
+          <h2 className="text-lg font-medium text-white/90">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
+            {QUICK_ACTIONS.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.id}
+                  href={action.href}
+                  className={`group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-rose-500/30 transition-all cursor-pointer h-[120px] ${action.gridClass}`}
+                  style={{
+                    background: "linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)",
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.25 + index * 0.05 }}
+                    className="p-4 h-full flex flex-col justify-between"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
+                        <Icon className="h-5 w-5 text-rose-400" />
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-[#4a4a4a] group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-xs text-[#6b6b6b] mt-0.5">
+                        {action.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                </Link>
+              );
+            })}
+          </div>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats?.completedTasks || 0}</div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Recent Tasks */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-medium text-white/90">Recent Tasks</h2>
+            <Link
+              href="/admin/tasks"
+              className="text-sm text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1"
+            >
+              View All
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+          <div
+            className="rounded-xl overflow-hidden border border-[#2a2a30]/50"
+            style={{
+              background: "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+              backdropFilter: "blur(20px)",
+            }}
+          >
             {isLoading ? (
-              <Skeleton className="h-8 w-16" />
+              <div className="p-4 space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-48 bg-[#1a1a1f]" />
+                      <Skeleton className="h-3 w-32 bg-[#1a1a1f]" />
+                    </div>
+                    <Skeleton className="h-6 w-20 bg-[#1a1a1f]" />
+                  </div>
+                ))}
+              </div>
+            ) : recentTasks.length === 0 ? (
+              <div className="p-8 text-center">
+                <FolderOpen className="h-12 w-12 mx-auto text-[#4a4a4a] mb-3" />
+                <p className="text-[#6b6b6b]">No tasks yet</p>
+              </div>
             ) : (
-              <div className="text-2xl font-bold">
-                ${(stats?.totalRevenue || 0).toLocaleString()}
+              <div className="divide-y divide-[#2a2a30]/50">
+                {recentTasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.35 + index * 0.03 }}
+                  >
+                    <Link
+                      href={`/admin/tasks/${task.id}`}
+                      className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors group"
+                    >
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <p className="font-medium text-white/90 group-hover:text-white transition-colors truncate pr-4">
+                          {task.title}
+                        </p>
+                        <p className="text-sm text-[#6b6b6b]">
+                          <span className="text-[#8b8b8b]">{task.clientName}</span>
+                          {task.freelancerName && (
+                            <>
+                              <span className="mx-2 text-[#4a4a4a]">→</span>
+                              <span className="text-[#8b8b8b]">{task.freelancerName}</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {getStatusBadge(task.status)}
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/admin/tasks">
-            <CardHeader>
-              <FolderOpen className="h-8 w-8 mb-2" />
-              <CardTitle className="text-lg">All Tasks</CardTitle>
-              <CardDescription>View and manage all tasks</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/admin/freelancers">
-            <CardHeader>
-              <UserCheck className="h-8 w-8 mb-2" />
-              <CardTitle className="text-lg">Freelancers</CardTitle>
-              <CardDescription>Manage freelancer approvals</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/admin/categories">
-            <CardHeader>
-              <FolderOpen className="h-8 w-8 mb-2" />
-              <CardTitle className="text-lg">Categories</CardTitle>
-              <CardDescription>Edit task categories</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/admin/styles">
-            <CardHeader>
-              <FolderOpen className="h-8 w-8 mb-2" />
-              <CardTitle className="text-lg">Style Library</CardTitle>
-              <CardDescription>Manage style references</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-      </div>
-
-      {/* Recent Tasks Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Tasks</CardTitle>
-              <CardDescription>Latest task activity</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/admin/tasks">View All</Link>
-            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-6 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : recentTasks.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">
-              No tasks yet
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {recentTasks.map((task) => (
-                <Link
-                  key={task.id}
-                  href={`/admin/tasks/${task.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <div className="space-y-1">
-                    <p className="font-medium">{task.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Client: {task.clientName}
-                      {task.freelancerName && ` | Freelancer: ${task.freelancerName}`}
-                    </p>
-                  </div>
-                  {getStatusBadge(task.status)}
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center pt-8"
+        >
+          <p className="text-sm text-[#4a4a4a]">
+            Super Admin Panel - Full platform control
+          </p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

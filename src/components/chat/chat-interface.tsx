@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { useSession } from "@/lib/auth-client";
-import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle } from "lucide-react";
+import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
 
@@ -20,6 +21,7 @@ interface ChatInterfaceProps {
   draftId: string;
   onDraftUpdate?: () => void;
   initialMessage?: string | null;
+  seamlessTransition?: boolean;
 }
 
 interface UploadedFile {
@@ -89,7 +91,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
-export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatInterfaceProps) {
+export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamlessTransition = false }: ChatInterfaceProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
@@ -149,9 +151,14 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // For seamless transition, skip the welcome message and only show user's message
+    if (seamlessTransition) {
+      setMessages([userMessage]);
+    } else {
+      setMessages((prev) => [...prev, userMessage]);
+    }
     setNeedsAutoContinue(true);
-  }, [initialMessage, initialMessageProcessed, isInitialized]);
+  }, [initialMessage, initialMessageProcessed, isInitialized, seamlessTransition]);
 
   // Auto-continue conversation if last message was from user
   useEffect(() => {
@@ -480,35 +487,117 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
     setMessages((prev) => [...prev, clarifyMessage]);
   };
 
+  // Generate smart chat title from messages that updates as chat progresses
+  const getChatTitle = () => {
+    if (messages.length <= 1) return null;
+
+    // Look through user messages to build context
+    const userMessages = messages.filter(m => m.role === "user");
+    if (userMessages.length === 0) return null;
+
+    // Try to extract key information from the conversation
+    const allUserContent = userMessages.map(m => m.content.toLowerCase()).join(" ");
+
+    // Detect content type
+    let contentType = "";
+    if (allUserContent.includes("instagram stories") || allUserContent.includes("story")) {
+      contentType = "Instagram Stories";
+    } else if (allUserContent.includes("instagram") || allUserContent.includes("feed post")) {
+      contentType = "Instagram Posts";
+    } else if (allUserContent.includes("linkedin")) {
+      contentType = "LinkedIn Content";
+    } else if (allUserContent.includes("social media")) {
+      contentType = "Social Media Content";
+    } else if (allUserContent.includes("logo")) {
+      contentType = "Logo Design";
+    } else if (allUserContent.includes("video")) {
+      contentType = "Video Content";
+    } else if (allUserContent.includes("website") || allUserContent.includes("web")) {
+      contentType = "Web Design";
+    }
+
+    // Detect quantity
+    let quantity = "";
+    if (allUserContent.includes("series") || allUserContent.includes("multiple") || allUserContent.includes("pack")) {
+      quantity = "Series";
+    }
+
+    // Build title
+    if (contentType && quantity) {
+      return `${contentType} ${quantity}`;
+    } else if (contentType) {
+      return contentType;
+    }
+
+    // Fallback to first user message
+    const content = userMessages[0].content;
+    return content.length > 40 ? content.substring(0, 40) + "..." : content;
+  };
+
+  const chatTitle = seamlessTransition ? getChatTitle() : null;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
-      {/* Messages */}
-      <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-        <div className="space-y-4 pb-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              <div
+    <div className={cn(
+      "flex flex-col relative",
+      seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]"
+    )}>
+      {/* Chat title - shown when there's context */}
+      {chatTitle && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="shrink-0 mb-4 pb-4 border-b border-[#2a2a30]/50"
+        >
+          <h1 className="text-lg font-medium text-white truncate">{chatTitle}</h1>
+          <p className="text-sm text-[#6b6b6b] mt-1">Design Request</p>
+        </motion.div>
+      )}
+      {/* Messages - scrollable area */}
+      <ScrollArea className={cn(
+        "pr-4",
+        seamlessTransition ? "flex-1 min-h-0 overflow-y-auto" : "flex-1"
+      )} ref={scrollAreaRef}>
+        <div className={cn(
+          "space-y-4",
+          seamlessTransition ? "pb-8" : "pb-4"
+        )}>
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={seamlessTransition && index > 0 ? { opacity: 0, y: 20 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index === 1 ? 0.1 : 0 }}
                 className={cn(
-                  "max-w-[80%] rounded-lg px-4 py-3",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                  "flex",
+                  message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                <div className={cn(
-                  "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
-                  message.role === "user"
-                    ? "prose-invert [&>*]:text-white"
-                    : "dark:prose-invert"
-                )}>
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                </div>
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl px-4 py-3",
+                    message.role === "user"
+                      ? seamlessTransition
+                        ? "bg-white text-black"
+                        : "bg-primary text-primary-foreground"
+                      : seamlessTransition
+                        ? "bg-[#1a1a1f] border border-[#2a2a30]/50"
+                        : "bg-muted"
+                  )}
+                >
+                  <div className={cn(
+                    "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
+                    message.role === "user"
+                      ? seamlessTransition
+                        ? "[&>*]:text-black"
+                        : "prose-invert [&>*]:text-white"
+                      : seamlessTransition
+                        ? "[&>*]:text-white"
+                        : "dark:prose-invert"
+                  )}>
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
 
                 {/* Attachments */}
                 {message.attachments && message.attachments.length > 0 && (
@@ -632,19 +721,69 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
                   </div>
                 )}
 
-                <p className="text-xs opacity-70 mt-2">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
+                {/* Hide timestamp for user messages in seamlessTransition mode */}
+                {!(seamlessTransition && message.role === "user") && (
+                  <p className={cn(
+                    "text-xs mt-2",
+                    seamlessTransition
+                      ? "text-white/50"
+                      : "opacity-70"
+                  )}>
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                )}
               </div>
-            </div>
+            </motion.div>
           ))}
+          </AnimatePresence>
 
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-4 py-3">
-                <LoadingSpinner size="sm" />
-              </div>
-            </div>
+            <motion.div
+              initial={seamlessTransition ? { opacity: 0, y: 10 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-start"
+            >
+              {seamlessTransition ? (
+                <div className="rounded-2xl px-4 py-3 bg-[#1a1a1f] border border-[#2a2a30]/50">
+                  <div className="flex items-center gap-1.5">
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.2,
+                      }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.4,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
+            </motion.div>
           )}
         </div>
       </ScrollArea>
@@ -699,15 +838,21 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
         </div>
       )}
 
-      {/* Input */}
-      <div className="border-t pt-4">
+      {/* Input - fixed at bottom */}
+      <div className={cn(
+        "shrink-0 mt-auto",
+        seamlessTransition ? "pt-4" : "border-t pt-4"
+      )}>
         {/* Pending uploads preview */}
         {uploadedFiles.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {uploadedFiles.map((file) => (
               <div
                 key={file.fileUrl}
-                className="relative group flex items-center gap-2 bg-muted px-3 py-2 rounded-lg"
+                className={cn(
+                  "relative group flex items-center gap-2 px-3 py-2 rounded-lg",
+                  seamlessTransition ? "bg-[#1a1a1f] border border-[#2a2a30]/50" : "bg-muted"
+                )}
               >
                 {file.fileType.startsWith("image/") ? (
                   <img
@@ -716,9 +861,15 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
                     className="h-10 w-10 rounded object-cover"
                   />
                 ) : (
-                  <FileIcon className="h-5 w-5 text-muted-foreground" />
+                  <FileIcon className={cn(
+                    "h-5 w-5",
+                    seamlessTransition ? "text-[#6b6b6b]" : "text-muted-foreground"
+                  )} />
                 )}
-                <span className="text-sm max-w-[100px] truncate">
+                <span className={cn(
+                  "text-sm max-w-[100px] truncate",
+                  seamlessTransition && "text-white"
+                )}>
                   {file.fileName}
                 </span>
                 <button
@@ -732,57 +883,126 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatIn
           </div>
         )}
 
-        <div className="flex gap-2">
-          {/* Hidden file input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-            multiple
-            accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
-          />
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading || isUploading}
-            className="h-[60px] w-[60px] shrink-0"
-            title="Attach files"
+        {seamlessTransition ? (
+          /* Glassy input matching dashboard */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="max-w-3xl mx-auto w-full"
           >
-            {isUploading ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Paperclip className="h-5 w-5" />
-            )}
-          </Button>
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              multiple
+              accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
+            />
+            <div
+              className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                backdropFilter: "blur(20px)",
+                boxShadow:
+                  "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
+              }}
+            >
+              <div className="relative flex items-center">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isUploading}
+                  className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Paperclip className="h-5 w-5" />
+                  )}
+                </button>
+                <div className="h-5 w-px bg-[#2a2a30]/50"></div>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Ask anything ..."
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm disabled:opacity-50"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
+                  className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <ArrowUp className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          /* Default input */
+          <>
+            <div className="flex gap-2">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+                multiple
+                accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
+              />
 
-          <Textarea
-            placeholder="Describe your design needs..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            className="min-h-[60px] resize-none"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
-            size="icon"
-            className="h-[60px] w-[60px] shrink-0"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line. Click <Paperclip className="h-3 w-3 inline" /> to attach files.
-        </p>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isUploading}
+                className="h-[60px] w-[60px] shrink-0"
+                title="Attach files"
+              >
+                {isUploading ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Paperclip className="h-5 w-5" />
+                )}
+              </Button>
+
+              <Textarea
+                placeholder="Describe your design needs..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                className="min-h-[60px] resize-none"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleSend}
+                disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
+                size="icon"
+                className="h-[60px] w-[60px] shrink-0"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Press Enter to send, Shift+Enter for new line. Click <Paperclip className="h-3 w-3 inline" /> to attach files.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Credit Purchase Dialog */}

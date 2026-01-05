@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Logo } from "@/components/shared/logo";
-import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
   Users,
@@ -15,7 +26,7 @@ import {
   Tags,
   Database,
   Ticket,
-  X,
+  History,
 } from "lucide-react";
 
 const navigation = [
@@ -67,69 +78,99 @@ const navigation = [
 ];
 
 interface AdminSidebarProps {
-  open?: boolean;
-  onClose?: () => void;
+  recentTasks?: Array<{ id: string; title: string }>;
 }
 
-export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
+export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
 
   return (
-    <>
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-background border-r transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between px-4 border-b">
-            <div className="flex items-center gap-2">
-              <Logo href="/admin" />
-              <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                Admin
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={onClose}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+    <Sidebar
+      collapsible="icon"
+      className="border-r-0"
+      style={{ fontFamily: "'Satoshi', sans-serif" }}
+    >
+      <SidebarHeader className="h-16 justify-center">
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-950/80">
+            <span className="text-sm font-bold text-rose-400">S</span>
           </div>
-
-          <nav className="flex-1 space-y-1 p-4">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
+          <span className="text-sm font-semibold">Super Admin</span>
         </div>
-      </aside>
-    </>
+        <SidebarTrigger />
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigation.map((item) => {
+                const isActive = item.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname.startsWith(item.href);
+
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.name}
+                      className={`rounded-xl ${
+                        isActive
+                          ? "bg-rose-950/80 text-rose-400 hover:bg-rose-950 hover:text-rose-400"
+                          : ""
+                      }`}
+                    >
+                      <Link href={item.href} onClick={handleLinkClick}>
+                        <item.icon className={isActive ? "text-rose-400" : ""} />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {recentTasks.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50">
+              Recent Tasks
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {recentTasks.slice(0, 5).map((task) => (
+                  <SidebarMenuItem key={task.id}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={task.title}
+                      className="rounded-xl"
+                    >
+                      <Link href={`/admin/tasks/${task.id}`} onClick={handleLinkClick}>
+                        <History className="h-4 w-4" />
+                        <span className="truncate">{task.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+
+      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+        <div className="px-2 py-2">
+          <p className="text-xs opacity-50">Super Admin Panel</p>
+          <p className="text-xs opacity-70">Full platform control</p>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

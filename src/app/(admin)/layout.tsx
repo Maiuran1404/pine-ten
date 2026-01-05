@@ -6,6 +6,12 @@ import { AdminSidebar } from "@/components/admin/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+
+interface Task {
+  id: string;
+  title: string;
+}
 
 export default function AdminLayout({
   children,
@@ -14,7 +20,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -29,6 +35,20 @@ export default function AdminLayout({
     }
   }, [session, isPending, router]);
 
+  // Fetch recent tasks for sidebar
+  useEffect(() => {
+    if (session) {
+      fetch("/api/admin/tasks?limit=5")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.tasks) {
+            setRecentTasks(data.tasks.map((t: { id: string; title: string }) => ({ id: t.id, title: t.title })));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session]);
+
   if (isPending) {
     return <FullPageLoader />;
   }
@@ -38,12 +58,22 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
-      </div>
-    </div>
+    <SidebarProvider
+      defaultOpen={true}
+      className="bg-background"
+      style={
+        {
+          fontFamily: "'Satoshi', sans-serif",
+          "--sidebar-width": "16rem",
+          "--sidebar-width-icon": "3rem",
+        } as React.CSSProperties
+      }
+    >
+      <AdminSidebar recentTasks={recentTasks} />
+      <SidebarInset className="bg-background">
+        <Header />
+        <main className="flex-1 overflow-auto">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
