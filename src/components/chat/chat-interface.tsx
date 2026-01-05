@@ -16,6 +16,16 @@ import { useSession } from "@/lib/auth-client";
 import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle, ArrowUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ChatInterfaceProps {
   draftId: string;
@@ -535,13 +545,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   };
 
   const chatTitle = seamlessTransition ? getChatTitle() : null;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleDeleteChat = () => {
-    if (confirm("Are you sure you want to delete this chat?")) {
-      deleteDraft(draftId);
-      onDraftUpdate?.();
-      router.push("/dashboard");
-    }
+    deleteDraft(draftId);
+    onDraftUpdate?.();
+    router.push("/dashboard");
   };
 
   return (
@@ -562,7 +571,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
             <p className="text-sm text-[#6b6b6b] mt-1">Design Request</p>
           </div>
           <button
-            onClick={handleDeleteChat}
+            onClick={() => setShowDeleteDialog(true)}
             className="p-2 rounded-lg text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Delete chat"
           >
@@ -570,6 +579,32 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
           </button>
         </motion.div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-[#0f0f12] border-[#2a2a30] max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
+              <Trash2 className="h-6 w-6 text-red-400" />
+            </div>
+            <AlertDialogTitle className="text-center text-white">Delete this chat?</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-[#6b6b6b]">
+              This will permanently delete this conversation and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+            <AlertDialogCancel className="bg-transparent border-[#2a2a30] text-white hover:bg-[#1a1a1f] hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteChat}
+              className="bg-red-500 text-white hover:bg-red-600 border-0"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Messages - scrollable area */}
       <ScrollArea className={cn(
         "pr-4",
