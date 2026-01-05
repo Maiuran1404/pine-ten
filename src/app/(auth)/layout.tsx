@@ -92,7 +92,10 @@ export default function AuthLayout({
   const portal = useSubdomain();
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+    <div
+      className="min-h-screen flex"
+      style={{ fontFamily: "'Satoshi', sans-serif" }}
+    >
       {/* Left side - Auth form */}
       <div className="flex-1 flex flex-col bg-background">
         {/* Mobile header with gradient */}
@@ -107,11 +110,15 @@ export default function AuthLayout({
           <div className="relative flex h-16 items-center px-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
-                <span className="text-lg font-bold text-white">{portal.icon}</span>
+                <span className="text-lg font-bold text-white">
+                  {portal.icon}
+                </span>
               </div>
               <div>
                 <span className="font-semibold text-white">{portal.name}</span>
-                <span className="ml-2 text-xs text-white/70">{portal.description}</span>
+                <span className="ml-2 text-xs text-white/70">
+                  {portal.description}
+                </span>
               </div>
             </div>
           </div>
@@ -119,14 +126,15 @@ export default function AuthLayout({
 
         {/* Form container */}
         <main className="flex-1 flex items-center justify-center p-6 sm:p-8">
-          <div className="w-full max-w-md">
-            {children}
-          </div>
+          <div className="w-full max-w-md">{children}</div>
         </main>
 
         {/* Footer */}
         <footer className="p-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Crafted Studio. All rights
+            reserved.
+          </p>
         </footer>
       </div>
 
@@ -160,7 +168,9 @@ export default function AuthLayout({
               <span className="text-2xl font-bold">{portal.icon}</span>
             </div>
             <div>
-              <span className="text-xl font-semibold tracking-tight">{portal.name}</span>
+              <span className="text-xl font-semibold tracking-tight">
+                {portal.name}
+              </span>
               <div className="text-sm text-white/70">{portal.description}</div>
             </div>
           </div>
@@ -168,16 +178,23 @@ export default function AuthLayout({
           {/* Main message */}
           <div className="space-y-6 max-w-md">
             <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
-              {portal.type === "app" && "Turn your ideas into stunning designs"}
-              {portal.type === "artist" && "Showcase your talent, grow your career"}
-              {portal.type === "superadmin" && "Complete control at your fingertips"}
+              {portal.type === "app" &&
+                "Turn your ideas into stunning designs maiu"}
+              {portal.type === "artist" &&
+                "Showcase your talent, grow your career"}
+              {portal.type === "superadmin" &&
+                "Complete control at your fingertips"}
               {portal.type === "default" && "Professional design on demand"}
             </h1>
             <p className="text-lg text-white/70 leading-relaxed">
-              {portal.type === "app" && "Connect with world-class designers who bring your vision to life. Fast, professional, and tailored to your needs."}
-              {portal.type === "artist" && "Join our network of talented freelancers. Get matched with exciting projects and build lasting client relationships."}
-              {portal.type === "superadmin" && "Monitor platform activity, manage users, and ensure smooth operations across all portals."}
-              {portal.type === "default" && "Get high-quality designs from vetted freelance designers. Simply describe what you need."}
+              {portal.type === "app" &&
+                "Connect with world-class designers who bring your vision to life. Fast, professional, and tailored to your needs."}
+              {portal.type === "artist" &&
+                "Join our network of talented freelancers. Get matched with exciting projects and build lasting client relationships."}
+              {portal.type === "superadmin" &&
+                "Monitor platform activity, manage users, and ensure smooth operations across all portals."}
+              {portal.type === "default" &&
+                "Get high-quality designs from vetted freelance designers. Simply describe what you need."}
             </p>
           </div>
 
@@ -191,7 +208,9 @@ export default function AuthLayout({
               <div className="w-3 h-3 rounded-full bg-white/30" />
             </div>
             {/* Crafted text */}
-            <span className="text-4xl font-light tracking-wide text-white">Crafted</span>
+            <span className="text-4xl font-light tracking-wide text-white">
+              Crafted
+            </span>
           </div>
         </div>
       </div>
