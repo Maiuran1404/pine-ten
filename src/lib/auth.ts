@@ -109,6 +109,8 @@ export const auth = betterAuth({
       sameSite: "lax", // Required for OAuth redirects
       httpOnly: true,
       path: "/",
+      // Set domain for cookie sharing across subdomains in production
+      ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },
   trustedOrigins,
