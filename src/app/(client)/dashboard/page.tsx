@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -119,16 +118,22 @@ const DESIGN_ASSETS = [
   },
 ];
 
-const AssetVisual = ({ type, brand }: { type: string; brand: BrandData | null }) => {
+const AssetVisual = ({
+  type,
+  brand,
+}: {
+  type: string;
+  brand: BrandData | null;
+}) => {
   const colors = brand?.brandColors?.length
     ? brand.brandColors
-    : [
+    : ([
         brand?.primaryColor,
         brand?.secondaryColor,
         brand?.accentColor,
         brand?.backgroundColor,
         brand?.textColor,
-      ].filter(Boolean) as string[];
+      ].filter(Boolean) as string[]);
 
   const primaryFont = brand?.primaryFont || "Inter";
   const secondaryFont = brand?.secondaryFont || "Inter";
@@ -143,22 +148,47 @@ const AssetVisual = ({ type, brand }: { type: string; brand: BrandData | null })
           {logoUrl ? (
             <>
               <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
-                <Image src={logoUrl} alt="Logo" width={40} height={40} className="object-contain" />
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
               </div>
               <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center overflow-hidden">
-                <Image src={logoUrl} alt="Logo" width={28} height={28} className="object-contain opacity-60" />
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={28}
+                  height={28}
+                  className="object-contain opacity-60"
+                />
               </div>
               <div className="w-7 h-7 rounded bg-white/5 flex items-center justify-center overflow-hidden">
-                <Image src={logoUrl} alt="Logo" width={20} height={20} className="object-contain opacity-40" />
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={20}
+                  height={20}
+                  className="object-contain opacity-40"
+                />
               </div>
             </>
           ) : (
             <>
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-                <span className="text-white font-bold text-xl">{companyInitial}</span>
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <span className="text-white font-bold text-xl">
+                  {companyInitial}
+                </span>
               </div>
               <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-white/60 font-medium text-base">{companyInitial}</span>
+                <span className="text-white/60 font-medium text-base">
+                  {companyInitial}
+                </span>
               </div>
               <div className="w-7 h-7 rounded bg-white/5 flex items-center justify-center">
                 <span className="text-white/40 text-sm">{companyInitial}</span>
@@ -171,13 +201,15 @@ const AssetVisual = ({ type, brand }: { type: string; brand: BrandData | null })
       return (
         <div className="flex items-center gap-2">
           {colors.length > 0 ? (
-            colors.slice(0, 6).map((color, i) => (
-              <div
-                key={i}
-                className="w-9 h-9 rounded-full border border-white/10"
-                style={{ backgroundColor: color }}
-              />
-            ))
+            colors
+              .slice(0, 6)
+              .map((color, i) => (
+                <div
+                  key={i}
+                  className="w-9 h-9 rounded-full border border-white/10"
+                  style={{ backgroundColor: color }}
+                />
+              ))
           ) : (
             <>
               <div className="w-9 h-9 rounded-full bg-[#6366f1]" />
@@ -217,7 +249,11 @@ const AssetVisual = ({ type, brand }: { type: string; brand: BrandData | null })
             <div
               key={i}
               className="w-6 h-6 rounded"
-              style={{ backgroundColor: colors[i % colors.length] || "rgba(255,255,255,0.1)", opacity: 0.6 + (i % 3) * 0.2 }}
+              style={{
+                backgroundColor:
+                  colors[i % colors.length] || "rgba(255,255,255,0.1)",
+                opacity: 0.6 + (i % 3) * 0.2,
+              }}
             />
           ))}
         </div>
@@ -246,14 +282,18 @@ const AssetVisual = ({ type, brand }: { type: string; brand: BrandData | null })
           <div
             className="w-14 h-9 rounded border border-white/20"
             style={{
-              background: `linear-gradient(135deg, ${primaryColor}40 0%, ${colors[1] || primaryColor}20 100%)`,
+              background: `linear-gradient(135deg, ${primaryColor}40 0%, ${
+                colors[1] || primaryColor
+              }20 100%)`,
             }}
           />
           {/* Phone mockup */}
           <div
             className="w-6 h-10 rounded-sm border border-white/20"
             style={{
-              background: `linear-gradient(180deg, ${primaryColor}30 0%, ${colors[1] || primaryColor}10 100%)`,
+              background: `linear-gradient(180deg, ${primaryColor}30 0%, ${
+                colors[1] || primaryColor
+              }10 100%)`,
             }}
           />
         </div>
@@ -316,9 +356,20 @@ function DashboardContent() {
   // Get credit indicator color based on amount
   const getCreditColor = () => {
     if (credits === null) return { dot: "bg-gray-500", text: "text-[#6b6b6b]" };
-    if (credits === 0) return { dot: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]", text: "text-red-400" };
-    if (credits <= 2) return { dot: "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]", text: "text-yellow-400" };
-    return { dot: "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]", text: "text-green-400" };
+    if (credits === 0)
+      return {
+        dot: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]",
+        text: "text-red-400",
+      };
+    if (credits <= 2)
+      return {
+        dot: "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]",
+        text: "text-yellow-400",
+      };
+    return {
+      dot: "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]",
+      text: "text-green-400",
+    };
   };
 
   const creditColors = getCreditColor();
@@ -361,8 +412,13 @@ function DashboardContent() {
       {/* Noise texture to prevent gradient banding */}
       <svg className="hidden">
         <filter id="noise">
-          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
-          <feColorMatrix type="saturate" values="0"/>
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.8"
+            numOctaves="4"
+            stitchTiles="stitch"
+          />
+          <feColorMatrix type="saturate" values="0" />
         </filter>
       </svg>
 
@@ -378,13 +434,14 @@ function DashboardContent() {
             rgba(255, 255, 255, 0.004) 80%,
             transparent 100%
           )`,
-          animation: 'curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          filter: 'blur(40px)',
+          animation: "curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          filter: "blur(40px)",
         }}
       />
       <style jsx>{`
         @keyframes curtainPulse {
-          0%, 100% {
+          0%,
+          100% {
             opacity: 0.7;
           }
           50% {
@@ -411,9 +468,7 @@ function DashboardContent() {
             className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10"
           >
             {/* Logo Icon */}
-            <motion.div
-              className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60"
-            >
+            <motion.div className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60">
               <svg
                 width="40"
                 height="40"
@@ -465,9 +520,11 @@ function DashboardContent() {
               <div
                 className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
                 style={{
-                  background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)',
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)',
+                  background:
+                    "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                  backdropFilter: "blur(20px)",
+                  boxShadow:
+                    "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
                 }}
               >
                 {/* Pro Plan Banner */}
@@ -480,7 +537,9 @@ function DashboardContent() {
                     onClick={() => credits === 0 && setShowCreditDialog(true)}
                     className="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity"
                   >
-                    <span className={`w-2 h-2 rounded-full ${creditColors.dot}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${creditColors.dot}`}
+                    ></span>
                     <Coins className={`h-3.5 w-3.5 ${creditColors.text}`} />
                     <span className={creditColors.text}>
                       {credits === null ? "..." : credits} credits
@@ -555,7 +614,11 @@ function DashboardContent() {
               <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.4, 0, 0.2, 1],
+                  delay: 0.1,
+                }}
                 className="flex justify-end mb-4"
               >
                 <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white text-black">
@@ -575,17 +638,31 @@ function DashboardContent() {
                     <motion.div
                       className="w-2 h-2 rounded-full bg-[#6b6b6b]"
                       animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
                     />
                     <motion.div
                       className="w-2 h-2 rounded-full bg-[#6b6b6b]"
                       animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.2,
+                      }}
                     />
                     <motion.div
                       className="w-2 h-2 rounded-full bg-[#6b6b6b]"
                       animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.4,
+                      }}
                     />
                   </div>
                 </div>
@@ -602,9 +679,11 @@ function DashboardContent() {
               <div
                 className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
                 style={{
-                  background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)',
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)',
+                  background:
+                    "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                  backdropFilter: "blur(20px)",
+                  boxShadow:
+                    "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
                 }}
               >
                 <div className="relative flex items-center">
@@ -646,8 +725,9 @@ function DashboardContent() {
                   key={asset.id}
                   className={`group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer h-[140px] ${asset.gridClass}`}
                   style={{
-                    background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-                    backdropFilter: 'blur(12px)',
+                    background:
+                      "linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)",
+                    backdropFilter: "blur(12px)",
                   }}
                 >
                   <div className="p-4 h-full flex flex-col justify-between">
@@ -686,13 +766,7 @@ function DashboardContent() {
             className="absolute bottom-6 left-0 right-0 text-center z-10"
           >
             <p className="text-sm text-[#4a4a4a]">
-              Unlock new era with Crafted.{" "}
-              <Link
-                href="/share"
-                className="underline hover:text-[#6b6b6b] transition-colors"
-              >
-                share us
-              </Link>
+              Unlock a new era with Crafted. Crafted with love from Norway.
             </p>
           </motion.div>
         )}

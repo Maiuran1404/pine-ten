@@ -59,7 +59,7 @@ export default function ClientLayout({
   return (
     <SidebarProvider
       defaultOpen={true}
-      className="bg-[#0a0a0a]"
+      className="bg-background"
       style={
         {
           fontFamily: "'Satoshi', sans-serif",
@@ -69,7 +69,7 @@ export default function ClientLayout({
       }
     >
       <AppSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-[#0a0a0a]">
+      <SidebarInset className="bg-background">
         <Header credits={user.credits || 0} />
         <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
