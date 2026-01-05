@@ -104,19 +104,17 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "pine",
-    useSecureCookies: isProduction,
-    // Enable cross-subdomain cookies for OAuth state to work across app/artist/superadmin subdomains
+    // Don't use useSecureCookies as it adds __Secure- prefix which conflicts with domain setting
+    // Instead, set secure explicitly in defaultCookieAttributes
     crossSubDomainCookies: isProduction
       ? {
           enabled: true,
-          domain: baseDomain, // craftedstudio.ai - allows cookies on all subdomains
+          domain: `.${baseDomain}`, // .craftedstudio.ai - leading dot for subdomain matching
         }
       : undefined,
     defaultCookieAttributes: {
-      // Use "none" in production for OAuth callbacks (Google redirect is treated as cross-site)
-      // "none" requires secure: true which is set by useSecureCookies
-      // Use "lax" in development since localhost doesn't support SameSite=None properly
       sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,
       httpOnly: true,
       path: "/",
     },
