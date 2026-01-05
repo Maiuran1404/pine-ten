@@ -55,25 +55,32 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function LoginContent() {
-  const router = useRouter();
+function SearchParamsWrapper({ children }: { children: (redirect: string | null) => React.ReactNode }) {
   const searchParams = useSearchParams();
+  return <>{children(searchParams.get("redirect"))}</>;
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginContentWithoutRedirect />}>
+      <SearchParamsWrapper>
+        {(redirect) => <LoginContentWithRedirect redirect={redirect} />}
+      </SearchParamsWrapper>
+    </Suspense>
+  );
+}
+
+function LoginContentWithoutRedirect() {
+  return <LoginContentWithRedirect redirect={null} />;
+}
+
+function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
+  const router = useRouter();
   const portal = useSubdomain();
   const { data: session, isPending, error } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [sessionTimeout, setSessionTimeout] = useState(false);
-
-  // Add timeout to prevent infinite loading - show form after 3 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isPending) {
-        setSessionTimeout(true);
-      }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [isPending]);
 
   const isSuperadmin = portal.type === "superadmin";
   const showSocialLogin = !isSuperadmin;
@@ -81,10 +88,10 @@ function LoginContent() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
+      const redirectTo = redirect || portal.defaultRedirect;
       router.push(redirectTo);
     }
-  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
+  }, [session, isPending, router, redirect, portal.defaultRedirect]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -109,7 +116,7 @@ function LoginContent() {
       }
 
       toast.success("Welcome back!");
-      router.push(portal.defaultRedirect);
+      router.push(redirect || portal.defaultRedirect);
     } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
@@ -120,7 +127,6 @@ function LoginContent() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      // Use absolute URL so we redirect back to the correct subdomain after OAuth
       const callbackURL = `${window.location.origin}${portal.defaultRedirect}`;
       await signIn.social({
         provider: "google",
@@ -132,7 +138,6 @@ function LoginContent() {
     }
   }
 
-  // Crafted design language button - teal to blue gradient
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -142,9 +147,6 @@ function LoginContent() {
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
-
-  // If already logged in, redirect (but don't block rendering)
-  // The form will still show briefly while redirecting
 
   return (
     <div className="space-y-6">
@@ -309,13 +311,5 @@ function LoginContent() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-12"><LoadingSpinner size="lg" /></div>}>
-      <LoginContent />
-    </Suspense>
   );
 }
