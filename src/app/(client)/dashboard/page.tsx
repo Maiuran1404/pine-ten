@@ -54,6 +54,7 @@ const DESIGN_ASSETS = [
     title: "Logo Pack",
     description: "Primary and secondary logos in various formats",
     fileCount: 12,
+    gridClass: "col-span-1 md:col-span-5",
   },
   {
     id: "colors",
@@ -61,6 +62,7 @@ const DESIGN_ASSETS = [
     title: "Brand Colors",
     description: "Color palette with hex codes and usage guidelines",
     fileCount: 8,
+    gridClass: "col-span-1 md:col-span-4",
   },
   {
     id: "typography",
@@ -68,6 +70,7 @@ const DESIGN_ASSETS = [
     title: "Typography",
     description: "Font files and typographic scale definitions",
     fileCount: 6,
+    gridClass: "col-span-1 md:col-span-3",
   },
   {
     id: "icons",
@@ -75,6 +78,7 @@ const DESIGN_ASSETS = [
     title: "Icon Set",
     description: "Custom icons for web and mobile applications",
     fileCount: 48,
+    gridClass: "col-span-1 md:col-span-3",
   },
   {
     id: "templates",
@@ -82,6 +86,7 @@ const DESIGN_ASSETS = [
     title: "Templates",
     description: "Social media and presentation templates",
     fileCount: 15,
+    gridClass: "col-span-1 md:col-span-5",
   },
   {
     id: "mockups",
@@ -89,6 +94,7 @@ const DESIGN_ASSETS = [
     title: "Mockups",
     description: "Product mockups and brand imagery",
     fileCount: 24,
+    gridClass: "col-span-1 md:col-span-4",
   },
 ];
 
@@ -319,51 +325,46 @@ function DashboardContent() {
             <Grip className="w-4 h-4" />
           </button>
         </div>
+      </div>
 
-        {/* Design Assets Grid */}
-        <div className="w-full max-w-3xl mt-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {DESIGN_ASSETS.map((asset) => (
-              <div
-                key={asset.id}
-                className="group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-                  backdropFilter: 'blur(12px)',
-                }}
-              >
-                <div className="p-4 space-y-3">
-                  {/* Icon */}
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center border border-[#2a2a30]/60"
-                    style={{
-                      background: 'rgba(24, 24, 27, 0.8)',
-                    }}
-                  >
-                    <asset.icon className="w-5 h-5 text-[#6b6b6b] group-hover:text-white transition-colors" />
-                  </div>
+      {/* Design Assets Grid - Full Width */}
+      <div className="w-full mt-10 px-8 z-10">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
+          {DESIGN_ASSETS.map((asset) => (
+            <div
+              key={asset.id}
+              className={`group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer h-[140px] ${asset.gridClass}`}
+              style={{
+                background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <div className="p-4 h-full flex flex-col justify-between">
+                {/* Icon */}
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center border border-[#2a2a30]/60"
+                  style={{
+                    background: 'rgba(24, 24, 27, 0.8)',
+                  }}
+                >
+                  <asset.icon className="w-5 h-5 text-[#6b6b6b] group-hover:text-white transition-colors" />
+                </div>
 
-                  {/* Content */}
-                  <div className="space-y-1">
+                {/* Footer with title and file count */}
+                <div className="flex items-end justify-between">
+                  <div>
                     <h3 className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
                       {asset.title}
                     </h3>
-                    <p className="text-xs text-[#4a4a4a] leading-relaxed line-clamp-2">
-                      {asset.description}
-                    </p>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2 border-t border-[#2a2a30]/40">
                     <span className="text-xs text-[#4a4a4a]">
                       {asset.fileCount} files
                     </span>
-                    <Download className="w-3.5 h-3.5 text-[#4a4a4a] group-hover:text-white transition-colors" />
                   </div>
+                  <Download className="w-4 h-4 text-[#4a4a4a] group-hover:text-white transition-colors" />
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
 
