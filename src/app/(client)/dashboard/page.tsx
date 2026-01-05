@@ -13,6 +13,12 @@ import {
   BookOpen,
   Grip,
   Sparkles,
+  Image,
+  Palette,
+  Type,
+  FileImage,
+  Layers,
+  Download,
 } from "lucide-react";
 
 interface Task {
@@ -38,6 +44,51 @@ const QUICK_PROMPTS = [
     id: "lessons",
     icon: BookOpen,
     label: "Life lessons from kratos",
+  },
+];
+
+const DESIGN_ASSETS = [
+  {
+    id: "logo",
+    icon: Image,
+    title: "Logo Pack",
+    description: "Primary and secondary logos in various formats",
+    fileCount: 12,
+  },
+  {
+    id: "colors",
+    icon: Palette,
+    title: "Brand Colors",
+    description: "Color palette with hex codes and usage guidelines",
+    fileCount: 8,
+  },
+  {
+    id: "typography",
+    icon: Type,
+    title: "Typography",
+    description: "Font files and typographic scale definitions",
+    fileCount: 6,
+  },
+  {
+    id: "icons",
+    icon: FileImage,
+    title: "Icon Set",
+    description: "Custom icons for web and mobile applications",
+    fileCount: 48,
+  },
+  {
+    id: "templates",
+    icon: Layers,
+    title: "Templates",
+    description: "Social media and presentation templates",
+    fileCount: 15,
+  },
+  {
+    id: "mockups",
+    icon: Image,
+    title: "Mockups",
+    description: "Product mockups and brand imagery",
+    fileCount: 24,
   },
 ];
 
@@ -99,36 +150,29 @@ function DashboardContent() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a] overflow-hidden">
-      {/* Curtain light from top */}
+    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-16 pb-20 bg-[#0a0a0a] overflow-auto">
+      {/* Noise texture to prevent gradient banding */}
+      <svg className="hidden">
+        <filter id="noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
+          <feColorMatrix type="saturate" values="0"/>
+        </filter>
+      </svg>
+
+      {/* Curtain light from top - subtle ambient glow */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[70%] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
         style={{
-          background: `linear-gradient(180deg,
+          background: `radial-gradient(ellipse 70% 55% at 50% 0%,
             rgba(255, 255, 255, 0.06) 0%,
-            rgba(255, 255, 255, 0.03) 20%,
-            rgba(255, 255, 255, 0.015) 40%,
-            transparent 70%
-          )`,
-          maskImage: `linear-gradient(90deg,
-            transparent 0%,
-            rgba(0,0,0,0.3) 20%,
-            rgba(0,0,0,0.8) 40%,
-            black 50%,
-            rgba(0,0,0,0.8) 60%,
-            rgba(0,0,0,0.3) 80%,
+            rgba(255, 255, 255, 0.04) 20%,
+            rgba(255, 255, 255, 0.025) 40%,
+            rgba(255, 255, 255, 0.012) 60%,
+            rgba(255, 255, 255, 0.004) 80%,
             transparent 100%
           )`,
-          WebkitMaskImage: `linear-gradient(90deg,
-            transparent 0%,
-            rgba(0,0,0,0.3) 20%,
-            rgba(0,0,0,0.8) 40%,
-            black 50%,
-            rgba(0,0,0,0.8) 60%,
-            rgba(0,0,0,0.3) 80%,
-            transparent 100%
-          )`,
-          animation: 'curtainPulse 6s ease-in-out infinite',
+          animation: 'curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          filter: 'blur(40px)',
         }}
       />
       <style jsx>{`
@@ -138,6 +182,14 @@ function DashboardContent() {
           }
           50% {
             opacity: 1;
+          }
+        }
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
           }
         }
       `}</style>
@@ -194,54 +246,50 @@ function DashboardContent() {
         </div>
 
         {/* Input Container with Glassy Effect */}
-        <div className="w-full max-w-xl mt-8">
-          {/* Pro Plan Banner */}
+        <div className="w-full max-w-xl mt-8 relative">
+          {/* Glass container */}
           <div
-            className="flex items-center justify-between px-4 py-3 rounded-t-xl border border-b-0 border-[#2a2a30]/60"
+            className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
             style={{
-              background:
-                "linear-gradient(180deg, rgba(25, 25, 28, 0.8) 0%, rgba(20, 20, 23, 0.9) 100%)",
-              backdropFilter: "blur(10px)",
+              background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)',
             }}
           >
-            <div className="flex items-center gap-2 text-[#6b6b6b] text-sm">
-              <Sparkles className="h-4 w-4" />
-              <span>Unlock more features with the Pro plan.</span>
+            {/* Pro Plan Banner */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a30]/40">
+              <div className="flex items-center gap-2 text-[#6b6b6b] text-sm">
+                <Sparkles className="h-4 w-4" />
+                <span>Unlock more features with the Pro plan.</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                <span className="text-[#6b6b6b]">Active extensions</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-              <span className="text-[#6b6b6b]">Active extensions</span>
-            </div>
-          </div>
 
-          {/* Input Field with Glassy Effect */}
-          <div
-            className="relative flex items-center rounded-b-xl border border-[#2a2a30]/60"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(20, 20, 23, 0.9) 0%, rgba(15, 15, 18, 0.95) 100%)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
-              <Paperclip className="h-5 w-5" />
-            </button>
-            <div className="h-5 w-px bg-[#2a2a30]"></div>
-            <input
-              ref={inputRef}
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything ..."
-              className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm"
-            />
-            <button
-              onClick={handleSubmit}
-              className="p-3 text-[#6b6b6b] hover:text-white transition-colors"
-            >
-              <ArrowUp className="h-5 w-5" />
-            </button>
+            {/* Input Field */}
+            <div className="relative flex items-center">
+              <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
+                <Paperclip className="h-5 w-5" />
+              </button>
+              <div className="h-5 w-px bg-[#2a2a30]/50"></div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask anything ..."
+                className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm"
+              />
+              <button
+                onClick={handleSubmit}
+                className="p-3 text-[#6b6b6b] hover:text-white transition-colors"
+              >
+                <ArrowUp className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -270,6 +318,52 @@ function DashboardContent() {
           >
             <Grip className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* Design Assets Grid */}
+        <div className="w-full max-w-3xl mt-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {DESIGN_ASSETS.map((asset) => (
+              <div
+                key={asset.id}
+                className="group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <div className="p-4 space-y-3">
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center border border-[#2a2a30]/60"
+                    style={{
+                      background: 'rgba(24, 24, 27, 0.8)',
+                    }}
+                  >
+                    <asset.icon className="w-5 h-5 text-[#6b6b6b] group-hover:text-white transition-colors" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                      {asset.title}
+                    </h3>
+                    <p className="text-xs text-[#4a4a4a] leading-relaxed line-clamp-2">
+                      {asset.description}
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-2 border-t border-[#2a2a30]/40">
+                    <span className="text-xs text-[#4a4a4a]">
+                      {asset.fileCount} files
+                    </span>
+                    <Download className="w-3.5 h-3.5 text-[#4a4a4a] group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

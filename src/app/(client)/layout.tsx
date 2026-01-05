@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 interface Task {
   id: string;
@@ -19,8 +20,6 @@ export default function ClientLayout({
 }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -58,24 +57,22 @@ export default function ClientLayout({
   const user = session.user as { credits?: number };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]" style={{ fontFamily: "'Satoshi', sans-serif" }}>
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        recentTasks={recentTasks}
-      />
-      <div
-        className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ marginLeft: 0 }}
-      >
-        <Header
-          onMenuClick={() => setSidebarOpen(true)}
-          credits={user.credits || 0}
-        />
+    <SidebarProvider
+      defaultOpen={true}
+      className="bg-[#0a0a0a]"
+      style={
+        {
+          fontFamily: "'Satoshi', sans-serif",
+          "--sidebar-width": "16rem",
+          "--sidebar-width-icon": "3rem",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar recentTasks={recentTasks} />
+      <SidebarInset className="bg-[#0a0a0a]">
+        <Header credits={user.credits || 0} />
         <main className="flex-1 overflow-auto">{children}</main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

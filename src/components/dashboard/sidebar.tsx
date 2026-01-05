@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import {
   Home,
   FileText,
   Wand2,
   Wallet,
   Settings2,
-  X,
   History,
-  PanelLeftClose,
-  PanelLeft,
 } from "lucide-react";
 
 const navigation = [
@@ -45,160 +54,94 @@ const navigation = [
   },
 ];
 
-interface SidebarProps {
-  open?: boolean;
-  onClose?: () => void;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
+interface AppSidebarProps {
   recentTasks?: Array<{ id: string; title: string }>;
 }
 
-export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, recentTasks = [] }: SidebarProps) {
+export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
-  // On mobile, sidebar is never "collapsed" - it slides in/out at full width
-  // collapsed state only applies on desktop (lg+)
-  const isCollapsedDesktop = collapsed;
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
 
   return (
-    <>
-      {/* Mobile overlay */}
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-black/80 lg:hidden",
-          "transition-opacity duration-300 ease-out",
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <Sidebar
+      collapsible="icon"
+      className="border-r-0"
+      style={{ fontFamily: "'Satoshi', sans-serif" }}
+    >
+      <SidebarHeader className="h-16 justify-center">
+        <SidebarTrigger />
+      </SidebarHeader>
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          // Base styles
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a]",
-          // Mobile: always w-64, only transform animates
-          "w-64 transform transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static positioning, width changes based on collapsed
-          "lg:static lg:z-auto lg:translate-x-0 lg:transition-[width] lg:duration-300",
-          isCollapsedDesktop && "lg:w-16"
-        )}
-        style={{ fontFamily: "'Satoshi', sans-serif" }}
-        role="navigation"
-        aria-label="Main navigation"
-      >
-        {/* Header with Toggle */}
-        <div className={cn(
-          "flex h-16 items-center shrink-0 px-4",
-          isCollapsedDesktop && "lg:justify-center lg:px-2"
-        )}>
-          {/* Desktop Toggle Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:inline-flex h-9 w-9 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f] rounded-lg"
-            onClick={onToggleCollapse}
-            aria-label={isCollapsedDesktop ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!isCollapsedDesktop}
-          >
-            {isCollapsedDesktop ? (
-              <PanelLeft className="h-5 w-5" />
-            ) : (
-              <PanelLeftClose className="h-5 w-5" />
-            )}
-          </Button>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                const isHighlight = 'highlight' in item && item.highlight;
 
-          {/* Mobile Close Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden ml-auto h-9 w-9 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f] rounded-lg"
-            onClick={onClose}
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.name}
+                      className="rounded-xl"
+                    >
+                      <Link href={item.href} onClick={handleLinkClick}>
+                        <item.icon className={isHighlight && !isActive ? "text-emerald-500" : ""} />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-        {/* Navigation */}
-        <nav
-          className={cn(
-            "flex-1 space-y-1 overflow-y-auto px-3",
-            isCollapsedDesktop && "lg:px-2"
-          )}
-          aria-label="Sidebar navigation"
-        >
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            const isHighlight = 'highlight' in item && item.highlight;
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={onClose}
-                title={isCollapsedDesktop ? item.name : undefined}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl text-sm font-medium px-3 py-2.5",
-                  "transition-colors duration-150",
-                  isCollapsedDesktop && "lg:justify-center lg:p-2.5",
-                  isActive
-                    ? "bg-[#1a1a1f] text-white"
-                    : "text-[#6b6b6b] hover:bg-[#1a1a1f]/50 hover:text-white"
-                )}
-              >
-                <item.icon className={cn(
-                  "h-5 w-5 shrink-0",
-                  isHighlight && !isActive && "text-emerald-500"
-                )} />
-                <span className={cn(isCollapsedDesktop && "lg:hidden")}>{item.name}</span>
-              </Link>
-            );
-          })}
-
-          {/* Recents Section - hidden on desktop when collapsed */}
-          {recentTasks.length > 0 && (
-            <div className={cn("pt-6", isCollapsedDesktop && "lg:hidden")}>
-              <div className="px-3 pb-2">
-                <p className="text-xs font-medium text-[#4a4a4a] uppercase tracking-wider">
-                  Recents
-                </p>
-              </div>
-              <div className="space-y-1">
+        {recentTasks.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50">
+              Recents
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {recentTasks.slice(0, 5).map((task) => (
-                  <Link
-                    key={task.id}
-                    href={`/dashboard/tasks/${task.id}`}
-                    onClick={onClose}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#6b6b6b] hover:bg-[#1a1a1f]/50 hover:text-white transition-colors"
-                  >
-                    <History className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{task.title}</span>
-                  </Link>
+                  <SidebarMenuItem key={task.id}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={task.title}
+                      className="rounded-xl"
+                    >
+                      <Link href={`/dashboard/tasks/${task.id}`} onClick={handleLinkClick}>
+                        <History className="h-4 w-4" />
+                        <span className="truncate">{task.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 ))}
-              </div>
-            </div>
-          )}
-        </nav>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
 
-        {/* Footer - hidden on desktop when collapsed */}
-        <div className={cn("shrink-0 p-4", isCollapsedDesktop && "lg:hidden")}>
-          <div className="px-3 py-2">
-            <p className="text-xs text-[#4a4a4a]">
-              Need help?
-            </p>
-            <a
-              href="#"
-              className="text-xs text-[#6b6b6b] hover:text-white underline underline-offset-4 transition-colors"
-            >
-              Contact support
-            </a>
-          </div>
+      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+        <div className="px-2 py-2">
+          <p className="text-xs opacity-50">Need help?</p>
+          <a
+            href="#"
+            className="text-xs opacity-70 hover:opacity-100 underline underline-offset-4"
+          >
+            Contact support
+          </a>
         </div>
-      </aside>
-    </>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

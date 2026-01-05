@@ -1,30 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { UserNav } from "@/components/shared/user-nav";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface HeaderProps {
-  onMenuClick?: () => void;
   credits?: number;
 }
 
-export function Header({ onMenuClick, credits = 0 }: HeaderProps) {
+export function Header({ credits = 0 }: HeaderProps) {
   return (
     <header
       className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-[#0a0a0a]/70 backdrop-blur-xl border-b border-white/[0.06]"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f]"
-        onClick={onMenuClick}
-      >
-        <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle menu</span>
-      </Button>
+      <SidebarTrigger className="md:hidden" />
 
       <div className="flex-1" />
 
