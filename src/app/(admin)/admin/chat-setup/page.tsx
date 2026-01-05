@@ -15,12 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { Save, RotateCcw, Info, MessageSquare, Video, ImageIcon, Sparkles } from "lucide-react";
 
@@ -341,41 +335,33 @@ export default function ChatSetupPage() {
               <CardTitle>Chat Flow Summary</CardTitle>
               <CardDescription>How the conversation flows</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="step0">
-                  <AccordionTrigger>Step 0: Initial Question</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      The AI first asks: <strong>&quot;What would you like to create?&quot;</strong>
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">Static ads / graphics</Badge>
-                      <Badge variant="outline">Video / motion content</Badge>
-                      <Badge variant="outline">Social media content</Badge>
-                      <Badge variant="outline">Something else</Badge>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="step1">
-                  <AccordionTrigger>Step 1: Follow Decision Tree</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Based on the user&apos;s choice, the AI follows the appropriate decision tree
-                      (Static Ads, Dynamic/Video, or Social Media) asking targeted questions.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="step2">
-                  <AccordionTrigger>Step 2: Generate Brief</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Once enough information is gathered, the AI generates a task brief summary
-                      and asks if the client wants to tweak anything before submitting.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-2">Step 0: Initial Question</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  The AI first asks: <strong>&quot;What would you like to create?&quot;</strong>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Static ads / graphics</Badge>
+                  <Badge variant="outline">Video / motion content</Badge>
+                  <Badge variant="outline">Social media content</Badge>
+                  <Badge variant="outline">Something else</Badge>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-2">Step 1: Follow Decision Tree</h4>
+                <p className="text-sm text-muted-foreground">
+                  Based on the user&apos;s choice, the AI follows the appropriate decision tree
+                  (Static Ads, Dynamic/Video, or Social Media) asking targeted questions.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-2">Step 2: Generate Brief</h4>
+                <p className="text-sm text-muted-foreground">
+                  Once enough information is gathered, the AI generates a task brief summary
+                  and asks if the client wants to tweak anything before submitting.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
