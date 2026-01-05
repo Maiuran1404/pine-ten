@@ -111,10 +111,14 @@ export default function LoginPage() {
     }
   }
 
+  // Crafted design language button - teal to blue gradient
+  const gradientButtonStyle = {
+    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
+  };
+
   const gradientButtonClass = cn(
     "w-full h-12 text-base font-medium transition-all duration-300",
-    "bg-gradient-to-r shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
-    portal.accentColor,
+    "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
 
@@ -124,7 +128,7 @@ export default function LoginPage() {
       <div className="space-y-2 text-center lg:text-left">
         <div className={cn(
           "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4",
-          isSuperadmin ? "bg-rose-500/10 text-rose-600" : "bg-primary/5 text-primary"
+          isSuperadmin ? "bg-rose-500/10 text-rose-600" : "bg-blue-500/10 text-blue-600"
         )}>
           {isSuperadmin ? <Shield className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
           <span>{portal.description}</span>
@@ -238,6 +242,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             className={gradientButtonClass}
+            style={gradientButtonStyle}
             disabled={isLoading}
           >
             {isLoading ? (

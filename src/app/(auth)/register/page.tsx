@@ -1,13 +1,13 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Eye, EyeOff, ArrowRight, Sparkles, Palette, Briefcase } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,14 +60,13 @@ function GoogleIcon({ className }: { className?: string }) {
 function RegisterContent() {
   const router = useRouter();
   const portal = useSubdomain();
-  const searchParams = useSearchParams();
-  const defaultType = searchParams.get("type") === "freelancer" ? "freelancer" : "client";
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [accountType, setAccountType] = useState<"client" | "freelancer">(
-    portal.type === "artist" ? "freelancer" : defaultType
-  );
+
+  // Determine account type based on portal
+  const isArtistPortal = portal.type === "artist";
+  const accountType = isArtistPortal ? "freelancer" : "client";
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -134,9 +133,6 @@ function RegisterContent() {
     "text-white border-0"
   );
 
-  // Hide account type selection for artist portal (always freelancer)
-  const showAccountTypeSelector = portal.type === "app";
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -153,54 +149,6 @@ function RegisterContent() {
           }
         </p>
       </div>
-
-      {/* Account type selector */}
-      {showAccountTypeSelector && (
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setAccountType("client")}
-            className={cn(
-              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-              accountType === "client"
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/50 hover:border-border hover:bg-muted/50"
-            )}
-          >
-            <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
-              accountType === "client" ? "bg-primary text-primary-foreground" : "bg-muted"
-            )}>
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-sm">I need designs</p>
-              <p className="text-xs text-muted-foreground">Get work done</p>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAccountType("freelancer")}
-            className={cn(
-              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-              accountType === "freelancer"
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/50 hover:border-border hover:bg-muted/50"
-            )}
-          >
-            <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
-              accountType === "freelancer" ? "bg-primary text-primary-foreground" : "bg-muted"
-            )}>
-              <Palette className="w-5 h-5" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-sm">I&apos;m a designer</p>
-              <p className="text-xs text-muted-foreground">Earn money</p>
-            </div>
-          </button>
-        </div>
-      )}
 
       {/* Google Sign Up */}
       <Button
