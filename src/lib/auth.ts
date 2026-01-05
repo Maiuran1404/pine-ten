@@ -28,6 +28,15 @@ const trustedOrigins = isProduction
       "http://superadmin.localhost:3000",
     ];
 
+// Get the base URL for Better Auth - needed for OAuth callbacks
+const getBaseURL = () => {
+  if (isProduction) {
+    // In production, use the APP_URL environment variable
+    return process.env.NEXT_PUBLIC_APP_URL || `https://app.${baseDomain}`;
+  }
+  return "http://localhost:3000";
+};
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -38,8 +47,7 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  // baseURL will be inferred from request headers by Better Auth
-  // This allows OAuth to work correctly on any subdomain
+  baseURL: getBaseURL(),
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
@@ -97,8 +105,13 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
-    // Do NOT set cookie domain - this keeps sessions separate per subdomain
-    // This allows users to be logged in as different accounts on app vs artist portals
+    // Set SameSite to lax for OAuth to work correctly
+    defaultCookieAttributes: {
+      sameSite: "lax",
+      secure: isProduction,
+      httpOnly: true,
+      path: "/",
+    },
   },
   trustedOrigins,
   rateLimit: {

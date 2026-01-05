@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "@/lib/auth-client";
-import { User, Bell, Mail, Phone, Calendar, RefreshCw } from "lucide-react";
+import { useSession, signOut } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { User, Bell, Mail, Phone, Calendar, RefreshCw, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NotificationPreferences {
@@ -42,9 +43,11 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
 );
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -127,6 +130,17 @@ export default function SettingsPage() {
       toast.error("Failed to update notification preferences");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+      router.push("/login");
+    } catch {
+      toast.error("Failed to log out");
+      setIsLoggingOut(false);
     }
   };
 
@@ -372,6 +386,45 @@ export default function SettingsPage() {
                   : "-"}
               </span>
             </div>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Logout Section */}
+      <GlassCard>
+        <div className="p-5 border-b border-[#2a2a30]/40">
+          <div className="flex items-center gap-2">
+            <LogOut className="h-4 w-4 text-[#6b6b6b]" />
+            <h2 className="text-sm font-medium text-white">Session</h2>
+          </div>
+          <p className="text-xs text-[#4a4a4a] mt-1">Manage your current session</p>
+        </div>
+        <div className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Log out of your account</p>
+              <p className="text-xs text-[#4a4a4a] mt-1">
+                You will need to sign in again to access your dashboard
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50"
+            >
+              {isLoggingOut ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </GlassCard>
