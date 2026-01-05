@@ -104,9 +104,10 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "pine",
-    useSecureCookies: isProduction,
+    // Don't use useSecureCookies - it adds __Secure- prefix that conflicts with domain
     defaultCookieAttributes: {
-      sameSite: "lax", // Required for OAuth redirects
+      sameSite: "lax",
+      secure: isProduction, // Use secure cookies in production (HTTPS)
       httpOnly: true,
       path: "/",
       // Set domain for cookie sharing across subdomains in production
