@@ -94,7 +94,7 @@ export function deleteDraft(id: string): void {
 // Server sync functions
 async function syncDraftToServer(draft: ChatDraft): Promise<void> {
   try {
-    await fetch("/api/drafts", {
+    const response = await fetch("/api/drafts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -105,6 +105,19 @@ async function syncDraftToServer(draft: ChatDraft): Promise<void> {
         pendingTask: draft.pendingTask,
       }),
     });
+
+    if (response.ok) {
+      const data = await response.json();
+      // If server created a new draft with a different ID (UUID), update local storage
+      if (data.localId && data.draft?.id && data.localId !== data.draft.id) {
+        const drafts = getLocalDrafts();
+        const index = drafts.findIndex((d) => d.id === data.localId);
+        if (index >= 0) {
+          drafts[index].id = data.draft.id;
+          setLocalDrafts(drafts);
+        }
+      }
+    }
   } catch (error) {
     console.error("Failed to sync draft to server:", error);
   }

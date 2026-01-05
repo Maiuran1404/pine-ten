@@ -45,8 +45,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { id, title, messages, selectedStyles, pendingTask } = body;
 
-    if (id) {
-      // Update existing draft
+    // Check if ID is a valid UUID (not a local draft ID like "draft_xxx")
+    const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    if (isValidUUID) {
+      // Update existing draft with valid UUID
       const existing = await db.query.chatDrafts.findFirst({
         where: and(
           eq(chatDrafts.id, id),
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create new draft
+    // Create new draft (either no ID, local draft ID, or UUID not found)
     const [draft] = await db
       .insert(chatDrafts)
       .values({
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ draft });
+    return NextResponse.json({ draft, localId: id });
   } catch (error) {
     console.error("Save draft error:", error);
     return NextResponse.json(
@@ -111,14 +114,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Draft ID required" }, { status: 400 });
     }
 
-    await db
-      .delete(chatDrafts)
-      .where(
-        and(
-          eq(chatDrafts.id, id),
-          eq(chatDrafts.clientId, session.user.id)
-        )
-      );
+    // Check if ID is a valid UUID before attempting delete
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    if (isValidUUID) {
+      await db
+        .delete(chatDrafts)
+        .where(
+          and(
+            eq(chatDrafts.id, id),
+            eq(chatDrafts.clientId, session.user.id)
+          )
+        );
+    }
+    // If not a valid UUID, it's a local-only draft - just return success
 
     return NextResponse.json({ success: true });
   } catch (error) {
