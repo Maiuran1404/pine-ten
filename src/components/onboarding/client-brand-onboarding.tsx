@@ -18,12 +18,17 @@ import {
   Globe,
   Palette,
   Building2,
-  Sparkles,
   Search,
   AlertCircle,
   Wand2,
-  Zap,
   CheckCircle2,
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  Sparkles,
+  Zap,
+  Link2,
+  X,
 } from "lucide-react";
 
 interface ClientBrandOnboardingProps {
@@ -101,6 +106,64 @@ const industries = [
   "Other",
 ];
 
+// Decorative curved lines component
+function DecorativeLines() {
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full"
+      viewBox="0 0 600 800"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <line x1="0" y1="250" x2="600" y2="250" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
+      <line x1="0" y1="620" x2="600" y2="620" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
+      <path
+        d="M 420 0 L 420 250 Q 420 420 250 420 Q 80 420 80 590 L 80 620"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeOpacity="0.35"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+// Grainy texture overlay
+function GrainOverlay() {
+  return (
+    <>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "256px 256px",
+          opacity: 0.35,
+          mixBlendMode: "overlay",
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+          opacity: 0.25,
+          mixBlendMode: "soft-light",
+        }}
+      />
+    </>
+  );
+}
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  file: File;
+}
+
 export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps) {
   const { refetch: refetchSession } = useSession();
   const [step, setStep] = useState<OnboardingStep>("welcome");
@@ -110,10 +173,12 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
   const [isLoading, setIsLoading] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const steps: OnboardingStep[] = hasWebsite === false
-    ? ["welcome", "website", "brand-form", "complete"]
-    : ["welcome", "website", "scanning", "brand-form", "complete"];
+  const steps: OnboardingStep[] = uploadedFiles.length > 0 && !websiteUrl.trim()
+    ? ["welcome", "brand-form", "complete"]
+    : ["welcome", "scanning", "brand-form", "complete"];
 
   const currentStepIndex = steps.indexOf(step);
   const progress = ((currentStepIndex) / (steps.length - 1)) * 100;
@@ -175,6 +240,57 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     }
   };
 
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
+
+    const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file,
+    }));
+
+    setUploadedFiles((prev) => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const handleContinue = () => {
+    if (websiteUrl.trim()) {
+      handleWebsiteScan();
+    } else if (uploadedFiles.length > 0) {
+      // Skip scanning, go directly to brand form
+      setHasWebsite(false);
+      setStep("brand-form");
+    } else {
+      toast.error("Please enter a website URL or upload brand assets");
+    }
+  };
+
   const handleSubmit = async () => {
     if (!brandData.name.trim()) {
       toast.error("Company name is required");
@@ -203,7 +319,6 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
       setStep("complete");
       setIsLoading(false);
 
-      // Refetch the session in background
       refetchSession().catch(() => {});
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -236,748 +351,461 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     }));
   };
 
+  // Gradient button style
+  const gradientButtonStyle = {
+    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-hidden font-satoshi"
-      style={{
-        fontFamily: "'Satoshi', sans-serif",
-        background: `
-          radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%),
-          radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%),
-          radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%),
-          linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%)
-        `,
-      }}
-    >
-      {/* Grain overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "256px 256px",
-          opacity: 0.35,
-          mixBlendMode: "overlay",
-        }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.25,
-          mixBlendMode: "soft-light",
-        }}
-      />
+    <div className="fixed inset-0 z-50 flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+      {/* Left side - Form content */}
+      <div className="flex-1 flex flex-col bg-background overflow-y-auto">
+        {/* Progress bar */}
+        <div className="sticky top-0 z-10 bg-background">
+          <Progress value={progress} className="h-1 rounded-none" />
+        </div>
 
-      {/* Decorative curved lines */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        viewBox="0 0 1200 800"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <line x1="0" y1="250" x2="1200" y2="250" stroke="white" strokeWidth="1" strokeOpacity="0.15" />
-        <line x1="0" y1="620" x2="1200" y2="620" stroke="white" strokeWidth="1" strokeOpacity="0.15" />
-        <path
-          d="M 850 0 L 850 250 Q 850 420 600 420 Q 350 420 350 590 L 350 620"
-          stroke="white"
-          strokeWidth="1"
-          strokeOpacity="0.15"
-          fill="none"
-        />
-      </svg>
-
-      {/* Progress bar at top */}
-      <div className="absolute top-0 left-0 right-0 z-20">
-        <Progress value={progress} className="h-1 rounded-none bg-white/10" />
-      </div>
-
-      {/* Main content */}
-      <div className="relative z-10 h-full flex items-center justify-center p-4 sm:p-8">
-        <AnimatePresence mode="wait">
-          {/* Welcome Step */}
-          {step === "welcome" && (
-            <motion.div
-              key="welcome"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -40 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-2xl text-center"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="mx-auto w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-teal-500/30"
-                style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%)" }}
-              >
-                <Sparkles className="h-12 w-12 text-white" />
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-4xl sm:text-5xl font-bold text-white mb-4"
-              >
-                Welcome to Crafted Studio
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-lg sm:text-xl text-slate-300 mb-12 max-w-lg mx-auto"
-              >
-                Let&apos;s set up your brand so our designers can create
-                stunning on-brand content for you.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="grid gap-4 sm:grid-cols-3 mb-12"
-              >
-                {[
-                  { icon: Globe, title: "Import from Website", desc: "We'll scan your site" },
-                  { icon: Wand2, title: "AI-Powered Analysis", desc: "Extract colors & fonts" },
-                  { icon: Zap, title: "Instant Setup", desc: "Ready in seconds" },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + i * 0.1 }}
-                    className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors"
-                  >
-                    <item.icon className="h-8 w-8 text-teal-400 mx-auto mb-3" />
-                    <p className="text-white font-semibold">{item.title}</p>
-                    <p className="text-sm text-slate-400">{item.desc}</p>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
-              >
-                <Button
-                  size="lg"
-                  onClick={() => setStep("website")}
-                  className="h-14 px-10 text-lg border-0 shadow-xl shadow-teal-500/25 hover:scale-[1.02] transition-transform"
-                  style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
+        {/* Main content */}
+        <main className="flex-1 flex items-center justify-center p-6 sm:p-8">
+          <div className="w-full max-w-lg">
+            <AnimatePresence mode="wait">
+              {/* Welcome Step */}
+              {step === "welcome" && (
+                <motion.div
+                  key="welcome"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8"
                 >
-                  Get Started
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* Website Input Step */}
-          {step === "website" && (
-            <motion.div
-              key="website"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -40 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-xl"
-            >
-              {hasWebsite === null ? (
-                <>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center"
-                  >
-                    Do you have a website?
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-slate-300 mb-10 text-center text-lg"
-                  >
-                    We can automatically extract your brand identity
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="grid gap-4 sm:grid-cols-2"
-                  >
-                    <button
-                      onClick={() => setHasWebsite(true)}
-                      className="group relative bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-teal-500/50 hover:bg-white/10 rounded-2xl p-8 transition-all duration-300"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
-                      <Globe className="h-16 w-16 text-teal-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                      <p className="text-xl font-semibold text-white mb-2">Yes, I have a website</p>
-                      <p className="text-sm text-slate-400">We&apos;ll scan it and extract your brand</p>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setHasWebsite(false);
-                        setStep("brand-form");
-                      }}
-                      className="group relative bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-slate-500/50 hover:bg-white/10 rounded-2xl p-8 transition-all duration-300"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-500/20 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
-                      <Building2 className="h-16 w-16 text-slate-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                      <p className="text-xl font-semibold text-white mb-2">Not yet</p>
-                      <p className="text-sm text-slate-400">I&apos;ll set up my brand manually</p>
-                    </button>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-8 text-center"
-                  >
-                    <Button
-                      variant="ghost"
-                      onClick={() => setStep("welcome")}
-                      className="text-slate-400 hover:text-white hover:bg-white/10"
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back
-                    </Button>
-                  </motion.div>
-                </>
-              ) : (
-                <>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center"
-                  >
-                    Enter your website URL
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-slate-300 mb-10 text-center text-lg"
-                  >
-                    We&apos;ll scan it and extract your brand colors, fonts, and more
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="space-y-6"
-                  >
-                    <div className="relative">
-                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <Input
-                        placeholder="example.com"
-                        value={websiteUrl}
-                        onChange={(e) => setWebsiteUrl(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleWebsiteScan()}
-                        className="h-14 pl-12 text-lg bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500 focus:ring-teal-500/20"
-                      />
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-medium mb-4">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Brand Setup</span>
                     </div>
+                    <h1 className="text-3xl font-bold tracking-tight">Welcome to Crafted Studio</h1>
+                    <p className="text-muted-foreground text-lg">
+                      Let&apos;s set up your brand so our designers can create stunning on-brand content for you.
+                    </p>
+                  </div>
 
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => setHasWebsite(null)}
-                        className="flex-1 h-12 bg-transparent border-white/20 text-white hover:bg-white/10"
-                      >
+                  <div className="grid gap-4">
+                    {[
+                      { icon: Globe, title: "Import from Website", desc: "We'll scan your site" },
+                      { icon: Wand2, title: "AI-Powered Analysis", desc: "Extract colors & fonts" },
+                      { icon: Zap, title: "Instant Setup", desc: "Ready in seconds" },
+                    ].map((item) => (
+                      <div key={item.title} className="flex items-center gap-4 p-4 rounded-xl border bg-muted/30">
+                        <div className="p-2 rounded-lg bg-teal-500/10">
+                          <item.icon className="h-5 w-5 text-teal-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    size="lg"
+                    onClick={() => setStep("website")}
+                    className="w-full h-12 text-white border-0 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+                    style={gradientButtonStyle}
+                  >
+                    Get Started
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* Website Step */}
+              {step === "website" && (
+                <motion.div
+                  key="website"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8"
+                >
+                  {hasWebsite === null ? (
+                    <>
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-bold">Do you have a website?</h2>
+                        <p className="text-muted-foreground">We can automatically extract your brand identity</p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <button
+                          onClick={() => setHasWebsite(true)}
+                          className="group p-6 rounded-xl border-2 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-all text-left"
+                        >
+                          <Globe className="h-10 w-10 text-teal-600 mb-3" />
+                          <p className="font-semibold mb-1">Yes, I have a website</p>
+                          <p className="text-sm text-muted-foreground">We&apos;ll scan and extract your brand</p>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setHasWebsite(false);
+                            setStep("brand-form");
+                          }}
+                          className="group p-6 rounded-xl border-2 hover:border-muted-foreground hover:bg-muted/50 transition-all text-left"
+                        >
+                          <Building2 className="h-10 w-10 text-muted-foreground mb-3" />
+                          <p className="font-semibold mb-1">Not yet</p>
+                          <p className="text-sm text-muted-foreground">I&apos;ll set up my brand manually</p>
+                        </button>
+                      </div>
+
+                      <Button variant="ghost" onClick={() => setStep("welcome")} className="w-full">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back
                       </Button>
-                      <Button
-                        onClick={handleWebsiteScan}
-                        disabled={!websiteUrl.trim()}
-                        className="flex-1 h-12 border-0 hover:scale-[1.02] transition-transform"
-                        style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
-                      >
-                        Scan Website
-                        <Search className="h-4 w-4 ml-2" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* Scanning Step */}
-          {step === "scanning" && (
-            <motion.div
-              key="scanning"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -40 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-lg text-center"
-            >
-              {scanError ? (
-                <>
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="mx-auto w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6"
-                  >
-                    <AlertCircle className="h-10 w-10 text-red-400" />
-                  </motion.div>
-                  <h2 className="text-2xl font-bold text-white mb-4">Scan Failed</h2>
-                  <p className="text-slate-400 mb-8">{scanError}</p>
-                  <div className="flex gap-3 justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setScanError(null);
-                        setStep("website");
-                      }}
-                      className="bg-transparent border-white/20 text-white hover:bg-white/10"
-                    >
-                      Try Again
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setBrandData({ ...defaultBrandData, website: websiteUrl });
-                        setStep("brand-form");
-                      }}
-                      className="border-0 hover:scale-[1.02] transition-transform"
-                      style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
-                    >
-                      Enter Manually
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="relative mx-auto w-32 h-32 mb-8">
-                    {/* Animated rings */}
-                    <div className="absolute inset-0 rounded-full border-4 border-teal-500/20 animate-ping" />
-                    <div className="absolute inset-2 rounded-full border-4 border-blue-500/30 animate-ping delay-100" />
-                    <div className="absolute inset-4 rounded-full border-4 border-teal-500/40" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
-                        style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%)" }}
-                      >
-                        <Wand2 className="h-8 w-8 text-white animate-pulse" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-bold">Enter your website URL</h2>
+                        <p className="text-muted-foreground">We&apos;ll scan it and extract your brand colors, fonts, and more</p>
                       </div>
-                    </div>
-                  </div>
 
-                  <h2 className="text-2xl font-bold text-white mb-2">Analyzing your website</h2>
-                  <p className="text-slate-400 mb-8">Our AI is extracting your brand identity</p>
-
-                  <div className="space-y-4 max-w-xs mx-auto">
-                    <Progress value={scanProgress} className="h-2 bg-white/10" />
-
-                    <div className="space-y-2 text-left">
-                      {[
-                        { threshold: 10, text: "Fetching website content" },
-                        { threshold: 30, text: "Capturing visual elements" },
-                        { threshold: 50, text: "Analyzing brand colors" },
-                        { threshold: 70, text: "Extracting typography" },
-                        { threshold: 90, text: "Building brand profile" },
-                      ].map((item) => (
-                        <div
-                          key={item.text}
-                          className={cn(
-                            "flex items-center gap-2 text-sm transition-colors duration-300",
-                            scanProgress > item.threshold ? "text-white" : "text-slate-500"
-                          )}
-                        >
-                          {scanProgress > item.threshold ? (
-                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border-2 border-slate-600" />
-                          )}
-                          {item.text}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* Brand Form Step */}
-          {step === "brand-form" && (
-            <motion.div
-              key="brand-form"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -40 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-4xl h-full flex flex-col"
-            >
-              <div className="text-center mb-8 pt-8">
-                <h2 className="text-3xl font-bold text-white mb-2">
-                  {hasWebsite ? "Review your brand" : "Set up your brand"}
-                </h2>
-                <p className="text-slate-400">
-                  {hasWebsite
-                    ? "We extracted this from your website. Feel free to edit."
-                    : "Tell us about your brand to get started."}
-                </p>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-4">
-                <div className="grid gap-8 lg:grid-cols-2 pb-8">
-                  {/* Left Column - Form */}
-                  <div className="space-y-6">
-                    {/* Company Info */}
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-teal-400" />
-                        Company Information
-                      </h3>
                       <div className="space-y-4">
+                        <div className="relative">
+                          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            placeholder="example.com"
+                            value={websiteUrl}
+                            onChange={(e) => setWebsiteUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleWebsiteScan()}
+                            className="h-12 pl-12 text-lg"
+                          />
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button variant="outline" onClick={() => setHasWebsite(null)} className="flex-1 h-12">
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                          </Button>
+                          <Button
+                            onClick={handleWebsiteScan}
+                            disabled={!websiteUrl.trim()}
+                            className="flex-1 h-12 text-white border-0"
+                            style={gradientButtonStyle}
+                          >
+                            Scan Website
+                            <Search className="h-4 w-4 ml-2" />
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Scanning Step */}
+              {step === "scanning" && (
+                <motion.div
+                  key="scanning"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8 text-center"
+                >
+                  {scanError ? (
+                    <>
+                      <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                        <AlertCircle className="h-8 w-8 text-red-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">Scan Failed</h2>
+                        <p className="text-muted-foreground">{scanError}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button variant="outline" onClick={() => { setScanError(null); setStep("website"); }} className="flex-1">
+                          Try Again
+                        </Button>
+                        <Button
+                          onClick={() => { setBrandData({ ...defaultBrandData, website: websiteUrl }); setStep("brand-form"); }}
+                          className="flex-1 text-white border-0"
+                          style={gradientButtonStyle}
+                        >
+                          Enter Manually
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative mx-auto w-24 h-24">
+                        <div className="absolute inset-0 rounded-full border-4 border-teal-500/20 animate-ping" />
+                        <div className="absolute inset-2 rounded-full border-4 border-blue-500/30 animate-ping delay-100" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl"
+                            style={gradientButtonStyle}
+                          >
+                            <Wand2 className="h-7 w-7 text-white animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">Analyzing your website</h2>
+                        <p className="text-muted-foreground">Our AI is extracting your brand identity</p>
+                      </div>
+
+                      <div className="space-y-4 max-w-xs mx-auto">
+                        <Progress value={scanProgress} className="h-2" />
+                        <div className="space-y-2 text-left">
+                          {[
+                            { threshold: 10, text: "Fetching website content" },
+                            { threshold: 30, text: "Capturing visual elements" },
+                            { threshold: 50, text: "Analyzing brand colors" },
+                            { threshold: 70, text: "Extracting typography" },
+                            { threshold: 90, text: "Building brand profile" },
+                          ].map((item) => (
+                            <div
+                              key={item.text}
+                              className={cn(
+                                "flex items-center gap-2 text-sm transition-colors",
+                                scanProgress > item.threshold ? "text-foreground" : "text-muted-foreground"
+                              )}
+                            >
+                              {scanProgress > item.threshold ? (
+                                <CheckCircle2 className="h-4 w-4 text-teal-500" />
+                              ) : (
+                                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                              )}
+                              {item.text}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Brand Form Step */}
+              {step === "brand-form" && (
+                <motion.div
+                  key="brand-form"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold">{hasWebsite ? "Review your brand" : "Set up your brand"}</h2>
+                    <p className="text-muted-foreground">
+                      {hasWebsite ? "We extracted this from your website. Feel free to edit." : "Tell us about your brand to get started."}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Company Info */}
+                    <div className="p-4 rounded-xl border space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-teal-600" />
+                        <h3 className="font-semibold">Company Information</h3>
+                      </div>
+                      <div className="space-y-3">
                         <div>
-                          <Label className="text-slate-300">Company Name *</Label>
+                          <Label>Company Name *</Label>
                           <Input
                             placeholder="Acme Inc."
                             value={brandData.name}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, name: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
+                            className="mt-1"
                           />
                         </div>
                         <div>
-                          <Label className="text-slate-300">Industry</Label>
+                          <Label>Industry</Label>
                           <select
                             value={brandData.industry || ""}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, industry: e.target.value }))}
-                            className="mt-1.5 w-full h-10 rounded-md bg-white/10 border border-white/20 text-white px-3 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3"
                           >
-                            <option value="" className="bg-slate-900">Select industry</option>
+                            <option value="">Select industry</option>
                             {industries.map((ind) => (
-                              <option key={ind} value={ind} className="bg-slate-900">{ind}</option>
+                              <option key={ind} value={ind}>{ind}</option>
                             ))}
                           </select>
                         </div>
                         <div>
-                          <Label className="text-slate-300">Description</Label>
+                          <Label>Description</Label>
                           <Textarea
                             placeholder="Brief description of your company..."
                             value={brandData.description}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, description: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500 min-h-[80px]"
+                            className="mt-1 min-h-[60px]"
                           />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-slate-300">Tagline</Label>
-                            <Input
-                              placeholder="Your tagline"
-                              value={brandData.tagline}
-                              onChange={(e) => setBrandData((prev) => ({ ...prev, tagline: e.target.value }))}
-                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-slate-300">Logo URL</Label>
-                            <Input
-                              placeholder="https://..."
-                              value={brandData.logoUrl}
-                              onChange={(e) => setBrandData((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
-                            />
-                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Colors */}
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Palette className="h-5 w-5 text-teal-400" />
-                        Brand Colors
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { key: "primaryColor", label: "Primary" },
-                            { key: "secondaryColor", label: "Secondary" },
-                            { key: "accentColor", label: "Accent" },
-                          ].map(({ key, label }) => (
-                            <div key={key}>
-                              <Label className="text-slate-400 text-xs">{label}</Label>
-                              <div className="mt-1.5 flex gap-2">
-                                <div
-                                  className="w-10 h-10 rounded-lg border border-white/20 cursor-pointer hover:scale-105 transition-transform"
-                                  style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
-                                  onClick={() => document.getElementById(`${key}-picker`)?.click()}
-                                />
-                                <Input
-                                  value={(brandData[key as keyof BrandData] as string) || ""}
-                                  onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
-                                  placeholder="#000000"
-                                  className="flex-1 bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-500 focus:border-teal-500"
-                                />
-                                <input
-                                  id={`${key}-picker`}
-                                  type="color"
-                                  value={(brandData[key as keyof BrandData] as string) || "#14b8a6"}
-                                  onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
-                                  className="sr-only"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Additional Colors */}
-                        <div>
-                          <Label className="text-slate-400 text-xs">Additional Colors</Label>
-                          <div className="mt-1.5 flex flex-wrap gap-2">
-                            {brandData.brandColors.map((color, index) => (
+                    <div className="p-4 rounded-xl border space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-5 w-5 text-teal-600" />
+                        <h3 className="font-semibold">Brand Colors</h3>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { key: "primaryColor", label: "Primary" },
+                          { key: "secondaryColor", label: "Secondary" },
+                          { key: "accentColor", label: "Accent" },
+                        ].map(({ key, label }) => (
+                          <div key={key}>
+                            <Label className="text-xs">{label}</Label>
+                            <div className="mt-1 flex gap-2">
                               <div
-                                key={index}
-                                className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1"
-                              >
-                                <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: color }} />
-                                <span className="text-xs text-slate-300">{color}</span>
-                                <button onClick={() => removeBrandColor(index)} className="text-slate-400 hover:text-red-400 ml-1">
-                                  &times;
-                                </button>
-                              </div>
-                            ))}
-                            <label className="flex items-center gap-1 bg-white/5 hover:bg-white/10 rounded-full px-3 py-1 cursor-pointer border border-dashed border-white/20">
+                                className="w-10 h-10 rounded-lg border cursor-pointer hover:scale-105 transition-transform"
+                                style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
+                                onClick={() => document.getElementById(`${key}-picker`)?.click()}
+                              />
+                              <Input
+                                value={(brandData[key as keyof BrandData] as string) || ""}
+                                onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
+                                placeholder="#000000"
+                                className="flex-1 text-sm"
+                              />
                               <input
+                                id={`${key}-picker`}
                                 type="color"
-                                onChange={(e) => addBrandColor(e.target.value)}
-                                className="w-4 h-4 rounded cursor-pointer"
+                                value={(brandData[key as keyof BrandData] as string) || "#14b8a6"}
+                                onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
+                                className="sr-only"
                               />
-                              <span className="text-xs text-slate-400">Add</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Typography */}
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4">Typography</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-slate-300">Primary Font</Label>
-                          <Input
-                            placeholder="e.g., Inter"
-                            value={brandData.primaryFont}
-                            onChange={(e) => setBrandData((prev) => ({ ...prev, primaryFont: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-slate-300">Secondary Font</Label>
-                          <Input
-                            placeholder="e.g., Open Sans"
-                            value={brandData.secondaryFont}
-                            onChange={(e) => setBrandData((prev) => ({ ...prev, secondaryFont: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column - Preview */}
-                  <div className="lg:sticky lg:top-0">
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4">Brand Preview</h3>
-
-                      {/* Preview Card */}
-                      <div
-                        className="rounded-xl p-6 transition-all border-2"
-                        style={{
-                          backgroundColor: brandData.backgroundColor || "#ffffff",
-                          borderColor: brandData.primaryColor || "#14b8a6",
-                        }}
-                      >
-                        <div className="flex items-center gap-3 mb-4">
-                          {brandData.logoUrl ? (
-                            <img
-                              src={brandData.logoUrl}
-                              alt="Logo"
-                              className="w-12 h-12 rounded-lg object-contain bg-white"
-                            />
-                          ) : (
-                            <div
-                              className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl font-bold"
-                              style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                            >
-                              {brandData.name?.[0]?.toUpperCase() || "C"}
                             </div>
-                          )}
-                          <div>
-                            <h4
-                              className="font-bold text-lg"
-                              style={{
-                                color: brandData.textColor || "#1f2937",
-                                fontFamily: brandData.primaryFont || "inherit",
-                              }}
-                            >
-                              {brandData.name || "Your Company"}
-                            </h4>
-                            {brandData.tagline && (
-                              <p
-                                className="text-sm opacity-70"
-                                style={{ color: brandData.textColor || "#1f2937" }}
-                              >
-                                {brandData.tagline}
-                              </p>
-                            )}
                           </div>
-                        </div>
-
-                        <p
-                          className="text-sm mb-4 opacity-80"
-                          style={{
-                            color: brandData.textColor || "#1f2937",
-                            fontFamily: brandData.secondaryFont || "inherit",
-                          }}
-                        >
-                          {brandData.description || "Your company description will appear here."}
-                        </p>
-
-                        <div className="flex gap-2">
-                          <button
-                            className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                            style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                          >
-                            Primary
-                          </button>
-                          <button
-                            className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                            style={{ backgroundColor: brandData.secondaryColor || "#8b5cf6" }}
-                          >
-                            Secondary
-                          </button>
-                          <button
-                            className="px-4 py-2 rounded-lg text-sm font-medium border-2"
-                            style={{
-                              borderColor: brandData.accentColor || "#ec4899",
-                              color: brandData.accentColor || "#ec4899",
-                            }}
-                          >
-                            Accent
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Color Palette */}
-                      <div className="mt-6">
-                        <p className="text-sm text-slate-400 mb-2">Color Palette</p>
-                        <div className="flex gap-2">
-                          {[brandData.primaryColor, brandData.secondaryColor, brandData.accentColor, ...brandData.brandColors]
-                            .filter(Boolean)
-                            .slice(0, 6)
-                            .map((color, i) => (
-                              <div
-                                key={i}
-                                className="w-10 h-10 rounded-lg border border-white/20 shadow-lg"
-                                style={{ backgroundColor: color || "#14b8a6" }}
-                                title={color || ""}
-                              />
-                            ))}
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Footer Actions */}
-              <div className="border-t border-white/10 p-4 flex gap-3 bg-slate-950/50 backdrop-blur-sm">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (hasWebsite && brandData.website) {
-                      setStep("website");
-                    } else {
-                      setStep("website");
-                      setHasWebsite(null);
-                    }
-                  }}
-                  disabled={isLoading}
-                  className="flex-1 h-12 bg-transparent border-white/20 text-white hover:bg-white/10"
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (hasWebsite && brandData.website) {
+                          setStep("website");
+                        } else {
+                          setStep("website");
+                          setHasWebsite(null);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="flex-1 h-12"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={isLoading || !brandData.name.trim()}
+                      className="flex-1 h-12 text-white border-0"
+                      style={gradientButtonStyle}
+                    >
+                      {isLoading ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          Complete Setup
+                          <Check className="h-4 w-4 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Complete Step */}
+              {step === "complete" && (
+                <motion.div
+                  key="complete"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center space-y-6"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isLoading || !brandData.name.trim()}
-                  className="flex-1 h-12 border-0 hover:scale-[1.02] transition-transform"
-                  style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
-                >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      Complete Setup
-                      <Check className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          )}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                    className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center shadow-2xl"
+                  >
+                    <Check className="h-10 w-10 text-white" />
+                  </motion.div>
 
-          {/* Complete Step */}
-          {step === "complete" && (
-            <motion.div
-              key="complete"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="text-center"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="mx-auto w-28 h-28 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/30"
-              >
-                <Check className="h-14 w-14 text-white" />
-              </motion.div>
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">You&apos;re all set!</h2>
+                    <p className="text-muted-foreground">Your brand profile has been saved. Redirecting to dashboard...</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </main>
 
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-3xl font-bold text-white mb-4"
-              >
-                You&apos;re all set!
-              </motion.h2>
+        {/* Footer */}
+        <footer className="p-6 text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
+        </footer>
+      </div>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="text-slate-400 text-lg"
-              >
-                Your brand profile has been saved. Redirecting to dashboard...
-              </motion.p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Right side - Branding panel */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
+        {/* Gradient background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%),
+              radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%),
+              linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%)
+            `,
+          }}
+        />
+
+        <GrainOverlay />
+        <DecorativeLines />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <span className="text-2xl font-bold">C</span>
+            </div>
+            <div>
+              <span className="text-xl font-semibold tracking-tight">Crafted Studio</span>
+              <div className="text-sm text-white/70">Design Platform</div>
+            </div>
+          </div>
+
+          <div className="space-y-6 max-w-md">
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
+              Turn your ideas into stunning designs
+            </h1>
+            <p className="text-lg text-white/70 leading-relaxed">
+              Connect with world-class designers who bring your vision to life. Fast, professional, and tailored to your needs.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-white" />
+              <div className="w-3 h-3 rounded-full bg-white/60" />
+              <div className="w-3 h-3 rounded-full bg-white/40" />
+              <div className="w-3 h-3 rounded-full bg-white/30" />
+            </div>
+            <span className="text-4xl font-light tracking-wide text-white">Crafted</span>
+          </div>
+        </div>
       </div>
     </div>
   );
