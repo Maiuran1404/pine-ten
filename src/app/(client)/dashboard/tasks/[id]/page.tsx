@@ -3,16 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -32,6 +23,7 @@ import {
   Download,
 } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -80,46 +72,27 @@ interface Task {
   }[];
 }
 
-const statusConfig: Record<
-  string,
-  { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: React.ReactNode }
-> = {
-  PENDING: {
-    variant: "secondary",
-    label: "Pending",
-    icon: <Clock className="h-4 w-4" />,
-  },
-  ASSIGNED: {
-    variant: "outline",
-    label: "Assigned",
-    icon: <User className="h-4 w-4" />,
-  },
-  IN_PROGRESS: {
-    variant: "default",
-    label: "In Progress",
-    icon: <RefreshCw className="h-4 w-4" />,
-  },
-  IN_REVIEW: {
-    variant: "outline",
-    label: "In Review",
-    icon: <FileText className="h-4 w-4" />,
-  },
-  REVISION_REQUESTED: {
-    variant: "destructive",
-    label: "Revision Requested",
-    icon: <AlertCircle className="h-4 w-4" />,
-  },
-  COMPLETED: {
-    variant: "secondary",
-    label: "Completed",
-    icon: <CheckCircle2 className="h-4 w-4" />,
-  },
-  CANCELLED: {
-    variant: "destructive",
-    label: "Cancelled",
-    icon: <AlertCircle className="h-4 w-4" />,
-  },
+const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
+  PENDING: { color: "text-yellow-400", bgColor: "bg-yellow-500/10 border-yellow-500/20", label: "Pending", icon: <Clock className="h-3.5 w-3.5" /> },
+  ASSIGNED: { color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20", label: "Assigned", icon: <User className="h-3.5 w-3.5" /> },
+  IN_PROGRESS: { color: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20", label: "In Progress", icon: <RefreshCw className="h-3.5 w-3.5" /> },
+  IN_REVIEW: { color: "text-orange-400", bgColor: "bg-orange-500/10 border-orange-500/20", label: "In Review", icon: <FileText className="h-3.5 w-3.5" /> },
+  REVISION_REQUESTED: { color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20", label: "Revision Requested", icon: <AlertCircle className="h-3.5 w-3.5" /> },
+  COMPLETED: { color: "text-green-400", bgColor: "bg-green-500/10 border-green-500/20", label: "Completed", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+  CANCELLED: { color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20", label: "Cancelled", icon: <AlertCircle className="h-3.5 w-3.5" /> },
 };
+
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div
+    className={cn("rounded-xl overflow-hidden border border-[#2a2a30]/50", className)}
+    style={{
+      background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
+      backdropFilter: 'blur(12px)',
+    }}
+  >
+    {children}
+  </div>
+);
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -154,34 +127,26 @@ export default function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
         <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10 rounded-lg bg-[#2a2a30]" />
           <div className="space-y-2">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-7 w-64 bg-[#2a2a30]" />
+            <Skeleton className="h-4 w-32 bg-[#2a2a30]" />
           </div>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-32 w-full" />
-              </CardContent>
-            </Card>
+            <GlassCard className="p-6">
+              <Skeleton className="h-6 w-32 bg-[#2a2a30]" />
+              <Skeleton className="h-32 w-full mt-4 bg-[#2a2a30]" />
+            </GlassCard>
           </div>
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
+          <div>
+            <GlassCard className="p-6">
+              <Skeleton className="h-6 w-24 bg-[#2a2a30]" />
+              <Skeleton className="h-24 w-full mt-4 bg-[#2a2a30]" />
+            </GlassCard>
           </div>
         </div>
       </div>
@@ -190,28 +155,30 @@ export default function TaskDetailPage() {
 
   if (error || !task) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" asChild>
+      <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+        <Button
+          variant="ghost"
+          asChild
+          className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+        >
           <Link href="/dashboard/tasks">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tasks
           </Link>
         </Button>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {error || "Task not found"}
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              The task you&apos;re looking for doesn&apos;t exist or you
-              don&apos;t have permission to view it.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard/tasks">View All Tasks</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <GlassCard className="p-12 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-[#6b6b6b] mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">
+            {error || "Task not found"}
+          </h2>
+          <p className="text-[#6b6b6b] mb-4">
+            The task you&apos;re looking for doesn&apos;t exist or you
+            don&apos;t have permission to view it.
+          </p>
+          <Button asChild className="bg-white text-black hover:bg-white/90">
+            <Link href="/dashboard/tasks">View All Tasks</Link>
+          </Button>
+        </GlassCard>
       </div>
     );
   }
@@ -219,24 +186,35 @@ export default function TaskDetailPage() {
   const status = statusConfig[task.status] || statusConfig.PENDING;
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <Button variant="ghost" size="icon" asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 rounded-lg"
+          >
             <Link href="/dashboard/tasks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{task.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={status.variant} className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold text-white">{task.title}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border",
+                status.bgColor,
+                status.color
+              )}>
                 {status.icon}
                 {status.label}
-              </Badge>
+              </span>
               {task.category && (
-                <Badge variant="outline">{task.category.name}</Badge>
+                <span className="inline-flex px-2.5 py-1 rounded-full text-xs border border-[#2a2a30] text-[#6b6b6b]">
+                  {task.category.name}
+                </span>
               )}
             </div>
           </div>
@@ -247,54 +225,52 @@ export default function TaskDetailPage() {
         {/* Main Content */}
         <div className="md:col-span-2 space-y-6">
           {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{task.description}</p>
-            </CardContent>
-          </Card>
+          <GlassCard>
+            <div className="p-5 border-b border-[#2a2a30]/40">
+              <h2 className="text-sm font-medium text-white">Description</h2>
+            </div>
+            <div className="p-5">
+              <p className="text-[#9a9a9a] whitespace-pre-wrap">{task.description}</p>
+            </div>
+          </GlassCard>
 
           {/* Requirements */}
           {task.requirements && Object.keys(task.requirements).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto">
+            <GlassCard>
+              <div className="p-5 border-b border-[#2a2a30]/40">
+                <h2 className="text-sm font-medium text-white">Requirements</h2>
+              </div>
+              <div className="p-5">
+                <pre className="text-sm text-[#9a9a9a] bg-[#0a0a0a] p-4 rounded-lg overflow-auto border border-[#2a2a30]/40">
                   {JSON.stringify(task.requirements, null, 2)}
                 </pre>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           )}
 
-          {/* Reference Files (Client Attachments) */}
+          {/* Reference Files */}
           {task.files.filter(f => !f.isDeliverable).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Your Attachments
-                </CardTitle>
-                <CardDescription>
-                  Reference files you provided
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <GlassCard>
+              <div className="p-5 border-b border-[#2a2a30]/40">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-[#6b6b6b]" />
+                  <h2 className="text-sm font-medium text-white">Your Attachments</h2>
+                </div>
+                <p className="text-xs text-[#4a4a4a] mt-1">Reference files you provided</p>
+              </div>
+              <div className="p-5">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {task.files.filter(f => !f.isDeliverable).map((file) => (
                     <div
                       key={file.id}
-                      className="group relative border rounded-lg overflow-hidden"
+                      className="group relative rounded-lg overflow-hidden border border-[#2a2a30]/40"
                     >
                       {file.fileType.startsWith("image/") ? (
                         <a
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block aspect-video relative bg-muted"
+                          className="block aspect-video relative bg-[#1a1a1f]"
                         >
                           <Image
                             src={file.fileUrl}
@@ -311,52 +287,50 @@ export default function TaskDetailPage() {
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
+                          className="flex flex-col items-center justify-center p-4 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
                         >
-                          <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-xs text-center truncate w-full">
+                          <FileIcon className="h-10 w-10 text-[#4a4a4a] mb-2" />
+                          <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
                             {file.fileName}
                           </p>
                         </a>
                       )}
-                      <div className="p-2 bg-background">
-                        <p className="text-xs truncate">{file.fileName}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="p-2 bg-[#0a0a0a]">
+                        <p className="text-xs text-[#9a9a9a] truncate">{file.fileName}</p>
+                        <p className="text-xs text-[#4a4a4a]">
                           {(file.fileSize / 1024).toFixed(1)} KB
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           )}
 
           {/* Deliverables */}
           {task.files.filter(f => f.isDeliverable).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Deliverables
-                </CardTitle>
-                <CardDescription>
-                  Files delivered by the designer
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <GlassCard>
+              <div className="p-5 border-b border-[#2a2a30]/40">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-green-400" />
+                  <h2 className="text-sm font-medium text-white">Deliverables</h2>
+                </div>
+                <p className="text-xs text-[#4a4a4a] mt-1">Files delivered by the designer</p>
+              </div>
+              <div className="p-5">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {task.files.filter(f => f.isDeliverable).map((file) => (
                     <div
                       key={file.id}
-                      className="group relative border rounded-lg overflow-hidden"
+                      className="group relative rounded-lg overflow-hidden border border-green-500/20"
                     >
                       {file.fileType.startsWith("image/") ? (
                         <a
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block aspect-video relative bg-muted"
+                          className="block aspect-video relative bg-[#1a1a1f]"
                         >
                           <Image
                             src={file.fileUrl}
@@ -373,22 +347,27 @@ export default function TaskDetailPage() {
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
+                          className="flex flex-col items-center justify-center p-4 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
                         >
-                          <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-xs text-center truncate w-full">
+                          <FileIcon className="h-10 w-10 text-green-400/50 mb-2" />
+                          <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
                             {file.fileName}
                           </p>
                         </a>
                       )}
-                      <div className="p-2 bg-background flex items-center justify-between">
+                      <div className="p-2 bg-[#0a0a0a] flex items-center justify-between">
                         <div>
-                          <p className="text-xs truncate">{file.fileName}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-[#9a9a9a] truncate">{file.fileName}</p>
+                          <p className="text-xs text-[#4a4a4a]">
                             {(file.fileSize / 1024).toFixed(1)} KB
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="h-8 w-8 p-0 text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]"
+                        >
                           <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4" />
                           </a>
@@ -397,71 +376,73 @@ export default function TaskDetailPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           )}
 
           {/* Messages */}
           {task.messages.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Messages
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {task.messages.map((message) => (
-                    <div key={message.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={message.senderImage || undefined} />
-                        <AvatarFallback>
-                          {message.senderName?.[0]?.toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            {message.senderName}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(message.createdAt).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1">{message.content}</p>
-                      </div>
-                    </div>
-                  ))}
+            <GlassCard>
+              <div className="p-5 border-b border-[#2a2a30]/40">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-[#6b6b6b]" />
+                  <h2 className="text-sm font-medium text-white">Messages</h2>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="p-5 space-y-4">
+                {task.messages.map((message) => (
+                  <div key={message.id} className="flex gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={message.senderImage || undefined} />
+                      <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b] text-xs">
+                        {message.senderName?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-white">
+                          {message.senderName}
+                        </span>
+                        <span className="text-xs text-[#4a4a4a]">
+                          {new Date(message.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#9a9a9a] mt-1">{message.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Task Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <GlassCard>
+            <div className="p-5 border-b border-[#2a2a30]/40">
+              <h2 className="text-sm font-medium text-white">Details</h2>
+            </div>
+            <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
-                <Coins className="h-5 w-5 text-muted-foreground" />
+                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+                  <Coins className="h-4 w-4 text-[#6b6b6b]" />
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Credits Used</p>
-                  <p className="font-medium">{task.creditsUsed} credits</p>
+                  <p className="text-xs text-[#4a4a4a]">Credits Used</p>
+                  <p className="text-sm font-medium text-white">{task.creditsUsed} credits</p>
                 </div>
               </div>
 
-              <Separator />
+              <div className="h-px bg-[#2a2a30]/40" />
 
               <div className="flex items-center gap-3">
-                <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+                  <RefreshCw className="h-4 w-4 text-[#6b6b6b]" />
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Revisions</p>
-                  <p className="font-medium">
+                  <p className="text-xs text-[#4a4a4a]">Revisions</p>
+                  <p className="text-sm font-medium text-white">
                     {task.revisionsUsed} / {task.maxRevisions} used
                   </p>
                 </div>
@@ -469,26 +450,28 @@ export default function TaskDetailPage() {
 
               {task.estimatedHours && (
                 <>
-                  <Separator />
+                  <div className="h-px bg-[#2a2a30]/40" />
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-[#6b6b6b]" />
+                    </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">
-                        Estimated Time
-                      </p>
-                      <p className="font-medium">{task.estimatedHours} hours</p>
+                      <p className="text-xs text-[#4a4a4a]">Estimated Time</p>
+                      <p className="text-sm font-medium text-white">{task.estimatedHours} hours</p>
                     </div>
                   </div>
                 </>
               )}
 
-              <Separator />
+              <div className="h-px bg-[#2a2a30]/40" />
 
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-[#6b6b6b]" />
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <p className="font-medium">
+                  <p className="text-xs text-[#4a4a4a]">Created</p>
+                  <p className="text-sm font-medium text-white">
                     {new Date(task.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -496,12 +479,14 @@ export default function TaskDetailPage() {
 
               {task.deadline && (
                 <>
-                  <Separator />
+                  <div className="h-px bg-[#2a2a30]/40" />
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+                      <Calendar className="h-4 w-4 text-[#6b6b6b]" />
+                    </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Deadline</p>
-                      <p className="font-medium">
+                      <p className="text-xs text-[#4a4a4a]">Deadline</p>
+                      <p className="text-sm font-medium text-white">
                         {new Date(task.deadline).toLocaleDateString()}
                       </p>
                     </div>
@@ -511,63 +496,64 @@ export default function TaskDetailPage() {
 
               {task.completedAt && (
                 <>
-                  <Separator />
+                  <div className="h-px bg-[#2a2a30]/40" />
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Completed</p>
-                      <p className="font-medium">
+                      <p className="text-xs text-[#4a4a4a]">Completed</p>
+                      <p className="text-sm font-medium text-green-400">
                         {new Date(task.completedAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </GlassCard>
 
           {/* Assigned Freelancer */}
           {task.freelancer && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Designer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <GlassCard>
+              <div className="p-5 border-b border-[#2a2a30]/40">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-[#6b6b6b]" />
+                  <h2 className="text-sm font-medium text-white">Designer</h2>
+                </div>
+              </div>
+              <div className="p-5">
                 <div className="flex items-center gap-3">
-                  <Avatar>
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={task.freelancer.image || undefined} />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b]">
                       {task.freelancer.name?.[0]?.toUpperCase() || "F"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{task.freelancer.name}</p>
+                    <p className="font-medium text-white">{task.freelancer.name}</p>
                     {task.assignedAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Assigned{" "}
-                        {new Date(task.assignedAt).toLocaleDateString()}
+                      <p className="text-xs text-[#4a4a4a]">
+                        Assigned {new Date(task.assignedAt).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           )}
 
-          {/* Waiting for Assignment - only shown if auto-assignment couldn't find available freelancers */}
+          {/* Waiting for Assignment */}
           {!task.freelancer && (task.status === "PENDING" || task.status === "ASSIGNED") && (
-            <Card>
-              <CardContent className="py-6 text-center">
-                <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="font-medium">Finding Designer</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  We&apos;re matching you with the best designer for this task
-                </p>
-              </CardContent>
-            </Card>
+            <GlassCard className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#2a2a30]/50 flex items-center justify-center mx-auto mb-3">
+                <Clock className="h-6 w-6 text-[#6b6b6b]" />
+              </div>
+              <p className="font-medium text-white">Finding Designer</p>
+              <p className="text-sm text-[#4a4a4a] mt-1">
+                We&apos;re matching you with the best designer for this task
+              </p>
+            </GlassCard>
           )}
         </div>
       </div>

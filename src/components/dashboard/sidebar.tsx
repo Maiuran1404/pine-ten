@@ -30,7 +30,6 @@ const navigation = [
     name: "Home",
     href: "/dashboard",
     icon: Home,
-    highlight: true,
   },
   {
     name: "My Tasks",
@@ -81,8 +80,11 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.map((item) => {
-                const isActive = pathname === item.href;
-                const isHighlight = 'highlight' in item && item.highlight;
+                // For home (/dashboard), only match exact path
+                // For other routes, match if pathname starts with the href
+                const isActive = item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname.startsWith(item.href);
 
                 return (
                   <SidebarMenuItem key={item.name}>
@@ -90,10 +92,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
                       asChild
                       isActive={isActive}
                       tooltip={item.name}
-                      className="rounded-xl"
+                      className={`rounded-xl ${
+                        isActive
+                          ? "bg-emerald-950/80 text-emerald-400 hover:bg-emerald-950 hover:text-emerald-400"
+                          : ""
+                      }`}
                     >
                       <Link href={item.href} onClick={handleLinkClick}>
-                        <item.icon className={isHighlight && !isActive ? "text-emerald-500" : ""} />
+                        <item.icon className={isActive ? "text-emerald-400" : ""} />
                         <span>{item.name}</span>
                       </Link>
                     </SidebarMenuButton>

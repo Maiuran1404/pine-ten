@@ -1,24 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Trash2, Clock } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ChatPage() {
+  const searchParams = useSearchParams();
   const [drafts, setDrafts] = useState<ChatDraft[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [showDrafts, setShowDrafts] = useState(true);
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load drafts on mount
     setDrafts(getDrafts());
-  }, []);
+
+    // Check for initial message from URL
+    const messageParam = searchParams.get("message");
+    if (messageParam) {
+      setInitialMessage(messageParam);
+      // Start a new chat immediately if there's a message
+      const newId = generateDraftId();
+      setCurrentDraftId(newId);
+      setShowDrafts(false);
+    }
+  }, [searchParams]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();
@@ -38,7 +48,6 @@ export default function ChatPage() {
   };
 
   const handleDraftUpdate = () => {
-    // Refresh drafts list when a draft is updated
     setDrafts(getDrafts());
   };
 
@@ -60,15 +69,19 @@ export default function ChatPage() {
   // If no draft is selected and there are drafts, show selection UI
   if (showDrafts && drafts.length > 0 && !currentDraftId) {
     return (
-      <div className="space-y-6">
+      <div className="min-h-full bg-[#0a0a0a] p-6 space-y-8">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">New Design Request</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-semibold text-white">New Design Request</h1>
+            <p className="text-[#6b6b6b] mt-1">
               Continue a previous request or start fresh
             </p>
           </div>
-          <Button onClick={handleStartNew} className="cursor-pointer">
+          <Button
+            onClick={handleStartNew}
+            className="bg-white text-black hover:bg-white/90 cursor-pointer"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Start New Request
           </Button>
@@ -76,49 +89,52 @@ export default function ChatPage() {
 
         {/* Recent Drafts */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+          <h2 className="text-sm font-medium text-[#6b6b6b] mb-4 flex items-center gap-2">
+            <Clock className="h-4 w-4" />
             Continue where you left off
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {drafts.map((draft) => (
-              <Card
+              <div
                 key={draft.id}
-                className={cn(
-                  "cursor-pointer transition-all hover:border-primary hover:shadow-md group"
-                )}
                 onClick={() => handleContinueDraft(draft.id)}
+                className={cn(
+                  "group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer p-4",
+                )}
+                style={{
+                  background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
+                  backdropFilter: 'blur(12px)',
+                }}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="font-medium truncate">{draft.title}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {formatTimeAgo(draft.updatedAt)}
-                      </p>
-                      {draft.pendingTask && (
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          Ready to submit
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <MessageSquare className="h-4 w-4 text-[#6b6b6b] shrink-0" />
+                      <span className="font-medium text-white truncate">{draft.title}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                      onClick={(e) => handleDeleteDraft(e, draft.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </Button>
+                    <p className="text-xs text-[#4a4a4a]">
+                      {formatTimeAgo(draft.updatedAt)}
+                    </p>
+                    {draft.pendingTask && (
+                      <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs bg-green-500/10 text-green-400 border border-green-500/20">
+                        <Sparkles className="h-3 w-3" />
+                        Ready to submit
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-3 text-sm text-muted-foreground line-clamp-2">
-                    {draft.messages.filter(m => m.role === "user").slice(-1)[0]?.content || "No messages yet"}
-                  </div>
-                </CardContent>
-              </Card>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10"
+                    onClick={(e) => handleDeleteDraft(e, draft.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-3 text-sm text-[#4a4a4a] line-clamp-2">
+                  {draft.messages.filter(m => m.role === "user").slice(-1)[0]?.content || "No messages yet"}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -128,11 +144,11 @@ export default function ChatPage() {
 
   // Show chat interface
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">New Design Request</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold text-white">New Design Request</h1>
+          <p className="text-[#6b6b6b] mt-1">
             Tell us what you need and we&apos;ll help create the perfect brief.
           </p>
         </div>
@@ -143,7 +159,7 @@ export default function ChatPage() {
               setCurrentDraftId(null);
               setShowDrafts(true);
             }}
-            className="cursor-pointer"
+            className="cursor-pointer border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
           >
             <Clock className="h-4 w-4 mr-2" />
             View Drafts ({drafts.length})
@@ -159,7 +175,7 @@ export default function ChatPage() {
               variant="outline"
               size="sm"
               onClick={handleStartNew}
-              className="shrink-0 cursor-pointer"
+              className="shrink-0 cursor-pointer border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
             >
               <Plus className="h-4 w-4 mr-1" />
               New
@@ -170,7 +186,12 @@ export default function ChatPage() {
                 variant={draft.id === currentDraftId ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleContinueDraft(draft.id)}
-                className="shrink-0 max-w-[200px] cursor-pointer"
+                className={cn(
+                  "shrink-0 max-w-[200px] cursor-pointer",
+                  draft.id === currentDraftId
+                    ? "bg-white text-black hover:bg-white/90"
+                    : "border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+                )}
               >
                 <MessageSquare className="h-4 w-4 mr-1 shrink-0" />
                 <span className="truncate">{draft.title}</span>
@@ -184,6 +205,7 @@ export default function ChatPage() {
       <ChatInterface
         draftId={currentDraftId || generateDraftId()}
         onDraftUpdate={handleDraftUpdate}
+        initialMessage={initialMessage}
       />
     </div>
   );

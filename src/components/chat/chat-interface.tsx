@@ -19,6 +19,7 @@ import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } 
 interface ChatInterfaceProps {
   draftId: string;
   onDraftUpdate?: () => void;
+  initialMessage?: string | null;
 }
 
 interface UploadedFile {
@@ -88,7 +89,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
-export function ChatInterface({ draftId, onDraftUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ draftId, onDraftUpdate, initialMessage }: ChatInterfaceProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
@@ -105,6 +106,7 @@ export function ChatInterface({ draftId, onDraftUpdate }: ChatInterfaceProps) {
 
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
+  const [initialMessageProcessed, setInitialMessageProcessed] = useState(false);
 
   // Load draft when draftId changes
   useEffect(() => {
@@ -132,6 +134,24 @@ export function ChatInterface({ draftId, onDraftUpdate }: ChatInterfaceProps) {
     }
     setIsInitialized(true);
   }, [draftId]);
+
+  // Handle initial message from URL param
+  useEffect(() => {
+    if (!initialMessage || initialMessageProcessed || !isInitialized) return;
+
+    setInitialMessageProcessed(true);
+
+    // Create user message with the initial content
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: initialMessage,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setNeedsAutoContinue(true);
+  }, [initialMessage, initialMessageProcessed, isInitialized]);
 
   // Auto-continue conversation if last message was from user
   useEffect(() => {

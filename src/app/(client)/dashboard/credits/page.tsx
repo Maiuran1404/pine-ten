@@ -2,18 +2,9 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
-import { Check, Coins, Sparkles } from "lucide-react";
+import { Check, Coins, Sparkles, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const creditPackages = [
@@ -54,12 +45,30 @@ const creditPackages = [
   },
 ];
 
+const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div
+    className={cn("rounded-xl overflow-hidden border border-[#2a2a30]/50", className)}
+    style={{
+      background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
+      backdropFilter: 'blur(12px)',
+    }}
+  >
+    {children}
+  </div>
+);
+
 export default function CreditsPage() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const user = session?.user as { credits?: number } | undefined;
   const currentCredits = user?.credits || 0;
+
+  const getCreditColor = () => {
+    if (currentCredits === 0) return "text-red-400";
+    if (currentCredits <= 2) return "text-yellow-400";
+    return "text-green-400";
+  };
 
   const handlePurchase = async (packageId: string) => {
     setIsLoading(packageId);
@@ -87,103 +96,107 @@ export default function CreditsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Credits</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-semibold text-white">Credits</h1>
+        <p className="text-[#6b6b6b] mt-1">
           Purchase credits to create design tasks
         </p>
       </div>
 
       {/* Current Balance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Current Balance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <GlassCard>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
+              <Coins className="h-5 w-5 text-[#6b6b6b]" />
+            </div>
+            <h2 className="text-sm font-medium text-white">Current Balance</h2>
+          </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold">{currentCredits}</span>
-            <span className="text-muted-foreground">credits</span>
+            <span className={cn("text-5xl font-bold", getCreditColor())}>{currentCredits}</span>
+            <span className="text-[#6b6b6b]">credits</span>
           </div>
           {currentCredits <= 2 && (
-            <p className="text-sm text-destructive mt-2">
+            <p className="text-sm text-red-400 mt-3">
               Your balance is low. Purchase more credits to continue creating tasks.
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
 
       {/* Credit Packages */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Purchase Credits</h2>
+        <h2 className="text-sm font-medium text-[#6b6b6b] mb-4">Purchase Credits</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {creditPackages.map((pkg) => (
-            <Card
+            <GlassCard
               key={pkg.id}
               className={cn(
                 "relative",
-                pkg.popular && "border-primary shadow-md"
+                pkg.popular && "border-[#6366f1]/50"
               )}
             >
               {pkg.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-[#6366f1] text-white">
                     <Sparkles className="h-3 w-3" />
                     Popular
-                  </Badge>
+                  </span>
                 </div>
               )}
-              <CardHeader>
-                <CardTitle>{pkg.name}</CardTitle>
-                <CardDescription>{pkg.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+              <div className="p-5 pt-6">
+                <h3 className="text-white font-medium">{pkg.name}</h3>
+                <p className="text-xs text-[#4a4a4a] mt-1">{pkg.description}</p>
+
+                <div className="mt-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">{pkg.credits}</span>
-                    <span className="text-muted-foreground">credits</span>
+                    <span className="text-3xl font-bold text-white">{pkg.credits}</span>
+                    <span className="text-[#6b6b6b]">credits</span>
                   </div>
                   <div className="mt-1">
                     {pkg.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through mr-2">
+                      <span className="text-sm text-[#4a4a4a] line-through mr-2">
                         ${pkg.originalPrice}
                       </span>
                     )}
-                    <span className="text-lg font-semibold">${pkg.price}</span>
+                    <span className="text-lg font-semibold text-white">${pkg.price}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[#4a4a4a] mt-1">
                     ${pkg.pricePerCredit.toFixed(2)} per credit
                   </p>
                 </div>
 
                 <Button
-                  className="w-full"
-                  variant={pkg.popular ? "default" : "outline"}
+                  className={cn(
+                    "w-full mt-4",
+                    pkg.popular
+                      ? "bg-white text-black hover:bg-white/90"
+                      : "bg-[#2a2a30] text-white hover:bg-[#3a3a40] border border-[#2a2a30]"
+                  )}
                   onClick={() => handlePurchase(pkg.id)}
                   disabled={isLoading !== null}
                 >
                   {isLoading === pkg.id ? (
-                    <LoadingSpinner size="sm" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
                     "Purchase"
                   )}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           ))}
         </div>
       </div>
 
       {/* What You Get */}
-      <Card>
-        <CardHeader>
-          <CardTitle>What&apos;s Included</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
+      <GlassCard>
+        <div className="p-5 border-b border-[#2a2a30]/40">
+          <h2 className="text-sm font-medium text-white">What&apos;s Included</h2>
+        </div>
+        <div className="p-5">
+          <ul className="space-y-3">
             {[
               "Professional design by vetted freelancers",
               "Up to 2 revisions per task",
@@ -192,14 +205,16 @@ export default function CreditsPage() {
               "Fast turnaround times",
               "Direct communication with designers",
             ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
+              <li key={item} className="flex items-center gap-3 text-[#9a9a9a]">
+                <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                  <Check className="h-3 w-3 text-green-400" />
+                </div>
                 <span>{item}</span>
               </li>
             ))}
           </ul>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
     </div>
   );
 }
