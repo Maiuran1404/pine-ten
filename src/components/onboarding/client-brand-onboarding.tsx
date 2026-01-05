@@ -15,20 +15,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
-  Globe,
-  Palette,
-  Building2,
-  Search,
   AlertCircle,
-  Wand2,
   CheckCircle2,
-  Upload,
-  FileText,
-  Image as ImageIcon,
-  Sparkles,
-  Zap,
-  Link2,
-  X,
 } from "lucide-react";
 
 interface ClientBrandOnboardingProps {
@@ -64,7 +52,14 @@ interface BrandData {
   screenshotUrl?: string;
 }
 
-type OnboardingStep = "welcome" | "website" | "scanning" | "brand-form" | "complete";
+type OnboardingStep = "brand-input" | "scanning" | "company-info" | "brand-colors" | "complete";
+
+const STEP_CONFIG = [
+  { id: "brand-input", label: "Brand" },
+  { id: "company-info", label: "Company" },
+  { id: "brand-colors", label: "Colors" },
+  { id: "complete", label: "Done" },
+] as const;
 
 const defaultBrandData: BrandData = {
   name: "",
@@ -157,31 +152,42 @@ function GrainOverlay() {
   );
 }
 
-interface UploadedFile {
-  name: string;
-  size: number;
-  type: string;
-  file: File;
+// Segmented Progress Bar Component
+function SegmentedProgress({
+  currentStep,
+  steps
+}: {
+  currentStep: OnboardingStep;
+  steps: typeof STEP_CONFIG;
+}) {
+  const currentIndex = steps.findIndex(s => s.id === currentStep);
+
+  return (
+    <div className="flex gap-2">
+      {steps.map((step, index) => (
+        <div
+          key={step.id}
+          className={cn(
+            "h-1 flex-1 rounded-full transition-all duration-300",
+            index <= currentIndex
+              ? "bg-foreground"
+              : "bg-muted-foreground/20"
+          )}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps) {
   const { refetch: refetchSession } = useSession();
-  const [step, setStep] = useState<OnboardingStep>("welcome");
-  const [hasWebsite, setHasWebsite] = useState<boolean | null>(null);
+  const [step, setStep] = useState<OnboardingStep>("brand-input");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [brandData, setBrandData] = useState<BrandData>(defaultBrandData);
   const [isLoading, setIsLoading] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const steps: OnboardingStep[] = uploadedFiles.length > 0 && !websiteUrl.trim()
-    ? ["welcome", "brand-form", "complete"]
-    : ["welcome", "scanning", "brand-form", "complete"];
-
-  const currentStepIndex = steps.indexOf(step);
-  const progress = ((currentStepIndex) / (steps.length - 1)) * 100;
+  const [hasScannedWebsite, setHasScannedWebsite] = useState(false);
 
   // Animate scanning progress
   useEffect(() => {
@@ -229,7 +235,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         website: websiteUrl,
       });
 
-      setStep("brand-form");
+      setHasScannedWebsite(true);
+      setStep("company-info");
       toast.success("Brand information extracted!");
     } catch (error) {
       console.error("Scan error:", error);
@@ -240,54 +247,9 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     }
   };
 
-  const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
-
-    const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file,
-    }));
-
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileSelect(e.dataTransfer.files);
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
-
-  const handleContinue = () => {
+  const handleContinueFromBrandInput = () => {
     if (websiteUrl.trim()) {
       handleWebsiteScan();
-    } else if (uploadedFiles.length > 0) {
-      // Skip scanning, go directly to brand form
-      setHasWebsite(false);
-      setStep("brand-form");
-    } else {
-      toast.error("Please enter a website URL or upload brand assets");
     }
   };
 
@@ -307,7 +269,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
           type: "client",
           data: {
             brand: brandData,
-            hasWebsite,
+            hasWebsite: !!websiteUrl.trim(),
           },
         }),
       });
@@ -335,171 +297,99 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     setBrandData((prev) => ({ ...prev, [colorKey]: value }));
   };
 
-  const addBrandColor = (color: string) => {
-    if (color && !brandData.brandColors.includes(color)) {
-      setBrandData((prev) => ({
-        ...prev,
-        brandColors: [...prev.brandColors, color],
-      }));
-    }
-  };
-
-  const removeBrandColor = (index: number) => {
-    setBrandData((prev) => ({
-      ...prev,
-      brandColors: prev.brandColors.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Gradient button style
-  const gradientButtonStyle = {
-    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
       {/* Left side - Form content */}
       <div className="flex-1 flex flex-col bg-background overflow-y-auto">
-        {/* Progress bar */}
-        <div className="sticky top-0 z-10 bg-background">
-          <Progress value={progress} className="h-1 rounded-none" />
+        {/* Header with progress */}
+        <header className="sticky top-0 z-10 bg-background border-b">
+          <div className="px-6 sm:px-10 lg:px-16 py-4">
+            {/* Segmented Progress Bar */}
+            <SegmentedProgress currentStep={step} steps={STEP_CONFIG} />
+          </div>
+        </header>
+
+        {/* Logo */}
+        <div className="px-6 sm:px-10 lg:px-16 pt-8">
+          <div className="flex items-center gap-2">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold"
+              style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
+            >
+              C
+            </div>
+            <span className="font-semibold text-lg tracking-tight">Crafted</span>
+          </div>
         </div>
 
         {/* Main content */}
-        <main className="flex-1 flex items-center justify-center p-6 sm:p-8">
-          <div className="w-full max-w-lg">
+        <main className="flex-1 px-6 sm:px-10 lg:px-16 py-10">
+          <div className="max-w-md">
             <AnimatePresence mode="wait">
-              {/* Welcome Step */}
-              {step === "welcome" && (
+              {/* Brand Input Step */}
+              {step === "brand-input" && (
                 <motion.div
-                  key="welcome"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  key="brand-input"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                   className="space-y-8"
                 >
+                  {/* Header */}
                   <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-medium mb-4">
-                      <Sparkles className="w-4 h-4" />
-                      <span>Brand Setup</span>
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Welcome to Crafted Studio</h1>
-                    <p className="text-muted-foreground text-lg">
-                      Let&apos;s set up your brand so our designers can create stunning on-brand content for you.
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      Show us your brand
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Give us one thing — we&apos;ll take care of the rest.
                     </p>
                   </div>
 
-                  <div className="grid gap-4">
-                    {[
-                      { icon: Globe, title: "Import from Website", desc: "We'll scan your site" },
-                      { icon: Wand2, title: "AI-Powered Analysis", desc: "Extract colors & fonts" },
-                      { icon: Zap, title: "Instant Setup", desc: "Ready in seconds" },
-                    ].map((item) => (
-                      <div key={item.title} className="flex items-center gap-4 p-4 rounded-xl border bg-muted/30">
-                        <div className="p-2 rounded-lg bg-teal-500/10">
-                          <item.icon className="h-5 w-5 text-teal-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-sm text-muted-foreground">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
+                  {/* Website URL Input */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">
+                      Paste your website URL
+                    </Label>
+                    <Input
+                      placeholder="yourcompany.com"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleContinueFromBrandInput()}
+                      className="h-12 text-base"
+                    />
                   </div>
 
+                  {/* CTA Button */}
                   <Button
                     size="lg"
-                    onClick={() => setStep("website")}
-                    className="w-full h-12 text-white border-0 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
-                    style={gradientButtonStyle}
+                    onClick={handleContinueFromBrandInput}
+                    disabled={!websiteUrl.trim()}
+                    className="w-full h-12 font-semibold"
                   >
-                    Get Started
-                    <ArrowRight className="h-5 w-5 ml-2" />
+                    Continue
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                </motion.div>
-              )}
 
-              {/* Website Step */}
-              {step === "website" && (
-                <motion.div
-                  key="website"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-8"
-                >
-                  {hasWebsite === null ? (
-                    <>
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-bold">Do you have a website?</h2>
-                        <p className="text-muted-foreground">We can automatically extract your brand identity</p>
-                      </div>
+                  {/* Divider */}
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-muted-foreground/20" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="bg-background px-4 text-muted-foreground">
+                        or
+                      </span>
+                    </div>
+                  </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <button
-                          onClick={() => setHasWebsite(true)}
-                          className="group p-6 rounded-xl border-2 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-all text-left"
-                        >
-                          <Globe className="h-10 w-10 text-teal-600 mb-3" />
-                          <p className="font-semibold mb-1">Yes, I have a website</p>
-                          <p className="text-sm text-muted-foreground">We&apos;ll scan and extract your brand</p>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setHasWebsite(false);
-                            setStep("brand-form");
-                          }}
-                          className="group p-6 rounded-xl border-2 hover:border-muted-foreground hover:bg-muted/50 transition-all text-left"
-                        >
-                          <Building2 className="h-10 w-10 text-muted-foreground mb-3" />
-                          <p className="font-semibold mb-1">Not yet</p>
-                          <p className="text-sm text-muted-foreground">I&apos;ll set up my brand manually</p>
-                        </button>
-                      </div>
-
-                      <Button variant="ghost" onClick={() => setStep("welcome")} className="w-full">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-bold">Enter your website URL</h2>
-                        <p className="text-muted-foreground">We&apos;ll scan it and extract your brand colors, fonts, and more</p>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                          <Input
-                            placeholder="example.com"
-                            value={websiteUrl}
-                            onChange={(e) => setWebsiteUrl(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleWebsiteScan()}
-                            className="h-12 pl-12 text-lg"
-                          />
-                        </div>
-
-                        <div className="flex gap-3">
-                          <Button variant="outline" onClick={() => setHasWebsite(null)} className="flex-1 h-12">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back
-                          </Button>
-                          <Button
-                            onClick={handleWebsiteScan}
-                            disabled={!websiteUrl.trim()}
-                            className="flex-1 h-12 text-white border-0"
-                            style={gradientButtonStyle}
-                          >
-                            Scan Website
-                            <Search className="h-4 w-4 ml-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  {/* No website button */}
+                  <button
+                    onClick={() => setStep("company-info")}
+                    className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    I don&apos;t have a website — <span className="underline underline-offset-4">Create my brand</span>
+                  </button>
                 </motion.div>
               )}
 
@@ -507,56 +397,73 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               {step === "scanning" && (
                 <motion.div
                   key="scanning"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-8 text-center"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
                 >
                   {scanError ? (
                     <>
-                      <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                        <AlertCircle className="h-8 w-8 text-red-600" />
+                      <div className="space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                          Scan failed
+                        </h1>
+                        <p className="text-muted-foreground">
+                          {scanError}
+                        </p>
                       </div>
-                      <div>
-                        <h2 className="text-2xl font-bold mb-2">Scan Failed</h2>
-                        <p className="text-muted-foreground">{scanError}</p>
+
+                      <div className="p-6 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
+                        <AlertCircle className="h-8 w-8 text-red-600 mb-4" />
+                        <p className="text-sm text-muted-foreground">
+                          We couldn&apos;t scan your website. You can try again or enter your brand details manually.
+                        </p>
                       </div>
+
                       <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => { setScanError(null); setStep("website"); }} className="flex-1">
+                        <Button
+                          variant="outline"
+                          onClick={() => { setScanError(null); setStep("brand-input"); }}
+                          className="flex-1 h-12"
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-2" />
                           Try Again
                         </Button>
                         <Button
-                          onClick={() => { setBrandData({ ...defaultBrandData, website: websiteUrl }); setStep("brand-form"); }}
-                          className="flex-1 text-white border-0"
-                          style={gradientButtonStyle}
+                          onClick={() => {
+                            setBrandData({ ...defaultBrandData, website: websiteUrl });
+                            setStep("company-info");
+                          }}
+                          className="flex-1 h-12"
                         >
                           Enter Manually
+                          <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="relative mx-auto w-24 h-24">
-                        <div className="absolute inset-0 rounded-full border-4 border-teal-500/20 animate-ping" />
-                        <div className="absolute inset-2 rounded-full border-4 border-blue-500/30 animate-ping delay-100" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl"
-                            style={gradientButtonStyle}
-                          >
-                            <Wand2 className="h-7 w-7 text-white animate-pulse" />
-                          </div>
+                      <div className="space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                          Analyzing your website
+                        </h1>
+                        <p className="text-muted-foreground">
+                          Our AI is extracting your brand identity.
+                        </p>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                          <motion.div
+                            className="absolute inset-y-0 left-0 bg-foreground rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${scanProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
                         </div>
-                      </div>
 
-                      <div>
-                        <h2 className="text-2xl font-bold mb-2">Analyzing your website</h2>
-                        <p className="text-muted-foreground">Our AI is extracting your brand identity</p>
-                      </div>
-
-                      <div className="space-y-4 max-w-xs mx-auto">
-                        <Progress value={scanProgress} className="h-2" />
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-3">
                           {[
                             { threshold: 10, text: "Fetching website content" },
                             { threshold: 30, text: "Capturing visual elements" },
@@ -567,14 +474,16 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                             <div
                               key={item.text}
                               className={cn(
-                                "flex items-center gap-2 text-sm transition-colors",
-                                scanProgress > item.threshold ? "text-foreground" : "text-muted-foreground"
+                                "flex items-center gap-3 text-sm transition-all duration-300",
+                                scanProgress > item.threshold
+                                  ? "text-foreground"
+                                  : "text-muted-foreground/50"
                               )}
                             >
                               {scanProgress > item.threshold ? (
-                                <CheckCircle2 className="h-4 w-4 text-teal-500" />
+                                <CheckCircle2 className="h-5 w-5 text-teal-500 flex-shrink-0" />
                               ) : (
-                                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
                               )}
                               {item.text}
                             </div>
@@ -586,126 +495,153 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </motion.div>
               )}
 
-              {/* Brand Form Step */}
-              {step === "brand-form" && (
+              {/* Company Info Step */}
+              {step === "company-info" && (
                 <motion.div
-                  key="brand-form"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-6"
+                  key="company-info"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
                 >
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-bold">{hasWebsite ? "Review your brand" : "Set up your brand"}</h2>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      {hasScannedWebsite ? "Review your company" : "Tell us about your company"}
+                    </h1>
                     <p className="text-muted-foreground">
-                      {hasWebsite ? "We extracted this from your website. Feel free to edit." : "Tell us about your brand to get started."}
+                      {hasScannedWebsite
+                        ? "We extracted this from your website. Feel free to edit."
+                        : "Help our designers understand your business."}
                     </p>
                   </div>
 
-                  <div className="space-y-4">
-                    {/* Company Info */}
-                    <div className="p-4 rounded-xl border space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-teal-600" />
-                        <h3 className="font-semibold">Company Information</h3>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <Label>Company Name *</Label>
-                          <Input
-                            placeholder="Acme Inc."
-                            value={brandData.name}
-                            onChange={(e) => setBrandData((prev) => ({ ...prev, name: e.target.value }))}
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label>Industry</Label>
-                          <select
-                            value={brandData.industry || ""}
-                            onChange={(e) => setBrandData((prev) => ({ ...prev, industry: e.target.value }))}
-                            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3"
-                          >
-                            <option value="">Select industry</option>
-                            {industries.map((ind) => (
-                              <option key={ind} value={ind}>{ind}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <Label>Description</Label>
-                          <Textarea
-                            placeholder="Brief description of your company..."
-                            value={brandData.description}
-                            onChange={(e) => setBrandData((prev) => ({ ...prev, description: e.target.value }))}
-                            className="mt-1 min-h-[60px]"
-                          />
-                        </div>
-                      </div>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Company name</Label>
+                      <Input
+                        placeholder="Acme Inc."
+                        value={brandData.name}
+                        onChange={(e) => setBrandData((prev) => ({ ...prev, name: e.target.value }))}
+                        className="h-12 text-base"
+                      />
                     </div>
 
-                    {/* Colors */}
-                    <div className="p-4 rounded-xl border space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-5 w-5 text-teal-600" />
-                        <h3 className="font-semibold">Brand Colors</h3>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { key: "primaryColor", label: "Primary" },
-                          { key: "secondaryColor", label: "Secondary" },
-                          { key: "accentColor", label: "Accent" },
-                        ].map(({ key, label }) => (
-                          <div key={key}>
-                            <Label className="text-xs">{label}</Label>
-                            <div className="mt-1 flex gap-2">
-                              <div
-                                className="w-10 h-10 rounded-lg border cursor-pointer hover:scale-105 transition-transform"
-                                style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
-                                onClick={() => document.getElementById(`${key}-picker`)?.click()}
-                              />
-                              <Input
-                                value={(brandData[key as keyof BrandData] as string) || ""}
-                                onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
-                                placeholder="#000000"
-                                className="flex-1 text-sm"
-                              />
-                              <input
-                                id={`${key}-picker`}
-                                type="color"
-                                value={(brandData[key as keyof BrandData] as string) || "#14b8a6"}
-                                onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
-                                className="sr-only"
-                              />
-                            </div>
-                          </div>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Industry</Label>
+                      <select
+                        value={brandData.industry || ""}
+                        onChange={(e) => setBrandData((prev) => ({ ...prev, industry: e.target.value }))}
+                        className="w-full h-12 rounded-md border border-input bg-background px-3 text-base"
+                      >
+                        <option value="">Select industry</option>
+                        {industries.map((ind) => (
+                          <option key={ind} value={ind}>{ind}</option>
                         ))}
-                      </div>
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Description (optional)</Label>
+                      <Textarea
+                        placeholder="Brief description of your company..."
+                        value={brandData.description}
+                        onChange={(e) => setBrandData((prev) => ({ ...prev, description: e.target.value }))}
+                        className="min-h-[100px] text-base resize-none"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        if (hasWebsite && brandData.website) {
-                          setStep("website");
-                        } else {
-                          setStep("website");
-                          setHasWebsite(null);
-                        }
-                      }}
-                      disabled={isLoading}
-                      className="flex-1 h-12"
+                      onClick={() => setStep("brand-input")}
+                      className="h-12"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={() => setStep("brand-colors")}
+                      disabled={!brandData.name.trim()}
+                      className="flex-1 h-12 font-semibold"
+                    >
+                      Continue
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Brand Colors Step */}
+              {step === "brand-colors" && (
+                <motion.div
+                  key="brand-colors"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      {hasScannedWebsite ? "Review your brand colors" : "Set your brand colors"}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      {hasScannedWebsite
+                        ? "We detected these colors. Adjust them if needed."
+                        : "Choose colors that represent your brand."}
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    {[
+                      { key: "primaryColor", label: "Primary color", desc: "Main brand color" },
+                      { key: "secondaryColor", label: "Secondary color", desc: "Supporting color" },
+                      { key: "accentColor", label: "Accent color", desc: "Highlights & CTAs" },
+                    ].map(({ key, label, desc }) => (
+                      <div key={key} className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-semibold">{label}</Label>
+                          <p className="text-xs text-muted-foreground">{desc}</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            className="w-12 h-12 rounded-lg border-2 border-input cursor-pointer hover:scale-105 transition-transform flex-shrink-0"
+                            style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
+                            onClick={() => document.getElementById(`${key}-picker`)?.click()}
+                          />
+                          <Input
+                            value={(brandData[key as keyof BrandData] as string) || ""}
+                            onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
+                            placeholder="#000000"
+                            className="h-12 text-base font-mono"
+                          />
+                          <input
+                            id={`${key}-picker`}
+                            type="color"
+                            value={(brandData[key as keyof BrandData] as string) || "#14b8a6"}
+                            onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
+                            className="sr-only"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep("company-info")}
+                      className="h-12"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Back
                     </Button>
                     <Button
                       onClick={handleSubmit}
-                      disabled={isLoading || !brandData.name.trim()}
-                      className="flex-1 h-12 text-white border-0"
-                      style={gradientButtonStyle}
+                      disabled={isLoading}
+                      className="flex-1 h-12 font-semibold"
                     >
                       {isLoading ? (
                         <>
@@ -727,23 +663,28 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               {step === "complete" && (
                 <motion.div
                   key="complete"
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="text-center space-y-6"
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
                 >
+                  <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      You&apos;re all set!
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Your brand profile has been saved. Redirecting to dashboard...
+                    </p>
+                  </div>
+
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center shadow-2xl"
+                    className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center shadow-lg"
                   >
-                    <Check className="h-10 w-10 text-white" />
+                    <Check className="h-8 w-8 text-white" />
                   </motion.div>
-
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">You&apos;re all set!</h2>
-                    <p className="text-muted-foreground">Your brand profile has been saved. Redirecting to dashboard...</p>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -751,13 +692,25 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         </main>
 
         {/* Footer */}
-        <footer className="p-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
+        <footer className="px-6 sm:px-10 lg:px-16 py-6 border-t mt-auto">
+          <div className="max-w-md space-y-3">
+            <p className="text-sm text-muted-foreground">
+              You can continue anytime. We&apos;ve saved your progress.
+            </p>
+            <div className="flex items-center gap-4 text-sm">
+              <a href="#" className="text-muted-foreground hover:text-foreground underline underline-offset-4">
+                Have questions? Contact us.
+              </a>
+            </div>
+            <button className="text-sm text-muted-foreground hover:text-foreground font-medium">
+              Log out
+            </button>
+          </div>
         </footer>
       </div>
 
-      {/* Right side - Branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
+      {/* Right side - Branding panel (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative overflow-hidden">
         {/* Gradient background */}
         <div
           className="absolute inset-0"
@@ -777,15 +730,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
-              <span className="text-2xl font-bold">C</span>
-            </div>
-            <div>
-              <span className="text-xl font-semibold tracking-tight">Crafted Studio</span>
-              <div className="text-sm text-white/70">Design Platform</div>
-            </div>
-          </div>
+          <div />
 
           <div className="space-y-6 max-w-md">
             <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
