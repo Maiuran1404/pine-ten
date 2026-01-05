@@ -22,6 +22,15 @@ function OnboardingContent() {
     const typeParam = searchParams.get("type");
     if (typeParam === "freelancer") {
       setType("freelancer");
+      // Set the role to FREELANCER immediately when landing on freelancer onboarding
+      // This ensures the user appears in the Artists section even if they don't complete onboarding
+      fetch("/api/auth/set-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "FREELANCER" }),
+      }).catch(() => {
+        // Ignore errors - onboarding completion will also set the role
+      });
     }
   }, [session, isPending, router, searchParams]);
 

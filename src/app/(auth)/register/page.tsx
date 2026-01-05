@@ -103,6 +103,19 @@ function RegisterContent() {
         return;
       }
 
+      // If registering as freelancer, set the role immediately
+      if (accountType === "freelancer") {
+        try {
+          await fetch("/api/auth/set-role", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: "FREELANCER" }),
+          });
+        } catch {
+          // Continue even if role update fails - onboarding will handle it
+        }
+      }
+
       toast.success("Account created successfully!");
 
       if (accountType === "freelancer") {

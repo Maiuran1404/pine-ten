@@ -13,12 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/lib/auth-client";
+import { motion } from "framer-motion";
 import {
   FolderOpen,
   Clock,
   CheckCircle,
   AlertTriangle,
   Star,
+  Sparkles,
+  ArrowRight,
+  Palette,
+  Briefcase,
+  Award,
 } from "lucide-react";
 
 interface FreelancerStats {
@@ -41,7 +47,7 @@ export default function FreelancerDashboardPage() {
   const [stats, setStats] = useState<FreelancerStats | null>(null);
   const [activeTasks, setActiveTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [profileStatus, setProfileStatus] = useState<string>("PENDING");
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -78,6 +84,94 @@ export default function FreelancerDashboardPage() {
 
   const user = session?.user;
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-9 w-64 mb-2" />
+          <Skeleton className="h-5 w-48" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding prompt for users who haven't completed onboarding
+  if (profileStatus === "NOT_FOUND") {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="max-w-2xl w-full space-y-8">
+          {/* Welcome Header */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 mb-4">
+              <Sparkles className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome to Crafted, {user?.name?.split(" ")[0]}!
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">
+              Complete your artist profile to start receiving design tasks and earning.
+            </p>
+          </div>
+
+          {/* Benefits Cards */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="text-center p-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 mb-4">
+                <Palette className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+              </div>
+              <h3 className="font-semibold mb-2">Showcase Your Skills</h3>
+              <p className="text-sm text-muted-foreground">
+                Add your portfolio and specializations
+              </p>
+            </Card>
+
+            <Card className="text-center p-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+                <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-semibold mb-2">Get Matched</h3>
+              <p className="text-sm text-muted-foreground">
+                Receive tasks that match your expertise
+              </p>
+            </Card>
+
+            <Card className="text-center p-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
+                <Award className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h3 className="font-semibold mb-2">Earn & Grow</h3>
+              <p className="text-sm text-muted-foreground">
+                Build your reputation and earnings
+              </p>
+            </Card>
+          </div>
+
+          {/* CTA Button */}
+          <div className="text-center">
+            <Button
+              size="lg"
+              className="h-12 px-8 text-base"
+              onClick={() => router.push("/onboarding?type=freelancer")}
+            >
+              Complete Your Profile
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <p className="text-sm text-muted-foreground mt-4">
+              Takes about 2 minutes to complete
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show pending review state
   if (profileStatus === "PENDING") {
     return (
       <div className="space-y-6">
@@ -88,14 +182,14 @@ export default function FreelancerDashboardPage() {
               <CardTitle>Application Under Review</CardTitle>
             </div>
             <CardDescription>
-              Your freelancer application is being reviewed by our team. You&apos;ll
+              Your artist application is being reviewed by our team. You&apos;ll
               receive a notification once it&apos;s approved.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
               This usually takes 24-48 hours. In the meantime, make sure your
-              profile is complete and your portfolio links are accessible.
+              portfolio links are accessible.
             </p>
           </CardContent>
         </Card>
