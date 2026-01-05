@@ -6,9 +6,10 @@ interface LogoProps {
   className?: string;
   href?: string;
   size?: "sm" | "md" | "lg";
+  name?: string;
 }
 
-export function Logo({ className = "", href = "/", size = "md" }: LogoProps) {
+export function Logo({ className = "", href = "/", size = "md", name = "Crafted" }: LogoProps) {
   const sizes = {
     sm: { icon: "h-6 w-6", text: "text-sm", iconText: "text-xs" },
     md: { icon: "h-8 w-8", text: "text-lg", iconText: "text-sm" },
@@ -26,7 +27,7 @@ export function Logo({ className = "", href = "/", size = "md" }: LogoProps) {
         C
       </div>
       <span className={`font-semibold ${text} tracking-tight`}>
-        Crafted
+        {name}
       </span>
     </Link>
   );

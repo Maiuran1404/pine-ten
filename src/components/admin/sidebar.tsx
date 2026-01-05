@@ -29,6 +29,7 @@ import {
   History,
   MessageSquare,
 } from "lucide-react";
+import { Logo } from "@/components/shared/logo";
 
 const navigation = [
   {
@@ -102,7 +103,10 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
       <SidebarHeader className="h-16 justify-center">
-        <SidebarTrigger />
+        <div className="flex items-center gap-2">
+          <SidebarTrigger />
+          <Logo href="/admin" name="Superadmin" className="group-data-[collapsible=icon]:hidden" />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
