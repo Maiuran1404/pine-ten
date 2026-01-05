@@ -88,7 +88,8 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectTo = redirect || portal.defaultRedirect;
+      // Don't redirect to "/" as it will cause a loop - use portal default instead
+      const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
       router.push(redirectTo);
     }
   }, [session, isPending, router, redirect, portal.defaultRedirect]);
@@ -116,7 +117,8 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
       }
 
       toast.success("Welcome back!");
-      router.push(redirect || portal.defaultRedirect);
+      // Don't redirect to "/" as it will cause a loop - use portal default instead
+      router.push((redirect && redirect !== "/") ? redirect : portal.defaultRedirect);
     } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
