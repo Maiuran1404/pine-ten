@@ -45,7 +45,7 @@ export default function FreelancersPage() {
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [filter, setFilter] = useState("pending");
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     fetchFreelancers();
@@ -76,14 +76,14 @@ export default function FreelancersPage() {
 
       if (!response.ok) throw new Error("Failed to approve");
 
-      toast.success("Freelancer approved successfully!");
+      toast.success("Artist approved successfully!");
       setFreelancers((prev) =>
         prev.map((f) =>
           f.id === freelancerId ? { ...f, status: "APPROVED" } : f
         )
       );
     } catch {
-      toast.error("Failed to approve freelancer");
+      toast.error("Failed to approve artist");
     } finally {
       setProcessingId(null);
     }
@@ -100,14 +100,14 @@ export default function FreelancersPage() {
 
       if (!response.ok) throw new Error("Failed to reject");
 
-      toast.success("Freelancer rejected");
+      toast.success("Artist rejected");
       setFreelancers((prev) =>
         prev.map((f) =>
           f.id === freelancerId ? { ...f, status: "REJECTED" } : f
         )
       );
     } catch {
-      toast.error("Failed to reject freelancer");
+      toast.error("Failed to reject artist");
     } finally {
       setProcessingId(null);
     }
@@ -132,9 +132,9 @@ export default function FreelancersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Freelancers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Artists</h1>
         <p className="text-muted-foreground">
-          Manage freelancer applications and profiles
+          Manage artist applications and profiles
         </p>
       </div>
 
@@ -152,12 +152,12 @@ export default function FreelancersPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                {filter === "pending" ? "Pending Applications" : "Freelancers"}
+                {filter === "pending" ? "Pending Applications" : "Artists"}
               </CardTitle>
               <CardDescription>
                 {filter === "pending"
-                  ? "Review and approve freelancer applications"
-                  : "All freelancers on the platform"}
+                  ? "Review and approve artist applications"
+                  : "All artists on the platform"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -169,7 +169,7 @@ export default function FreelancersPage() {
                 </div>
               ) : filteredFreelancers.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">
-                  No freelancers found
+                  No artists found
                 </p>
               ) : (
                 <Table>

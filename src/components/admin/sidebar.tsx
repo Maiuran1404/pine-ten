@@ -46,7 +46,7 @@ const navigation = [
     icon: Users,
   },
   {
-    name: "Freelancers",
+    name: "Artists",
     href: "/admin/freelancers",
     icon: UserCheck,
   },

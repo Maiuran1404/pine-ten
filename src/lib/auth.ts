@@ -117,6 +117,9 @@ export const auth = betterAuth({
     window: 60, // 1 minute
     max: 100, // max requests per window
   },
+  onAPIError: {
+    errorURL: "/auth-error",
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;

@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, CheckCircle, XCircle, Coins, Plus } from "lucide-react";
+import { Search, CheckCircle, XCircle, Coins, Plus, Trash2 } from "lucide-react";
 
 interface Client {
   id: string;
@@ -50,11 +50,13 @@ export default function ClientsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [grantDialogOpen, setGrantDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [grantCredits, setGrantCredits] = useState(5);
   const [grantReason, setGrantReason] = useState("");
   const [sendNotification, setSendNotification] = useState(true);
   const [isGranting, setIsGranting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -125,6 +127,35 @@ export default function ClientsPage() {
       toast.error(error instanceof Error ? error.message : "Failed to grant credits");
     } finally {
       setIsGranting(false);
+    }
+  };
+
+  const openDeleteDialog = (client: Client) => {
+    setSelectedClient(client);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedClient) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/clients/${selectedClient.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete user");
+      }
+
+      toast.success(`Successfully deleted ${selectedClient.name}`);
+      setClients((prev) => prev.filter((c) => c.id !== selectedClient.id));
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete user");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -267,15 +298,25 @@ export default function ClientsPage() {
                       {formatDate(client.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openGrantDialog(client)}
-                        className="cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Grant Credits
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openGrantDialog(client)}
+                          className="cursor-pointer"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Grant Credits
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDeleteDialog(client)}
+                          className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -360,6 +401,52 @@ export default function ClientsPage() {
               disabled={isGranting || grantCredits <= 0}
             >
               {isGranting ? "Granting..." : `Grant ${grantCredits} Credits`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete User
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedClient?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedClient && (
+            <div className="py-4">
+              <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg text-sm space-y-1">
+                <p><span className="text-muted-foreground">Name:</span> {selectedClient.name}</p>
+                <p><span className="text-muted-foreground">Email:</span> {selectedClient.email}</p>
+                <p><span className="text-muted-foreground">Tasks:</span> {selectedClient.totalTasks} total</p>
+                <p><span className="text-muted-foreground">Credits:</span> {selectedClient.credits}</p>
+              </div>
+              <p className="text-sm text-muted-foreground mt-3">
+                This will permanently delete the user and all associated data including tasks, files, and transactions.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete User"}
             </Button>
           </DialogFooter>
         </DialogContent>
