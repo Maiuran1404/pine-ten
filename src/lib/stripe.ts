@@ -1,9 +1,28 @@
 import Stripe from "stripe";
 import { config } from "@/lib/config";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-11-17.clover",
-});
+// Lazy initialization to avoid errors during build when env vars aren't available
+let stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not configured");
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-11-17.clover",
+    });
+  }
+  return stripeInstance;
+}
+
+// For backwards compatibility - use getter to lazily initialize
+export const stripe = {
+  get coupons() { return getStripe().coupons; },
+  get promotionCodes() { return getStripe().promotionCodes; },
+  get checkout() { return getStripe().checkout; },
+  get webhooks() { return getStripe().webhooks; },
+} as unknown as Stripe;
 
 // Credit packages for purchase
 export const creditPackages = [
