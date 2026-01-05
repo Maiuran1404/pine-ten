@@ -58,7 +58,7 @@ export default function ClientLayout({
   const user = session.user as { credits?: number };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]" style={{ fontFamily: "'Satoshi', sans-serif" }}>
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -71,7 +71,7 @@ export default function ClientLayout({
           onMenuClick={() => setSidebarOpen(true)}
           credits={user.credits || 0}
         />
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );
