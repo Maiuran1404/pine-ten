@@ -32,6 +32,8 @@ import {
   Send,
   ThumbsUp,
   Loader2,
+  Expand,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -121,7 +123,9 @@ export default function TaskDetailPage() {
     reason: string;
     estimatedCredits?: number;
   } | null>(null);
+  const [showFullChat, setShowFullChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fullChatMessagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -132,7 +136,8 @@ export default function TaskDetailPage() {
   useEffect(() => {
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [task?.messages]);
+    fullChatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [task?.messages, showFullChat]);
 
   const fetchTask = async (id: string) => {
     try {
@@ -401,11 +406,22 @@ export default function TaskDetailPage() {
                   <MessageSquare className="h-4 w-4 text-[#6b6b6b]" />
                   <h2 className="text-sm font-medium text-white">Conversation</h2>
                 </div>
-                {(isInReview || task.status === "REVISION_REQUESTED") && (
-                  <span className="text-xs text-[#6b6b6b]">
-                    Revisions: {task.revisionsUsed}/{task.maxRevisions}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  {(isInReview || task.status === "REVISION_REQUESTED") && (
+                    <span className="text-xs text-[#6b6b6b]">
+                      Revisions: {task.revisionsUsed}/{task.maxRevisions}
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFullChat(true)}
+                    className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 h-8 px-2"
+                  >
+                    <Expand className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Open Chat</span>
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="p-5">
@@ -977,6 +993,309 @@ export default function TaskDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Full Screen Chat Modal */}
+      {showFullChat && (
+        <div className="fixed inset-0 z-50 bg-[#0a0a0a]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2a30]/40">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowFullChat(false)}
+                className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 rounded-lg"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              <div>
+                <h2 className="text-lg font-semibold text-white">{task.title}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={cn(
+                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border",
+                    status.bgColor,
+                    status.color
+                  )}>
+                    {status.icon}
+                    {status.label}
+                  </span>
+                  {task.freelancer && (
+                    <span className="text-xs text-[#6b6b6b]">
+                      with {task.freelancer.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            {(isInReview || task.status === "REVISION_REQUESTED") && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-[#6b6b6b]">
+                  Revisions: {task.revisionsUsed}/{task.maxRevisions}
+                </span>
+                {isInReview && deliverables.length > 0 && (
+                  <Button
+                    onClick={handleApprove}
+                    disabled={isApproving}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isApproving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ThumbsUp className="h-4 w-4 mr-2" />
+                    )}
+                    Approve & Complete
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto h-[calc(100vh-180px)] p-6">
+            <div className="max-w-3xl mx-auto space-y-6">
+              {task.messages.length === 0 && deliverables.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-20">
+                  <div className="w-20 h-20 rounded-full bg-[#1a1a1f] flex items-center justify-center mb-4">
+                    <MessageSquare className="h-10 w-10 text-[#2a2a30]" />
+                  </div>
+                  <p className="text-lg text-[#4a4a4a]">No messages yet</p>
+                  <p className="text-sm text-[#3a3a3a] mt-1">Your designer will communicate with you here</p>
+                </div>
+              ) : (
+                <>
+                  {/* Show messages */}
+                  {task.messages.map((msg) => (
+                    <div key={msg.id} className="flex gap-4">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={msg.senderImage || undefined} />
+                        <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b]">
+                          {msg.senderName?.[0]?.toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="font-medium text-white">
+                            {msg.senderName}
+                          </span>
+                          <span className="text-xs text-[#4a4a4a]">
+                            {new Date(msg.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-[#9a9a9a] mt-2 whitespace-pre-wrap break-words">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Show deliverables inline if in review */}
+                  {deliverables.length > 0 && (isInReview || task.status === "COMPLETED") && (
+                    <div className="my-6 p-6 rounded-xl border border-[#2a2a30]/60 bg-[#1a1a1f]/50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-green-400" />
+                        </div>
+                        <div>
+                          <span className="font-medium text-white">Deliverables submitted</span>
+                          <p className="text-xs text-[#6b6b6b]">{deliverables.length} file{deliverables.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {deliverables.map((file) => (
+                          <div
+                            key={file.id}
+                            className="group relative rounded-lg overflow-hidden border border-[#2a2a30]/40"
+                          >
+                            {file.fileType.startsWith("image/") ? (
+                              <a
+                                href={file.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block aspect-video relative bg-[#1a1a1f]"
+                              >
+                                <Image
+                                  src={file.fileUrl}
+                                  alt={file.fileName}
+                                  fill
+                                  className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <ExternalLink className="h-5 w-5 text-white" />
+                                </div>
+                              </a>
+                            ) : (
+                              <a
+                                href={file.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex flex-col items-center justify-center p-4 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
+                              >
+                                <FileIcon className="h-10 w-10 text-green-400/50 mb-2" />
+                                <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
+                                  {file.fileName}
+                                </p>
+                              </a>
+                            )}
+                            <div className="p-3 bg-[#0a0a0a] flex items-center justify-between">
+                              <p className="text-sm text-[#9a9a9a] truncate flex-1">{file.fileName}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="h-7 w-7 p-0 text-[#6b6b6b] hover:text-white"
+                              >
+                                <a href={file.fileUrl} download>
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              <div ref={fullChatMessagesEndRef} />
+            </div>
+          </div>
+
+          {/* Feedback Analysis Result - Full Chat */}
+          {feedbackAnalysis && (
+            <div className="px-6 pb-2">
+              <div className={cn(
+                "max-w-3xl mx-auto p-4 rounded-lg border",
+                feedbackAnalysis.isRevision
+                  ? "border-green-500/30 bg-green-500/5"
+                  : "border-orange-500/30 bg-orange-500/5"
+              )}>
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                    feedbackAnalysis.isRevision ? "bg-green-500/10" : "bg-orange-500/10"
+                  )}>
+                    {feedbackAnalysis.isRevision ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-orange-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={cn(
+                      "text-sm font-medium",
+                      feedbackAnalysis.isRevision ? "text-green-400" : "text-orange-400"
+                    )}>
+                      {feedbackAnalysis.isRevision
+                        ? `Included in your revisions (${task.revisionsUsed}/${task.maxRevisions} used)`
+                        : "This may require additional credits"}
+                    </p>
+                    <p className="text-xs text-[#9a9a9a] mt-1">{feedbackAnalysis.reason}</p>
+                    {!feedbackAnalysis.isRevision && feedbackAnalysis.estimatedCredits && (
+                      <p className="text-xs text-orange-400 mt-1">
+                        Estimated: {feedbackAnalysis.estimatedCredits} credits
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    onClick={() => handleSendMessage(feedbackAnalysis.isRevision)}
+                    disabled={isSendingMessage}
+                    size="sm"
+                    className={cn(
+                      feedbackAnalysis.isRevision
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-orange-600 hover:bg-orange-700",
+                      "text-white"
+                    )}
+                  >
+                    {isSendingMessage ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : null}
+                    {feedbackAnalysis.isRevision ? "Continue Chatting" : "Request Anyway"}
+                  </Button>
+                  <Button
+                    onClick={() => setFeedbackAnalysis(null)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-[#6b6b6b] hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Message Input - Full Chat */}
+          {canChat && !feedbackAnalysis && (
+            <div className="px-6 py-4 border-t border-[#2a2a30]/40">
+              <div className="max-w-3xl mx-auto">
+                <div className="flex gap-3">
+                  <Textarea
+                    placeholder={isInReview ? "Share your feedback on the deliverables..." : "Type your message..."}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (isInReview && message.trim()) {
+                          analyzeFeedback();
+                        } else {
+                          handleSendMessage();
+                        }
+                      }
+                    }}
+                    className="flex-1 min-h-[60px] max-h-[120px] bg-[#1a1a1f] border-[#2a2a30] text-white placeholder:text-[#4a4a4a] resize-none"
+                  />
+                  <div className="flex flex-col justify-end gap-2">
+                    {isInReview ? (
+                      <Button
+                        onClick={analyzeFeedback}
+                        disabled={!message.trim() || isAnalyzing}
+                        className="bg-white text-black hover:bg-white/90 px-6"
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleSendMessage()}
+                        disabled={!message.trim() || isSendingMessage}
+                        className="bg-white text-black hover:bg-white/90 px-6"
+                      >
+                        {isSendingMessage ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {isInReview && (
+                  <p className="text-xs text-[#4a4a4a] mt-2">
+                    {hasRevisionsLeft
+                      ? "Your feedback will be analyzed to determine if it's covered by your revisions"
+                      : "No revisions left - additional feedback may cost credits"}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!canChat && task.status === "COMPLETED" && (
+            <div className="px-6 py-6 border-t border-[#2a2a30]/40">
+              <div className="max-w-3xl mx-auto text-center">
+                <CheckCircle2 className="h-8 w-8 mx-auto text-green-400 mb-2" />
+                <p className="text-sm text-green-400 font-medium">Task Completed</p>
+                <p className="text-xs text-[#4a4a4a] mt-1">Thank you for using our service!</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

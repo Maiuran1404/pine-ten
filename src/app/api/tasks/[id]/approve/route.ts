@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
+import { config } from "@/lib/config";
 
 export async function POST(
   request: NextRequest,
@@ -66,7 +67,7 @@ export async function POST(
           title: "Task Approved",
           content: `Your work on "${task.title}" has been approved by the client!`,
           taskId: task.id,
-          taskUrl: `/portal/tasks/${task.id}`,
+          taskUrl: `${config.app.url}/portal/tasks/${task.id}`,
           additionalData: {
             taskTitle: task.title,
           },

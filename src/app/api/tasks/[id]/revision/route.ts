@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { tasks, taskMessages } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
+import { config } from "@/lib/config";
 
 export async function POST(
   request: NextRequest,
@@ -91,7 +92,7 @@ export async function POST(
           title: "Revision Requested",
           content: `The client has requested changes on "${task.title}": ${feedback.substring(0, 100)}${feedback.length > 100 ? '...' : ''}`,
           taskId: task.id,
-          taskUrl: `/portal/tasks/${task.id}`,
+          taskUrl: `${config.app.url}/portal/tasks/${task.id}`,
           additionalData: {
             taskTitle: task.title,
             feedback,

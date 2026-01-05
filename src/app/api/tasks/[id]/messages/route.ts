@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { tasks, taskMessages, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
+import { config } from "@/lib/config";
 
 // GET - Fetch messages for a task
 export async function GET(
@@ -142,7 +143,7 @@ export async function POST(
           title: "New Message",
           content: `${session.user.name || 'Someone'} sent you a message: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
           taskId: task.id,
-          taskUrl: isClient ? `/portal/tasks/${task.id}` : `/dashboard/tasks/${task.id}`,
+          taskUrl: isClient ? `${config.app.url}/portal/tasks/${task.id}` : `${config.app.url}/dashboard/tasks/${task.id}`,
           additionalData: {
             taskTitle: task.title,
             senderName: session.user.name,

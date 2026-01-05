@@ -1,7 +1,47 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
-import { styleReferences, taskCategories, users, companies } from "@/db/schema";
+import { styleReferences, taskCategories, users, companies, platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+
+// Chat prompts interface
+interface ChatPrompts {
+  systemPrompt: string;
+  staticAdsTree: string;
+  dynamicAdsTree: string;
+  socialMediaTree: string;
+  creditGuidelines: string;
+}
+
+// Cache for chat prompts (refreshed every 5 minutes)
+let cachedPrompts: ChatPrompts | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Fetch chat prompts from database
+async function getChatPrompts(): Promise<ChatPrompts | null> {
+  // Check cache first
+  if (cachedPrompts && Date.now() - cacheTimestamp < CACHE_DURATION) {
+    return cachedPrompts;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(platformSettings)
+      .where(eq(platformSettings.key, "chat_prompts"))
+      .limit(1);
+
+    if (result.length > 0 && result[0].value) {
+      cachedPrompts = result[0].value as ChatPrompts;
+      cacheTimestamp = Date.now();
+      return cachedPrompts;
+    }
+  } catch (error) {
+    console.error("Failed to fetch chat prompts from database:", error);
+  }
+
+  return null;
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -27,19 +67,96 @@ function getDeliveryDate(businessDays: number): string {
   return `${dayName} ${dayNum}${suffix} ${monthName}`;
 }
 
-function getSystemPrompt(): string {
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-  return `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
-
-TODAY'S DATE: ${todayStr}
+// Default prompts (fallback if database is empty)
+const DEFAULT_SYSTEM_PROMPT = `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
 
 WHAT YOU AUTOMATICALLY APPLY (never ask about these):
 - Brand colors, typography, logo rules, tone
 - The brand's visual style (minimal/bold/editorial/playful)
 - Known do/don't rules from Brand DNA
-- Default export formats based on channel
+- Default export formats based on channel`;
+
+const DEFAULT_STATIC_ADS_TREE = `=== STATIC ADS DECISION TREE (only use after user selects static ads) ===
+
+STEP 1 - THE 3 CORE QUESTIONS (always ask these in order):
+
+Q1 - GOAL: "What do you want the ad to do?"
+[QUICK_OPTIONS]
+{"question": "What do you want the ad to do?", "options": ["Get signups", "Book a demo", "Sell something", "Bring people back (retargeting)", "Just get attention (awareness)"]}
+[/QUICK_OPTIONS]
+
+Q2 - CHANNEL: "Where will this run?"
+[QUICK_OPTIONS]
+{"question": "Where will this run?", "options": ["LinkedIn", "Instagram / Facebook", "Twitter / X", "Snapchat", "Not sure — you pick"]}
+[/QUICK_OPTIONS]
+
+AUTO-SET FORMATS based on channel:
+- LinkedIn: 1:1 + 4:5
+- Instagram/Facebook (Meta): 1:1 + 4:5 + 9:16
+- Twitter/X: 1:1
+- Snapchat: 1:1 + 4:5 + 9:16
+
+Q3 - WHAT TO SHOW: "What should we feature?"
+[QUICK_OPTIONS]
+{"question": "What should we feature?", "options": ["Product screenshots", "A bold text-only ad (clean + direct)", "People / lifestyle", "Surprise me (recommended)"]}
+[/QUICK_OPTIONS]
+
+STEP 2 - CONDITIONAL QUESTION (only ask if goal is "Book a demo" or "Sell something"):
+Q4 - THE PROMISE with options: Save time, Save money, Higher quality, More consistent, Better results, New feature
+
+STEP 3 - OPTIONAL BOOST (only offer if they want to strengthen the ads):
+BOOST Q1 - PROOF: Customer logos, A number/metric, A quote, None yet
+BOOST Q2 - OBJECTION: Too expensive, Too complicated, Don't trust it, Already have a solution, None
+
+BRIEF STATUS:
+🟢 GREEN - Goal ✓, Channel ✓, What to show ✓ → "Perfect. That's all I need."
+🟡 YELLOW - Missing promise → Ask or make best guess
+🔴 RED - Missing goal or channel → "One tiny thing before we go."
+
+=== END STATIC ADS TREE ===`;
+
+const DEFAULT_DYNAMIC_ADS_TREE = `=== DYNAMIC ADS / VIDEO DECISION TREE (only use after user selects video/motion) ===
+
+OPENER: "Got it. Since I already have your Brand DNA, this is going to be quick. I'll keep everything on-brand — motion included."
+
+STEP 1 - THE 2 MANDATORY QUESTIONS:
+Q1 - GOAL: Get signups, Book a demo, Sell something, Retargeting, Just get attention
+Q2 - CHANNEL: LinkedIn, Instagram / Facebook, TikTok / Reels
+
+STEP 2 - MOTION DIRECTION:
+Q3 - Options: Clean Reveal, Product Spotlight, Bold Hook, Surprise me
+
+STEP 3 - CONDITIONAL QUESTIONS based on goal/direction chosen
+
+BRIEF STATUS:
+🟢 GREEN - Goal ✓, Channel ✓, Motion direction ✓ → "Perfect. We're moving."
+🟡 YELLOW - Missing promise or highlight → Offer to decide
+🔴 RED - Missing goal or channel → "One tiny thing before we go."
+
+=== END DYNAMIC ADS TREE ===`;
+
+const DEFAULT_CREDIT_GUIDELINES = `Credit & delivery guidelines:
+- Static ad set (5 concepts + 2 variants each): 2-3 credits, 3 business days
+- Simple single ad: 1 credit, 2 business days
+- Dynamic/video ads (3 concepts + 2 variants): 4-5 credits, 5 business days
+- Short video (15-30 sec): 3 credits, 5 business days
+- Longer video (30-60 sec): 5 credits, 7 business days`;
+
+async function getSystemPrompt(): Promise<string> {
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Try to get prompts from database
+  const dbPrompts = await getChatPrompts();
+
+  const systemPrompt = dbPrompts?.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+  const staticAdsTree = dbPrompts?.staticAdsTree || DEFAULT_STATIC_ADS_TREE;
+  const dynamicAdsTree = dbPrompts?.dynamicAdsTree || DEFAULT_DYNAMIC_ADS_TREE;
+  const creditGuidelines = dbPrompts?.creditGuidelines || DEFAULT_CREDIT_GUIDELINES;
+
+  return `${systemPrompt}
+
+TODAY'S DATE: ${todayStr}
 
 === STEP 0 - FIRST QUESTION (ALWAYS ASK THIS FIRST) ===
 
