@@ -117,16 +117,24 @@ export default function FreelancersPage() {
     if (filter === "pending") return f.status === "PENDING";
     if (filter === "approved") return f.status === "APPROVED";
     if (filter === "rejected") return f.status === "REJECTED";
+    if (filter === "not_onboarded") return f.status === "NOT_ONBOARDED";
     return true;
   });
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       PENDING: "secondary",
       APPROVED: "default",
       REJECTED: "destructive",
+      NOT_ONBOARDED: "outline",
     };
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
+    const labels: Record<string, string> = {
+      PENDING: "Pending",
+      APPROVED: "Approved",
+      REJECTED: "Rejected",
+      NOT_ONBOARDED: "Not Onboarded",
+    };
+    return <Badge variant={variants[status] || "secondary"}>{labels[status] || status}</Badge>;
   };
 
   return (
@@ -140,23 +148,33 @@ export default function FreelancersPage() {
 
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList>
+          <TabsTrigger value="all">
+            All ({freelancers.length})
+          </TabsTrigger>
           <TabsTrigger value="pending">
             Pending ({freelancers.filter((f) => f.status === "PENDING").length})
           </TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved ({freelancers.filter((f) => f.status === "APPROVED").length})
+          </TabsTrigger>
+          <TabsTrigger value="not_onboarded">
+            Not Onboarded ({freelancers.filter((f) => f.status === "NOT_ONBOARDED").length})
+          </TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
         <TabsContent value={filter} className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>
-                {filter === "pending" ? "Pending Applications" : "Artists"}
+                {filter === "pending" ? "Pending Applications" :
+                 filter === "not_onboarded" ? "Not Onboarded" : "Artists"}
               </CardTitle>
               <CardDescription>
                 {filter === "pending"
                   ? "Review and approve artist applications"
+                  : filter === "not_onboarded"
+                  ? "Artists who registered but haven't completed onboarding"
                   : "All artists on the platform"}
               </CardDescription>
             </CardHeader>
