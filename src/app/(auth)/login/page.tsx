@@ -55,29 +55,11 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function SearchParamsWrapper({ children }: { children: (redirect: string | null) => React.ReactNode }) {
-  const searchParams = useSearchParams();
-  return <>{children(searchParams.get("redirect"))}</>;
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<LoginContentWithoutRedirect />}>
-      <SearchParamsWrapper>
-        {(redirect) => <LoginContentWithRedirect redirect={redirect} />}
-      </SearchParamsWrapper>
-    </Suspense>
-  );
-}
-
-function LoginContentWithoutRedirect() {
-  return <LoginContentWithRedirect redirect={null} />;
-}
-
-function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const portal = useSubdomain();
-  const { data: session, isPending, error } = useSession();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -88,11 +70,10 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      // Don't redirect to "/" as it will cause a loop - use portal default instead
-      const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
+      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
       router.push(redirectTo);
     }
-  }, [session, isPending, router, redirect, portal.defaultRedirect]);
+  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -117,8 +98,7 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
       }
 
       toast.success("Welcome back!");
-      // Don't redirect to "/" as it will cause a loop - use portal default instead
-      router.push((redirect && redirect !== "/") ? redirect : portal.defaultRedirect);
+      router.push(portal.defaultRedirect);
     } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
@@ -129,6 +109,7 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
+      // Use absolute URL so we redirect back to the correct subdomain after OAuth
       const callbackURL = `${window.location.origin}${portal.defaultRedirect}`;
       await signIn.social({
         provider: "google",
@@ -140,6 +121,7 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
     }
   }
 
+  // Crafted design language button - teal to blue gradient
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -149,6 +131,24 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't show login form if already logged in (redirect will happen)
+  if (session?.user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -313,5 +313,13 @@ function LoginContentWithRedirect({ redirect }: { redirect: string | null }) {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><LoadingSpinner size="lg" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

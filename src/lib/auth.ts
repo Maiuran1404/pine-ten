@@ -104,19 +104,13 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "pine",
-    // Don't use useSecureCookies as it adds __Secure- prefix which conflicts with domain setting
-    // Instead, set secure explicitly in defaultCookieAttributes
-    crossSubDomainCookies: isProduction
-      ? {
-          enabled: true,
-          domain: `.${baseDomain}`, // .craftedstudio.ai - explicit leading dot for cross-subdomain
-        }
-      : undefined,
+    useSecureCookies: isProduction,
     defaultCookieAttributes: {
-      sameSite: isProduction ? "none" : "lax",
-      secure: isProduction,
+      sameSite: "lax", // Required for OAuth redirects
       httpOnly: true,
       path: "/",
+      // Set domain for cookie sharing across subdomains in production
+      ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },
   trustedOrigins,

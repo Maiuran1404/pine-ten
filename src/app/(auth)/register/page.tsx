@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { LoadingSpinner } from "@/components/shared/loading";
+import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
 import { signUp, signIn, useSession } from "@/lib/auth-client";
 import { useSubdomain } from "@/hooks/use-subdomain";
 import { cn } from "@/lib/utils";
@@ -57,23 +57,9 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function SearchParamsWrapper({ children }: { children: (redirect: string | null) => React.ReactNode }) {
-  const searchParams = useSearchParams();
-  return <>{children(searchParams.get("redirect"))}</>;
-}
-
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={<RegisterContentWithRedirect redirect={null} />}>
-      <SearchParamsWrapper>
-        {(redirect) => <RegisterContentWithRedirect redirect={redirect} />}
-      </SearchParamsWrapper>
-    </Suspense>
-  );
-}
-
-function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const portal = useSubdomain();
   const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
@@ -87,10 +73,10 @@ function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) 
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectTo = redirect || portal.defaultRedirect;
+      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
       router.push(redirectTo);
     }
-  }, [session, isPending, router, redirect, portal.defaultRedirect]);
+  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -147,6 +133,7 @@ function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) 
   async function handleGoogleSignUp() {
     setIsGoogleLoading(true);
     try {
+      // Use absolute URL so we redirect back to the correct subdomain after OAuth
       const redirectPath = accountType === "freelancer"
         ? "/onboarding?type=freelancer"
         : "/onboarding";
@@ -162,6 +149,7 @@ function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) 
     }
   }
 
+  // Crafted design language button - teal to blue gradient
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -171,6 +159,24 @@ function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) 
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't show register form if already logged in (redirect will happen)
+  if (session?.user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -365,5 +371,13 @@ function RegisterContentWithRedirect({ redirect }: { redirect: string | null }) 
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <RegisterContent />
+    </Suspense>
   );
 }
