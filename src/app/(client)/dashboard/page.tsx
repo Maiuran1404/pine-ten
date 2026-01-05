@@ -100,53 +100,26 @@ function DashboardContent() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a]">
-      {/* Clean glimmery glow effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Soft ambient glow */}
-        <div
-          className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[500px] h-[400px]"
-          style={{
-            background: 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 60%)',
-          }}
-        />
-        {/* Subtle vertical light streaks */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[350px]"
-          style={{
-            background: `linear-gradient(180deg,
-              rgba(255, 255, 255, 0.02) 0%,
-              rgba(255, 255, 255, 0.015) 40%,
-              transparent 100%
-            )`,
-            maskImage: `linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(0,0,0,0.5) 35%,
-              transparent 40%,
-              transparent 45%,
-              rgba(0,0,0,0.3) 50%,
-              transparent 55%,
-              transparent 60%,
-              rgba(0,0,0,0.5) 65%,
-              transparent 70%,
-              transparent 100%
-            )`,
-            WebkitMaskImage: `linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(0,0,0,0.5) 35%,
-              transparent 40%,
-              transparent 45%,
-              rgba(0,0,0,0.3) 50%,
-              transparent 55%,
-              transparent 60%,
-              rgba(0,0,0,0.5) 65%,
-              transparent 70%,
-              transparent 100%
-            )`,
-          }}
-        />
-      </div>
+      {/* Animated glow behind logo */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[400px] h-[400px] pointer-events-none animate-pulse"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 35%, transparent 65%)',
+          animation: 'glow 4s ease-in-out infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes glow {
+          0%, 100% {
+            opacity: 0.6;
+            transform: translate(-50%, -60%) scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -60%) scale(1.05);
+          }
+        }
+      `}</style>
 
       {/* Center Content */}
       <div className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10">

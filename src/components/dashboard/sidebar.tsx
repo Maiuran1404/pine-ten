@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  FolderOpen,
-  CreditCard,
-  Settings,
-  Palette,
+  Home,
+  FileText,
+  Wand2,
+  Wallet,
+  Settings2,
   X,
-  Sparkles,
-  Clock,
+  History,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -20,28 +20,28 @@ const navigation = [
   {
     name: "Home",
     href: "/dashboard",
-    icon: Sparkles,
+    icon: Home,
     highlight: true,
   },
   {
     name: "My Tasks",
     href: "/dashboard/tasks",
-    icon: FolderOpen,
+    icon: FileText,
   },
   {
     name: "My Brand",
     href: "/dashboard/brand",
-    icon: Palette,
+    icon: Wand2,
   },
   {
     name: "Credits",
     href: "/dashboard/credits",
-    icon: CreditCard,
+    icon: Wallet,
   },
   {
     name: "Settings",
     href: "/dashboard/settings",
-    icon: Settings,
+    icon: Settings2,
   },
 ];
 
@@ -59,18 +59,19 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
   return (
     <>
       {/* Mobile overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/80 lg:hidden"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-black/80 lg:hidden transition-opacity duration-300 ease-in-out",
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a] lg:static lg:z-auto",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a] lg:static lg:z-auto transition-all duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           collapsed ? "w-16" : "w-64"
         )}
@@ -162,7 +163,7 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
                     onClick={onClose}
                     className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#6b6b6b] hover:bg-[#1a1a1f]/50 hover:text-white transition-colors"
                   >
-                    <Clock className="h-4 w-4 shrink-0" />
+                    <History className="h-4 w-4 shrink-0" />
                     <span className="truncate">{task.title}</span>
                   </Link>
                 ))}
