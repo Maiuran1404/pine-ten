@@ -100,56 +100,50 @@ function DashboardContent() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a]">
-      {/* Gradient light rays effect */}
+      {/* Clean glimmery glow effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Soft ambient glow */}
         <div
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px]"
+          className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[500px] h-[400px]"
           style={{
-            background: `
-              radial-gradient(ellipse 600px 400px at 50% 50%, rgba(50, 50, 60, 0.4) 0%, transparent 70%),
-              linear-gradient(180deg, transparent 0%, transparent 30%, rgba(30, 30, 40, 0.2) 50%, transparent 70%),
-              repeating-linear-gradient(
-                90deg,
-                transparent 0px,
-                transparent 60px,
-                rgba(60, 60, 70, 0.1) 60px,
-                rgba(60, 60, 70, 0.1) 62px,
-                transparent 62px,
-                transparent 120px
-              )
-            `,
-            maskImage:
-              "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)",
+            background: 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 60%)',
           }}
         />
-        {/* Vertical light beams */}
+        {/* Subtle vertical light streaks */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px]"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[350px]"
           style={{
-            background: `
-              linear-gradient(90deg,
-                transparent 0%,
-                transparent 20%,
-                rgba(80, 80, 90, 0.08) 25%,
-                transparent 30%,
-                transparent 35%,
-                rgba(80, 80, 90, 0.06) 40%,
-                transparent 45%,
-                transparent 50%,
-                rgba(80, 80, 90, 0.08) 55%,
-                transparent 60%,
-                transparent 65%,
-                rgba(80, 80, 90, 0.06) 70%,
-                transparent 75%,
-                transparent 100%
-              )
-            `,
-            maskImage:
-              "linear-gradient(180deg, black 0%, black 30%, transparent 80%)",
-            WebkitMaskImage:
-              "linear-gradient(180deg, black 0%, black 30%, transparent 80%)",
+            background: `linear-gradient(180deg,
+              rgba(255, 255, 255, 0.02) 0%,
+              rgba(255, 255, 255, 0.015) 40%,
+              transparent 100%
+            )`,
+            maskImage: `linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(0,0,0,0.5) 35%,
+              transparent 40%,
+              transparent 45%,
+              rgba(0,0,0,0.3) 50%,
+              transparent 55%,
+              transparent 60%,
+              rgba(0,0,0,0.5) 65%,
+              transparent 70%,
+              transparent 100%
+            )`,
+            WebkitMaskImage: `linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(0,0,0,0.5) 35%,
+              transparent 40%,
+              transparent 45%,
+              rgba(0,0,0,0.3) 50%,
+              transparent 55%,
+              transparent 60%,
+              rgba(0,0,0,0.5) 65%,
+              transparent 70%,
+              transparent 100%
+            )`,
           }}
         />
       </div>
@@ -157,7 +151,12 @@ function DashboardContent() {
       {/* Center Content */}
       <div className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10">
         {/* Logo Icon */}
-        <div className="w-20 h-20 rounded-2xl bg-[#1a1a1f] flex items-center justify-center shadow-2xl mb-2 border border-[#2a2a30]/50">
+        <div
+          className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60"
+          style={{
+            boxShadow: '0 0 60px rgba(255, 255, 255, 0.04), 0 0 20px rgba(255, 255, 255, 0.02)',
+          }}
+        >
           <svg
             width="40"
             height="40"
