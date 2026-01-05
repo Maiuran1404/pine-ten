@@ -21,6 +21,15 @@ export default function ChatPage() {
   useEffect(() => {
     setDrafts(getDrafts());
 
+    // Check for draft ID from URL (clicking from sidebar)
+    const draftParam = searchParams.get("draft");
+    if (draftParam) {
+      setCurrentDraftId(draftParam);
+      setShowDrafts(false);
+      setIsTransitioning(true); // Use modern design for drafts too
+      return;
+    }
+
     // Check for initial message from URL
     const messageParam = searchParams.get("message");
     if (messageParam) {
@@ -30,11 +39,6 @@ export default function ChatPage() {
       const newId = generateDraftId();
       setCurrentDraftId(newId);
       setShowDrafts(false);
-
-      // End transition after a short delay to allow smooth handoff
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 100);
     }
   }, [searchParams]);
 
@@ -187,10 +191,10 @@ export default function ChatPage() {
 
       <div className={cn(
         "relative z-10",
-        initialMessage ? "flex flex-col px-4 sm:px-8 lg:px-16 pt-8 h-[calc(100vh-4rem)] pb-6" : "p-6 space-y-6 h-full"
+        isTransitioning ? "flex flex-col px-4 sm:px-8 lg:px-16 pt-8 h-[calc(100vh-4rem)] pb-6" : "p-6 space-y-6 h-full"
       )}>
-        {/* Header - only show when not transitioning from dashboard */}
-        {!initialMessage && (
+        {/* Header - only show when not using modern design */}
+        {!isTransitioning && (
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-white">New Design Request</h1>
@@ -214,8 +218,8 @@ export default function ChatPage() {
           </div>
         )}
 
-        {/* Horizontal scroll of drafts when in chat mode - only show when not transitioning */}
-        {drafts.length > 0 && currentDraftId && !initialMessage && (
+        {/* Horizontal scroll of drafts when in chat mode - only show when not using modern design */}
+        {drafts.length > 0 && currentDraftId && !isTransitioning && (
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-2 pb-2">
               <Button
@@ -254,7 +258,7 @@ export default function ChatPage() {
             draftId={currentDraftId || generateDraftId()}
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
-            seamlessTransition={!!initialMessage}
+            seamlessTransition={isTransitioning}
           />
         </div>
       </div>

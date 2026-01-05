@@ -22,6 +22,11 @@ export default function AdminLayout({
   const { data: session, isPending } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
+  // Set page title for admin portal
+  useEffect(() => {
+    document.title = "Super Admin | Crafted";
+  }, []);
+
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/login");
@@ -70,9 +75,9 @@ export default function AdminLayout({
       }
     >
       <AdminSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-[#0a0a0a]">
         <Header />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

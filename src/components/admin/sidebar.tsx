@@ -96,12 +96,6 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
       <SidebarHeader className="h-16 justify-center">
-        <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-950/80">
-            <span className="text-sm font-bold text-rose-400">S</span>
-          </div>
-          <span className="text-sm font-semibold">Super Admin</span>
-        </div>
         <SidebarTrigger />
       </SidebarHeader>
 

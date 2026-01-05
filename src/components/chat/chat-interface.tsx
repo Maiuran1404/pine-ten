@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { useSession } from "@/lib/auth-client";
-import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle, ArrowUp } from "lucide-react";
+import { Send, Coins, Clock, Check, X, Image as ImageIcon, Paperclip, FileIcon, XCircle, ArrowUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
 
@@ -536,21 +536,38 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
   const chatTitle = seamlessTransition ? getChatTitle() : null;
 
+  const handleDeleteChat = () => {
+    if (confirm("Are you sure you want to delete this chat?")) {
+      deleteDraft(draftId);
+      onDraftUpdate?.();
+      router.push("/dashboard");
+    }
+  };
+
   return (
     <div className={cn(
       "flex flex-col relative",
       seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]"
     )}>
       {/* Chat title - shown when there's context */}
-      {chatTitle && (
+      {seamlessTransition && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="shrink-0 mb-4 pb-4 border-b border-[#2a2a30]/50"
+          className="shrink-0 mb-4 pb-4 border-b border-[#2a2a30]/50 flex items-start justify-between"
         >
-          <h1 className="text-lg font-medium text-white truncate">{chatTitle}</h1>
-          <p className="text-sm text-[#6b6b6b] mt-1">Design Request</p>
+          <div>
+            <h1 className="text-lg font-medium text-white truncate">{chatTitle || "New Chat"}</h1>
+            <p className="text-sm text-[#6b6b6b] mt-1">Design Request</p>
+          </div>
+          <button
+            onClick={handleDeleteChat}
+            className="p-2 rounded-lg text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Delete chat"
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
         </motion.div>
       )}
       {/* Messages - scrollable area */}

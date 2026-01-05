@@ -16,6 +16,11 @@ export default function FreelancerLayout({
   const { data: session, isPending } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Set page title for artist portal
+  useEffect(() => {
+    document.title = "Artist Portal | Crafted";
+  }, []);
+
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/login");

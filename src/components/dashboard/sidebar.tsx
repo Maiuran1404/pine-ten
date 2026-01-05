@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -23,7 +24,9 @@ import {
   Wallet,
   Settings2,
   History,
+  MessageSquare,
 } from "lucide-react";
+import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 
 const navigation = [
   {
@@ -60,10 +63,58 @@ interface AppSidebarProps {
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
+
+  // Load chat drafts from localStorage
+  useEffect(() => {
+    const loadDrafts = () => {
+      const drafts = getDrafts();
+      setChatDrafts(drafts);
+    };
+
+    loadDrafts();
+
+    // Listen for storage changes (when drafts are updated)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "chat-drafts") {
+        loadDrafts();
+      }
+    };
+
+    // Also listen for custom events from same tab
+    const handleDraftUpdate = () => loadDrafts();
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("drafts-updated", handleDraftUpdate);
+
+    // Poll for changes every 2 seconds (for same-tab updates)
+    const interval = setInterval(loadDrafts, 2000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("drafts-updated", handleDraftUpdate);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLinkClick = () => {
     setOpenMobile(false);
   };
+
+  // Combine and sort recents - drafts first (ongoing), then submitted tasks
+  const allRecents = [
+    ...chatDrafts.map(d => ({
+      id: d.id,
+      title: d.title,
+      type: "draft" as const,
+      updatedAt: d.updatedAt,
+    })),
+    ...recentTasks.map(t => ({
+      id: t.id,
+      title: t.title,
+      type: "task" as const,
+      updatedAt: new Date().toISOString(),
+    })),
+  ].slice(0, 5);
 
   return (
     <Sidebar
@@ -110,23 +161,30 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {recentTasks.length > 0 && (
+        {allRecents.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50">
               Recents
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {recentTasks.slice(0, 5).map((task) => (
-                  <SidebarMenuItem key={task.id}>
+                {allRecents.map((item) => (
+                  <SidebarMenuItem key={`${item.type}-${item.id}`}>
                     <SidebarMenuButton
                       asChild
-                      tooltip={task.title}
+                      tooltip={item.title}
                       className="rounded-xl"
                     >
-                      <Link href={`/dashboard/tasks/${task.id}`} onClick={handleLinkClick}>
-                        <History className="h-4 w-4" />
-                        <span className="truncate">{task.title}</span>
+                      <Link
+                        href={item.type === "draft" ? `/dashboard/chat?draft=${item.id}` : `/dashboard/tasks/${item.id}`}
+                        onClick={handleLinkClick}
+                      >
+                        {item.type === "draft" ? (
+                          <MessageSquare className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <History className="h-4 w-4" />
+                        )}
+                        <span className="truncate">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -47,6 +47,8 @@ function setLocalDrafts(drafts: ChatDraft[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+    // Dispatch custom event to notify sidebar of changes
+    window.dispatchEvent(new CustomEvent("drafts-updated"));
   } catch {
     console.error("Failed to save drafts to localStorage");
   }

@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="relative flex flex-col min-h-full px-4 sm:px-6 lg:px-8 pt-24 pb-20 bg-[#0a0a0a] overflow-auto">
+    <div className="relative flex flex-col min-h-full overflow-auto">
       {/* Curtain light from top - subtle ambient glow */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
