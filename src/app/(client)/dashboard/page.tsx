@@ -99,24 +99,45 @@ function DashboardContent() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a]">
-      {/* Animated glow behind logo */}
+    <div className="relative flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a] overflow-hidden">
+      {/* Curtain light from top */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[400px] h-[400px] pointer-events-none animate-pulse"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[70%] pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 35%, transparent 65%)',
-          animation: 'glow 4s ease-in-out infinite',
+          background: `linear-gradient(180deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.03) 20%,
+            rgba(255, 255, 255, 0.015) 40%,
+            transparent 70%
+          )`,
+          maskImage: `linear-gradient(90deg,
+            transparent 0%,
+            rgba(0,0,0,0.3) 20%,
+            rgba(0,0,0,0.8) 40%,
+            black 50%,
+            rgba(0,0,0,0.8) 60%,
+            rgba(0,0,0,0.3) 80%,
+            transparent 100%
+          )`,
+          WebkitMaskImage: `linear-gradient(90deg,
+            transparent 0%,
+            rgba(0,0,0,0.3) 20%,
+            rgba(0,0,0,0.8) 40%,
+            black 50%,
+            rgba(0,0,0,0.8) 60%,
+            rgba(0,0,0,0.3) 80%,
+            transparent 100%
+          )`,
+          animation: 'curtainPulse 6s ease-in-out infinite',
         }}
       />
       <style jsx>{`
-        @keyframes glow {
+        @keyframes curtainPulse {
           0%, 100% {
-            opacity: 0.6;
-            transform: translate(-50%, -60%) scale(1);
+            opacity: 0.7;
           }
           50% {
             opacity: 1;
-            transform: translate(-50%, -60%) scale(1.05);
           }
         }
       `}</style>
@@ -126,9 +147,6 @@ function DashboardContent() {
         {/* Logo Icon */}
         <div
           className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60"
-          style={{
-            boxShadow: '0 0 60px rgba(255, 255, 255, 0.04), 0 0 20px rgba(255, 255, 255, 0.02)',
-          }}
         >
           <svg
             width="40"

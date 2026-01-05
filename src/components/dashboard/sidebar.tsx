@@ -56,12 +56,17 @@ interface SidebarProps {
 export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, recentTasks = [] }: SidebarProps) {
   const pathname = usePathname();
 
+  // On mobile, sidebar is never "collapsed" - it slides in/out at full width
+  // collapsed state only applies on desktop (lg+)
+  const isCollapsedDesktop = collapsed;
+
   return (
     <>
       {/* Mobile overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/80 lg:hidden transition-opacity duration-300 ease-in-out",
+          "fixed inset-0 z-40 bg-black/80 lg:hidden",
+          "transition-opacity duration-300 ease-out",
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
@@ -71,9 +76,14 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a] lg:static lg:z-auto transition-all duration-300 ease-in-out",
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          collapsed ? "w-16" : "w-64"
+          // Base styles
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a]",
+          // Mobile: always w-64, only transform animates
+          "w-64 transform transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "-translate-x-full",
+          // Desktop: static positioning, width changes based on collapsed
+          "lg:static lg:z-auto lg:translate-x-0 lg:transition-[width] lg:duration-300",
+          isCollapsedDesktop && "lg:w-16"
         )}
         style={{ fontFamily: "'Satoshi', sans-serif" }}
         role="navigation"
@@ -81,8 +91,8 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
       >
         {/* Header with Toggle */}
         <div className={cn(
-          "flex h-16 items-center shrink-0",
-          collapsed ? "justify-center px-2" : "px-4"
+          "flex h-16 items-center shrink-0 px-4",
+          isCollapsedDesktop && "lg:justify-center lg:px-2"
         )}>
           {/* Desktop Toggle Button */}
           <Button
@@ -90,10 +100,10 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
             size="icon"
             className="hidden lg:inline-flex h-9 w-9 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f] rounded-lg"
             onClick={onToggleCollapse}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
+            aria-label={isCollapsedDesktop ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCollapsedDesktop}
           >
-            {collapsed ? (
+            {isCollapsedDesktop ? (
               <PanelLeft className="h-5 w-5" />
             ) : (
               <PanelLeftClose className="h-5 w-5" />
@@ -101,22 +111,23 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
           </Button>
 
           {/* Mobile Close Button */}
-          {!collapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden ml-auto h-9 w-9 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f] rounded-lg"
-              onClick={onClose}
-              aria-label="Close sidebar"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden ml-auto h-9 w-9 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1f] rounded-lg"
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Navigation */}
         <nav
-          className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-2" : "px-3")}
+          className={cn(
+            "flex-1 space-y-1 overflow-y-auto px-3",
+            isCollapsedDesktop && "lg:px-2"
+          )}
           aria-label="Sidebar navigation"
         >
           {navigation.map((item) => {
@@ -128,11 +139,12 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
                 key={item.name}
                 href={item.href}
                 onClick={onClose}
-                title={collapsed ? item.name : undefined}
+                title={isCollapsedDesktop ? item.name : undefined}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
-                  collapsed ? "justify-center p-2.5" : "px-3 py-2.5",
+                  "flex items-center gap-3 rounded-xl text-sm font-medium px-3 py-2.5",
+                  "transition-colors duration-150",
+                  isCollapsedDesktop && "lg:justify-center lg:p-2.5",
                   isActive
                     ? "bg-[#1a1a1f] text-white"
                     : "text-[#6b6b6b] hover:bg-[#1a1a1f]/50 hover:text-white"
@@ -142,14 +154,14 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
                   "h-5 w-5 shrink-0",
                   isHighlight && !isActive && "text-emerald-500"
                 )} />
-                {!collapsed && <span>{item.name}</span>}
+                <span className={cn(isCollapsedDesktop && "lg:hidden")}>{item.name}</span>
               </Link>
             );
           })}
 
-          {/* Recents Section */}
-          {!collapsed && recentTasks.length > 0 && (
-            <div className="pt-6">
+          {/* Recents Section - hidden on desktop when collapsed */}
+          {recentTasks.length > 0 && (
+            <div className={cn("pt-6", isCollapsedDesktop && "lg:hidden")}>
               <div className="px-3 pb-2">
                 <p className="text-xs font-medium text-[#4a4a4a] uppercase tracking-wider">
                   Recents
@@ -172,22 +184,20 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
           )}
         </nav>
 
-        {/* Footer */}
-        {!collapsed && (
-          <div className="shrink-0 p-4">
-            <div className="px-3 py-2">
-              <p className="text-xs text-[#4a4a4a]">
-                Need help?
-              </p>
-              <a
-                href="#"
-                className="text-xs text-[#6b6b6b] hover:text-white underline underline-offset-4 transition-colors"
-              >
-                Contact support
-              </a>
-            </div>
+        {/* Footer - hidden on desktop when collapsed */}
+        <div className={cn("shrink-0 p-4", isCollapsedDesktop && "lg:hidden")}>
+          <div className="px-3 py-2">
+            <p className="text-xs text-[#4a4a4a]">
+              Need help?
+            </p>
+            <a
+              href="#"
+              className="text-xs text-[#6b6b6b] hover:text-white underline underline-offset-4 transition-colors"
+            >
+              Contact support
+            </a>
           </div>
-        )}
+        </div>
       </aside>
     </>
   );
