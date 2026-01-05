@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
-import { signUp, signIn } from "@/lib/auth-client";
+import { signUp, signIn, useSession } from "@/lib/auth-client";
 import { useSubdomain } from "@/hooks/use-subdomain";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,9 @@ function GoogleIcon({ className }: { className?: string }) {
 
 function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const portal = useSubdomain();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -67,6 +69,14 @@ function RegisterContent() {
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
+      router.push(redirectTo);
+    }
+  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -136,6 +146,24 @@ function RegisterContent() {
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't show register form if already logged in (redirect will happen)
+  if (session?.user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

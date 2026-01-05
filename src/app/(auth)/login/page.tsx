@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { signIn } from "@/lib/auth-client";
+import { signIn, useSession } from "@/lib/auth-client";
 import { useSubdomain } from "@/hooks/use-subdomain";
 import { cn } from "@/lib/utils";
 
@@ -57,13 +57,23 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const portal = useSubdomain();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const isSuperadmin = portal.type === "superadmin";
   const showSocialLogin = !isSuperadmin;
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      const redirectTo = searchParams.get("redirect") || portal.defaultRedirect;
+      router.push(redirectTo);
+    }
+  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -121,6 +131,24 @@ export default function LoginPage() {
     "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't show login form if already logged in (redirect will happen)
+  if (session?.user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
