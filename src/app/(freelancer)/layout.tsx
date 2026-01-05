@@ -18,7 +18,7 @@ export default function FreelancerLayout({
 
   // Set page title for artist portal
   useEffect(() => {
-    document.title = "Artist Portal | Crafted";
+    document.title = "Artist";
   }, []);
 
   useEffect(() => {

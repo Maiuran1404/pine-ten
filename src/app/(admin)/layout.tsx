@@ -24,7 +24,7 @@ export default function AdminLayout({
 
   // Set page title for admin portal
   useEffect(() => {
-    document.title = "Super Admin | Crafted";
+    document.title = "Superadmin";
   }, []);
 
   useEffect(() => {
