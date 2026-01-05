@@ -81,7 +81,9 @@ function DashboardContent() {
     if (!chatInput.trim() || isSending) return;
 
     setIsSending(true);
-    router.push(`/dashboard/chat?message=${encodeURIComponent(chatInput.trim())}`);
+    router.push(
+      `/dashboard/chat?message=${encodeURIComponent(chatInput.trim())}`
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -116,8 +118,10 @@ function DashboardContent() {
                 transparent 120px
               )
             `,
-            maskImage: 'radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)',
+            maskImage:
+              "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 70%)",
           }}
         />
         {/* Vertical light beams */}
@@ -142,8 +146,10 @@ function DashboardContent() {
                 transparent 100%
               )
             `,
-            maskImage: 'linear-gradient(180deg, black 0%, black 30%, transparent 80%)',
-            WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 30%, transparent 80%)',
+            maskImage:
+              "linear-gradient(180deg, black 0%, black 30%, transparent 80%)",
+            WebkitMaskImage:
+              "linear-gradient(180deg, black 0%, black 30%, transparent 80%)",
           }}
         />
       </div>
@@ -171,24 +177,26 @@ function DashboardContent() {
           <h1
             className="text-3xl sm:text-4xl font-normal tracking-tight"
             style={{
-              background: 'linear-gradient(90deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              background:
+                "linear-gradient(90deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
             }}
           >
-            Good to See You!
+            Good to see you!
           </h1>
           <h2
             className="text-2xl sm:text-3xl font-normal tracking-tight"
             style={{
-              background: 'linear-gradient(90deg, #e5e7eb 0%, #9ca3af 40%, #6b7280 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              background:
+                "linear-gradient(90deg, #e5e7eb 0%, #9ca3af 40%, #6b7280 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
             }}
           >
-            How Can I be an Assistance?
+            How can I help you today?
           </h2>
           <p className="text-[#6b7280] text-base mt-4">
             Im available 24/7 for you, ask me anything.
@@ -201,8 +209,9 @@ function DashboardContent() {
           <div
             className="flex items-center justify-between px-4 py-3 rounded-t-xl border border-b-0 border-[#2a2a30]/60"
             style={{
-              background: 'linear-gradient(180deg, rgba(25, 25, 28, 0.8) 0%, rgba(20, 20, 23, 0.9) 100%)',
-              backdropFilter: 'blur(10px)',
+              background:
+                "linear-gradient(180deg, rgba(25, 25, 28, 0.8) 0%, rgba(20, 20, 23, 0.9) 100%)",
+              backdropFilter: "blur(10px)",
             }}
           >
             <div className="flex items-center gap-2 text-[#6b6b6b] text-sm">
@@ -219,8 +228,9 @@ function DashboardContent() {
           <div
             className="relative flex items-center rounded-b-xl border border-[#2a2a30]/60"
             style={{
-              background: 'linear-gradient(180deg, rgba(20, 20, 23, 0.9) 0%, rgba(15, 15, 18, 0.95) 100%)',
-              backdropFilter: 'blur(10px)',
+              background:
+                "linear-gradient(180deg, rgba(20, 20, 23, 0.9) 0%, rgba(15, 15, 18, 0.95) 100%)",
+              backdropFilter: "blur(10px)",
             }}
           >
             <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
@@ -253,8 +263,8 @@ function DashboardContent() {
               onClick={() => handleQuickPrompt(prompt.label)}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#2a2a30]/60 hover:border-[#3a3a40]/80 transition-all text-sm text-[#6b6b6b] hover:text-white"
               style={{
-                background: 'rgba(20, 20, 23, 0.6)',
-                backdropFilter: 'blur(8px)',
+                background: "rgba(20, 20, 23, 0.6)",
+                backdropFilter: "blur(8px)",
               }}
             >
               <prompt.icon className="w-4 h-4" />
@@ -264,8 +274,8 @@ function DashboardContent() {
           <button
             className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-[#2a2a30]/60 hover:border-[#3a3a40]/80 transition-all text-[#6b6b6b] hover:text-white"
             style={{
-              background: 'rgba(20, 20, 23, 0.6)',
-              backdropFilter: 'blur(8px)',
+              background: "rgba(20, 20, 23, 0.6)",
+              backdropFilter: "blur(8px)",
             }}
           >
             <MoreHorizontal className="w-4 h-4" />
@@ -277,7 +287,10 @@ function DashboardContent() {
       <div className="absolute bottom-6 left-0 right-0 text-center z-10">
         <p className="text-sm text-[#4a4a4a]">
           Unlock new era with Crafted.{" "}
-          <Link href="/share" className="underline hover:text-[#6b6b6b] transition-colors">
+          <Link
+            href="/share"
+            className="underline hover:text-[#6b6b6b] transition-colors"
+          >
             share us
           </Link>
         </p>

@@ -66,7 +66,10 @@ export default function ClientLayout({
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         recentTasks={recentTasks}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div
+        className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ marginLeft: 0 }}
+      >
         <Header
           onMenuClick={() => setSidebarOpen(true)}
           credits={user.credits || 0}
