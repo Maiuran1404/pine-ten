@@ -47,6 +47,12 @@ import {
   Factory,
   HandHeart,
   Sparkles,
+  Target,
+  Layout,
+  Share2,
+  Presentation,
+  BookOpen,
+  Zap,
 } from "lucide-react";
 
 interface ClientBrandOnboardingProps {
@@ -80,14 +86,28 @@ interface BrandData {
   contactPhone: string;
   keywords: string[];
   screenshotUrl?: string;
+  // Feel preferences (0-100 scale)
+  feelPlayfulSerious: number;
+  feelBoldMinimal: number;
+  feelExperimentalClassic: number;
+  // Creative focus areas
+  creativeFocus: string[];
 }
 
-type OnboardingStep = "brand-input" | "scanning" | "company-info" | "brand-colors" | "complete";
+interface CreativeFocusOption {
+  id: string;
+  title: string;
+  description: string;
+}
+
+type OnboardingStep = "brand-input" | "scanning" | "company-info" | "brand-colors" | "fine-tune" | "creative-focus" | "complete";
 
 const STEP_CONFIG = [
   { id: "brand-input", label: "Brand" },
   { id: "company-info", label: "Company" },
   { id: "brand-colors", label: "Colors" },
+  { id: "fine-tune", label: "Style" },
+  { id: "creative-focus", label: "Focus" },
   { id: "complete", label: "Done" },
 ] as const;
 
@@ -111,7 +131,20 @@ const defaultBrandData: BrandData = {
   contactEmail: "",
   contactPhone: "",
   keywords: [],
+  // Feel preferences default to middle (50)
+  feelPlayfulSerious: 50,
+  feelBoldMinimal: 50,
+  feelExperimentalClassic: 50,
+  creativeFocus: [],
 };
+
+const CREATIVE_FOCUS_OPTIONS: CreativeFocusOption[] = [
+  { id: "ads", title: "Ads that actually convert", description: "On-brand, ready to launch." },
+  { id: "landing-pages", title: "Landing page visuals", description: "Make your site feel premium." },
+  { id: "social", title: "Social content", description: "Consistent posts, no designers needed." },
+  { id: "pitch-decks", title: "Pitch decks", description: "Clear, confident, investor-ready." },
+  { id: "brand-guidelines", title: "Brand guidelines", description: "So things don't fall apart as you grow." },
+];
 
 const industries = [
   "Technology",
@@ -151,57 +184,6 @@ const getIndustryIcon = (industry: string) => {
   };
   return iconMap[industry] || Building2;
 };
-
-// Decorative curved lines component
-function DecorativeLines() {
-  return (
-    <svg
-      className="absolute inset-0 w-full h-full"
-      viewBox="0 0 600 800"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid slice"
-    >
-      <line x1="0" y1="250" x2="600" y2="250" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
-      <line x1="0" y1="620" x2="600" y2="620" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
-      <path
-        d="M 420 0 L 420 250 Q 420 420 250 420 Q 80 420 80 590 L 80 620"
-        stroke="white"
-        strokeWidth="1.5"
-        strokeOpacity="0.35"
-        fill="none"
-      />
-    </svg>
-  );
-}
-
-// Grainy texture overlay
-function GrainOverlay() {
-  return (
-    <>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "256px 256px",
-          opacity: 0.35,
-          mixBlendMode: "overlay",
-        }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.25,
-          mixBlendMode: "soft-light",
-        }}
-      />
-    </>
-  );
-}
 
 // Segmented Progress Bar Component
 function SegmentedProgress({
@@ -347,10 +329,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
       setIsLoading(false);
 
       refetchSession().catch(() => {});
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      toast.success("Welcome aboard!");
-      onComplete();
+      toast.success("Brand profile saved!");
     } catch (error) {
       console.error("Onboarding error:", error);
       toast.error("Something went wrong. Please try again.");
@@ -740,72 +719,27 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                           </div>
                         </div>
 
-                        {/* Hero section */}
-                        <div className="p-4 space-y-4">
-                          {/* Headline */}
-                          <div className="space-y-1">
-                            <h3 className="font-bold text-gray-900 text-sm leading-tight">
-                              {brandData.industry
-                                ? `Welcome to ${brandData.name || "Your Company"}`
-                                : "Welcome to your brand"}
-                            </h3>
-                            <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                              {brandData.description
-                                ? brandData.description.slice(0, 80) + (brandData.description.length > 80 ? "..." : "")
-                                : brandData.industry
-                                  ? `Your trusted ${brandData.industry.toLowerCase()} partner`
-                                  : "Your company description will appear here"}
-                            </p>
-                          </div>
-
-                          {/* Stats or features based on industry */}
-                          <div className="flex gap-2">
-                            {(brandData.industry === "E-commerce" || brandData.industry === "SaaS") ? (
-                              <>
-                                <div className="flex-1 p-2 rounded-lg bg-gray-50 text-center">
-                                  <div className="text-sm font-bold" style={{ color: brandData.primaryColor || "#14b8a6" }}>2.4k+</div>
-                                  <div className="text-[10px] text-gray-500">Users</div>
-                                </div>
-                                <div className="flex-1 p-2 rounded-lg bg-gray-50 text-center">
-                                  <div className="text-sm font-bold" style={{ color: brandData.primaryColor || "#14b8a6" }}>98%</div>
-                                  <div className="text-[10px] text-gray-500">Satisfaction</div>
-                                </div>
-                                <div className="flex-1 p-2 rounded-lg bg-gray-50 text-center">
-                                  <div className="text-sm font-bold" style={{ color: brandData.primaryColor || "#14b8a6" }}>24/7</div>
-                                  <div className="text-[10px] text-gray-500">Support</div>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div
-                                  className="w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center"
-                                  style={{ backgroundColor: `${brandData.primaryColor || "#14b8a6"}20` }}
-                                >
-                                  <Check className="w-4 h-4" style={{ color: brandData.primaryColor || "#14b8a6" }} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-xs font-medium text-gray-700">
-                                    {brandData.industry || "Professional"} Excellence
-                                  </div>
-                                  <div className="text-[10px] text-gray-400">Trusted by thousands</div>
-                                </div>
-                              </>
-                            )}
+                        {/* Content section */}
+                        <div className="p-4 space-y-3">
+                          {/* Placeholder content lines */}
+                          <div className="space-y-2">
+                            <div className="h-2.5 bg-gray-200 rounded-full w-3/4" />
+                            <div className="h-2 bg-gray-100 rounded-full w-1/2" />
                           </div>
 
                           {/* CTA Buttons */}
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 pt-1">
                             <div
-                              className="h-8 px-4 rounded-lg flex items-center justify-center flex-1 transition-all duration-300"
+                              className="h-7 px-3 rounded-lg flex items-center justify-center flex-1 transition-all duration-300"
                               style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
                             >
-                              <span className="text-white text-xs font-medium">Get Started</span>
+                              <span className="text-white text-[11px] font-medium">Get Started</span>
                             </div>
                             <div
-                              className="h-8 px-4 rounded-lg flex items-center justify-center border-2 transition-all duration-300"
+                              className="h-7 px-3 rounded-lg flex items-center justify-center border-2 transition-all duration-300"
                               style={{ borderColor: brandData.primaryColor || "#14b8a6", color: brandData.primaryColor || "#14b8a6" }}
                             >
-                              <span className="text-xs font-medium">Learn More</span>
+                              <span className="text-[11px] font-medium">Learn</span>
                             </div>
                           </div>
                         </div>
@@ -826,15 +760,15 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   {/* Color Pickers */}
                   <div className="flex gap-6 justify-center">
                     {[
-                      { key: "primaryColor", label: "Primary", presets: ["#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#6366f1", "#000000"] },
-                      { key: "secondaryColor", label: "Secondary", presets: ["#3b82f6", "#1e3a8a", "#4338ca", "#7c3aed", "#be185d", "#9a3412", "#166534", "#155e75", "#334155", "#18181b"] },
-                    ].map(({ key, label, presets }) => (
+                      { key: "primaryColor", label: "Primary", defaultColor: "#14b8a6", presets: ["#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#6366f1", "#000000"] },
+                      { key: "secondaryColor", label: "Secondary", defaultColor: "#3b82f6", presets: ["#3b82f6", "#1e3a8a", "#4338ca", "#7c3aed", "#be185d", "#9a3412", "#166534", "#155e75", "#334155", "#18181b"] },
+                    ].map(({ key, label, defaultColor, presets }) => (
                       <Popover key={key}>
                         <PopoverTrigger asChild>
                           <button className="flex flex-col items-center gap-2 group cursor-pointer">
                             <div
                               className="w-16 h-16 rounded-2xl shadow-lg cursor-pointer group-hover:scale-105 transition-all duration-200 ring-4 ring-white"
-                              style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
+                              style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || defaultColor }}
                             />
                             <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
                           </button>
@@ -860,11 +794,41 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                               ))}
                             </div>
 
-                            {/* Custom Color Input */}
+                            {/* Color Wheel Picker */}
+                            <div className="relative">
+                              <label
+                                htmlFor={`${key}-wheel`}
+                                className="flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-border hover:border-foreground/50 cursor-pointer transition-colors group"
+                              >
+                                <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                                  {/* Rainbow gradient background */}
+                                  <div
+                                    className="absolute inset-0"
+                                    style={{
+                                      background: "conic-gradient(from 0deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080, #ff0000)"
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium group-hover:text-foreground transition-colors">Pick from color wheel</div>
+                                  <div className="text-xs text-muted-foreground">Choose any color</div>
+                                </div>
+                              </label>
+                              <input
+                                id={`${key}-wheel`}
+                                type="color"
+                                value={(brandData[key as keyof BrandData] as string) || defaultColor}
+                                onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                            </div>
+
+                            {/* Custom Hex Input */}
                             <div className="flex gap-2 items-center">
                               <div
                                 className="w-10 h-10 rounded-lg border-2 border-input flex-shrink-0"
-                                style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
+                                style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || defaultColor }}
                               />
                               <Input
                                 value={(brandData[key as keyof BrandData] as string) || ""}
@@ -889,6 +853,300 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       Back
                     </Button>
                     <Button
+                      onClick={() => setStep("fine-tune")}
+                      className="flex-1 h-12 font-semibold cursor-pointer"
+                    >
+                      Continue
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Fine-tune the Feel Step - Visual "This or That" Selection */}
+              {step === "fine-tune" && (
+                <motion.div
+                  key="fine-tune"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      Which feels more like you?
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Pick the style that matches your brand&apos;s vibe.
+                    </p>
+                  </div>
+
+                  {/* Visual "This or That" Cards */}
+                  <div className="space-y-4">
+                    {/* Playful vs Serious */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelPlayfulSerious: 0 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelPlayfulSerious < 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Playful */}
+                        <div className="mb-3 flex items-center gap-1">
+                          <div className="w-4 h-4 rounded-full bg-yellow-400" />
+                          <div className="w-3 h-3 rounded-full bg-pink-400" />
+                          <div className="w-5 h-5 rounded-full bg-cyan-400" />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Playful</span>
+                          <p className="text-xs text-muted-foreground">Fun, friendly, approachable</p>
+                        </div>
+                        {brandData.feelPlayfulSerious < 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelPlayfulSerious: 100 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelPlayfulSerious >= 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Serious */}
+                        <div className="mb-3 flex items-center gap-2">
+                          <div className="w-8 h-1 bg-gray-800 rounded" />
+                          <div className="w-4 h-1 bg-gray-400 rounded" />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Serious</span>
+                          <p className="text-xs text-muted-foreground">Professional, trustworthy</p>
+                        </div>
+                        {brandData.feelPlayfulSerious >= 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Bold vs Minimal */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelBoldMinimal: 0 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelBoldMinimal < 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Bold */}
+                        <div className="mb-3">
+                          <div className="text-2xl font-black tracking-tight text-foreground">Aa</div>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Bold</span>
+                          <p className="text-xs text-muted-foreground">Strong, impactful, loud</p>
+                        </div>
+                        {brandData.feelBoldMinimal < 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelBoldMinimal: 100 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelBoldMinimal >= 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Minimal */}
+                        <div className="mb-3">
+                          <div className="text-2xl font-light tracking-wide text-muted-foreground">Aa</div>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Minimal</span>
+                          <p className="text-xs text-muted-foreground">Clean, refined, subtle</p>
+                        </div>
+                        {brandData.feelBoldMinimal >= 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Experimental vs Classic */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelExperimentalClassic: 0 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelExperimentalClassic < 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Experimental */}
+                        <div className="mb-3 flex items-end gap-1">
+                          <div className="w-3 h-6 bg-gradient-to-t from-violet-500 to-pink-500 rounded-sm -rotate-12" />
+                          <div className="w-3 h-4 bg-gradient-to-t from-cyan-500 to-blue-500 rounded-sm rotate-6" />
+                          <div className="w-3 h-8 bg-gradient-to-t from-orange-500 to-yellow-500 rounded-sm -rotate-3" />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Experimental</span>
+                          <p className="text-xs text-muted-foreground">Edgy, creative, unique</p>
+                        </div>
+                        {brandData.feelExperimentalClassic < 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setBrandData((prev) => ({ ...prev, feelExperimentalClassic: 100 }))}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                          brandData.feelExperimentalClassic >= 50
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/50"
+                        )}
+                      >
+                        {/* Visual representation - Classic */}
+                        <div className="mb-3 flex items-end gap-1">
+                          <div className="w-3 h-4 bg-gray-700 rounded-sm" />
+                          <div className="w-3 h-6 bg-gray-700 rounded-sm" />
+                          <div className="w-3 h-5 bg-gray-700 rounded-sm" />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-semibold text-foreground">Classic</span>
+                          <p className="text-xs text-muted-foreground">Timeless, elegant, proven</p>
+                        </div>
+                        {brandData.feelExperimentalClassic >= 50 && (
+                          <div className="absolute top-3 right-3">
+                            <Check className="w-4 h-4 text-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep("brand-colors")}
+                      className="h-12 cursor-pointer"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={() => setStep("creative-focus")}
+                      className="flex-1 h-12 font-semibold cursor-pointer"
+                    >
+                      Save & continue
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Creative Focus Step */}
+              {step === "creative-focus" && (
+                <motion.div
+                  key="creative-focus"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      What do you want to improve first?
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Pick what matters right now. You can always add more later.
+                    </p>
+                  </div>
+
+                  {/* Creative Focus Cards */}
+                  <div className="space-y-3">
+                    {CREATIVE_FOCUS_OPTIONS.map((option) => {
+                      const isSelected = brandData.creativeFocus.includes(option.id);
+                      const IconComponent = {
+                        "ads": Target,
+                        "landing-pages": Layout,
+                        "social": Share2,
+                        "pitch-decks": Presentation,
+                        "brand-guidelines": BookOpen,
+                      }[option.id] || Zap;
+
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => {
+                            setBrandData((prev) => ({
+                              ...prev,
+                              creativeFocus: isSelected
+                                ? prev.creativeFocus.filter((id) => id !== option.id)
+                                : [...prev.creativeFocus, option.id],
+                            }));
+                          }}
+                          className={cn(
+                            "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-start gap-4",
+                            isSelected
+                              ? "border-foreground bg-foreground/5"
+                              : "border-border hover:border-foreground/50 bg-background"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                              isSelected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            <IconComponent className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{option.title}</span>
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-foreground" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">{option.description}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    Most teams start with 1–3.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep("fine-tune")}
+                      className="h-12 cursor-pointer"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
                       onClick={handleSubmit}
                       disabled={isLoading}
                       className="flex-1 h-12 font-semibold cursor-pointer"
@@ -900,8 +1158,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         </>
                       ) : (
                         <>
-                          Complete Setup
-                          <Check className="h-4 w-4 ml-2" />
+                          Continue
+                          <ArrowRight className="h-4 w-4 ml-2" />
                         </>
                       )}
                     </Button>
@@ -909,7 +1167,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </motion.div>
               )}
 
-              {/* Complete Step */}
+              {/* Complete Step - Brand Ready */}
               {step === "complete" && (
                 <motion.div
                   key="complete"
@@ -920,21 +1178,57 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 >
                   <div className="space-y-2">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                      You&apos;re all set!
+                      You&apos;re all set
                     </h1>
                     <p className="text-muted-foreground">
-                      Your brand profile has been saved. Redirecting to dashboard...
+                      Crafted now understands your brand — and will protect it as you create.
                     </p>
                   </div>
 
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center shadow-lg"
+                  {/* Summary Items */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
+                      <div className="w-10 h-10 rounded-lg bg-foreground/10 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">Your Brand DNA</p>
+                        <p className="text-sm text-muted-foreground">{brandData.name} • {brandData.industry || "Brand profile saved"}</p>
+                      </div>
+                    </div>
+
+                    {brandData.creativeFocus.length > 0 && (
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
+                        <div className="w-10 h-10 rounded-lg bg-foreground/10 flex items-center justify-center">
+                          <Target className="w-5 h-5 text-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">What you want to focus on</p>
+                          <p className="text-sm text-muted-foreground">
+                            {brandData.creativeFocus.length} area{brandData.creativeFocus.length > 1 ? "s" : ""} selected
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
+                      <div className="w-10 h-10 rounded-lg bg-foreground/10 flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">Available credits</p>
+                        <p className="text-sm text-muted-foreground">Ready to create your first asset</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={onComplete}
+                    className="w-full h-12 font-semibold cursor-pointer"
                   >
-                    <Check className="h-8 w-8 text-white" />
-                  </motion.div>
+                    Create your first asset
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -959,36 +1253,10 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         </footer>
       </div>
 
-      {/* Right side - Dynamic Branding panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative overflow-hidden">
-        {/* Dynamic Gradient background - changes based on brand colors */}
-        <motion.div
-          className="absolute inset-0"
-          animate={{
-            background: step === "brand-colors" || step === "complete"
-              ? `
-                radial-gradient(ellipse at 0% 0%, ${brandData.primaryColor}88 0%, transparent 50%),
-                radial-gradient(ellipse at 100% 30%, ${brandData.secondaryColor}88 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, ${brandData.secondaryColor}44 0%, transparent 60%),
-                radial-gradient(ellipse at 30% 70%, ${brandData.primaryColor}66 0%, transparent 50%),
-                linear-gradient(180deg, ${brandData.primaryColor} 0%, ${brandData.secondaryColor} 50%, ${brandData.primaryColor}88 100%)
-              `
-              : `
-                radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%),
-                radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%),
-                radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%),
-                linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%)
-              `
-          }}
-          transition={{ duration: 0.7 }}
-        />
-
-        <GrainOverlay />
-        <DecorativeLines />
-
+      {/* Right side - Subtle preview panel (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative overflow-hidden bg-muted">
         {/* Dynamic Content based on step */}
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white w-full">
+        <div className="relative z-10 flex flex-col justify-center items-center p-12 w-full">
           <AnimatePresence mode="wait">
             {/* Brand Input Step - Welcome state */}
             {step === "brand-input" && (
@@ -1002,18 +1270,18 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               >
                 <div className="relative">
                   <motion.div
-                    className="w-32 h-32 rounded-3xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mx-auto"
+                    className="w-32 h-32 rounded-3xl bg-background border border-border shadow-lg flex items-center justify-center mx-auto"
                     animate={{
-                      boxShadow: ["0 0 0 0 rgba(255,255,255,0.2)", "0 0 0 20px rgba(255,255,255,0)", "0 0 0 0 rgba(255,255,255,0.2)"]
+                      boxShadow: ["0 4px 20px rgba(0,0,0,0.08)", "0 8px 30px rgba(0,0,0,0.12)", "0 4px 20px rgba(0,0,0,0.08)"]
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <Globe className="w-16 h-16 text-white/80" />
+                    <Globe className="w-16 h-16 text-muted-foreground/60" />
                   </motion.div>
                 </div>
                 <div className="space-y-3 max-w-sm">
-                  <h2 className="text-2xl font-bold">Your brand starts here</h2>
-                  <p className="text-white/70">
+                  <h2 className="text-2xl font-bold text-foreground">Your brand starts here</h2>
+                  <p className="text-muted-foreground">
                     Enter your website URL and we&apos;ll automatically extract your brand identity
                   </p>
                 </div>
@@ -1038,23 +1306,23 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                     animate={{ rotate: 360 }}
                     transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                   >
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white/40" />
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white/30" />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white/30" />
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white/40" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary/30" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary/20" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-primary/20" />
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary/30" />
                   </motion.div>
 
                   {/* Center building icon */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
-                      className="w-24 h-24 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center"
+                      className="w-24 h-24 rounded-2xl bg-background border border-border shadow-lg flex items-center justify-center"
                       animate={{
                         scale: [1, 1.05, 1],
-                        borderColor: ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.4)", "rgba(255,255,255,0.2)"]
+                        boxShadow: ["0 4px 20px rgba(0,0,0,0.08)", "0 8px 30px rgba(0,0,0,0.15)", "0 4px 20px rgba(0,0,0,0.08)"]
                       }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <Sparkles className="w-12 h-12 text-white/80" />
+                      <Sparkles className="w-12 h-12 text-primary/70" />
                     </motion.div>
                   </div>
 
@@ -1062,7 +1330,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   {[...Array(6)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className="absolute w-2 h-2 rounded-full bg-white/40"
+                      className="absolute w-2 h-2 rounded-full bg-primary/40"
                       initial={{
                         x: Math.random() * 192 - 96,
                         y: Math.random() * 192 - 96,
@@ -1083,13 +1351,13 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </div>
 
                 <div className="space-y-3 max-w-sm">
-                  <h2 className="text-2xl font-bold">Building your brand</h2>
-                  <p className="text-white/70">
+                  <h2 className="text-2xl font-bold text-foreground">Building your brand</h2>
+                  <p className="text-muted-foreground">
                     Analyzing colors, typography, and visual identity...
                   </p>
-                  <div className="w-48 h-1.5 bg-white/20 rounded-full mx-auto overflow-hidden">
+                  <div className="w-48 h-1.5 bg-border rounded-full mx-auto overflow-hidden">
                     <motion.div
-                      className="h-full bg-white rounded-full"
+                      className="h-full bg-primary rounded-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${scanProgress}%` }}
                       transition={{ duration: 0.3 }}
@@ -1111,7 +1379,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               >
                 {/* Brand Card */}
                 <motion.div
-                  className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 overflow-hidden"
+                  className="bg-background rounded-3xl border border-border shadow-xl overflow-hidden"
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
@@ -1131,7 +1399,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   {/* Company Icon */}
                   <div className="relative px-6 -mt-10">
                     <motion.div
-                      className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center"
+                      className="w-20 h-20 rounded-2xl bg-background shadow-xl border border-border flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", delay: 0.2 }}
@@ -1139,10 +1407,10 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       {brandData.industry ? (
                         (() => {
                           const IconComponent = getIndustryIcon(brandData.industry);
-                          return <IconComponent className="w-10 h-10 text-gray-700" />;
+                          return <IconComponent className="w-10 h-10 text-foreground" />;
                         })()
                       ) : (
-                        <span className="text-3xl font-bold text-gray-700">
+                        <span className="text-3xl font-bold text-foreground">
                           {brandData.name?.charAt(0)?.toUpperCase() || "?"}
                         </span>
                       )}
@@ -1153,7 +1421,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   <div className="p-6 pt-4 space-y-4">
                     <div>
                       <motion.h3
-                        className="text-xl font-bold text-white"
+                        className="text-xl font-bold text-foreground"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
@@ -1163,7 +1431,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       </motion.h3>
                       {brandData.industry && (
                         <motion.p
-                          className="text-white/60 text-sm mt-1"
+                          className="text-muted-foreground text-sm mt-1"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.4 }}
@@ -1176,7 +1444,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
 
                     {brandData.description && (
                       <motion.p
-                        className="text-white/70 text-sm line-clamp-3"
+                        className="text-muted-foreground text-sm line-clamp-3"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5 }}
@@ -1188,7 +1456,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
 
                     {brandData.website && (
                       <motion.div
-                        className="flex items-center gap-2 text-white/50 text-sm"
+                        className="flex items-center gap-2 text-muted-foreground text-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.6 }}
@@ -1201,7 +1469,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </motion.div>
 
                 <motion.p
-                  className="text-center text-white/50 text-sm mt-6"
+                  className="text-center text-muted-foreground text-sm mt-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
@@ -1211,7 +1479,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               </motion.div>
             )}
 
-            {/* Brand Colors Step - Live color preview */}
+            {/* Brand Colors Step - Simple color preview */}
             {step === "brand-colors" && (
               <motion.div
                 key="preview-colors"
@@ -1219,95 +1487,181 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.4 }}
+                className="text-center space-y-8"
+              >
+                {/* Color circles display */}
+                <div className="flex items-center justify-center gap-6">
+                  <motion.div
+                    className="w-28 h-28 rounded-full shadow-xl"
+                    style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                    animate={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  <motion.div
+                    className="w-28 h-28 rounded-full shadow-xl"
+                    style={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
+                    animate={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+
+                {/* Company name with brand color */}
+                <div className="space-y-3">
+                  <h2 className="text-2xl font-bold text-foreground">{brandData.name || "Your Brand"}</h2>
+                  <p className="text-muted-foreground text-sm">Your brand colors</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Fine-tune Step - Style spectrum preview */}
+            {step === "fine-tune" && (
+              <motion.div
+                key="preview-fine-tune"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4 }}
                 className="w-full max-w-sm"
               >
-                {/* Color-themed brand card */}
+                {/* Style visualization */}
                 <motion.div
-                  className="rounded-3xl overflow-hidden shadow-2xl"
-                  style={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
-                  animate={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
-                  transition={{ duration: 0.3 }}
+                  className="bg-background rounded-3xl border border-border shadow-xl p-8 space-y-6"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
                 >
-                  <div className="p-6">
-                    {/* Mini app preview */}
-                    <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
-                      {/* App header */}
-                      <motion.div
-                        className="h-12 flex items-center px-4 gap-3"
-                        style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                        animate={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">
-                            {brandData.name?.charAt(0)?.toUpperCase() || "C"}
-                          </span>
-                        </div>
-                        <span className="text-white font-semibold text-sm truncate">
-                          {brandData.name || "Your Brand"}
-                        </span>
-                      </motion.div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-lg font-semibold text-foreground">Your brand feel</h3>
+                    <p className="text-sm text-muted-foreground">Adjusting in real-time</p>
+                  </div>
 
-                      {/* App content */}
-                      <div className="p-4 space-y-4">
-                        {/* Content blocks */}
-                        <div className="space-y-2">
-                          <div className="h-3 bg-gray-200 rounded-full w-3/4" />
-                          <div className="h-3 bg-gray-100 rounded-full w-1/2" />
-                        </div>
-
-                        {/* Colored elements */}
-                        <div className="flex gap-2">
-                          <motion.div
-                            className="h-8 px-4 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                            animate={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <span className="text-white text-xs font-medium">Primary</span>
-                          </motion.div>
-                          <motion.div
-                            className="h-8 px-4 rounded-lg flex items-center justify-center border-2"
-                            style={{
-                              borderColor: brandData.primaryColor || "#14b8a6",
-                              color: brandData.primaryColor || "#14b8a6"
-                            }}
-                            animate={{
-                              borderColor: brandData.primaryColor || "#14b8a6",
-                              color: brandData.primaryColor || "#14b8a6"
-                            }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <span className="text-xs font-medium">Secondary</span>
-                          </motion.div>
-                        </div>
-
-                        {/* Color swatches */}
-                        <div className="flex items-center gap-2 pt-2">
-                          <motion.div
-                            className="w-8 h-8 rounded-full shadow-md"
-                            style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                            animate={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                            transition={{ duration: 0.3 }}
-                          />
-                          <motion.div
-                            className="w-8 h-8 rounded-full shadow-md"
-                            style={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
-                            animate={{ backgroundColor: brandData.secondaryColor || "#3b82f6" }}
-                            transition={{ duration: 0.3 }}
-                          />
-                          <div className="flex-1 h-px bg-gray-200" />
-                          <span className="text-xs text-gray-400">Your palette</span>
-                        </div>
+                  {/* Visual representation of sliders */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Playful</span>
+                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                          animate={{ width: `${brandData.feelPlayfulSerious}%` }}
+                          transition={{ duration: 0.3 }}
+                        />
                       </div>
+                      <span className="text-xs text-muted-foreground">Serious</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Bold</span>
+                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                          animate={{ width: `${brandData.feelBoldMinimal}%` }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">Minimal</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Experimental</span>
+                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                          animate={{ width: `${brandData.feelExperimentalClassic}%` }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">Classic</span>
                     </div>
                   </div>
 
-                  {/* Footer text */}
-                  <div className="px-6 pb-6">
-                    <p className="text-white/70 text-sm text-center">
-                      This is how your brand will look across the platform
+                  {/* Brand identity badge */}
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                    >
+                      <span className="text-white font-bold text-sm">
+                        {brandData.name?.charAt(0)?.toUpperCase() || "C"}
+                      </span>
+                    </div>
+                    <span className="font-medium text-foreground">{brandData.name || "Your Brand"}</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Creative Focus Step - Focus areas preview */}
+            {step === "creative-focus" && (
+              <motion.div
+                key="preview-creative-focus"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4 }}
+                className="w-full max-w-sm"
+              >
+                <motion.div
+                  className="bg-background rounded-3xl border border-border shadow-xl p-8 space-y-6"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                >
+                  <div className="text-center space-y-2">
+                    <h3 className="text-lg font-semibold text-foreground">Your focus areas</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {brandData.creativeFocus.length > 0
+                        ? `${brandData.creativeFocus.length} selected`
+                        : "Select what matters most"}
                     </p>
+                  </div>
+
+                  {/* Selected focus items */}
+                  <div className="space-y-3">
+                    {brandData.creativeFocus.length > 0 ? (
+                      brandData.creativeFocus.map((focusId) => {
+                        const option = CREATIVE_FOCUS_OPTIONS.find((o) => o.id === focusId);
+                        const IconComponent = {
+                          "ads": Target,
+                          "landing-pages": Layout,
+                          "social": Share2,
+                          "pitch-decks": Presentation,
+                          "brand-guidelines": BookOpen,
+                        }[focusId] || Zap;
+
+                        return (
+                          <motion.div
+                            key={focusId}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-foreground/5"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                            >
+                              <IconComponent className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground">{option?.title}</span>
+                          </motion.div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        Select focus areas to see them here
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Brand footer */}
+                  <div className="flex items-center justify-center gap-2 pt-4 border-t border-border">
+                    <div
+                      className="w-6 h-6 rounded flex items-center justify-center"
+                      style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                    >
+                      <span className="text-white font-bold text-xs">
+                        {brandData.name?.charAt(0)?.toUpperCase() || "C"}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">{brandData.name || "Your Brand"}</span>
                   </div>
                 </motion.div>
               </motion.div>
@@ -1325,7 +1679,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               >
                 {/* Success animation */}
                 <motion.div
-                  className="w-32 h-32 rounded-full flex items-center justify-center mx-auto"
+                  className="w-32 h-32 rounded-full flex items-center justify-center mx-auto shadow-lg"
                   style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -1341,15 +1695,15 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </motion.div>
 
                 <div className="space-y-3 max-w-sm">
-                  <h2 className="text-2xl font-bold">{brandData.name || "Your brand"} is ready!</h2>
-                  <p className="text-white/70">
+                  <h2 className="text-2xl font-bold text-foreground">{brandData.name || "Your brand"} is ready!</h2>
+                  <p className="text-muted-foreground">
                     Your brand profile has been saved. Get ready to create amazing designs.
                   </p>
                 </div>
 
                 {/* Mini brand summary */}
                 <motion.div
-                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 max-w-xs mx-auto"
+                  className="bg-background border border-border shadow-lg rounded-xl p-4 max-w-xs mx-auto"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
@@ -1364,35 +1718,14 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       </span>
                     </div>
                     <div className="text-left">
-                      <p className="font-semibold text-white">{brandData.name}</p>
-                      <p className="text-white/60 text-sm">{brandData.industry || "Your Company"}</p>
+                      <p className="font-semibold text-foreground">{brandData.name}</p>
+                      <p className="text-muted-foreground text-sm">{brandData.industry || "Your Company"}</p>
                     </div>
                   </div>
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        {/* Bottom branding - always visible */}
-        <div className="absolute bottom-8 left-12 right-12 z-10">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <motion.div
-                className="w-3 h-3 rounded-full"
-                animate={{
-                  backgroundColor: step === "brand-colors" || step === "complete"
-                    ? brandData.primaryColor || "white"
-                    : "white"
-                }}
-                transition={{ duration: 0.3 }}
-              />
-              <div className="w-3 h-3 rounded-full bg-white/60" />
-              <div className="w-3 h-3 rounded-full bg-white/40" />
-              <div className="w-3 h-3 rounded-full bg-white/30" />
-            </div>
-            <span className="text-4xl font-light tracking-wide text-white">Crafted</span>
-          </div>
         </div>
       </div>
     </div>
