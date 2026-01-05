@@ -126,10 +126,14 @@ function RegisterContent() {
     }
   }
 
+  // Crafted design language button - teal to blue gradient
+  const gradientButtonStyle = {
+    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
+  };
+
   const gradientButtonClass = cn(
     "w-full h-12 text-base font-medium transition-all duration-300",
-    "bg-gradient-to-r shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
-    portal.accentColor,
+    "shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
     "text-white border-0"
   );
 
@@ -137,7 +141,7 @@ function RegisterContent() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2 text-center lg:text-left">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 text-primary text-sm font-medium mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-medium mb-4">
           <Sparkles className="w-4 h-4" />
           <span>{portal.description}</span>
         </div>
@@ -278,6 +282,7 @@ function RegisterContent() {
           <Button
             type="submit"
             className={gradientButtonClass}
+            style={gradientButtonStyle}
             disabled={isLoading}
           >
             {isLoading ? (

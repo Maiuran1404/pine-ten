@@ -202,17 +202,7 @@ export default function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Password</FormLabel>
-                  {!isSuperadmin && (
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      Forgot password?
-                    </Link>
-                  )}
-                </div>
+                <FormLabel className="text-sm font-medium">Password</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input

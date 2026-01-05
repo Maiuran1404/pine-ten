@@ -54,17 +54,33 @@ function DecorativeLines() {
   );
 }
 
-// Grainy texture overlay for the aesthetic
+// Grainy texture overlay for the aesthetic - matching Crafted design
 function GrainOverlay() {
   return (
-    <div
-      className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        backgroundRepeat: "repeat",
-        backgroundSize: "200px 200px",
-      }}
-    />
+    <>
+      {/* Primary grain layer */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "256px 256px",
+          opacity: 0.35,
+          mixBlendMode: "overlay",
+        }}
+      />
+      {/* Secondary grain layer for more texture */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+          opacity: 0.25,
+          mixBlendMode: "soft-light",
+        }}
+      />
+    </>
   );
 }
 
@@ -76,7 +92,7 @@ export default function AuthLayout({
   const portal = useSubdomain();
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
       {/* Left side - Auth form */}
       <div className="flex-1 flex flex-col bg-background">
         {/* Mobile header with gradient */}

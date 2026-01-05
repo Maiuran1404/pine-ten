@@ -69,9 +69,9 @@ const defaultBrandData: BrandData = {
   industry: "",
   logoUrl: "",
   faviconUrl: "",
-  primaryColor: "#6366f1",
-  secondaryColor: "#8b5cf6",
-  accentColor: "#ec4899",
+  primaryColor: "#14b8a6",
+  secondaryColor: "#3b82f6",
+  accentColor: "#4338ca",
   backgroundColor: "#ffffff",
   textColor: "#1f2937",
   brandColors: [],
@@ -237,13 +237,59 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-violet-950 via-slate-900 to-slate-950 overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-500" />
-      </div>
+    <div
+      className="fixed inset-0 z-50 overflow-hidden font-satoshi"
+      style={{
+        fontFamily: "'Satoshi', sans-serif",
+        background: `
+          radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%),
+          radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%),
+          radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%),
+          linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%)
+        `,
+      }}
+    >
+      {/* Grain overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "256px 256px",
+          opacity: 0.35,
+          mixBlendMode: "overlay",
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+          opacity: 0.25,
+          mixBlendMode: "soft-light",
+        }}
+      />
+
+      {/* Decorative curved lines */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        viewBox="0 0 1200 800"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <line x1="0" y1="250" x2="1200" y2="250" stroke="white" strokeWidth="1" strokeOpacity="0.15" />
+        <line x1="0" y1="620" x2="1200" y2="620" stroke="white" strokeWidth="1" strokeOpacity="0.15" />
+        <path
+          d="M 850 0 L 850 250 Q 850 420 600 420 Q 350 420 350 590 L 350 620"
+          stroke="white"
+          strokeWidth="1"
+          strokeOpacity="0.15"
+          fill="none"
+        />
+      </svg>
 
       {/* Progress bar at top */}
       <div className="absolute top-0 left-0 right-0 z-20">
@@ -267,7 +313,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="mx-auto w-24 h-24 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-violet-500/30"
+                className="mx-auto w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-teal-500/30"
+                style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%)" }}
               >
                 <Sparkles className="h-12 w-12 text-white" />
               </motion.div>
@@ -309,7 +356,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                     transition={{ delay: 0.6 + i * 0.1 }}
                     className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors"
                   >
-                    <item.icon className="h-8 w-8 text-violet-400 mx-auto mb-3" />
+                    <item.icon className="h-8 w-8 text-teal-400 mx-auto mb-3" />
                     <p className="text-white font-semibold">{item.title}</p>
                     <p className="text-sm text-slate-400">{item.desc}</p>
                   </motion.div>
@@ -324,7 +371,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 <Button
                   size="lg"
                   onClick={() => setStep("website")}
-                  className="h-14 px-10 text-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 border-0 shadow-xl shadow-violet-500/25"
+                  className="h-14 px-10 text-lg border-0 shadow-xl shadow-teal-500/25 hover:scale-[1.02] transition-transform"
+                  style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
                 >
                   Get Started
                   <ArrowRight className="h-5 w-5 ml-2" />
@@ -370,10 +418,10 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   >
                     <button
                       onClick={() => setHasWebsite(true)}
-                      className="group relative bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-violet-500/50 hover:bg-white/10 rounded-2xl p-8 transition-all duration-300"
+                      className="group relative bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-teal-500/50 hover:bg-white/10 rounded-2xl p-8 transition-all duration-300"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
-                      <Globe className="h-16 w-16 text-violet-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
+                      <Globe className="h-16 w-16 text-teal-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
                       <p className="text-xl font-semibold text-white mb-2">Yes, I have a website</p>
                       <p className="text-sm text-slate-400">We&apos;ll scan it and extract your brand</p>
                     </button>
@@ -440,7 +488,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleWebsiteScan()}
-                        className="h-14 pl-12 text-lg bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/20"
+                        className="h-14 pl-12 text-lg bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500 focus:ring-teal-500/20"
                       />
                     </div>
 
@@ -456,7 +504,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       <Button
                         onClick={handleWebsiteScan}
                         disabled={!websiteUrl.trim()}
-                        className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 border-0"
+                        className="flex-1 h-12 border-0 hover:scale-[1.02] transition-transform"
+                        style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
                       >
                         Scan Website
                         <Search className="h-4 w-4 ml-2" />
@@ -505,7 +554,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         setBrandData({ ...defaultBrandData, website: websiteUrl });
                         setStep("brand-form");
                       }}
-                      className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 border-0"
+                      className="border-0 hover:scale-[1.02] transition-transform"
+                      style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
                     >
                       Enter Manually
                     </Button>
@@ -515,11 +565,14 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 <>
                   <div className="relative mx-auto w-32 h-32 mb-8">
                     {/* Animated rings */}
-                    <div className="absolute inset-0 rounded-full border-4 border-violet-500/20 animate-ping" />
-                    <div className="absolute inset-2 rounded-full border-4 border-violet-500/30 animate-ping delay-100" />
-                    <div className="absolute inset-4 rounded-full border-4 border-violet-500/40" />
+                    <div className="absolute inset-0 rounded-full border-4 border-teal-500/20 animate-ping" />
+                    <div className="absolute inset-2 rounded-full border-4 border-blue-500/30 animate-ping delay-100" />
+                    <div className="absolute inset-4 rounded-full border-4 border-teal-500/40" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                      <div
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
+                        style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%)" }}
+                      >
                         <Wand2 className="h-8 w-8 text-white animate-pulse" />
                       </div>
                     </div>
@@ -547,7 +600,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                           )}
                         >
                           {scanProgress > item.threshold ? (
-                            <CheckCircle2 className="h-4 w-4 text-violet-400" />
+                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
                           ) : (
                             <div className="h-4 w-4 rounded-full border-2 border-slate-600" />
                           )}
@@ -589,7 +642,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                     {/* Company Info */}
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-violet-400" />
+                        <Building2 className="h-5 w-5 text-teal-400" />
                         Company Information
                       </h3>
                       <div className="space-y-4">
@@ -599,7 +652,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                             placeholder="Acme Inc."
                             value={brandData.name}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, name: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500"
+                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
                           />
                         </div>
                         <div>
@@ -607,7 +660,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                           <select
                             value={brandData.industry || ""}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, industry: e.target.value }))}
-                            className="mt-1.5 w-full h-10 rounded-md bg-white/10 border border-white/20 text-white px-3 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            className="mt-1.5 w-full h-10 rounded-md bg-white/10 border border-white/20 text-white px-3 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                           >
                             <option value="" className="bg-slate-900">Select industry</option>
                             {industries.map((ind) => (
@@ -621,7 +674,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                             placeholder="Brief description of your company..."
                             value={brandData.description}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, description: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500 min-h-[80px]"
+                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500 min-h-[80px]"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -631,7 +684,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                               placeholder="Your tagline"
                               value={brandData.tagline}
                               onChange={(e) => setBrandData((prev) => ({ ...prev, tagline: e.target.value }))}
-                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500"
+                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
                             />
                           </div>
                           <div>
@@ -640,7 +693,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                               placeholder="https://..."
                               value={brandData.logoUrl}
                               onChange={(e) => setBrandData((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500"
+                              className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
                             />
                           </div>
                         </div>
@@ -650,7 +703,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                     {/* Colors */}
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Palette className="h-5 w-5 text-violet-400" />
+                        <Palette className="h-5 w-5 text-teal-400" />
                         Brand Colors
                       </h3>
                       <div className="space-y-4">
@@ -665,19 +718,19 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                               <div className="mt-1.5 flex gap-2">
                                 <div
                                   className="w-10 h-10 rounded-lg border border-white/20 cursor-pointer hover:scale-105 transition-transform"
-                                  style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#6366f1" }}
+                                  style={{ backgroundColor: (brandData[key as keyof BrandData] as string) || "#14b8a6" }}
                                   onClick={() => document.getElementById(`${key}-picker`)?.click()}
                                 />
                                 <Input
                                   value={(brandData[key as keyof BrandData] as string) || ""}
                                   onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
                                   placeholder="#000000"
-                                  className="flex-1 bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-500 focus:border-violet-500"
+                                  className="flex-1 bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-500 focus:border-teal-500"
                                 />
                                 <input
                                   id={`${key}-picker`}
                                   type="color"
-                                  value={(brandData[key as keyof BrandData] as string) || "#6366f1"}
+                                  value={(brandData[key as keyof BrandData] as string) || "#14b8a6"}
                                   onChange={(e) => handleColorChange(key as keyof BrandData, e.target.value)}
                                   className="sr-only"
                                 />
@@ -725,7 +778,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                             placeholder="e.g., Inter"
                             value={brandData.primaryFont}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, primaryFont: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500"
+                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
                           />
                         </div>
                         <div>
@@ -734,7 +787,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                             placeholder="e.g., Open Sans"
                             value={brandData.secondaryFont}
                             onChange={(e) => setBrandData((prev) => ({ ...prev, secondaryFont: e.target.value }))}
-                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-violet-500"
+                            className="mt-1.5 bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-teal-500"
                           />
                         </div>
                       </div>
@@ -751,7 +804,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         className="rounded-xl p-6 transition-all border-2"
                         style={{
                           backgroundColor: brandData.backgroundColor || "#ffffff",
-                          borderColor: brandData.primaryColor || "#6366f1",
+                          borderColor: brandData.primaryColor || "#14b8a6",
                         }}
                       >
                         <div className="flex items-center gap-3 mb-4">
@@ -764,7 +817,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                           ) : (
                             <div
                               className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl font-bold"
-                              style={{ backgroundColor: brandData.primaryColor || "#6366f1" }}
+                              style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
                             >
                               {brandData.name?.[0]?.toUpperCase() || "C"}
                             </div>
@@ -803,7 +856,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         <div className="flex gap-2">
                           <button
                             className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                            style={{ backgroundColor: brandData.primaryColor || "#6366f1" }}
+                            style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
                           >
                             Primary
                           </button>
@@ -836,7 +889,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                               <div
                                 key={i}
                                 className="w-10 h-10 rounded-lg border border-white/20 shadow-lg"
-                                style={{ backgroundColor: color || "#6366f1" }}
+                                style={{ backgroundColor: color || "#14b8a6" }}
                                 title={color || ""}
                               />
                             ))}
@@ -868,7 +921,8 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 <Button
                   onClick={handleSubmit}
                   disabled={isLoading || !brandData.name.trim()}
-                  className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 border-0"
+                  className="flex-1 h-12 border-0 hover:scale-[1.02] transition-transform"
+                  style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
                 >
                   {isLoading ? (
                     <>

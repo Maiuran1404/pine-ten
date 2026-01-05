@@ -48,6 +48,19 @@
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
+  /* Crafted Design System Colors */
+  --crafted-teal: #14b8a6;
+  --crafted-teal-light: #2dd4bf;
+  --crafted-blue: #3b82f6;
+  --crafted-indigo: #4338ca;
+  --crafted-navy: #1e3a8a;
+  --crafted-gradient: linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%);
+  --crafted-gradient-vertical: linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%);
+  --crafted-gradient-radial: radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%), radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%), linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%);
+
+  /* Crafted Font */
+  --font-satoshi: 'Satoshi', sans-serif;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -120,4 +133,58 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Crafted Design System Utilities */
+.crafted-gradient {
+  background: var(--crafted-gradient-radial);
+}
+
+.crafted-gradient-simple {
+  background: var(--crafted-gradient);
+}
+
+.crafted-button {
+  background: var(--crafted-gradient);
+  color: white;
+  border: none;
+}
+
+.crafted-button:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.crafted-grain {
+  position: relative;
+}
+
+.crafted-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.crafted-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter2)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.25;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.font-satoshi {
+  font-family: var(--font-satoshi);
 }
