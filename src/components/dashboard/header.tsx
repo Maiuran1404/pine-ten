@@ -13,7 +13,7 @@ interface HeaderProps {
 export function Header({ onMenuClick, credits = 0 }: HeaderProps) {
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 bg-[#0a0a0a] px-4 sm:px-6"
+      className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-[#0a0a0a]/70 backdrop-blur-xl border-b border-white/[0.06]"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
       <Button
