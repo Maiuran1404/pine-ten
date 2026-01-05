@@ -105,10 +105,8 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "pine",
     useSecureCookies: isProduction,
-    // Set SameSite to lax for OAuth to work correctly
     defaultCookieAttributes: {
-      sameSite: "lax",
-      secure: isProduction,
+      sameSite: "lax", // Required for OAuth redirects
       httpOnly: true,
       path: "/",
     },
