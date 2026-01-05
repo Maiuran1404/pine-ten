@@ -156,7 +156,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-16 pb-20 bg-[#0a0a0a] overflow-auto">
+    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-32 pb-20 bg-[#0a0a0a] overflow-auto">
       {/* Noise texture to prevent gradient banding */}
       <svg className="hidden">
         <filter id="noise">
@@ -328,7 +328,7 @@ function DashboardContent() {
       </div>
 
       {/* Design Assets Grid - Full Width */}
-      <div className="w-full mt-10 px-8 z-10">
+      <div className="w-full mt-24 px-8 z-10">
         <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
           {DESIGN_ASSETS.map((asset) => (
             <div
