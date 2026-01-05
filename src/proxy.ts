@@ -4,17 +4,17 @@ import type { NextRequest } from "next/server";
 // Subdomain configuration
 const SUBDOMAINS = {
   app: {
-    allowedPaths: ["/dashboard", "/onboarding", "/login", "/register"],
+    allowedPaths: ["/dashboard", "/onboarding", "/login", "/register", "/auth-error"],
     defaultPath: "/dashboard",
     requiredRole: "CLIENT",
   },
   artist: {
-    allowedPaths: ["/portal", "/login", "/register", "/onboarding"],
+    allowedPaths: ["/portal", "/login", "/register", "/onboarding", "/auth-error"],
     defaultPath: "/portal",
     requiredRole: "FREELANCER",
   },
   superadmin: {
-    allowedPaths: ["/admin", "/login", "/register"],
+    allowedPaths: ["/admin", "/login", "/register", "/auth-error"],
     defaultPath: "/admin",
     requiredRole: "ADMIN",
   },
@@ -23,7 +23,7 @@ const SUBDOMAINS = {
 type Subdomain = keyof typeof SUBDOMAINS;
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/login", "/register", "/api/auth"];
+const PUBLIC_ROUTES = ["/login", "/register", "/api/auth", "/auth-error"];
 
 // Get the subdomain from the host
 function getSubdomain(host: string): Subdomain | null {
