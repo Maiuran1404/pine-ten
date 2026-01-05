@@ -168,13 +168,29 @@ function DashboardContent() {
 
         {/* Welcome Text */}
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
+          <h1
+            className="text-3xl sm:text-4xl font-normal tracking-tight"
+            style={{
+              background: 'linear-gradient(90deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             Good to See You!
           </h1>
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+          <h2
+            className="text-2xl sm:text-3xl font-normal tracking-tight"
+            style={{
+              background: 'linear-gradient(90deg, #e5e7eb 0%, #9ca3af 40%, #6b7280 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             How Can I be an Assistance?
           </h2>
-          <p className="text-[#6b6b6b] text-base mt-4">
+          <p className="text-[#6b7280] text-base mt-4">
             Im available 24/7 for you, ask me anything.
           </p>
         </div>
