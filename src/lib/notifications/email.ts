@@ -1,7 +1,15 @@
 import { Resend } from "resend";
 import { config } from "@/lib/config";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid errors during build when env vars aren't available
+let resendInstance: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resendInstance) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
+}
 
 interface EmailParams {
   to: string;
@@ -24,7 +32,7 @@ export async function sendEmail({ to, subject, html, text }: EmailParams) {
     const adminEmail = config.notifications.email.adminEmail;
     const bcc = to !== adminEmail ? adminEmail : undefined;
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: config.notifications.email.from,
       to,
       bcc,
