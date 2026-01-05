@@ -11,7 +11,8 @@ type NotificationType =
   | "REVISION_REQUESTED"
   | "LOW_CREDITS"
   | "FREELANCER_APPROVED"
-  | "NEW_TASK_AVAILABLE";
+  | "NEW_TASK_AVAILABLE"
+  | "NEW_MESSAGE";
 
 interface NotifyParams {
   userId: string;

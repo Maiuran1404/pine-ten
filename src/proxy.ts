@@ -9,7 +9,7 @@ const SUBDOMAINS = {
     requiredRole: "CLIENT",
   },
   artist: {
-    allowedPaths: ["/portal", "/login", "/register"],
+    allowedPaths: ["/portal", "/login", "/register", "/onboarding"],
     defaultPath: "/portal",
     requiredRole: "FREELANCER",
   },

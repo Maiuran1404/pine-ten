@@ -87,15 +87,15 @@ export default function FreelancerDashboardPage() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-9 w-64 mb-2" />
-          <Skeleton className="h-5 w-48" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
+      <div className="flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a]">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto space-y-6">
+          <Skeleton className="w-20 h-20 rounded-2xl bg-[#1a1a1f]" />
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-64 mx-auto bg-[#1a1a1f]" />
+            <Skeleton className="h-10 w-80 mx-auto bg-[#1a1a1f]" />
+            <Skeleton className="h-5 w-56 mx-auto mt-4 bg-[#1a1a1f]" />
+          </div>
+          <Skeleton className="h-16 w-full max-w-md rounded-xl mt-8 bg-[#1a1a1f]" />
         </div>
       </div>
     );
@@ -104,68 +104,121 @@ export default function FreelancerDashboardPage() {
   // Show onboarding prompt for users who haven't completed onboarding
   if (profileStatus === "NOT_FOUND") {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="max-w-2xl w-full space-y-8">
-          {/* Welcome Header */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 mb-4">
-              <Sparkles className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome to Crafted, {user?.name?.split(" ")[0]}!
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              Complete your artist profile to start receiving design tasks and earning.
-            </p>
+      <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-24 pb-20 bg-[#0a0a0a] overflow-auto">
+        {/* Curtain light from top */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 70% 55% at 50% 0%,
+              rgba(255, 255, 255, 0.06) 0%,
+              rgba(255, 255, 255, 0.04) 20%,
+              rgba(255, 255, 255, 0.025) 40%,
+              rgba(255, 255, 255, 0.012) 60%,
+              rgba(255, 255, 255, 0.004) 80%,
+              transparent 100%
+            )`,
+            filter: "blur(40px)",
+          }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10"
+        >
+          {/* Logo Icon */}
+          <div className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60">
+            <Sparkles className="w-10 h-10 text-white" />
           </div>
 
-          {/* Benefits Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 mb-4">
-                <Palette className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-              </div>
-              <h3 className="font-semibold mb-2">Showcase Your Skills</h3>
-              <p className="text-sm text-muted-foreground">
-                Add your portfolio and specializations
-              </p>
-            </Card>
-
-            <Card className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
-                <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="font-semibold mb-2">Get Matched</h3>
-              <p className="text-sm text-muted-foreground">
-                Receive tasks that match your expertise
-              </p>
-            </Card>
-
-            <Card className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
-                <Award className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <h3 className="font-semibold mb-2">Earn & Grow</h3>
-              <p className="text-sm text-muted-foreground">
-                Build your reputation and earnings
-              </p>
-            </Card>
+          {/* Welcome Text */}
+          <div className="space-y-2">
+            <h1
+              className="text-3xl sm:text-4xl font-normal tracking-tight"
+              style={{
+                background: "linear-gradient(90deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Welcome, {user?.name?.split(" ")[0]}!
+            </h1>
+            <h2
+              className="text-2xl sm:text-3xl font-normal tracking-tight"
+              style={{
+                background: "linear-gradient(90deg, #e5e7eb 0%, #9ca3af 40%, #6b7280 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Let&apos;s set up your profile
+            </h2>
+            <p className="text-[#6b7280] text-base mt-4">
+              Complete your artist profile to start receiving design tasks.
+            </p>
           </div>
 
           {/* CTA Button */}
-          <div className="text-center">
-            <Button
-              size="lg"
-              className="h-12 px-8 text-base"
-              onClick={() => router.push("/onboarding?type=freelancer")}
-            >
-              Complete Your Profile
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              Takes about 2 minutes to complete
-            </p>
+          <div className="w-full max-w-md mt-8">
+            <Link href="/onboarding?type=freelancer">
+              <div
+                className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer group"
+                style={{
+                  background: "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                  backdropFilter: "blur(20px)",
+                  boxShadow: "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
+                }}
+              >
+                <div className="flex items-center justify-between px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Palette className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-medium">Complete Your Profile</p>
+                      <p className="text-[#6b6b6b] text-sm">Takes about 2 minutes</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-[#6b6b6b] group-hover:text-white group-hover:translate-x-1 transition-all" />
+                </div>
+              </div>
+            </Link>
           </div>
+
+          {/* Benefits */}
+          <div className="flex flex-wrap justify-center gap-3 mt-8">
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#2a2a30]/60"
+              style={{ background: "rgba(20, 20, 23, 0.6)", backdropFilter: "blur(8px)" }}
+            >
+              <Palette className="w-4 h-4 text-[#6b6b6b]" />
+              <span className="text-sm text-[#6b6b6b]">Showcase skills</span>
+            </div>
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#2a2a30]/60"
+              style={{ background: "rgba(20, 20, 23, 0.6)", backdropFilter: "blur(8px)" }}
+            >
+              <Briefcase className="w-4 h-4 text-[#6b6b6b]" />
+              <span className="text-sm text-[#6b6b6b]">Get matched</span>
+            </div>
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#2a2a30]/60"
+              style={{ background: "rgba(20, 20, 23, 0.6)", backdropFilter: "blur(8px)" }}
+            >
+              <Award className="w-4 h-4 text-[#6b6b6b]" />
+              <span className="text-sm text-[#6b6b6b]">Earn & grow</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Footer */}
+        <div className="absolute bottom-6 left-0 right-0 text-center z-10">
+          <p className="text-sm text-[#4a4a4a]">
+            Join our network of talented designers.
+          </p>
         </div>
       </div>
     );
@@ -174,25 +227,77 @@ export default function FreelancerDashboardPage() {
   // Show pending review state
   if (profileStatus === "PENDING") {
     return (
-      <div className="space-y-6">
-        <Card className="border-yellow-500/50 bg-yellow-500/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              <CardTitle>Application Under Review</CardTitle>
-            </div>
-            <CardDescription>
-              Your artist application is being reviewed by our team. You&apos;ll
-              receive a notification once it&apos;s approved.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              This usually takes 24-48 hours. In the meantime, make sure your
-              portfolio links are accessible.
+      <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-24 pb-20 bg-[#0a0a0a] overflow-auto">
+        {/* Curtain light from top */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 70% 55% at 50% 0%,
+              rgba(234, 179, 8, 0.04) 0%,
+              rgba(234, 179, 8, 0.02) 20%,
+              rgba(234, 179, 8, 0.01) 40%,
+              transparent 60%
+            )`,
+            filter: "blur(40px)",
+          }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10"
+        >
+          {/* Icon */}
+          <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 flex items-center justify-center mb-2 border border-yellow-500/20">
+            <Clock className="w-10 h-10 text-yellow-500" />
+          </div>
+
+          {/* Text */}
+          <div className="space-y-2">
+            <h1
+              className="text-3xl sm:text-4xl font-normal tracking-tight"
+              style={{
+                background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Application Under Review
+            </h1>
+            <p className="text-[#6b7280] text-base mt-4 max-w-md">
+              Your artist application is being reviewed by our team.
+              You&apos;ll receive a notification once it&apos;s approved.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Status Card */}
+          <div className="w-full max-w-md mt-8">
+            <div
+              className="relative rounded-xl overflow-hidden border border-yellow-500/20"
+              style={{
+                background: "linear-gradient(180deg, rgba(234, 179, 8, 0.05) 0%, rgba(12, 12, 15, 0.9) 100%)",
+                backdropFilter: "blur(20px)",
+              }}
+            >
+              <div className="flex items-center gap-4 px-6 py-4">
+                <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
+                <div className="text-left">
+                  <p className="text-white font-medium">Review in progress</p>
+                  <p className="text-[#6b6b6b] text-sm">Usually takes 24-48 hours</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tips */}
+          <div className="mt-8 text-center">
+            <p className="text-[#4a4a4a] text-sm">
+              Make sure your portfolio links are accessible and showcase your best work.
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }

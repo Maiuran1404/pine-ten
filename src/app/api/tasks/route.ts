@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
           title: "New Task Assigned",
           content: `You have been assigned a new task: ${title}`,
           taskId: newTask.id,
-          taskUrl: `/portal/tasks/${newTask.id}`,
+          taskUrl: `${config.app.url}/portal/tasks/${newTask.id}`,
           additionalData: {
             taskTitle: title,
           },

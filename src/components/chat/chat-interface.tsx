@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -261,11 +261,16 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
     onDraftUpdateRef.current?.();
   }, [messages, selectedStyles, pendingTask, draftId, isInitialized]);
 
-  useEffect(() => {
-    // Scroll to bottom when messages change
+  // Helper function to scroll to bottom
+  const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
+  };
+
+  // Use useLayoutEffect for synchronous scroll before paint - prevents flash
+  useLayoutEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -605,6 +610,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       {/* Messages - scrollable area */}
       <ScrollArea className={cn(
         "pr-4",
@@ -618,9 +624,9 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
             {messages.map((message, index) => (
               <motion.div
                 key={message.id}
-                initial={seamlessTransition && index > 0 ? { opacity: 0, y: 20 } : false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index === 1 ? 0.1 : 0 }}
+                initial={seamlessTransition && index > 0 ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }}
                 className={cn(
                   "flex",
                   message.role === "user" ? "justify-end" : "justify-start"

@@ -103,7 +103,6 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
     specializations: [] as string[],
     portfolioUrls: "",
     whatsappNumber: "",
-    hourlyRate: "",
   });
 
   const totalSteps = 4;
@@ -248,19 +247,8 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                         placeholder="Tell us about yourself and your design experience..."
                         value={formData.bio}
                         onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
-                        className="mt-1 min-h-[120px]"
+                        className="mt-1 min-h-[150px]"
                       />
-                    </div>
-                    <div>
-                      <Label>Expected Hourly Rate (USD)</Label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 25"
-                        value={formData.hourlyRate}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, hourlyRate: e.target.value }))}
-                        className="mt-1"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">This helps us match you with appropriate projects</p>
                     </div>
                   </div>
 

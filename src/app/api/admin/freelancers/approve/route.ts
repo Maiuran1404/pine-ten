@@ -55,6 +55,15 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(freelancerProfiles.id, freelancerId));
 
+    // Ensure user role is set to FREELANCER (safeguard in case onboarding didn't set it)
+    await db
+      .update(users)
+      .set({
+        role: "FREELANCER",
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, profile[0].userId));
+
     // Get user info for notification
     const freelancerUser = await db
       .select()
