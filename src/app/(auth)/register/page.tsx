@@ -162,8 +162,8 @@ function RegisterContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session
-  if (isPending) {
+  // If already logged in, show loading (redirect will happen via useEffect)
+  if (!isPending && session?.user) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -171,14 +171,7 @@ function RegisterContent() {
     );
   }
 
-  // Don't show register form if already logged in (redirect will happen)
-  if (session?.user) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  // Show form immediately - don't block on session check
 
   return (
     <div className="space-y-6">
