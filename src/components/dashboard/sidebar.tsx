@@ -70,7 +70,7 @@ export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse, re
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a] transition-[width] duration-150 ease-out lg:static lg:z-auto",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0a0a0a] lg:static lg:z-auto",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           collapsed ? "w-16" : "w-64"
         )}

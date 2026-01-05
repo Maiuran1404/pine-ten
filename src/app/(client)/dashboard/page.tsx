@@ -6,13 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Plus,
-  AudioLines,
-  User,
-  PlayCircle,
-  FileText,
-  MoreHorizontal,
-  Zap,
+  Paperclip,
+  ArrowUp,
+  Lightbulb,
+  Video,
+  BookOpen,
+  Grip,
+  Sparkles,
 } from "lucide-react";
 
 interface Task {
@@ -26,17 +26,17 @@ interface Task {
 const QUICK_PROMPTS = [
   {
     id: "advice",
-    icon: User,
+    icon: Lightbulb,
     label: "Any advice for me?",
   },
   {
     id: "youtube",
-    icon: PlayCircle,
+    icon: Video,
     label: "Some youtube video idea",
   },
   {
     id: "lessons",
-    icon: FileText,
+    icon: BookOpen,
     label: "Life lessons from kratos",
   },
 ];
@@ -215,7 +215,7 @@ function DashboardContent() {
             }}
           >
             <div className="flex items-center gap-2 text-[#6b6b6b] text-sm">
-              <Zap className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
               <span>Unlock more features with the Pro plan.</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
@@ -234,7 +234,7 @@ function DashboardContent() {
             }}
           >
             <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
-              <Plus className="h-5 w-5" />
+              <Paperclip className="h-5 w-5" />
             </button>
             <div className="h-5 w-px bg-[#2a2a30]"></div>
             <input
@@ -250,7 +250,7 @@ function DashboardContent() {
               onClick={handleSubmit}
               className="p-3 text-[#6b6b6b] hover:text-white transition-colors"
             >
-              <AudioLines className="h-5 w-5" />
+              <ArrowUp className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -278,7 +278,7 @@ function DashboardContent() {
               backdropFilter: "blur(8px)",
             }}
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <Grip className="w-4 h-4" />
           </button>
         </div>
       </div>
