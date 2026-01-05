@@ -129,13 +129,13 @@ export default function CreditsPage() {
       {/* Credit Packages */}
       <div>
         <h2 className="text-sm font-medium text-[#6b6b6b] mb-4">Purchase Credits</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-3">
           {creditPackages.map((pkg) => (
             <GlassCard
               key={pkg.id}
               className={cn(
                 "relative",
-                pkg.popular && "border-[#6366f1]/50"
+                pkg.popular && "border-[#6366f1]/50 !overflow-visible"
               )}
             >
               {pkg.popular && (
