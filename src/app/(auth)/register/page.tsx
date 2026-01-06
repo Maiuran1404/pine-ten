@@ -70,6 +70,8 @@ function RegisterContent() {
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
+  // Only show Google sign-up on client portal (app.craftedstudio.ai)
+  const showGoogleSignUp = !isArtistPortal;
 
   // Handle redirect after registration
   const handleSuccessfulAuth = useCallback(() => {
@@ -209,33 +211,37 @@ function RegisterContent() {
         </p>
       </div>
 
-      {/* Google Sign Up */}
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full h-12 text-base font-medium"
-        onClick={handleGoogleSignUp}
-        disabled={isGoogleLoading}
-      >
-        {isGoogleLoading ? (
-          <LoadingSpinner size="sm" className="mr-2" />
-        ) : (
-          <GoogleIcon className="w-5 h-5 mr-3" />
-        )}
-        Continue with Google
-      </Button>
+      {/* Google Sign Up - Only on client portal */}
+      {showGoogleSignUp && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-12 text-base font-medium"
+            onClick={handleGoogleSignUp}
+            disabled={isGoogleLoading}
+          >
+            {isGoogleLoading ? (
+              <LoadingSpinner size="sm" className="mr-2" />
+            ) : (
+              <GoogleIcon className="w-5 h-5 mr-3" />
+            )}
+            Continue with Google
+          </Button>
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border/50" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-4 text-muted-foreground">
-            or continue with email
-          </span>
-        </div>
-      </div>
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/50" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-4 text-muted-foreground">
+                or continue with email
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Form */}
       <Form {...form}>

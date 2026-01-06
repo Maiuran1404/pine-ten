@@ -23,7 +23,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 import {
   ArrowRight,
   ArrowLeft,
@@ -1246,7 +1246,10 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 Have questions? Contact us.
               </a>
             </div>
-            <button className="text-sm text-muted-foreground hover:text-foreground font-medium">
+            <button
+              onClick={() => signOut({ fetchOptions: { onSuccess: () => window.location.href = "/login" } })}
+              className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+            >
               Log out
             </button>
           </div>

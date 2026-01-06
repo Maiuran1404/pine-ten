@@ -68,7 +68,10 @@ function LoginContent() {
   const [showFormAnyway, setShowFormAnyway] = useState(false);
 
   const isSuperadmin = portal.type === "superadmin";
-  const showSocialLogin = !isSuperadmin;
+  const isArtist = portal.type === "artist";
+  // Only show Google sign-in on the client portal (app.craftedstudio.ai)
+  // Artists and superadmins use email/password only
+  const showSocialLogin = !isSuperadmin && !isArtist;
 
   // Handle redirect after login
   const handleSuccessfulAuth = useCallback(() => {
@@ -314,8 +317,8 @@ function LoginContent() {
         </form>
       </Form>
 
-      {/* Sign up link - Only for app and artist portals */}
-      {showSocialLogin && (
+      {/* Sign up link - Show for app and artist portals (not superadmin) */}
+      {!isSuperadmin && (
         <>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
