@@ -178,8 +178,7 @@ export default function AuthLayout({
           {/* Main message */}
           <div className="space-y-6 max-w-md">
             <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
-              {portal.type === "app" &&
-                "Turn your ideas into stunning designs maiu"}
+              {portal.type === "app" && "Turn your ideas into stunning designs"}
               {portal.type === "artist" &&
                 "Showcase your talent, grow your career"}
               {portal.type === "superadmin" &&
