@@ -1,15 +1,20 @@
 import Stripe from "stripe";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 // Lazy initialization to avoid errors during build when env vars aren't available
 let stripeInstance: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!stripeInstance) {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
-    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    if (!secretKey.startsWith("sk_")) {
+      throw new Error("Invalid STRIPE_SECRET_KEY format");
+    }
+    stripeInstance = new Stripe(secretKey, {
       apiVersion: "2025-11-17.clover",
     });
   }
@@ -23,6 +28,20 @@ export const stripe = {
   get checkout() { return getStripe().checkout; },
   get webhooks() { return getStripe().webhooks; },
 } as unknown as Stripe;
+
+/**
+ * Validate that webhook secret is properly configured
+ */
+export function getWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
+  }
+  if (!secret.startsWith("whsec_")) {
+    throw new Error("Invalid STRIPE_WEBHOOK_SECRET format");
+  }
+  return secret;
+}
 
 // Credit packages for purchase
 export const creditPackages = [
@@ -101,25 +120,35 @@ export async function handleWebhook(
   body: string,
   signature: string
 ): Promise<{ userId: string; credits: number } | null> {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  // Use safe getter that validates the secret
+  const webhookSecret = getWebhookSecret();
 
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    logger.error({ err }, "Webhook signature verification failed");
     throw new Error("Invalid signature");
   }
+
+  logger.info({ eventType: event.type, eventId: event.id }, "Processing Stripe webhook");
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (session.payment_status === "paid" && session.metadata) {
-      return {
-        userId: session.metadata.userId,
-        credits: parseInt(session.metadata.credits),
-      };
+      const userId = session.metadata.userId;
+      const credits = parseInt(session.metadata.credits);
+
+      if (!userId || isNaN(credits)) {
+        logger.error({ session: session.id }, "Invalid webhook metadata");
+        return null;
+      }
+
+      logger.info({ userId, credits, sessionId: session.id }, "Credit purchase completed");
+
+      return { userId, credits };
     }
   }
 

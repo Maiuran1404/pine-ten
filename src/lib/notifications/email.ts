@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 // Lazy initialization to avoid errors during build when env vars aren't available
 let resendInstance: Resend | null = null;
@@ -20,17 +21,16 @@ interface EmailParams {
 
 export async function sendEmail({ to, subject, html, text }: EmailParams) {
   try {
-    console.log(`[Email] Attempting to send email to: ${to}, subject: ${subject}`);
-    console.log(`[Email] From: ${config.notifications.email.from}`);
+    logger.debug({ to, subject }, "Sending email");
 
     if (!process.env.RESEND_API_KEY) {
-      console.error("[Email] RESEND_API_KEY is not set!");
+      logger.error("RESEND_API_KEY is not set");
       return { success: false, error: "RESEND_API_KEY not configured" };
     }
 
-    // BCC admin on all emails for monitoring
+    // BCC admin on all emails for monitoring (if admin email is set)
     const adminEmail = config.notifications.email.adminEmail;
-    const bcc = to !== adminEmail ? adminEmail : undefined;
+    const bcc = adminEmail && to !== adminEmail ? adminEmail : undefined;
 
     const { data, error } = await getResend().emails.send({
       from: config.notifications.email.from,
@@ -42,14 +42,14 @@ export async function sendEmail({ to, subject, html, text }: EmailParams) {
     });
 
     if (error) {
-      console.error("[Email] Send error:", JSON.stringify(error, null, 2));
+      logger.error({ err: error, to, subject }, "Email send failed");
       return { success: false, error };
     }
 
-    console.log(`[Email] Successfully sent! ID: ${data?.id}`);
+    logger.info({ emailId: data?.id, to }, "Email sent successfully");
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("[Email] Exception:", error);
+    logger.error({ err: error, to, subject }, "Email exception");
     return { success: false, error };
   }
 }
@@ -488,6 +488,36 @@ export const emailTemplates = {
         <p>Hi ${clientName},</p>
         <p><strong>${credits} credits</strong> have been added to your account. You're all set to create new tasks!</p>
         <a href="${dashboardUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Create a Task</a>
+        <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
+  // Password reset email
+  passwordReset: (userName: string, resetUrl: string) => ({
+    subject: `Reset Your Password`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #000;">Reset Your Password</h2>
+        <p>Hi ${userName},</p>
+        <p>We received a request to reset your password. Click the button below to create a new password:</p>
+        <a href="${resetUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Reset Password</a>
+        <p style="margin-top: 24px; color: #666; font-size: 14px;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+        <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
+  // Email verification
+  emailVerification: (userName: string, verificationUrl: string) => ({
+    subject: `Verify Your Email Address`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #000;">Verify Your Email</h2>
+        <p>Hi ${userName},</p>
+        <p>Thanks for signing up! Please verify your email address by clicking the button below:</p>
+        <a href="${verificationUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Verify Email</a>
+        <p style="margin-top: 24px; color: #666; font-size: 14px;">This link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
         <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
       </div>
     `,

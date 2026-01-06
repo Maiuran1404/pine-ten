@@ -1,8 +1,22 @@
-// App configuration - easy to update
+/**
+ * App configuration
+ * All sensitive values must come from environment variables
+ */
+
+// Validate required env vars are present
+function requireEnv(key: string, fallback?: string): string {
+  const value = process.env[key] || fallback;
+  if (!value && process.env.NODE_ENV === "production") {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value || "";
+}
+
 export const config = {
   app: {
-    name: process.env.NEXT_PUBLIC_APP_NAME || "Crafted",
-    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    name: requireEnv("NEXT_PUBLIC_APP_NAME", "Crafted"),
+    url: requireEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
+    baseDomain: process.env.NEXT_PUBLIC_BASE_DOMAIN || "localhost",
   },
   credits: {
     pricePerCredit: 49, // USD
@@ -20,12 +34,25 @@ export const config = {
   },
   notifications: {
     email: {
-      from: process.env.EMAIL_FROM || "Nameless <noreply@example.com>",
-      adminEmail: process.env.ADMIN_NOTIFICATION_EMAIL || "maiuran@craftedstudio.ai",
+      // Must be set in production
+      from: requireEnv("EMAIL_FROM", "Crafted <noreply@localhost>"),
+      // Admin email must be set via env var in production
+      adminEmail: requireEnv("ADMIN_NOTIFICATION_EMAIL"),
     },
     whatsapp: {
       number: process.env.TWILIO_WHATSAPP_NUMBER || "",
     },
+  },
+  // Upload limits
+  uploads: {
+    maxFileSizeMB: 50,
+    maxFilesPerRequest: 10,
+  },
+  // Rate limits
+  rateLimits: {
+    api: { window: 60, max: 100 }, // 100 req/min
+    auth: { window: 60, max: 20 }, // 20 req/min
+    chat: { window: 60, max: 30 }, // 30 req/min (AI is expensive)
   },
 } as const;
 

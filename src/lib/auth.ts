@@ -49,9 +49,21 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    // Email verification required in production for security
+    requireEmailVerification: isProduction,
     minPasswordLength: 8,
     maxPasswordLength: 128,
+    // Password reset configuration
+    sendResetPassword: async ({ user, url }) => {
+      // Import dynamically to avoid circular dependencies
+      const { sendEmail, emailTemplates } = await import("@/lib/notifications");
+      const resetEmail = emailTemplates.passwordReset(user.name, url);
+      await sendEmail({
+        to: user.email,
+        subject: resetEmail.subject,
+        html: resetEmail.html,
+      });
+    },
   },
   socialProviders: {
     google: {

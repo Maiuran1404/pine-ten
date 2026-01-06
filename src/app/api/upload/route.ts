@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
+import { logger } from "@/lib/logger";
+import { config } from "@/lib/config";
 
 // Initialize Supabase client with service role for storage operations
 const supabase = createClient(
@@ -9,88 +12,181 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const ALLOWED_TYPES = [
+/**
+ * Allowed MIME types for upload
+ * SECURITY: Removed application/octet-stream to prevent arbitrary file uploads
+ */
+const ALLOWED_TYPES: Record<string, { extensions: string[]; maxSize?: number }> = {
   // Images
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "image/svg+xml",
-  "image/tiff",
-  "image/bmp",
+  "image/jpeg": { extensions: ["jpg", "jpeg"] },
+  "image/png": { extensions: ["png"] },
+  "image/gif": { extensions: ["gif"] },
+  "image/webp": { extensions: ["webp"] },
+  "image/svg+xml": { extensions: ["svg"], maxSize: 5 * 1024 * 1024 }, // 5MB max for SVG (prevents XML bombs)
+  "image/tiff": { extensions: ["tiff", "tif"] },
+  "image/bmp": { extensions: ["bmp"] },
   // Documents
-  "application/pdf",
+  "application/pdf": { extensions: ["pdf"] },
   // Archives
-  "application/zip",
-  "application/x-zip-compressed",
-  "application/x-rar-compressed",
+  "application/zip": { extensions: ["zip"] },
+  "application/x-zip-compressed": { extensions: ["zip"] },
   // Videos
-  "video/mp4",
-  "video/quicktime",
-  "video/webm",
-  "video/x-msvideo",
+  "video/mp4": { extensions: ["mp4"] },
+  "video/quicktime": { extensions: ["mov"] },
+  "video/webm": { extensions: ["webm"] },
+  "video/x-msvideo": { extensions: ["avi"] },
   // Office
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
-  "application/vnd.ms-powerpoint", // ppt
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
-  "application/msword", // doc
-  // Design files
-  "application/illustrator",
-  "application/postscript", // ai, eps
-  "image/vnd.adobe.photoshop", // psd
-  "application/x-photoshop",
-  "application/octet-stream", // fallback for design files
-];
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
+    extensions: ["pptx"],
+  },
+  "application/vnd.ms-powerpoint": { extensions: ["ppt"] },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    extensions: ["docx"],
+  },
+  "application/msword": { extensions: ["doc"] },
+  // Design files - specific types only
+  "application/postscript": { extensions: ["ai", "eps"] },
+  "image/vnd.adobe.photoshop": { extensions: ["psd"] },
+};
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = config.uploads.maxFileSizeMB * 1024 * 1024;
+
+/**
+ * Validate file magic bytes (first few bytes of file)
+ * This prevents MIME type spoofing attacks
+ */
+const MAGIC_BYTES: Record<string, number[]> = {
+  "image/jpeg": [0xff, 0xd8, 0xff],
+  "image/png": [0x89, 0x50, 0x4e, 0x47],
+  "image/gif": [0x47, 0x49, 0x46],
+  "image/webp": [0x52, 0x49, 0x46, 0x46], // RIFF header
+  "application/pdf": [0x25, 0x50, 0x44, 0x46], // %PDF
+  "application/zip": [0x50, 0x4b, 0x03, 0x04], // PK
+  "application/x-zip-compressed": [0x50, 0x4b, 0x03, 0x04],
+  "video/mp4": [0x00, 0x00, 0x00], // ftyp box (varies)
+};
+
+function validateMagicBytes(
+  buffer: Buffer,
+  mimeType: string
+): boolean {
+  const magicBytes = MAGIC_BYTES[mimeType];
+  if (!magicBytes) {
+    // No magic bytes check available for this type - allow
+    return true;
+  }
+
+  for (let i = 0; i < magicBytes.length; i++) {
+    if (buffer[i] !== magicBytes[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Validate file extension matches MIME type
+ */
+function validateExtension(filename: string, mimeType: string): boolean {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  if (!ext) return false;
+
+  const typeConfig = ALLOWED_TYPES[mimeType];
+  if (!typeConfig) return false;
+
+  return typeConfig.extensions.includes(ext);
+}
+
+/**
+ * Sanitize filename to prevent directory traversal and other attacks
+ */
+function sanitizeFilename(filename: string): string {
+  // Remove path components
+  const basename = filename.split(/[/\\]/).pop() || "file";
+
+  // Remove dangerous characters, keep only safe ones
+  const sanitized = basename
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/\.{2,}/g, ".") // Remove multiple dots
+    .replace(/^\./, "_") // Don't start with dot
+    .substring(0, 100); // Limit length
+
+  return sanitized || "file";
+}
 
 export async function POST(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw Errors.unauthorized();
     }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) || "attachments";
 
+    // Validate folder name (prevent directory traversal)
+    const allowedFolders = ["attachments", "deliverables", "brand", "avatars"];
+    if (!allowedFolders.includes(folder)) {
+      throw Errors.badRequest("Invalid folder specified");
+    }
+
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      throw Errors.badRequest("No file provided");
     }
 
     // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: "File type not allowed" },
-        { status: 400 }
+    if (!ALLOWED_TYPES[file.type]) {
+      logger.warn(
+        { userId: session.user.id, fileType: file.type },
+        "Rejected upload with disallowed file type"
+      );
+      throw Errors.badRequest(
+        "File type not allowed. Allowed types: images, PDFs, videos, Office documents, and design files."
       );
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File too large. Maximum size is 50MB" },
-        { status: 400 }
+    // Check type-specific max size
+    const typeConfig = ALLOWED_TYPES[file.type];
+    const effectiveMaxSize = typeConfig.maxSize || MAX_FILE_SIZE;
+
+    if (file.size > effectiveMaxSize) {
+      throw Errors.badRequest(
+        `File too large. Maximum size is ${Math.round(effectiveMaxSize / 1024 / 1024)}MB for this file type.`
       );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const extension = file.name.split(".").pop() || "bin";
-    const sanitizedName = file.name
-      .replace(/[^a-zA-Z0-9.-]/g, "_")
-      .substring(0, 50);
-    const fileName = `${timestamp}-${randomStr}-${sanitizedName}`;
-    const filePath = `${folder}/${session.user.id}/${fileName}`;
+    // Validate file extension matches MIME type
+    if (!validateExtension(file.name, file.type)) {
+      logger.warn(
+        { userId: session.user.id, fileName: file.name, fileType: file.type },
+        "Rejected upload with mismatched extension"
+      );
+      throw Errors.badRequest("File extension does not match file type");
+    }
 
-    // Convert File to Buffer
+    // Convert File to Buffer for magic bytes check
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Validate magic bytes (file signature)
+    if (!validateMagicBytes(buffer, file.type)) {
+      logger.warn(
+        { userId: session.user.id, fileType: file.type },
+        "Rejected upload with invalid magic bytes"
+      );
+      throw Errors.badRequest("File content does not match declared type");
+    }
+
+    // Generate secure filename
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const sanitizedName = sanitizeFilename(file.name);
+    const fileName = `${timestamp}-${randomStr}-${sanitizedName}`;
+    const filePath = `${folder}/${session.user.id}/${fileName}`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -101,11 +197,8 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      console.error("Supabase upload error:", error);
-      return NextResponse.json(
-        { error: "Failed to upload file" },
-        { status: 500 }
-      );
+      logger.error({ err: error, userId: session.user.id }, "Supabase upload failed");
+      throw Errors.internal("Failed to upload file");
     }
 
     // Get public URL
@@ -113,8 +206,18 @@ export async function POST(request: NextRequest) {
       data: { publicUrl },
     } = supabase.storage.from("uploads").getPublicUrl(data.path);
 
-    return NextResponse.json({
-      success: true,
+    logger.info(
+      {
+        userId: session.user.id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        path: data.path,
+      },
+      "File uploaded successfully"
+    );
+
+    return successResponse({
       file: {
         fileName: file.name,
         fileUrl: publicUrl,
@@ -123,11 +226,5 @@ export async function POST(request: NextRequest) {
         path: data.path,
       },
     });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Failed to upload file" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/upload" });
 }
