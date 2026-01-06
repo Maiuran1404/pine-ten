@@ -69,6 +69,8 @@ const publicPaths = [
   "/api/auth",
   "/api/webhooks",
   "/api/health",
+  "/api/openapi",
+  "/api-docs",
   "/_next",
   "/favicon.ico",
   "/robots.txt",
