@@ -30,7 +30,7 @@ export const createTaskSchema = z.object({
     .max(100, { message: "Maximum 100 credits per task" }),
   deadline: z.string().datetime().optional().nullable(),
   chatHistory: z.array(z.record(z.string(), z.unknown())).optional().default([]),
-  styleReferences: z.array(z.string().url()).optional().default([]),
+  styleReferences: z.array(z.string()).optional().default([]),
   attachments: z
     .array(
       z.object({

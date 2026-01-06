@@ -9,9 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
   ArrowUp,
-  Lightbulb,
   Video,
-  BookOpen,
   Grip,
   Sparkles,
   Image as ImageIcon,
@@ -45,19 +43,19 @@ interface BrandData {
 
 const QUICK_PROMPTS = [
   {
-    id: "advice",
-    icon: Lightbulb,
-    label: "Any advice for me?",
+    id: "static-ad",
+    icon: ImageIcon,
+    label: "I need a static ad design",
   },
   {
-    id: "youtube",
+    id: "video-ad",
     icon: Video,
-    label: "Some youtube video idea",
+    label: "Create a video ad for me",
   },
   {
-    id: "lessons",
-    icon: BookOpen,
-    label: "Life lessons from kratos",
+    id: "social-content",
+    icon: Layers,
+    label: "Design social media content",
   },
 ];
 

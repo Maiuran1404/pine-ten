@@ -436,7 +436,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create task");
+        throw new Error(error.error?.message || error.message || "Failed to create task");
       }
 
       const data = await response.json();
