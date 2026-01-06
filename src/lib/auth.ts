@@ -11,6 +11,17 @@ const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
 // The canonical auth URL - ALL OAuth callbacks go through this domain
 // This MUST match what's registered in Google OAuth console
 const getAuthBaseURL = () => {
+  // Use BETTER_AUTH_URL if provided (Better Auth standard)
+  if (process.env.BETTER_AUTH_URL) {
+    const url = process.env.BETTER_AUTH_URL.trim();
+    // In production, ensure HTTPS (convert HTTP to HTTPS if needed)
+    if (isProduction && url.startsWith("http://")) {
+      return url.replace("http://", "https://");
+    }
+    return url;
+  }
+
+  // Fallback: construct URL based on environment
   if (isProduction) {
     // In production, always use app subdomain for OAuth callbacks
     // This is the URL registered with Google OAuth
