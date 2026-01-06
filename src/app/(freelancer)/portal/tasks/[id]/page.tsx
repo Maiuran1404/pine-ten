@@ -37,12 +37,65 @@ import {
   XCircle,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
+import { BrandDNA } from "@/components/freelancer/brand-dna";
+import { PreviousDeliverables } from "@/components/freelancer/previous-deliverables";
 
 interface UploadedFile {
   fileName: string;
   fileUrl: string;
   fileType: string;
   fileSize: number;
+}
+
+interface BrandDNAType {
+  name: string;
+  website?: string | null;
+  industry?: string | null;
+  description?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  colors: {
+    primary?: string | null;
+    secondary?: string | null;
+    accent?: string | null;
+    background?: string | null;
+    text?: string | null;
+    additional?: string[];
+  };
+  typography: {
+    primaryFont?: string | null;
+    secondaryFont?: string | null;
+  };
+  socialLinks?: {
+    twitter?: string;
+    linkedin?: string;
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+  } | null;
+  brandAssets?: {
+    images?: string[];
+    documents?: string[];
+  } | null;
+  tagline?: string | null;
+  keywords?: string[] | null;
+}
+
+interface PreviousWorkTask {
+  taskId: string;
+  taskTitle: string;
+  taskStatus: string;
+  completedAt: string | null;
+  categoryName: string | null;
+  deliverables: {
+    id: string;
+    taskId: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+    createdAt: string;
+  }[];
 }
 
 interface Task {
@@ -85,6 +138,8 @@ interface Task {
     senderName: string;
     senderImage: string | null;
   }[];
+  brandDNA?: BrandDNAType | null;
+  previousWork?: PreviousWorkTask[];
 }
 
 const statusConfig: Record<
@@ -367,6 +422,17 @@ export default function FreelancerTaskDetailPage() {
               <p className="whitespace-pre-wrap">{task.description}</p>
             </CardContent>
           </Card>
+
+          {/* Brand DNA - Collapsible */}
+          {task.brandDNA && <BrandDNA brandDNA={task.brandDNA} />}
+
+          {/* Previous Work for this Company - Collapsible */}
+          {task.previousWork && task.previousWork.length > 0 && task.brandDNA && (
+            <PreviousDeliverables
+              previousWork={task.previousWork}
+              companyName={task.brandDNA.name}
+            />
+          )}
 
           {/* Client Attachments */}
           {clientAttachments.length > 0 && (

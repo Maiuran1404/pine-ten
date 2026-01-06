@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks, users, taskCategories, taskFiles, taskMessages } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { tasks, users, taskCategories, taskFiles, taskMessages, companies } from "@/db/schema";
+import { eq, desc, and, ne } from "drizzle-orm";
 
 // Type alias for better readability
 const freelancerUsers = users;
@@ -77,8 +77,19 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Fetch files and messages in parallel (they're independent queries)
-    const [files, messages] = await Promise.all([
+    // First, get the client info to find their company
+    const clientInfo = await db
+      .select({
+        companyId: users.companyId,
+      })
+      .from(users)
+      .where(eq(users.id, taskRow.clientId))
+      .limit(1);
+
+    const companyId = clientInfo[0]?.companyId;
+
+    // Fetch files, messages, and optionally brand info in parallel
+    const [files, messages, brandResult, previousWorkResult] = await Promise.all([
       db
         .select()
         .from(taskFiles)
@@ -98,7 +109,100 @@ export async function GET(
         .leftJoin(users, eq(taskMessages.senderId, users.id))
         .where(eq(taskMessages.taskId, id))
         .orderBy(taskMessages.createdAt),
+      // Fetch company/brand info if companyId exists
+      companyId
+        ? db
+            .select()
+            .from(companies)
+            .where(eq(companies.id, companyId))
+            .limit(1)
+        : Promise.resolve([]),
+      // Fetch previous completed work for this company (tasks with deliverables)
+      companyId
+        ? db
+            .select({
+              taskId: tasks.id,
+              taskTitle: tasks.title,
+              taskStatus: tasks.status,
+              completedAt: tasks.completedAt,
+              categoryName: taskCategories.name,
+            })
+            .from(tasks)
+            .leftJoin(users, eq(tasks.clientId, users.id))
+            .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+            .where(
+              and(
+                eq(users.companyId, companyId),
+                eq(tasks.status, "COMPLETED"),
+                ne(tasks.id, id) // Exclude current task
+              )
+            )
+            .orderBy(desc(tasks.completedAt))
+            .limit(20)
+        : Promise.resolve([]),
     ]);
+
+    // Get deliverable files for previous work
+    const previousTaskIds = previousWorkResult.map((t) => t.taskId);
+    const previousDeliverables =
+      previousTaskIds.length > 0
+        ? await db
+            .select({
+              id: taskFiles.id,
+              taskId: taskFiles.taskId,
+              fileName: taskFiles.fileName,
+              fileUrl: taskFiles.fileUrl,
+              fileType: taskFiles.fileType,
+              fileSize: taskFiles.fileSize,
+              createdAt: taskFiles.createdAt,
+            })
+            .from(taskFiles)
+            .where(
+              and(
+                eq(taskFiles.isDeliverable, true)
+              )
+            )
+            .orderBy(desc(taskFiles.createdAt))
+        : [];
+
+    // Filter deliverables to only those belonging to previous tasks
+    const filteredDeliverables = previousDeliverables.filter((d) =>
+      previousTaskIds.includes(d.taskId)
+    );
+
+    // Group deliverables by task
+    const previousWork = previousWorkResult.map((task) => ({
+      ...task,
+      deliverables: filteredDeliverables.filter((d) => d.taskId === task.taskId),
+    }));
+
+    // Build brand DNA object
+    const brandDNA = brandResult[0]
+      ? {
+          name: brandResult[0].name,
+          website: brandResult[0].website,
+          industry: brandResult[0].industry,
+          description: brandResult[0].description,
+          logoUrl: brandResult[0].logoUrl,
+          faviconUrl: brandResult[0].faviconUrl,
+          colors: {
+            primary: brandResult[0].primaryColor,
+            secondary: brandResult[0].secondaryColor,
+            accent: brandResult[0].accentColor,
+            background: brandResult[0].backgroundColor,
+            text: brandResult[0].textColor,
+            additional: brandResult[0].brandColors || [],
+          },
+          typography: {
+            primaryFont: brandResult[0].primaryFont,
+            secondaryFont: brandResult[0].secondaryFont,
+          },
+          socialLinks: brandResult[0].socialLinks,
+          brandAssets: brandResult[0].brandAssets,
+          tagline: brandResult[0].tagline,
+          keywords: brandResult[0].keywords,
+        }
+      : null;
 
     // Construct category object if it exists
     const category = taskRow.categoryDbId
@@ -143,6 +247,8 @@ export async function GET(
         freelancer,
         files,
         messages,
+        brandDNA,
+        previousWork,
       },
     });
   } catch (error) {
