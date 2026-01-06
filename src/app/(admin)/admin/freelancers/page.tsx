@@ -97,7 +97,7 @@ export default function FreelancersPage() {
       const response = await fetch("/api/admin/freelancers");
       if (response.ok) {
         const data = await response.json();
-        setFreelancers(data.freelancers || []);
+        setFreelancers(data.data?.freelancers || []);
       }
     } catch (error) {
       console.error("Failed to fetch freelancers:", error);

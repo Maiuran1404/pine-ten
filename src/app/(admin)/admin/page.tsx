@@ -92,7 +92,7 @@ export default function AdminDashboardPage() {
 
       if (statsRes.ok) {
         const data = await statsRes.json();
-        setStats(data);
+        setStats(data.data);
       }
 
       if (tasksRes.ok) {
