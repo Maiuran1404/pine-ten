@@ -165,7 +165,8 @@ export default function AdminDashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-        className="relative z-10 space-y-8"
+        className="relative z-10 space-y-8 outline-none"
+        tabIndex={-1}
       >
         {/* Header */}
         <div className="flex items-start justify-between">
