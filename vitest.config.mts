@@ -5,20 +5,20 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: "happy-dom",
+    environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    exclude: ["node_modules", ".next", "dist"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules", ".next"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
       exclude: [
-        "node_modules/",
-        "src/test/",
+        "node_modules",
+        ".next",
+        "src/test",
         "**/*.d.ts",
         "**/*.config.*",
-        "**/types/**",
       ],
     },
   },
