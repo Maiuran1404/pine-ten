@@ -23,20 +23,31 @@ export default function ClientLayout({
   const { data: session, isPending } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
-  // Redirect to login if not authenticated (after session check completes)
+  // Redirect based on auth state and role
   useEffect(() => {
-    if (!isPending && !session) {
-      router.replace("/login");
-    }
-  }, [session, isPending, router]);
+    if (isPending) return;
 
-  // Redirect to onboarding if not completed
-  useEffect(() => {
-    if (!isPending && session?.user) {
-      const user = session.user as { onboardingCompleted?: boolean };
-      if (!user.onboardingCompleted) {
-        router.replace("/onboarding");
-      }
+    // Not authenticated - redirect to login
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+
+    const user = session.user as { role?: string; onboardingCompleted?: boolean };
+
+    // Redirect non-CLIENT users to their appropriate portal
+    if (user.role === "ADMIN") {
+      router.replace("/admin");
+      return;
+    }
+    if (user.role === "FREELANCER") {
+      router.replace("/portal");
+      return;
+    }
+
+    // Check onboarding for clients
+    if (!user.onboardingCompleted) {
+      router.replace("/onboarding");
     }
   }, [session, isPending, router]);
 
@@ -68,8 +79,13 @@ export default function ClientLayout({
     return <FullPageLoader />;
   }
 
+  // Don't render if user is not a CLIENT (redirect will happen)
+  const user = session.user as { role?: string; onboardingCompleted?: boolean; credits?: number };
+  if (user.role === "ADMIN" || user.role === "FREELANCER") {
+    return <FullPageLoader />;
+  }
+
   // Don't render if onboarding not completed (redirect will happen)
-  const user = session.user as { onboardingCompleted?: boolean; credits?: number };
   if (!user.onboardingCompleted) {
     return <FullPageLoader />;
   }

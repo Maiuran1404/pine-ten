@@ -68,19 +68,36 @@ function LoginContent() {
   const isArtist = portal.type === "artist";
   const showSocialLogin = !isSuperadmin && !isArtist;
 
-  // Get redirect destination
-  const getRedirectUrl = () => {
+  // Get redirect destination based on user role
+  const getRedirectUrl = (userRole?: string) => {
+    // First check for explicit redirect param
     const redirect = searchParams.get("redirect");
     if (redirect && redirect !== "/" && !redirect.includes("login")) {
       return redirect;
     }
+
+    // If user role is available, redirect based on role (takes priority)
+    if (userRole) {
+      switch (userRole) {
+        case "ADMIN":
+          return "/admin";
+        case "FREELANCER":
+          return "/portal";
+        case "CLIENT":
+        default:
+          return "/dashboard";
+      }
+    }
+
+    // Fallback to portal default
     return portal.defaultRedirect;
   };
 
   // Redirect if already logged in - only after session check completes
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectUrl = getRedirectUrl();
+      const user = session.user as { role?: string };
+      const redirectUrl = getRedirectUrl(user.role);
       router.replace(redirectUrl);
     }
   }, [session, isPending, router]);

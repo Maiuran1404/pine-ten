@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 export type PortalType = "app" | "artist" | "superadmin" | "default";
 
@@ -13,9 +13,10 @@ interface PortalConfig {
   bgGradient: string;
   icon: string;
   defaultRedirect: string;
+  isHydrated: boolean;
 }
 
-const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
+const PORTAL_CONFIGS: Record<PortalType, Omit<PortalConfig, "isHydrated">> = {
   app: {
     type: "app",
     name: "Crafted Studio",
@@ -88,17 +89,24 @@ export function getPortalFromHostname(hostname: string): PortalType {
   return "app";
 }
 
+// Default config used for SSR - must be consistent between server and client initial render
+const DEFAULT_CONFIG: PortalConfig = {
+  ...PORTAL_CONFIGS.app,
+  isHydrated: false,
+};
+
 export function useSubdomain(): PortalConfig {
-  // Use useMemo to compute the portal config on initial render
-  // This avoids the setState-in-useEffect anti-pattern
-  const portalConfig = useMemo(() => {
-    // Check if we're on the client side
-    if (typeof window === "undefined") {
-      return PORTAL_CONFIGS.app;
-    }
+  // Start with default config to ensure consistent SSR
+  const [portalConfig, setPortalConfig] = useState<PortalConfig>(DEFAULT_CONFIG);
+
+  // Update to actual subdomain after hydration
+  useEffect(() => {
     const hostname = window.location.hostname;
     const portalType = getPortalFromHostname(hostname);
-    return PORTAL_CONFIGS[portalType];
+    setPortalConfig({
+      ...PORTAL_CONFIGS[portalType],
+      isHydrated: true,
+    });
   }, []);
 
   return portalConfig;
