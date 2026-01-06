@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
@@ -22,7 +22,7 @@ export default function ClientLayout({
   const router = useRouter();
   const { data: session, isPending, error } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clear stale session and redirect to login
   const clearSessionAndRedirect = useCallback(async () => {
@@ -35,25 +35,26 @@ export default function ClientLayout({
     router.push("/login");
   }, [router]);
 
-  // Add a loading timeout to detect stuck states
+  // Add a loading timeout to detect stuck states - call redirect directly instead of setting state
   useEffect(() => {
     if (isPending) {
-      const timeout = setTimeout(() => {
-        setLoadingTimeout(true);
+      timeoutRef.current = setTimeout(() => {
+        console.warn("Session loading stuck, clearing session");
+        clearSessionAndRedirect();
       }, 5000); // 5 second timeout
-      return () => clearTimeout(timeout);
-    } else {
-      setLoadingTimeout(false);
+      return () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      };
     }
-  }, [isPending]);
+  }, [isPending, clearSessionAndRedirect]);
 
-  // Handle stuck loading or session errors
+  // Handle session errors
   useEffect(() => {
-    if (loadingTimeout || error) {
-      console.warn("Session loading stuck or errored, clearing session:", error);
+    if (error) {
+      console.warn("Session error, clearing session:", error);
       clearSessionAndRedirect();
     }
-  }, [loadingTimeout, error, clearSessionAndRedirect]);
+  }, [error, clearSessionAndRedirect]);
 
   useEffect(() => {
     if (!isPending && !session) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
@@ -19,44 +19,45 @@ export default function ChatPage() {
     return getDrafts();
   });
 
-  // Derive initial state from URL params
-  const urlState = useMemo(() => {
-    const draftParam = searchParams.get("draft");
-    const messageParam = searchParams.get("message");
-    return { draftParam, messageParam };
-  }, [searchParams]);
+  // Get current URL params
+  const draftParam = searchParams.get("draft");
+  const messageParam = searchParams.get("message");
 
-  // Initialize currentDraftId based on URL
+  // Initialize state based on URL
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(() => {
-    if (urlState.draftParam) return urlState.draftParam;
-    if (urlState.messageParam) return generateDraftId();
+    if (draftParam) return draftParam;
+    if (messageParam) return generateDraftId();
     return null;
   });
 
-  const [showDrafts, setShowDrafts] = useState(() => !urlState.draftParam && !urlState.messageParam);
-  const [initialMessage, setInitialMessage] = useState<string | null>(() => urlState.messageParam);
-  const [isTransitioning, setIsTransitioning] = useState(() => !!urlState.draftParam || !!urlState.messageParam);
+  const [showDrafts, setShowDrafts] = useState(() => !draftParam && !messageParam);
+  const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
+  const [isTransitioning, setIsTransitioning] = useState(() => !!draftParam || !!messageParam);
 
-  // Handle URL changes after initial mount
+  // Handle URL changes after initial mount using startTransition for non-blocking updates
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
       return; // Skip first run as state was already initialized
     }
 
-    // URL changed, update state accordingly
-    if (urlState.draftParam) {
-      setCurrentDraftId(urlState.draftParam);
-      setShowDrafts(false);
-      setIsTransitioning(true);
-    } else if (urlState.messageParam) {
-      setInitialMessage(urlState.messageParam);
-      setIsTransitioning(true);
-      const newId = generateDraftId();
-      setCurrentDraftId(newId);
-      setShowDrafts(false);
+    // URL changed, update state accordingly using startTransition to avoid the sync setState warning
+    if (draftParam) {
+      startTransition(() => {
+        setCurrentDraftId(draftParam);
+        setShowDrafts(false);
+        setIsTransitioning(true);
+      });
+    } else if (messageParam) {
+      startTransition(() => {
+        setInitialMessage(messageParam);
+        setIsTransitioning(true);
+        const newId = generateDraftId();
+        setCurrentDraftId(newId);
+        setShowDrafts(false);
+      });
     }
-  }, [urlState.draftParam, urlState.messageParam]);
+  }, [draftParam, messageParam]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();
