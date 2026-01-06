@@ -27,6 +27,7 @@ export function Header({ credits = 0, onMenuClick }: HeaderProps) {
             size="sm"
             className="md:hidden"
             onClick={onMenuClick}
+            aria-label="Open navigation menu"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -38,6 +39,7 @@ export function Header({ credits = 0, onMenuClick }: HeaderProps) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />

@@ -50,6 +50,7 @@ export function FreelancerSidebar({ open, onClose }: FreelancerSidebarProps) {
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
@@ -67,8 +68,9 @@ export function FreelancerSidebar({ open, onClose }: FreelancerSidebarProps) {
               size="icon"
               className="lg:hidden"
               onClick={onClose}
+              aria-label="Close navigation menu"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" aria-hidden="true" />
             </Button>
           </div>
 
@@ -87,7 +89,7 @@ export function FreelancerSidebar({ open, onClose }: FreelancerSidebarProps) {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
                   {item.name}
                 </Link>
               );

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { CsrfProvider } from "@/providers/csrf-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SkipLink } from "@/components/shared/skip-link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0a] dark:bg-[#0a0a0a]`}
       >
+        <SkipLink />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -52,7 +54,9 @@ export default function RootLayout({
         >
           <QueryProvider>
             <CsrfProvider>
-              {children}
+              <main id="main-content">
+                {children}
+              </main>
               <Toaster position="top-right" />
             </CsrfProvider>
           </QueryProvider>

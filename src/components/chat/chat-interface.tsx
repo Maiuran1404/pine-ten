@@ -588,9 +588,9 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
           <button
             onClick={() => setShowDeleteDialog(true)}
             className="p-2 rounded-lg text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Delete chat"
+            aria-label="Delete chat"
           >
-            <Trash2 className="h-5 w-5" />
+            <Trash2 className="h-5 w-5" aria-hidden="true" />
           </button>
         </motion.div>
       )}
@@ -717,13 +717,24 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       {message.styleReferences.slice(0, 3).map((style, idx) => (
                         <div
                           key={`${style.name}-${idx}`}
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={selectedStyles.includes(style.name)}
+                          aria-label={`Select ${style.name} style`}
                           className={cn(
                             "flex-shrink-0 w-32 rounded-lg border-2 p-2 cursor-pointer transition-all",
+                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                             selectedStyles.includes(style.name)
                               ? "border-primary ring-2 ring-primary/20"
                               : "border-transparent bg-background/50 hover:border-muted-foreground/50"
                           )}
                           onClick={() => handleStyleSelect(style.name)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleStyleSelect(style.name);
+                            }
+                          }}
                         >
                           <div className="aspect-video bg-muted rounded overflow-hidden mb-1">
                             {style.imageUrl ? (
@@ -983,11 +994,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading || isUploading}
                   className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                  aria-label={isUploading ? "Uploading file" : "Attach file"}
                 >
                   {isUploading ? (
                     <LoadingSpinner size="sm" />
                   ) : (
-                    <Paperclip className="h-5 w-5" />
+                    <Paperclip className="h-5 w-5" aria-hidden="true" />
                   )}
                 </button>
                 <div className="h-5 w-px bg-[#2a2a30]/50"></div>
@@ -1009,8 +1021,9 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   onClick={handleSend}
                   disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
                   className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                  aria-label="Send message"
                 >
-                  <ArrowUp className="h-5 w-5" />
+                  <ArrowUp className="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
