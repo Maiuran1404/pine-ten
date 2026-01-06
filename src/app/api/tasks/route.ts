@@ -1,14 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, users, taskCategories, taskFiles, freelancerProfiles } from "@/db/schema";
-import { eq, desc, and, count, sql, asc } from "drizzle-orm";
+import { db, withTransaction } from "@/db";
+import {
+  tasks,
+  users,
+  taskCategories,
+  taskFiles,
+  freelancerProfiles,
+  creditTransactions,
+} from "@/db/schema";
+import { eq, desc, and, count, sql } from "drizzle-orm";
 import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { createTaskSchema } from "@/lib/validations";
+import {
+  withErrorHandling,
+  errorResponse,
+  successResponse,
+  ErrorCodes,
+  Errors,
+} from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 // Get the next available freelancer using least-loaded assignment
-async function getNextFreelancer(): Promise<{ userId: string; name: string; email: string } | null> {
+async function getNextFreelancer(): Promise<{
+  userId: string;
+  name: string;
+  email: string;
+} | null> {
   // Get all active freelancers (approved and available)
   const activeFreelancers = await db
     .select({
@@ -68,17 +88,17 @@ async function getNextFreelancer(): Promise<{ userId: string; name: string; emai
 }
 
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw Errors.unauthorized();
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
     const status = searchParams.get("status");
 
@@ -88,16 +108,24 @@ export async function GET(request: NextRequest) {
 
     if (user.role === "ADMIN") {
       // Admin sees all tasks
-      conditions = status ? eq(tasks.status, status as typeof tasks.status.enumValues[number]) : undefined;
+      conditions = status
+        ? eq(tasks.status, status as (typeof tasks.status.enumValues)[number])
+        : undefined;
     } else if (user.role === "FREELANCER") {
       // Freelancer sees assigned tasks
       conditions = status
-        ? and(eq(tasks.freelancerId, session.user.id), eq(tasks.status, status as typeof tasks.status.enumValues[number]))
+        ? and(
+            eq(tasks.freelancerId, session.user.id),
+            eq(tasks.status, status as (typeof tasks.status.enumValues)[number])
+          )
         : eq(tasks.freelancerId, session.user.id);
     } else {
       // Client sees their own tasks
       conditions = status
-        ? and(eq(tasks.clientId, session.user.id), eq(tasks.status, status as typeof tasks.status.enumValues[number]))
+        ? and(
+            eq(tasks.clientId, session.user.id),
+            eq(tasks.status, status as (typeof tasks.status.enumValues)[number])
+          )
         : eq(tasks.clientId, session.user.id);
     }
 
@@ -122,7 +150,7 @@ export async function GET(request: NextRequest) {
       })
       .from(tasks);
 
-    return NextResponse.json({
+    return successResponse({
       tasks: taskList,
       stats: {
         activeTasks: Number(statsResult[0]?.activeTasks) || 0,
@@ -130,26 +158,23 @@ export async function GET(request: NextRequest) {
         totalCreditsUsed: Number(statsResult[0]?.totalCreditsUsed) || 0,
       },
     });
-  } catch (error) {
-    console.error("Tasks fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch tasks" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/tasks" });
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw Errors.unauthorized();
     }
 
+    // Parse and validate request body
     const body = await request.json();
+    const validatedData = createTaskSchema.parse(body);
+
     const {
       title,
       description,
@@ -161,134 +186,152 @@ export async function POST(request: NextRequest) {
       chatHistory,
       styleReferences,
       attachments,
-    } = body;
+    } = validatedData;
 
-    // Get user's current credits
-    const userResult = await db
-      .select({ credits: users.credits })
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1);
+    // Use transaction to prevent race conditions
+    const result = await withTransaction(async (tx) => {
+      // Get user's current credits with row lock
+      const [userResult] = await tx
+        .select({ credits: users.credits })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .for("update"); // Lock the row
 
-    if (!userResult.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const currentCredits = userResult[0].credits;
-
-    if (currentCredits < creditsRequired) {
-      return NextResponse.json(
-        { error: "Insufficient credits", message: "Please purchase more credits to create this task" },
-        { status: 400 }
-      );
-    }
-
-    // Find category ID
-    let categoryId = null;
-    if (category) {
-      const categoryResult = await db
-        .select({ id: taskCategories.id })
-        .from(taskCategories)
-        .where(eq(taskCategories.slug, category.toLowerCase().replace(/_/g, "-")))
-        .limit(1);
-
-      if (categoryResult.length) {
-        categoryId = categoryResult[0].id;
+      if (!userResult) {
+        throw Errors.notFound("User");
       }
-    }
 
-    // Auto-assign to the next available freelancer
-    const assignedFreelancer = await getNextFreelancer();
+      const currentCredits = userResult.credits;
 
-    // Create the task with auto-assignment
-    const [newTask] = await db
-      .insert(tasks)
-      .values({
-        clientId: session.user.id,
-        categoryId,
-        title,
-        description,
-        requirements,
-        estimatedHours: estimatedHours?.toString(),
-        creditsUsed: creditsRequired,
-        maxRevisions: config.tasks.defaultMaxRevisions,
-        chatHistory,
-        styleReferences: styleReferences || [],
-        deadline: deadline ? new Date(deadline) : null,
-        // Auto-assign if freelancer available, otherwise leave pending
-        status: assignedFreelancer ? "ASSIGNED" : "PENDING",
-        freelancerId: assignedFreelancer?.userId || null,
-        assignedAt: assignedFreelancer ? new Date() : null,
-      })
-      .returning();
+      if (currentCredits < creditsRequired) {
+        throw Errors.insufficientCredits(creditsRequired, currentCredits);
+      }
 
-    // Deduct credits
-    await db
-      .update(users)
-      .set({
-        credits: currentCredits - creditsRequired,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, session.user.id));
+      // Find category ID
+      let categoryId = null;
+      if (category) {
+        const categorySlug = category.toLowerCase().replace(/_/g, "-");
+        const [categoryResult] = await tx
+          .select({ id: taskCategories.id })
+          .from(taskCategories)
+          .where(eq(taskCategories.slug, categorySlug))
+          .limit(1);
 
-    // Save attachments if provided
-    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
-      await db.insert(taskFiles).values(
-        attachments.map((file: { fileName: string; fileUrl: string; fileType: string; fileSize: number }) => ({
-          taskId: newTask.id,
-          uploadedBy: session.user.id,
-          fileName: file.fileName,
-          fileUrl: file.fileUrl,
-          fileType: file.fileType,
-          fileSize: file.fileSize,
-          isDeliverable: false,
-        }))
-      );
-    }
+        if (categoryResult) {
+          categoryId = categoryResult.id;
+        }
+      }
 
-    // Send admin notification for new task
+      // Auto-assign to the next available freelancer
+      const assignedFreelancer = await getNextFreelancer();
+
+      // Create the task
+      const [newTask] = await tx
+        .insert(tasks)
+        .values({
+          clientId: session.user.id,
+          categoryId,
+          title,
+          description,
+          requirements,
+          estimatedHours: estimatedHours?.toString(),
+          creditsUsed: creditsRequired,
+          maxRevisions: config.tasks.defaultMaxRevisions,
+          chatHistory: chatHistory || [],
+          styleReferences: styleReferences || [],
+          deadline: deadline ? new Date(deadline) : null,
+          status: assignedFreelancer ? "ASSIGNED" : "PENDING",
+          freelancerId: assignedFreelancer?.userId || null,
+          assignedAt: assignedFreelancer ? new Date() : null,
+        })
+        .returning();
+
+      // Deduct credits atomically
+      await tx
+        .update(users)
+        .set({
+          credits: sql`${users.credits} - ${creditsRequired}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, session.user.id));
+
+      // Log credit transaction
+      await tx.insert(creditTransactions).values({
+        userId: session.user.id,
+        amount: -creditsRequired,
+        type: "USAGE",
+        description: `Task created: ${title}`,
+        relatedTaskId: newTask.id,
+      });
+
+      // Save attachments if provided
+      if (attachments && attachments.length > 0) {
+        await tx.insert(taskFiles).values(
+          attachments.map((file) => ({
+            taskId: newTask.id,
+            uploadedBy: session.user.id,
+            fileName: file.fileName,
+            fileUrl: file.fileUrl,
+            fileType: file.fileType,
+            fileSize: file.fileSize,
+            isDeliverable: false,
+          }))
+        );
+      }
+
+      return { task: newTask, freelancer: assignedFreelancer };
+    });
+
+    // Send notifications outside the transaction
     try {
       await adminNotifications.newTaskCreated({
-        taskId: newTask.id,
+        taskId: result.task.id,
         taskTitle: title,
         clientName: session.user.name || "Unknown",
         clientEmail: session.user.email || "",
         category: category || "General",
         creditsUsed: creditsRequired,
       });
-    } catch (emailError) {
-      console.error("Failed to send task creation notification:", emailError);
+    } catch (error) {
+      logger.error({ err: error, taskId: result.task.id }, "Failed to send admin notification");
     }
 
     // Notify assigned freelancer
-    if (assignedFreelancer) {
+    if (result.freelancer) {
       try {
         await notify({
-          userId: assignedFreelancer.userId,
+          userId: result.freelancer.userId,
           type: "TASK_ASSIGNED",
           title: "New Task Assigned",
           content: `You have been assigned a new task: ${title}`,
-          taskId: newTask.id,
-          taskUrl: `${config.app.url}/portal/tasks/${newTask.id}`,
-          additionalData: {
-            taskTitle: title,
-          },
+          taskId: result.task.id,
+          taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
+          additionalData: { taskTitle: title },
         });
-      } catch (emailError) {
-        console.error("Failed to send freelancer assignment notification:", emailError);
+      } catch (error) {
+        logger.error(
+          { err: error, freelancerId: result.freelancer.userId },
+          "Failed to send freelancer notification"
+        );
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      taskId: newTask.id,
-      assignedTo: assignedFreelancer?.name || null,
-    });
-  } catch (error) {
-    console.error("Task creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to create task" },
-      { status: 500 }
+    logger.info(
+      {
+        taskId: result.task.id,
+        userId: session.user.id,
+        creditsUsed: creditsRequired,
+        freelancerAssigned: result.freelancer?.userId,
+      },
+      "Task created successfully"
     );
-  }
+
+    return successResponse(
+      {
+        taskId: result.task.id,
+        assignedTo: result.freelancer?.name || null,
+      },
+      201
+    );
+  }, { endpoint: "POST /api/tasks" });
 }
