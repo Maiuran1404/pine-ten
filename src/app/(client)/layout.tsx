@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 interface Task {
@@ -20,49 +20,23 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { data: session, isPending, error } = useSession();
+  const { data: session, isPending } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clear stale session and redirect to login
-  const clearSessionAndRedirect = useCallback(async () => {
-    try {
-      await signOut();
-    } catch {
-      // If signOut fails, manually clear cookies by making a request
-      // This handles corrupted session state
-    }
-    router.push("/login");
-  }, [router]);
-
-  // Add a loading timeout to detect stuck states - call redirect directly instead of setting state
-  useEffect(() => {
-    if (isPending) {
-      timeoutRef.current = setTimeout(() => {
-        console.warn("Session loading stuck, clearing session");
-        clearSessionAndRedirect();
-      }, 5000); // 5 second timeout
-      return () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      };
-    }
-  }, [isPending, clearSessionAndRedirect]);
-
-  // Handle session errors
-  useEffect(() => {
-    if (error) {
-      console.warn("Session error, clearing session:", error);
-      clearSessionAndRedirect();
-    }
-  }, [error, clearSessionAndRedirect]);
-
+  // Redirect to login if not authenticated (after session check completes)
   useEffect(() => {
     if (!isPending && !session) {
-      router.push("/login");
+      router.replace("/login");
     }
-    // Redirect to onboarding if not completed
-    if (session?.user && !(session.user as { onboardingCompleted?: boolean }).onboardingCompleted) {
-      router.push("/onboarding");
+  }, [session, isPending, router]);
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      const user = session.user as { onboardingCompleted?: boolean };
+      if (!user.onboardingCompleted) {
+        router.replace("/onboarding");
+      }
     }
   }, [session, isPending, router]);
 
@@ -84,15 +58,21 @@ export default function ClientLayout({
     }
   }, [session]);
 
+  // Show loading while checking session
   if (isPending) {
     return <FullPageLoader />;
   }
 
+  // Don't render anything if not authenticated (redirect will happen)
   if (!session) {
-    return null;
+    return <FullPageLoader />;
   }
 
-  const user = session.user as { credits?: number };
+  // Don't render if onboarding not completed (redirect will happen)
+  const user = session.user as { onboardingCompleted?: boolean; credits?: number };
+  if (!user.onboardingCompleted) {
+    return <FullPageLoader />;
+  }
 
   return (
     <SidebarProvider

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -59,54 +59,31 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = useSubdomain();
-  const { data: session, isPending, error } = useSession();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [hasCheckedSession, setHasCheckedSession] = useState(false);
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
-  const [showFormAnyway, setShowFormAnyway] = useState(false);
 
   const isSuperadmin = portal.type === "superadmin";
   const isArtist = portal.type === "artist";
-  // Only show Google sign-in on the client portal (app.craftedstudio.ai)
-  // Artists and superadmins use email/password only
   const showSocialLogin = !isSuperadmin && !isArtist;
 
-  // Handle redirect after login
-  const handleSuccessfulAuth = useCallback(() => {
+  // Get redirect destination
+  const getRedirectUrl = () => {
     const redirect = searchParams.get("redirect");
-    const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
-    router.push(redirectTo);
-    setRedirectAttempted(true);
-  }, [searchParams, portal.defaultRedirect, router]);
-
-  // Check session once and redirect if logged in
-  useEffect(() => {
-    if (!isPending) {
-      setHasCheckedSession(true);
-      // If there's an error fetching session, show the form
-      if (error) {
-        setShowFormAnyway(true);
-        return;
-      }
-      if (session?.user) {
-        handleSuccessfulAuth();
-      }
+    if (redirect && redirect !== "/" && !redirect.includes("login")) {
+      return redirect;
     }
-  }, [session, isPending, error, handleSuccessfulAuth]);
+    return portal.defaultRedirect;
+  };
 
-  // Timeout: if redirect takes too long, show the form anyway
-  // This handles cases where there's a stale/invalid session cookie
+  // Redirect if already logged in - only after session check completes
   useEffect(() => {
-    if (redirectAttempted && !showFormAnyway) {
-      const timeout = setTimeout(() => {
-        console.log("Redirect timeout - showing login form");
-        setShowFormAnyway(true);
-      }, 3000); // 3 seconds
-      return () => clearTimeout(timeout);
+    if (!isPending && session?.user) {
+      const redirectUrl = getRedirectUrl();
+      router.replace(redirectUrl);
     }
-  }, [redirectAttempted, showFormAnyway]);
+  }, [session, isPending, router]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -127,14 +104,14 @@ function LoginContent() {
 
       if (result.error) {
         toast.error(result.error.message || "Invalid credentials");
+        setIsLoading(false);
         return;
       }
 
       toast.success("Welcome back!");
-      handleSuccessfulAuth();
+      // Let the useEffect handle redirect after session updates
     } catch {
       toast.error("An error occurred. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   }
@@ -142,15 +119,13 @@ function LoginContent() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      // The callbackURL is where the user ends up AFTER successful OAuth
-      // This should be on the CURRENT subdomain (cookies are shared)
-      const callbackURL = `${window.location.origin}${portal.defaultRedirect}`;
+      const callbackURL = `${window.location.origin}${getRedirectUrl()}`;
 
       await signIn.social({
         provider: "google",
         callbackURL,
       });
-      // Note: This will redirect away from the page, so no need to handle success here
+      // This will redirect away from the page
     } catch (error) {
       console.error("Google sign-in error:", error);
       toast.error("Failed to sign in with Google. Please try again.");
@@ -158,7 +133,7 @@ function LoginContent() {
     }
   }
 
-  // Crafted design language button - teal to blue gradient
+  // Gradient button style
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -169,8 +144,8 @@ function LoginContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session (but not if we've decided to show form anyway)
-  if (!hasCheckedSession && !showFormAnyway) {
+  // Show loading while checking initial session
+  if (isPending) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -178,9 +153,8 @@ function LoginContent() {
     );
   }
 
-  // If already logged in, show loading (redirect will happen via useEffect)
-  // But if timeout expired, show the form anyway (stale session)
-  if (session?.user && !showFormAnyway) {
+  // If already logged in, show redirecting state
+  if (session?.user) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <LoadingSpinner size="lg" />
@@ -211,7 +185,7 @@ function LoginContent() {
         </p>
       </div>
 
-      {/* Google Sign In - Only for app and artist portals */}
+      {/* Google Sign In */}
       {showSocialLogin && (
         <>
           <Button
@@ -229,7 +203,6 @@ function LoginContent() {
             Continue with Google
           </Button>
 
-          {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border/50" />
@@ -317,7 +290,7 @@ function LoginContent() {
         </form>
       </Form>
 
-      {/* Sign up link - Show for app and artist portals (not superadmin) */}
+      {/* Sign up link */}
       {!isSuperadmin && (
         <>
           <div className="relative">
@@ -346,7 +319,7 @@ function LoginContent() {
       {/* Portal-specific note */}
       <div className="pt-4 border-t border-border/50">
         <p className="text-xs text-center text-muted-foreground">
-          {portal.type === "app" && "Need design work done? You're in the right place."}
+          {portal.type === "app" && "Need design work done? You&apos;re in the right place."}
           {portal.type === "artist" && "Join 500+ designers earning on their own terms."}
           {portal.type === "superadmin" && "Authorized personnel only. All actions are logged."}
         </p>

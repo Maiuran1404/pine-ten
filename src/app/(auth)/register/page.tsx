@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -65,30 +65,28 @@ function RegisterContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
-  // Only show Google sign-up on client portal (app.craftedstudio.ai)
   const showGoogleSignUp = !isArtistPortal;
 
-  // Handle redirect after registration
-  const handleSuccessfulAuth = useCallback(() => {
+  // Get redirect destination
+  const getRedirectUrl = () => {
     const redirect = searchParams.get("redirect");
-    const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
-    router.push(redirectTo);
-  }, [searchParams, portal.defaultRedirect, router]);
-
-  // Check session once and redirect if logged in
-  useEffect(() => {
-    if (!isPending) {
-      setHasCheckedSession(true);
-      if (session?.user) {
-        handleSuccessfulAuth();
-      }
+    if (redirect && redirect !== "/" && !redirect.includes("register")) {
+      return redirect;
     }
-  }, [session, isPending, handleSuccessfulAuth]);
+    return portal.defaultRedirect;
+  };
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      const redirectUrl = getRedirectUrl();
+      router.replace(redirectUrl);
+    }
+  }, [session, isPending, router]);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -112,6 +110,7 @@ function RegisterContent() {
 
       if (result.error) {
         toast.error(result.error.message || "Failed to create account");
+        setIsLoading(false);
         return;
       }
 
@@ -137,7 +136,6 @@ function RegisterContent() {
       }
     } catch {
       toast.error("An error occurred. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   }
@@ -145,8 +143,6 @@ function RegisterContent() {
   async function handleGoogleSignUp() {
     setIsGoogleLoading(true);
     try {
-      // The callbackURL is where the user ends up AFTER successful OAuth
-      // This should be on the CURRENT subdomain (cookies are shared)
       const redirectPath = accountType === "freelancer"
         ? "/onboarding?type=freelancer"
         : "/onboarding";
@@ -156,7 +152,7 @@ function RegisterContent() {
         provider: "google",
         callbackURL,
       });
-      // Note: This will redirect away from the page
+      // This will redirect away from the page
     } catch (error) {
       console.error("Google sign-up error:", error);
       toast.error("Failed to sign up with Google. Please try again.");
@@ -164,7 +160,7 @@ function RegisterContent() {
     }
   }
 
-  // Crafted design language button - teal to blue gradient
+  // Gradient button style
   const gradientButtonStyle = {
     background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
   };
@@ -175,8 +171,8 @@ function RegisterContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session
-  if (!hasCheckedSession) {
+  // Show loading while checking initial session
+  if (isPending) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -184,7 +180,7 @@ function RegisterContent() {
     );
   }
 
-  // If already logged in, show loading (redirect will happen via useEffect)
+  // If already logged in, show redirecting state
   if (session?.user) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
@@ -211,7 +207,7 @@ function RegisterContent() {
         </p>
       </div>
 
-      {/* Google Sign Up - Only on client portal */}
+      {/* Google Sign Up */}
       {showGoogleSignUp && (
         <>
           <Button
@@ -229,7 +225,6 @@ function RegisterContent() {
             Continue with Google
           </Button>
 
-          {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border/50" />
