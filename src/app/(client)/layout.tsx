@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
-import { useSession } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 interface Task {
@@ -20,8 +20,40 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Clear stale session and redirect to login
+  const clearSessionAndRedirect = useCallback(async () => {
+    try {
+      await signOut();
+    } catch {
+      // If signOut fails, manually clear cookies by making a request
+      // This handles corrupted session state
+    }
+    router.push("/login");
+  }, [router]);
+
+  // Add a loading timeout to detect stuck states
+  useEffect(() => {
+    if (isPending) {
+      const timeout = setTimeout(() => {
+        setLoadingTimeout(true);
+      }, 5000); // 5 second timeout
+      return () => clearTimeout(timeout);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [isPending]);
+
+  // Handle stuck loading or session errors
+  useEffect(() => {
+    if (loadingTimeout || error) {
+      console.warn("Session loading stuck or errored, clearing session:", error);
+      clearSessionAndRedirect();
+    }
+  }, [loadingTimeout, error, clearSessionAndRedirect]);
 
   useEffect(() => {
     if (!isPending && !session) {

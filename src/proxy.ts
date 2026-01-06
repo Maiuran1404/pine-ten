@@ -104,13 +104,9 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
       }
 
-      // Auth routes with session - redirect to dashboard
-      const authRoutes = ["/login", "/register"];
-      const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
-      if (isAuthRoute && sessionCookie?.value) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-
+      // Don't auto-redirect from auth routes to dashboard
+      // Let the client-side handle this to avoid issues with stale/invalid sessions
+      // The client will validate the session and redirect if it's actually valid
       return NextResponse.next();
     }
 
@@ -132,10 +128,9 @@ export function proxy(request: NextRequest) {
 
   // Handle public routes
   if (isPublicRoute(pathname)) {
-    // If user is logged in and on login/register, redirect to default path
-    if (sessionCookie?.value && (pathname === "/login" || pathname === "/register")) {
-      return NextResponse.redirect(new URL(subdomainConfig.defaultPath, request.url));
-    }
+    // Don't auto-redirect from login/register even if session cookie exists
+    // Let the client-side validate the session and redirect if valid
+    // This prevents redirect loops with stale/invalid session cookies
     return NextResponse.next();
   }
 
