@@ -28,7 +28,6 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  phone: z.string().optional(),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -94,7 +93,6 @@ function RegisterContent() {
       name: "",
       email: "",
       password: "",
-      phone: "",
     },
   });
 
@@ -310,30 +308,6 @@ function RegisterContent() {
               </FormItem>
             )}
           />
-
-          {accountType === "freelancer" && (
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">
-                    WhatsApp Number
-                    <span className="text-muted-foreground font-normal ml-1">(optional)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="tel"
-                      placeholder="+1 234 567 8900"
-                      className="h-12 px-4 bg-background border-input/50 focus:border-primary transition-colors"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
 
           <Button
             type="submit"
