@@ -1,66 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { taskCategories } from "@/db/schema";
 import { desc } from "drizzle-orm";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
+import { createCategorySchema } from "@/lib/validations";
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+export async function GET() {
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const categories = await db
       .select()
       .from(taskCategories)
       .orderBy(desc(taskCategories.createdAt));
 
-    return NextResponse.json({ categories });
-  } catch (error) {
-    console.error("Categories fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch categories" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ categories });
+  }, { endpoint: "GET /api/admin/categories" });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
-    const { name, description, baseCredits, isActive } = body;
+    const validatedData = createCategorySchema.parse(body);
 
-    if (!name) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    const slug = name
+    // Generate slug from name if not provided
+    const slug = validatedData.slug || validatedData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
@@ -68,20 +35,14 @@ export async function POST(request: NextRequest) {
     const [newCategory] = await db
       .insert(taskCategories)
       .values({
-        name,
+        name: validatedData.name,
         slug,
-        description,
-        baseCredits: baseCredits || 1,
-        isActive: isActive !== false,
+        description: validatedData.description,
+        baseCredits: validatedData.baseCredits,
+        isActive: validatedData.isActive,
       })
       .returning();
 
-    return NextResponse.json({ category: newCategory });
-  } catch (error) {
-    console.error("Category create error:", error);
-    return NextResponse.json(
-      { error: "Failed to create category" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ category: newCategory }, 201);
+  }, { endpoint: "POST /api/admin/categories" });
 }
