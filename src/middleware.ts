@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 const isProduction = process.env.NODE_ENV === "production";
 const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+
+// Cookie prefix must match auth.ts config
+const COOKIE_PREFIX = "crafted";
 
 /**
  * Subdomain configuration
@@ -98,11 +102,14 @@ export async function middleware(request: NextRequest) {
   // Get subdomain context
   const subdomain = getSubdomain(request);
 
-  // Check for session cookie
-  const sessionToken = request.cookies.get("crafted.session_token")?.value;
+  // Check for session cookie using BetterAuth's utility
+  // Must pass cookiePrefix explicitly as Edge Runtime can't import auth config
+  const sessionCookie = getSessionCookie(request, {
+    cookiePrefix: COOKIE_PREFIX,
+  });
 
   // If no session and trying to access protected route, redirect to login
-  if (!sessionToken) {
+  if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
