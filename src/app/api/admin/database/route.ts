@@ -20,6 +20,26 @@ import {
 } from "@/db/schema";
 import { count, desc } from "drizzle-orm";
 
+// Table configuration for DRY code
+const tableConfig = {
+  users: { table: users, orderBy: users.createdAt },
+  sessions: { table: sessions, orderBy: sessions.createdAt },
+  accounts: { table: accounts, orderBy: accounts.createdAt },
+  verifications: { table: verifications, orderBy: verifications.createdAt },
+  companies: { table: companies, orderBy: companies.createdAt },
+  freelancerProfiles: { table: freelancerProfiles, orderBy: freelancerProfiles.createdAt },
+  taskCategories: { table: taskCategories, orderBy: taskCategories.createdAt },
+  tasks: { table: tasks, orderBy: tasks.createdAt },
+  taskFiles: { table: taskFiles, orderBy: taskFiles.createdAt },
+  taskMessages: { table: taskMessages, orderBy: taskMessages.createdAt },
+  styleReferences: { table: styleReferences, orderBy: styleReferences.createdAt },
+  notifications: { table: notifications, orderBy: notifications.createdAt },
+  creditTransactions: { table: creditTransactions, orderBy: creditTransactions.createdAt },
+  platformSettings: { table: platformSettings, orderBy: platformSettings.updatedAt },
+} as const;
+
+type TableName = keyof typeof tableConfig;
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -36,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const tableName = searchParams.get("table");
+    const tableName = searchParams.get("table") as TableName | null;
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -52,6 +72,7 @@ export async function GET(request: NextRequest) {
         }
       };
 
+      // All count queries run in parallel
       const tableCounts = await Promise.all([
         safeCount("users", db.select({ count: count() }).from(users)),
         safeCount("sessions", db.select({ count: count() }).from(sessions)),
@@ -72,102 +93,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ tables: tableCounts });
     }
 
-    // Get specific table data
-    let data;
-    let total = 0;
-
-    switch (tableName) {
-      case "users": {
-        const [countRes] = await db.select({ count: count() }).from(users);
-        total = countRes.count;
-        data = await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "sessions": {
-        const [countRes] = await db.select({ count: count() }).from(sessions);
-        total = countRes.count;
-        data = await db.select().from(sessions).orderBy(desc(sessions.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "accounts": {
-        const [countRes] = await db.select({ count: count() }).from(accounts);
-        total = countRes.count;
-        data = await db.select().from(accounts).orderBy(desc(accounts.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "verifications": {
-        const [countRes] = await db.select({ count: count() }).from(verifications);
-        total = countRes.count;
-        data = await db.select().from(verifications).orderBy(desc(verifications.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "companies": {
-        const [countRes] = await db.select({ count: count() }).from(companies);
-        total = countRes.count;
-        data = await db.select().from(companies).orderBy(desc(companies.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "freelancerProfiles": {
-        const [countRes] = await db.select({ count: count() }).from(freelancerProfiles);
-        total = countRes.count;
-        data = await db.select().from(freelancerProfiles).orderBy(desc(freelancerProfiles.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "taskCategories": {
-        const [countRes] = await db.select({ count: count() }).from(taskCategories);
-        total = countRes.count;
-        data = await db.select().from(taskCategories).orderBy(desc(taskCategories.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "tasks": {
-        const [countRes] = await db.select({ count: count() }).from(tasks);
-        total = countRes.count;
-        data = await db.select().from(tasks).orderBy(desc(tasks.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "taskFiles": {
-        const [countRes] = await db.select({ count: count() }).from(taskFiles);
-        total = countRes.count;
-        data = await db.select().from(taskFiles).orderBy(desc(taskFiles.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "taskMessages": {
-        const [countRes] = await db.select({ count: count() }).from(taskMessages);
-        total = countRes.count;
-        data = await db.select().from(taskMessages).orderBy(desc(taskMessages.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "styleReferences": {
-        const [countRes] = await db.select({ count: count() }).from(styleReferences);
-        total = countRes.count;
-        data = await db.select().from(styleReferences).orderBy(desc(styleReferences.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "notifications": {
-        const [countRes] = await db.select({ count: count() }).from(notifications);
-        total = countRes.count;
-        data = await db.select().from(notifications).orderBy(desc(notifications.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "creditTransactions": {
-        const [countRes] = await db.select({ count: count() }).from(creditTransactions);
-        total = countRes.count;
-        data = await db.select().from(creditTransactions).orderBy(desc(creditTransactions.createdAt)).limit(limit).offset(offset);
-        break;
-      }
-      case "platformSettings": {
-        const [countRes] = await db.select({ count: count() }).from(platformSettings);
-        total = countRes.count;
-        data = await db.select().from(platformSettings).orderBy(desc(platformSettings.updatedAt)).limit(limit).offset(offset);
-        break;
-      }
-      default:
-        return NextResponse.json({ error: "Invalid table name" }, { status: 400 });
+    // Validate table name
+    if (!(tableName in tableConfig)) {
+      return NextResponse.json({ error: "Invalid table name" }, { status: 400 });
     }
+
+    const config = tableConfig[tableName];
+
+    // Run count and data queries in parallel (fixes N+1 pattern)
+    const [countResult, data] = await Promise.all([
+      db.select({ count: count() }).from(config.table),
+      db.select().from(config.table).orderBy(desc(config.orderBy)).limit(limit).offset(offset),
+    ]);
 
     return NextResponse.json({
       table: tableName,
-      total,
+      total: countResult[0].count,
       data,
       limit,
       offset,

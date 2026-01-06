@@ -3,7 +3,10 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, users, taskCategories, taskFiles, taskMessages } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+
+// Type alias for better readability
+const freelancerUsers = users;
 
 export async function GET(
   request: NextRequest,
@@ -20,9 +23,10 @@ export async function GET(
 
     const { id } = await params;
 
-    // Get the task with related data
+    // Get task with category and freelancer in a single query using LEFT JOINs (fixes N+1)
     const taskResult = await db
       .select({
+        // Task fields
         id: tasks.id,
         title: tasks.title,
         description: tasks.description,
@@ -42,8 +46,18 @@ export async function GET(
         clientId: tasks.clientId,
         freelancerId: tasks.freelancerId,
         categoryId: tasks.categoryId,
+        // Category fields (nullable due to LEFT JOIN)
+        categoryDbId: taskCategories.id,
+        categoryName: taskCategories.name,
+        categorySlug: taskCategories.slug,
+        // Freelancer fields (nullable due to LEFT JOIN)
+        freelancerDbId: freelancerUsers.id,
+        freelancerName: freelancerUsers.name,
+        freelancerImage: freelancerUsers.image,
       })
       .from(tasks)
+      .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+      .leftJoin(freelancerUsers, eq(tasks.freelancerId, freelancerUsers.id))
       .where(eq(tasks.id, id))
       .limit(1);
 
@@ -51,74 +65,80 @@ export async function GET(
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    const task = taskResult[0];
+    const taskRow = taskResult[0];
 
     // Check if user has permission to view this task
     const user = session.user as { role?: string };
     if (
       user.role !== "ADMIN" &&
-      task.clientId !== session.user.id &&
-      task.freelancerId !== session.user.id
+      taskRow.clientId !== session.user.id &&
+      taskRow.freelancerId !== session.user.id
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get category info if exists
-    let category = null;
-    if (task.categoryId) {
-      const categoryResult = await db
+    // Fetch files and messages in parallel (they're independent queries)
+    const [files, messages] = await Promise.all([
+      db
+        .select()
+        .from(taskFiles)
+        .where(eq(taskFiles.taskId, id))
+        .orderBy(desc(taskFiles.createdAt)),
+      db
         .select({
-          id: taskCategories.id,
-          name: taskCategories.name,
-          slug: taskCategories.slug,
+          id: taskMessages.id,
+          content: taskMessages.content,
+          attachments: taskMessages.attachments,
+          createdAt: taskMessages.createdAt,
+          senderId: taskMessages.senderId,
+          senderName: users.name,
+          senderImage: users.image,
         })
-        .from(taskCategories)
-        .where(eq(taskCategories.id, task.categoryId))
-        .limit(1);
-      category = categoryResult[0] || null;
-    }
+        .from(taskMessages)
+        .leftJoin(users, eq(taskMessages.senderId, users.id))
+        .where(eq(taskMessages.taskId, id))
+        .orderBy(taskMessages.createdAt),
+    ]);
 
-    // Get freelancer info if assigned
-    let freelancer = null;
-    if (task.freelancerId) {
-      const freelancerResult = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          image: users.image,
-        })
-        .from(users)
-        .where(eq(users.id, task.freelancerId))
-        .limit(1);
-      freelancer = freelancerResult[0] || null;
-    }
+    // Construct category object if it exists
+    const category = taskRow.categoryDbId
+      ? {
+          id: taskRow.categoryDbId,
+          name: taskRow.categoryName,
+          slug: taskRow.categorySlug,
+        }
+      : null;
 
-    // Get task files
-    const files = await db
-      .select()
-      .from(taskFiles)
-      .where(eq(taskFiles.taskId, id))
-      .orderBy(desc(taskFiles.createdAt));
-
-    // Get task messages
-    const messages = await db
-      .select({
-        id: taskMessages.id,
-        content: taskMessages.content,
-        attachments: taskMessages.attachments,
-        createdAt: taskMessages.createdAt,
-        senderId: taskMessages.senderId,
-        senderName: users.name,
-        senderImage: users.image,
-      })
-      .from(taskMessages)
-      .leftJoin(users, eq(taskMessages.senderId, users.id))
-      .where(eq(taskMessages.taskId, id))
-      .orderBy(taskMessages.createdAt);
+    // Construct freelancer object if it exists
+    const freelancer = taskRow.freelancerDbId
+      ? {
+          id: taskRow.freelancerDbId,
+          name: taskRow.freelancerName,
+          image: taskRow.freelancerImage,
+        }
+      : null;
 
     return NextResponse.json({
       task: {
-        ...task,
+        id: taskRow.id,
+        title: taskRow.title,
+        description: taskRow.description,
+        status: taskRow.status,
+        requirements: taskRow.requirements,
+        styleReferences: taskRow.styleReferences,
+        chatHistory: taskRow.chatHistory,
+        estimatedHours: taskRow.estimatedHours,
+        creditsUsed: taskRow.creditsUsed,
+        maxRevisions: taskRow.maxRevisions,
+        revisionsUsed: taskRow.revisionsUsed,
+        priority: taskRow.priority,
+        deadline: taskRow.deadline,
+        assignedAt: taskRow.assignedAt,
+        completedAt: taskRow.completedAt,
+        createdAt: taskRow.createdAt,
+        clientId: taskRow.clientId,
+        freelancerId: taskRow.freelancerId,
+        categoryId: taskRow.categoryId,
         category,
         freelancer,
         files,

@@ -15,16 +15,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { freelancerId, reason } = adminFreelancerActionSchema.parse(body);
 
-    // Get freelancer profile
-    const profile = await db
-      .select()
+    // Get freelancer profile with user info in a single query (fixes N+1)
+    const profileWithUser = await db
+      .select({
+        profile: freelancerProfiles,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
       .from(freelancerProfiles)
+      .innerJoin(users, eq(freelancerProfiles.userId, users.id))
       .where(eq(freelancerProfiles.id, freelancerId))
       .limit(1);
 
-    if (!profile.length) {
+    if (!profileWithUser.length) {
       throw Errors.notFound("Freelancer");
     }
+
+    const { user: freelancerUser } = profileWithUser[0];
 
     // Update status to rejected
     await db
@@ -35,31 +45,22 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(freelancerProfiles.id, freelancerId));
 
-    // Get user info for notification
-    const freelancerUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, profile[0].userId))
-      .limit(1);
+    // Send rejection email to freelancer
+    try {
+      const rejectionEmail = emailTemplates.freelancerRejected(freelancerUser.name);
+      await sendEmail({
+        to: freelancerUser.email,
+        subject: rejectionEmail.subject,
+        html: rejectionEmail.html,
+      });
 
-    if (freelancerUser.length) {
-      // Send rejection email to freelancer
-      try {
-        const rejectionEmail = emailTemplates.freelancerRejected(freelancerUser[0].name);
-        await sendEmail({
-          to: freelancerUser[0].email,
-          subject: rejectionEmail.subject,
-          html: rejectionEmail.html,
-        });
-
-        // Send admin notification
-        await adminNotifications.freelancerRejected({
-          name: freelancerUser[0].name,
-          email: freelancerUser[0].email,
-        });
-      } catch (emailError) {
-        logger.error({ err: emailError }, "Failed to send rejection notifications");
-      }
+      // Send admin notification
+      await adminNotifications.freelancerRejected({
+        name: freelancerUser.name,
+        email: freelancerUser.email,
+      });
+    } catch (emailError) {
+      logger.error({ err: emailError }, "Failed to send rejection notifications");
     }
 
     logger.info({ freelancerId, reason }, "Freelancer rejected");

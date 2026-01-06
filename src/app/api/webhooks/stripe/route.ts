@@ -23,31 +23,32 @@ export async function POST(request: NextRequest) {
 
     if (result) {
       try {
-        // Update user credits
-        const user = await db
-          .select({ credits: users.credits })
+        // Get full user data in a single query (fixes N+1 - previously fetched twice)
+        const [user] = await db
+          .select()
           .from(users)
           .where(eq(users.id, result.userId))
           .limit(1);
 
-        if (user.length) {
-          const newCredits = user[0].credits + result.credits;
+        if (user) {
+          const newCredits = user.credits + result.credits;
 
-          await db
-            .update(users)
-            .set({
-              credits: newCredits,
-              updatedAt: new Date(),
-            })
-            .where(eq(users.id, result.userId));
-
-          // Log the transaction
-          await db.insert(creditTransactions).values({
-            userId: result.userId,
-            amount: result.credits,
-            type: "PURCHASE",
-            description: `Purchased ${result.credits} credits`,
-          });
+          // Update credits and log transaction in parallel
+          await Promise.all([
+            db
+              .update(users)
+              .set({
+                credits: newCredits,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, result.userId)),
+            db.insert(creditTransactions).values({
+              userId: result.userId,
+              amount: result.credits,
+              type: "PURCHASE",
+              description: `Purchased ${result.credits} credits`,
+            }),
+          ]);
 
           // Mark event as successfully processed
           await markEventProcessed(
@@ -62,37 +63,30 @@ export async function POST(request: NextRequest) {
             "Credits added successfully"
           );
 
-          // Get full user data for notifications
-          const fullUser = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, result.userId))
-            .limit(1);
-
-          if (fullUser.length) {
-            try {
-              // Send admin notification
-              await adminNotifications.creditPurchase({
-                clientName: fullUser[0].name,
-                clientEmail: fullUser[0].email,
+          // Send notifications (non-blocking)
+          try {
+            await Promise.all([
+              adminNotifications.creditPurchase({
+                clientName: user.name,
+                clientEmail: user.email,
                 credits: result.credits,
                 amount: result.credits * config.credits.pricePerCredit,
-              });
-
-              // Send confirmation email to user
-              const purchaseEmail = emailTemplates.creditsPurchased(
-                fullUser[0].name,
-                result.credits,
-                `${config.app.url}/dashboard`
-              );
-              await sendEmail({
-                to: fullUser[0].email,
-                subject: purchaseEmail.subject,
-                html: purchaseEmail.html,
-              });
-            } catch (emailError) {
-              logger.error({ err: emailError }, "Failed to send purchase notifications");
-            }
+              }),
+              (async () => {
+                const purchaseEmail = emailTemplates.creditsPurchased(
+                  user.name,
+                  result.credits,
+                  `${config.app.url}/dashboard`
+                );
+                await sendEmail({
+                  to: user.email,
+                  subject: purchaseEmail.subject,
+                  html: purchaseEmail.html,
+                });
+              })(),
+            ]);
+          } catch (emailError) {
+            logger.error({ err: emailError }, "Failed to send purchase notifications");
           }
         } else {
           // User not found, mark as failed
