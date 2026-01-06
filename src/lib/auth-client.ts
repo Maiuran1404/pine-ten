@@ -27,6 +27,10 @@ const getAuthBaseURL = () => {
 // Create auth client pointing to the canonical auth endpoint
 export const authClient = createAuthClient({
   baseURL: getAuthBaseURL(),
+  fetchOptions: {
+    // Ensure credentials are included for cross-subdomain requests
+    credentials: "include",
+  },
 });
 
 export const {
@@ -36,3 +40,11 @@ export const {
   useSession,
   getSession,
 } = authClient;
+
+// Helper to clear local session state
+export const clearLocalSession = () => {
+  if (typeof window !== "undefined") {
+    // Clear any cached session data
+    window.location.href = "/api/auth/clear-session";
+  }
+};

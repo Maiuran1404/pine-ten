@@ -59,11 +59,13 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = useSubdomain();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [hasCheckedSession, setHasCheckedSession] = useState(false);
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
+  const [showFormAnyway, setShowFormAnyway] = useState(false);
 
   const isSuperadmin = portal.type === "superadmin";
   const showSocialLogin = !isSuperadmin;
@@ -73,17 +75,35 @@ function LoginContent() {
     const redirect = searchParams.get("redirect");
     const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
     router.push(redirectTo);
+    setRedirectAttempted(true);
   }, [searchParams, portal.defaultRedirect, router]);
 
   // Check session once and redirect if logged in
   useEffect(() => {
     if (!isPending) {
       setHasCheckedSession(true);
+      // If there's an error fetching session, show the form
+      if (error) {
+        setShowFormAnyway(true);
+        return;
+      }
       if (session?.user) {
         handleSuccessfulAuth();
       }
     }
-  }, [session, isPending, handleSuccessfulAuth]);
+  }, [session, isPending, error, handleSuccessfulAuth]);
+
+  // Timeout: if redirect takes too long, show the form anyway
+  // This handles cases where there's a stale/invalid session cookie
+  useEffect(() => {
+    if (redirectAttempted && !showFormAnyway) {
+      const timeout = setTimeout(() => {
+        console.log("Redirect timeout - showing login form");
+        setShowFormAnyway(true);
+      }, 3000); // 3 seconds
+      return () => clearTimeout(timeout);
+    }
+  }, [redirectAttempted, showFormAnyway]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -146,8 +166,8 @@ function LoginContent() {
     "text-white border-0"
   );
 
-  // Show loading while checking session
-  if (!hasCheckedSession) {
+  // Show loading while checking session (but not if we've decided to show form anyway)
+  if (!hasCheckedSession && !showFormAnyway) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -156,7 +176,8 @@ function LoginContent() {
   }
 
   // If already logged in, show loading (redirect will happen via useEffect)
-  if (session?.user) {
+  // But if timeout expired, show the form anyway (stale session)
+  if (session?.user && !showFormAnyway) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <LoadingSpinner size="lg" />
