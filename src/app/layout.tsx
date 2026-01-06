@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CsrfProvider } from "@/providers/csrf-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
@@ -49,10 +50,12 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <CsrfProvider>
-            {children}
-            <Toaster position="top-right" />
-          </CsrfProvider>
+          <QueryProvider>
+            <CsrfProvider>
+              {children}
+              <Toaster position="top-right" />
+            </CsrfProvider>
+          </QueryProvider>
           <SpeedInsights />
           <Analytics />
         </ThemeProvider>
