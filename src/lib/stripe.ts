@@ -1,6 +1,9 @@
 import Stripe from "stripe";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { db } from "@/db";
+import { webhookEvents } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // Lazy initialization to avoid errors during build when env vars aren't available
 let stripeInstance: Stripe | null = null;
@@ -116,10 +119,43 @@ export async function createCheckoutSession(
   return session;
 }
 
+/**
+ * Check if a webhook event has already been processed
+ */
+export async function isEventProcessed(eventId: string): Promise<boolean> {
+  const existing = await db
+    .select({ id: webhookEvents.id })
+    .from(webhookEvents)
+    .where(eq(webhookEvents.eventId, eventId))
+    .limit(1);
+
+  return existing.length > 0;
+}
+
+/**
+ * Mark a webhook event as processed
+ */
+export async function markEventProcessed(
+  eventId: string,
+  eventType: string,
+  payload?: unknown,
+  status: "processed" | "failed" = "processed",
+  errorMessage?: string
+): Promise<void> {
+  await db.insert(webhookEvents).values({
+    eventId,
+    eventType,
+    provider: "stripe",
+    payload: payload as Record<string, unknown>,
+    status,
+    errorMessage,
+  });
+}
+
 export async function handleWebhook(
   body: string,
   signature: string
-): Promise<{ userId: string; credits: number } | null> {
+): Promise<{ userId: string; credits: number; eventId: string } | null> {
   // Use safe getter that validates the secret
   const webhookSecret = getWebhookSecret();
 
@@ -134,6 +170,13 @@ export async function handleWebhook(
 
   logger.info({ eventType: event.type, eventId: event.id }, "Processing Stripe webhook");
 
+  // Check idempotency - skip if already processed
+  const alreadyProcessed = await isEventProcessed(event.id);
+  if (alreadyProcessed) {
+    logger.info({ eventId: event.id }, "Webhook event already processed, skipping");
+    return null;
+  }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
@@ -143,15 +186,19 @@ export async function handleWebhook(
 
       if (!userId || isNaN(credits)) {
         logger.error({ session: session.id }, "Invalid webhook metadata");
+        // Mark as failed for debugging
+        await markEventProcessed(event.id, event.type, { sessionId: session.id }, "failed", "Invalid metadata");
         return null;
       }
 
       logger.info({ userId, credits, sessionId: session.id }, "Credit purchase completed");
 
-      return { userId, credits };
+      return { userId, credits, eventId: event.id };
     }
   }
 
+  // Mark non-handled event types as processed to avoid re-processing
+  await markEventProcessed(event.id, event.type, { type: event.type }, "processed");
   return null;
 }
 

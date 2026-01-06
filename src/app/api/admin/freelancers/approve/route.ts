@@ -1,35 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { freelancerProfiles, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { notify, adminNotifications, sendEmail, emailTemplates } from "@/lib/notifications";
+import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { freelancerId } = body;
 
     if (!freelancerId) {
-      return NextResponse.json(
-        { error: "Freelancer ID is required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Freelancer ID is required");
     }
 
     // Get freelancer profile
@@ -40,10 +27,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!profile.length) {
-      return NextResponse.json(
-        { error: "Freelancer not found" },
-        { status: 404 }
-      );
+      throw Errors.notFound("Freelancer");
     }
 
     // Update status to approved
@@ -88,16 +72,12 @@ export async function POST(request: NextRequest) {
           email: freelancerUser[0].email,
         });
       } catch (emailError) {
-        console.error("Failed to send admin notification:", emailError);
+        logger.error({ err: emailError }, "Failed to send admin notification");
       }
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Approve freelancer error:", error);
-    return NextResponse.json(
-      { error: "Failed to approve freelancer" },
-      { status: 500 }
-    );
-  }
+    logger.info({ freelancerId, userId: profile[0].userId }, "Freelancer approved");
+
+    return successResponse({ success: true });
+  }, { endpoint: "POST /api/admin/freelancers/approve" });
 }

@@ -418,3 +418,22 @@ export const chatDraftsRelations = relations(chatDrafts, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Webhook events for idempotency
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    eventId: text("event_id").notNull().unique(), // Stripe event ID
+    eventType: text("event_type").notNull(),
+    provider: text("provider").notNull().default("stripe"),
+    payload: jsonb("payload"), // Store the full event for debugging
+    processedAt: timestamp("processed_at").notNull().defaultNow(),
+    status: text("status").notNull().default("processed"), // processed, failed
+    errorMessage: text("error_message"),
+  },
+  (table) => [
+    index("webhook_events_event_id_idx").on(table.eventId),
+    index("webhook_events_processed_at_idx").on(table.processedAt),
+  ]
+);
