@@ -26,71 +26,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  type UploadedFile,
+  type QuickOptions as QuickOptionsType,
+  type StyleReference,
+  type TaskProposal,
+  type ChatMessage as Message,
+  getDeliveryDateString,
+} from "./types";
+import { TaskProposalCard } from "./task-proposal-card";
+import { FileAttachmentList } from "./file-attachment";
+import { QuickOptions } from "./quick-options";
 
 interface ChatInterfaceProps {
   draftId: string;
   onDraftUpdate?: () => void;
   initialMessage?: string | null;
   seamlessTransition?: boolean;
-}
-
-interface UploadedFile {
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-}
-
-interface QuickOptions {
-  question: string;
-  options: string[];
-}
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  styleReferences?: StyleReference[];
-  taskProposal?: TaskProposal;
-  attachments?: UploadedFile[];
-  quickOptions?: QuickOptions;
-}
-
-interface StyleReference {
-  category: string;
-  name: string;
-  imageUrl: string;
-}
-
-interface TaskProposal {
-  title: string;
-  description: string;
-  category: string;
-  estimatedHours: number;
-  deliveryDays?: number;
-  creditsRequired: number;
-  deadline?: string;
-}
-
-// Helper to calculate delivery date from business days
-function getDeliveryDateString(businessDays: number): string {
-  const date = new Date();
-  let daysAdded = 0;
-  while (daysAdded < businessDays) {
-    date.setDate(date.getDate() + 1);
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      daysAdded++;
-    }
-  }
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const dayName = days[date.getDay()];
-  const dayNum = date.getDate();
-  const suffix = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' : dayNum === 2 || dayNum === 22 ? 'nd' : dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
-  const monthName = months[date.getMonth()];
-  return `${dayName} ${dayNum}${suffix} ${monthName}`;
 }
 
 const DEFAULT_WELCOME_MESSAGE: Message = {
@@ -669,42 +621,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
                 {/* Attachments */}
                 {message.attachments && message.attachments.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {message.attachments.map((file, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 p-2 rounded bg-background/50"
-                      >
-                        {file.fileType.startsWith("image/") ? (
-                          <a
-                            href={file.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block"
-                          >
-                            <img
-                              src={file.fileUrl}
-                              alt={file.fileName}
-                              className="max-w-[200px] max-h-[150px] rounded object-cover"
-                            />
-                          </a>
-                        ) : (
-                          <a
-                            href={file.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm hover:underline"
-                          >
-                            <FileIcon className="h-4 w-4" />
-                            <span>{file.fileName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({(file.fileSize / 1024).toFixed(1)} KB)
-                            </span>
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <FileAttachmentList files={message.attachments} />
                 )}
 
                 {/* Style References */}
@@ -760,44 +677,16 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
                 {/* Task Proposal */}
                 {message.taskProposal && (
-                  <Card className="mt-4 bg-background">
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold mb-2">Task Summary</h4>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {message.taskProposal.description}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Coins className="h-3 w-3" />
-                          {message.taskProposal.creditsRequired} credits
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {getDeliveryDateString(message.taskProposal.deliveryDays || 3)}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <TaskProposalCard proposal={message.taskProposal} />
                 )}
 
                 {/* Quick Options */}
-                {message.quickOptions && message.quickOptions.options.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium mb-2">{message.quickOptions.question}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {message.quickOptions.options.map((option, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleQuickOptionClick(option)}
-                          disabled={isLoading}
-                          className="px-4 py-2 text-sm font-medium rounded-full border border-border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {message.quickOptions && (
+                  <QuickOptions
+                    options={message.quickOptions}
+                    onSelect={handleQuickOptionClick}
+                    disabled={isLoading}
+                  />
                 )}
 
                 {/* Hide timestamp for user messages in seamlessTransition mode */}
