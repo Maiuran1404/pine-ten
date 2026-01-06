@@ -101,24 +101,24 @@ export default function ClientsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: selectedClient.id,
-          credits: grantCredits,
-          reason: grantReason || `Admin granted ${grantCredits} credits`,
-          sendNotification,
+          amount: grantCredits,
+          type: "BONUS",
+          description: grantReason || `Admin granted ${grantCredits} credits`,
         }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to grant credits");
+        throw new Error(result.error?.message || "Failed to grant credits");
       }
 
-      const result = await response.json();
       toast.success(`Successfully granted ${grantCredits} credits to ${selectedClient.name}`);
 
       // Update local state
       setClients((prev) =>
         prev.map((c) =>
-          c.id === selectedClient.id ? { ...c, credits: result.newCredits } : c
+          c.id === selectedClient.id ? { ...c, credits: result.data?.newCredits ?? c.credits + grantCredits } : c
         )
       );
 
