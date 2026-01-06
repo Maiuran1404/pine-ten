@@ -7,17 +7,14 @@ import { config } from "@/lib/config";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { adminFreelancerActionSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     await requireAdmin();
 
     const body = await request.json();
-    const { freelancerId } = body;
-
-    if (!freelancerId) {
-      throw Errors.badRequest("Freelancer ID is required");
-    }
+    const { freelancerId } = adminFreelancerActionSchema.parse(body);
 
     // Get freelancer profile
     const profile = await db
