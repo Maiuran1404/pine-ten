@@ -29,6 +29,21 @@ export async function sendWhatsApp({ to, message }: WhatsAppParams) {
   }
 }
 
+// Send WhatsApp notification to admin
+export async function notifyAdminWhatsApp(message: string) {
+  const adminNumber = config.notifications.whatsapp.adminNumber;
+  
+  if (!adminNumber) {
+    console.warn("ADMIN_WHATSAPP_NUMBER is not set, skipping WhatsApp notification");
+    return { success: false, error: "ADMIN_WHATSAPP_NUMBER not configured" };
+  }
+
+  return sendWhatsApp({
+    to: adminNumber,
+    message,
+  });
+}
+
 // WhatsApp message templates
 export const whatsappTemplates = {
   taskAssigned: (taskTitle: string, taskUrl: string) =>
@@ -42,4 +57,34 @@ export const whatsappTemplates = {
 
   newTaskAvailable: (taskTitle: string, credits: number, taskUrl: string) =>
     `*New Task Available*\n\n${taskTitle}\nCredits: ${credits}\n\nClaim now: ${taskUrl}`,
+};
+
+// Admin WhatsApp notification templates
+export const adminWhatsAppTemplates = {
+  newTaskCreated: (data: {
+    taskTitle: string;
+    clientName: string;
+    clientEmail: string;
+    category: string;
+    creditsUsed: number;
+    taskUrl: string;
+  }) =>
+    `*🆕 New Task Created*\n\n` +
+    `*Task:* ${data.taskTitle}\n` +
+    `*Client:* ${data.clientName} (${data.clientEmail})\n` +
+    `*Category:* ${data.category}\n` +
+    `*Credits:* ${data.creditsUsed}\n\n` +
+    `View: ${data.taskUrl}`,
+
+  newUserSignup: (data: {
+    name: string;
+    email: string;
+    role: string;
+    signupUrl?: string;
+  }) =>
+    `*👤 New User Signup*\n\n` +
+    `*Name:* ${data.name}\n` +
+    `*Email:* ${data.email}\n` +
+    `*Role:* ${data.role}\n` +
+    (data.signupUrl ? `\nView: ${data.signupUrl}` : ""),
 };

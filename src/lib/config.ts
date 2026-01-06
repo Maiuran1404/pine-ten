@@ -39,6 +39,8 @@ export const config = {
     },
     whatsapp: {
       number: process.env.TWILIO_WHATSAPP_NUMBER || "",
+      // Admin WhatsApp number must be set via env var in production
+      adminNumber: requireEnv("ADMIN_WHATSAPP_NUMBER"),
     },
   },
   // Upload limits

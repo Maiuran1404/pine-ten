@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, freelancerProfiles, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { adminNotifications, sendEmail, emailTemplates } from "@/lib/notifications";
+import { adminNotifications, sendEmail, emailTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
@@ -72,8 +72,17 @@ export async function POST(request: NextRequest) {
           await adminNotifications.newClientSignup({ name: userName, email: userEmail });
           const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`);
           await sendEmail({ to: userEmail, subject: welcomeEmail.subject, html: welcomeEmail.html });
-        } catch (emailError) {
-          console.error("Failed to send client onboarding notifications:", emailError);
+          
+          // Send WhatsApp notification to admin
+          const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
+            name: userName,
+            email: userEmail,
+            role: "CLIENT",
+            signupUrl: `${config.app.url}/admin/clients`,
+          });
+          await notifyAdminWhatsApp(whatsappMessage);
+        } catch (error) {
+          console.error("Failed to send client onboarding notifications:", error);
         }
       });
 
@@ -118,8 +127,17 @@ export async function POST(request: NextRequest) {
             skills: freelancerSkills,
             portfolioUrls: freelancerPortfolio,
           });
-        } catch (emailError) {
-          console.error("Failed to send freelancer application notification:", emailError);
+          
+          // Send WhatsApp notification to admin
+          const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
+            name: freelancerName,
+            email: freelancerEmail,
+            role: "FREELANCER",
+            signupUrl: `${config.app.url}/admin/freelancers`,
+          });
+          await notifyAdminWhatsApp(whatsappMessage);
+        } catch (error) {
+          console.error("Failed to send freelancer application notification:", error);
         }
       });
 

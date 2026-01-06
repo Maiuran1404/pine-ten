@@ -195,4 +195,4 @@ function getWhatsAppMessage(
 }
 
 export { sendEmail, emailTemplates, adminNotifications, notifyAdmin } from "./email";
-export { sendWhatsApp, whatsappTemplates } from "./whatsapp";
+export { sendWhatsApp, whatsappTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "./whatsapp";

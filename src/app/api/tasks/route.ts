@@ -11,7 +11,7 @@ import {
   creditTransactions,
 } from "@/db/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
-import { notify, adminNotifications } from "@/lib/notifications";
+import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { createTaskSchema } from "@/lib/validations";
 import {
@@ -293,7 +293,22 @@ export async function POST(request: NextRequest) {
         creditsUsed: creditsRequired,
       });
     } catch (error) {
-      logger.error({ err: error, taskId: result.task.id }, "Failed to send admin notification");
+      logger.error({ err: error, taskId: result.task.id }, "Failed to send admin email notification");
+    }
+
+    // Send WhatsApp notification to admin
+    try {
+      const whatsappMessage = adminWhatsAppTemplates.newTaskCreated({
+        taskTitle: title,
+        clientName: session.user.name || "Unknown",
+        clientEmail: session.user.email || "",
+        category: category || "General",
+        creditsUsed: creditsRequired,
+        taskUrl: `${config.app.url}/admin/tasks`,
+      });
+      await notifyAdminWhatsApp(whatsappMessage);
+    } catch (error) {
+      logger.error({ err: error, taskId: result.task.id }, "Failed to send admin WhatsApp notification");
     }
 
     // Notify assigned freelancer
