@@ -1,24 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { freelancerProfiles, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get all users with FREELANCER role, left joining their profiles
     // This shows artists who haven't completed onboarding too
@@ -60,12 +49,6 @@ export async function GET(request: NextRequest) {
       user: f.user,
     }));
 
-    return NextResponse.json({ freelancers: transformedFreelancers });
-  } catch (error) {
-    console.error("Admin freelancers error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch freelancers" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ freelancers: transformedFreelancers });
+  }, { endpoint: "GET /api/admin/freelancers" });
 }

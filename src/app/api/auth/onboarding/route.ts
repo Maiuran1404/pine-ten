@@ -6,8 +6,9 @@ import { users, freelancerProfiles, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { adminNotifications, sendEmail, emailTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { withRateLimit } from "@/lib/rate-limit";
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -153,3 +154,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply auth rate limiting (20 req/min)
+export const POST = withRateLimit(handler, "auth", config.rateLimits.auth);

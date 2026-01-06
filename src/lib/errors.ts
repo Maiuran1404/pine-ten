@@ -34,6 +34,10 @@ export const ErrorCodes = {
   INVALID_PACKAGE: "PAY_002",
   WEBHOOK_ERROR: "PAY_003",
 
+  // Security errors (6xxx)
+  CSRF_INVALID: "SEC_001",
+  CSRF_MISSING: "SEC_002",
+
   // Server errors (9xxx)
   INTERNAL_ERROR: "SRV_001",
   DATABASE_ERROR: "SRV_002",
@@ -228,4 +232,7 @@ export const Errors = {
 
   internal: (message = "Internal server error") =>
     new APIError(ErrorCodes.INTERNAL_ERROR, message, 500),
+
+  csrfInvalid: () =>
+    new APIError(ErrorCodes.CSRF_INVALID, "Invalid or missing CSRF token", 403),
 };

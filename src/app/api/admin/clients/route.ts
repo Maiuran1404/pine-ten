@@ -1,24 +1,12 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, tasks, creditTransactions } from "@/db/schema";
-import { eq, desc, count, sum, sql } from "drizzle-orm";
+import { eq, desc, count, sum } from "drizzle-orm";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get all clients
     const clients = await db
@@ -76,12 +64,6 @@ export async function GET() {
       totalCreditsPurchased: creditsMap.get(client.id) || 0,
     }));
 
-    return NextResponse.json({ clients: clientsWithStats });
-  } catch (error) {
-    console.error("Admin clients error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch clients" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ clients: clientsWithStats });
+  }, { endpoint: "GET /api/admin/clients" });
 }

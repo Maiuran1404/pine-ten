@@ -22,6 +22,7 @@ import {
   Errors,
 } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Get the next available freelancer using least-loaded assignment
 async function getNextFreelancer(): Promise<{
@@ -88,6 +89,17 @@ async function getNextFreelancer(): Promise<{
 }
 
 export async function GET(request: NextRequest) {
+  // Check rate limit (100 req/min)
+  const { limited, resetIn } = checkRateLimit(request, "api", config.rateLimits.api);
+  if (limited) {
+    const response = NextResponse.json(
+      { error: "Too many requests", retryAfter: resetIn },
+      { status: 429 }
+    );
+    response.headers.set("Retry-After", String(resetIn));
+    return response;
+  }
+
   return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -162,6 +174,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Check rate limit (100 req/min)
+  const { limited, resetIn } = checkRateLimit(request, "api", config.rateLimits.api);
+  if (limited) {
+    const response = NextResponse.json(
+      { error: "Too many requests", retryAfter: resetIn },
+      { status: 429 }
+    );
+    response.headers.set("Retry-After", String(resetIn));
+    return response;
+  }
+
   return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),

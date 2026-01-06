@@ -4,9 +4,11 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { withRateLimit } from "@/lib/rate-limit";
+import { config } from "@/lib/config";
 
 // Set user role after registration based on portal type
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -53,3 +55,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply auth rate limiting (20 req/min)
+export const POST = withRateLimit(handler, "auth", config.rateLimits.auth);

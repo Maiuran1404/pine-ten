@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { chat, parseTaskFromChat, getStyleReferencesByCategory } from "@/lib/ai/chat";
+import { withRateLimit } from "@/lib/rate-limit";
+import { config } from "@/lib/config";
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -43,3 +45,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply chat rate limiting (30 req/min)
+export const POST = withRateLimit(handler, "chat", config.rateLimits.chat);

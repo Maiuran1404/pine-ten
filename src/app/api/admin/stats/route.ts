@@ -1,31 +1,20 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, tasks, freelancerProfiles, creditTransactions } from "@/db/schema";
-import { eq, count, sum, and, notInArray, inArray } from "drizzle-orm";
+import { eq, count, sum, notInArray } from "drizzle-orm";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Helper for safe queries
     const safeQuery = async <T>(name: string, query: Promise<T>, defaultValue: T): Promise<T> => {
       try {
         return await query;
       } catch (err) {
-        console.error(`Failed to query ${name}:`, err);
+        logger.error({ err, queryName: name }, `Failed to query ${name}`);
         return defaultValue;
       }
     };
@@ -77,7 +66,7 @@ export async function GET() {
     // $49 per credit
     const totalRevenue = (Number(revenueResult[0]?.total) || 0) * 49;
 
-    return NextResponse.json({
+    return successResponse({
       totalClients: Number(clientsResult[0]?.count) || 0,
       totalFreelancers: Number(freelancersResult[0]?.count) || 0,
       pendingApprovals: Number(pendingResult[0]?.count) || 0,
@@ -85,11 +74,5 @@ export async function GET() {
       completedTasks: Number(completedTasksResult[0]?.count) || 0,
       totalRevenue,
     });
-  } catch (error) {
-    console.error("Admin stats error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch stats" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/stats" });
 }

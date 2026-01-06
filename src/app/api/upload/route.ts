@@ -1,10 +1,11 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { config } from "@/lib/config";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Initialize Supabase client with service role for storage operations
 const supabase = createClient(
@@ -115,6 +116,19 @@ function sanitizeFilename(filename: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Check rate limit first (100 req/min for API)
+  const { limited, remaining, resetIn } = checkRateLimit(request, "api", config.rateLimits.api);
+  if (limited) {
+    const response = NextResponse.json(
+      { error: "Too many requests. Please try again later.", retryAfter: resetIn },
+      { status: 429 }
+    );
+    response.headers.set("X-RateLimit-Remaining", "0");
+    response.headers.set("X-RateLimit-Reset", String(resetIn));
+    response.headers.set("Retry-After", String(resetIn));
+    return response;
+  }
+
   return withErrorHandling(async () => {
     const session = await auth.api.getSession({
       headers: await headers(),
