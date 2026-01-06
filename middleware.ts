@@ -4,17 +4,17 @@ import type { NextRequest } from "next/server";
 // Subdomain configuration
 const SUBDOMAINS = {
   app: {
-    allowedPaths: ["/dashboard", "/onboarding", "/login", "/register", "/auth-error"],
+    allowedPaths: ["/dashboard", "/onboarding", "/login", "/register", "/auth-error", "/api"],
     defaultPath: "/dashboard",
     requiredRole: "CLIENT",
   },
   artist: {
-    allowedPaths: ["/portal", "/login", "/register", "/onboarding", "/auth-error"],
+    allowedPaths: ["/portal", "/login", "/register", "/onboarding", "/auth-error", "/api"],
     defaultPath: "/portal",
     requiredRole: "FREELANCER",
   },
   superadmin: {
-    allowedPaths: ["/admin", "/login", "/register", "/auth-error"],
+    allowedPaths: ["/admin", "/login", "/register", "/auth-error", "/api"],
     defaultPath: "/admin",
     requiredRole: "ADMIN",
   },
@@ -23,11 +23,10 @@ const SUBDOMAINS = {
 type Subdomain = keyof typeof SUBDOMAINS;
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/login", "/register", "/api/auth", "/auth-error"];
+const PUBLIC_ROUTES = ["/login", "/register", "/auth-error"];
 
 // Get the subdomain from the host
 function getSubdomain(host: string): Subdomain | null {
-  // Remove port if present
   const hostname = host.split(":")[0];
 
   // Local development: app.localhost, artist.localhost, superadmin.localhost
@@ -65,11 +64,11 @@ function isStaticAsset(pathname: string): boolean {
   return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    /\.(svg|png|jpg|jpeg|gif|webp|ico|css|js)$/.test(pathname)
+    pathname.includes(".") && !pathname.startsWith("/api")
   );
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
@@ -81,18 +80,14 @@ export function proxy(request: NextRequest) {
   // Get subdomain
   const subdomain = getSubdomain(host);
 
-  // If no valid subdomain (localhost without subdomain, or www), allow through
-  // This handles development on plain localhost:3000
+  // If no valid subdomain (localhost without subdomain, or www)
   if (!subdomain) {
     const hostname = host.split(":")[0];
 
-    // Plain localhost - allow all routes (development mode)
+    // Plain localhost - development mode, allow all routes
     if (hostname === "localhost") {
-      const sessionCookie =
-        request.cookies.get("pine.session_token") ||
-        request.cookies.get("better-auth.session_token");
-
-      // Protected routes without session
+      // Check for session cookie for protected routes
+      const sessionCookie = request.cookies.get("crafted.session_token");
       const protectedRoutes = ["/dashboard", "/portal", "/admin", "/onboarding"];
       const isProtectedRoute = protectedRoutes.some((route) =>
         pathname.startsWith(route)
@@ -100,17 +95,16 @@ export function proxy(request: NextRequest) {
 
       if (isProtectedRoute && !sessionCookie?.value) {
         const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
+        if (pathname !== "/") {
+          loginUrl.searchParams.set("redirect", pathname);
+        }
         return NextResponse.redirect(loginUrl);
       }
 
-      // Don't auto-redirect from auth routes to dashboard
-      // Let the client-side handle this to avoid issues with stale/invalid sessions
-      // The client will validate the session and redirect if it's actually valid
       return NextResponse.next();
     }
 
-    // www subdomain or base domain - pass through (Framer handles this)
+    // www subdomain or base domain - pass through
     return NextResponse.next();
   }
 
@@ -122,22 +116,16 @@ export function proxy(request: NextRequest) {
   }
 
   // Check for session cookie
-  const sessionCookie =
-    request.cookies.get("pine.session_token") ||
-    request.cookies.get("better-auth.session_token");
+  const sessionCookie = request.cookies.get("crafted.session_token");
 
-  // Handle public routes
+  // Handle public routes - allow access
   if (isPublicRoute(pathname)) {
-    // Don't auto-redirect from login/register even if session cookie exists
-    // Let the client-side validate the session and redirect if valid
-    // This prevents redirect loops with stale/invalid session cookies
     return NextResponse.next();
   }
 
   // Protected routes - require authentication
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url);
-    // Don't set redirect param for root path - it causes issues
     if (pathname !== "/") {
       loginUrl.searchParams.set("redirect", pathname);
     }
@@ -174,7 +162,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

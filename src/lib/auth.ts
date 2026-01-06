@@ -5,14 +5,21 @@ import * as schema from "@/db/schema";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-// Admin credentials from environment (hashed password comparison)
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-export const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
-
-// Get the base domain for cookie sharing across subdomains
+// Base domain for cookie sharing across subdomains
 const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
 
-// Build trusted origins for all subdomains
+// The canonical auth URL - ALL OAuth callbacks go through this domain
+// This MUST match what's registered in Google OAuth console
+const getAuthBaseURL = () => {
+  if (isProduction) {
+    // In production, always use app subdomain for OAuth callbacks
+    // This is the URL registered with Google OAuth
+    return `https://app.${baseDomain}`;
+  }
+  return "http://localhost:3000";
+};
+
+// Trusted origins - all subdomains that can make auth requests
 const trustedOrigins = isProduction
   ? [
       `https://app.${baseDomain}`,
@@ -28,15 +35,6 @@ const trustedOrigins = isProduction
       "http://superadmin.localhost:3000",
     ];
 
-// Get the base URL for Better Auth - needed for OAuth callbacks
-const getBaseURL = () => {
-  if (isProduction) {
-    // In production, use the APP_URL environment variable
-    return process.env.NEXT_PUBLIC_APP_URL || `https://app.${baseDomain}`;
-  }
-  return "http://localhost:3000";
-};
-
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -47,7 +45,7 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  baseURL: getBaseURL(),
+  baseURL: getAuthBaseURL(),
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
@@ -103,25 +101,21 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    cookiePrefix: "pine",
-    // Don't use useSecureCookies - it adds __Secure- prefix that conflicts with domain
+    cookiePrefix: "crafted",
     defaultCookieAttributes: {
       sameSite: "lax",
-      secure: isProduction, // Use secure cookies in production (HTTPS)
+      secure: isProduction,
       httpOnly: true,
       path: "/",
-      // Set domain for cookie sharing across subdomains in production
+      // CRITICAL: Set domain for cross-subdomain cookie sharing in production
       ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },
   trustedOrigins,
   rateLimit: {
     enabled: true,
-    window: 60, // 1 minute
-    max: 100, // max requests per window
-  },
-  onAPIError: {
-    errorURL: "/auth-error",
+    window: 60,
+    max: 100,
   },
 });
 

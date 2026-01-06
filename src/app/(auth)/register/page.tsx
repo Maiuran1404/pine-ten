@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -65,20 +65,28 @@ function RegisterContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
 
-  // Redirect if already logged in
+  // Handle redirect after registration
+  const handleSuccessfulAuth = useCallback(() => {
+    const redirect = searchParams.get("redirect");
+    const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
+    router.push(redirectTo);
+  }, [searchParams, portal.defaultRedirect, router]);
+
+  // Check session once and redirect if logged in
   useEffect(() => {
-    if (!isPending && session?.user) {
-      const redirect = searchParams.get("redirect");
-      // Don't redirect to "/" - use portal default instead
-      const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
-      router.push(redirectTo);
+    if (!isPending) {
+      setHasCheckedSession(true);
+      if (session?.user) {
+        handleSuccessfulAuth();
+      }
     }
-  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
+  }, [session, isPending, handleSuccessfulAuth]);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -135,7 +143,8 @@ function RegisterContent() {
   async function handleGoogleSignUp() {
     setIsGoogleLoading(true);
     try {
-      // Use absolute URL so we redirect back to the correct subdomain after OAuth
+      // The callbackURL is where the user ends up AFTER successful OAuth
+      // This should be on the CURRENT subdomain (cookies are shared)
       const redirectPath = accountType === "freelancer"
         ? "/onboarding?type=freelancer"
         : "/onboarding";
@@ -145,8 +154,10 @@ function RegisterContent() {
         provider: "google",
         callbackURL,
       });
-    } catch {
-      toast.error("Failed to sign up with Google");
+      // Note: This will redirect away from the page
+    } catch (error) {
+      console.error("Google sign-up error:", error);
+      toast.error("Failed to sign up with Google. Please try again.");
       setIsGoogleLoading(false);
     }
   }
@@ -162,8 +173,8 @@ function RegisterContent() {
     "text-white border-0"
   );
 
-  // If already logged in, show loading (redirect will happen via useEffect)
-  if (!isPending && session?.user) {
+  // Show loading while checking session
+  if (!hasCheckedSession) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -171,7 +182,15 @@ function RegisterContent() {
     );
   }
 
-  // Show form immediately - don't block on session check
+  // If already logged in, show loading (redirect will happen via useEffect)
+  if (session?.user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <LoadingSpinner size="lg" />
+        <p className="text-sm text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

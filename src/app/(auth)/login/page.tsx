@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -63,19 +63,27 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   const isSuperadmin = portal.type === "superadmin";
   const showSocialLogin = !isSuperadmin;
 
-  // Redirect if already logged in
+  // Handle redirect after login
+  const handleSuccessfulAuth = useCallback(() => {
+    const redirect = searchParams.get("redirect");
+    const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
+    router.push(redirectTo);
+  }, [searchParams, portal.defaultRedirect, router]);
+
+  // Check session once and redirect if logged in
   useEffect(() => {
-    if (!isPending && session?.user) {
-      const redirect = searchParams.get("redirect");
-      // Don't redirect to "/" - use portal default instead
-      const redirectTo = (redirect && redirect !== "/") ? redirect : portal.defaultRedirect;
-      router.push(redirectTo);
+    if (!isPending) {
+      setHasCheckedSession(true);
+      if (session?.user) {
+        handleSuccessfulAuth();
+      }
     }
-  }, [session, isPending, router, searchParams, portal.defaultRedirect]);
+  }, [session, isPending, handleSuccessfulAuth]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -100,7 +108,7 @@ function LoginContent() {
       }
 
       toast.success("Welcome back!");
-      router.push(portal.defaultRedirect);
+      handleSuccessfulAuth();
     } catch {
       toast.error("An error occurred. Please try again.");
     } finally {
@@ -111,14 +119,18 @@ function LoginContent() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      // Use absolute URL so we redirect back to the correct subdomain after OAuth
+      // The callbackURL is where the user ends up AFTER successful OAuth
+      // This should be on the CURRENT subdomain (cookies are shared)
       const callbackURL = `${window.location.origin}${portal.defaultRedirect}`;
+
       await signIn.social({
         provider: "google",
         callbackURL,
       });
-    } catch {
-      toast.error("Failed to sign in with Google");
+      // Note: This will redirect away from the page, so no need to handle success here
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      toast.error("Failed to sign in with Google. Please try again.");
       setIsGoogleLoading(false);
     }
   }
@@ -134,8 +146,8 @@ function LoginContent() {
     "text-white border-0"
   );
 
-  // If already logged in, show loading (redirect will happen via useEffect)
-  if (!isPending && session?.user) {
+  // Show loading while checking session
+  if (!hasCheckedSession) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -143,7 +155,15 @@ function LoginContent() {
     );
   }
 
-  // Show form immediately - don't block on session check
+  // If already logged in, show loading (redirect will happen via useEffect)
+  if (session?.user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <LoadingSpinner size="lg" />
+        <p className="text-sm text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

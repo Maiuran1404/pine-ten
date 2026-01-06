@@ -1,17 +1,30 @@
 import { createAuthClient } from "better-auth/react";
 
-// Get auth base URL dynamically based on current environment
-// This needs to work both during SSR and on the client
+// Determine the auth API base URL
+// In production, ALL auth API calls go through app.craftedstudio.ai
+// This ensures OAuth callbacks work correctly (they're registered with Google for this domain)
+// Cookies are shared across subdomains via domain: .craftedstudio.ai
 const getAuthBaseURL = () => {
-  // On the client, use the current origin so OAuth works correctly
-  if (typeof window !== "undefined") {
-    return window.location.origin;
+  if (typeof window === "undefined") {
+    // Server-side: use environment variable
+    return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   }
-  // During SSR, use the configured app URL
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  // Client-side: determine based on hostname
+  const hostname = window.location.hostname;
+
+  // Development: use localhost
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return "http://localhost:3000";
+  }
+
+  // Production: always use app subdomain for auth API
+  // This is critical for OAuth to work - Google callback is registered here
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+  return `https://app.${baseDomain}`;
 };
 
-// Create auth client - baseURL will be determined at runtime
+// Create auth client pointing to the canonical auth endpoint
 export const authClient = createAuthClient({
   baseURL: getAuthBaseURL(),
 });
