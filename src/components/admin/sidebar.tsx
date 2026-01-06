@@ -1,20 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -26,12 +19,16 @@ import {
   Tags,
   Database,
   Ticket,
-  History,
   MessageSquare,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
+import {
+  SidebarNavigation,
+  SidebarRecents,
+  type NavigationItem,
+} from "@/components/shared/sidebar";
 
-const navigation = [
+const navigation: NavigationItem[] = [
   {
     name: "Dashboard",
     href: "/admin",
@@ -89,12 +86,12 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
-  const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
-
-  const handleLinkClick = () => {
-    setOpenMobile(false);
-  };
+  // Transform recent tasks to RecentItem format
+  const recentItems = recentTasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    href: `/admin/tasks/${task.id}`,
+  }));
 
   return (
     <Sidebar
@@ -112,61 +109,18 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive = item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
-
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.name}
-                      className={`rounded-xl ${
-                        isActive
-                          ? "bg-rose-950/80 text-rose-400 hover:bg-rose-950 hover:text-rose-400"
-                          : ""
-                      }`}
-                    >
-                      <Link href={item.href} onClick={handleLinkClick}>
-                        <item.icon className={isActive ? "text-rose-400" : ""} />
-                        <span>{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarNavigation
+              items={navigation}
+              basePath="/admin"
+              accentColor="rose"
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {recentTasks.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50">
-              Recent Tasks
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {recentTasks.slice(0, 5).map((task) => (
-                  <SidebarMenuItem key={task.id}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={task.title}
-                      className="rounded-xl"
-                    >
-                      <Link href={`/admin/tasks/${task.id}`} onClick={handleLinkClick}>
-                        <History className="h-4 w-4" />
-                        <span className="truncate">{task.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarRecents
+          items={recentItems}
+          title="Recent Tasks"
+        />
       </SidebarContent>
 
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">

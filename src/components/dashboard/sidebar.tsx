@@ -1,21 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -29,8 +22,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
+import {
+  SidebarNavigation,
+  SidebarRecents,
+  type NavigationItem,
+  type RecentItem,
+} from "@/components/shared/sidebar";
 
-const navigation = [
+const navigation: NavigationItem[] = [
   {
     name: "Home",
     href: "/dashboard",
@@ -63,8 +62,6 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
-  const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
   const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
 
   // Load chat drafts from localStorage
@@ -98,10 +95,6 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     };
   }, []);
 
-  const handleLinkClick = () => {
-    setOpenMobile(false);
-  };
-
   // Active statuses - where artists are working
   const activeStatuses = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "REVISION_REQUESTED"];
 
@@ -109,19 +102,30 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
   const activeTasks = recentTasks.filter(t => t.status && activeStatuses.includes(t.status));
   const otherTasks = recentTasks.filter(t => !t.status || !activeStatuses.includes(t.status));
 
+  // Transform active tasks to RecentItem format
+  const activeItems: RecentItem[] = activeTasks.slice(0, 3).map((task) => ({
+    id: task.id,
+    title: task.title,
+    href: `/dashboard/tasks/${task.id}`,
+    icon: Sparkles,
+    iconClassName: "text-amber-400",
+  }));
+
   // Combine drafts and non-active tasks for recents
-  const allRecents = [
+  const recentItems: RecentItem[] = [
     ...chatDrafts.map(d => ({
       id: d.id,
       title: d.title,
-      type: "draft" as const,
-      updatedAt: d.updatedAt,
+      href: `/dashboard/chat?draft=${d.id}`,
+      icon: MessageCircle,
+      iconClassName: "text-emerald-400",
     })),
     ...otherTasks.map(t => ({
       id: t.id,
       title: t.title,
-      type: "task" as const,
-      updatedAt: new Date().toISOString(),
+      href: `/dashboard/tasks/${t.id}`,
+      icon: FolderKanban,
+      iconClassName: "text-[#6b6b6b]",
     })),
   ].slice(0, 5);
 
@@ -138,103 +142,28 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                // For home (/dashboard), only match exact path
-                // For other routes, match if pathname starts with the href
-                const isActive = item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.name}
-                      className={`rounded-xl ${
-                        isActive
-                          ? "bg-emerald-950/80 text-emerald-400 hover:bg-emerald-950 hover:text-emerald-400"
-                          : ""
-                      }`}
-                    >
-                      <Link href={item.href} onClick={handleLinkClick}>
-                        <item.icon className={isActive ? "text-emerald-400" : ""} />
-                        <span>{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarNavigation
+              items={navigation}
+              basePath="/dashboard"
+              accentColor="emerald"
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Active Tasks - where artists are working */}
-        {activeTasks.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50 flex items-center gap-1.5">
-              <Zap className="h-3 w-3 text-amber-400" />
-              Active
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {activeTasks.slice(0, 3).map((task) => (
-                  <SidebarMenuItem key={`active-${task.id}`}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={task.title}
-                      className="rounded-xl"
-                    >
-                      <Link
-                        href={`/dashboard/tasks/${task.id}`}
-                        onClick={handleLinkClick}
-                      >
-                        <Sparkles className="h-4 w-4 text-amber-400" />
-                        <span className="truncate">{task.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarRecents
+          items={activeItems}
+          title="Active"
+          icon={Zap}
+          maxItems={3}
+        />
 
         {/* Recents - drafts and completed/pending tasks */}
-        {allRecents.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50 flex items-center gap-1.5">
-              <Clock className="h-3 w-3" />
-              Recents
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {allRecents.map((item) => (
-                  <SidebarMenuItem key={`${item.type}-${item.id}`}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.title}
-                      className="rounded-xl"
-                    >
-                      <Link
-                        href={item.type === "draft" ? `/dashboard/chat?draft=${item.id}` : `/dashboard/tasks/${item.id}`}
-                        onClick={handleLinkClick}
-                      >
-                        {item.type === "draft" ? (
-                          <MessageCircle className="h-4 w-4 text-emerald-400" />
-                        ) : (
-                          <FolderKanban className="h-4 w-4 text-[#6b6b6b]" />
-                        )}
-                        <span className="truncate">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarRecents
+          items={recentItems}
+          title="Recents"
+          icon={Clock}
+        />
       </SidebarContent>
 
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
