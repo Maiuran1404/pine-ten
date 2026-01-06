@@ -330,9 +330,9 @@ function RegisterContent() {
 
           <p className="text-xs text-center text-muted-foreground">
             By creating an account, you agree to our{" "}
-            <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
+            <span className="text-primary">Terms of Service</span>
             {" "}and{" "}
-            <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+            <span className="text-primary">Privacy Policy</span>
           </p>
         </form>
       </Form>
