@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import {
@@ -16,7 +15,10 @@ import {
   Tags,
   Image,
   ArrowRight,
+  LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth-client";
 
 interface AdminStats {
   totalClients: number;
@@ -166,21 +168,31 @@ export default function AdminDashboardPage() {
         className="relative z-10 space-y-8"
       >
         {/* Header */}
-        <div className="space-y-2">
-          <h1
-            className="text-3xl sm:text-4xl font-normal tracking-tight"
-            style={{
-              background: "linear-gradient(90deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <h1
+              className="text-3xl sm:text-4xl font-normal tracking-tight"
+              style={{
+                background: "linear-gradient(90deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Admin Dashboard
+            </h1>
+            <p className="text-[#6b7280] text-base">
+              Overview of platform activity and management
+            </p>
+          </div>
+          <Button
+            onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
+            variant="outline"
+            className="border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
           >
-            Admin Dashboard
-          </h1>
-          <p className="text-[#6b7280] text-base">
-            Overview of platform activity and management
-          </p>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
 
         {/* Stats Grid */}

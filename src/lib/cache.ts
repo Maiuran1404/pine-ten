@@ -82,7 +82,7 @@ export function cachedSuccessResponse<T>(
     isPrivate?: boolean;
   }
 ): NextResponse<{ success: true; data: T }> {
-  const response = NextResponse.json(
+  const response = NextResponse.json<{ success: true; data: T }>(
     { success: true, data },
     { status: 200 }
   );
