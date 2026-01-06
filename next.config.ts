@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "framerusercontent.com",
+      },
     ],
   },
   // Externalize pino and its dependencies to avoid Turbopack bundling issues
