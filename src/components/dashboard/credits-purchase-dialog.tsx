@@ -229,7 +229,7 @@ export function CreditsPurchaseDialog({
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[var(--ds-text-muted)]">You'll receive</p>
+              <p className="text-xs text-[var(--ds-text-muted)]">You&apos;ll receive</p>
               <p className="text-lg font-semibold text-[var(--ds-text-primary)]">
                 {selectedPkg?.credits || 0} credits
               </p>

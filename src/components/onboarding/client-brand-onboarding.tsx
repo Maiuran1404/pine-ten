@@ -325,10 +325,11 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         throw new Error("Failed to complete onboarding");
       }
 
+      // Await session refresh to ensure onboardingCompleted is updated before navigating
+      await refetchSession();
+
       setStep("complete");
       setIsLoading(false);
-
-      refetchSession().catch(() => {});
       toast.success("Brand profile saved!");
     } catch (error) {
       console.error("Onboarding error:", error);
@@ -1247,7 +1248,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               </a>
             </div>
             <button
-              onClick={() => signOut({ fetchOptions: { onSuccess: () => window.location.href = "/login" } })}
+              onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
               className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             >
               Log out

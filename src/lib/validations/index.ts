@@ -21,15 +21,15 @@ export const createTaskSchema = z.object({
     .enum(["STATIC_ADS", "VIDEO_MOTION", "SOCIAL_MEDIA"])
     .optional()
     .nullable(),
-  requirements: z.record(z.unknown()).optional().nullable(),
+  requirements: z.record(z.string(), z.unknown()).optional().nullable(),
   estimatedHours: z.number().positive().optional().nullable(),
   creditsRequired: z
-    .number()
-    .int()
-    .min(1, "At least 1 credit required")
-    .max(100, "Maximum 100 credits per task"),
+    .number({ message: "Credits required must be a number" })
+    .int({ message: "Credits must be a whole number" })
+    .min(1, { message: "At least 1 credit required" })
+    .max(100, { message: "Maximum 100 credits per task" }),
   deadline: z.string().datetime().optional().nullable(),
-  chatHistory: z.array(z.record(z.unknown())).optional().default([]),
+  chatHistory: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   styleReferences: z.array(z.string().url()).optional().default([]),
   attachments: z
     .array(
@@ -58,7 +58,7 @@ export const updateTaskSchema = z.object({
       "CANCELLED",
     ])
     .optional(),
-  priority: z.number().int().min(0).max(3).optional(),
+  priority: z.number().int({ message: "Priority must be a whole number" }).min(0).max(3).optional(),
   deadline: z.string().datetime().optional().nullable(),
 });
 

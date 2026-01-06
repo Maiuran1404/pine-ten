@@ -332,7 +332,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   }
 
   // Clean the content (use global flag to remove ALL occurrences)
-  let cleanContent = content
+  const cleanContent = content
     .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, "")
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();

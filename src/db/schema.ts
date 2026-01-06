@@ -8,6 +8,7 @@ import {
   uuid,
   pgEnum,
   decimal,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -45,22 +46,29 @@ export const notificationChannelEnum = pgEnum("notification_channel", [
 ]);
 
 // Users table (BetterAuth compatible)
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  role: userRoleEnum("role").notNull().default("CLIENT"),
-  phone: text("phone"),
-  credits: integer("credits").notNull().default(0),
-  companyId: uuid("company_id"),
-  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
-  onboardingData: jsonb("onboarding_data"),
-  notificationPreferences: jsonb("notification_preferences"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    role: userRoleEnum("role").notNull().default("CLIENT"),
+    phone: text("phone"),
+    credits: integer("credits").notNull().default(0),
+    companyId: uuid("company_id"),
+    onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+    onboardingData: jsonb("onboarding_data"),
+    notificationPreferences: jsonb("notification_preferences"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("users_email_idx").on(table.email),
+    index("users_role_idx").on(table.role),
+  ]
+);
 
 // BetterAuth sessions table
 export const sessions = pgTable("sessions", {
@@ -184,30 +192,40 @@ export const taskCategories = pgTable("task_categories", {
 });
 
 // Tasks
-export const tasks = pgTable("tasks", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  clientId: text("client_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  freelancerId: text("freelancer_id").references(() => users.id),
-  categoryId: uuid("category_id").references(() => taskCategories.id),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  status: taskStatusEnum("status").notNull().default("PENDING"),
-  requirements: jsonb("requirements"),
-  styleReferences: jsonb("style_references").$type<string[]>().default([]),
-  chatHistory: jsonb("chat_history").$type<object[]>().default([]),
-  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
-  creditsUsed: integer("credits_used").notNull().default(1),
-  maxRevisions: integer("max_revisions").notNull().default(2),
-  revisionsUsed: integer("revisions_used").notNull().default(0),
-  priority: integer("priority").notNull().default(0),
-  deadline: timestamp("deadline"),
-  assignedAt: timestamp("assigned_at"),
-  completedAt: timestamp("completed_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    freelancerId: text("freelancer_id").references(() => users.id),
+    categoryId: uuid("category_id").references(() => taskCategories.id),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    status: taskStatusEnum("status").notNull().default("PENDING"),
+    requirements: jsonb("requirements"),
+    styleReferences: jsonb("style_references").$type<string[]>().default([]),
+    chatHistory: jsonb("chat_history").$type<object[]>().default([]),
+    estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
+    creditsUsed: integer("credits_used").notNull().default(1),
+    maxRevisions: integer("max_revisions").notNull().default(2),
+    revisionsUsed: integer("revisions_used").notNull().default(0),
+    priority: integer("priority").notNull().default(0),
+    deadline: timestamp("deadline"),
+    assignedAt: timestamp("assigned_at"),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("tasks_client_id_idx").on(table.clientId),
+    index("tasks_freelancer_id_idx").on(table.freelancerId),
+    index("tasks_status_idx").on(table.status),
+    index("tasks_created_at_idx").on(table.createdAt),
+    index("tasks_client_status_idx").on(table.clientId, table.status),
+  ]
+);
 
 // Task files
 export const taskFiles = pgTable("task_files", {

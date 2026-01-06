@@ -117,12 +117,12 @@ export function errorResponse(
 export function handleZodError(error: ZodError): NextResponse<APIErrorResponse> {
   const fieldErrors: Record<string, string[]> = {};
 
-  error.errors.forEach((err) => {
-    const path = err.path.join(".");
+  error.issues.forEach((issue) => {
+    const path = issue.path.join(".");
     if (!fieldErrors[path]) {
       fieldErrors[path] = [];
     }
-    fieldErrors[path].push(err.message);
+    fieldErrors[path].push(issue.message);
   });
 
   return errorResponse(

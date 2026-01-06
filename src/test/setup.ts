@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { setupServer } from "msw/node";
 
 // MSW server for API mocking

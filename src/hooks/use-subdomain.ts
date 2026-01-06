@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 
 export type PortalType = "app" | "artist" | "superadmin" | "default";
 
@@ -89,12 +89,16 @@ export function getPortalFromHostname(hostname: string): PortalType {
 }
 
 export function useSubdomain(): PortalConfig {
-  const [portalConfig, setPortalConfig] = useState<PortalConfig>(PORTAL_CONFIGS.app);
-
-  useEffect(() => {
+  // Use useMemo to compute the portal config on initial render
+  // This avoids the setState-in-useEffect anti-pattern
+  const portalConfig = useMemo(() => {
+    // Check if we're on the client side
+    if (typeof window === "undefined") {
+      return PORTAL_CONFIGS.app;
+    }
     const hostname = window.location.hostname;
     const portalType = getPortalFromHostname(hostname);
-    setPortalConfig(PORTAL_CONFIGS[portalType]);
+    return PORTAL_CONFIGS[portalType];
   }, []);
 
   return portalConfig;

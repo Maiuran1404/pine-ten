@@ -1,46 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Trash2, Clock, Sparkles, Paperclip, ArrowUp } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
-  const [drafts, setDrafts] = useState<ChatDraft[]>([]);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [showDrafts, setShowDrafts] = useState(true);
-  const [initialMessage, setInitialMessage] = useState<string | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const initializedRef = useRef(false);
 
-  useEffect(() => {
-    setDrafts(getDrafts());
+  // Initialize drafts directly (only runs once on mount due to lazy initializer)
+  const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
+    if (typeof window === "undefined") return [];
+    return getDrafts();
+  });
 
-    // Check for draft ID from URL (clicking from sidebar)
+  // Derive initial state from URL params
+  const urlState = useMemo(() => {
     const draftParam = searchParams.get("draft");
-    if (draftParam) {
-      setCurrentDraftId(draftParam);
-      setShowDrafts(false);
-      setIsTransitioning(true); // Use modern design for drafts too
-      return;
+    const messageParam = searchParams.get("message");
+    return { draftParam, messageParam };
+  }, [searchParams]);
+
+  // Initialize currentDraftId based on URL
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(() => {
+    if (urlState.draftParam) return urlState.draftParam;
+    if (urlState.messageParam) return generateDraftId();
+    return null;
+  });
+
+  const [showDrafts, setShowDrafts] = useState(() => !urlState.draftParam && !urlState.messageParam);
+  const [initialMessage, setInitialMessage] = useState<string | null>(() => urlState.messageParam);
+  const [isTransitioning, setIsTransitioning] = useState(() => !!urlState.draftParam || !!urlState.messageParam);
+
+  // Handle URL changes after initial mount
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      return; // Skip first run as state was already initialized
     }
 
-    // Check for initial message from URL
-    const messageParam = searchParams.get("message");
-    if (messageParam) {
-      setInitialMessage(messageParam);
+    // URL changed, update state accordingly
+    if (urlState.draftParam) {
+      setCurrentDraftId(urlState.draftParam);
+      setShowDrafts(false);
       setIsTransitioning(true);
-      // Start a new chat immediately if there's a message
+    } else if (urlState.messageParam) {
+      setInitialMessage(urlState.messageParam);
+      setIsTransitioning(true);
       const newId = generateDraftId();
       setCurrentDraftId(newId);
       setShowDrafts(false);
     }
-  }, [searchParams]);
+  }, [urlState.draftParam, urlState.messageParam]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();

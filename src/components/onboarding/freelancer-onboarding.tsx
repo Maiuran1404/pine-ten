@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,7 @@ function GrainOverlay() {
 }
 
 export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) {
+  const { refetch: refetchSession } = useSession();
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -148,6 +150,9 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
       if (!response.ok) {
         throw new Error("Failed to complete onboarding");
       }
+
+      // Await session refresh to ensure onboardingCompleted is updated before navigating
+      await refetchSession();
 
       toast.success("Application submitted! We'll review it shortly.");
       onComplete();

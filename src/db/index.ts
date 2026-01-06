@@ -23,6 +23,9 @@ export const db = drizzle(client, { schema });
 // Export the raw client for transactions
 export const sql = client;
 
+// Transaction type for use in functions
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /**
  * Execute a function within a database transaction
  * Automatically rolls back on error
@@ -35,11 +38,13 @@ export const sql = client;
  *   });
  */
 export async function withTransaction<T>(
-  fn: (tx: typeof db) => Promise<T>
+  fn: (tx: Transaction) => Promise<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
-    return await fn(tx as typeof db);
+    return await fn(tx);
   });
 }
+
+export type { Transaction };
 
 export * from "./schema";
