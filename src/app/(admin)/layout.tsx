@@ -65,7 +65,7 @@ export default function AdminLayout({
   return (
     <SidebarProvider
       defaultOpen={true}
-      className="bg-background"
+      className="bg-background outline-none focus:outline-none"
       style={
         {
           fontFamily: "'Satoshi', sans-serif",
@@ -75,9 +75,9 @@ export default function AdminLayout({
       }
     >
       <AdminSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-background outline-none focus:outline-none">
         <Header />
-        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">{children}</main>
+        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

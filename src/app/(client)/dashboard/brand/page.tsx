@@ -194,10 +194,10 @@ export default function BrandPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] p-6">
+      <div className="min-h-full bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-8 w-48 bg-[#2a2a30]" />
-          <Skeleton className="h-[400px] w-full bg-[#2a2a30] rounded-xl" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>
       </div>
     );
@@ -205,11 +205,11 @@ export default function BrandPage() {
 
   if (!brand) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] p-6 flex items-center justify-center">
+      <div className="min-h-full bg-background p-6 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Building2 className="h-12 w-12 mx-auto text-[#6b6b6b]" />
-          <h3 className="text-lg font-medium text-white">No Brand Set Up</h3>
-          <p className="text-[#6b6b6b]">
+          <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h3 className="text-lg font-medium text-foreground">No Brand Set Up</h3>
+          <p className="text-muted-foreground">
             Complete onboarding to set up your brand.
           </p>
         </div>
@@ -225,16 +225,16 @@ export default function BrandPage() {
   ];
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] relative overflow-hidden">
-      {/* Curtain light effect */}
+    <div className="min-h-full bg-background relative overflow-hidden">
+      {/* Curtain light effect - only visible in dark mode */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(255, 255, 255, 0.04) 0%,
-            rgba(255, 255, 255, 0.025) 20%,
-            rgba(255, 255, 255, 0.015) 40%,
-            rgba(255, 255, 255, 0.008) 60%,
+            rgba(13, 148, 136, 0.08) 0%,
+            rgba(13, 148, 136, 0.04) 20%,
+            rgba(13, 148, 136, 0.02) 40%,
+            rgba(13, 148, 136, 0.01) 60%,
             transparent 80%
           )`,
           filter: "blur(40px)",
@@ -247,8 +247,8 @@ export default function BrandPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl font-semibold text-white">My Brand</h1>
-              <p className="text-[#6b6b6b] mt-1">
+              <h1 className="text-2xl font-semibold text-foreground">My Brand</h1>
+              <p className="text-muted-foreground mt-1">
                 Manage your brand identity and visual guidelines
               </p>
             </div>
@@ -259,7 +259,6 @@ export default function BrandPage() {
                   size="sm"
                   onClick={handleRescan}
                   disabled={isRescanning}
-                  className="border-[#2a2a30] bg-transparent text-[#9a9a9a] hover:text-white hover:bg-[#1a1a1f]"
                 >
                   {isRescanning ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -272,7 +271,6 @@ export default function BrandPage() {
                 onClick={handleSave}
                 disabled={isSaving}
                 size="sm"
-                className="bg-white text-black hover:bg-white/90"
               >
                 {isSaving ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -287,7 +285,7 @@ export default function BrandPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-[#0f0f12] rounded-xl mb-6 border border-[#2a2a30]/50">
+          <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 border border-border">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -295,8 +293,8 @@ export default function BrandPage() {
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center",
                   activeTab === tab.id
-                    ? "bg-[#1a1a1f] text-white shadow-sm"
-                    : "text-[#6b6b6b] hover:text-white"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <tab.icon className="h-4 w-4" />
@@ -318,19 +316,19 @@ export default function BrandPage() {
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Company Name</Label>
+                    <Label className="text-muted-foreground text-sm">Company Name</Label>
                     <Input
                       value={brand.name}
                       onChange={(e) => updateField("name", e.target.value)}
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Industry</Label>
+                    <Label className="text-muted-foreground text-sm">Industry</Label>
                     <select
                       value={brand.industry || ""}
                       onChange={(e) => updateField("industry", e.target.value)}
-                      className="flex h-11 w-full rounded-md border border-[#2a2a30] bg-[#0f0f12] px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3a3a40]"
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">Select industry</option>
                       {industries.map((ind) => (
@@ -343,53 +341,53 @@ export default function BrandPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[#9a9a9a] text-sm">Description</Label>
+                  <Label className="text-muted-foreground text-sm">Description</Label>
                   <Textarea
                     value={brand.description || ""}
                     onChange={(e) => updateField("description", e.target.value)}
                     rows={3}
-                    className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] resize-none"
+                    className="resize-none"
                   />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Tagline</Label>
+                    <Label className="text-muted-foreground text-sm">Tagline</Label>
                     <Input
                       value={brand.tagline || ""}
                       onChange={(e) => updateField("tagline", e.target.value)}
                       placeholder="Your company tagline"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Website</Label>
+                    <Label className="text-muted-foreground text-sm">Website</Label>
                     <Input
                       value={brand.website || ""}
                       onChange={(e) => updateField("website", e.target.value)}
                       placeholder="yourcompany.com"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Logo URL</Label>
+                    <Label className="text-muted-foreground text-sm">Logo URL</Label>
                     <Input
                       value={brand.logoUrl || ""}
                       onChange={(e) => updateField("logoUrl", e.target.value)}
                       placeholder="https://..."
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Favicon URL</Label>
+                    <Label className="text-muted-foreground text-sm">Favicon URL</Label>
                     <Input
                       value={brand.faviconUrl || ""}
                       onChange={(e) => updateField("faviconUrl", e.target.value)}
                       placeholder="https://..."
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                 </div>
@@ -413,23 +411,23 @@ export default function BrandPage() {
                     { key: "accentColor", label: "Accent", presets: COLOR_PRESETS.primary },
                   ].map(({ key, label, presets }) => (
                     <div key={key} className="space-y-2">
-                      <Label className="text-[#9a9a9a] text-sm">{label}</Label>
+                      <Label className="text-muted-foreground text-sm">{label}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-[#0f0f12] border border-[#2a2a30] hover:border-[#3a3a40] transition-colors">
+                          <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:border-ring transition-colors">
                             <div
-                              className="w-10 h-10 rounded-lg border border-white/10"
+                              className="w-10 h-10 rounded-lg border border-border"
                               style={{
                                 backgroundColor:
                                   (brand[key as keyof BrandData] as string) || "#6366f1",
                               }}
                             />
-                            <span className="text-sm font-mono text-[#9a9a9a]">
+                            <span className="text-sm font-mono text-muted-foreground">
                               {(brand[key as keyof BrandData] as string) || "#6366f1"}
                             </span>
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-64 p-4 bg-[#0f0f12] border-[#2a2a30]" align="start">
+                        <PopoverContent className="w-64 p-4 bg-popover border-border" align="start">
                           <div className="space-y-4">
                             <div className="grid grid-cols-5 gap-2">
                               {presets.map((color) => (
@@ -438,8 +436,8 @@ export default function BrandPage() {
                                   className={cn(
                                     "w-10 h-10 rounded-lg transition-all hover:scale-110",
                                     (brand[key as keyof BrandData] as string) === color
-                                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#0f0f12]"
-                                      : "ring-1 ring-white/10"
+                                      ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                      : "ring-1 ring-border"
                                   )}
                                   style={{ backgroundColor: color }}
                                   onClick={() => updateField(key as keyof BrandData, color)}
@@ -457,7 +455,7 @@ export default function BrandPage() {
                                 value={(brand[key as keyof BrandData] as string) || ""}
                                 onChange={(e) => updateField(key as keyof BrandData, e.target.value)}
                                 placeholder="#000000"
-                                className="flex-1 bg-[#1a1a1f] border-[#2a2a30] text-white h-10 font-mono text-sm"
+                                className="flex-1 h-10 font-mono text-sm"
                               />
                             </div>
                           </div>
@@ -474,10 +472,10 @@ export default function BrandPage() {
                     { key: "textColor", label: "Text" },
                   ].map(({ key, label }) => (
                     <div key={key} className="space-y-2">
-                      <Label className="text-[#9a9a9a] text-sm">{label}</Label>
+                      <Label className="text-muted-foreground text-sm">{label}</Label>
                       <div className="flex gap-2">
                         <div
-                          className="w-12 h-12 rounded-lg border border-[#2a2a30] cursor-pointer"
+                          className="w-12 h-12 rounded-lg border border-input cursor-pointer"
                           style={{
                             backgroundColor: (brand[key as keyof BrandData] as string) || "#1a1a1f",
                           }}
@@ -490,7 +488,7 @@ export default function BrandPage() {
                           value={(brand[key as keyof BrandData] as string) || ""}
                           onChange={(e) => updateField(key as keyof BrandData, e.target.value)}
                           placeholder="#000000"
-                          className="flex-1 bg-[#0f0f12] border-[#2a2a30] text-white h-12"
+                          className="flex-1 h-12"
                         />
                         <input
                           id={`${key}-picker`}
@@ -506,21 +504,21 @@ export default function BrandPage() {
 
                 {/* Additional Colors */}
                 <div className="space-y-3">
-                  <Label className="text-[#9a9a9a] text-sm">Additional Brand Colors</Label>
+                  <Label className="text-muted-foreground text-sm">Additional Brand Colors</Label>
                   <div className="flex flex-wrap gap-2">
                     {brand.brandColors.map((color, index) => (
                       <div
                         key={index}
-                        className="group flex items-center gap-2 bg-[#0f0f12] rounded-lg px-3 py-2 border border-[#2a2a30]"
+                        className="group flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border"
                       >
                         <div
-                          className="w-6 h-6 rounded border border-white/10"
+                          className="w-6 h-6 rounded border border-border"
                           style={{ backgroundColor: color }}
                         />
-                        <span className="text-sm font-mono text-[#9a9a9a]">{color}</span>
+                        <span className="text-sm font-mono text-muted-foreground">{color}</span>
                         <button
                           onClick={() => copyColor(color)}
-                          className="p-1 hover:bg-[#2a2a30] rounded text-[#6b6b6b] hover:text-white"
+                          className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
                         >
                           {copiedColor === color ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                         </button>
@@ -532,13 +530,13 @@ export default function BrandPage() {
                         </button>
                       </div>
                     ))}
-                    <div className="flex items-center gap-2 bg-[#0f0f12]/50 rounded-lg px-3 py-2 border-2 border-dashed border-[#2a2a30]">
+                    <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 border-2 border-dashed border-border">
                       <input
                         type="color"
                         onChange={(e) => addBrandColor(e.target.value)}
                         className="w-6 h-6 rounded cursor-pointer bg-transparent"
                       />
-                      <span className="text-sm text-[#4a4a4a]">Add color</span>
+                      <span className="text-sm text-muted-foreground">Add color</span>
                     </div>
                   </div>
                 </div>
@@ -556,16 +554,16 @@ export default function BrandPage() {
               >
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Primary Font (Headings)</Label>
+                    <Label className="text-muted-foreground text-sm">Primary Font (Headings)</Label>
                     <Input
                       value={brand.primaryFont || ""}
                       onChange={(e) => updateField("primaryFont", e.target.value)}
                       placeholder="e.g., Inter, Roboto"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                     {brand.primaryFont && (
                       <p
-                        className="text-lg font-bold text-white mt-3 p-3 bg-[#0f0f12] rounded-lg border border-[#2a2a30]"
+                        className="text-lg font-bold text-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
                         style={{ fontFamily: brand.primaryFont }}
                       >
                         The quick brown fox
@@ -573,16 +571,16 @@ export default function BrandPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Secondary Font (Body)</Label>
+                    <Label className="text-muted-foreground text-sm">Secondary Font (Body)</Label>
                     <Input
                       value={brand.secondaryFont || ""}
                       onChange={(e) => updateField("secondaryFont", e.target.value)}
                       placeholder="e.g., Open Sans, Lato"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                     {brand.secondaryFont && (
                       <p
-                        className="text-base text-[#9a9a9a] mt-3 p-3 bg-[#0f0f12] rounded-lg border border-[#2a2a30]"
+                        className="text-base text-muted-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
                         style={{ fontFamily: brand.secondaryFont }}
                       >
                         The quick brown fox
@@ -593,12 +591,12 @@ export default function BrandPage() {
 
                 {/* Keywords */}
                 <div className="space-y-3">
-                  <Label className="text-[#9a9a9a] text-sm">Brand Keywords</Label>
+                  <Label className="text-muted-foreground text-sm">Brand Keywords</Label>
                   <div className="flex flex-wrap gap-2">
                     {brand.keywords.map((keyword, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-full text-sm border border-emerald-500/20"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm border border-primary/20"
                       >
                         {keyword}
                         <button
@@ -616,7 +614,7 @@ export default function BrandPage() {
                     ))}
                     <Input
                       placeholder="Add keyword..."
-                      className="w-32 bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-8"
+                      className="w-32 h-8"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && e.currentTarget.value.trim()) {
                           updateField("keywords", [...brand.keywords, e.currentTarget.value.trim()]);
@@ -640,35 +638,35 @@ export default function BrandPage() {
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Contact Email</Label>
+                    <Label className="text-muted-foreground text-sm">Contact Email</Label>
                     <Input
                       type="email"
                       value={brand.contactEmail || ""}
                       onChange={(e) => updateField("contactEmail", e.target.value)}
                       placeholder="hello@company.com"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#9a9a9a] text-sm">Contact Phone</Label>
+                    <Label className="text-muted-foreground text-sm">Contact Phone</Label>
                     <Input
                       value={brand.contactPhone || ""}
                       onChange={(e) => updateField("contactPhone", e.target.value)}
                       placeholder="+1 (555) 000-0000"
-                      className="bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                      className="h-11"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[#9a9a9a] text-sm">Social Media Links</Label>
+                  <Label className="text-muted-foreground text-sm">Social Media Links</Label>
                   {[
                     { key: "twitter", label: "Twitter / X", placeholder: "https://twitter.com/..." },
                     { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/..." },
                     { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/..." },
                   ].map(({ key, label, placeholder }) => (
                     <div key={key} className="flex gap-3 items-center">
-                      <Label className="w-24 text-right text-[#6b6b6b] text-sm">{label}</Label>
+                      <Label className="w-24 text-right text-muted-foreground text-sm">{label}</Label>
                       <Input
                         value={brand.socialLinks?.[key as keyof typeof brand.socialLinks] || ""}
                         onChange={(e) =>
@@ -678,7 +676,7 @@ export default function BrandPage() {
                           })
                         }
                         placeholder={placeholder}
-                        className="flex-1 bg-[#0f0f12] border-[#2a2a30] text-white focus:border-[#3a3a40] h-11"
+                        className="flex-1 h-11"
                       />
                     </div>
                   ))}
@@ -689,7 +687,7 @@ export default function BrandPage() {
         </div>
 
         {/* Right side - Live Preview */}
-        <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 bg-[#0f0f12] border-l border-[#2a2a30]/50 items-center justify-center p-8 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 bg-muted border-l border-border items-center justify-center p-8 relative overflow-hidden">
           {/* Subtle gradient overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -709,7 +707,7 @@ export default function BrandPage() {
               className="relative z-10 w-full max-w-md"
             >
               {/* Mock App Preview */}
-              <div className="rounded-2xl overflow-hidden shadow-2xl border border-[#2a2a30]/50 bg-[#0a0a0a]">
+              <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card">
                 {/* App Header */}
                 <motion.div
                   className="h-14 flex items-center justify-between px-4"
@@ -749,10 +747,10 @@ export default function BrandPage() {
                   <div className="space-y-2">
                     <motion.div
                       className="h-3 rounded-full w-3/4"
-                      style={{ backgroundColor: brand.textColor || "#ffffff" }}
-                      animate={{ backgroundColor: brand.textColor || "#ffffff" }}
+                      style={{ backgroundColor: brand.textColor || "currentColor" }}
+                      animate={{ backgroundColor: brand.textColor || "currentColor" }}
                     />
-                    <div className="h-2 bg-[#2a2a30] rounded-full w-1/2" />
+                    <div className="h-2 bg-muted-foreground/30 rounded-full w-1/2" />
                   </div>
 
                   {/* CTA Buttons */}
@@ -793,14 +791,14 @@ export default function BrandPage() {
                           style={{ backgroundColor: color || "#10b981" }}
                           animate={{ backgroundColor: color || "#10b981" }}
                         />
-                        <div className="h-2 bg-[#2a2a30] rounded w-3/4" />
+                        <div className="h-2 bg-muted-foreground/30 rounded w-3/4" />
                       </motion.div>
                     ))}
                   </div>
                 </div>
 
                 {/* App Footer */}
-                <div className="px-5 py-3 border-t border-[#2a2a30]/50 flex items-center justify-between">
+                <div className="px-5 py-3 border-t border-border flex items-center justify-between">
                   <div className="flex gap-2">
                     {brand.brandColors.slice(0, 4).map((color, i) => (
                       <motion.div
@@ -814,7 +812,7 @@ export default function BrandPage() {
                     ))}
                   </div>
                   {brand.website && (
-                    <span className="text-[#4a4a4a] text-xs flex items-center gap-1">
+                    <span className="text-muted-foreground text-xs flex items-center gap-1">
                       <Globe className="w-3 h-3" />
                       {brand.website.replace(/^https?:\/\//, "")}
                     </span>
@@ -824,7 +822,7 @@ export default function BrandPage() {
 
               {/* Caption */}
               <motion.p
-                className="text-center text-[#6b6b6b] text-sm mt-6 flex items-center justify-center gap-2"
+                className="text-center text-muted-foreground text-sm mt-6 flex items-center justify-center gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}

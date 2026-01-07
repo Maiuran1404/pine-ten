@@ -97,11 +97,7 @@ const statusConfig: Record<string, { color: string; bgColor: string; label: stri
 
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <div
-    className={cn("rounded-xl overflow-hidden border border-[#2a2a30]/50", className)}
-    style={{
-      background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-      backdropFilter: 'blur(12px)',
-    }}
+    className={cn("rounded-xl overflow-hidden border border-border bg-card", className)}
   >
     {children}
   </div>
@@ -269,25 +265,25 @@ export default function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+      <div className="min-h-full bg-background p-6 space-y-6">
         <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg bg-[#2a2a30]" />
+          <Skeleton className="h-10 w-10 rounded-lg bg-muted" />
           <div className="space-y-2">
-            <Skeleton className="h-7 w-64 bg-[#2a2a30]" />
-            <Skeleton className="h-4 w-32 bg-[#2a2a30]" />
+            <Skeleton className="h-7 w-64 bg-muted" />
+            <Skeleton className="h-4 w-32 bg-muted" />
           </div>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
             <GlassCard className="p-6">
-              <Skeleton className="h-6 w-32 bg-[#2a2a30]" />
-              <Skeleton className="h-32 w-full mt-4 bg-[#2a2a30]" />
+              <Skeleton className="h-6 w-32 bg-muted" />
+              <Skeleton className="h-32 w-full mt-4 bg-muted" />
             </GlassCard>
           </div>
           <div>
             <GlassCard className="p-6">
-              <Skeleton className="h-6 w-24 bg-[#2a2a30]" />
-              <Skeleton className="h-24 w-full mt-4 bg-[#2a2a30]" />
+              <Skeleton className="h-6 w-24 bg-muted" />
+              <Skeleton className="h-24 w-full mt-4 bg-muted" />
             </GlassCard>
           </div>
         </div>
@@ -297,11 +293,11 @@ export default function TaskDetailPage() {
 
   if (error || !task) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+      <div className="min-h-full bg-background p-6 space-y-6">
         <Button
           variant="ghost"
           asChild
-          className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
         >
           <Link href="/dashboard/tasks">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -309,15 +305,15 @@ export default function TaskDetailPage() {
           </Link>
         </Button>
         <GlassCard className="p-12 text-center">
-          <AlertCircle className="h-12 w-12 mx-auto text-[#6b6b6b] mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             {error || "Task not found"}
           </h2>
-          <p className="text-[#6b6b6b] mb-4">
+          <p className="text-muted-foreground mb-4">
             The task you&apos;re looking for doesn&apos;t exist or you
             don&apos;t have permission to view it.
           </p>
-          <Button asChild className="bg-white text-black hover:bg-white/90">
+          <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Link href="/dashboard/tasks">View All Tasks</Link>
           </Button>
         </GlassCard>
@@ -333,7 +329,7 @@ export default function TaskDetailPage() {
   const hasRevisionsLeft = task.revisionsUsed < task.maxRevisions;
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+    <div className="min-h-full bg-background p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
@@ -341,14 +337,14 @@ export default function TaskDetailPage() {
             variant="ghost"
             size="icon"
             asChild
-            className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 rounded-lg"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
           >
             <Link href="/dashboard/tasks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-white">{task.title}</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{task.title}</h1>
             <div className="flex items-center gap-2 mt-2">
               <span className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border",
@@ -359,7 +355,7 @@ export default function TaskDetailPage() {
                 {status.label}
               </span>
               {task.category && (
-                <span className="inline-flex px-2.5 py-1 rounded-full text-xs border border-[#2a2a30] text-[#6b6b6b]">
+                <span className="inline-flex px-2.5 py-1 rounded-full text-xs border border-border text-muted-foreground">
                   {task.category.name}
                 </span>
               )}
@@ -379,14 +375,14 @@ export default function TaskDetailPage() {
                   <CheckCircle2 className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">Ready to approve?</p>
-                  <p className="text-xs text-[#6b6b6b]">Review the deliverables and approve when satisfied</p>
+                  <p className="text-sm font-medium text-foreground">Ready to approve?</p>
+                  <p className="text-xs text-muted-foreground">Review the deliverables and approve when satisfied</p>
                 </div>
               </div>
               <Button
                 onClick={handleApprove}
                 disabled={isApproving}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-foreground"
               >
                 {isApproving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -400,15 +396,15 @@ export default function TaskDetailPage() {
 
           {/* Chat / Messages with Deliverables - MOVED TO TOP */}
           <GlassCard>
-            <div className="p-5 border-b border-[#2a2a30]/40">
+            <div className="p-5 border-b border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-[#6b6b6b]" />
-                  <h2 className="text-sm font-medium text-white">Conversation</h2>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Conversation</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   {(isInReview || task.status === "REVISION_REQUESTED") && (
-                    <span className="text-xs text-[#6b6b6b]">
+                    <span className="text-xs text-muted-foreground">
                       Revisions: {task.revisionsUsed}/{task.maxRevisions}
                     </span>
                   )}
@@ -416,7 +412,7 @@ export default function TaskDetailPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowFullChat(true)}
-                    className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 h-8 px-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 px-2"
                   >
                     <Expand className="h-4 w-4 mr-1" />
                     <span className="text-xs">Open Chat</span>
@@ -429,9 +425,9 @@ export default function TaskDetailPage() {
               <div className="space-y-4 max-h-[500px] overflow-y-auto mb-4">
                 {task.messages.length === 0 && deliverables.length === 0 ? (
                   <div className="text-center py-8">
-                    <MessageSquare className="h-10 w-10 mx-auto text-[#2a2a30] mb-3" />
-                    <p className="text-sm text-[#4a4a4a]">No messages yet</p>
-                    <p className="text-xs text-[#3a3a3a] mt-1">Your designer will communicate with you here</p>
+                    <MessageSquare className="h-10 w-10 mx-auto text-muted mb-3" />
+                    <p className="text-sm text-muted-foreground">No messages yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Your designer will communicate with you here</p>
                   </div>
                 ) : (
                   <>
@@ -440,43 +436,43 @@ export default function TaskDetailPage() {
                       <div key={msg.id} className="flex gap-3">
                         <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarImage src={msg.senderImage || undefined} />
-                          <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b] text-xs">
+                          <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                             {msg.senderName?.[0]?.toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-sm text-white">
+                            <span className="font-medium text-sm text-foreground">
                               {msg.senderName}
                             </span>
-                            <span className="text-xs text-[#4a4a4a]">
+                            <span className="text-xs text-muted-foreground">
                               {new Date(msg.createdAt).toLocaleString()}
                             </span>
                           </div>
-                          <p className="text-sm text-[#9a9a9a] mt-1 whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{msg.content}</p>
                         </div>
                       </div>
                     ))}
 
                     {/* Show deliverables inline if in review */}
                     {deliverables.length > 0 && (isInReview || task.status === "COMPLETED") && (
-                      <div className="my-4 p-4 rounded-lg border border-[#2a2a30]/60 bg-[#1a1a1f]/50">
+                      <div className="my-4 p-4 rounded-lg border border-border/60 bg-muted/50">
                         <div className="flex items-center gap-2 mb-3">
                           <FileText className="h-4 w-4 text-green-400" />
-                          <span className="text-sm font-medium text-white">Deliverables submitted</span>
+                          <span className="text-sm font-medium text-foreground">Deliverables submitted</span>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           {deliverables.map((file) => (
                             <div
                               key={file.id}
-                              className="group relative rounded-lg overflow-hidden border border-[#2a2a30]/40"
+                              className="group relative rounded-lg overflow-hidden border border-border/40"
                             >
                               {file.fileType.startsWith("image/") ? (
                                 <a
                                   href={file.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="block aspect-video relative bg-[#1a1a1f]"
+                                  className="block aspect-video relative bg-muted"
                                 >
                                   <Image
                                     src={file.fileUrl}
@@ -485,7 +481,7 @@ export default function TaskDetailPage() {
                                     className="object-cover"
                                   />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <ExternalLink className="h-5 w-5 text-white" />
+                                    <ExternalLink className="h-5 w-5 text-foreground" />
                                   </div>
                                 </a>
                               ) : (
@@ -493,21 +489,21 @@ export default function TaskDetailPage() {
                                   href={file.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex flex-col items-center justify-center p-3 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
+                                  className="flex flex-col items-center justify-center p-3 aspect-video bg-muted hover:bg-muted transition-colors"
                                 >
                                   <FileIcon className="h-8 w-8 text-green-400/50 mb-1" />
-                                  <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
+                                  <p className="text-xs text-center text-muted-foreground truncate w-full">
                                     {file.fileName}
                                   </p>
                                 </a>
                               )}
-                              <div className="p-2 bg-[#0a0a0a] flex items-center justify-between">
-                                <p className="text-xs text-[#9a9a9a] truncate flex-1">{file.fileName}</p>
+                              <div className="p-2 bg-background flex items-center justify-between">
+                                <p className="text-xs text-muted-foreground truncate flex-1">{file.fileName}</p>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   asChild
-                                  className="h-6 w-6 p-0 text-[#6b6b6b] hover:text-white"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                 >
                                   <a href={file.fileUrl} download>
                                     <Download className="h-3 w-3" />
@@ -552,7 +548,7 @@ export default function TaskDetailPage() {
                           ? `Included in your revisions (${task.revisionsUsed}/${task.maxRevisions} used)`
                           : "This may require additional credits"}
                       </p>
-                      <p className="text-xs text-[#9a9a9a] mt-1">{feedbackAnalysis.reason}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{feedbackAnalysis.reason}</p>
                       {!feedbackAnalysis.isRevision && feedbackAnalysis.estimatedCredits && (
                         <p className="text-xs text-orange-400 mt-1">
                           Estimated: {feedbackAnalysis.estimatedCredits} credits
@@ -569,7 +565,7 @@ export default function TaskDetailPage() {
                         feedbackAnalysis.isRevision
                           ? "bg-green-600 hover:bg-green-700"
                           : "bg-orange-600 hover:bg-orange-700",
-                        "text-white"
+                        "text-foreground"
                       )}
                     >
                       {isSendingMessage ? (
@@ -581,7 +577,7 @@ export default function TaskDetailPage() {
                       onClick={() => setFeedbackAnalysis(null)}
                       variant="ghost"
                       size="sm"
-                      className="text-[#6b6b6b] hover:text-white"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       Cancel
                     </Button>
@@ -591,7 +587,7 @@ export default function TaskDetailPage() {
 
               {/* Message Input */}
               {canChat && !feedbackAnalysis && (
-                <div className="pt-4 border-t border-[#2a2a30]/40">
+                <div className="pt-4 border-t border-border/40">
                   <Textarea
                     placeholder={isInReview ? "Share your feedback on the deliverables..." : "Type your message..."}
                     value={message}
@@ -606,10 +602,10 @@ export default function TaskDetailPage() {
                         }
                       }
                     }}
-                    className="w-full min-h-[80px] bg-[#1a1a1f] border-[#2a2a30] text-white placeholder:text-[#4a4a4a] resize-none mb-3"
+                    className="w-full min-h-[80px] bg-muted border-border text-foreground placeholder:text-muted-foreground resize-none mb-3"
                   />
                   <div className="flex items-center justify-between">
-                    <div className="text-xs text-[#4a4a4a]">
+                    <div className="text-xs text-muted-foreground">
                       {isInReview && hasRevisionsLeft ? (
                         <span>Your feedback will be analyzed to determine if it&apos;s covered by your revisions</span>
                       ) : isInReview && !hasRevisionsLeft ? (
@@ -621,7 +617,7 @@ export default function TaskDetailPage() {
                         <Button
                           onClick={analyzeFeedback}
                           disabled={!message.trim() || isAnalyzing}
-                          className="bg-white text-black hover:bg-white/90"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                           {isAnalyzing ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -634,7 +630,7 @@ export default function TaskDetailPage() {
                         <Button
                           onClick={() => handleSendMessage()}
                           disabled={!message.trim() || isSendingMessage}
-                          className="bg-white text-black hover:bg-white/90"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                           {isSendingMessage ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -649,10 +645,10 @@ export default function TaskDetailPage() {
               )}
 
               {!canChat && task.status === "COMPLETED" && (
-                <div className="pt-4 border-t border-[#2a2a30]/40 text-center">
+                <div className="pt-4 border-t border-border/40 text-center">
                   <CheckCircle2 className="h-8 w-8 mx-auto text-green-400 mb-2" />
                   <p className="text-sm text-green-400 font-medium">Task Completed</p>
-                  <p className="text-xs text-[#4a4a4a] mt-1">Thank you for using our service!</p>
+                  <p className="text-xs text-muted-foreground mt-1">Thank you for using our service!</p>
                 </div>
               )}
             </div>
@@ -660,11 +656,11 @@ export default function TaskDetailPage() {
 
           {/* Description */}
           <GlassCard>
-            <div className="p-5 border-b border-[#2a2a30]/40">
-              <h2 className="text-sm font-medium text-white">Description</h2>
+            <div className="p-5 border-b border-border/40">
+              <h2 className="text-sm font-medium text-foreground">Description</h2>
             </div>
             <div className="p-5">
-              <p className="text-[#9a9a9a] whitespace-pre-wrap">{task.description}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
             </div>
           </GlassCard>
 
@@ -680,19 +676,19 @@ export default function TaskDetailPage() {
             };
             return (
               <GlassCard>
-                <div className="p-5 border-b border-[#2a2a30]/40">
-                  <h2 className="text-sm font-medium text-white">Requirements</h2>
+                <div className="p-5 border-b border-border/40">
+                  <h2 className="text-sm font-medium text-foreground">Requirements</h2>
                 </div>
                 <div className="p-5 space-y-5">
                   {/* Project Type */}
                   {req.projectType && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <FolderOpen className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a]">Project Type</p>
-                        <p className="text-sm text-white">{req.projectType}</p>
+                        <p className="text-xs text-muted-foreground">Project Type</p>
+                        <p className="text-sm text-foreground">{req.projectType}</p>
                       </div>
                     </div>
                   )}
@@ -700,16 +696,16 @@ export default function TaskDetailPage() {
                   {/* Platforms */}
                   {req.platforms && req.platforms.length > 0 && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <Monitor className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <Monitor className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a] mb-2">Platforms</p>
+                        <p className="text-xs text-muted-foreground mb-2">Platforms</p>
                         <div className="flex flex-wrap gap-2">
                           {req.platforms.map((platform, index) => (
                             <span
                               key={index}
-                              className="inline-flex px-2.5 py-1 rounded-full text-xs border border-[#2a2a30] bg-[#2a2a30]/30 text-[#9a9a9a]"
+                              className="inline-flex px-2.5 py-1 rounded-full text-xs border border-border bg-muted/30 text-muted-foreground"
                             >
                               {platform}
                             </span>
@@ -722,16 +718,16 @@ export default function TaskDetailPage() {
                   {/* Dimensions */}
                   {req.dimensions && req.dimensions.length > 0 && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <Maximize2 className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <Maximize2 className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a] mb-2">Dimensions</p>
+                        <p className="text-xs text-muted-foreground mb-2">Dimensions</p>
                         <div className="flex flex-wrap gap-2">
                           {req.dimensions.map((dimension, index) => (
                             <span
                               key={index}
-                              className="inline-flex px-2.5 py-1 rounded-full text-xs border border-[#2a2a30] bg-[#2a2a30]/30 text-[#9a9a9a]"
+                              className="inline-flex px-2.5 py-1 rounded-full text-xs border border-border bg-muted/30 text-muted-foreground"
                             >
                               {dimension}
                             </span>
@@ -744,12 +740,12 @@ export default function TaskDetailPage() {
                   {/* Key Message */}
                   {req.keyMessage && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <Target className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <Target className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a]">Key Message</p>
-                        <p className="text-sm text-[#9a9a9a]">{req.keyMessage}</p>
+                        <p className="text-xs text-muted-foreground">Key Message</p>
+                        <p className="text-sm text-muted-foreground">{req.keyMessage}</p>
                       </div>
                     </div>
                   )}
@@ -757,15 +753,15 @@ export default function TaskDetailPage() {
                   {/* Deliverables */}
                   {req.deliverables && req.deliverables.length > 0 && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <ListChecks className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <ListChecks className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a] mb-2">Deliverables</p>
+                        <p className="text-xs text-muted-foreground mb-2">Deliverables</p>
                         <ul className="space-y-1.5">
                           {req.deliverables.map((deliverable, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-[#9a9a9a]">
-                              <span className="text-[#4a4a4a] mt-1.5">•</span>
+                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="text-muted-foreground mt-1.5">•</span>
                               {deliverable}
                             </li>
                           ))}
@@ -777,12 +773,12 @@ export default function TaskDetailPage() {
                   {/* Additional Notes */}
                   {req.additionalNotes && (
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center flex-shrink-0">
-                        <StickyNote className="h-4 w-4 text-[#6b6b6b]" />
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <StickyNote className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-[#4a4a4a]">Additional Notes</p>
-                        <p className="text-sm text-[#9a9a9a]">{req.additionalNotes}</p>
+                        <p className="text-xs text-muted-foreground">Additional Notes</p>
+                        <p className="text-sm text-muted-foreground">{req.additionalNotes}</p>
                       </div>
                     </div>
                   )}
@@ -794,26 +790,26 @@ export default function TaskDetailPage() {
           {/* Reference Files */}
           {attachments.length > 0 && (
             <GlassCard>
-              <div className="p-5 border-b border-[#2a2a30]/40">
+              <div className="p-5 border-b border-border/40">
                 <div className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-[#6b6b6b]" />
-                  <h2 className="text-sm font-medium text-white">Your Attachments</h2>
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Your Attachments</h2>
                 </div>
-                <p className="text-xs text-[#4a4a4a] mt-1">Reference files you provided</p>
+                <p className="text-xs text-muted-foreground mt-1">Reference files you provided</p>
               </div>
               <div className="p-5">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {attachments.map((file) => (
                     <div
                       key={file.id}
-                      className="group relative rounded-lg overflow-hidden border border-[#2a2a30]/40"
+                      className="group relative rounded-lg overflow-hidden border border-border/40"
                     >
                       {file.fileType.startsWith("image/") ? (
                         <a
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block aspect-video relative bg-[#1a1a1f]"
+                          className="block aspect-video relative bg-muted"
                         >
                           <Image
                             src={file.fileUrl}
@@ -822,7 +818,7 @@ export default function TaskDetailPage() {
                             className="object-cover"
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <ExternalLink className="h-6 w-6 text-white" />
+                            <ExternalLink className="h-6 w-6 text-foreground" />
                           </div>
                         </a>
                       ) : (
@@ -830,17 +826,17 @@ export default function TaskDetailPage() {
                           href={file.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center p-4 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
+                          className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted transition-colors"
                         >
-                          <FileIcon className="h-10 w-10 text-[#4a4a4a] mb-2" />
-                          <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
+                          <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                          <p className="text-xs text-center text-muted-foreground truncate w-full">
                             {file.fileName}
                           </p>
                         </a>
                       )}
-                      <div className="p-2 bg-[#0a0a0a]">
-                        <p className="text-xs text-[#9a9a9a] truncate">{file.fileName}</p>
-                        <p className="text-xs text-[#4a4a4a]">
+                      <div className="p-2 bg-background">
+                        <p className="text-xs text-muted-foreground truncate">{file.fileName}</p>
+                        <p className="text-xs text-muted-foreground">
                           {(file.fileSize / 1024).toFixed(1)} KB
                         </p>
                       </div>
@@ -856,29 +852,29 @@ export default function TaskDetailPage() {
         <div className="space-y-6">
           {/* Task Details */}
           <GlassCard>
-            <div className="p-5 border-b border-[#2a2a30]/40">
-              <h2 className="text-sm font-medium text-white">Details</h2>
+            <div className="p-5 border-b border-border/40">
+              <h2 className="text-sm font-medium text-foreground">Details</h2>
             </div>
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
-                  <Coins className="h-4 w-4 text-[#6b6b6b]" />
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <Coins className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#4a4a4a]">Credits Used</p>
-                  <p className="text-sm font-medium text-white">{task.creditsUsed} credits</p>
+                  <p className="text-xs text-muted-foreground">Credits Used</p>
+                  <p className="text-sm font-medium text-foreground">{task.creditsUsed} credits</p>
                 </div>
               </div>
 
-              <div className="h-px bg-[#2a2a30]/40" />
+              <div className="h-px bg-muted/40" />
 
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
-                  <RefreshCw className="h-4 w-4 text-[#6b6b6b]" />
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <RefreshCw className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#4a4a4a]">Revisions</p>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-xs text-muted-foreground">Revisions</p>
+                  <p className="text-sm font-medium text-foreground">
                     {task.revisionsUsed} / {task.maxRevisions} used
                   </p>
                 </div>
@@ -886,28 +882,28 @@ export default function TaskDetailPage() {
 
               {task.estimatedHours && (
                 <>
-                  <div className="h-px bg-[#2a2a30]/40" />
+                  <div className="h-px bg-muted/40" />
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-[#6b6b6b]" />
+                    <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-xs text-[#4a4a4a]">Estimated Time</p>
-                      <p className="text-sm font-medium text-white">{task.estimatedHours} hours</p>
+                      <p className="text-xs text-muted-foreground">Estimated Time</p>
+                      <p className="text-sm font-medium text-foreground">{task.estimatedHours} hours</p>
                     </div>
                   </div>
                 </>
               )}
 
-              <div className="h-px bg-[#2a2a30]/40" />
+              <div className="h-px bg-muted/40" />
 
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
-                  <Calendar className="h-4 w-4 text-[#6b6b6b]" />
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#4a4a4a]">Created</p>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-xs text-muted-foreground">Created</p>
+                  <p className="text-sm font-medium text-foreground">
                     {new Date(task.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -915,14 +911,14 @@ export default function TaskDetailPage() {
 
               {task.deadline && (
                 <>
-                  <div className="h-px bg-[#2a2a30]/40" />
+                  <div className="h-px bg-muted/40" />
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#2a2a30]/50 flex items-center justify-center">
-                      <Calendar className="h-4 w-4 text-[#6b6b6b]" />
+                    <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-xs text-[#4a4a4a]">Deadline</p>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-xs text-muted-foreground">Deadline</p>
+                      <p className="text-sm font-medium text-foreground">
                         {new Date(task.deadline).toLocaleDateString()}
                       </p>
                     </div>
@@ -932,13 +928,13 @@ export default function TaskDetailPage() {
 
               {task.completedAt && (
                 <>
-                  <div className="h-px bg-[#2a2a30]/40" />
+                  <div className="h-px bg-muted/40" />
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
                       <CheckCircle2 className="h-4 w-4 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-[#4a4a4a]">Completed</p>
+                      <p className="text-xs text-muted-foreground">Completed</p>
                       <p className="text-sm font-medium text-green-400">
                         {new Date(task.completedAt).toLocaleDateString()}
                       </p>
@@ -952,24 +948,24 @@ export default function TaskDetailPage() {
           {/* Assigned Freelancer */}
           {task.freelancer && (
             <GlassCard>
-              <div className="p-5 border-b border-[#2a2a30]/40">
+              <div className="p-5 border-b border-border/40">
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-[#6b6b6b]" />
-                  <h2 className="text-sm font-medium text-white">Designer</h2>
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Designer</h2>
                 </div>
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={task.freelancer.image || undefined} />
-                    <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b]">
+                    <AvatarFallback className="bg-muted text-muted-foreground">
                       {task.freelancer.name?.[0]?.toUpperCase() || "F"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-white">{task.freelancer.name}</p>
+                    <p className="font-medium text-foreground">{task.freelancer.name}</p>
                     {task.assignedAt && (
-                      <p className="text-xs text-[#4a4a4a]">
+                      <p className="text-xs text-muted-foreground">
                         Assigned {new Date(task.assignedAt).toLocaleDateString()}
                       </p>
                     )}
@@ -982,11 +978,11 @@ export default function TaskDetailPage() {
           {/* Waiting for Assignment */}
           {!task.freelancer && (task.status === "PENDING" || task.status === "ASSIGNED") && (
             <GlassCard className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#2a2a30]/50 flex items-center justify-center mx-auto mb-3">
-                <Clock className="h-6 w-6 text-[#6b6b6b]" />
+              <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                <Clock className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="font-medium text-white">Finding Designer</p>
-              <p className="text-sm text-[#4a4a4a] mt-1">
+              <p className="font-medium text-foreground">Finding Designer</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 We&apos;re matching you with the best designer for this task
               </p>
             </GlassCard>
@@ -996,20 +992,20 @@ export default function TaskDetailPage() {
 
       {/* Full Screen Chat Modal */}
       {showFullChat && (
-        <div className="fixed inset-0 z-50 bg-[#0a0a0a]">
+        <div className="fixed inset-0 z-50 bg-background">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2a30]/40">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowFullChat(false)}
-                className="text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50 rounded-lg"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
               >
                 <X className="h-5 w-5" />
               </Button>
               <div>
-                <h2 className="text-lg font-semibold text-white">{task.title}</h2>
+                <h2 className="text-lg font-semibold text-foreground">{task.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={cn(
                     "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border",
@@ -1020,7 +1016,7 @@ export default function TaskDetailPage() {
                     {status.label}
                   </span>
                   {task.freelancer && (
-                    <span className="text-xs text-[#6b6b6b]">
+                    <span className="text-xs text-muted-foreground">
                       with {task.freelancer.name}
                     </span>
                   )}
@@ -1029,14 +1025,14 @@ export default function TaskDetailPage() {
             </div>
             {(isInReview || task.status === "REVISION_REQUESTED") && (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-[#6b6b6b]">
+                <span className="text-sm text-muted-foreground">
                   Revisions: {task.revisionsUsed}/{task.maxRevisions}
                 </span>
                 {isInReview && deliverables.length > 0 && (
                   <Button
                     onClick={handleApprove}
                     disabled={isApproving}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-foreground"
                   >
                     {isApproving ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1055,11 +1051,11 @@ export default function TaskDetailPage() {
             <div className="max-w-3xl mx-auto space-y-6">
               {task.messages.length === 0 && deliverables.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-20">
-                  <div className="w-20 h-20 rounded-full bg-[#1a1a1f] flex items-center justify-center mb-4">
-                    <MessageSquare className="h-10 w-10 text-[#2a2a30]" />
+                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <MessageSquare className="h-10 w-10 text-muted" />
                   </div>
-                  <p className="text-lg text-[#4a4a4a]">No messages yet</p>
-                  <p className="text-sm text-[#3a3a3a] mt-1">Your designer will communicate with you here</p>
+                  <p className="text-lg text-muted-foreground">No messages yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">Your designer will communicate with you here</p>
                 </div>
               ) : (
                 <>
@@ -1068,48 +1064,48 @@ export default function TaskDetailPage() {
                     <div key={msg.id} className="flex gap-4">
                       <Avatar className="h-10 w-10 flex-shrink-0">
                         <AvatarImage src={msg.senderImage || undefined} />
-                        <AvatarFallback className="bg-[#2a2a30] text-[#6b6b6b]">
+                        <AvatarFallback className="bg-muted text-muted-foreground">
                           {msg.senderName?.[0]?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="font-medium text-white">
+                          <span className="font-medium text-foreground">
                             {msg.senderName}
                           </span>
-                          <span className="text-xs text-[#4a4a4a]">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(msg.createdAt).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-[#9a9a9a] mt-2 whitespace-pre-wrap break-words">{msg.content}</p>
+                        <p className="text-muted-foreground mt-2 whitespace-pre-wrap break-words">{msg.content}</p>
                       </div>
                     </div>
                   ))}
 
                   {/* Show deliverables inline if in review */}
                   {deliverables.length > 0 && (isInReview || task.status === "COMPLETED") && (
-                    <div className="my-6 p-6 rounded-xl border border-[#2a2a30]/60 bg-[#1a1a1f]/50">
+                    <div className="my-6 p-6 rounded-xl border border-border/60 bg-muted/50">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                           <FileText className="h-5 w-5 text-green-400" />
                         </div>
                         <div>
-                          <span className="font-medium text-white">Deliverables submitted</span>
-                          <p className="text-xs text-[#6b6b6b]">{deliverables.length} file{deliverables.length !== 1 ? 's' : ''}</p>
+                          <span className="font-medium text-foreground">Deliverables submitted</span>
+                          <p className="text-xs text-muted-foreground">{deliverables.length} file{deliverables.length !== 1 ? 's' : ''}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {deliverables.map((file) => (
                           <div
                             key={file.id}
-                            className="group relative rounded-lg overflow-hidden border border-[#2a2a30]/40"
+                            className="group relative rounded-lg overflow-hidden border border-border/40"
                           >
                             {file.fileType.startsWith("image/") ? (
                               <a
                                 href={file.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block aspect-video relative bg-[#1a1a1f]"
+                                className="block aspect-video relative bg-muted"
                               >
                                 <Image
                                   src={file.fileUrl}
@@ -1118,7 +1114,7 @@ export default function TaskDetailPage() {
                                   className="object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <ExternalLink className="h-5 w-5 text-white" />
+                                  <ExternalLink className="h-5 w-5 text-foreground" />
                                 </div>
                               </a>
                             ) : (
@@ -1126,21 +1122,21 @@ export default function TaskDetailPage() {
                                 href={file.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex flex-col items-center justify-center p-4 aspect-video bg-[#1a1a1f] hover:bg-[#2a2a30] transition-colors"
+                                className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted transition-colors"
                               >
                                 <FileIcon className="h-10 w-10 text-green-400/50 mb-2" />
-                                <p className="text-xs text-center text-[#6b6b6b] truncate w-full">
+                                <p className="text-xs text-center text-muted-foreground truncate w-full">
                                   {file.fileName}
                                 </p>
                               </a>
                             )}
-                            <div className="p-3 bg-[#0a0a0a] flex items-center justify-between">
-                              <p className="text-sm text-[#9a9a9a] truncate flex-1">{file.fileName}</p>
+                            <div className="p-3 bg-background flex items-center justify-between">
+                              <p className="text-sm text-muted-foreground truncate flex-1">{file.fileName}</p>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 asChild
-                                className="h-7 w-7 p-0 text-[#6b6b6b] hover:text-white"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                               >
                                 <a href={file.fileUrl} download>
                                   <Download className="h-4 w-4" />
@@ -1187,7 +1183,7 @@ export default function TaskDetailPage() {
                         ? `Included in your revisions (${task.revisionsUsed}/${task.maxRevisions} used)`
                         : "This may require additional credits"}
                     </p>
-                    <p className="text-xs text-[#9a9a9a] mt-1">{feedbackAnalysis.reason}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{feedbackAnalysis.reason}</p>
                     {!feedbackAnalysis.isRevision && feedbackAnalysis.estimatedCredits && (
                       <p className="text-xs text-orange-400 mt-1">
                         Estimated: {feedbackAnalysis.estimatedCredits} credits
@@ -1204,7 +1200,7 @@ export default function TaskDetailPage() {
                       feedbackAnalysis.isRevision
                         ? "bg-green-600 hover:bg-green-700"
                         : "bg-orange-600 hover:bg-orange-700",
-                      "text-white"
+                      "text-foreground"
                     )}
                   >
                     {isSendingMessage ? (
@@ -1216,7 +1212,7 @@ export default function TaskDetailPage() {
                     onClick={() => setFeedbackAnalysis(null)}
                     variant="ghost"
                     size="sm"
-                    className="text-[#6b6b6b] hover:text-white"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     Cancel
                   </Button>
@@ -1227,7 +1223,7 @@ export default function TaskDetailPage() {
 
           {/* Message Input - Full Chat */}
           {canChat && !feedbackAnalysis && (
-            <div className="px-6 py-4 border-t border-[#2a2a30]/40">
+            <div className="px-6 py-4 border-t border-border/40">
               <div className="max-w-3xl mx-auto">
                 <div className="flex gap-3">
                   <Textarea
@@ -1244,14 +1240,14 @@ export default function TaskDetailPage() {
                         }
                       }
                     }}
-                    className="flex-1 min-h-[60px] max-h-[120px] bg-[#1a1a1f] border-[#2a2a30] text-white placeholder:text-[#4a4a4a] resize-none"
+                    className="flex-1 min-h-[60px] max-h-[120px] bg-muted border-border text-foreground placeholder:text-muted-foreground resize-none"
                   />
                   <div className="flex flex-col justify-end gap-2">
                     {isInReview ? (
                       <Button
                         onClick={analyzeFeedback}
                         disabled={!message.trim() || isAnalyzing}
-                        className="bg-white text-black hover:bg-white/90 px-6"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 px-6"
                       >
                         {isAnalyzing ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1263,7 +1259,7 @@ export default function TaskDetailPage() {
                       <Button
                         onClick={() => handleSendMessage()}
                         disabled={!message.trim() || isSendingMessage}
-                        className="bg-white text-black hover:bg-white/90 px-6"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 px-6"
                       >
                         {isSendingMessage ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1275,7 +1271,7 @@ export default function TaskDetailPage() {
                   </div>
                 </div>
                 {isInReview && (
-                  <p className="text-xs text-[#4a4a4a] mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {hasRevisionsLeft
                       ? "Your feedback will be analyzed to determine if it's covered by your revisions"
                       : "No revisions left - additional feedback may cost credits"}
@@ -1286,11 +1282,11 @@ export default function TaskDetailPage() {
           )}
 
           {!canChat && task.status === "COMPLETED" && (
-            <div className="px-6 py-6 border-t border-[#2a2a30]/40">
+            <div className="px-6 py-6 border-t border-border/40">
               <div className="max-w-3xl mx-auto text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto text-green-400 mb-2" />
                 <p className="text-sm text-green-400 font-medium">Task Completed</p>
-                <p className="text-xs text-[#4a4a4a] mt-1">Thank you for using our service!</p>
+                <p className="text-xs text-muted-foreground mt-1">Thank you for using our service!</p>
               </div>
             </div>
           )}

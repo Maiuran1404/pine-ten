@@ -125,7 +125,7 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
       title: t.title,
       href: `/dashboard/tasks/${t.id}`,
       icon: FolderKanban,
-      iconClassName: "text-[#6b6b6b]",
+      iconClassName: "text-muted-foreground",
     })),
   ].slice(0, 5);
 

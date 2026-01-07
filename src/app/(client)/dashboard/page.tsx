@@ -353,7 +353,7 @@ function DashboardContent() {
 
   // Get credit indicator color based on amount
   const getCreditColor = () => {
-    if (credits === null) return { dot: "bg-gray-500", text: "text-[#6b6b6b]" };
+    if (credits === null) return { dot: "bg-gray-500", text: "text-muted-foreground" };
     if (credits === 0)
       return {
         dot: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]",
@@ -420,19 +420,17 @@ function DashboardContent() {
         </filter>
       </svg>
 
-      {/* Curtain light from top - subtle ambient glow */}
+      {/* Curtain light from top - subtle ambient glow (dark mode only) */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none dark:opacity-100 opacity-0"
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(255, 255, 255, 0.06) 0%,
-            rgba(255, 255, 255, 0.04) 20%,
-            rgba(255, 255, 255, 0.025) 40%,
-            rgba(255, 255, 255, 0.012) 60%,
-            rgba(255, 255, 255, 0.004) 80%,
-            transparent 100%
+            rgba(13, 148, 136, 0.08) 0%,
+            rgba(13, 148, 136, 0.04) 20%,
+            rgba(13, 148, 136, 0.02) 40%,
+            rgba(13, 148, 136, 0.01) 60%,
+            transparent 80%
           )`,
-          animation: "curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite",
           filter: "blur(40px)",
         }}
       />
@@ -466,7 +464,7 @@ function DashboardContent() {
             className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10"
           >
             {/* Logo Icon */}
-            <motion.div className="w-20 h-20 rounded-2xl bg-[#18181b] flex items-center justify-center mb-2 border border-[#27272a]/60">
+            <motion.div className="w-20 h-20 rounded-2xl bg-card flex items-center justify-center mb-2 border border-border">
               <svg
                 width="40"
                 height="40"
@@ -507,7 +505,7 @@ function DashboardContent() {
               >
                 How can I help you today?
               </h2>
-              <p className="text-[#6b7280] text-base mt-4">
+              <p className="text-muted-foreground text-base mt-4">
                 Im available 24/7 for you, ask me anything.
               </p>
             </div>
@@ -515,19 +513,10 @@ function DashboardContent() {
             {/* Input Container with Glassy Effect */}
             <div className="w-full max-w-xl mt-8 relative">
               {/* Glass container */}
-              <div
-                className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
-                  backdropFilter: "blur(20px)",
-                  boxShadow:
-                    "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
-                }}
-              >
+              <div className="relative rounded-xl overflow-hidden border border-border bg-card">
                 {/* Pro Plan Banner */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a30]/40">
-                  <div className="flex items-center gap-2 text-[#6b6b6b] text-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Sparkles className="h-4 w-4" />
                     <span>Unlock more features with the Pro plan.</span>
                   </div>
@@ -547,10 +536,10 @@ function DashboardContent() {
 
                 {/* Input Field */}
                 <div className="relative flex items-center">
-                  <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
+                  <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
                     <Paperclip className="h-5 w-5" />
                   </button>
-                  <div className="h-5 w-px bg-[#2a2a30]/50"></div>
+                  <div className="h-5 w-px bg-border"></div>
                   <input
                     ref={inputRef}
                     type="text"
@@ -558,12 +547,12 @@ function DashboardContent() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask anything ..."
-                    className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm"
+                    className="flex-1 bg-transparent px-4 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm"
                   />
                   <button
                     onClick={handleSubmit}
                     disabled={isSending}
-                    className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                    className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
                     <ArrowUp className="h-5 w-5" />
                   </button>
@@ -577,23 +566,13 @@ function DashboardContent() {
                 <button
                   key={prompt.id}
                   onClick={() => handleQuickPrompt(prompt.label)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#2a2a30]/60 hover:border-[#3a3a40]/80 transition-all text-sm text-[#6b6b6b] hover:text-white"
-                  style={{
-                    background: "rgba(20, 20, 23, 0.6)",
-                    backdropFilter: "blur(8px)",
-                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-border hover:border-border/80 transition-all text-sm text-muted-foreground hover:text-foreground bg-card"
                 >
                   <prompt.icon className="w-4 h-4" />
                   {prompt.label}
                 </button>
               ))}
-              <button
-                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-[#2a2a30]/60 hover:border-[#3a3a40]/80 transition-all text-[#6b6b6b] hover:text-white"
-                style={{
-                  background: "rgba(20, 20, 23, 0.6)",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
+              <button className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-border hover:border-border/80 transition-all text-muted-foreground hover:text-foreground bg-card">
                 <Grip className="w-4 h-4" />
               </button>
             </div>
@@ -631,10 +610,10 @@ function DashboardContent() {
                 transition={{ duration: 0.3, delay: 0.3 }}
                 className="flex justify-start"
               >
-                <div className="rounded-2xl px-4 py-3 bg-[#1a1a1f] border border-[#2a2a30]/50">
+                <div className="rounded-2xl px-4 py-3 bg-muted border border-border">
                   <div className="flex items-center gap-1.5">
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -643,7 +622,7 @@ function DashboardContent() {
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -653,7 +632,7 @@ function DashboardContent() {
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -674,30 +653,21 @@ function DashboardContent() {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="w-full"
             >
-              <div
-                className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
-                  backdropFilter: "blur(20px)",
-                  boxShadow:
-                    "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
-                }}
-              >
+              <div className="relative rounded-xl overflow-hidden border border-border bg-card">
                 <div className="relative flex items-center">
-                  <button className="p-3 text-[#6b6b6b] hover:text-white transition-colors">
+                  <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
                     <Paperclip className="h-5 w-5" />
                   </button>
-                  <div className="h-5 w-px bg-[#2a2a30]/50"></div>
+                  <div className="h-5 w-px bg-border"></div>
                   <input
                     type="text"
                     disabled
                     placeholder="Ask anything ..."
-                    className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm disabled:opacity-50"
+                    className="flex-1 bg-transparent px-4 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm disabled:opacity-50"
                   />
                   <button
                     disabled
-                    className="p-3 text-[#6b6b6b] transition-colors disabled:opacity-50"
+                    className="p-3 text-muted-foreground transition-colors disabled:opacity-50"
                   >
                     <ArrowUp className="h-5 w-5" />
                   </button>
@@ -721,12 +691,7 @@ function DashboardContent() {
               {DESIGN_ASSETS.map((asset) => (
                 <div
                   key={asset.id}
-                  className={`group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer h-[140px] ${asset.gridClass}`}
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)",
-                    backdropFilter: "blur(12px)",
-                  }}
+                  className={`group relative rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all cursor-pointer h-[140px] bg-card ${asset.gridClass}`}
                 >
                   <div className="p-4 h-full flex flex-col justify-between">
                     {/* Visual Preview */}
@@ -737,14 +702,14 @@ function DashboardContent() {
                     {/* Footer with title and file count */}
                     <div className="flex items-end justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                        <h3 className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors">
                           {asset.title}
                         </h3>
-                        <span className="text-xs text-[#4a4a4a]">
+                        <span className="text-xs text-muted-foreground">
                           {asset.fileCount} files
                         </span>
                       </div>
-                      <Download className="w-4 h-4 text-[#4a4a4a] group-hover:text-white transition-colors" />
+                      <Download className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -763,7 +728,7 @@ function DashboardContent() {
             transition={{ duration: 0.2 }}
             className="absolute bottom-6 left-0 right-0 text-center z-10"
           >
-            <p className="text-sm text-[#4a4a4a]">
+            <p className="text-sm text-muted-foreground">
               Unlock a new era with Crafted. Crafted with care from Norway.
             </p>
           </motion.div>
@@ -783,19 +748,19 @@ function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-full px-4 bg-[#0a0a0a]">
+    <div className="flex flex-col items-center justify-center min-h-full px-4 bg-background">
       <div className="flex flex-col items-center text-center max-w-2xl mx-auto space-y-6">
-        <Skeleton className="w-20 h-20 rounded-2xl bg-[#1a1a1f]" />
+        <Skeleton className="w-20 h-20 rounded-2xl bg-muted" />
         <div className="space-y-3">
-          <Skeleton className="h-10 w-64 mx-auto bg-[#1a1a1f]" />
-          <Skeleton className="h-10 w-80 mx-auto bg-[#1a1a1f]" />
-          <Skeleton className="h-5 w-56 mx-auto mt-4 bg-[#1a1a1f]" />
+          <Skeleton className="h-10 w-64 mx-auto bg-muted" />
+          <Skeleton className="h-10 w-80 mx-auto bg-muted" />
+          <Skeleton className="h-5 w-56 mx-auto mt-4 bg-muted" />
         </div>
-        <Skeleton className="h-24 w-full max-w-xl rounded-xl mt-8 bg-[#1a1a1f]" />
+        <Skeleton className="h-24 w-full max-w-xl rounded-xl mt-8 bg-muted" />
         <div className="flex gap-3 mt-6">
-          <Skeleton className="h-10 w-40 rounded-full bg-[#1a1a1f]" />
-          <Skeleton className="h-10 w-48 rounded-full bg-[#1a1a1f]" />
-          <Skeleton className="h-10 w-44 rounded-full bg-[#1a1a1f]" />
+          <Skeleton className="h-10 w-40 rounded-full bg-muted" />
+          <Skeleton className="h-10 w-48 rounded-full bg-muted" />
+          <Skeleton className="h-10 w-44 rounded-full bg-muted" />
         </div>
       </div>
     </div>

@@ -531,15 +531,15 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="shrink-0 mb-4 pb-4 border-b border-[#2a2a30]/50 flex items-start justify-between"
+          className="shrink-0 mb-4 pb-4 border-b border-border flex items-start justify-between"
         >
           <div>
-            <h1 className="text-lg font-medium text-white truncate">{chatTitle || "New Chat"}</h1>
-            <p className="text-sm text-[#6b6b6b] mt-1">Design Request</p>
+            <h1 className="text-lg font-medium text-foreground truncate">{chatTitle || "New Chat"}</h1>
+            <p className="text-sm text-muted-foreground mt-1">Design Request</p>
           </div>
           <button
             onClick={() => setShowDeleteDialog(true)}
-            className="p-2 rounded-lg text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
             aria-label="Delete chat"
           >
             <Trash2 className="h-5 w-5" aria-hidden="true" />
@@ -549,18 +549,18 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-[#0f0f12] border-[#2a2a30] max-w-md">
+        <AlertDialogContent className="bg-card border-border max-w-md">
           <AlertDialogHeader>
             <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
               <Trash2 className="h-6 w-6 text-red-400" />
             </div>
-            <AlertDialogTitle className="text-center text-white">Delete this chat?</AlertDialogTitle>
-            <AlertDialogDescription className="text-center text-[#6b6b6b]">
+            <AlertDialogTitle className="text-center text-foreground">Delete this chat?</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-muted-foreground">
               This will permanently delete this conversation and all its messages. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
-            <AlertDialogCancel className="bg-transparent border-[#2a2a30] text-white hover:bg-[#1a1a1f] hover:text-white">
+            <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -599,10 +599,10 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                     "max-w-[80%] rounded-2xl px-4 py-3",
                     message.role === "user"
                       ? seamlessTransition
-                        ? "bg-white text-black"
+                        ? "bg-primary text-primary-foreground dark:bg-white dark:text-black"
                         : "bg-primary text-primary-foreground"
                       : seamlessTransition
-                        ? "bg-[#1a1a1f] border border-[#2a2a30]/50"
+                        ? "bg-muted border border-border"
                         : "bg-muted"
                   )}
                 >
@@ -610,10 +610,10 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                     "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
                     message.role === "user"
                       ? seamlessTransition
-                        ? "[&_*]:text-black"
-                        : "prose-invert [&_*]:text-white"
+                        ? "[&_*]:text-primary-foreground"
+                        : "prose-invert [&_*]:text-primary-foreground"
                       : seamlessTransition
-                        ? "prose-invert [&_*]:text-white [&_strong]:text-white [&_b]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-white"
+                        ? "prose dark:prose-invert [&_*]:text-foreground [&_strong]:text-foreground [&_b]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_li]:text-foreground"
                         : "dark:prose-invert"
                   )}>
                     <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -694,7 +694,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   <p className={cn(
                     "text-xs mt-2",
                     seamlessTransition
-                      ? "text-white/50"
+                      ? "text-muted-foreground"
                       : "opacity-70"
                   )}>
                     {message.timestamp.toLocaleTimeString()}
@@ -713,10 +713,10 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
               className="flex justify-start"
             >
               {seamlessTransition ? (
-                <div className="rounded-2xl px-4 py-3 bg-[#1a1a1f] border border-[#2a2a30]/50">
+                <div className="rounded-2xl px-4 py-3 bg-muted border border-border">
                   <div className="flex items-center gap-1.5">
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -725,7 +725,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -735,7 +735,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-[#6b6b6b]"
+                      className="w-2 h-2 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -819,7 +819,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                 key={file.fileUrl}
                 className={cn(
                   "relative group flex items-center gap-2 px-3 py-2 rounded-lg",
-                  seamlessTransition ? "bg-[#1a1a1f] border border-[#2a2a30]/50" : "bg-muted"
+                  seamlessTransition ? "bg-muted border border-border" : "bg-muted"
                 )}
               >
                 {file.fileType.startsWith("image/") ? (
@@ -831,12 +831,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                 ) : (
                   <FileIcon className={cn(
                     "h-5 w-5",
-                    seamlessTransition ? "text-[#6b6b6b]" : "text-muted-foreground"
+                    seamlessTransition ? "text-muted-foreground" : "text-muted-foreground"
                   )} />
                 )}
                 <span className={cn(
                   "text-sm max-w-[100px] truncate",
-                  seamlessTransition && "text-white"
+                  seamlessTransition && "text-foreground"
                 )}>
                   {file.fileName}
                 </span>
@@ -869,20 +869,13 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
               accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
             />
             <div
-              className="relative rounded-xl overflow-hidden border border-[#2a2a30]/50"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
-                backdropFilter: "blur(20px)",
-                boxShadow:
-                  "0 0 30px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04)",
-              }}
+              className="relative rounded-xl overflow-hidden border border-border bg-card"
             >
               <div className="relative flex items-center">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading || isUploading}
-                  className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                  className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   aria-label={isUploading ? "Uploading file" : "Attach file"}
                 >
                   {isUploading ? (
@@ -891,7 +884,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                     <Paperclip className="h-5 w-5" aria-hidden="true" />
                   )}
                 </button>
-                <div className="h-5 w-px bg-[#2a2a30]/50"></div>
+                <div className="h-5 w-px bg-border"></div>
                 <input
                   type="text"
                   value={input}
@@ -904,12 +897,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   }}
                   placeholder="Ask anything ..."
                   disabled={isLoading}
-                  className="flex-1 bg-transparent px-4 py-3.5 text-white placeholder:text-[#4a4a4a] focus:outline-none text-sm disabled:opacity-50"
+                  className="flex-1 bg-transparent px-4 py-3.5 text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-sm disabled:opacity-50"
                 />
                 <button
                   onClick={handleSend}
                   disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
-                  className="p-3 text-[#6b6b6b] hover:text-white transition-colors disabled:opacity-50"
+                  className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   aria-label="Send message"
                 >
                   <ArrowUp className="h-5 w-5" aria-hidden="true" />

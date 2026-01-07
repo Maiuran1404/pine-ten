@@ -98,16 +98,16 @@ export default function ChatPage() {
   // If no draft is selected and there are drafts, show selection UI
   if (showDrafts && drafts.length > 0 && !currentDraftId) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] relative overflow-hidden">
-        {/* Curtain light effect */}
+      <div className="min-h-full bg-background relative overflow-hidden">
+        {/* Curtain light effect - only in dark mode */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
           style={{
             background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-              rgba(255, 255, 255, 0.04) 0%,
-              rgba(255, 255, 255, 0.025) 20%,
-              rgba(255, 255, 255, 0.015) 40%,
-              rgba(255, 255, 255, 0.008) 60%,
+              rgba(13, 148, 136, 0.08) 0%,
+              rgba(13, 148, 136, 0.04) 20%,
+              rgba(13, 148, 136, 0.02) 40%,
+              rgba(13, 148, 136, 0.01) 60%,
               transparent 80%
             )`,
             filter: "blur(40px)",
@@ -118,14 +118,14 @@ export default function ChatPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-white">New Design Request</h1>
-              <p className="text-[#6b6b6b] mt-1">
+              <h1 className="text-2xl font-semibold text-foreground">New Design Request</h1>
+              <p className="text-muted-foreground mt-1">
                 Continue a previous request or start fresh
               </p>
             </div>
             <Button
               onClick={handleStartNew}
-              className="bg-white text-black hover:bg-white/90 cursor-pointer"
+              className="cursor-pointer"
             >
               <Plus className="h-4 w-4 mr-2" />
               Start New Request
@@ -134,7 +134,7 @@ export default function ChatPage() {
 
           {/* Recent Drafts */}
           <div>
-            <h2 className="text-sm font-medium text-[#6b6b6b] mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Continue where you left off
             </h2>
@@ -144,20 +144,16 @@ export default function ChatPage() {
                   key={draft.id}
                   onClick={() => handleContinueDraft(draft.id)}
                   className={cn(
-                    "group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer p-4",
+                    "group relative rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all cursor-pointer p-4 bg-card",
                   )}
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-                    backdropFilter: 'blur(12px)',
-                  }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="h-4 w-4 text-[#6b6b6b] shrink-0" />
-                        <span className="font-medium text-white truncate">{draft.title}</span>
+                        <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="font-medium text-foreground truncate">{draft.title}</span>
                       </div>
-                      <p className="text-xs text-[#4a4a4a]">
+                      <p className="text-xs text-muted-foreground">
                         {formatTimeAgo(draft.updatedAt)}
                       </p>
                       {draft.pendingTask && (
@@ -170,13 +166,13 @@ export default function ChatPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/10"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
                       onClick={(e) => handleDeleteDraft(e, draft.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="mt-3 text-sm text-[#4a4a4a] line-clamp-2">
+                  <div className="mt-3 text-sm text-muted-foreground line-clamp-2">
                     {draft.messages.filter(m => m.role === "user").slice(-1)[0]?.content || "No messages yet"}
                   </div>
                 </div>
@@ -190,16 +186,16 @@ export default function ChatPage() {
 
   // Show chat interface
   return (
-    <div className="min-h-full bg-[#0a0a0a] relative overflow-hidden">
-      {/* Curtain light effect */}
+    <div className="min-h-full bg-background relative overflow-hidden">
+      {/* Curtain light effect - only in dark mode */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(255, 255, 255, 0.04) 0%,
-            rgba(255, 255, 255, 0.025) 20%,
-            rgba(255, 255, 255, 0.015) 40%,
-            rgba(255, 255, 255, 0.008) 60%,
+            rgba(13, 148, 136, 0.08) 0%,
+            rgba(13, 148, 136, 0.04) 20%,
+            rgba(13, 148, 136, 0.02) 40%,
+            rgba(13, 148, 136, 0.01) 60%,
             transparent 80%
           )`,
           filter: "blur(40px)",
@@ -214,8 +210,8 @@ export default function ChatPage() {
         {!isTransitioning && (
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-white">New Design Request</h1>
-              <p className="text-[#6b6b6b] mt-1">
+              <h1 className="text-2xl font-semibold text-foreground">New Design Request</h1>
+              <p className="text-muted-foreground mt-1">
                 Tell us what you need and we&apos;ll help create the perfect brief.
               </p>
             </div>
@@ -226,7 +222,7 @@ export default function ChatPage() {
                   setCurrentDraftId(null);
                   setShowDrafts(true);
                 }}
-                className="cursor-pointer border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+                className="cursor-pointer"
               >
                 <Clock className="h-4 w-4 mr-2" />
                 View Drafts ({drafts.length})
@@ -243,7 +239,7 @@ export default function ChatPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleStartNew}
-                className="shrink-0 cursor-pointer border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+                className="shrink-0 cursor-pointer"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 New
@@ -257,8 +253,8 @@ export default function ChatPage() {
                   className={cn(
                     "shrink-0 max-w-[200px] cursor-pointer",
                     draft.id === currentDraftId
-                      ? "bg-white text-black hover:bg-white/90"
-                      : "border-[#2a2a30] bg-transparent text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]/50"
+                      ? ""
+                      : ""
                   )}
                 >
                   <MessageSquare className="h-4 w-4 mr-1 shrink-0" />

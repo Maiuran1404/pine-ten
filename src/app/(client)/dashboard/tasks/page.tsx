@@ -64,16 +64,12 @@ export default function TasksPage() {
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
         <div
-          className="group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-[#3a3a40]/80 transition-all cursor-pointer h-full"
-          style={{
-            background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-            backdropFilter: 'blur(12px)',
-          }}
+          className="group relative rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all cursor-pointer h-full bg-card"
         >
           <div className="p-5 h-full flex flex-col">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-3">
-              <h3 className="text-white font-medium line-clamp-1 group-hover:text-white/90 transition-colors">
+              <h3 className="text-foreground font-medium line-clamp-1 group-hover:text-foreground/90 transition-colors">
                 {task.title}
               </h3>
               <span className={cn(
@@ -87,17 +83,17 @@ export default function TasksPage() {
             </div>
 
             {/* Description */}
-            <p className="text-sm text-[#6b6b6b] line-clamp-2 flex-1">
+            <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
               {task.description}
             </p>
 
             {/* Footer */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2a2a30]/40">
-              <div className="flex items-center gap-1.5 text-xs text-[#4a4a4a]">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
                 {new Date(task.createdAt).toLocaleDateString()}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-[#4a4a4a]">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Coins className="h-3.5 w-3.5" />
                 {task.creditsUsed} credits
               </div>
@@ -109,16 +105,16 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] p-6 space-y-6">
+    <div className="min-h-full bg-background p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">My Tasks</h1>
-          <p className="text-[#6b6b6b] mt-1">
+          <h1 className="text-2xl font-semibold text-foreground">My Tasks</h1>
+          <p className="text-muted-foreground mt-1">
             View and manage all your design projects
           </p>
         </div>
-        <Button asChild className="bg-white text-black hover:bg-white/90">
+        <Button asChild>
           <Link href="/dashboard/chat">
             <MessageSquarePlus className="h-4 w-4 mr-2" />
             New Request
@@ -139,8 +135,8 @@ export default function TasksPage() {
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-all",
               filter === tab.value
-                ? "bg-white text-black"
-                : "bg-[#1a1a1f] text-[#6b6b6b] hover:text-white hover:bg-[#2a2a30]"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
             )}
           >
             {tab.label}
@@ -154,33 +150,29 @@ export default function TasksPage() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-[#2a2a30]/50 p-5"
-              style={{ background: 'rgba(20, 20, 24, 0.6)' }}
+              className="rounded-xl border border-border p-5 bg-card"
             >
-              <Skeleton className="h-5 w-3/4 bg-[#2a2a30]" />
-              <Skeleton className="h-4 w-full mt-3 bg-[#2a2a30]" />
-              <Skeleton className="h-4 w-2/3 mt-2 bg-[#2a2a30]" />
-              <div className="flex gap-4 mt-4 pt-4 border-t border-[#2a2a30]/40">
-                <Skeleton className="h-4 w-20 bg-[#2a2a30]" />
-                <Skeleton className="h-4 w-16 bg-[#2a2a30]" />
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-full mt-3" />
+              <Skeleton className="h-4 w-2/3 mt-2" />
+              <div className="flex gap-4 mt-4 pt-4 border-t border-border">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
               </div>
             </div>
           ))}
         </div>
       ) : filteredTasks.length === 0 ? (
         <div
-          className="rounded-xl border border-[#2a2a30]/50 p-12 text-center"
-          style={{
-            background: 'linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)',
-          }}
+          className="rounded-xl border border-border p-12 text-center bg-card"
         >
-          <p className="text-[#6b6b6b] mb-4">
+          <p className="text-muted-foreground mb-4">
             {filter === "all"
               ? "No tasks yet. Create your first design request!"
               : `No ${filter} tasks found.`}
           </p>
           {filter === "all" && (
-            <Button asChild className="bg-white text-black hover:bg-white/90">
+            <Button asChild>
               <Link href="/dashboard/chat">
                 <MessageSquarePlus className="h-4 w-4 mr-2" />
                 New Request
