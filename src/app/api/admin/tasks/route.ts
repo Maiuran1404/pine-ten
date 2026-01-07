@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
         status: tasks.status,
         creditsUsed: tasks.creditsUsed,
         createdAt: tasks.createdAt,
+        deadline: tasks.deadline,
+        assignedAt: tasks.assignedAt,
         clientName: clients.name,
         freelancerName: freelancers.name,
       })

@@ -12,7 +12,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Coins, Clock } from "lucide-react";
+import { Calendar, Coins, Clock, AlertTriangle } from "lucide-react";
+import {
+  calculateWorkingDeadline,
+  getDeadlineUrgency,
+  formatTimeRemaining,
+} from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -21,6 +26,7 @@ interface Task {
   status: string;
   createdAt: string;
   deadline: string | null;
+  assignedAt: string | null;
   creditsUsed: number;
   estimatedHours: string | null;
 }
@@ -69,43 +75,66 @@ export default function FreelancerTasksPage() {
     return true;
   });
 
-  const TaskCard = ({ task }: { task: Task }) => (
-    <Link href={`/portal/tasks/${task.id}`}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
-            <CardTitle className="text-lg line-clamp-1">{task.title}</CardTitle>
-            <Badge variant={statusConfig[task.status]?.variant || "secondary"}>
-              {statusConfig[task.status]?.label || task.status}
-            </Badge>
-          </div>
-          <CardDescription className="line-clamp-2">
-            {task.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Coins className="h-4 w-4" />
-              {task.creditsUsed} credits
+  const TaskCard = ({ task }: { task: Task }) => {
+    const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
+    const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
+    const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+
+    const urgencyStyles = {
+      overdue: "text-destructive",
+      urgent: "text-orange-500",
+      warning: "text-yellow-600",
+      safe: "text-muted-foreground",
+    };
+
+    return (
+      <Link href={`/portal/tasks/${task.id}`}>
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <CardHeader className="pb-2">
+            <div className="flex items-start justify-between">
+              <CardTitle className="text-lg line-clamp-1">{task.title}</CardTitle>
+              <Badge variant={statusConfig[task.status]?.variant || "secondary"}>
+                {statusConfig[task.status]?.label || task.status}
+              </Badge>
             </div>
-            {task.estimatedHours && (
+            <CardDescription className="line-clamp-2">
+              {task.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                ~{task.estimatedHours}h
+                <Coins className="h-4 w-4" />
+                {task.creditsUsed} credits
               </div>
-            )}
-            {task.deadline && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(task.deadline).toLocaleDateString()}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
+              {task.estimatedHours && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  ~{task.estimatedHours}h
+                </div>
+              )}
+              {workingDeadline && isActiveTask && (
+                <div className={`flex items-center gap-1 ${urgency ? urgencyStyles[urgency] : ""}`}>
+                  {(urgency === "overdue" || urgency === "urgent") && (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  <Calendar className="h-4 w-4" />
+                  <span>Due {workingDeadline.toLocaleDateString()}</span>
+                  <span className="text-xs">({formatTimeRemaining(workingDeadline)})</span>
+                </div>
+              )}
+              {!workingDeadline && task.deadline && isActiveTask && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  Due {new Date(task.deadline).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
 
   return (
     <div className="space-y-6">

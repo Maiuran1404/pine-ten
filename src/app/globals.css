@@ -60,38 +60,70 @@
   /* Crafted Font */
   --font-satoshi: 'Satoshi', sans-serif;
 
-  /* Light mode defaults */
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: #f8f9fa;
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.145 0 0);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.145 0 0);
-  --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Light Mode - Sleek & Modern */
+  --background: #fafafa;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #0d9488;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #334155;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #ecfdf5;
+  --accent-foreground: #047857;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #14b8a6;
+  --chart-1: #14b8a6;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #0d9488;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0fdfa;
+  --sidebar-accent-foreground: #0d9488;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #14b8a6;
+
+  /* Light Mode Dashboard Design System */
+  /* Primary Accent - Teal/Emerald */
+  --ds-accent: #0d9488;
+  --ds-accent-light: #14b8a6;
+  --ds-accent-dark: #0f766e;
+  --ds-accent-muted: rgba(13, 148, 136, 0.1);
+
+  /* Background Hierarchy */
+  --ds-bg-base: #fafafa;
+  --ds-bg-elevated: #ffffff;
+  --ds-bg-card: #ffffff;
+  --ds-bg-card-hover: #f8fafc;
+
+  /* Border Colors */
+  --ds-border: #e2e8f0;
+  --ds-border-light: #f1f5f9;
+  --ds-border-accent: rgba(13, 148, 136, 0.3);
+
+  /* Text Hierarchy */
+  --ds-text-primary: #0f172a;
+  --ds-text-secondary: #475569;
+  --ds-text-muted: #94a3b8;
+  --ds-text-faint: #cbd5e1;
+
+  /* Status Colors */
+  --ds-success: #059669;
+  --ds-success-muted: rgba(5, 150, 105, 0.1);
+  --ds-warning: #d97706;
+  --ds-warning-muted: rgba(217, 119, 6, 0.1);
+  --ds-error: #dc2626;
+  --ds-error-muted: rgba(220, 38, 38, 0.1);
 }
 
 .dark {

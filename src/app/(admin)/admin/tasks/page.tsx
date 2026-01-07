@@ -30,7 +30,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye, AlertTriangle } from "lucide-react";
+import {
+  calculateWorkingDeadline,
+  getTaskProgressPercent,
+  getTimeProgressPercent,
+  getDeadlineUrgency,
+  formatTimeRemaining,
+} from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -39,6 +53,8 @@ interface Task {
   status: string;
   creditsUsed: number;
   createdAt: string;
+  deadline: string | null;
+  assignedAt: string | null;
   clientName: string;
   freelancerName: string | null;
 }

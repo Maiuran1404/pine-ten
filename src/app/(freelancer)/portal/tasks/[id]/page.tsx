@@ -35,10 +35,16 @@ import {
   Send,
   Paperclip,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { BrandDNA } from "@/components/freelancer/brand-dna";
 import { PreviousDeliverables } from "@/components/freelancer/previous-deliverables";
+import {
+  calculateWorkingDeadline,
+  getDeadlineUrgency,
+  formatTimeRemaining,
+} from "@/lib/utils";
 
 interface UploadedFile {
   fileName: string;
@@ -737,20 +743,61 @@ export default function FreelancerTaskDetailPage() {
                 </>
               )}
 
-              {task.deadline && (
-                <>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Deadline</p>
-                      <p className="font-medium">
-                        {new Date(task.deadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
+              {(() => {
+                const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
+                const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
+                const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+
+                const urgencyStyles = {
+                  overdue: "text-destructive",
+                  urgent: "text-orange-500",
+                  warning: "text-yellow-600",
+                  safe: "text-foreground",
+                };
+
+                const urgencyBgStyles = {
+                  overdue: "bg-destructive/10 border-destructive/20",
+                  urgent: "bg-orange-500/10 border-orange-500/20",
+                  warning: "bg-yellow-500/10 border-yellow-500/20",
+                  safe: "",
+                };
+
+                if (!workingDeadline && !task.deadline) return null;
+
+                return (
+                  <>
+                    <Separator />
+                    {workingDeadline && isActiveTask ? (
+                      <div className={`flex items-start gap-3 p-3 -mx-3 rounded-lg border ${urgency ? urgencyBgStyles[urgency] : ""}`}>
+                        {(urgency === "overdue" || urgency === "urgent") ? (
+                          <AlertTriangle className={`h-5 w-5 mt-0.5 ${urgency ? urgencyStyles[urgency] : ""}`} />
+                        ) : (
+                          <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Your Deadline</p>
+                          <p className={`font-medium ${urgency ? urgencyStyles[urgency] : ""}`}>
+                            {workingDeadline.toLocaleDateString()}
+                          </p>
+                          <p className={`text-sm ${urgency ? urgencyStyles[urgency] : "text-muted-foreground"}`}>
+                            {formatTimeRemaining(workingDeadline)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : task.deadline ? (
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Deadline</p>
+                          <p className="font-medium">
+                            {new Date(task.deadline).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()}
 
               <Separator />
 
