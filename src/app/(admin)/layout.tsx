@@ -75,7 +75,7 @@ export default function AdminLayout({
       }
     >
       <AdminSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-[#0a0a0a]">
+      <SidebarInset className="bg-background">
         <Header />
         <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">{children}</main>
       </SidebarInset>

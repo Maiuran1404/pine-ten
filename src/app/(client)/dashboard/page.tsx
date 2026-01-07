@@ -406,7 +406,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-32 pb-20 bg-[#0a0a0a] overflow-auto">
+    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-32 pb-20 bg-background overflow-auto">
       {/* Noise texture to prevent gradient banding */}
       <svg className="hidden">
         <filter id="noise">

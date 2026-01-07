@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
             >
               Admin Dashboard
             </h1>
-            <p className="text-[#6b7280] text-base">
+            <p className="text-muted-foreground text-base">
               Overview of platform activity and management
             </p>
           </div>
@@ -215,19 +215,15 @@ export default function AdminDashboardPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-                className={`relative rounded-xl overflow-hidden border transition-all ${
+                className={`relative rounded-xl overflow-hidden border transition-all bg-card ${
                   shouldHighlight
                     ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
-                    : "border-[#2a2a30]/50 hover:border-[#3a3a40]/80"
+                    : "border-border hover:border-border/80"
                 }`}
-                style={{
-                  background: "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
-                  backdropFilter: "blur(20px)",
-                }}
               >
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-[#6b6b6b] uppercase tracking-wider">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {stat.label}
                     </span>
                     <div className={`p-1.5 rounded-lg ${stat.bgColor}`}>
@@ -235,7 +231,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-16 bg-[#1a1a1f]" />
+                    <Skeleton className="h-8 w-16 bg-muted" />
                   ) : (
                     <div className={`text-2xl font-bold ${stat.color}`}>
                       {displayValue}
@@ -254,7 +250,7 @@ export default function AdminDashboardPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="space-y-4"
         >
-          <h2 className="text-lg font-medium text-white/90">Quick Actions</h2>
+          <h2 className="text-lg font-medium text-foreground">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
             {QUICK_ACTIONS.map((action, index) => {
               const Icon = action.icon;
@@ -262,11 +258,7 @@ export default function AdminDashboardPage() {
                 <Link
                   key={action.id}
                   href={action.href}
-                  className={`group relative rounded-xl overflow-hidden border border-[#2a2a30]/50 hover:border-rose-500/30 transition-all cursor-pointer h-[120px] ${action.gridClass}`}
-                  style={{
-                    background: "linear-gradient(180deg, rgba(20, 20, 24, 0.6) 0%, rgba(12, 12, 15, 0.8) 100%)",
-                    backdropFilter: "blur(12px)",
-                  }}
+                  className={`group relative rounded-xl overflow-hidden border border-border hover:border-rose-500/30 transition-all cursor-pointer h-[120px] bg-card ${action.gridClass}`}
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -278,13 +270,13 @@ export default function AdminDashboardPage() {
                       <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
                         <Icon className="h-5 w-5 text-rose-400" />
                       </div>
-                      <ArrowRight className="h-4 w-4 text-[#4a4a4a] group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                      <h3 className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors">
                         {action.title}
                       </h3>
-                      <p className="text-xs text-[#6b6b6b] mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {action.description}
                       </p>
                     </div>
@@ -303,7 +295,7 @@ export default function AdminDashboardPage() {
           className="space-y-4"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-white/90">Recent Tasks</h2>
+            <h2 className="text-lg font-medium text-foreground">Recent Tasks</h2>
             <Link
               href="/admin/tasks"
               className="text-sm text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1"
@@ -313,32 +305,26 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
-          <div
-            className="rounded-xl overflow-hidden border border-[#2a2a30]/50"
-            style={{
-              background: "linear-gradient(180deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 15, 0.9) 100%)",
-              backdropFilter: "blur(20px)",
-            }}
-          >
+          <div className="rounded-xl overflow-hidden border border-border bg-card">
             {isLoading ? (
               <div className="p-4 space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-48 bg-[#1a1a1f]" />
-                      <Skeleton className="h-3 w-32 bg-[#1a1a1f]" />
+                      <Skeleton className="h-4 w-48 bg-muted" />
+                      <Skeleton className="h-3 w-32 bg-muted" />
                     </div>
-                    <Skeleton className="h-6 w-20 bg-[#1a1a1f]" />
+                    <Skeleton className="h-6 w-20 bg-muted" />
                   </div>
                 ))}
               </div>
             ) : recentTasks.length === 0 ? (
               <div className="p-8 text-center">
-                <FolderOpen className="h-12 w-12 mx-auto text-[#4a4a4a] mb-3" />
-                <p className="text-[#6b6b6b]">No tasks yet</p>
+                <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No tasks yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#2a2a30]/50">
+              <div className="divide-y divide-border">
                 {recentTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
@@ -348,18 +334,18 @@ export default function AdminDashboardPage() {
                   >
                     <Link
                       href={`/admin/tasks/${task.id}`}
-                      className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors group"
+                      className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors group"
                     >
                       <div className="space-y-1 min-w-0 flex-1">
-                        <p className="font-medium text-white/90 group-hover:text-white transition-colors truncate pr-4">
+                        <p className="font-medium text-foreground group-hover:text-foreground transition-colors truncate pr-4">
                           {task.title}
                         </p>
-                        <p className="text-sm text-[#6b6b6b]">
-                          <span className="text-[#8b8b8b]">{task.clientName}</span>
+                        <p className="text-sm text-muted-foreground">
+                          <span>{task.clientName}</span>
                           {task.freelancerName && (
                             <>
-                              <span className="mx-2 text-[#4a4a4a]">→</span>
-                              <span className="text-[#8b8b8b]">{task.freelancerName}</span>
+                              <span className="mx-2 text-muted-foreground/50">→</span>
+                              <span>{task.freelancerName}</span>
                             </>
                           )}
                         </p>
@@ -382,7 +368,7 @@ export default function AdminDashboardPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center pt-8"
         >
-          <p className="text-sm text-[#4a4a4a]">
+          <p className="text-sm text-muted-foreground">
             Super Admin Panel - Full platform control
           </p>
         </motion.div>

@@ -275,48 +275,121 @@ export default function AllTasksPage() {
                       No tasks found
                     </p>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Task</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Freelancer</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Credits</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredTasks.map((task) => (
-                          <TableRow key={task.id}>
-                            <TableCell>
-                              <div className="max-w-xs">
-                                <p className="font-medium truncate">{task.title}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm">{task.clientName || "-"}</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm">{task.freelancerName || "Unassigned"}</span>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(task.status)}</TableCell>
-                            <TableCell>{task.creditsUsed}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {formatDate(task.createdAt)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/admin/tasks/${task.id}`}>
-                                  <ExternalLink className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                            </TableCell>
+                    <TooltipProvider>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Task</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Freelancer</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Progress</TableHead>
+                            <TableHead>Deadline</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredTasks.map((task) => {
+                            const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
+                            const taskProgress = getTaskProgressPercent(task.status);
+                            const timeProgress = getTimeProgressPercent(task.assignedAt, task.deadline);
+                            const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
+                            const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED", "IN_REVIEW"].includes(task.status);
+
+                            const urgencyColors = {
+                              overdue: "bg-destructive",
+                              urgent: "bg-orange-500",
+                              warning: "bg-yellow-500",
+                              safe: "bg-green-500",
+                            };
+
+                            return (
+                              <TableRow key={task.id}>
+                                <TableCell>
+                                  <div className="max-w-xs">
+                                    <p className="font-medium truncate">{task.title}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="text-sm">{task.clientName || "-"}</span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="text-sm">{task.freelancerName || "Unassigned"}</span>
+                                </TableCell>
+                                <TableCell>{getStatusBadge(task.status)}</TableCell>
+                                <TableCell>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="w-24 space-y-1">
+                                        <Progress value={taskProgress} className="h-1.5" />
+                                        {task.deadline && isActiveTask && (
+                                          <div className="relative">
+                                            <Progress
+                                              value={Math.min(timeProgress, 100)}
+                                              className={`h-1.5 ${timeProgress > 100 ? "[&>div]:bg-destructive" : "[&>div]:bg-muted-foreground/50"}`}
+                                            />
+                                            <div
+                                              className="absolute top-0 h-1.5 w-px bg-orange-500"
+                                              style={{ left: "70%" }}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Task: {taskProgress}% complete</p>
+                                      {task.deadline && isActiveTask && (
+                                        <p>Time: {Math.round(timeProgress)}% elapsed</p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  {task.deadline && isActiveTask ? (
+                                    <div className="flex items-center gap-1.5">
+                                      {(urgency === "overdue" || urgency === "urgent") && (
+                                        <AlertTriangle className={`h-3.5 w-3.5 ${urgency === "overdue" ? "text-destructive" : "text-orange-500"}`} />
+                                      )}
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div>
+                                            <span className={`text-sm ${urgency === "overdue" ? "text-destructive" : urgency === "urgent" ? "text-orange-500" : ""}`}>
+                                              {formatTimeRemaining(workingDeadline || task.deadline)}
+                                            </span>
+                                            {urgency && (
+                                              <div className={`mt-0.5 h-1 w-full rounded-full ${urgencyColors[urgency]}`} />
+                                            )}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <div className="space-y-1 text-xs">
+                                            {workingDeadline && (
+                                              <p>Artist: {workingDeadline.toLocaleDateString()}</p>
+                                            )}
+                                            <p>Client: {new Date(task.deadline).toLocaleDateString()}</p>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                  ) : task.status === "COMPLETED" ? (
+                                    <span className="text-sm text-green-600">Done</span>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button variant="ghost" size="sm" asChild>
+                                    <Link href={`/admin/tasks/${task.id}`}>
+                                      <ExternalLink className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TooltipProvider>
                   )}
 
                   {/* Pagination */}

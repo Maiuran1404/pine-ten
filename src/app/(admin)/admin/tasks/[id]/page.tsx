@@ -18,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
-  Calendar,
   Clock,
   Coins,
   FileText,
@@ -32,6 +31,7 @@ import {
   FileIcon,
   ExternalLink,
 } from "lucide-react";
+import { TaskProgressCard } from "@/components/admin/task-progress-card";
 
 interface Task {
   id: string;
@@ -470,6 +470,15 @@ export default function AdminTaskDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Progress & Timeline */}
+          <TaskProgressCard
+            status={task.status}
+            assignedAt={task.assignedAt}
+            deadline={task.deadline}
+            createdAt={task.createdAt}
+            completedAt={task.completedAt}
+          />
+
           {/* Task Details */}
           <Card>
             <CardHeader>
@@ -500,54 +509,12 @@ export default function AdminTaskDetailPage() {
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <RefreshCw className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">
                         Estimated Time
                       </p>
                       <p className="font-medium">{task.estimatedHours} hours</p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <Separator />
-
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <p className="font-medium">
-                    {new Date(task.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {task.deadline && (
-                <>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Deadline</p>
-                      <p className="font-medium">
-                        {new Date(task.deadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {task.completedAt && (
-                <>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Completed</p>
-                      <p className="font-medium">
-                        {new Date(task.completedAt).toLocaleDateString()}
-                      </p>
                     </div>
                   </div>
                 </>
