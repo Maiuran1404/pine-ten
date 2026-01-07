@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Plus, MessageSquare, Trash2, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -231,75 +230,14 @@ export default function ChatPage() {
         }}
       />
 
-      <div className={cn(
-        "relative z-10",
-        isTransitioning ? "flex flex-col px-4 sm:px-8 lg:px-16 pt-8 h-[calc(100vh-4rem)] pb-6" : "p-6 space-y-6 h-full"
-      )}>
-        {/* Header - only show when not using modern design */}
-        {!isTransitioning && (
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">New Design Request</h1>
-              <p className="text-muted-foreground mt-1">
-                Tell us what you need and we&apos;ll help create the perfect brief.
-              </p>
-            </div>
-            {drafts.length > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDrafts(true);
-                }}
-                className="cursor-pointer"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                View Drafts ({drafts.length})
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Horizontal scroll of drafts when in chat mode - only show when not using modern design */}
-        {drafts.length > 0 && !isTransitioning && (
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 pb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleStartNew}
-                className="shrink-0 cursor-pointer"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New
-              </Button>
-              {drafts.slice(0, 5).map((draft) => (
-                <Button
-                  key={draft.id}
-                  variant={draft.id === currentDraftId ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleContinueDraft(draft.id)}
-                  className={cn(
-                    "shrink-0 max-w-[200px] cursor-pointer",
-                    draft.id === currentDraftId
-                      ? ""
-                      : ""
-                  )}
-                >
-                  <MessageSquare className="h-4 w-4 mr-1 shrink-0" />
-                  <span className="truncate">{draft.title}</span>
-                </Button>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        )}
-
+      {/* Always use seamless full-width layout to prevent flash during navigation */}
+      <div className="relative z-10 flex flex-col px-4 sm:px-8 lg:px-16 pt-8 h-[calc(100vh-4rem)] pb-6">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <ChatInterface
             draftId={currentDraftId}
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
-            seamlessTransition={isTransitioning}
+            seamlessTransition={true}
           />
         </div>
       </div>

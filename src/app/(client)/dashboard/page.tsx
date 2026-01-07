@@ -28,7 +28,19 @@ import {
   FolderKanban,
   Download,
   FileImage,
+  Megaphone,
+  Share2,
+  PenTool,
+  LayoutGrid,
+  Mail,
+  Presentation,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
@@ -516,19 +528,8 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Input Field */}
-            <div className="relative flex items-center gap-2 px-4 py-3">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <Paperclip className="h-5 w-5" />
-                )}
-              </button>
+            {/* Input Row */}
+            <div className="relative flex items-center gap-2 px-5 pt-4 pb-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -541,24 +542,67 @@ function DashboardContent() {
                   }
                 }}
                 placeholder={uploadedFiles.length > 0 ? "Add a message or just send..." : "Describe what you want to create..."}
-                className="flex-1 bg-transparent py-2 text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
+                className="flex-1 bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
               />
-
-              {/* Credits badge - inline */}
-              <button
-                onClick={() => credits === 0 && setShowCreditDialog(true)}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${creditColors.dot}`}></span>
-                <span>{credits === null ? "..." : credits}</span>
-              </button>
-
               <button
                 onClick={() => handleSubmit()}
                 disabled={isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)}
-                className="p-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                <ArrowUp className="h-5 w-5" />
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Toolbar Row */}
+            <div className="flex items-center gap-1 px-4 pb-3 pt-1">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </button>
+
+              <div className="w-px h-4 bg-border mx-1" />
+
+              {/* Templates button */}
+              <button
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <Layers className="h-3.5 w-3.5" />
+                <span>Templates</span>
+              </button>
+
+              {/* Improve Prompt button */}
+              <button
+                disabled={!chatInput.trim()}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Improve Prompt</span>
+              </button>
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Credits indicator */}
+              <button
+                onClick={() => credits === 0 && setShowCreditDialog(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${creditColors.dot}`}></span>
+                <span>{credits === null ? "..." : credits} credits</span>
               </button>
             </div>
           </div>
