@@ -17,6 +17,7 @@ export interface QuickOptions {
 export interface StyleReference {
   category: string;
   name: string;
+  description?: string | null;
   imageUrl: string;
 }
 

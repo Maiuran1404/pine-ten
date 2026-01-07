@@ -42,6 +42,7 @@ import {
   AlertCircle,
   Timer,
   Download,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
@@ -123,7 +124,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi there! What design project can I help you get started with today?",
+    "Hi there! 👋 **What design project** can I help you get started with today?",
   timestamp: new Date(),
 };
 
@@ -552,6 +553,64 @@ export function ChatInterface({
     );
   };
 
+  const handleSubmitStyles = async () => {
+    if (selectedStyles.length === 0 || isLoading) return;
+
+    const styleMessage = selectedStyles.length === 1
+      ? `I like the ${selectedStyles[0]} style`
+      : `I like these styles: ${selectedStyles.join(", ")}`;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: styleMessage,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedStyles,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleQuickOptionClick = async (option: string) => {
     if (isLoading) return;
 
@@ -893,11 +952,11 @@ export function ChatInterface({
 
                         {/* Style References */}
                         {message.styleReferences && message.styleReferences.length > 0 && (
-                          <div className="mt-4 ml-8">
-                            <p className="text-sm font-medium mb-3 text-foreground">
-                              Select styles you prefer:
+                          <div className="mt-5 ml-8">
+                            <p className="text-sm font-medium mb-4 text-foreground">
+                              Which style direction resonates with you?
                             </p>
-                            <div className="flex gap-3 overflow-x-auto pb-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
                               {message.styleReferences.slice(0, 3).map((style, idx) => (
                                 <div
                                   key={`${style.name}-${idx}`}
@@ -906,11 +965,11 @@ export function ChatInterface({
                                   aria-pressed={selectedStyles.includes(style.name)}
                                   aria-label={`Select ${style.name} style`}
                                   className={cn(
-                                    "flex-shrink-0 w-32 rounded-lg border-2 p-2 cursor-pointer transition-all",
+                                    "group relative rounded-xl border overflow-hidden cursor-pointer transition-all duration-200",
                                     "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                                     selectedStyles.includes(style.name)
-                                      ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                                      : "border-border hover:border-primary/50 bg-background"
+                                      ? "border-primary/50 bg-primary/5 shadow-md"
+                                      : "border-border hover:border-primary/30 hover:shadow-md bg-card"
                                   )}
                                   onClick={() => handleStyleSelect(style.name)}
                                   onKeyDown={(e) => {
@@ -920,24 +979,57 @@ export function ChatInterface({
                                     }
                                   }}
                                 >
-                                  <div className="aspect-video bg-muted rounded overflow-hidden mb-2">
+                                  {/* Selection indicator */}
+                                  {selectedStyles.includes(style.name) && (
+                                    <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                                      <Check className="h-4 w-4 text-primary-foreground" />
+                                    </div>
+                                  )}
+
+                                  {/* Image */}
+                                  <div className="aspect-[4/3] bg-muted overflow-hidden">
                                     {style.imageUrl ? (
                                       <img
                                         src={style.imageUrl}
                                         alt={style.name}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                       />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center">
-                                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
                                       </div>
                                     )}
                                   </div>
-                                  <p className="text-xs font-medium text-center truncate text-foreground">
-                                    {style.name}
-                                  </p>
+
+                                  {/* Content */}
+                                  <div className="p-3">
+                                    <p className="text-sm font-semibold text-foreground mb-1">
+                                      {style.name}
+                                    </p>
+                                    {style.description && (
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {style.description}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
+                            </div>
+                            <div className="flex items-center justify-between mt-3">
+                              <p className="text-xs text-muted-foreground ml-1">
+                                Click to select · You can pick multiple or describe something else
+                              </p>
+                              {selectedStyles.length > 0 && (
+                                <Button
+                                  onClick={handleSubmitStyles}
+                                  disabled={isLoading}
+                                  size="sm"
+                                  className="gap-2"
+                                >
+                                  Continue with {selectedStyles.length === 1 ? "style" : `${selectedStyles.length} styles`}
+                                  <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -982,20 +1074,20 @@ export function ChatInterface({
                       </div>
                     </div>
                   ) : (
-                    /* User message - right aligned bubble */
+                    /* User message - right aligned speech bubble */
                     <div className="max-w-[75%]">
-                      <div className="bg-muted rounded-2xl rounded-br-md px-4 py-3">
+                      <div className="bg-muted/80 rounded-full px-5 py-2.5 shadow-sm">
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {message.content}
                         </p>
-                        {/* User attachments */}
-                        {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-2">
-                            <FileAttachmentList files={message.attachments} />
-                          </div>
-                        )}
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                      {/* User attachments */}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="mt-2">
+                          <FileAttachmentList files={message.attachments} />
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-1.5 text-right pr-2">
                         {formatTimeAgo(message.timestamp)}
                       </p>
                     </div>
@@ -1010,30 +1102,11 @@ export function ChatInterface({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex justify-start"
+                className="flex justify-start ml-2"
               >
-                <div className="bg-card border border-border rounded-2xl px-4 py-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                    <span className="text-sm">Thinking</span>
-                    <div className="flex items-center gap-1">
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                      />
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Timer className="h-4 w-4" />
+                  <span className="text-sm">Thinking...</span>
                 </div>
               </motion.div>
             )}
@@ -1493,22 +1566,40 @@ export function ChatInterface({
                       </div>
                     )}
 
-                    {/* Chat activity */}
+                    {/* Process Timeline */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-foreground">Activity</h3>
-                      <div className="flex gap-0.5 flex-wrap">
-                        {Array.from({ length: 20 }).map((_, i) => {
-                          const hasActivity = i < messages.length;
-                          return (
-                            <div
-                              key={i}
-                              className={cn(
-                                "w-2 h-2 rounded-sm",
-                                hasActivity ? "bg-primary" : "bg-muted"
+                      <h3 className="text-sm font-semibold text-foreground">Process</h3>
+                      <div className="space-y-0">
+                        {[
+                          { label: "Brief", done: messages.length >= 1 },
+                          { label: "Style", done: selectedStyles.length > 0 },
+                          { label: "Review", done: !!pendingTask },
+                          { label: "In Progress", done: isTaskMode && taskData?.status === "IN_PROGRESS" },
+                          { label: "Delivered", done: isTaskMode && taskData?.status === "COMPLETED" },
+                        ].map((step, i, arr) => (
+                          <div key={step.label} className="flex items-start gap-3">
+                            {/* Timeline line and dot */}
+                            <div className="flex flex-col items-center">
+                              <div className={cn(
+                                "w-2 h-2 rounded-full shrink-0 mt-1.5",
+                                step.done ? "bg-primary" : "bg-muted"
+                              )} />
+                              {i < arr.length - 1 && (
+                                <div className={cn(
+                                  "w-0.5 h-6",
+                                  step.done ? "bg-primary/30" : "bg-muted"
+                                )} />
                               )}
-                            />
-                          );
-                        })}
+                            </div>
+                            {/* Label */}
+                            <span className={cn(
+                              "text-sm",
+                              step.done ? "text-foreground" : "text-muted-foreground"
+                            )}>
+                              {step.label}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </>

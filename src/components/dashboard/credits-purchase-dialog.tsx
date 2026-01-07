@@ -96,9 +96,9 @@ export function CreditsPurchaseDialog({
   };
 
   const getCreditColor = () => {
-    if (credits === 0) return "text-[var(--ds-error)]";
-    if (credits <= 2) return "text-[var(--ds-warning)]";
-    return "text-[var(--ds-accent)]";
+    if (credits === 0) return "text-red-500";
+    if (credits <= 2) return "text-yellow-500";
+    return "text-emerald-500";
   };
 
   const handlePurchase = async (packageId: string) => {
@@ -128,18 +128,11 @@ export function CreditsPurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-[520px] p-0 gap-0 border-[var(--ds-border)]/50 overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(20, 20, 24, 0.95) 0%, rgba(10, 10, 12, 0.98) 100%)",
-          backdropFilter: "blur(20px)",
-        }}
-      >
+      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="text-xl font-semibold text-[var(--ds-text-primary)] flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--ds-accent)] to-[var(--ds-accent-dark)] flex items-center justify-center">
-              <Coins className="h-5 w-5 text-white" />
+          <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
             Purchase Credits
           </DialogTitle>
@@ -147,20 +140,20 @@ export function CreditsPurchaseDialog({
 
         {/* Current Balance */}
         <div className="px-6 pb-4">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--ds-bg-card)]/50 border border-[var(--ds-border)]/30">
-            <span className="text-sm text-[var(--ds-text-muted)]">Current Balance</span>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+            <span className="text-sm text-muted-foreground">Current Balance</span>
             <div className="flex items-baseline gap-1.5">
               <span className={cn("text-2xl font-bold", getCreditColor())}>
                 {credits}
               </span>
-              <span className="text-sm text-[var(--ds-text-faint)]">credits</span>
+              <span className="text-sm text-muted-foreground">credits</span>
             </div>
           </div>
         </div>
 
         {/* Package Selection */}
         <div className="px-6 pb-2">
-          <p className="text-xs text-[var(--ds-text-muted)] mb-3">Select a package</p>
+          <p className="text-xs text-muted-foreground mb-3">Select a package</p>
           <div className="grid grid-cols-2 gap-2">
             {creditPackages.map((pkg) => (
               <button
@@ -169,13 +162,13 @@ export function CreditsPurchaseDialog({
                 className={cn(
                   "relative p-4 rounded-xl border text-left transition-all duration-200",
                   selectedPackage === pkg.id
-                    ? "border-[var(--ds-accent)] bg-[var(--ds-accent-muted)]"
-                    : "border-[var(--ds-border)]/50 bg-[var(--ds-bg-card)]/30 hover:border-[var(--ds-border-light)]"
+                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                    : "border-border bg-card hover:border-primary/50"
                 )}
               >
                 {pkg.popular && (
                   <div className="absolute -top-2 right-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-[var(--ds-accent)] text-white font-medium">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary text-primary-foreground font-medium">
                       <Sparkles className="h-2.5 w-2.5" />
                       Popular
                     </span>
@@ -183,35 +176,35 @@ export function CreditsPurchaseDialog({
                 )}
 
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-[var(--ds-text-primary)]">
+                  <span className="text-sm font-medium text-foreground">
                     {pkg.name}
                   </span>
                   {selectedPackage === pkg.id && (
-                    <div className="w-4 h-4 rounded-full bg-[var(--ds-accent)] flex items-center justify-center">
-                      <Check className="h-2.5 w-2.5 text-white" />
+                    <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="h-2.5 w-2.5 text-primary-foreground" />
                     </div>
                   )}
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-[var(--ds-text-primary)]">
+                  <span className="text-2xl font-bold text-foreground">
                     {pkg.credits}
                   </span>
-                  <span className="text-xs text-[var(--ds-text-muted)]">credits</span>
+                  <span className="text-xs text-muted-foreground">credits</span>
                 </div>
 
                 <div className="mt-1.5 flex items-center gap-2">
                   {pkg.originalPrice && (
-                    <span className="text-xs text-[var(--ds-text-faint)] line-through">
+                    <span className="text-xs text-muted-foreground line-through">
                       ${formatPrice(pkg.originalPrice)}
                     </span>
                   )}
-                  <span className="text-sm font-semibold text-[var(--ds-text-primary)]">
+                  <span className="text-sm font-semibold text-foreground">
                     ${formatPrice(pkg.price)}
                   </span>
                 </div>
 
-                <p className="text-[10px] text-[var(--ds-text-faint)] mt-1">
+                <p className="text-[10px] text-muted-foreground mt-1">
                   {pkg.description}
                 </p>
               </button>
@@ -220,24 +213,24 @@ export function CreditsPurchaseDialog({
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-4 border-t border-[var(--ds-border)]/30 mt-4">
+        <div className="p-6 pt-4 border-t border-border mt-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs text-[var(--ds-text-muted)]">Total</p>
-              <p className="text-2xl font-bold text-[var(--ds-text-primary)]">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-foreground">
                 ${formatPrice(selectedPkg?.price || 0)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[var(--ds-text-muted)]">You&apos;ll receive</p>
-              <p className="text-lg font-semibold text-[var(--ds-text-primary)]">
+              <p className="text-xs text-muted-foreground">You&apos;ll receive</p>
+              <p className="text-lg font-semibold text-foreground">
                 {selectedPkg?.credits || 0} credits
               </p>
             </div>
           </div>
 
           <Button
-            className="w-full h-12 bg-[var(--ds-accent)] text-white hover:bg-[var(--ds-accent-dark)] font-medium text-sm rounded-xl"
+            className="w-full h-12 font-medium text-sm rounded-xl"
             onClick={() => selectedPackage && handlePurchase(selectedPackage)}
             disabled={isLoading !== null || !selectedPackage}
           >
@@ -251,7 +244,7 @@ export function CreditsPurchaseDialog({
             )}
           </Button>
 
-          <p className="text-[10px] text-center text-[var(--ds-text-faint)] mt-3">
+          <p className="text-[10px] text-center text-muted-foreground mt-3">
             Secure payment powered by Stripe
           </p>
         </div>

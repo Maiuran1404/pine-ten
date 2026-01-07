@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -10,12 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
   ArrowUp,
-  Video,
   Sparkles,
   Image as ImageIcon,
-  Palette,
-  Type,
-  Layers,
   Upload,
   FileText,
   FileVideo,
@@ -27,20 +22,11 @@ import {
   Clock,
   FolderKanban,
   Download,
-  FileImage,
   Megaphone,
   Share2,
   PenTool,
   LayoutGrid,
-  Mail,
-  Presentation,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
@@ -72,175 +58,183 @@ interface BrandData {
   } | null;
 }
 
-// Quick prompts as feature cards
-const QUICK_PROMPTS = [
+// Prompt templates organized by category
+const PROMPT_TEMPLATES = [
   {
-    id: "static-ad",
-    icon: ImageIcon,
-    title: "Static Ad Design",
-    description: "Create eye-catching banner ads and display creatives.",
-    prompt: "I need a static ad design",
-    color: "emerald",
-  },
-  {
-    id: "video-ad",
-    icon: Video,
-    title: "Video Ad Creator",
-    description: "Produce engaging video content for any platform.",
-    prompt: "Create a video ad for me",
+    category: "Social Media",
+    icon: Share2,
     color: "blue",
+    templates: [
+      {
+        title: "Instagram Post",
+        prompt: "I need social media content - specifically an Instagram post design with eye-catching visuals and on-brand colors.",
+      },
+      {
+        title: "Instagram Story",
+        prompt: "I need social media content - specifically Instagram story designs that are engaging and interactive.",
+      },
+      {
+        title: "LinkedIn Post",
+        prompt: "I need social media content - specifically a professional LinkedIn post graphic that's clean and on-brand.",
+      },
+      {
+        title: "Twitter/X Banner",
+        prompt: "I need social media content - specifically a Twitter/X header banner that showcases our brand identity.",
+      },
+    ],
   },
   {
-    id: "social-content",
-    icon: Layers,
-    title: "Social Media Content",
-    description: "Design scroll-stopping posts and stories.",
-    prompt: "Design social media content",
+    category: "Advertising",
+    icon: Megaphone,
+    color: "emerald",
+    templates: [
+      {
+        title: "Facebook Ad",
+        prompt: "I need static ad graphics - specifically a high-converting Facebook ad with a clear CTA.",
+      },
+      {
+        title: "Google Display Ad",
+        prompt: "I need static ad graphics - specifically Google Display ads in multiple sizes (300x250, 728x90, 160x600).",
+      },
+      {
+        title: "Video Ad",
+        prompt: "I need video/motion content - specifically a short video ad that hooks viewers and highlights key benefits.",
+      },
+      {
+        title: "Retargeting Ad",
+        prompt: "I need static ad graphics - specifically retargeting ads with a special offer to convert visitors.",
+      },
+    ],
+  },
+  {
+    category: "Branding",
+    icon: PenTool,
     color: "violet",
+    templates: [
+      {
+        title: "Logo Variations",
+        prompt: "I need UI/UX design work - specifically logo variations for different use cases (primary, icon-only, single-color).",
+      },
+      {
+        title: "Brand Guidelines",
+        prompt: "I need UI/UX design work - specifically a brand guidelines document showing logo usage, colors, and typography.",
+      },
+      {
+        title: "Business Card",
+        prompt: "I need static ad graphics - specifically a professional business card design with our brand identity.",
+      },
+      {
+        title: "Email Signature",
+        prompt: "I need UI/UX design work - specifically an email signature design with logo and contact details.",
+      },
+    ],
+  },
+  {
+    category: "Marketing",
+    icon: LayoutGrid,
+    color: "amber",
+    templates: [
+      {
+        title: "Email Newsletter",
+        prompt: "I need UI/UX design work - specifically an email newsletter template that's mobile-responsive and on-brand.",
+      },
+      {
+        title: "Landing Page Hero",
+        prompt: "I need UI/UX design work - specifically a landing page hero section with headline, CTA, and hero image.",
+      },
+      {
+        title: "Presentation Deck",
+        prompt: "I need static ad graphics - specifically a presentation template with title, content, and closing slides.",
+      },
+      {
+        title: "Infographic",
+        prompt: "I need static ad graphics - specifically an infographic to visualize data in an easy-to-understand way.",
+      },
+    ],
   },
 ];
 
-// Brand asset cards
-const DESIGN_ASSETS = [
-  {
-    id: "logo",
-    title: "Logo Pack",
-    fileCount: 12,
-    gridClass: "col-span-1 md:col-span-5",
-    visual: "logo",
-  },
-  {
-    id: "colors",
-    title: "Brand Colors",
-    fileCount: 8,
-    gridClass: "col-span-1 md:col-span-4",
-    visual: "colors",
-  },
-  {
-    id: "typography",
-    title: "Typography",
-    fileCount: 6,
-    gridClass: "col-span-1 md:col-span-3",
-    visual: "typography",
-  },
-];
-
-const AssetVisual = ({
-  type,
+// Brand asset display component
+const BrandAssetCard = ({
   brand,
+  type,
 }: {
-  type: string;
   brand: BrandData | null;
+  type: "logo" | "primary" | "secondary" | "accent" | "fonts";
 }) => {
-  const colors = brand?.brandColors?.length
-    ? brand.brandColors
-    : ([
-        brand?.primaryColor,
-        brand?.secondaryColor,
-        brand?.accentColor,
-        brand?.backgroundColor,
-        brand?.textColor,
-      ].filter(Boolean) as string[]);
-
-  const primaryFont = brand?.primaryFont || "Inter";
-  const secondaryFont = brand?.secondaryFont || "Inter";
-  const logoUrl = brand?.logoUrl;
   const companyInitial = brand?.name?.charAt(0)?.toUpperCase() || "C";
-  const primaryColor = brand?.primaryColor || "#6366f1";
 
   switch (type) {
     case "logo":
       return (
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <>
-              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                <Image
-                  src={logoUrl}
-                  alt="Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                />
-              </div>
-              <div className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center overflow-hidden">
-                <Image
-                  src={logoUrl}
-                  alt="Logo"
-                  width={28}
-                  height={28}
-                  className="object-contain opacity-60"
-                />
-              </div>
-            </>
+        <div className="flex flex-col items-center gap-2">
+          {brand?.logoUrl ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-border/50">
+              <img
+                src={brand.logoUrl}
+                alt="Logo"
+                className="object-cover w-full h-full"
+              />
+            </div>
           ) : (
-            <>
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <span className="text-white font-bold text-xl">
-                  {companyInitial}
-                </span>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-muted-foreground font-medium text-base">
-                  {companyInitial}
-                </span>
-              </div>
-            </>
+            <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 flex items-center justify-center">
+              <span className="text-muted-foreground font-semibold text-lg">
+                {companyInitial}
+              </span>
+            </div>
           )}
+          <span className="text-xs text-muted-foreground">Logo</span>
         </div>
       );
-    case "colors":
+    case "primary":
       return (
-        <div className="flex items-center gap-2">
-          {colors.length > 0 ? (
-            colors
-              .slice(0, 4)
-              .map((color, i) => (
-                <div
-                  key={i}
-                  className="w-9 h-9 rounded-full border border-border"
-                  style={{ backgroundColor: color }}
-                />
-              ))
-          ) : (
-            <>
-              <div className="w-9 h-9 rounded-full bg-[#6366f1]" />
-              <div className="w-9 h-9 rounded-full bg-[#8b5cf6]" />
-              <div className="w-9 h-9 rounded-full bg-[#22c55e]" />
-            </>
-          )}
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
+            style={{ backgroundColor: brand?.primaryColor || "#e5e5e5" }}
+          />
+          <span className="text-xs text-muted-foreground">Primary</span>
         </div>
       );
-    case "typography":
+    case "secondary":
       return (
-        <div className="flex items-baseline gap-3">
-          <span
-            className="text-foreground text-2xl font-bold"
-            style={{ fontFamily: primaryFont }}
-          >
-            Aa
-          </span>
-          <span
-            className="text-muted-foreground text-lg"
-            style={{ fontFamily: secondaryFont }}
-          >
-            Bb
-          </span>
-          <span
-            className="text-muted-foreground/60 text-sm"
-            style={{ fontFamily: primaryFont }}
-          >
-            Cc
-          </span>
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
+            style={{ backgroundColor: brand?.secondaryColor || "#d4d4d4" }}
+          />
+          <span className="text-xs text-muted-foreground">Secondary</span>
+        </div>
+      );
+    case "accent":
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
+            style={{ backgroundColor: brand?.accentColor || "#c4c4c4" }}
+          />
+          <span className="text-xs text-muted-foreground">Accent</span>
+        </div>
+      );
+    case "fonts":
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 flex items-center justify-center">
+            <span
+              className="text-foreground/80 text-lg font-semibold"
+              style={{ fontFamily: brand?.primaryFont || "Inter" }}
+            >
+              Aa
+            </span>
+          </div>
+          <span className="text-xs text-muted-foreground">Fonts</span>
         </div>
       );
     default:
       return null;
   }
 };
+
 
 function DashboardContent() {
   const router = useRouter();
@@ -250,13 +244,14 @@ function DashboardContent() {
   const [isSending, setIsSending] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(PROMPT_TEMPLATES[0].category);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [recentChats, setRecentChats] = useState<ChatDraft[]>([]);
   const [recentTasks, setRecentTasks] = useState<Array<{ id: string; title: string; status: string; createdAt: string }>>([]);
   const [brandData, setBrandData] = useState<BrandData | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
@@ -281,7 +276,11 @@ function DashboardContent() {
     // Fetch brand data
     fetch("/api/brand")
       .then((res) => res.json())
-      .then((data) => setBrandData(data))
+      .then((data) => {
+        if (data.success && data.data) {
+          setBrandData(data.data);
+        }
+      })
       .catch(console.error);
 
     // Fetch recent tasks
@@ -297,6 +296,14 @@ function DashboardContent() {
     // Load chat drafts
     setRecentChats(getDrafts().slice(0, 5));
   }, [searchParams]);
+
+  // Auto-resize textarea when template is selected
+  useEffect(() => {
+    if (inputRef.current && chatInput) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 150) + 'px';
+    }
+  }, [chatInput]);
 
   // Credit indicator colors
   const getCreditColor = () => {
@@ -529,12 +536,16 @@ function DashboardContent() {
             )}
 
             {/* Input Row */}
-            <div className="relative flex items-center gap-2 px-5 pt-4 pb-2">
-              <input
+            <div className="relative flex items-start gap-2 px-5 pt-4 pb-2">
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
+                onChange={(e) => {
+                  setChatInput(e.target.value);
+                  // Auto-resize textarea
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -542,12 +553,13 @@ function DashboardContent() {
                   }
                 }}
                 placeholder={uploadedFiles.length > 0 ? "Add a message or just send..." : "Describe what you want to create..."}
-                className="flex-1 bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
+                className="flex-1 bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base resize-none min-h-[28px] max-h-[150px]"
+                rows={1}
               />
               <button
                 onClick={() => handleSubmit()}
                 disabled={isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)}
-                className="p-2 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="p-2 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0 mt-0.5"
               >
                 <ArrowUp className="h-4 w-4" />
               </button>
@@ -576,14 +588,6 @@ function DashboardContent() {
 
               <div className="w-px h-4 bg-border mx-1" />
 
-              {/* Templates button */}
-              <button
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-              >
-                <Layers className="h-3.5 w-3.5" />
-                <span>Templates</span>
-              </button>
-
               {/* Improve Prompt button */}
               <button
                 disabled={!chatInput.trim()}
@@ -608,34 +612,84 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Quick Prompts as Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6 w-full max-w-3xl">
-          {QUICK_PROMPTS.map((prompt) => (
-            <button
-              key={prompt.id}
-              onClick={() => handleSubmit(prompt.prompt)}
-              className="group flex flex-col rounded-lg border border-border/50 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden text-left"
-            >
-              {/* Illustration Area */}
-              <div className={`h-20 flex items-center justify-center ${
-                prompt.color === "emerald" ? "bg-emerald-50 dark:bg-emerald-500/10" :
-                prompt.color === "blue" ? "bg-blue-50 dark:bg-blue-500/10" :
-                "bg-violet-50 dark:bg-violet-500/10"
-              }`}>
-                <prompt.icon className={`w-8 h-8 opacity-80 group-hover:scale-110 transition-transform ${
-                  prompt.color === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
-                  prompt.color === "blue" ? "text-blue-600 dark:text-blue-400" :
-                  "text-violet-600 dark:text-violet-400"
-                }`} />
-              </div>
+        {/* Template Categories */}
+        <div className="mt-8 w-full max-w-3xl">
+          {/* Category Tabs */}
+          <div className="flex justify-center gap-2 mb-4 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {PROMPT_TEMPLATES.map((cat) => {
+              const isActive = selectedCategory === cat.category;
+              const colorClasses = {
+                blue: isActive ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30" : "",
+                emerald: isActive ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30" : "",
+                violet: isActive ? "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30" : "",
+                amber: isActive ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30" : "",
+              };
 
-              {/* Content */}
-              <div className="p-3">
-                <h3 className="font-medium text-sm text-foreground mb-0.5">{prompt.title}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
-              </div>
-            </button>
-          ))}
+              return (
+                <button
+                  key={cat.category}
+                  onClick={() => setSelectedCategory(cat.category)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
+                    isActive
+                      ? colorClasses[cat.color as keyof typeof colorClasses]
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 hover:bg-muted/50"
+                  }`}
+                >
+                  <cat.icon className="h-4 w-4" />
+                  {cat.category}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Template Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {PROMPT_TEMPLATES.find(c => c.category === selectedCategory)?.templates.map((template, idx) => {
+              const currentCategory = PROMPT_TEMPLATES.find(c => c.category === selectedCategory);
+              const categoryColor = currentCategory?.color || "emerald";
+              const bgClasses = {
+                blue: "bg-blue-50 dark:bg-blue-500/10",
+                emerald: "bg-emerald-50 dark:bg-emerald-500/10",
+                violet: "bg-violet-50 dark:bg-violet-500/10",
+                amber: "bg-amber-50 dark:bg-amber-500/10",
+              };
+              const iconClasses = {
+                blue: "text-blue-600 dark:text-blue-400",
+                emerald: "text-emerald-600 dark:text-emerald-400",
+                violet: "text-violet-600 dark:text-violet-400",
+                amber: "text-amber-600 dark:text-amber-400",
+              };
+              const hoverClasses = {
+                blue: "hover:border-blue-300 dark:hover:border-blue-500/40",
+                emerald: "hover:border-emerald-300 dark:hover:border-emerald-500/40",
+                violet: "hover:border-violet-300 dark:hover:border-violet-500/40",
+                amber: "hover:border-amber-300 dark:hover:border-amber-500/40",
+              };
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setChatInput(template.prompt);
+                    inputRef.current?.focus();
+                  }}
+                  className={`group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-card text-left transition-all duration-200 ${hoverClasses[categoryColor as keyof typeof hoverClasses]} hover:shadow-md`}
+                >
+                  <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${bgClasses[categoryColor as keyof typeof bgClasses]}`}>
+                    {currentCategory?.icon && <currentCategory.icon className={`h-5 w-5 ${iconClasses[categoryColor as keyof typeof iconClasses]}`} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm text-foreground mb-0.5 group-hover:text-primary transition-colors">
+                      {template.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {template.prompt}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -650,35 +704,31 @@ function DashboardContent() {
             Manage brand →
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          {DESIGN_ASSETS.map((asset) => (
-            <Link
-              key={asset.id}
-              href="/dashboard/brand"
-              className={`group relative rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all cursor-pointer h-[120px] bg-card ${asset.gridClass}`}
-            >
-              <div className="p-4 h-full flex flex-col justify-between">
-                {/* Visual Preview */}
-                <div className="flex-1 flex items-center">
-                  <AssetVisual type={asset.visual} brand={brandData} />
-                </div>
-
-                {/* Footer with title and file count */}
-                <div className="flex items-end justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground">
-                      {asset.title}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
-                      {asset.fileCount} files
-                    </span>
-                  </div>
-                  <Download className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+        <Link
+          href="/dashboard/brand"
+          className="group block rounded-xl border border-border/50 hover:border-primary/30 hover:shadow-md transition-all bg-card overflow-hidden"
+        >
+          <div className="px-5 py-4">
+            <div className="flex items-center justify-between gap-6">
+              {/* Brand assets in a row */}
+              <div className="flex items-center gap-6 md:gap-8">
+                <BrandAssetCard brand={brandData} type="logo" />
+                <div className="w-px h-12 bg-border/50 hidden sm:block" />
+                <BrandAssetCard brand={brandData} type="primary" />
+                <BrandAssetCard brand={brandData} type="secondary" />
+                <BrandAssetCard brand={brandData} type="accent" />
+                <div className="w-px h-12 bg-border/50 hidden sm:block" />
+                <BrandAssetCard brand={brandData} type="fonts" />
               </div>
-            </Link>
-          ))}
-        </div>
+
+              {/* Arrow on hover */}
+              <div className="hidden md:flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                <span className="text-sm">Edit</span>
+                <Download className="w-4 h-4 -rotate-90" />
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Recent Items Section */}
@@ -801,11 +851,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-10 w-52 rounded-full" />
       </div>
       <Skeleton className="h-6 w-24 mb-4" />
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-12">
-        <Skeleton className="h-[120px] rounded-xl col-span-5" />
-        <Skeleton className="h-[120px] rounded-xl col-span-4" />
-        <Skeleton className="h-[120px] rounded-xl col-span-3" />
-      </div>
+      <Skeleton className="h-[88px] w-full rounded-xl mb-12" />
       <Skeleton className="h-6 w-24 mb-4" />
       <Skeleton className="h-48 w-full rounded-xl" />
     </div>

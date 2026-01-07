@@ -113,6 +113,26 @@ function SidebarProvider({
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed"
 
+  // Set CSS variables on document root for dialogs/modals to use
+  React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      const root = document.documentElement
+      if (open && !isMobile) {
+        root.style.setProperty("--sidebar-offset", SIDEBAR_WIDTH)
+        root.setAttribute("data-sidebar-open", "true")
+      } else {
+        root.style.setProperty("--sidebar-offset", "0px")
+        root.removeAttribute("data-sidebar-open")
+      }
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.documentElement.style.removeProperty("--sidebar-offset")
+        document.documentElement.removeAttribute("data-sidebar-open")
+      }
+    }
+  }, [open, isMobile])
+
   const contextValue = React.useMemo<SidebarContextProps>(
     () => ({
       state,

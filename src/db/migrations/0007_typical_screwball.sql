@@ -1,0 +1,1 @@
+ALTER TABLE "style_references" ADD COLUMN "description" text;

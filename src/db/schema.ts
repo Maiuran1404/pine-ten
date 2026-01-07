@@ -263,8 +263,9 @@ export const taskMessages = pgTable("task_messages", {
 // Style references (for AI chat suggestions)
 export const styleReferences = pgTable("style_references", {
   id: uuid("id").defaultRandom().primaryKey(),
-  category: text("category").notNull(),
+  category: text("category").notNull(), // e.g., "static_ads", "video_motion", "social_media", "ui_ux"
   name: text("name").notNull(),
+  description: text("description"), // Short description shown under the style card
   imageUrl: text("image_url").notNull(),
   tags: jsonb("tags").$type<string[]>().default([]),
   usageCount: integer("usage_count").notNull().default(0),

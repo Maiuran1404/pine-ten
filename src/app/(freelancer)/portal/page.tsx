@@ -132,15 +132,7 @@ export default function FreelancerDashboardPage() {
 
           {/* Welcome Text */}
           <div className="space-y-2">
-            <h1
-              className="text-3xl sm:text-4xl font-normal tracking-tight"
-              style={{
-                background: "linear-gradient(90deg, var(--ds-accent) 0%, var(--ds-accent-light) 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
+            <h1 className="text-3xl sm:text-4xl font-normal tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Welcome, {user?.name?.split(" ")[0]}!
             </h1>
             <h2 className="text-2xl sm:text-3xl font-normal tracking-tight text-foreground">
