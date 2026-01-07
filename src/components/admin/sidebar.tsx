@@ -20,6 +20,7 @@ import {
   Database,
   Ticket,
   MessageSquare,
+  DollarSign,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -33,6 +34,11 @@ const navigation: NavigationItem[] = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Revenue",
+    href: "/admin/revenue",
+    icon: DollarSign,
   },
   {
     name: "All Tasks",

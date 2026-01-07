@@ -14,20 +14,12 @@ import { useRouter } from "next/navigation";
 import { User, Mail, Phone, Calendar, RefreshCw, LogOut, Briefcase, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface NotificationPreferences {
-  email: boolean;
-  inApp: boolean;
-  taskUpdates: boolean;
-  marketing: boolean;
-}
-
 interface UserSettings {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   image: string | null;
-  notificationPreferences: NotificationPreferences | null;
   createdAt: string;
 }
 
@@ -63,12 +55,6 @@ export default function FreelancerSettingsPage() {
     whatsappNumber: "",
     portfolioUrls: "",
   });
-  const [notifications, setNotifications] = useState<NotificationPreferences>({
-    email: true,
-    inApp: true,
-    taskUpdates: true,
-    marketing: false,
-  });
   const [availability, setAvailability] = useState(true);
 
   useEffect(() => {
@@ -90,9 +76,6 @@ export default function FreelancerSettingsPage() {
           name: data.user.name || "",
           phone: data.user.phone || "",
         }));
-        if (data.user.notificationPreferences) {
-          setNotifications(data.user.notificationPreferences);
-        }
       }
 
       if (profileResponse.ok) {
@@ -164,29 +147,6 @@ export default function FreelancerSettingsPage() {
       }
     } catch {
       toast.error("Failed to update freelancer profile");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSaveNotifications = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api/user/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          notificationPreferences: notifications,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Notification preferences updated");
-      } else {
-        throw new Error("Failed to update notifications");
-      }
-    } catch {
-      toast.error("Failed to update notification preferences");
     } finally {
       setIsSaving(false);
     }
@@ -409,101 +369,6 @@ export default function FreelancerSettingsPage() {
               </>
             ) : (
               "Save Freelancer Profile"
-            )}
-          </Button>
-        </div>
-      </GlassCard>
-
-      {/* Notification Preferences */}
-      <GlassCard>
-        <div className="p-5 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium text-foreground">Notifications</h2>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">Choose how you want to receive notifications</p>
-        </div>
-        <div className="p-5 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-foreground">Email Notifications</Label>
-                <p className="text-xs text-muted-foreground">
-                  Receive notifications via email
-                </p>
-              </div>
-              <Switch
-                checked={notifications.email}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, email: checked })
-                }
-              />
-            </div>
-
-            <div className="h-px bg-muted/40" />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-foreground">In-App Notifications</Label>
-                <p className="text-xs text-muted-foreground">
-                  Receive notifications in the portal
-                </p>
-              </div>
-              <Switch
-                checked={notifications.inApp}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, inApp: checked })
-                }
-              />
-            </div>
-
-            <div className="h-px bg-muted/40" />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-foreground">Task Updates</Label>
-                <p className="text-xs text-muted-foreground">
-                  Get notified about new available tasks
-                </p>
-              </div>
-              <Switch
-                checked={notifications.taskUpdates}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, taskUpdates: checked })
-                }
-              />
-            </div>
-
-            <div className="h-px bg-muted/40" />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-foreground">Marketing Emails</Label>
-                <p className="text-xs text-muted-foreground">
-                  Receive news and promotional content
-                </p>
-              </div>
-              <Switch
-                checked={notifications.marketing}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, marketing: checked })
-                }
-              />
-            </div>
-          </div>
-
-          <Button
-            onClick={handleSaveNotifications}
-            disabled={isSaving}
-            className=""
-          >
-            {isSaving ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Preferences"
             )}
           </Button>
         </div>
