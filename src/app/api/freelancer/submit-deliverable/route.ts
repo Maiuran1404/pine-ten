@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, taskFiles, taskMessages, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
+import { adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
@@ -76,36 +76,41 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Update task status to IN_REVIEW
+    // Update task status to PENDING_ADMIN_REVIEW (requires admin verification before client sees it)
     await db
       .update(tasks)
       .set({
-        status: "IN_REVIEW",
+        status: "PENDING_ADMIN_REVIEW",
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId));
 
-    // Notify the client that deliverables are ready for review
+    // Get freelancer and client details for admin notification
     try {
-      const freelancer = await db
-        .select({ name: users.name })
+      const [freelancer] = await db
+        .select({ name: users.name, email: users.email })
         .from(users)
         .where(eq(users.id, session.user.id))
         .limit(1);
 
-      await notify({
-        userId: task.clientId,
-        type: "TASK_COMPLETED",
-        title: "Ready for Review",
-        content: `${freelancer[0]?.name || "Your designer"} has submitted work for "${task.title}". Please review and approve or request changes.`,
+      const [client] = await db
+        .select({ name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, task.clientId))
+        .limit(1);
+
+      // Notify admin that deliverables need verification
+      await adminNotifications.deliverablePendingReview({
         taskId: task.id,
-        taskUrl: `${config.app.url}/dashboard/tasks/${task.id}`,
-        additionalData: {
-          taskTitle: task.title,
-        },
+        taskTitle: task.title,
+        freelancerName: freelancer?.name || "Unknown",
+        freelancerEmail: freelancer?.email || "",
+        clientName: client?.name || "Unknown",
+        clientEmail: client?.email || "",
+        fileCount: files.length,
       });
     } catch (notifyError) {
-      console.error("Failed to send deliverable notification:", notifyError);
+      console.error("Failed to send admin notification:", notifyError);
     }
 
     return NextResponse.json({ success: true });

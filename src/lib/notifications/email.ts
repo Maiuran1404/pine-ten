@@ -372,6 +372,75 @@ export const adminNotifications = {
       `
     );
   },
+
+  // Deliverable pending admin review
+  deliverablePendingReview: async (data: {
+    taskId: string;
+    taskTitle: string;
+    freelancerName: string;
+    freelancerEmail: string;
+    clientName: string;
+    clientEmail: string;
+    fileCount: number;
+  }) => {
+    return notifyAdmin(
+      "ACTION REQUIRED: Deliverable Needs Verification",
+      `
+        <h2 style="color: #dc2626; margin-top: 0;">Deliverable Pending Verification</h2>
+        <p style="background: #fef3c7; padding: 12px; border-radius: 6px; color: #92400e; font-weight: 600;">
+          A freelancer has submitted deliverables that require your verification before the client can review them.
+        </p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Task</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: 600;">${data.taskTitle}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Freelancer</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${data.freelancerName} (${data.freelancerEmail})</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Client</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${data.clientName} (${data.clientEmail})</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Files Submitted</td>
+            <td style="padding: 8px 0;">${data.fileCount} file${data.fileCount !== 1 ? 's' : ''}</td>
+          </tr>
+        </table>
+        <div style="margin-top: 20px;">
+          <a href="${config.app.url}/admin/verify/${data.taskId}" style="display: inline-block; background: #dc2626; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Review & Verify Deliverable</a>
+        </div>
+        <p style="margin-top: 16px; color: #666; font-size: 14px;">
+          The client will not see the deliverables until you verify them. Please review the work quality before approving.
+        </p>
+      `
+    );
+  },
+
+  // Deliverable verified by admin (sent to client)
+  deliverableVerified: async (data: {
+    taskTitle: string;
+    clientName: string;
+    clientEmail: string;
+    freelancerName: string;
+    taskUrl: string;
+  }) => {
+    return sendEmail({
+      to: data.clientEmail,
+      subject: `Deliverable Ready for Review: ${data.taskTitle}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #16a34a;">Your Deliverable is Ready!</h2>
+          <p>Hi ${data.clientName},</p>
+          <p><strong>${data.freelancerName}</strong> has completed work on <strong>${data.taskTitle}</strong>.</p>
+          <p>The deliverable has been verified by our team and is now ready for your review.</p>
+          <a href="${data.taskUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Review Deliverable</a>
+          <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+        </div>
+      `,
+    });
+  },
 };
 
 // ============================================

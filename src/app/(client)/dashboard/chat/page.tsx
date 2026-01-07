@@ -23,11 +23,11 @@ export default function ChatPage() {
   const draftParam = searchParams.get("draft");
   const messageParam = searchParams.get("message");
 
-  // Initialize state based on URL
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(() => {
+  // Initialize state based on URL - always generate a draftId to avoid regenerating on every render
+  const [currentDraftId, setCurrentDraftId] = useState<string>(() => {
     if (draftParam) return draftParam;
-    if (messageParam) return generateDraftId();
-    return null;
+    // Always generate a stable ID upfront
+    return generateDraftId();
   });
 
   const [showDrafts, setShowDrafts] = useState(() => !draftParam && !messageParam);
@@ -65,8 +65,8 @@ export default function ChatPage() {
     setShowDrafts(false);
   };
 
-  const handleContinueDraft = (draftId: string) => {
-    setCurrentDraftId(draftId);
+  const handleContinueDraft = (draftIdToLoad: string) => {
+    setCurrentDraftId(draftIdToLoad);
     setShowDrafts(false);
   };
 
@@ -95,8 +95,8 @@ export default function ChatPage() {
     return date.toLocaleDateString();
   };
 
-  // If no draft is selected and there are drafts, show selection UI
-  if (showDrafts && drafts.length > 0 && !currentDraftId) {
+  // If user wants to see drafts and there are drafts, show selection UI
+  if (showDrafts && drafts.length > 0) {
     return (
       <div className="min-h-full bg-background relative overflow-hidden">
         {/* Curtain light effect - only in dark mode */}
@@ -219,7 +219,6 @@ export default function ChatPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setCurrentDraftId(null);
                   setShowDrafts(true);
                 }}
                 className="cursor-pointer"
@@ -232,7 +231,7 @@ export default function ChatPage() {
         )}
 
         {/* Horizontal scroll of drafts when in chat mode - only show when not using modern design */}
-        {drafts.length > 0 && currentDraftId && !isTransitioning && (
+        {drafts.length > 0 && !isTransitioning && (
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-2 pb-2">
               <Button
@@ -268,7 +267,7 @@ export default function ChatPage() {
 
         <div className="w-full flex-1 flex flex-col min-h-0">
           <ChatInterface
-            draftId={currentDraftId || generateDraftId()}
+            draftId={currentDraftId}
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
             seamlessTransition={isTransitioning}

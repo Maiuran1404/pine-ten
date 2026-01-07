@@ -100,6 +100,11 @@ const statusConfig: Record<
     label: "In Progress",
     icon: <RefreshCw className="h-4 w-4" />,
   },
+  PENDING_ADMIN_REVIEW: {
+    variant: "destructive",
+    label: "Pending Admin Review",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
   IN_REVIEW: {
     variant: "outline",
     label: "In Review",

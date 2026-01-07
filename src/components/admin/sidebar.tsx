@@ -22,6 +22,7 @@ import {
   MessageSquare,
   DollarSign,
   Bell,
+  ShieldCheck,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -45,6 +46,11 @@ const navigation: NavigationItem[] = [
     name: "All Tasks",
     href: "/admin/tasks",
     icon: FolderOpen,
+  },
+  {
+    name: "Verify",
+    href: "/admin/verify",
+    icon: ShieldCheck,
   },
   {
     name: "Clients",

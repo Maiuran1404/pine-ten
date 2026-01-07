@@ -65,8 +65,10 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
@@ -235,14 +237,15 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
     });
   }, [messages]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Shared file upload logic
+  const uploadFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
 
     setIsUploading(true);
 
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
+      const uploadPromises = fileArray.map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("folder", "task-attachments");
@@ -268,10 +271,54 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
       toast.error(error instanceof Error ? error.message : "Failed to upload files");
     } finally {
       setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    await uploadFiles(files);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      await uploadFiles(files);
     }
   };
 
@@ -521,10 +568,36 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   };
 
   return (
-    <div className={cn(
-      "flex flex-col relative",
-      seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]"
-    )}>
+    <div
+      className={cn(
+        "flex flex-col relative",
+        seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]"
+      )}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl flex items-center justify-center"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <ImageIcon className="h-8 w-8 text-primary" />
+              </div>
+              <p className="text-lg font-medium text-foreground">Drop files here</p>
+              <p className="text-sm text-muted-foreground mt-1">Images, videos, PDFs, and more</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Chat title - shown when there's context */}
       {seamlessTransition && (
         <motion.div
@@ -598,9 +671,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   className={cn(
                     "max-w-[80%] rounded-2xl px-4 py-3",
                     message.role === "user"
-                      ? seamlessTransition
-                        ? "bg-primary text-primary-foreground dark:bg-white dark:text-black"
-                        : "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground"
                       : seamlessTransition
                         ? "bg-muted border border-border"
                         : "bg-muted"
@@ -609,9 +680,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   <div className={cn(
                     "prose prose-sm max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>p:last-child]:mb-0",
                     message.role === "user"
-                      ? seamlessTransition
-                        ? "[&_*]:text-primary-foreground"
-                        : "prose-invert [&_*]:text-primary-foreground"
+                      ? "prose-invert [&_*]:text-primary-foreground"
                       : seamlessTransition
                         ? "prose dark:prose-invert [&_*]:text-foreground [&_strong]:text-foreground [&_b]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_li]:text-foreground"
                         : "dark:prose-invert"
@@ -689,17 +758,16 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                   />
                 )}
 
-                {/* Hide timestamp for user messages in seamlessTransition mode */}
-                {!(seamlessTransition && message.role === "user") && (
-                  <p className={cn(
+                <p className={cn(
                     "text-xs mt-2",
-                    seamlessTransition
-                      ? "text-muted-foreground"
-                      : "opacity-70"
+                    message.role === "user"
+                      ? "opacity-70"
+                      : seamlessTransition
+                        ? "text-muted-foreground"
+                        : "opacity-70"
                   )}>
                     {message.timestamp.toLocaleTimeString()}
                   </p>
-                )}
               </div>
             </motion.div>
           ))}
