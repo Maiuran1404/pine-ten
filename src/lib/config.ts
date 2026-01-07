@@ -77,6 +77,13 @@ export const defaultTaskCategories = [
     description: "Social media posts, stories, and carousel content",
     baseCredits: 1,
   },
+  {
+    name: "UI/UX Design",
+    slug: "ui-ux",
+    description:
+      "User interface and experience design for apps, websites, and digital products",
+    baseCredits: 5,
+  },
 ] as const;
 
 // Complexity multipliers for credit calculation

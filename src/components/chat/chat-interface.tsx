@@ -215,27 +215,36 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
     onDraftUpdateRef.current?.();
   }, [messages, selectedStyles, pendingTask, draftId, isInitialized]);
 
-  // Helper function to scroll to bottom
-  const scrollToBottom = () => {
+  // Helper function to scroll to bottom with smooth behavior
+  const scrollToBottom = (smooth = false) => {
     if (scrollAreaRef.current) {
       // ScrollArea uses a viewport inside, find it and scroll
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
+        if (smooth) {
+          viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+        } else {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
       } else {
         // Fallback to the ref itself
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        if (smooth) {
+          scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+        } else {
+          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
       }
     }
   };
 
   // Use useLayoutEffect for synchronous scroll before paint - prevents flash
+  // Scroll when messages change OR when loading state changes (to show thinking indicator)
   useLayoutEffect(() => {
     // Small delay to ensure content is rendered
     requestAnimationFrame(() => {
       scrollToBottom();
     });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // Shared file upload logic
   const uploadFiles = async (files: FileList | File[]) => {
@@ -248,7 +257,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
       const uploadPromises = fileArray.map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("folder", "task-attachments");
+        formData.append("folder", "attachments");
 
         const response = await fetch("/api/upload", {
           method: "POST",
@@ -256,8 +265,8 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Upload failed");
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || errorData.message || "Upload failed");
         }
 
         const data = await response.json();
@@ -555,7 +564,9 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
     // Fallback to first user message
     const content = userMessages[0].content;
-    return content.length > 40 ? content.substring(0, 40) + "..." : content;
+    // Ensure content is a string (not an object)
+    const contentStr = typeof content === 'string' ? content : String(content || 'New Request');
+    return contentStr.length > 40 ? contentStr.substring(0, 40) + "..." : contentStr;
   };
 
   const chatTitle = seamlessTransition ? getChatTitle() : null;
@@ -780,11 +791,15 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
               transition={{ duration: 0.3 }}
               className="flex justify-start"
             >
-              {seamlessTransition ? (
-                <div className="rounded-2xl px-4 py-3 bg-muted border border-border">
-                  <div className="flex items-center gap-1.5">
+              <div className={cn(
+                "rounded-2xl px-4 py-3",
+                seamlessTransition ? "bg-muted border border-border" : "bg-muted"
+              )}>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Thinking</span>
+                  <div className="flex items-center gap-1">
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-muted-foreground"
+                      className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -793,7 +808,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-muted-foreground"
+                      className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -803,7 +818,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       }}
                     />
                     <motion.div
-                      className="w-2 h-2 rounded-full bg-muted-foreground"
+                      className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
                       animate={{ opacity: [0.4, 1, 0.4] }}
                       transition={{
                         duration: 1,
@@ -814,11 +829,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                     />
                   </div>
                 </div>
-              ) : (
-                <div className="bg-muted rounded-lg px-4 py-3">
-                  <LoadingSpinner size="sm" />
-                </div>
-              )}
+              </div>
             </motion.div>
           )}
         </div>

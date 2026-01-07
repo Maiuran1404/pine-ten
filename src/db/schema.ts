@@ -33,6 +33,7 @@ export const taskCategoryEnum = pgEnum("task_category", [
   "STATIC_ADS",
   "VIDEO_MOTION",
   "SOCIAL_MEDIA",
+  "UI_UX",
 ]);
 export const freelancerStatusEnum = pgEnum("freelancer_status", [
   "PENDING",

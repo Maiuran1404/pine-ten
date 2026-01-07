@@ -18,7 +18,7 @@ export const createTaskSchema = z.object({
     .max(5000, "Description must be less than 5000 characters")
     .transform((val) => val.trim()),
   category: z
-    .enum(["STATIC_ADS", "VIDEO_MOTION", "SOCIAL_MEDIA"])
+    .enum(["STATIC_ADS", "VIDEO_MOTION", "SOCIAL_MEDIA", "UI_UX"])
     .optional()
     .nullable(),
   requirements: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -197,6 +197,7 @@ export const chatPromptsSchema = z.object({
   staticAdsTree: z.string().max(10000).optional(),
   dynamicAdsTree: z.string().max(10000).optional(),
   socialMediaTree: z.string().max(10000).optional(),
+  uiuxTree: z.string().max(10000).optional(),
   creditGuidelines: z.string().max(5000).optional(),
 });
 

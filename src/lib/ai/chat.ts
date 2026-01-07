@@ -9,6 +9,7 @@ interface ChatPrompts {
   staticAdsTree: string;
   dynamicAdsTree: string;
   socialMediaTree: string;
+  uiuxTree: string;
   creditGuidelines: string;
 }
 
@@ -135,12 +136,93 @@ BRIEF STATUS:
 
 === END DYNAMIC ADS TREE ===`;
 
+const DEFAULT_UIUX_TREE = `=== UI/UX DESIGN DECISION TREE (only use after user selects UI/UX design) ===
+
+OPENER: "Great choice! UI/UX design is our specialty. I'll make sure everything aligns with your brand. Let me gather a few details to scope this properly."
+
+STEP 1 - THE 3 CORE QUESTIONS (always ask these in order):
+
+Q1 - PROJECT TYPE: "What type of UI/UX project is this?"
+[QUICK_OPTIONS]
+{"question": "What type of UI/UX project is this?", "options": ["Website design", "Mobile app design", "Web app / Dashboard", "Landing page", "Design system / Component library"]}
+[/QUICK_OPTIONS]
+
+Q2 - PROJECT SCOPE: "What's the scope of this project?"
+[QUICK_OPTIONS]
+{"question": "What's the scope of this project?", "options": ["New design from scratch", "Redesign existing interface", "Add new features to existing design", "Quick fixes / UI polish"]}
+[/QUICK_OPTIONS]
+
+Q3 - SCREENS/PAGES: "Roughly how many screens or pages do you need?"
+[QUICK_OPTIONS]
+{"question": "Roughly how many screens or pages?", "options": ["1-3 screens (simple)", "4-8 screens (medium)", "9-15 screens (large)", "16+ screens (complex)"]}
+[/QUICK_OPTIONS]
+
+STEP 2 - CONDITIONAL QUESTIONS (based on project type):
+
+IF website or landing page:
+Q4 - PURPOSE: "What's the main goal of this website/page?"
+[QUICK_OPTIONS]
+{"question": "What's the main goal?", "options": ["Generate leads", "Showcase products/services", "Build credibility/trust", "Drive specific action (signup, purchase)"]}
+[/QUICK_OPTIONS]
+
+IF mobile app or web app:
+Q4 - KEY FEATURES: "What are the 2-3 most important features?"
+(Let user type their answer)
+
+Q5 - USER TYPES: "Who will use this? Any different user roles?"
+[QUICK_OPTIONS]
+{"question": "Any different user roles?", "options": ["Single user type", "Admin + Regular users", "Multiple user types (3+)", "Not sure yet"]}
+[/QUICK_OPTIONS]
+
+IF design system:
+Q4 - COMPONENTS NEEDED: "What components do you need?"
+[QUICK_OPTIONS]
+{"question": "What components do you need?", "options": ["Core basics (buttons, forms, cards)", "Full component library", "Specific components only", "Let us recommend"]}
+[/QUICK_OPTIONS]
+
+STEP 3 - DESIGN PREFERENCES (optional but helpful):
+
+Q6 - VISUAL STYLE: "Any visual style preference?"
+[QUICK_OPTIONS]
+{"question": "Visual style preference?", "options": ["Clean & minimal", "Bold & modern", "Soft & friendly", "Corporate & professional", "Match our brand exactly", "Surprise me"]}
+[/QUICK_OPTIONS]
+
+Q7 - REFERENCES (optional): "Have any examples or competitors we should look at?"
+(Let user share links or skip)
+
+STEP 4 - DELIVERABLES:
+
+Based on scope, explain what they'll receive:
+- Simple (1-3 screens): Figma designs + basic interactions, 5-7 business days
+- Medium (4-8 screens): Full Figma designs + component structure + interactions, 10-12 business days
+- Large (9-15 screens): Complete design system + all screens + prototype + documentation, 15-18 business days
+- Complex (16+): Custom quote needed, typically 20+ business days
+
+CREDIT CALCULATION for UI/UX:
+- Simple (1-3 screens): 5-8 credits
+- Medium (4-8 screens): 10-15 credits
+- Large (9-15 screens): 18-25 credits
+- Complex (16+): 30+ credits (provide estimate)
+
+BRIEF STATUS:
+🟢 GREEN - Project type ✓, Scope ✓, Screen count ✓ → "Perfect, I've got everything I need."
+🟡 YELLOW - Missing key features or user types → "Just one more thing..."
+🔴 RED - Missing project type or scope → "I need a bit more info to proceed."
+
+=== END UI/UX TREE ===`;
+
 const DEFAULT_CREDIT_GUIDELINES = `Credit & delivery guidelines:
 - Static ad set (5 concepts + 2 variants each): 2-3 credits, 3 business days
 - Simple single ad: 1 credit, 2 business days
 - Dynamic/video ads (3 concepts + 2 variants): 4-5 credits, 5 business days
 - Short video (15-30 sec): 3 credits, 5 business days
-- Longer video (30-60 sec): 5 credits, 7 business days`;
+- Longer video (30-60 sec): 5 credits, 7 business days
+
+UI/UX Design credit guidelines:
+- Simple UI (1-3 screens): 5-8 credits, 5-7 business days
+- Medium UI (4-8 screens): 10-15 credits, 10-12 business days
+- Large UI (9-15 screens): 18-25 credits, 15-18 business days
+- Complex UI (16+ screens): 30+ credits, 20+ business days (custom quote)`;
 
 async function getSystemPrompt(): Promise<string> {
   const today = new Date();
@@ -152,6 +234,7 @@ async function getSystemPrompt(): Promise<string> {
   const systemPrompt = dbPrompts?.systemPrompt || DEFAULT_SYSTEM_PROMPT;
   const staticAdsTree = dbPrompts?.staticAdsTree || DEFAULT_STATIC_ADS_TREE;
   const dynamicAdsTree = dbPrompts?.dynamicAdsTree || DEFAULT_DYNAMIC_ADS_TREE;
+  const uiuxTree = dbPrompts?.uiuxTree || DEFAULT_UIUX_TREE;
   const creditGuidelines = dbPrompts?.creditGuidelines || DEFAULT_CREDIT_GUIDELINES;
 
   return `${systemPrompt}
@@ -164,18 +247,21 @@ Before anything else, ask what type of project they need:
 
 "What would you like to create?"
 [QUICK_OPTIONS]
-{"question": "What would you like to create?", "options": ["Static ads / graphics", "Video / motion content", "Social media content", "Something else"]}
+{"question": "What would you like to create?", "options": ["Static ads / graphics", "Video / motion content", "Social media content", "UI/UX design", "Something else"]}
 [/QUICK_OPTIONS]
 
 ONLY after they choose, follow the appropriate decision tree below.
 - If "Static ads / graphics" → follow STATIC ADS DECISION TREE
 - If "Video / motion content" → follow DYNAMIC ADS DECISION TREE
 - If "Social media content" → ask about platform, content type, frequency
+- If "UI/UX design" → follow UI/UX DESIGN DECISION TREE
 - If "Something else" → ask them to describe what they need
 
 ${staticAdsTree}
 
 ${dynamicAdsTree}
+
+${uiuxTree}
 
 ${creditGuidelines}
 
@@ -225,6 +311,30 @@ FOR DYNAMIC/VIDEO ADS:
   },
   "estimatedHours": number,
   "deliveryDays": 5,
+  "creditsRequired": number,
+  "deadline": null
+}
+[/TASK_READY]
+
+FOR UI/UX DESIGN:
+[TASK_READY]
+{
+  "title": "Brief task title (e.g., 'Mobile App UI Design - Fitness Tracker')",
+  "description": "Full description including project type, scope, screens, features, user types, and visual preferences",
+  "category": "UI_UX",
+  "requirements": {
+    "projectType": "website|mobile-app|web-app|landing-page|design-system",
+    "scope": "new-design|redesign|add-features|ui-polish",
+    "screenCount": "1-3|4-8|9-15|16+",
+    "purpose": "...",
+    "keyFeatures": ["feature1", "feature2", "feature3"],
+    "userTypes": "single|admin-regular|multiple|tbd",
+    "visualStyle": "clean-minimal|bold-modern|soft-friendly|corporate|brand-match|surprise-me",
+    "references": ["url1", "url2"],
+    "deliverables": "Figma designs + component structure + interactions + prototype"
+  },
+  "estimatedHours": number,
+  "deliveryDays": number,
   "creditsRequired": number,
   "deadline": null
 }
