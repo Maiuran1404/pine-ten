@@ -1074,9 +1074,9 @@ export function ChatInterface({
                       </div>
                     </div>
                   ) : (
-                    /* User message - right aligned speech bubble */
+                    /* User message - right aligned flat bubble */
                     <div className="max-w-[75%]">
-                      <div className="bg-muted/80 rounded-full px-5 py-2.5 shadow-sm">
+                      <div className="bg-muted/60 rounded-2xl px-4 py-2.5">
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {message.content}
                         </p>

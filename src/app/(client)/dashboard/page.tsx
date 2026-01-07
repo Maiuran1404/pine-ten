@@ -67,19 +67,19 @@ const PROMPT_TEMPLATES = [
     templates: [
       {
         title: "Instagram Post",
-        prompt: "I need social media content - specifically an Instagram post design with eye-catching visuals and on-brand colors.",
+        prompt: "I need social media content - an Instagram post design with eye-catching visuals.",
       },
       {
         title: "Instagram Story",
-        prompt: "I need social media content - specifically Instagram story designs that are engaging and interactive.",
+        prompt: "I need social media content - Instagram story designs that are engaging.",
       },
       {
         title: "LinkedIn Post",
-        prompt: "I need social media content - specifically a professional LinkedIn post graphic that's clean and on-brand.",
+        prompt: "I need social media content - a professional LinkedIn post graphic.",
       },
       {
-        title: "Twitter/X Banner",
-        prompt: "I need social media content - specifically a Twitter/X header banner that showcases our brand identity.",
+        title: "TikTok/Reels",
+        prompt: "I need video/motion content - short-form video content for TikTok or Reels.",
       },
     ],
   },
@@ -90,19 +90,19 @@ const PROMPT_TEMPLATES = [
     templates: [
       {
         title: "Facebook Ad",
-        prompt: "I need static ad graphics - specifically a high-converting Facebook ad with a clear CTA.",
+        prompt: "I need static ads/graphics - a Facebook ad design with a clear CTA.",
       },
       {
         title: "Google Display Ad",
-        prompt: "I need static ad graphics - specifically Google Display ads in multiple sizes (300x250, 728x90, 160x600).",
+        prompt: "I need static ads/graphics - Google Display ads in standard sizes.",
       },
       {
         title: "Video Ad",
-        prompt: "I need video/motion content - specifically a short video ad that hooks viewers and highlights key benefits.",
+        prompt: "I need video/motion content - a short video ad for social media.",
       },
       {
-        title: "Retargeting Ad",
-        prompt: "I need static ad graphics - specifically retargeting ads with a special offer to convert visitors.",
+        title: "Banner Ads",
+        prompt: "I need static ads/graphics - web banner ads for a campaign.",
       },
     ],
   },
@@ -112,20 +112,20 @@ const PROMPT_TEMPLATES = [
     color: "violet",
     templates: [
       {
-        title: "Logo Variations",
-        prompt: "I need UI/UX design work - specifically logo variations for different use cases (primary, icon-only, single-color).",
+        title: "Logo Design",
+        prompt: "I need static ads/graphics - logo variations (primary, icon-only, single-color).",
       },
       {
         title: "Brand Guidelines",
-        prompt: "I need UI/UX design work - specifically a brand guidelines document showing logo usage, colors, and typography.",
+        prompt: "I need static ads/graphics - a brand guidelines document with logo usage and colors.",
       },
       {
         title: "Business Card",
-        prompt: "I need static ad graphics - specifically a professional business card design with our brand identity.",
+        prompt: "I need static ads/graphics - a professional business card design.",
       },
       {
-        title: "Email Signature",
-        prompt: "I need UI/UX design work - specifically an email signature design with logo and contact details.",
+        title: "Brand Assets",
+        prompt: "I need static ads/graphics - brand asset designs (letterhead, social covers).",
       },
     ],
   },
@@ -135,20 +135,20 @@ const PROMPT_TEMPLATES = [
     color: "amber",
     templates: [
       {
-        title: "Email Newsletter",
-        prompt: "I need UI/UX design work - specifically an email newsletter template that's mobile-responsive and on-brand.",
+        title: "Email Design",
+        prompt: "I need UI/UX design - an email newsletter template design.",
       },
       {
-        title: "Landing Page Hero",
-        prompt: "I need UI/UX design work - specifically a landing page hero section with headline, CTA, and hero image.",
+        title: "Landing Page",
+        prompt: "I need UI/UX design - a landing page design with hero section and CTA.",
       },
       {
-        title: "Presentation Deck",
-        prompt: "I need static ad graphics - specifically a presentation template with title, content, and closing slides.",
+        title: "Presentation",
+        prompt: "I need static ads/graphics - a presentation deck template.",
       },
       {
         title: "Infographic",
-        prompt: "I need static ad graphics - specifically an infographic to visualize data in an easy-to-understand way.",
+        prompt: "I need static ads/graphics - an infographic to visualize data.",
       },
     ],
   },
