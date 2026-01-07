@@ -517,11 +517,11 @@ function DashboardContent() {
             )}
 
             {/* Input Field */}
-            <div className="relative flex items-center gap-1 px-4 py-2">
+            <div className="relative flex items-center gap-2 px-4 py-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
               >
                 {isUploading ? (
                   <LoadingSpinner size="sm" />
@@ -541,8 +541,18 @@ function DashboardContent() {
                   }
                 }}
                 placeholder={uploadedFiles.length > 0 ? "Add a message or just send..." : "Describe what you want to create..."}
-                className="flex-1 bg-transparent py-3.5 px-2 text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
+                className="flex-1 bg-transparent py-2 text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
               />
+
+              {/* Credits badge - inline */}
+              <button
+                onClick={() => credits === 0 && setShowCreditDialog(true)}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${creditColors.dot}`}></span>
+                <span>{credits === null ? "..." : credits}</span>
+              </button>
+
               <button
                 onClick={() => handleSubmit()}
                 disabled={isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)}
@@ -551,37 +561,24 @@ function DashboardContent() {
                 <ArrowUp className="h-5 w-5" />
               </button>
             </div>
-
-            {/* Credits indicator */}
-            <div className="flex items-center justify-end px-4 py-2 border-t border-border/50">
-              <button
-                onClick={() => credits === 0 && setShowCreditDialog(true)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${creditColors.dot}`}></span>
-                <span>
-                  {credits === null ? "..." : credits} credits
-                </span>
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Quick Prompts as Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 w-full max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6 w-full max-w-3xl">
           {QUICK_PROMPTS.map((prompt) => (
             <button
               key={prompt.id}
               onClick={() => handleSubmit(prompt.prompt)}
-              className="group flex flex-col rounded-xl border border-border/50 bg-card hover:border-primary/30 hover:shadow-lg transition-all duration-200 overflow-hidden text-left"
+              className="group flex flex-col rounded-lg border border-border/50 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden text-left"
             >
               {/* Illustration Area */}
-              <div className={`h-32 flex items-center justify-center ${
+              <div className={`h-20 flex items-center justify-center ${
                 prompt.color === "emerald" ? "bg-emerald-50 dark:bg-emerald-500/10" :
                 prompt.color === "blue" ? "bg-blue-50 dark:bg-blue-500/10" :
                 "bg-violet-50 dark:bg-violet-500/10"
               }`}>
-                <prompt.icon className={`w-12 h-12 opacity-80 group-hover:scale-110 transition-transform ${
+                <prompt.icon className={`w-8 h-8 opacity-80 group-hover:scale-110 transition-transform ${
                   prompt.color === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
                   prompt.color === "blue" ? "text-blue-600 dark:text-blue-400" :
                   "text-violet-600 dark:text-violet-400"
@@ -589,9 +586,9 @@ function DashboardContent() {
               </div>
 
               {/* Content */}
-              <div className="p-4">
-                <h3 className="font-semibold text-foreground mb-1">{prompt.title}</h3>
-                <p className="text-sm text-muted-foreground">{prompt.description}</p>
+              <div className="p-3">
+                <h3 className="font-medium text-sm text-foreground mb-0.5">{prompt.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
               </div>
             </button>
           ))}

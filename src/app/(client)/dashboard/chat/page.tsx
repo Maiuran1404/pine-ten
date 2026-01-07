@@ -35,8 +35,6 @@ export default function ChatPage() {
   const hasUrlParams = !!draftParam || !!messageParam;
   const [showDrafts, setShowDrafts] = useState(() => !hasUrlParams);
   const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
-  // Default to true (seamless) - only false if explicitly showing drafts with no URL params
-  const [isTransitioning, setIsTransitioning] = useState(true);
 
   // Handle initial mount and URL changes
   useEffect(() => {
@@ -50,10 +48,8 @@ export default function ChatPage() {
       }
 
       // If no URL params and there are drafts, show draft selection
-      if (!hasUrlParams && drafts.length > 0) {
-        setShowDrafts(true);
-        setIsTransitioning(false);
-      }
+      // But DON'T check hasUrlParams here because it might be wrong during SSR
+      // We'll set this after a small delay to ensure hydration is complete
       return;
     }
 
@@ -62,18 +58,35 @@ export default function ChatPage() {
       startTransition(() => {
         setCurrentDraftId(draftParam);
         setShowDrafts(false);
-        setIsTransitioning(true);
       });
-    } else if (messageParam) {
+    } else if (messageParam && messageParam !== initialMessage) {
+      // Only regenerate draftId if it's a NEW message (URL actually changed)
       startTransition(() => {
         setInitialMessage(messageParam);
-        setIsTransitioning(true);
         const newId = generateDraftId();
         setCurrentDraftId(newId);
         setShowDrafts(false);
       });
     }
   }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage]);
+
+  // Separate effect to handle showing drafts - runs after a delay to ensure URL params are loaded
+  useEffect(() => {
+    // If we have URL params, never show drafts selection
+    if (hasUrlParams) {
+      setShowDrafts(false);
+      return;
+    }
+
+    // Wait for hydration to complete before deciding to show drafts
+    const timer = setTimeout(() => {
+      if (!draftParam && !messageParam && drafts.length > 0) {
+        setShowDrafts(true);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [hasUrlParams, draftParam, messageParam, drafts.length]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();
