@@ -103,7 +103,7 @@ export default function ClientLayout({
       }
     >
       <AppSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-background light-mesh-bg">
         <Header credits={user.credits || 0} />
         <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>

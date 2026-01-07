@@ -20,6 +20,11 @@ import {
   Download,
   Coins,
   Upload,
+  FileText,
+  FileVideo,
+  FileArchive,
+  File,
+  X,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -646,28 +651,10 @@ function DashboardContent() {
 
             {/* Welcome Text */}
             <div className="space-y-2">
-              <h1
-                className="text-3xl sm:text-4xl font-normal tracking-tight"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #9ca3af 0%, #6b7280 50%, #4b5563 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-muted-foreground">
                 Good to see you!
               </h1>
-              <h2
-                className="text-2xl sm:text-3xl font-normal tracking-tight"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #e5e7eb 0%, #9ca3af 40%, #6b7280 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 How can I help you today?
               </h2>
               <p className="text-muted-foreground text-base mt-4">
@@ -703,33 +690,46 @@ function DashboardContent() {
                 {uploadedFiles.length > 0 && (
                   <div className="px-4 py-3 border-b border-border">
                     <div className="flex flex-wrap gap-2">
-                      {uploadedFiles.map((file) => (
-                        <div
-                          key={file.fileUrl}
-                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted"
-                        >
-                          {file.fileType.startsWith("image/") ? (
-                            <img
-                              src={file.fileUrl}
-                              alt={file.fileName}
-                              className="h-8 w-8 rounded object-cover"
-                            />
-                          ) : (
-                            <FileImage className="h-5 w-5 text-muted-foreground" />
-                          )}
-                          <span className="text-sm max-w-[100px] truncate text-foreground">
-                            {file.fileName}
-                          </span>
-                          <button
-                            onClick={() => removeFile(file.fileUrl)}
-                            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      {uploadedFiles.filter(Boolean).map((file) => {
+                        // Get the appropriate icon based on file type
+                        const getFileIcon = () => {
+                          const type = file.fileType || "";
+                          if (type.startsWith("image/")) return <FileImage className="h-5 w-5 text-foreground" />;
+                          if (type.startsWith("video/")) return <FileVideo className="h-5 w-5 text-foreground" />;
+                          if (type === "application/pdf") return <FileText className="h-5 w-5 text-foreground" />;
+                          if (type.includes("zip") || type.includes("archive")) return <FileArchive className="h-5 w-5 text-foreground" />;
+                          if (type.includes("word") || type.includes("document")) return <FileText className="h-5 w-5 text-foreground" />;
+                          if (type.includes("presentation") || type.includes("powerpoint")) return <FileText className="h-5 w-5 text-foreground" />;
+                          return <File className="h-5 w-5 text-foreground" />;
+                        };
+
+                        return (
+                          <div
+                            key={file.fileUrl}
+                            className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
                           >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
+                            {file.fileType?.startsWith("image/") ? (
+                              <img
+                                src={file.fileUrl}
+                                alt={file.fileName}
+                                className="h-8 w-8 rounded object-cover"
+                              />
+                            ) : (
+                              getFileIcon()
+                            )}
+                            <span className="text-sm max-w-[150px] truncate text-foreground">
+                              {file.fileName}
+                            </span>
+                            <button
+                              onClick={() => removeFile(file.fileUrl)}
+                              className="ml-1 p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted-foreground/20 transition-colors"
+                              aria-label="Remove file"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

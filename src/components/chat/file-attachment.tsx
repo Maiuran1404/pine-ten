@@ -13,8 +13,11 @@ interface FileAttachmentProps {
  * Displays a file attachment with preview for images
  */
 export function FileAttachment({ file, showPreview = true, onRemove }: FileAttachmentProps) {
-  const isImage = file.fileType.startsWith("image/");
-  const fileSizeKB = (file.fileSize / 1024).toFixed(1);
+  // Guard against null/undefined file
+  if (!file) return null;
+
+  const isImage = file.fileType?.startsWith("image/") ?? false;
+  const fileSizeKB = ((file.fileSize || 0) / 1024).toFixed(1);
 
   if (isImage && showPreview) {
     return (
@@ -83,13 +86,15 @@ interface FileAttachmentListProps {
  * Displays a list of file attachments
  */
 export function FileAttachmentList({ files, showPreview = true, onRemove }: FileAttachmentListProps) {
-  if (files.length === 0) return null;
+  // Filter out null/undefined files
+  const validFiles = files.filter(Boolean);
+  if (validFiles.length === 0) return null;
 
   return (
     <div className="mt-3 space-y-2">
-      {files.map((file, idx) => (
+      {validFiles.map((file, idx) => (
         <FileAttachment
-          key={idx}
+          key={file.fileUrl || idx}
           file={file}
           showPreview={showPreview}
           onRemove={onRemove ? () => onRemove(idx) : undefined}

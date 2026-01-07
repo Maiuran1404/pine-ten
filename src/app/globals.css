@@ -48,78 +48,78 @@
   --radius: 0.625rem;
 
   /* Crafted Design System Colors */
-  --crafted-teal: #14b8a6;
-  --crafted-teal-light: #2dd4bf;
-  --crafted-blue: #3b82f6;
-  --crafted-indigo: #4338ca;
-  --crafted-navy: #1e3a8a;
-  --crafted-gradient: linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%);
-  --crafted-gradient-vertical: linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%);
-  --crafted-gradient-radial: radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%), radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%), linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%);
+  --crafted-green: #4a7c4a;
+  --crafted-green-light: #6b9b6b;
+  --crafted-sage: #8bb58b;
+  --crafted-mint: #a8d4a8;
+  --crafted-forest: #2d5a2d;
+  --crafted-gradient: linear-gradient(135deg, #4a7c4a 0%, #6b9b6b 50%, #8bb58b 100%);
+  --crafted-gradient-vertical: linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
+  --crafted-gradient-radial: radial-gradient(ellipse at 0% 0%, #6b9b6b 0%, transparent 50%), radial-gradient(ellipse at 100% 30%, #8bb58b 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, #2d5a2d 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, #4a7c4a 0%, transparent 50%), linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
 
   /* Crafted Font */
   --font-satoshi: 'Satoshi', sans-serif;
 
-  /* Light Mode - Sleek & Modern */
-  --background: #fafafa;
-  --foreground: #171717;
+  /* Light Mode - Soft Pastel Green/Mint */
+  --background: #f8faf8;
+  --foreground: #111111;
   --card: #ffffff;
-  --card-foreground: #171717;
+  --card-foreground: #1a1a1a;
   --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #0d9488;
+  --popover-foreground: #1a1a1a;
+  --primary: #1a1a1a;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #334155;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #ecfdf5;
-  --accent-foreground: #047857;
+  --secondary: #f0f4f0;
+  --secondary-foreground: #3d4a3d;
+  --muted: #f2f5f2;
+  --muted-foreground: #4a5a4a;
+  --accent: #e8f5e8;
+  --accent-foreground: #2d5a2d;
   --destructive: #dc2626;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #14b8a6;
-  --chart-1: #14b8a6;
-  --chart-2: #3b82f6;
-  --chart-3: #8b5cf6;
+  --border: #dde5dd;
+  --input: #e5ebe5;
+  --ring: #4a7c4a;
+  --chart-1: #4a7c4a;
+  --chart-2: #6b9b6b;
+  --chart-3: #8bb58b;
   --chart-4: #f59e0b;
   --chart-5: #ef4444;
   --sidebar: #ffffff;
-  --sidebar-foreground: #171717;
-  --sidebar-primary: #0d9488;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #1a1a1a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0fdfa;
-  --sidebar-accent-foreground: #0d9488;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #14b8a6;
+  --sidebar-accent: #e8f5e8;
+  --sidebar-accent-foreground: #2d5a2d;
+  --sidebar-border: #dde5dd;
+  --sidebar-ring: #4a7c4a;
 
   /* Light Mode Dashboard Design System */
-  /* Primary Accent - Teal/Emerald */
-  --ds-accent: #0d9488;
-  --ds-accent-light: #14b8a6;
-  --ds-accent-dark: #0f766e;
-  --ds-accent-muted: rgba(13, 148, 136, 0.1);
+  /* Primary Accent - Sage/Forest Green */
+  --ds-accent: #4a7c4a;
+  --ds-accent-light: #6b9b6b;
+  --ds-accent-dark: #3d5a3d;
+  --ds-accent-muted: rgba(74, 124, 74, 0.1);
 
   /* Background Hierarchy */
-  --ds-bg-base: #fafafa;
+  --ds-bg-base: #f8faf8;
   --ds-bg-elevated: #ffffff;
   --ds-bg-card: #ffffff;
-  --ds-bg-card-hover: #f8fafc;
+  --ds-bg-card-hover: #f5f8f5;
 
   /* Border Colors */
-  --ds-border: #e2e8f0;
-  --ds-border-light: #f1f5f9;
-  --ds-border-accent: rgba(13, 148, 136, 0.3);
+  --ds-border: #dde5dd;
+  --ds-border-light: #e8efe8;
+  --ds-border-accent: rgba(74, 124, 74, 0.3);
 
   /* Text Hierarchy */
-  --ds-text-primary: #0f172a;
-  --ds-text-secondary: #475569;
-  --ds-text-muted: #94a3b8;
-  --ds-text-faint: #cbd5e1;
+  --ds-text-primary: #1a1a1a;
+  --ds-text-secondary: #3d4d3d;
+  --ds-text-muted: #5a6a5a;
+  --ds-text-faint: #8a9a8a;
 
   /* Status Colors */
-  --ds-success: #059669;
-  --ds-success-muted: rgba(5, 150, 105, 0.1);
+  --ds-success: #4a7c4a;
+  --ds-success-muted: rgba(74, 124, 74, 0.1);
   --ds-warning: #d97706;
   --ds-warning-muted: rgba(217, 119, 6, 0.1);
   --ds-error: #dc2626;
@@ -272,4 +272,42 @@
 
 .font-satoshi {
   font-family: var(--font-satoshi);
+}
+
+/* Soft pastel gradient background for light mode */
+.light-gradient-bg {
+  background: linear-gradient(135deg,
+    #f0f7f0 0%,
+    #e8f5e8 25%,
+    #f5f8f5 50%,
+    #eef5ee 75%,
+    #f8faf8 100%
+  );
+}
+
+/* Apply gradient background in light mode only */
+:root:not(.dark) .gradient-bg-light {
+  background: linear-gradient(
+    160deg,
+    rgba(232, 245, 232, 0.6) 0%,
+    rgba(240, 248, 240, 0.4) 30%,
+    rgba(248, 250, 248, 0.3) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+/* Visible mesh gradient for light mode backgrounds - like reference */
+.light-mesh-bg {
+  background:
+    radial-gradient(ellipse 80% 80% at 0% 0%, rgba(134, 200, 160, 0.55) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 70% at 100% 10%, rgba(150, 210, 170, 0.45) 0%, transparent 45%),
+    radial-gradient(ellipse 90% 60% at 100% 100%, rgba(180, 220, 190, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 0% 100%, rgba(160, 205, 175, 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, #f0f7f2 0%, #f8faf8 50%, #fafcfa 100%);
+}
+
+/* Dark mode keeps solid background */
+.dark .light-mesh-bg,
+.dark .light-gradient-bg {
+  background: var(--background);
 }
