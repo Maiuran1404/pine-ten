@@ -108,7 +108,7 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     title: task.title,
     href: `/dashboard/tasks/${task.id}`,
     icon: Sparkles,
-    iconClassName: "text-amber-400",
+    iconClassName: "bg-amber-400",
   }));
 
   // Combine drafts and non-active tasks for recents
@@ -118,14 +118,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
       title: d.title,
       href: `/dashboard/chat?draft=${d.id}`,
       icon: MessageCircle,
-      iconClassName: "text-emerald-400",
+      iconClassName: "bg-emerald-400",
     })),
     ...otherTasks.map(t => ({
       id: t.id,
       title: t.title,
       href: `/dashboard/tasks/${t.id}`,
       icon: FolderKanban,
-      iconClassName: "text-muted-foreground",
+      iconClassName: "bg-muted-foreground/40",
     })),
   ].slice(0, 5);
 

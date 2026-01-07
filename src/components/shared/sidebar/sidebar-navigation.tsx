@@ -51,10 +51,9 @@ export function SidebarNavigation({
               asChild
               isActive={isActive}
               tooltip={item.name}
-              className={`rounded-xl ${isActive ? colorStyles.active : ""}`}
             >
               <Link href={item.href} onClick={handleLinkClick}>
-                <item.icon className={isActive ? colorStyles.icon : ""} />
+                <item.icon className={isActive ? "opacity-100" : "opacity-60"} />
                 <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>

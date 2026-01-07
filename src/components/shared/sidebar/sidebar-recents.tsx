@@ -45,7 +45,7 @@ export function SidebarRecents({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="uppercase tracking-wider text-xs opacity-50 flex items-center gap-1.5">
+      <SidebarGroupLabel className="flex items-center gap-1.5">
         <TitleIcon className="h-3 w-3" />
         {title}
       </SidebarGroupLabel>
@@ -58,10 +58,12 @@ export function SidebarRecents({
                 <SidebarMenuButton
                   asChild
                   tooltip={item.title}
-                  className="rounded-xl"
+                  size="sm"
                 >
                   <Link href={item.href} onClick={handleLinkClick}>
-                    <ItemIcon className={`h-4 w-4 ${item.iconClassName || ""}`} />
+                    <span className="w-4 h-4 rounded-full flex items-center justify-center">
+                      <span className={`w-2 h-2 rounded-full ${item.iconClassName || "bg-muted-foreground/40"}`} />
+                    </span>
                     <span className="truncate">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>

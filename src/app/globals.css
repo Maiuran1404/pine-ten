@@ -84,13 +84,13 @@
   --chart-3: #8bb58b;
   --chart-4: #f59e0b;
   --chart-5: #ef4444;
-  --sidebar: #ffffff;
+  --sidebar: #fafafa;
   --sidebar-foreground: #1a1a1a;
   --sidebar-primary: #1a1a1a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8f5e8;
-  --sidebar-accent-foreground: #2d5a2d;
-  --sidebar-border: #dde5dd;
+  --sidebar-accent: #e8ede8;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e8e8e8;
   --sidebar-ring: #4a7c4a;
 
   /* Light Mode Dashboard Design System */

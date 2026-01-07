@@ -13,15 +13,15 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const initializedRef = useRef(false);
 
+  // Get current URL params
+  const draftParam = searchParams.get("draft");
+  const messageParam = searchParams.get("message");
+
   // Initialize drafts directly (only runs once on mount due to lazy initializer)
   const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
     if (typeof window === "undefined") return [];
     return getDrafts();
   });
-
-  // Get current URL params
-  const draftParam = searchParams.get("draft");
-  const messageParam = searchParams.get("message");
 
   // Initialize state based on URL - always generate a draftId to avoid regenerating on every render
   const [currentDraftId, setCurrentDraftId] = useState<string>(() => {
@@ -30,15 +30,31 @@ export default function ChatPage() {
     return generateDraftId();
   });
 
-  const [showDrafts, setShowDrafts] = useState(() => !draftParam && !messageParam);
+  // Always use seamless transition (full-width) layout when there are params
+  // This prevents the flash of the smaller layout during hydration
+  const hasUrlParams = !!draftParam || !!messageParam;
+  const [showDrafts, setShowDrafts] = useState(() => !hasUrlParams);
   const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
-  const [isTransitioning, setIsTransitioning] = useState(() => !!draftParam || !!messageParam);
+  // Default to true (seamless) - only false if explicitly showing drafts with no URL params
+  const [isTransitioning, setIsTransitioning] = useState(true);
 
-  // Handle URL changes after initial mount using startTransition for non-blocking updates
+  // Handle initial mount and URL changes
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-      return; // Skip first run as state was already initialized
+
+      // On first mount, handle the messageParam if it exists
+      // This is needed because useSearchParams may not be available during SSR
+      if (messageParam && !initialMessage) {
+        setInitialMessage(messageParam);
+      }
+
+      // If no URL params and there are drafts, show draft selection
+      if (!hasUrlParams && drafts.length > 0) {
+        setShowDrafts(true);
+        setIsTransitioning(false);
+      }
+      return;
     }
 
     // URL changed, update state accordingly using startTransition to avoid the sync setState warning
@@ -57,7 +73,7 @@ export default function ChatPage() {
         setShowDrafts(false);
       });
     }
-  }, [draftParam, messageParam]);
+  }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();

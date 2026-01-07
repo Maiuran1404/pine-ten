@@ -34,6 +34,14 @@ import {
   User,
   Clock,
   Info,
+  Coins,
+  RotateCcw,
+  Package,
+  Palette,
+  CheckCircle2,
+  AlertCircle,
+  Timer,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
@@ -59,11 +67,56 @@ import { TaskProposalCard } from "./task-proposal-card";
 import { FileAttachmentList } from "./file-attachment";
 import { QuickOptions } from "./quick-options";
 
+// Task data types for when viewing an active task
+export interface TaskFile {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  isDeliverable: boolean;
+  createdAt: string;
+  uploadedBy: string;
+}
+
+export interface AssignedArtist {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+}
+
+export interface TaskData {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  creditsUsed: number;
+  maxRevisions: number;
+  revisionsUsed: number;
+  estimatedHours?: number | null;
+  deadline?: string | null;
+  assignedAt?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+  freelancer?: AssignedArtist | null;
+  files?: TaskFile[];
+  chatHistory?: Array<{
+    role: string;
+    content: string;
+    timestamp: string;
+    attachments?: UploadedFile[];
+  }>;
+}
+
 interface ChatInterfaceProps {
   draftId: string;
   onDraftUpdate?: () => void;
   initialMessage?: string | null;
   seamlessTransition?: boolean;
+  // Task mode props - when viewing an active task
+  taskData?: TaskData | null;
+  onTaskUpdate?: () => void;
 }
 
 const DEFAULT_WELCOME_MESSAGE: Message = {
@@ -89,7 +142,14 @@ function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString();
 }
 
-export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamlessTransition = false }: ChatInterfaceProps) {
+export function ChatInterface({
+  draftId,
+  onDraftUpdate,
+  initialMessage,
+  seamlessTransition = false,
+  taskData,
+  onTaskUpdate,
+}: ChatInterfaceProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
@@ -104,7 +164,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   const [isDragging, setIsDragging] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showSidePanel, setShowSidePanel] = useState(true);
-  const [sidePanelTab, setSidePanelTab] = useState<"info" | "files">("info");
+  const [sidePanelTab, setSidePanelTab] = useState<"info" | "files" | "deliverables">("info");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -113,6 +173,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false);
+
+  // Check if we're in task mode (viewing an active task)
+  const isTaskMode = !!taskData;
+  const assignedArtist = taskData?.freelancer;
+  const deliverables = taskData?.files?.filter(f => f.isDeliverable) || [];
+  const taskFiles = taskData?.files?.filter(f => !f.isDeliverable) || [];
 
   // Get user info
   const userName = session?.user?.name || "You";
@@ -123,8 +189,28 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
     .filter((m) => m.attachments && m.attachments.length > 0)
     .flatMap((m) => m.attachments || []);
 
-  // Load draft when draftId changes
+  // Load draft when draftId changes OR load task chat history when in task mode
   useEffect(() => {
+    // If we're in task mode, load chat history from task data
+    if (isTaskMode && taskData?.chatHistory) {
+      const loadedMessages = taskData.chatHistory.map((m, idx) => ({
+        id: `task-msg-${idx}`,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        timestamp: new Date(m.timestamp),
+        attachments: m.attachments,
+      }));
+      // Ensure we have at least the welcome message
+      if (loadedMessages.length === 0) {
+        setMessages([DEFAULT_WELCOME_MESSAGE]);
+      } else {
+        setMessages(loadedMessages);
+      }
+      setIsInitialized(true);
+      return;
+    }
+
+    // Regular draft loading
     const draft = getDraft(draftId);
     if (draft) {
       const loadedMessages = draft.messages.map((m) => ({
@@ -145,7 +231,7 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
       setPendingTask(null);
     }
     setIsInitialized(true);
-  }, [draftId]);
+  }, [draftId, isTaskMode, taskData]);
 
   // Handle initial message from URL param
   useEffect(() => {
@@ -320,12 +406,15 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
         }
 
         const data = await response.json();
-        return data.file as UploadedFile;
+        // API returns { success: true, data: { file: {...} } }
+        return (data.data?.file || data.file) as UploadedFile;
       });
 
       const newFiles = await Promise.all(uploadPromises);
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-      toast.success(`${newFiles.length} file(s) uploaded`);
+      // Filter out any undefined/null files
+      const validFiles = newFiles.filter((f): f is UploadedFile => !!f && !!f.fileUrl);
+      setUploadedFiles((prev) => [...prev, ...validFiles]);
+      toast.success(`${validFiles.length} file(s) uploaded`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to upload files");
     } finally {
@@ -631,16 +720,36 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
   };
 
   // Format date for side panel
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
   };
 
-  // Get chat creation date (from first message)
-  const chatCreatedAt = messages.length > 0 ? messages[0].timestamp : new Date();
+  // Format task status for display
+  const getStatusDisplay = (status: string) => {
+    const statusMap: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+      PENDING: { label: "Pending", color: "bg-yellow-500/10 text-yellow-500", icon: <Clock className="h-3 w-3" /> },
+      ASSIGNED: { label: "Assigned", color: "bg-blue-500/10 text-blue-500", icon: <User className="h-3 w-3" /> },
+      IN_PROGRESS: { label: "In Progress", color: "bg-primary/10 text-primary", icon: <Activity className="h-3 w-3" /> },
+      PENDING_ADMIN_REVIEW: { label: "Under Review", color: "bg-orange-500/10 text-orange-500", icon: <AlertCircle className="h-3 w-3" /> },
+      PENDING_REVIEW: { label: "Pending Review", color: "bg-purple-500/10 text-purple-500", icon: <Timer className="h-3 w-3" /> },
+      REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-500/10 text-red-500", icon: <RotateCcw className="h-3 w-3" /> },
+      COMPLETED: { label: "Completed", color: "bg-green-500/10 text-green-500", icon: <CheckCircle2 className="h-3 w-3" /> },
+      CANCELLED: { label: "Cancelled", color: "bg-muted text-muted-foreground", icon: <X className="h-3 w-3" /> },
+    };
+    return statusMap[status] || { label: status, color: "bg-muted text-muted-foreground", icon: <Info className="h-3 w-3" /> };
+  };
+
+  // Get chat creation date (from first message or task creation date)
+  const chatCreatedAt = isTaskMode && taskData?.createdAt
+    ? new Date(taskData.createdAt)
+    : messages.length > 0
+      ? messages[0].timestamp
+      : new Date();
 
   return (
     <div
@@ -988,31 +1097,34 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
           {/* Pending uploads preview */}
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
-              {uploadedFiles.map((file) => (
-                <div
-                  key={file.fileUrl}
-                  className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
-                >
-                  {file.fileType.startsWith("image/") ? (
-                    <img
-                      src={file.fileUrl}
-                      alt={file.fileName}
-                      className="h-10 w-10 rounded object-cover"
-                    />
-                  ) : (
-                    <FileIcon className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <span className="text-sm max-w-[100px] truncate text-foreground">
-                    {file.fileName}
-                  </span>
-                  <button
-                    onClick={() => removeFile(file.fileUrl)}
-                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              {uploadedFiles.filter(Boolean).map((file) => {
+                if (!file || !file.fileUrl) return null;
+                return (
+                  <div
+                    key={file.fileUrl}
+                    className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
                   >
-                    <XCircle className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+                    {file.fileType?.startsWith("image/") ? (
+                      <img
+                        src={file.fileUrl}
+                        alt={file.fileName || "Uploaded file"}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                    ) : (
+                      <FileIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <span className="text-sm max-w-[100px] truncate text-foreground">
+                      {file.fileName || "File"}
+                    </span>
+                    <button
+                      onClick={() => removeFile(file.fileUrl)}
+                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -1130,6 +1242,19 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
               >
                 Files
               </button>
+              {isTaskMode && (
+                <button
+                  onClick={() => setSidePanelTab("deliverables")}
+                  className={cn(
+                    "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                    sidePanelTab === "deliverables"
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Deliverables
+                </button>
+              )}
             </div>
 
             {/* Panel content */}
@@ -1137,6 +1262,36 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
               <div className="p-4 space-y-6">
                 {sidePanelTab === "info" ? (
                   <>
+                    {/* Assigned Artist Section - Only show in task mode when assigned */}
+                    {isTaskMode && assignedArtist && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-foreground">Assigned Artist</h3>
+                        <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                          <div className="flex items-center gap-3">
+                            {assignedArtist.image ? (
+                              <img
+                                src={assignedArtist.image}
+                                alt={assignedArtist.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Palette className="h-5 w-5 text-primary" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {assignedArtist.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {assignedArtist.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Main info section */}
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-foreground">Main info</h3>
@@ -1164,21 +1319,66 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                         <span className="text-sm text-foreground">{formatDate(chatCreatedAt)}</span>
                       </div>
 
-                      {/* Status */}
+                      {/* Status - Enhanced for task mode */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Activity className="h-4 w-4" />
                           <span className="text-sm">Status</span>
                         </div>
-                        <span className={cn(
-                          "text-xs px-2 py-0.5 rounded-full",
-                          pendingTask
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-primary/10 text-primary"
-                        )}>
-                          {pendingTask ? "Ready" : "Active"}
-                        </span>
+                        {isTaskMode && taskData ? (
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full flex items-center gap-1",
+                            getStatusDisplay(taskData.status).color
+                          )}>
+                            {getStatusDisplay(taskData.status).icon}
+                            {getStatusDisplay(taskData.status).label}
+                          </span>
+                        ) : (
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full",
+                            pendingTask
+                              ? "bg-green-500/10 text-green-500"
+                              : "bg-primary/10 text-primary"
+                          )}>
+                            {pendingTask ? "Ready" : "Draft"}
+                          </span>
+                        )}
                       </div>
+
+                      {/* Credits Used - Only in task mode */}
+                      {isTaskMode && taskData && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Coins className="h-4 w-4" />
+                            <span className="text-sm">Credits used</span>
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{taskData.creditsUsed}</span>
+                        </div>
+                      )}
+
+                      {/* Revisions - Only in task mode */}
+                      {isTaskMode && taskData && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <RotateCcw className="h-4 w-4" />
+                            <span className="text-sm">Revisions</span>
+                          </div>
+                          <span className="text-sm text-foreground">
+                            {taskData.revisionsUsed} / {taskData.maxRevisions}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Deadline - Only in task mode if set */}
+                      {isTaskMode && taskData?.deadline && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Timer className="h-4 w-4" />
+                            <span className="text-sm">Deadline</span>
+                          </div>
+                          <span className="text-sm text-foreground">{formatDate(taskData.deadline)}</span>
+                        </div>
+                      )}
 
                       {/* Messages count */}
                       <div className="flex items-center justify-between">
@@ -1189,17 +1389,39 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                         <span className="text-sm text-foreground">{messages.length}</span>
                       </div>
 
-                      {/* Files count */}
-                      <div className="flex items-center justify-between">
+                      {/* Files count - click to switch tab */}
+                      <button
+                        onClick={() => setSidePanelTab("files")}
+                        className="flex items-center justify-between w-full hover:bg-muted/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
+                      >
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <FileText className="h-4 w-4" />
                           <span className="text-sm">Files</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-sm text-foreground">{allAttachments.length}</span>
+                          <span className="text-sm text-foreground">
+                            {isTaskMode ? taskFiles.length + allAttachments.length : allAttachments.length}
+                          </span>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
-                      </div>
+                      </button>
+
+                      {/* Deliverables count - Only in task mode */}
+                      {isTaskMode && (
+                        <button
+                          onClick={() => setSidePanelTab("deliverables")}
+                          className="flex items-center justify-between w-full hover:bg-muted/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
+                        >
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Package className="h-4 w-4" />
+                            <span className="text-sm">Deliverables</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm text-foreground">{deliverables.length}</span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </button>
+                      )}
                     </div>
 
                     {/* Selected styles */}
@@ -1219,8 +1441,8 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       </div>
                     )}
 
-                    {/* Task summary if pending */}
-                    {pendingTask && (
+                    {/* Task summary if pending (draft mode) */}
+                    {!isTaskMode && pendingTask && (
                       <div className="space-y-3">
                         <h3 className="text-sm font-semibold text-foreground">Task Summary</h3>
                         <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
@@ -1237,10 +1459,44 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       </div>
                     )}
 
+                    {/* Timeline - Only in task mode */}
+                    {isTaskMode && taskData && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-foreground">Timeline</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <div className="flex-1">
+                              <p className="text-xs text-muted-foreground">Created</p>
+                              <p className="text-sm text-foreground">{formatDate(taskData.createdAt)}</p>
+                            </div>
+                          </div>
+                          {taskData.assignedAt && (
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-blue-500" />
+                              <div className="flex-1">
+                                <p className="text-xs text-muted-foreground">Assigned</p>
+                                <p className="text-sm text-foreground">{formatDate(taskData.assignedAt)}</p>
+                              </div>
+                            </div>
+                          )}
+                          {taskData.completedAt && (
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              <div className="flex-1">
+                                <p className="text-xs text-muted-foreground">Completed</p>
+                                <p className="text-sm text-foreground">{formatDate(taskData.completedAt)}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Chat activity */}
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold text-foreground">Activity</h3>
-                      <div className="flex gap-0.5">
+                      <div className="flex gap-0.5 flex-wrap">
                         {Array.from({ length: 20 }).map((_, i) => {
                           const hasActivity = i < messages.length;
                           return (
@@ -1256,13 +1512,18 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       </div>
                     </div>
                   </>
-                ) : (
+                ) : sidePanelTab === "files" ? (
                   /* Files tab */
                   <div className="space-y-4">
                     <h3 className="text-sm font-semibold text-foreground">Attached files</h3>
-                    {allAttachments.length > 0 ? (
+                    {(isTaskMode ? [...taskFiles, ...allAttachments] : allAttachments).length > 0 ? (
                       <div className="space-y-2">
-                        {allAttachments.map((file, idx) => (
+                        {(isTaskMode ? [...taskFiles.map(f => ({
+                          fileName: f.fileName,
+                          fileUrl: f.fileUrl,
+                          fileType: f.fileType,
+                          fileSize: f.fileSize,
+                        })), ...allAttachments] : allAttachments).map((file, idx) => (
                           <a
                             key={`${file.fileUrl}-${idx}`}
                             href={file.fileUrl}
@@ -1296,6 +1557,63 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
                       <div className="text-center py-8">
                         <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">No files attached yet</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Deliverables tab - Only available in task mode */
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
+                    {deliverables.length > 0 ? (
+                      <div className="space-y-3">
+                        {deliverables.map((file) => (
+                          <div
+                            key={file.id}
+                            className="p-3 rounded-lg border border-border bg-muted/30 space-y-2"
+                          >
+                            <div className="flex items-start gap-3">
+                              {file.fileType?.startsWith("image/") ? (
+                                <img
+                                  src={file.fileUrl}
+                                  alt={file.fileName}
+                                  className="w-16 h-16 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                                  <FileIcon className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {file.fileName}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {((file.fileSize || 0) / 1024).toFixed(1)} KB
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDate(file.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No deliverables yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Files will appear here once the artist submits their work
+                        </p>
                       </div>
                     )}
                   </div>
