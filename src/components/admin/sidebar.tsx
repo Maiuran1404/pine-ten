@@ -21,6 +21,7 @@ import {
   Ticket,
   MessageSquare,
   DollarSign,
+  Bell,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -74,6 +75,11 @@ const navigation: NavigationItem[] = [
     name: "Chat Setup",
     href: "/admin/chat-setup",
     icon: MessageSquare,
+  },
+  {
+    name: "Notifications",
+    href: "/admin/notifications",
+    icon: Bell,
   },
   {
     name: "Database",

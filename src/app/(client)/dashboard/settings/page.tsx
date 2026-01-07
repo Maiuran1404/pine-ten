@@ -271,15 +271,18 @@ export default function SettingsPage() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="phone" className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Phone Number
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp Number
                   </Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+1 234 567 8900"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Include country code. We&apos;ll send task updates via WhatsApp.
+                  </p>
                 </div>
               </div>
 

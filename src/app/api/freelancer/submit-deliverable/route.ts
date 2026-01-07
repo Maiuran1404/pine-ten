@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks, taskFiles, taskMessages } from "@/db/schema";
+import { tasks, taskFiles, taskMessages, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { notify } from "@/lib/notifications";
+import { config } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,6 +84,29 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId));
+
+    // Notify the client that deliverables are ready for review
+    try {
+      const freelancer = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+
+      await notify({
+        userId: task.clientId,
+        type: "TASK_COMPLETED",
+        title: "Ready for Review",
+        content: `${freelancer[0]?.name || "Your designer"} has submitted work for "${task.title}". Please review and approve or request changes.`,
+        taskId: task.id,
+        taskUrl: `${config.app.url}/dashboard/tasks/${task.id}`,
+        additionalData: {
+          taskTitle: task.title,
+        },
+      });
+    } catch (notifyError) {
+      console.error("Failed to send deliverable notification:", notifyError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

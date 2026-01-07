@@ -437,3 +437,26 @@ export const webhookEvents = pgTable(
     index("webhook_events_processed_at_idx").on(table.processedAt),
   ]
 );
+
+// Notification settings (admin-configurable)
+export const notificationSettings = pgTable("notification_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventType: text("event_type").notNull().unique(), // e.g., TASK_ASSIGNED, TASK_STARTED, TASK_COMPLETED
+  name: text("name").notNull(), // Human-readable name
+  description: text("description"), // Description of when this fires
+  // Channel toggles
+  emailEnabled: boolean("email_enabled").notNull().default(true),
+  whatsappEnabled: boolean("whatsapp_enabled").notNull().default(true),
+  inAppEnabled: boolean("in_app_enabled").notNull().default(true),
+  // Recipients
+  notifyClient: boolean("notify_client").notNull().default(false),
+  notifyFreelancer: boolean("notify_freelancer").notNull().default(false),
+  notifyAdmin: boolean("notify_admin").notNull().default(false),
+  // Templates (JSON for flexibility)
+  emailSubject: text("email_subject"),
+  emailTemplate: text("email_template"), // HTML template with {{variables}}
+  whatsappTemplate: text("whatsapp_template"), // Plain text with {{variables}}
+  // Metadata
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: text("updated_by").references(() => users.id),
+});
