@@ -24,6 +24,7 @@ import {
   ArrowDownRight,
   Plus,
   ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
