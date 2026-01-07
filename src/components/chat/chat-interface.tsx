@@ -107,12 +107,29 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
 
     setInitialMessageProcessed(true);
 
-    // Create user message with the initial content
+    // Check for pending files from dashboard
+    let pendingFiles: UploadedFile[] = [];
+    try {
+      const storedFiles = sessionStorage.getItem("pending_chat_files");
+      if (storedFiles) {
+        pendingFiles = JSON.parse(storedFiles);
+        sessionStorage.removeItem("pending_chat_files");
+        // Also add them to uploadedFiles state so they show in preview
+        if (pendingFiles.length > 0) {
+          setUploadedFiles(pendingFiles);
+        }
+      }
+    } catch {
+      // Ignore parsing errors
+    }
+
+    // Create user message with the initial content and any pending files
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: initialMessage,
       timestamp: new Date(),
+      attachments: pendingFiles.length > 0 ? pendingFiles : undefined,
     };
 
     // For seamless transition, skip the welcome message and only show user's message
@@ -121,6 +138,12 @@ export function ChatInterface({ draftId, onDraftUpdate, initialMessage, seamless
     } else {
       setMessages((prev) => [...prev, userMessage]);
     }
+
+    // Clear the uploaded files since they're now part of the message
+    if (pendingFiles.length > 0) {
+      setUploadedFiles([]);
+    }
+
     setNeedsAutoContinue(true);
   }, [initialMessage, initialMessageProcessed, isInitialized, seamlessTransition]);
 

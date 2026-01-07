@@ -19,8 +19,17 @@ import {
   Layers,
   Download,
   Coins,
+  Upload,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
+import { LoadingSpinner } from "@/components/shared/loading";
+
+interface UploadedFile {
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+}
 
 interface BrandData {
   id: string;
@@ -311,7 +320,12 @@ function DashboardContent() {
   const [sentMessage, setSentMessage] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
   const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   useEffect(() => {
     const payment = searchParams.get("payment");
@@ -405,8 +419,159 @@ function DashboardContent() {
     inputRef.current?.focus();
   };
 
+  // File upload logic
+  const uploadFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      const uploadPromises = fileArray.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "attachments");
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || errorData.message || "Upload failed");
+        }
+
+        const data = await response.json();
+        return data.file as UploadedFile;
+      });
+
+      const newFiles = await Promise.all(uploadPromises);
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} file(s) uploaded successfully`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload files");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await uploadFiles(files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      await uploadFiles(files);
+    }
+  };
+
+  const removeFile = (fileUrl: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl));
+  };
+
+  // Modified submit to include files
+  const handleSubmitWithFiles = async () => {
+    if ((!chatInput.trim() && uploadedFiles.length === 0) || isSending || isTransitioning) return;
+
+    // Check if user has credits
+    if (credits === 0) {
+      setShowCreditDialog(true);
+      return;
+    }
+
+    const message = chatInput.trim() || `Attached ${uploadedFiles.length} file(s)`;
+    setIsSending(true);
+    setSentMessage(message);
+    setChatInput("");
+    setIsTransitioning(true);
+
+    // Store files in sessionStorage for the chat page to pick up
+    if (uploadedFiles.length > 0) {
+      sessionStorage.setItem("pending_chat_files", JSON.stringify(uploadedFiles));
+    }
+    setUploadedFiles([]);
+
+    // Wait for animation to complete then navigate
+    setTimeout(() => {
+      router.push(`/dashboard/chat?message=${encodeURIComponent(message)}`);
+    }, 500);
+  };
+
   return (
-    <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-32 pb-20 bg-background overflow-auto">
+    <div
+      className="relative flex flex-col items-center justify-start min-h-full px-4 pt-32 pb-20 bg-background overflow-auto"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        className="hidden"
+        multiple
+        accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
+      />
+
+      {/* Drag overlay */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center"
+          >
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Upload className="h-10 w-10 text-primary" />
+              </div>
+              <p className="text-xl font-medium text-foreground">Drop files here</p>
+              <p className="text-sm text-muted-foreground mt-2">Images, videos, PDFs, and more</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Noise texture to prevent gradient banding */}
       <svg className="hidden">
         <filter id="noise">
@@ -534,10 +699,53 @@ function DashboardContent() {
                   </button>
                 </div>
 
+                {/* Uploaded files preview */}
+                {uploadedFiles.length > 0 && (
+                  <div className="px-4 py-3 border-b border-border">
+                    <div className="flex flex-wrap gap-2">
+                      {uploadedFiles.map((file) => (
+                        <div
+                          key={file.fileUrl}
+                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted"
+                        >
+                          {file.fileType.startsWith("image/") ? (
+                            <img
+                              src={file.fileUrl}
+                              alt={file.fileName}
+                              className="h-8 w-8 rounded object-cover"
+                            />
+                          ) : (
+                            <FileImage className="h-5 w-5 text-muted-foreground" />
+                          )}
+                          <span className="text-sm max-w-[100px] truncate text-foreground">
+                            {file.fileName}
+                          </span>
+                          <button
+                            onClick={() => removeFile(file.fileUrl)}
+                            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Input Field */}
                 <div className="relative flex items-center">
-                  <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
-                    <Paperclip className="h-5 w-5" />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <Paperclip className="h-5 w-5" />
+                    )}
                   </button>
                   <div className="h-5 w-px bg-border"></div>
                   <input
@@ -545,13 +753,18 @@ function DashboardContent() {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask anything ..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmitWithFiles();
+                      }
+                    }}
+                    placeholder={uploadedFiles.length > 0 ? "Add a message or just send the files..." : "Ask anything ..."}
                     className="flex-1 bg-transparent px-4 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm"
                   />
                   <button
-                    onClick={handleSubmit}
-                    disabled={isSending}
+                    onClick={handleSubmitWithFiles}
+                    disabled={isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)}
                     className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
                     <ArrowUp className="h-5 w-5" />
