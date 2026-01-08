@@ -145,15 +145,15 @@ export const InfiniteGrid = ({
         <div className="absolute inset-0 pointer-events-none">
           {/* Light mode: Sea Gradient (#096060, #075057, #D2ECF2) | Dark mode: warm orange/blue */}
           {/* Right side - top */}
-          <div className="absolute right-[-20%] top-[-20%] w-[40%] h-[40%] rounded-full bg-[#D2ECF2]/60 dark:bg-orange-600/20 blur-[120px]" />
-          <div className="absolute right-[10%] top-[-10%] w-[20%] h-[20%] rounded-full bg-[#096060]/20 dark:bg-primary/30 blur-[100px]" />
+          <div className="absolute right-[-20%] top-[-20%] w-[40%] h-[40%] rounded-full bg-[#D2ECF2] dark:bg-orange-600/20 blur-[120px]" />
+          <div className="absolute right-[10%] top-[-10%] w-[20%] h-[20%] rounded-full bg-[#096060]/35 dark:bg-primary/30 blur-[100px]" />
           {/* Left side - top */}
-          <div className="absolute left-[-15%] top-[10%] w-[30%] h-[30%] rounded-full bg-[#D2ECF2]/40 dark:bg-blue-600/15 blur-[120px]" />
-          <div className="absolute left-[5%] top-[-5%] w-[20%] h-[20%] rounded-full bg-[#096060]/15 dark:bg-violet-600/15 blur-[100px]" />
+          <div className="absolute left-[-15%] top-[10%] w-[30%] h-[30%] rounded-full bg-[#D2ECF2]/70 dark:bg-blue-600/15 blur-[120px]" />
+          <div className="absolute left-[5%] top-[-5%] w-[20%] h-[20%] rounded-full bg-[#096060]/25 dark:bg-violet-600/15 blur-[100px]" />
           {/* Left side - bottom */}
-          <div className="absolute left-[-10%] bottom-[-20%] w-[40%] h-[40%] rounded-full bg-[#075057]/30 dark:bg-blue-600/20 blur-[120px]" />
+          <div className="absolute left-[-10%] bottom-[-20%] w-[40%] h-[40%] rounded-full bg-[#075057]/45 dark:bg-blue-600/20 blur-[120px]" />
           {/* Center - subtle accent */}
-          <div className="absolute left-[30%] top-[40%] w-[15%] h-[15%] rounded-full bg-[#D2ECF2]/20 dark:bg-primary/10 blur-[80px]" />
+          <div className="absolute left-[30%] top-[40%] w-[15%] h-[15%] rounded-full bg-[#D2ECF2]/35 dark:bg-primary/10 blur-[80px]" />
         </div>
       )}
 

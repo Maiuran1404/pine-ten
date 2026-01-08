@@ -28,11 +28,18 @@ import {
   LayoutGrid,
   Wand2,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
-import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
+import { getDrafts, deleteDraft, type ChatDraft } from "@/lib/chat-drafts";
 import { QuickDesignModal } from "@/components/client/quick-design-modal";
 
 interface UploadedFile {
@@ -453,6 +460,14 @@ function DashboardContent() {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
+  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    deleteDraft(chatId);
+    setRecentChats((prev) => prev.filter((chat) => chat.id !== chatId));
+    toast.success("Chat deleted");
+  };
+
   return (
     <div
       className="relative flex flex-col min-h-full px-6 md:px-10 pt-48 md:pt-60 pb-10 overflow-auto"
@@ -790,12 +805,14 @@ function DashboardContent() {
 
             {/* Chat Drafts */}
             {recentChats.map((chat) => (
-              <Link
+              <div
                 key={chat.id}
-                href={`/dashboard/chat?draft=${chat.id}`}
                 className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border hover:bg-muted/50 transition-colors items-center"
               >
-                <div className="col-span-5 flex items-center gap-3">
+                <Link
+                  href={`/dashboard/chat?draft=${chat.id}`}
+                  className="col-span-5 flex items-center gap-3"
+                >
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                     <MessageSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
@@ -805,7 +822,7 @@ function DashboardContent() {
                       Last edited {formatDate(chat.updatedAt)}
                     </p>
                   </div>
-                </div>
+                </Link>
                 <div className="col-span-3">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -816,11 +833,24 @@ function DashboardContent() {
                   {formatDate(chat.createdAt)}
                 </div>
                 <div className="col-span-1 flex justify-end">
-                  <button className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </Link>
+              </div>
             ))}
 
             {/* Tasks */}
