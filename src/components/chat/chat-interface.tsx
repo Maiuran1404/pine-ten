@@ -188,7 +188,8 @@ export function ChatInterface({
   // Get all attachments from messages for the side panel
   const allAttachments = messages
     .filter((m) => m.attachments && m.attachments.length > 0)
-    .flatMap((m) => m.attachments || []);
+    .flatMap((m) => m.attachments || [])
+    .filter((file): file is NonNullable<typeof file> => file != null && file.fileUrl != null);
 
   // Load draft when draftId changes OR load task chat history when in task mode
   useEffect(() => {
@@ -679,7 +680,8 @@ export function ChatInterface({
 
     const allAttachments = messages
       .filter((m) => m.attachments && m.attachments.length > 0)
-      .flatMap((m) => m.attachments || []);
+      .flatMap((m) => m.attachments || [])
+      .filter((file) => file != null && file.fileUrl != null);
 
     try {
       const response = await fetch("/api/tasks", {
@@ -691,7 +693,7 @@ export function ChatInterface({
             role: m.role,
             content: m.content,
             timestamp: m.timestamp,
-            attachments: m.attachments,
+            attachments: m.attachments?.filter((a) => a != null),
           })),
           styleReferences: selectedStyles,
           attachments: allAttachments,
@@ -703,11 +705,11 @@ export function ChatInterface({
         throw new Error(error.error?.message || error.message || "Failed to create task");
       }
 
-      const data = await response.json();
+      const result = await response.json();
       deleteDraft(draftId);
       onDraftUpdate?.();
       toast.success("Task created successfully!");
-      router.push(`/dashboard/tasks/${data.taskId}`);
+      router.push(`/dashboard/tasks/${result.data.taskId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create task");
     } finally {

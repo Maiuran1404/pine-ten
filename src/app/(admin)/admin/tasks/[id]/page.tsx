@@ -17,6 +17,14 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   Clock,
   Coins,
@@ -30,8 +38,12 @@ import {
   Image as ImageIcon,
   FileIcon,
   ExternalLink,
+  UserPlus,
+  Loader2,
+  Star,
 } from "lucide-react";
 import { TaskProgressCard } from "@/components/admin/task-progress-card";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -127,11 +139,25 @@ const statusConfig: Record<
   },
 };
 
+interface Freelancer {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  completedTasks: number;
+  rating: string | null;
+  availability: boolean;
+}
+
 export default function AdminTaskDetailPage() {
   const params = useParams();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [isLoadingFreelancers, setIsLoadingFreelancers] = useState(false);
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -157,6 +183,52 @@ export default function AdminTaskDetailPage() {
       setIsLoading(false);
     }
   };
+
+  const fetchFreelancers = async () => {
+    if (freelancers.length > 0) return; // Already loaded
+    setIsLoadingFreelancers(true);
+    try {
+      const response = await fetch(`/api/admin/tasks/${params.id}/reassign`);
+      if (response.ok) {
+        const data = await response.json();
+        setFreelancers(data.data.freelancers);
+      }
+    } catch (err) {
+      console.error("Failed to fetch freelancers:", err);
+      toast.error("Failed to load freelancers");
+    } finally {
+      setIsLoadingFreelancers(false);
+    }
+  };
+
+  const handleReassign = async (freelancerId: string) => {
+    setIsReassigning(true);
+    try {
+      const response = await fetch(`/api/admin/tasks/${params.id}/reassign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ freelancerId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`Task reassigned to ${data.data.assignedTo}`);
+        setReassignDialogOpen(false);
+        // Refresh task data
+        fetchTask(params.id as string);
+      } else {
+        const error = await response.json();
+        toast.error(error.error?.message || "Failed to reassign task");
+      }
+    } catch (err) {
+      console.error("Failed to reassign task:", err);
+      toast.error("Failed to reassign task");
+    } finally {
+      setIsReassigning(false);
+    }
+  };
+
+  const canReassign = task && ["PENDING", "ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
 
   const isImage = (fileType: string) => fileType.startsWith("image/");
 
@@ -536,7 +608,7 @@ export default function AdminTaskDetailPage() {
                   Assigned Artist
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={task.freelancer.image || undefined} />
@@ -553,6 +625,78 @@ export default function AdminTaskDetailPage() {
                     )}
                   </div>
                 </div>
+                {canReassign && (
+                  <Dialog open={reassignDialogOpen} onOpenChange={(open) => {
+                    setReassignDialogOpen(open);
+                    if (open) fetchFreelancers();
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Reassign Task
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                      <DialogHeader>
+                        <DialogTitle>Reassign Task</DialogTitle>
+                        <DialogDescription>
+                          Select a freelancer to reassign this task to.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                        {isLoadingFreelancers ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : freelancers.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-8">
+                            No approved freelancers available
+                          </p>
+                        ) : (
+                          freelancers.map((freelancer) => (
+                            <button
+                              key={freelancer.userId}
+                              onClick={() => handleReassign(freelancer.userId)}
+                              disabled={isReassigning || freelancer.userId === task.freelancer?.id}
+                              className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                            >
+                              <Avatar>
+                                <AvatarImage src={freelancer.image || undefined} />
+                                <AvatarFallback>
+                                  {freelancer.name?.[0]?.toUpperCase() || "F"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{freelancer.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{freelancer.email}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-muted-foreground">
+                                    {freelancer.completedTasks} tasks
+                                  </span>
+                                  {freelancer.rating && (
+                                    <span className="flex items-center gap-0.5 text-xs text-amber-500">
+                                      <Star className="h-3 w-3 fill-current" />
+                                      {parseFloat(freelancer.rating).toFixed(1)}
+                                    </span>
+                                  )}
+                                  {!freelancer.availability && (
+                                    <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {freelancer.userId === task.freelancer?.id && (
+                                <Badge variant="outline" className="text-xs">Current</Badge>
+                              )}
+                              {isReassigning && (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardContent>
             </Card>
           )}
@@ -566,6 +710,73 @@ export default function AdminTaskDetailPage() {
                 <p className="text-sm text-muted-foreground mt-1">
                   No artist has claimed this task yet
                 </p>
+                <Dialog open={reassignDialogOpen} onOpenChange={(open) => {
+                  setReassignDialogOpen(open);
+                  if (open) fetchFreelancers();
+                }}>
+                  <DialogTrigger asChild>
+                    <Button variant="default" size="sm" className="mt-4">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assign Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                      <DialogTitle>Assign Task</DialogTitle>
+                      <DialogDescription>
+                        Select a freelancer to assign this task to.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                      {isLoadingFreelancers ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : freelancers.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          No approved freelancers available
+                        </p>
+                      ) : (
+                        freelancers.map((freelancer) => (
+                          <button
+                            key={freelancer.userId}
+                            onClick={() => handleReassign(freelancer.userId)}
+                            disabled={isReassigning}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                          >
+                            <Avatar>
+                              <AvatarImage src={freelancer.image || undefined} />
+                              <AvatarFallback>
+                                {freelancer.name?.[0]?.toUpperCase() || "F"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{freelancer.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{freelancer.email}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-muted-foreground">
+                                  {freelancer.completedTasks} tasks
+                                </span>
+                                {freelancer.rating && (
+                                  <span className="flex items-center gap-0.5 text-xs text-amber-500">
+                                    <Star className="h-3 w-3 fill-current" />
+                                    {parseFloat(freelancer.rating).toFixed(1)}
+                                  </span>
+                                )}
+                                {!freelancer.availability && (
+                                  <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                                )}
+                              </div>
+                            </div>
+                            {isReassigning && (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           )}

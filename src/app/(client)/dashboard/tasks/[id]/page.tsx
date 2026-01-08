@@ -694,7 +694,7 @@ export default function TaskDetailPage() {
                   )}
 
                   {/* Platforms */}
-                  {req.platforms && req.platforms.length > 0 && (
+                  {Array.isArray(req.platforms) && req.platforms.length > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
                         <Monitor className="h-4 w-4 text-muted-foreground" />
@@ -716,7 +716,7 @@ export default function TaskDetailPage() {
                   )}
 
                   {/* Dimensions */}
-                  {req.dimensions && req.dimensions.length > 0 && (
+                  {Array.isArray(req.dimensions) && req.dimensions.length > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
                         <Maximize2 className="h-4 w-4 text-muted-foreground" />
@@ -751,7 +751,7 @@ export default function TaskDetailPage() {
                   )}
 
                   {/* Deliverables */}
-                  {req.deliverables && req.deliverables.length > 0 && (
+                  {Array.isArray(req.deliverables) && req.deliverables.length > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
                         <ListChecks className="h-4 w-4 text-muted-foreground" />
