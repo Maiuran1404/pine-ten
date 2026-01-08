@@ -7,6 +7,7 @@ import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
 interface Task {
   id: string;
@@ -93,7 +94,7 @@ export default function ClientLayout({
   return (
     <SidebarProvider
       defaultOpen={true}
-      className="bg-background"
+      className=""
       style={
         {
           fontFamily: "'Satoshi', sans-serif",
@@ -103,9 +104,20 @@ export default function ClientLayout({
       }
     >
       <AppSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-background light-mesh-bg">
+      <SidebarInset className="bg-transparent">
+        {/* Infinite Grid Background - covers entire viewport */}
+        <InfiniteGrid
+          gridSize={50}
+          speedX={0.3}
+          speedY={0.3}
+          spotlightRadius={250}
+          backgroundOpacity={0.03}
+          highlightOpacity={0.15}
+          showBlurSpheres={true}
+          className="!fixed inset-0"
+        />
         <Header credits={user.credits || 0} />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="relative z-10 flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -18,7 +18,7 @@ export function Header({ credits = 0, onMenuClick }: HeaderProps) {
   return (
     <>
       <header
-        className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-background/70 backdrop-blur-xl border-b border-border"
+        className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-transparent backdrop-blur-sm"
         style={{ fontFamily: "'Satoshi', sans-serif" }}
       >
         {onMenuClick ? (

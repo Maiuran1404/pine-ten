@@ -34,7 +34,6 @@ import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 import { QuickDesignModal } from "@/components/client/quick-design-modal";
-import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
 interface UploadedFile {
   fileName: string;
@@ -456,25 +455,14 @@ function DashboardContent() {
 
   return (
     <div
-      className="relative flex flex-col min-h-full px-6 md:px-10 pt-48 md:pt-60 pb-10 bg-background overflow-auto"
+      className="relative flex flex-col min-h-full px-6 md:px-10 pt-48 md:pt-60 pb-10 overflow-auto"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Infinite Grid Background */}
-      <InfiniteGrid
-        gridSize={50}
-        speedX={0.3}
-        speedY={0.3}
-        spotlightRadius={250}
-        backgroundOpacity={0.03}
-        highlightOpacity={0.15}
-        showBlurSpheres={true}
-      />
-
-      {/* Content wrapper - stays above grid */}
-      <div className="relative z-10 flex flex-col flex-1">
+      {/* Content wrapper */}
+      <div className="relative flex flex-col flex-1">
       {/* Hidden file input */}
       <input
         type="file"
