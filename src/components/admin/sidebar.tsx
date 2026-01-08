@@ -23,6 +23,7 @@ import {
   DollarSign,
   Bell,
   ShieldCheck,
+  Wand2,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -71,6 +72,11 @@ const navigation: NavigationItem[] = [
     name: "Style Library",
     href: "/admin/styles",
     icon: Image,
+  },
+  {
+    name: "Quick Design",
+    href: "/admin/orshot-templates",
+    icon: Wand2,
   },
   {
     name: "Coupons",

@@ -463,3 +463,84 @@ export const notificationSettings = pgTable("notification_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   updatedBy: text("updated_by").references(() => users.id),
 });
+
+// Orshot template presets (admin-configurable)
+export const orshotTemplates = pgTable(
+  "orshot_templates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    category: text("category").notNull(), // 'social_media', 'marketing', 'brand_assets'
+    orshotTemplateId: integer("orshot_template_id").notNull(), // Orshot Studio template ID
+    previewImageUrl: text("preview_image_url"), // Preview thumbnail for selector
+    parameterMapping: jsonb("parameter_mapping")
+      .notNull()
+      .$type<{
+        [brandField: string]: {
+          paramId: string;
+          type: "text" | "color" | "image" | "number";
+          style?: {
+            fontSize?: string;
+            fontFamily?: string;
+            fontWeight?: string;
+            textAlign?: string;
+          };
+        };
+      }>(),
+    outputFormat: text("output_format").notNull().default("png"), // 'png', 'jpg', 'webp', 'pdf'
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("orshot_templates_category_idx").on(table.category)]
+);
+
+// Generated designs (client history)
+export const generatedDesigns = pgTable(
+  "generated_designs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    templateId: uuid("template_id").references(() => orshotTemplates.id, {
+      onDelete: "set null",
+    }),
+    templateName: text("template_name").notNull(), // Store name in case template is deleted
+    imageUrl: text("image_url").notNull(),
+    imageFormat: text("image_format").notNull(),
+    modificationsUsed: jsonb("modifications_used").$type<
+      Record<string, unknown>
+    >(), // Store what values were used
+    savedToAssets: boolean("saved_to_assets").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("generated_designs_client_id_idx").on(table.clientId),
+    index("generated_designs_created_at_idx").on(table.createdAt),
+  ]
+);
+
+// Orshot templates relations
+export const orshotTemplatesRelations = relations(
+  orshotTemplates,
+  ({ many }) => ({
+    generatedDesigns: many(generatedDesigns),
+  })
+);
+
+// Generated designs relations
+export const generatedDesignsRelations = relations(
+  generatedDesigns,
+  ({ one }) => ({
+    client: one(users, {
+      fields: [generatedDesigns.clientId],
+      references: [users.id],
+    }),
+    template: one(orshotTemplates, {
+      fields: [generatedDesigns.templateId],
+      references: [orshotTemplates.id],
+    }),
+  })
+);

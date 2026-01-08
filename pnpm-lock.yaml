@@ -128,6 +128,9 @@ importers:
       openapi-types:
         specifier: ^12.1.3
         version: 12.1.3
+      orshot:
+        specifier: ^0.1.2
+        version: 0.1.2
       pino:
         specifier: ^10.1.0
         version: 10.1.0
@@ -4325,6 +4328,9 @@ packages:
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
+
+  orshot@0.1.2:
+    resolution: {integrity: sha512-rl0JRvzqM9TTJO5g+NpOj+R3TYrPDUVTovONm/70733BunCLTpZFQWnrOPoXkCrZopc+RpeF+QABM5AfbHojHg==}
 
   outvariant@1.4.3:
     resolution: {integrity: sha512-+Sl2UErvtsoajRDKCE5/dBz4DIvHXQQnAxtQTF04OJxY0+DyZXSo5P5Bb7XYWOh81syohlYL24hbDwxedPUJCA==}
@@ -9759,6 +9765,8 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
       word-wrap: 1.2.5
+
+  orshot@0.1.2: {}
 
   outvariant@1.4.3: {}
 

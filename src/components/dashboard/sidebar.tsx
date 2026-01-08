@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Zap,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 import {
@@ -44,6 +45,11 @@ const navigation: NavigationItem[] = [
     name: "My Brand",
     href: "/dashboard/brand",
     icon: Palette,
+  },
+  {
+    name: "Designs",
+    href: "/dashboard/designs",
+    icon: Wand2,
   },
   {
     name: "Credits",
