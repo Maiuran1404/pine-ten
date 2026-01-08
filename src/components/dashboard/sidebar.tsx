@@ -8,6 +8,9 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
@@ -141,8 +144,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
       className="border-r-0"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
-      <SidebarHeader className="h-16 justify-center">
-        <SidebarTrigger />
+      <SidebarHeader className="h-16 px-3 py-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="size-8 p-2">
+              <SidebarTrigger />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
