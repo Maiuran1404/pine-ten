@@ -34,6 +34,7 @@ import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 import { QuickDesignModal } from "@/components/client/quick-design-modal";
+import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
 interface UploadedFile {
   fileName: string;
@@ -455,12 +456,25 @@ function DashboardContent() {
 
   return (
     <div
-      className="relative flex flex-col min-h-full px-6 md:px-10 py-10 bg-background overflow-auto"
+      className="relative flex flex-col min-h-full px-6 md:px-10 pt-48 md:pt-60 pb-10 bg-background overflow-auto"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {/* Infinite Grid Background */}
+      <InfiniteGrid
+        gridSize={50}
+        speedX={0.3}
+        speedY={0.3}
+        spotlightRadius={250}
+        backgroundOpacity={0.03}
+        highlightOpacity={0.15}
+        showBlurSpheres={true}
+      />
+
+      {/* Content wrapper - stays above grid */}
+      <div className="relative z-10 flex flex-col flex-1">
       {/* Hidden file input */}
       <input
         type="file"
@@ -617,7 +631,7 @@ function DashboardContent() {
         </div>
 
         {/* Template Categories */}
-        <div className="mt-8 w-full max-w-3xl">
+        <div className="mt-8 w-full max-w-6xl">
           {/* Category Tabs */}
           <div className="flex justify-center gap-2 mb-4 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {PROMPT_TEMPLATES.map((cat) => {
@@ -647,7 +661,7 @@ function DashboardContent() {
           </div>
 
           {/* Template Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PROMPT_TEMPLATES.find(c => c.category === selectedCategory)?.templates.map((template, idx) => {
               const currentCategory = PROMPT_TEMPLATES.find(c => c.category === selectedCategory);
               const categoryColor = currentCategory?.color || "emerald";
@@ -677,7 +691,7 @@ function DashboardContent() {
                     setChatInput(template.prompt);
                     inputRef.current?.focus();
                   }}
-                  className={`group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-card text-left transition-all duration-200 ${hoverClasses[categoryColor as keyof typeof hoverClasses]} hover:shadow-md`}
+                  className={`group flex items-start gap-3 p-5 rounded-xl border border-border/50 bg-card text-left transition-all duration-200 ${hoverClasses[categoryColor as keyof typeof hoverClasses]} hover:shadow-md`}
                 >
                   <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${bgClasses[categoryColor as keyof typeof bgClasses]}`}>
                     {currentCategory?.icon && <currentCategory.icon className={`h-5 w-5 ${iconClasses[categoryColor as keyof typeof iconClasses]}`} />}
@@ -686,7 +700,7 @@ function DashboardContent() {
                     <h3 className="font-medium text-sm text-foreground mb-0.5 group-hover:text-primary transition-colors">
                       {template.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
+                    <p className="text-xs text-muted-foreground">
                       {template.prompt}
                     </p>
                   </div>
@@ -866,6 +880,7 @@ function DashboardContent() {
           </div>
         </div>
       )}
+      </div>{/* End content wrapper */}
 
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog

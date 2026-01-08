@@ -126,7 +126,7 @@ export default function CreditsPage() {
             <div
               key={pkg.id}
               className={cn(
-                "relative rounded-xl overflow-hidden border bg-card",
+                "relative rounded-xl border bg-card",
                 pkg.popular ? "border-primary" : "border-border"
               )}
             >
