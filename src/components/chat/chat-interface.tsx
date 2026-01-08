@@ -118,6 +118,8 @@ interface ChatInterfaceProps {
   // Task mode props - when viewing an active task
   taskData?: TaskData | null;
   onTaskUpdate?: () => void;
+  // Callback when a task is created (to update sidebar)
+  onTaskCreated?: (taskId: string) => void;
 }
 
 const DEFAULT_WELCOME_MESSAGE: Message = {
@@ -148,12 +150,14 @@ export function ChatInterface({
   onDraftUpdate,
   initialMessage,
   seamlessTransition = false,
-  taskData,
+  taskData: initialTaskData,
   onTaskUpdate,
+  onTaskCreated,
 }: ChatInterfaceProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null);
   const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -174,6 +178,13 @@ export function ChatInterface({
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false);
+
+  // Sync taskData state with initialTaskData prop when it changes
+  useEffect(() => {
+    if (initialTaskData) {
+      setTaskData(initialTaskData);
+    }
+  }, [initialTaskData]);
 
   // Check if we're in task mode (viewing an active task)
   const isTaskMode = !!taskData;
@@ -706,10 +717,68 @@ export function ChatInterface({
       }
 
       const result = await response.json();
+      const taskId = result.data.taskId;
+
+      // Delete draft
       deleteDraft(draftId);
       onDraftUpdate?.();
+
+      // Add success message to chat
+      const successMessage: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `🎉 **Your task has been submitted!**\n\n${result.data.assignedTo ? `**${result.data.assignedTo}** has been assigned to work on your project.` : "We're finding the perfect artist for your project."} You'll receive updates as your design progresses.\n\nYou can view your task details in the panel on the right.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, successMessage]);
+
+      // Clear pending task UI
+      setPendingTask(null);
+
+      // Fetch the full task data to switch to task mode
+      try {
+        const taskResponse = await fetch(`/api/tasks/${taskId}`);
+        if (taskResponse.ok) {
+          const taskResult = await taskResponse.json();
+          // Transform to TaskData format
+          const fetchedTaskData: TaskData = {
+            id: taskResult.task.id,
+            title: taskResult.task.title,
+            description: taskResult.task.description,
+            status: taskResult.task.status,
+            creditsUsed: taskResult.task.creditsUsed,
+            maxRevisions: taskResult.task.maxRevisions,
+            revisionsUsed: taskResult.task.revisionsUsed,
+            estimatedHours: taskResult.task.estimatedHours,
+            deadline: taskResult.task.deadline,
+            assignedAt: taskResult.task.assignedAt,
+            completedAt: taskResult.task.completedAt,
+            createdAt: taskResult.task.createdAt,
+            freelancer: taskResult.task.freelancer ? {
+              id: taskResult.task.freelancer.id,
+              name: taskResult.task.freelancer.name,
+              email: "",
+              image: taskResult.task.freelancer.image,
+            } : null,
+            files: taskResult.task.files,
+            chatHistory: taskResult.task.chatHistory,
+          };
+          setTaskData(fetchedTaskData);
+        }
+      } catch {
+        // Task was created but we couldn't fetch details - that's okay
+      }
+
+      // Dispatch event to notify sidebar to refresh tasks
+      window.dispatchEvent(new CustomEvent("tasks-updated"));
+
+      // Call the callback if provided
+      onTaskCreated?.(taskId);
+
+      // Update URL without navigation to reflect task ID
+      window.history.replaceState({}, "", `/dashboard/tasks/${taskId}`);
+
       toast.success("Task created successfully!");
-      router.push(`/dashboard/tasks/${result.data.taskId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create task");
     } finally {

@@ -52,23 +52,40 @@ export default function ClientLayout({
     }
   }, [session, isPending, router]);
 
+  // Function to fetch tasks
+  const fetchTasks = () => {
+    fetch("/api/tasks?limit=10")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.tasks) {
+          setRecentTasks(data.tasks.map((t: { id: string; title: string; status: string }) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+          })));
+        }
+      })
+      .catch(console.error);
+  };
+
   // Fetch recent tasks for sidebar
   useEffect(() => {
     if (session) {
-      fetch("/api/tasks?limit=10")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.tasks) {
-            setRecentTasks(data.tasks.map((t: { id: string; title: string; status: string }) => ({
-              id: t.id,
-              title: t.title,
-              status: t.status,
-            })));
-          }
-        })
-        .catch(console.error);
+      fetchTasks();
     }
   }, [session]);
+
+  // Listen for tasks-updated event to refresh sidebar
+  useEffect(() => {
+    const handleTasksUpdated = () => {
+      fetchTasks();
+    };
+
+    window.addEventListener("tasks-updated", handleTasksUpdated);
+    return () => {
+      window.removeEventListener("tasks-updated", handleTasksUpdated);
+    };
+  }, []);
 
   // Show loading while checking session
   if (isPending) {
