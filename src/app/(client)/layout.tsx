@@ -99,7 +99,7 @@ export default function ClientLayout({
         {
           fontFamily: "'Satoshi', sans-serif",
           "--sidebar-width": "16rem",
-          "--sidebar-width-icon": "3rem",
+          "--sidebar-width-icon": "4rem",
         } as React.CSSProperties
       }
     >

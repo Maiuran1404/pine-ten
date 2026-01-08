@@ -26,7 +26,6 @@ import {
   Share2,
   PenTool,
   LayoutGrid,
-  Wand2,
   ArrowRight,
   Trash2,
 } from "lucide-react";
@@ -40,7 +39,6 @@ import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getDrafts, deleteDraft, type ChatDraft } from "@/lib/chat-drafts";
-import { QuickDesignModal } from "@/components/client/quick-design-modal";
 
 interface UploadedFile {
   fileName: string;
@@ -261,8 +259,7 @@ function DashboardContent() {
   const [recentChats, setRecentChats] = useState<ChatDraft[]>([]);
   const [recentTasks, setRecentTasks] = useState<Array<{ id: string; title: string; status: string; createdAt: string }>>([]);
   const [brandData, setBrandData] = useState<BrandData | null>(null);
-  const [showQuickDesign, setShowQuickDesign] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
@@ -752,43 +749,6 @@ function DashboardContent() {
         </Link>
       </div>
 
-      {/* Quick Design Section */}
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Quick Design</h2>
-          <Link
-            href="/dashboard/designs"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            View all designs →
-          </Link>
-        </div>
-        <button
-          onClick={() => setShowQuickDesign(true)}
-          className="group w-full rounded-xl border border-border/50 hover:border-primary/30 hover:shadow-md transition-all bg-card overflow-hidden"
-        >
-          <div className="px-5 py-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/20 to-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Wand2 className="h-7 w-7 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                  Generate Instant Designs
-                </h3>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Create branded social media posts, marketing materials, and more with one click
-                </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-                <span className="text-sm">Create</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </div>
-        </button>
-      </div>
-
       {/* Recent Items Section */}
       {(recentChats.length > 0 || recentTasks.length > 0) && (
         <div className="w-full">
@@ -908,11 +868,6 @@ function DashboardContent() {
         requiredCredits={1}
       />
 
-      {/* Quick Design Modal */}
-      <QuickDesignModal
-        open={showQuickDesign}
-        onOpenChange={setShowQuickDesign}
-      />
     </div>
   );
 }

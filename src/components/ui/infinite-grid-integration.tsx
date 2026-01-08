@@ -140,20 +140,77 @@ export const InfiniteGrid = ({
         <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} size={gridSize} patternId={hlPatternId} />
       </motion.div>
 
-      {/* Decorative Blur Spheres */}
+      {/* Decorative Animated Gradient Spheres */}
+      {/*
+        Three gradient palettes - all spheres change color together:
+        - Sahara: #EDBA8D (peach)
+        - Green: #9AA48C (sage)
+        - Sea: #D2ECF2 (light blue)
+      */}
       {showBlurSpheres && (
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Light mode: Sea Gradient (#096060, #075057, #D2ECF2) | Dark mode: warm orange/blue */}
-          {/* Right side - top */}
-          <div className="absolute right-[-20%] top-[-20%] w-[40%] h-[40%] rounded-full bg-[#D2ECF2] dark:bg-orange-600/20 blur-[120px]" />
-          <div className="absolute right-[10%] top-[-10%] w-[20%] h-[20%] rounded-full bg-[#096060]/35 dark:bg-primary/30 blur-[100px]" />
-          {/* Left side - top */}
-          <div className="absolute left-[-15%] top-[10%] w-[30%] h-[30%] rounded-full bg-[#D2ECF2]/70 dark:bg-blue-600/15 blur-[120px]" />
-          <div className="absolute left-[5%] top-[-5%] w-[20%] h-[20%] rounded-full bg-[#096060]/25 dark:bg-violet-600/15 blur-[100px]" />
-          {/* Left side - bottom */}
-          <div className="absolute left-[-10%] bottom-[-20%] w-[40%] h-[40%] rounded-full bg-[#075057]/45 dark:bg-blue-600/20 blur-[120px]" />
-          {/* Center - subtle accent */}
-          <div className="absolute left-[30%] top-[40%] w-[15%] h-[15%] rounded-full bg-[#D2ECF2]/35 dark:bg-primary/10 blur-[80px]" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Top right sphere */}
+          <motion.div
+            className="absolute right-[-5%] top-[-5%] w-[35%] h-[35%] rounded-full blur-[120px]"
+            animate={{
+              x: [0, 30, -20, 0],
+              y: [0, -30, 20, 0],
+              scale: [1, 1.05, 0.98, 1],
+              backgroundColor: [
+                "rgba(237, 186, 141, 0.7)",  // Sahara peach
+                "rgba(154, 164, 140, 0.7)",  // Green sage
+                "rgba(210, 236, 242, 0.7)",  // Sea light
+                "rgba(237, 186, 141, 0.7)",  // Back to Sahara
+              ],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
+          {/* Left sphere */}
+          <motion.div
+            className="absolute left-[-8%] top-[10%] w-[30%] h-[30%] rounded-full blur-[120px]"
+            animate={{
+              x: [0, 25, -15, 0],
+              y: [0, 20, -25, 0],
+              scale: [1, 0.98, 1.03, 1],
+              backgroundColor: [
+                "rgba(237, 186, 141, 0.6)",  // Sahara peach
+                "rgba(154, 164, 140, 0.6)",  // Green sage
+                "rgba(210, 236, 242, 0.6)",  // Sea light
+                "rgba(237, 186, 141, 0.6)",  // Back to Sahara
+              ],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
+          {/* Bottom left sphere */}
+          <motion.div
+            className="absolute left-[-5%] bottom-[-5%] w-[32%] h-[32%] rounded-full blur-[120px]"
+            animate={{
+              x: [0, 20, -25, 0],
+              y: [0, -20, 25, 0],
+              scale: [1, 1.02, 0.97, 1],
+              backgroundColor: [
+                "rgba(237, 186, 141, 0.65)", // Sahara peach
+                "rgba(154, 164, 140, 0.65)", // Green sage
+                "rgba(210, 236, 242, 0.65)", // Sea light
+                "rgba(237, 186, 141, 0.65)", // Back to Sahara
+              ],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
         </div>
       )}
 
