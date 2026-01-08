@@ -113,12 +113,12 @@ export default function DesignsGalleryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-background p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Designs</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold text-foreground">My Designs</h1>
+          <p className="text-muted-foreground mt-1">
             Your generated branded designs
           </p>
         </div>
@@ -130,31 +130,35 @@ export default function DesignsGalleryPage() {
 
       {/* Designs Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="aspect-square rounded-xl" />
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-card overflow-hidden"
+            >
+              <Skeleton className="aspect-square" />
+              <div className="p-4">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </div>
+            </div>
           ))}
         </div>
       ) : designs.length === 0 ? (
-        <div className="text-center py-16 px-4">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <Wand2 className="h-10 w-10 text-primary" />
+        <div className="rounded-xl border border-border p-12 text-center bg-card">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Wand2 className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
-            No designs yet
-          </h2>
-          <p className="text-muted-foreground max-w-md mx-auto mb-6">
-            Generate your first branded design in seconds. Just select a
-            template and we'll apply your brand colors and company name
-            automatically.
+          <p className="text-muted-foreground mb-4">
+            No designs yet. Create your first design request!
           </p>
-          <Button onClick={() => setShowQuickDesign(true)} size="lg">
+          <Button onClick={() => setShowQuickDesign(true)}>
             <Sparkles className="h-4 w-4 mr-2" />
             Create Your First Design
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {designs.map((design, index) => {
             const categoryConfig = getCategoryConfig(design.templateCategory);
             const CategoryIcon = categoryConfig.icon;
@@ -168,7 +172,7 @@ export default function DesignsGalleryPage() {
               >
                 <Link
                   href={`/dashboard/designs/${design.id}`}
-                  className="group block rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200"
+                  className="group block rounded-xl border border-border bg-card overflow-hidden hover:border-border/80 transition-all"
                 >
                   {/* Image */}
                   <div className="aspect-square relative bg-muted">
@@ -229,7 +233,7 @@ export default function DesignsGalleryPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                        <h3 className="font-medium text-foreground truncate group-hover:text-foreground/90 transition-colors">
                           {design.templateName}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
