@@ -44,7 +44,7 @@ function AuthErrorContent() {
   };
 
   const gradientButtonStyle = {
-    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
+    background: "linear-gradient(135deg, #4a7c4a 0%, #6b9b6b 50%, #8bb58b 100%)",
   };
 
   const gradientButtonClass = cn(

@@ -103,7 +103,7 @@ export default function AuthLayout({
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)`,
+              background: `linear-gradient(135deg, #4a7c4a 0%, #6b9b6b 50%, #8bb58b 100%)`,
             }}
           />
           <GrainOverlay />
@@ -145,11 +145,11 @@ export default function AuthLayout({
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse at 0% 0%, #2dd4bf 0%, transparent 50%),
-              radial-gradient(ellipse at 100% 30%, #3b82f6 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, #1e3a8a 0%, transparent 60%),
-              radial-gradient(ellipse at 30% 70%, #4338ca 0%, transparent 50%),
-              linear-gradient(180deg, #14b8a6 0%, #3b82f6 35%, #4338ca 65%, #1e3a8a 100%)
+              radial-gradient(ellipse at 0% 0%, #6b9b6b 0%, transparent 50%),
+              radial-gradient(ellipse at 100% 30%, #8bb58b 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 100%, #2d5a2d 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, #4a7c4a 0%, transparent 50%),
+              linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%)
             `,
           }}
         />

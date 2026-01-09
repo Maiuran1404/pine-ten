@@ -152,7 +152,7 @@ function LoginContent() {
 
   // Gradient button style
   const gradientButtonStyle = {
-    background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)",
+    background: "linear-gradient(135deg, #4a7c4a 0%, #6b9b6b 50%, #8bb58b 100%)",
   };
 
   const gradientButtonClass = cn(
@@ -186,7 +186,7 @@ function LoginContent() {
       <div className="space-y-2 text-center lg:text-left">
         <div className={cn(
           "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4",
-          isSuperadmin ? "bg-rose-500/10 text-rose-600" : "bg-blue-500/10 text-blue-600"
+          isSuperadmin ? "bg-rose-500/10 text-rose-600" : "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
         )}>
           {isSuperadmin ? <Shield className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
           <span>{portal.description}</span>
