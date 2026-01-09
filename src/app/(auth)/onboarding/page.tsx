@@ -750,7 +750,7 @@ function OnboardingContent() {
       <Header userEmail={userEmail} />
 
       {/* Main content */}
-      <main className="relative z-10 w-full max-w-md px-4 py-24">
+      <main className="relative z-10 w-full max-w-xl px-4 py-24">
         {type === "freelancer" ? (
           <SimpleFreelancerOnboarding onComplete={handleComplete} />
         ) : (

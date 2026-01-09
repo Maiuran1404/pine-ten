@@ -104,6 +104,12 @@ export async function middleware(request: NextRequest) {
   // Get subdomain context
   const subdomain = getSubdomain(request);
 
+  // For API routes, let the route handler check auth (they have full session access)
+  // This must be checked BEFORE the session cookie check to avoid redirecting API calls to HTML pages
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // Check for session cookie using BetterAuth's utility
   // Must pass cookiePrefix explicitly as Edge Runtime can't import auth config
   const sessionCookie = getSessionCookie(request, {
@@ -115,11 +121,6 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // For API routes, let the route handler check auth (they have full session access)
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
   }
 
   // Clone the response to add headers
