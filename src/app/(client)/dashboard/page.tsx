@@ -283,9 +283,12 @@ function DashboardContent() {
 
     // Fetch brand data
     fetch("/api/brand")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then((data) => {
-        if (data.success && data.data) {
+        if (data?.success && data?.data) {
           setBrandData(data.data);
         }
       })
