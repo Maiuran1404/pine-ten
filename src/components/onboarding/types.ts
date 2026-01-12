@@ -48,8 +48,21 @@ export interface BrandData {
   feelPlayfulSerious: number;
   feelBoldMinimal: number;
   feelExperimentalClassic: number;
+  // Additional feel preferences for Route B
+  feelFriendlyProfessional: number;
+  feelPremiumAccessible: number;
   // Creative focus areas
   creativeFocus: string[];
+  // Brand assets (uploaded files)
+  brandAssets: string[];
+  // Route B specific fields
+  productType?: string; // SaaS, app, marketplace, agency, etc.
+  targetAudience?: string;
+  brandPositioning?: string; // What should people understand about your brand
+  // Visual preferences from instinct test
+  visualPreferences?: VisualPreference[];
+  // Selected brand direction (Route B)
+  selectedDirection?: BrandDirection;
 }
 
 export interface CreativeFocusOption {
@@ -58,15 +71,53 @@ export interface CreativeFocusOption {
   description: string;
 }
 
+// Route selection
+export type OnboardingRoute = "existing" | "create";
+
+// All possible onboarding steps
 export type OnboardingStep =
+  // Welcome / Path selection
+  | "welcome"
+  // Route A - Existing Brand
   | "brand-input"
   | "scanning"
-  | "company-info"
-  | "brand-colors"
+  | "brand-dna-reveal"
   | "fine-tune"
   | "creative-focus"
-  | "complete";
+  | "brand-ready"
+  // Route B - Create Brand
+  | "brand-intent"
+  | "brand-personality"
+  | "visual-instinct"
+  | "tone-of-voice"
+  | "ai-directions"
+  | "confirm-direction"
+  // Shared final step
+  | "complete"
+  // Legacy steps (backward compatibility)
+  | "company-info"
+  | "brand-colors";
 
+// Route A step configuration
+export const ROUTE_A_STEPS = [
+  { id: "brand-input", label: "Brand" },
+  { id: "brand-dna-reveal", label: "DNA" },
+  { id: "fine-tune", label: "Style" },
+  { id: "creative-focus", label: "Focus" },
+  { id: "brand-ready", label: "Ready" },
+] as const;
+
+// Route B step configuration
+export const ROUTE_B_STEPS = [
+  { id: "brand-intent", label: "Intent" },
+  { id: "brand-personality", label: "Feel" },
+  { id: "visual-instinct", label: "Visual" },
+  { id: "tone-of-voice", label: "Tone" },
+  { id: "ai-directions", label: "Directions" },
+  { id: "confirm-direction", label: "Confirm" },
+] as const;
+
+// Keep for backward compatibility
 export const STEP_CONFIG = [
   { id: "brand-input", label: "Brand" },
   { id: "company-info", label: "Company" },
@@ -75,6 +126,78 @@ export const STEP_CONFIG = [
   { id: "creative-focus", label: "Focus" },
   { id: "complete", label: "Done" },
 ] as const;
+
+// Visual Instinct Test types
+export interface VisualPreference {
+  id: string;
+  choice: "A" | "B";
+  dimension: string; // e.g., "lightDark", "textVisual", etc.
+}
+
+export interface VisualComparisonPair {
+  id: string;
+  dimension: string;
+  optionA: {
+    label: string;
+    description: string;
+    visual: "light" | "dark" | "text-heavy" | "visual" | "structured" | "expressive" | "calm" | "energetic" | "minimal" | "dense" | "geometric" | "organic";
+  };
+  optionB: {
+    label: string;
+    description: string;
+    visual: "light" | "dark" | "text-heavy" | "visual" | "structured" | "expressive" | "calm" | "energetic" | "minimal" | "dense" | "geometric" | "organic";
+  };
+}
+
+export const VISUAL_COMPARISON_PAIRS: VisualComparisonPair[] = [
+  {
+    id: "1",
+    dimension: "lightDark",
+    optionA: { label: "Light & Airy", description: "Clean, open, bright", visual: "light" },
+    optionB: { label: "Dark & Bold", description: "Rich, dramatic, impactful", visual: "dark" },
+  },
+  {
+    id: "2",
+    dimension: "textVisual",
+    optionA: { label: "Content-First", description: "Words tell the story", visual: "text-heavy" },
+    optionB: { label: "Visual-First", description: "Images lead the way", visual: "visual" },
+  },
+  {
+    id: "3",
+    dimension: "structuredExpressive",
+    optionA: { label: "Structured", description: "Grid-based, organized", visual: "structured" },
+    optionB: { label: "Expressive", description: "Freeform, artistic", visual: "expressive" },
+  },
+  {
+    id: "4",
+    dimension: "calmEnergetic",
+    optionA: { label: "Calm", description: "Peaceful, serene", visual: "calm" },
+    optionB: { label: "Energetic", description: "Dynamic, exciting", visual: "energetic" },
+  },
+  {
+    id: "5",
+    dimension: "minimalDense",
+    optionA: { label: "Minimal", description: "Less is more", visual: "minimal" },
+    optionB: { label: "Rich", description: "More is more", visual: "dense" },
+  },
+  {
+    id: "6",
+    dimension: "geometricOrganic",
+    optionA: { label: "Geometric", description: "Sharp, angular shapes", visual: "geometric" },
+    optionB: { label: "Organic", description: "Soft, natural forms", visual: "organic" },
+  },
+];
+
+// Brand Direction (AI-generated options for Route B)
+export interface BrandDirection {
+  id: string;
+  name: string;
+  narrative: string;
+  colorPalette: string[];
+  typographyStyle: "modern" | "classic" | "bold" | "elegant" | "playful";
+  visualStyle: string;
+  moodKeywords: string[];
+}
 
 export const defaultBrandData: BrandData = {
   name: "",
@@ -100,8 +223,40 @@ export const defaultBrandData: BrandData = {
   feelPlayfulSerious: 50,
   feelBoldMinimal: 50,
   feelExperimentalClassic: 50,
+  feelFriendlyProfessional: 50,
+  feelPremiumAccessible: 50,
   creativeFocus: [],
+  brandAssets: [],
+  productType: "",
+  targetAudience: "",
+  brandPositioning: "",
+  visualPreferences: [],
 };
+
+// Product type options for Route B
+export const PRODUCT_TYPES = [
+  { id: "saas", label: "SaaS", description: "Software as a service" },
+  { id: "app", label: "App", description: "Mobile or web application" },
+  { id: "marketplace", label: "Marketplace", description: "Two-sided platform" },
+  { id: "agency", label: "Agency", description: "Service-based business" },
+  { id: "ecommerce", label: "E-commerce", description: "Online store" },
+  { id: "media", label: "Media/Content", description: "Publishing or content" },
+  { id: "fintech", label: "Fintech", description: "Financial technology" },
+  { id: "healthtech", label: "Healthtech", description: "Healthcare technology" },
+  { id: "other", label: "Something else", description: "Tell us more" },
+];
+
+// Target audience options
+export const TARGET_AUDIENCES = [
+  { id: "founders", label: "Founders & Startups" },
+  { id: "developers", label: "Developers" },
+  { id: "designers", label: "Designers" },
+  { id: "marketers", label: "Marketers" },
+  { id: "enterprises", label: "Enterprise Teams" },
+  { id: "smb", label: "Small Businesses" },
+  { id: "consumers", label: "Consumers" },
+  { id: "creators", label: "Creators" },
+];
 
 export const CREATIVE_FOCUS_OPTIONS: CreativeFocusOption[] = [
   { id: "ads", title: "Ads that actually convert", description: "On-brand, ready to launch." },

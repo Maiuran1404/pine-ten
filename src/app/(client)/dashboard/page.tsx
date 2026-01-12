@@ -40,6 +40,9 @@ import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getDrafts, deleteDraft, type ChatDraft } from "@/lib/chat-drafts";
 
+// TODO: Remove after testing onboarding
+const SHOW_DEV_RESET_BUTTON = true;
+
 interface UploadedFile {
   fileName: string;
   fileUrl: string;
@@ -870,6 +873,32 @@ function DashboardContent() {
         currentCredits={credits || 0}
         requiredCredits={1}
       />
+
+      {/* TODO: Remove after testing onboarding */}
+      {SHOW_DEV_RESET_BUTTON && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/dev/reset-onboarding", { method: "POST" });
+                if (res.ok) {
+                  toast.success("Onboarding reset! Redirecting...");
+                  setTimeout(() => {
+                    window.location.href = "/onboarding";
+                  }, 500);
+                } else {
+                  toast.error("Failed to reset onboarding");
+                }
+              } catch {
+                toast.error("Failed to reset onboarding");
+              }
+            }}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors"
+          >
+            Reset Onboarding (Dev)
+          </button>
+        </div>
+      )}
 
     </div>
   );
