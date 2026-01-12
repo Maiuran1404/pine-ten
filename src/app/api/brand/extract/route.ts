@@ -26,6 +26,38 @@ function getAnthropic(): Anthropic {
   return anthropic;
 }
 
+// Visual Style options - must match types.ts VISUAL_STYLE_OPTIONS
+const VISUAL_STYLE_VALUES = [
+  "minimal-clean",
+  "bold-impactful",
+  "elegant-refined",
+  "modern-sleek",
+  "playful-vibrant",
+  "organic-natural",
+  "tech-futuristic",
+  "classic-timeless",
+  "artistic-expressive",
+  "corporate-professional",
+  "warm-inviting",
+  "edgy-disruptive",
+] as const;
+
+// Brand Tone options - must match types.ts BRAND_TONE_OPTIONS
+const BRAND_TONE_VALUES = [
+  "friendly-approachable",
+  "professional-trustworthy",
+  "playful-witty",
+  "bold-confident",
+  "sophisticated-refined",
+  "innovative-visionary",
+  "empathetic-caring",
+  "authoritative-expert",
+  "casual-relaxed",
+  "inspiring-motivational",
+  "premium-exclusive",
+  "rebellious-edgy",
+] as const;
+
 interface BrandExtraction {
   name: string;
   description: string;
@@ -51,6 +83,9 @@ interface BrandExtraction {
   contactEmail: string | null;
   contactPhone: string | null;
   keywords: string[];
+  // Explicit style and tone selections
+  visualStyle: string;
+  brandTone: string;
   // Brand personality/feel values (0-100 scale)
   feelPlayfulSerious: number; // 0 = Playful, 100 = Serious
   feelBoldMinimal: number; // 0 = Bold, 100 = Minimal
@@ -155,6 +190,9 @@ function createDefaultBrandData(
     contactEmail: null,
     contactPhone: null,
     keywords: [],
+    // Default style and tone selections
+    visualStyle: "modern-sleek",
+    brandTone: "professional-trustworthy",
     // Default feel values (neutral)
     feelPlayfulSerious: 50,
     feelBoldMinimal: 50,
@@ -310,13 +348,42 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - backgroundColor: Main background color (hex code)
    - textColor: Main text color (hex code)
    - brandColors: Array of all significant brand colors (hex codes)
-7. **Typography**: Identify fonts if mentioned or visible
-   - primaryFont: Main heading/brand font
-   - secondaryFont: Body text font
+7. **Typography**: Identify fonts if mentioned or visible. Choose from these common options if the exact font isn't clear:
+   - Modern Sans: Satoshi, Inter, DM Sans, Plus Jakarta Sans, Outfit, Space Grotesk, Manrope, Sora
+   - Classic Sans: Helvetica, Arial, Futura, Avenir, Proxima Nova, Montserrat, Lato, Open Sans, Roboto
+   - Elegant Serif: Playfair Display, Cormorant Garamond, Libre Baskerville, Source Serif Pro, Fraunces
+   - Classic Serif: Times New Roman, Georgia, Merriweather, Lora
+   - Geometric/Display: Poppins, Raleway, Josefin Sans, Bebas Neue, Oswald
 8. **Social Links**: Any social media profile URLs found
 9. **Contact Info**: Email and phone if found
 10. **Keywords**: 5-10 keywords that describe this brand
-11. **Brand Personality** (ALL values 0-100 scale, analyze carefully based on visual style, copy tone, and overall feel):
+11. **Visual Style** (choose ONE that best matches):
+   - "minimal-clean": Simple, whitespace-focused, uncluttered
+   - "bold-impactful": Strong contrasts, commanding presence
+   - "elegant-refined": Sophisticated, luxurious, polished
+   - "modern-sleek": Contemporary, cutting-edge, streamlined
+   - "playful-vibrant": Colorful, energetic, fun
+   - "organic-natural": Earthy, flowing, nature-inspired
+   - "tech-futuristic": Digital, innovative, forward-thinking
+   - "classic-timeless": Traditional, enduring, heritage
+   - "artistic-expressive": Creative, unique, unconventional
+   - "corporate-professional": Business-focused, trustworthy, established
+   - "warm-inviting": Cozy, welcoming, friendly aesthetics
+   - "edgy-disruptive": Rebellious, challenging norms, provocative
+12. **Brand Tone** (choose ONE that best matches the voice/personality):
+   - "friendly-approachable": Warm, conversational, relatable
+   - "professional-trustworthy": Credible, reliable, expert
+   - "playful-witty": Humorous, clever, light-hearted
+   - "bold-confident": Assertive, self-assured, direct
+   - "sophisticated-refined": Cultured, elegant, discerning
+   - "innovative-visionary": Forward-thinking, pioneering, ambitious
+   - "empathetic-caring": Understanding, supportive, compassionate
+   - "authoritative-expert": Knowledgeable, commanding, leading
+   - "casual-relaxed": Easy-going, informal, laid-back
+   - "inspiring-motivational": Uplifting, empowering, encouraging
+   - "premium-exclusive": Luxury, high-end, selective
+   - "rebellious-edgy": Unconventional, provocative, challenging
+13. **Brand Personality** (ALL values 0-100 scale, analyze carefully based on visual style, copy tone, and overall feel):
    - feelPlayfulSerious: 0 = Very playful/fun/casual, 100 = Very serious/formal/corporate
    - feelBoldMinimal: 0 = Bold/loud/maximalist with lots of visual elements, 100 = Minimal/clean/whitespace-heavy
    - feelExperimentalClassic: 0 = Experimental/edgy/unconventional, 100 = Classic/traditional/timeless
@@ -327,11 +394,12 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - signalWarmth: 0 = Cold/technical/distant, 100 = Warm/human/inviting
    - signalPremium: 0 = Accessible/budget, 100 = Premium/luxury
 
-IMPORTANT: Do NOT default all personality values to 50. Analyze the actual visual design:
-- A tech startup with bold colors and playful copy should have LOW feelPlayfulSerious (e.g., 20-40)
-- A law firm with serif fonts and dark colors should have HIGH feelPlayfulSerious (e.g., 70-90)
-- A site with lots of whitespace should have HIGH feelBoldMinimal (e.g., 70-90)
-- A site with dense content and many elements should have LOW feelBoldMinimal (e.g., 20-40)
+IMPORTANT: Do NOT default all personality values to 50 and DO NOT always pick generic options. Analyze the actual visual design:
+- A tech startup with bold colors and playful copy should have visualStyle "playful-vibrant" or "tech-futuristic", brandTone "bold-confident" or "playful-witty"
+- A law firm with serif fonts and dark colors should have visualStyle "corporate-professional" or "elegant-refined", brandTone "authoritative-expert"
+- An investment firm with clean design should have visualStyle "minimal-clean" or "modern-sleek", brandTone "professional-trustworthy" or "sophisticated-refined"
+- A luxury fashion brand should have visualStyle "elegant-refined", brandTone "premium-exclusive" or "sophisticated-refined"
+- A kids' product brand should have visualStyle "playful-vibrant", brandTone "friendly-approachable" or "playful-witty"
 
 Return ONLY a valid JSON object with this exact structure:
 {
@@ -359,6 +427,8 @@ Return ONLY a valid JSON object with this exact structure:
   "contactEmail": "string or null",
   "contactPhone": "string or null",
   "keywords": ["keyword1", "keyword2"],
+  "visualStyle": "one of the visual style values above",
+  "brandTone": "one of the brand tone values above",
   "feelPlayfulSerious": number,
   "feelBoldMinimal": number,
   "feelExperimentalClassic": number,
@@ -500,6 +570,13 @@ Return ONLY a valid JSON object with this exact structure:
     brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50;
     brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
     brandDataWithFeels.signalPremium = brandData.signalPremium ?? 50;
+
+    // Validate and set defaults for visualStyle and brandTone
+    const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(brandData.visualStyle as typeof VISUAL_STYLE_VALUES[number]);
+    const isValidBrandTone = BRAND_TONE_VALUES.includes(brandData.brandTone as typeof BRAND_TONE_VALUES[number]);
+
+    brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : "modern-sleek";
+    brandDataWithFeels.brandTone = isValidBrandTone ? brandData.brandTone : "professional-trustworthy";
 
     return NextResponse.json({
       success: true,

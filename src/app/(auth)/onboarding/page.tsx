@@ -39,6 +39,9 @@ import {
   TARGET_AUDIENCES,
   ROUTE_A_STEPS,
   ROUTE_B_STEPS,
+  VISUAL_STYLE_OPTIONS,
+  BRAND_TONE_OPTIONS,
+  FONT_OPTIONS,
 } from "@/components/onboarding/types";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
@@ -425,18 +428,117 @@ function BrandDNARevealStep({
   onAdjust,
   onContinue,
   onBack,
+  setBrandData,
 }: {
   brandData: BrandData;
   onAdjust: (field: string) => void;
   onContinue: () => void;
   onBack: () => void;
+  setBrandData: (data: BrandData) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editField, setEditField] = useState<string | null>(null);
+
+  // Derive initial style and tone from feel values if not explicitly set
+  const getInitialVisualStyle = () => {
+    if (brandData.visualStyle) return brandData.visualStyle;
+    // Map feelBoldMinimal to a style
+    const val = brandData.feelBoldMinimal;
+    if (val < 30) return "bold-impactful";
+    if (val < 45) return "modern-sleek";
+    if (val < 55) return "minimal-clean";
+    if (val < 70) return "elegant-refined";
+    return "classic-timeless";
+  };
+
+  const getInitialBrandTone = () => {
+    if (brandData.brandTone) return brandData.brandTone;
+    // Map feelPlayfulSerious to a tone
+    const val = brandData.feelPlayfulSerious;
+    if (val < 30) return "playful-witty";
+    if (val < 45) return "friendly-approachable";
+    if (val < 55) return "casual-relaxed";
+    if (val < 70) return "professional-trustworthy";
+    return "authoritative-expert";
+  };
+
+  const [tempValues, setTempValues] = useState({
+    name: brandData.name,
+    description: brandData.description,
+    primaryColor: brandData.primaryColor,
+    secondaryColor: brandData.secondaryColor,
+    accentColor: brandData.accentColor,
+    primaryFont: brandData.primaryFont || "Satoshi",
+    visualStyle: getInitialVisualStyle(),
+    brandTone: getInitialBrandTone(),
+  });
+
   const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean);
   const primaryColor = colors[0] || "#3b82f6";
   const secondaryColor = colors[1] || "#8b5cf6";
-  const visualStyle = brandData.feelBoldMinimal < 50 ? "Bold & Impactful" : "Minimal & Clean";
-  const toneStyle = brandData.feelPlayfulSerious < 50 ? "Friendly & Approachable" : "Professional & Trustworthy";
-  const fontFamily = brandData.primaryFont?.toLowerCase().includes("serif") ? "'Times New Roman', serif" : "'Satoshi', sans-serif";
+
+  // Get display labels for current values
+  const getStyleLabel = (value: string) => {
+    const option = VISUAL_STYLE_OPTIONS.find(o => o.value === value);
+    return option?.label || "Minimal & Clean";
+  };
+
+  const getToneLabel = (value: string) => {
+    const option = BRAND_TONE_OPTIONS.find(o => o.value === value);
+    return option?.label || "Professional & Trustworthy";
+  };
+
+  const visualStyleLabel = getStyleLabel(brandData.visualStyle || getInitialVisualStyle());
+  const brandToneLabel = getToneLabel(brandData.brandTone || getInitialBrandTone());
+
+  // Get font family for display
+  const getFontFamily = (fontName: string) => {
+    const font = FONT_OPTIONS.find(f => f.value === fontName);
+    return font?.family || "'Satoshi', sans-serif";
+  };
+  const fontFamily = getFontFamily(brandData.primaryFont || "Satoshi");
+
+  const handleStartEdit = () => {
+    setTempValues({
+      name: brandData.name,
+      description: brandData.description,
+      primaryColor: brandData.primaryColor,
+      secondaryColor: brandData.secondaryColor,
+      accentColor: brandData.accentColor,
+      primaryFont: brandData.primaryFont || "Satoshi",
+      visualStyle: brandData.visualStyle || getInitialVisualStyle(),
+      brandTone: brandData.brandTone || getInitialBrandTone(),
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    setBrandData({
+      ...brandData,
+      name: tempValues.name,
+      description: tempValues.description,
+      primaryColor: tempValues.primaryColor,
+      secondaryColor: tempValues.secondaryColor || "",
+      accentColor: tempValues.accentColor || "",
+      primaryFont: tempValues.primaryFont,
+      visualStyle: tempValues.visualStyle,
+      brandTone: tempValues.brandTone,
+    });
+    setIsEditing(false);
+    setEditField(null);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditField(null);
+  };
+
+  // Group fonts by category for better UX
+  const groupedFonts = FONT_OPTIONS.reduce((acc, font) => {
+    if (!acc[font.category]) acc[font.category] = [];
+    acc[font.category].push(font);
+    return acc;
+  }, {} as Record<string, typeof FONT_OPTIONS>);
 
   return (
     <motion.div
@@ -475,21 +577,45 @@ function BrandDNARevealStep({
               }}
             >
               <span className="text-white/90 font-semibold text-base" style={{ fontFamily }}>
-                {brandData.name?.[0]?.toUpperCase() || "B"}
+                {(isEditing ? tempValues.name : brandData.name)?.[0]?.toUpperCase() || "B"}
               </span>
             </div>
 
-            {/* Edit button */}
-            <button
-              onClick={() => onAdjust("all")}
-              className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
-              style={{
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.08)"
-              }}
-            >
-              Edit
-            </button>
+            {/* Edit/Save/Cancel buttons */}
+            {isEditing ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-3 py-1.5 rounded-full text-xs text-black/80 hover:bg-white transition-colors"
+                  style={{
+                    background: "rgba(154, 164, 140, 0.9)",
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleStartEdit}
+                className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)"
+                }}
+              >
+                Edit
+              </button>
+            )}
           </div>
 
           {/* Brand Name & Description */}
@@ -497,12 +623,33 @@ function BrandDNARevealStep({
             <p className="text-white/30 text-xs mb-1" style={{ fontFamily: "'Times New Roman', serif", fontStyle: "italic" }}>
               This is
             </p>
-            <h1 className="text-2xl text-white font-medium mb-2" style={{ fontFamily }}>
-              {brandData.name || "Your Brand"}
-            </h1>
-            <p className="text-white/40 text-sm leading-relaxed">
-              {brandData.description || brandData.industry || "Your brand story will appear here."}
-            </p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={tempValues.name}
+                onChange={(e) => setTempValues({ ...tempValues, name: e.target.value })}
+                className="text-2xl text-white font-medium mb-2 bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
+                style={{ fontFamily }}
+                placeholder="Brand name"
+              />
+            ) : (
+              <h1 className="text-2xl text-white font-medium mb-2" style={{ fontFamily }}>
+                {brandData.name || "Your Brand"}
+              </h1>
+            )}
+            {isEditing ? (
+              <textarea
+                value={tempValues.description}
+                onChange={(e) => setTempValues({ ...tempValues, description: e.target.value })}
+                className="text-white/40 text-sm leading-relaxed bg-transparent border border-white/10 rounded-lg p-2 focus:border-[#9AA48C] outline-none w-full resize-none"
+                rows={3}
+                placeholder="Brand description"
+              />
+            ) : (
+              <p className="text-white/40 text-sm leading-relaxed">
+                {brandData.description || brandData.industry || "Your brand story will appear here."}
+              </p>
+            )}
           </div>
 
           {/* Divider */}
@@ -510,24 +657,65 @@ function BrandDNARevealStep({
 
           {/* Color Palette */}
           <div className="flex items-center gap-3 mb-5">
-            {colors.length > 0 ? colors.map((color, i) => (
-              <motion.div
-                key={i}
-                className="w-8 h-8 rounded-lg"
-                style={{
-                  backgroundColor: color,
-                  boxShadow: `0 2px 12px ${color}30`
-                }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 + i * 0.1 }}
-              />
-            )) : (
+            {isEditing ? (
               <>
-                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
-                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
-                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={tempValues.primaryColor || "#3b82f6"}
+                    onChange={(e) => setTempValues({ ...tempValues, primaryColor: e.target.value })}
+                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                  />
+                  <div
+                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
+                    style={{ backgroundColor: tempValues.primaryColor || "#3b82f6" }}
+                  />
+                </div>
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={tempValues.secondaryColor || "#8b5cf6"}
+                    onChange={(e) => setTempValues({ ...tempValues, secondaryColor: e.target.value })}
+                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                  />
+                  <div
+                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
+                    style={{ backgroundColor: tempValues.secondaryColor || "#8b5cf6" }}
+                  />
+                </div>
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={tempValues.accentColor || "#f59e0b"}
+                    onChange={(e) => setTempValues({ ...tempValues, accentColor: e.target.value })}
+                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                  />
+                  <div
+                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
+                    style={{ backgroundColor: tempValues.accentColor || "#f59e0b" }}
+                  />
+                </div>
               </>
+            ) : (
+              colors.length > 0 ? colors.map((color, i) => (
+                <motion.div
+                  key={i}
+                  className="w-8 h-8 rounded-lg"
+                  style={{
+                    backgroundColor: color,
+                    boxShadow: `0 2px 12px ${color}30`
+                  }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                />
+              )) : (
+                <>
+                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
+                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
+                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
+                </>
+              )
             )}
             <span className="text-white/20 text-xs ml-1">Colors</span>
           </div>
@@ -542,9 +730,28 @@ function BrandDNARevealStep({
               }}
             >
               <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Type</span>
-              <p className="text-white text-sm font-medium" style={{ fontFamily }}>
-                {brandData.primaryFont || "Sans-serif"}
-              </p>
+              {isEditing ? (
+                <select
+                  value={tempValues.primaryFont || "Satoshi"}
+                  onChange={(e) => setTempValues({ ...tempValues, primaryFont: e.target.value })}
+                  className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
+                  style={{ fontFamily: getFontFamily(tempValues.primaryFont) }}
+                >
+                  {Object.entries(groupedFonts).map(([category, fonts]) => (
+                    <optgroup key={category} label={category} style={{ background: "#1a1a1a", color: "#666" }}>
+                      {fonts.map((font) => (
+                        <option key={font.value} value={font.value} style={{ background: "#1a1a1a", color: "#fff", fontFamily: font.family }}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-white text-sm font-medium" style={{ fontFamily }}>
+                  {brandData.primaryFont || "Satoshi"}
+                </p>
+              )}
             </div>
 
             <div
@@ -555,9 +762,23 @@ function BrandDNARevealStep({
               }}
             >
               <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Style</span>
-              <p className="text-white text-sm font-medium">
-                {visualStyle}
-              </p>
+              {isEditing ? (
+                <select
+                  value={tempValues.visualStyle}
+                  onChange={(e) => setTempValues({ ...tempValues, visualStyle: e.target.value })}
+                  className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
+                >
+                  {VISUAL_STYLE_OPTIONS.map((style) => (
+                    <option key={style.value} value={style.value} style={{ background: "#1a1a1a" }}>
+                      {style.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-white text-sm font-medium">
+                  {visualStyleLabel}
+                </p>
+              )}
             </div>
           </div>
 
@@ -570,35 +791,51 @@ function BrandDNARevealStep({
             }}
           >
             <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Tone</span>
-            <p className="text-white text-sm font-medium">
-              {toneStyle}
-            </p>
+            {isEditing ? (
+              <select
+                value={tempValues.brandTone}
+                onChange={(e) => setTempValues({ ...tempValues, brandTone: e.target.value })}
+                className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
+              >
+                {BRAND_TONE_OPTIONS.map((tone) => (
+                  <option key={tone.value} value={tone.value} style={{ background: "#1a1a1a" }}>
+                    {tone.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-white text-sm font-medium">
+                {brandToneLabel}
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={onBack}
-              className="flex-1 py-3 rounded-xl font-medium text-xs text-white/40 hover:text-white/70 transition-colors"
-              style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)"
-              }}
-            >
-              <ArrowLeft className="w-3 h-3 inline mr-1" />
-              Back
-            </button>
-            <button
-              onClick={onContinue}
-              className="flex-1 py-3 rounded-xl font-medium text-xs transition-all hover:bg-white text-black/80"
-              style={{
-                background: "rgba(245, 245, 240, 0.9)",
-              }}
-            >
-              Looks right
-              <Check className="w-3 h-3 inline ml-1" />
-            </button>
-          </div>
+          {!isEditing && (
+            <div className="flex gap-2">
+              <button
+                onClick={onBack}
+                className="flex-1 py-3 rounded-xl font-medium text-xs text-white/40 hover:text-white/70 transition-colors"
+                style={{
+                  background: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid rgba(255, 255, 255, 0.06)"
+                }}
+              >
+                <ArrowLeft className="w-3 h-3 inline mr-1" />
+                Back
+              </button>
+              <button
+                onClick={onContinue}
+                className="flex-1 py-3 rounded-xl font-medium text-xs transition-all hover:bg-white text-black/80"
+                style={{
+                  background: "rgba(245, 245, 240, 0.9)",
+                }}
+              >
+                Looks right
+                <Check className="w-3 h-3 inline ml-1" />
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -1193,122 +1430,78 @@ const BRAND_SIGNAL_SLIDERS = [
   },
 ];
 
-// Get current level label based on slider value
-function getSliderLevelLabel(value: number, levels: string[]): string {
-  const index = Math.min(Math.floor(value / (100 / levels.length)), levels.length - 1);
-  return levels[index];
-}
-
-// Snap a value to the nearest valid position based on number of levels
-function snapToNearestLevel(value: number, numLevels: number): number {
-  const positions = Array.from({ length: numLevels }, (_, i) => (i / (numLevels - 1)) * 100);
-  let nearest = positions[0];
-  let minDistance = Math.abs(value - nearest);
-
-  for (const pos of positions) {
-    const distance = Math.abs(value - pos);
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearest = pos;
-    }
-  }
-  return nearest;
-}
-
-// Custom styled slider component with haptic feedback and snapping
+// Simple stepped slider component
 function BrandSignalSlider({
   slider,
   value,
   onChange,
+  accentColor = "#9AA48C",
 }: {
   slider: typeof BRAND_SIGNAL_SLIDERS[0];
   value: number;
   onChange: (value: number) => void;
+  accentColor?: string;
 }) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [displayValue, setDisplayValue] = useState(value);
-  const lastHapticStep = useRef(-1);
   const numSteps = slider.levels.length;
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Calculate snap positions (tick marks)
-  const getSnapPositions = useCallback(() => {
-    return slider.levels.map((_, index) => (index / (numSteps - 1)) * 100);
-  }, [numSteps, slider.levels]);
-
-  // Snap to nearest tick mark
-  const snapToNearest = useCallback((val: number) => {
-    const positions = getSnapPositions();
-    let nearest = positions[0];
-    let minDistance = Math.abs(val - nearest);
-
-    for (const pos of positions) {
-      const distance = Math.abs(val - pos);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearest = pos;
-      }
-    }
-    return nearest;
-  }, [getSnapPositions]);
-
-  // Get step index from value
-  const getStepIndex = useCallback((val: number) => {
-    const positions = getSnapPositions();
-    for (let i = 0; i < positions.length; i++) {
-      if (Math.abs(val - positions[i]) < 1) return i;
-    }
-    return Math.round((val / 100) * (numSteps - 1));
-  }, [getSnapPositions, numSteps]);
-
-  const currentLevel = slider.levels[getStepIndex(value)];
-
-  // Trigger haptic feedback
-  const triggerHaptic = useCallback(() => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(5);
-    }
-  }, []);
-
-  // Handle slider change with haptic feedback at level boundaries
-  const handleChange = (newValue: number) => {
-    setDisplayValue(newValue);
-
-    // Check if we crossed a step boundary for haptic
-    const currentStep = getStepIndex(snapToNearest(newValue));
-    if (currentStep !== lastHapticStep.current) {
-      triggerHaptic();
-      lastHapticStep.current = currentStep;
-    }
+  // Get current level index and label
+  const getLevelIndex = (val: number) => {
+    const stepSize = 100 / (numSteps - 1);
+    return Math.round(val / stepSize);
   };
 
-  // Snap on release
-  const handleRelease = () => {
+  const currentLevelIndex = getLevelIndex(value);
+  const currentLevel = slider.levels[currentLevelIndex];
+
+  // Snap value to nearest step
+  const snapToStep = (val: number) => {
+    const stepSize = 100 / (numSteps - 1);
+    const stepIndex = Math.round(val / stepSize);
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
+  };
+
+  // Calculate value from mouse/touch position
+  const getValueFromPosition = (clientX: number) => {
+    if (!sliderRef.current) return value;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.min(Math.max((x / rect.width) * 100, 0), 100);
+    return snapToStep(percentage);
+  };
+
+  // Handle pointer down
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const newValue = getValueFromPosition(e.clientX);
+    onChange(newValue);
+  };
+
+  // Handle pointer move
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const newValue = getValueFromPosition(e.clientX);
+    onChange(newValue);
+  };
+
+  // Handle pointer up
+  const handlePointerUp = () => {
     setIsDragging(false);
-    const snappedValue = snapToNearest(displayValue);
-    setDisplayValue(snappedValue);
-    onChange(snappedValue);
   };
-
-  // Sync display value with prop
-  useEffect(() => {
-    if (!isDragging) {
-      setDisplayValue(value);
-    }
-  }, [value, isDragging]);
-
-  // Calculate thumb position percentage
-  const thumbPosition = displayValue;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Slider header */}
       <div className="flex justify-between items-center">
         <span className="text-white text-sm font-medium">{slider.name}</span>
         <motion.span
           key={currentLevel}
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-[#9AA48C] text-xs font-medium px-2 py-0.5 rounded-full"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-xs font-medium px-2.5 py-1 rounded-full text-[#9AA48C]"
           style={{
             background: "rgba(154, 164, 140, 0.15)",
             border: "1px solid rgba(154, 164, 140, 0.3)",
@@ -1324,100 +1517,79 @@ function BrandSignalSlider({
         <span>{slider.rightLabel}</span>
       </div>
 
-      {/* Custom Slider Track */}
-      <div className="relative h-10 flex items-center">
+      {/* Slider track */}
+      <div
+        ref={sliderRef}
+        className="relative h-10 flex items-center cursor-pointer select-none touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
         {/* Track background */}
-        <div
-          className="absolute inset-x-0 h-2 rounded-full overflow-hidden"
-          style={{
-            background: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          {/* Filled portion */}
-          <motion.div
-            className="h-full rounded-full"
-            style={{
-              width: `${thumbPosition}%`,
-              background: "linear-gradient(90deg, rgba(154, 164, 140, 0.3) 0%, rgba(154, 164, 140, 0.6) 100%)",
-            }}
-            animate={{ width: `${thumbPosition}%` }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
-        </div>
+        <div className="absolute inset-x-0 h-1 rounded-full bg-white/10" />
 
-        {/* Tick marks */}
-        <div className="absolute inset-x-0 flex justify-between px-1">
+        {/* Filled track */}
+        <motion.div
+          className="absolute left-0 h-1 rounded-full bg-[#9AA48C]"
+          initial={false}
+          animate={{ width: `${value}%` }}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+        />
+
+        {/* Step indicators */}
+        <div className="absolute inset-x-0 flex justify-between pointer-events-none">
           {slider.levels.map((_, index) => {
-            const tickPosition = (index / (numSteps - 1)) * 100;
-            const isActive = value >= tickPosition - (50 / numSteps);
+            const stepPosition = (index / (numSteps - 1)) * 100;
+            const isActive = value >= stepPosition;
+
             return (
               <div
                 key={index}
-                className="w-0.5 h-2 rounded-full transition-colors duration-200"
+                className="w-0.5 h-3 rounded-full transition-colors duration-150"
                 style={{
-                  background: isActive ? "rgba(154, 164, 140, 0.6)" : "rgba(255, 255, 255, 0.15)",
+                  backgroundColor: isActive ? "rgba(154, 164, 140, 0.8)" : "rgba(255, 255, 255, 0.2)",
                 }}
               />
             );
           })}
         </div>
 
-        {/* Custom thumb */}
+        {/* Thumb */}
         <motion.div
-          className="absolute w-5 h-5 -ml-2.5 pointer-events-none"
-          style={{
-            left: `${thumbPosition}%`,
-          }}
-          animate={{
-            left: `${thumbPosition}%`,
-            scale: isDragging ? 1.2 : 1,
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          className="absolute pointer-events-none"
+          initial={false}
+          animate={{ left: `${value}%` }}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
         >
-          {/* Outer glow */}
-          <div
-            className="absolute inset-0 rounded-full transition-opacity duration-200"
+          <motion.div
+            className="relative rounded-full -ml-2.5 bg-[#9AA48C]"
             style={{
-              background: "rgba(154, 164, 140, 0.3)",
-              filter: "blur(6px)",
-              opacity: isDragging ? 1 : 0,
-            }}
-          />
-          {/* Main thumb */}
-          <div
-            className="relative w-5 h-5 rounded-full shadow-lg"
-            style={{
-              background: "linear-gradient(135deg, #b8c4a8 0%, #9AA48C 100%)",
+              width: "20px",
+              height: "20px",
               boxShadow: isDragging
-                ? "0 0 20px rgba(154, 164, 140, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3)"
-                : "0 2px 8px rgba(0, 0, 0, 0.3)",
+                ? "0 2px 12px rgba(154, 164, 140, 0.5)"
+                : "0 2px 8px rgba(154, 164, 140, 0.3)",
             }}
+            animate={{
+              scale: isDragging ? 1.2 : 1,
+            }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
           >
-            {/* Inner highlight */}
+            {/* Inner dot */}
             <div
-              className="absolute inset-1 rounded-full"
+              className="absolute rounded-full"
               style={{
-                background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)",
+                width: "6px",
+                height: "6px",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                backgroundColor: "rgba(0, 0, 0, 0.2)",
               }}
             />
-          </div>
+          </motion.div>
         </motion.div>
-
-        {/* Hidden native input for accessibility */}
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={displayValue}
-          onChange={(e) => handleChange(parseInt(e.target.value))}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={handleRelease}
-          onMouseLeave={() => { if (isDragging) handleRelease(); }}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={handleRelease}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
       </div>
     </div>
   );
@@ -1434,19 +1606,28 @@ function FineTuneStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
+  // Use brand primary color or fallback to default
+  const accentColor = brandData.primaryColor || "#9AA48C";
+
   // Get the number of levels for a slider by id
   const getNumLevels = (id: string): number => {
     const slider = BRAND_SIGNAL_SLIDERS.find(s => s.id === id);
     return slider?.levels.length || 5;
   };
 
+  // Snap value to nearest step
+  const snapToStep = (val: number, numLevels: number) => {
+    const stepSize = 100 / (numLevels - 1);
+    const stepIndex = Math.round(val / stepSize);
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
+  };
+
   // Initialize signal values if not present (4 signals)
-  // Always snap to nearest valid position to ensure proper alignment
   const getSignalValue = (id: string): number => {
     const numLevels = getNumLevels(id);
     const value = brandData[id as keyof BrandData];
     if (typeof value === 'number') {
-      return snapToNearestLevel(value, numLevels);
+      return snapToStep(value, numLevels);
     }
     // Map from old values if available, then snap
     let rawValue: number;
@@ -1457,7 +1638,7 @@ function FineTuneStep({
       case 'signalPremium': rawValue = brandData.feelExperimentalClassic as number || 50; break;
       default: rawValue = 50;
     }
-    return snapToNearestLevel(rawValue, numLevels);
+    return snapToStep(rawValue, numLevels);
   };
 
   return (
@@ -1483,6 +1664,7 @@ function FineTuneStep({
                 slider={slider}
                 value={getSignalValue(slider.id)}
                 onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
+                accentColor={accentColor}
               />
             </motion.div>
           ))}
@@ -1538,11 +1720,8 @@ function CreativeFocusStep({
     "brand-guidelines": BookOpen,
   };
 
-  // Use brand primary color or fallback to default
-  const accentColor = brandData.primaryColor || "#9AA48C";
-
   return (
-    <GlowingCard glowColor={accentColor}>
+    <GlowingCard glowColor="#9AA48C">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -1567,18 +1746,17 @@ function CreativeFocusStep({
                 key={option.id}
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
-                className="w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 hover:bg-white/5"
+                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
+                  isSelected ? "bg-[#9AA48C]/20 border-[#9AA48C]/50" : "hover:bg-white/5"
+                }`}
                 style={{
-                  backgroundColor: isSelected ? `${accentColor}20` : undefined,
-                  border: isSelected ? `1px solid ${accentColor}80` : "1px solid rgba(255, 255, 255, 0.1)",
+                  border: isSelected ? "1px solid rgba(154, 164, 140, 0.5)" : "1px solid rgba(255, 255, 255, 0.1)",
                 }}
               >
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{
-                    backgroundColor: isSelected ? accentColor : "rgba(255, 255, 255, 0.1)",
-                    color: isSelected ? "#000" : "rgba(255, 255, 255, 0.5)",
-                  }}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isSelected ? "bg-[#9AA48C] text-black" : "bg-white/10 text-white/50"
+                  }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
@@ -1586,7 +1764,7 @@ function CreativeFocusStep({
                   <h3 className="text-white font-medium text-sm">{option.title}</h3>
                   <p className="text-white/40 text-xs">{option.description}</p>
                 </div>
-                {isSelected && <Check className="w-5 h-5" style={{ color: accentColor }} />}
+                {isSelected && <Check className="w-5 h-5 text-[#9AA48C]" />}
               </motion.button>
             );
           })}
@@ -2637,7 +2815,7 @@ function OnboardingContent() {
         {/* Progress indicator for non-welcome steps */}
         {step !== "welcome" && step !== "scanning" && step !== "brand-ready" && step !== "complete" && (
           <div className="mb-6">
-            <ProgressIndicator steps={currentSteps} currentStep={step} accentColor={brandData.primaryColor || "#9AA48C"} />
+            <ProgressIndicator steps={currentSteps} currentStep={step} />
           </div>
         )}
 
@@ -2671,6 +2849,7 @@ function OnboardingContent() {
             <motion.div key="brand-dna-reveal" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <BrandDNARevealStep
                 brandData={brandData}
+                setBrandData={setBrandData}
                 onAdjust={(field) => console.log("Adjust:", field)}
                 onContinue={() => setStep("fine-tune")}
                 onBack={() => setStep("brand-input")}
