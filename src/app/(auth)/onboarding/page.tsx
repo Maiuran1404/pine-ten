@@ -1907,7 +1907,9 @@ function BrandIntentStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
-  const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
+  const [selectedAudiences, setSelectedAudiences] = useState<string[]>(
+    brandData.targetAudience ? brandData.targetAudience.split(", ").filter(Boolean) : []
+  );
 
   const toggleAudience = (id: string) => {
     const newAudiences = selectedAudiences.includes(id)
@@ -1926,14 +1928,37 @@ function BrandIntentStep({
       >
         <motion.div variants={staggerItem} className="text-left mb-8">
           <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-            First, tell us what you&apos;re building
+            Tell us about your brand
           </h1>
           <p className="text-white/50 text-sm">
-            This helps us design a brand that actually fits.
+            Give us a few details — we&apos;ll create something that fits.
           </p>
         </motion.div>
 
         <div className="space-y-6">
+          {/* Company Name */}
+          <motion.div variants={staggerItem} className="space-y-2">
+            <label className="text-white/70 text-sm font-medium">What&apos;s your brand called?</label>
+            <div
+              className="relative rounded-xl overflow-hidden"
+              style={{
+                background: "rgba(40, 40, 40, 0.6)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <Building2 className="w-5 h-5 text-white/30" />
+              </div>
+              <input
+                type="text"
+                value={brandData.name}
+                onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
+                className="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none"
+                placeholder="Company or product name"
+              />
+            </div>
+          </motion.div>
+
           {/* Product Type */}
           <motion.div variants={staggerItem} className="space-y-3">
             <label className="text-white/70 text-sm font-medium">What are you building?</label>
@@ -1942,40 +1967,22 @@ function BrandIntentStep({
                 <button
                   key={type.id}
                   onClick={() => setBrandData({ ...brandData, productType: type.id })}
-                  className={`p-3 rounded-xl text-left transition-all ${
+                  className={`p-3 rounded-xl text-center transition-all duration-200 ${
                     brandData.productType === type.id
-                      ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
+                      ? "bg-[#9AA48C]/20"
                       : "hover:bg-white/5"
                   }`}
                   style={{
                     border: brandData.productType === type.id
-                      ? "1px solid rgba(139, 181, 139, 0.5)"
-                      : "1px solid rgba(255, 255, 255, 0.1)",
+                      ? "1px solid rgba(154, 164, 140, 0.5)"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
                   }}
                 >
-                  <span className="text-white text-sm font-medium">{type.label}</span>
+                  <span className={`text-sm font-medium ${brandData.productType === type.id ? "text-[#9AA48C]" : "text-white/80"}`}>
+                    {type.label}
+                  </span>
                 </button>
               ))}
-            </div>
-          </motion.div>
-
-          {/* Company Name */}
-          <motion.div variants={staggerItem} className="space-y-2">
-            <label className="text-white/70 text-sm font-medium">What&apos;s the product or company called?</label>
-            <div
-              className="relative rounded-xl overflow-hidden"
-              style={{
-                background: "rgba(40, 40, 40, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-              }}
-            >
-              <input
-                type="text"
-                value={brandData.name}
-                onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
-                className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none"
-                placeholder="If undecided, that's okay"
-              />
             </div>
           </motion.div>
 
@@ -1987,15 +1994,15 @@ function BrandIntentStep({
                 <button
                   key={audience.id}
                   onClick={() => toggleAudience(audience.id)}
-                  className={`px-4 py-2 rounded-full text-sm transition-all ${
+                  className={`px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                     selectedAudiences.includes(audience.id)
-                      ? "bg-[#9AA48C]/20 text-[#9AA48C] border-[#9AA48C]/50"
-                      : "text-white/70 hover:bg-white/5"
+                      ? "bg-[#9AA48C]/20 text-[#9AA48C]"
+                      : "text-white/60 hover:bg-white/5 hover:text-white/80"
                   }`}
                   style={{
                     border: selectedAudiences.includes(audience.id)
-                      ? "1px solid rgba(139, 181, 139, 0.5)"
-                      : "1px solid rgba(255, 255, 255, 0.1)",
+                      ? "1px solid rgba(154, 164, 140, 0.5)"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
                   }}
                 >
                   {audience.label}
@@ -2015,7 +2022,7 @@ function BrandIntentStep({
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            className="flex-1 py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
             Continue
@@ -2038,93 +2045,78 @@ function BrandPersonalityStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
-  const getSliderLabel = (value: number, dimension: string) => {
-    if (dimension === "feelPlayfulSerious") {
-      if (value < 30) return "Startup energy";
-      if (value > 70) return "Established confidence";
-      return "Balanced approach";
-    }
-    if (dimension === "feelBoldMinimal") {
-      if (value < 30) return "Design-forward";
-      if (value > 70) return "Enterprise-ready";
-      return "Versatile style";
-    }
-    if (dimension === "feelFriendlyProfessional") {
-      if (value < 30) return "Community-first";
-      if (value > 70) return "Business-focused";
-      return "Approachable yet capable";
-    }
-    if (dimension === "feelExperimentalClassic") {
-      if (value < 30) return "Innovation-driven";
-      if (value > 70) return "Trust-building";
-      return "Modern classic";
-    }
-    if (dimension === "feelPremiumAccessible") {
-      if (value < 30) return "Luxury positioning";
-      if (value > 70) return "Mass appeal";
-      return "Premium quality";
-    }
-    return "";
+  // Get the number of levels for a slider by id
+  const getNumLevels = (id: string): number => {
+    const slider = BRAND_SIGNAL_SLIDERS.find(s => s.id === id);
+    return slider?.levels.length || 5;
   };
 
-  const sliders = [
-    { id: "feelPlayfulSerious", left: "Playful", right: "Serious" },
-    { id: "feelBoldMinimal", left: "Bold", right: "Minimal" },
-    { id: "feelFriendlyProfessional", left: "Friendly", right: "Professional" },
-    { id: "feelExperimentalClassic", left: "Experimental", right: "Trusted" },
-    { id: "feelPremiumAccessible", left: "Premium", right: "Accessible" },
-  ];
+  // Snap value to nearest step
+  const snapToStep = (val: number, numLevels: number) => {
+    const stepSize = 100 / (numLevels - 1);
+    const stepIndex = Math.round(val / stepSize);
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
+  };
+
+  // Get signal value with proper snapping
+  const getSignalValue = (id: string): number => {
+    const numLevels = getNumLevels(id);
+    const value = brandData[id as keyof BrandData];
+    if (typeof value === 'number') {
+      return snapToStep(value, numLevels);
+    }
+    // Map from old values if available
+    let rawValue: number;
+    switch (id) {
+      case 'signalTone': rawValue = brandData.feelPlayfulSerious as number || 50; break;
+      case 'signalDensity': rawValue = brandData.feelBoldMinimal as number || 50; break;
+      case 'signalWarmth': rawValue = 50; break;
+      case 'signalPremium': rawValue = brandData.feelExperimentalClassic as number || 50; break;
+      default: rawValue = 50;
+    }
+    return snapToStep(rawValue, numLevels);
+  };
 
   return (
-    <GlowingCard>
+    <GlowingCard glowColor="#9AA48C" className="max-w-lg">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
       >
         <motion.div variants={staggerItem} className="text-left mb-8">
-          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+          <h1 className="text-2xl sm:text-3xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
             How should your brand feel?
           </h1>
           <p className="text-white/50 text-sm">
-            There are no right answers. Trust your instinct.
+            Adjust these core signals to define your brand personality.
           </p>
         </motion.div>
 
-        <div className="space-y-6">
-          {sliders.map((slider) => {
-            const value = brandData[slider.id as keyof BrandData] as number;
-            return (
-              <motion.div key={slider.id} variants={staggerItem} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/70 text-sm">{slider.left}</span>
-                  <span className="text-[#9AA48C] text-xs">{getSliderLabel(value, slider.id)}</span>
-                  <span className="text-white/70 text-sm">{slider.right}</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={value}
-                  onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
-                />
-              </motion.div>
-            );
-          })}
+        <div className="space-y-6 mb-8">
+          {BRAND_SIGNAL_SLIDERS.map((slider) => (
+            <motion.div key={slider.id} variants={staggerItem}>
+              <BrandSignalSlider
+                slider={slider}
+                value={getSignalValue(slider.id)}
+                onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
+                accentColor="#9AA48C"
+              />
+            </motion.div>
+          ))}
         </div>
 
-        <motion.div variants={staggerItem} className="flex gap-3 mt-8">
+        <motion.div variants={staggerItem} className="flex gap-3">
           <button
             onClick={onBack}
-            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3.5 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
             style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
             Continue
@@ -2172,34 +2164,34 @@ function VisualInstinctStep({
     switch (visual) {
       case "light":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-gray-200" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-gray-200" />
           </div>
         );
       case "dark":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-gray-800" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-gray-800" />
           </div>
         );
       case "text-heavy":
         return (
-          <div className="w-full h-32 rounded-xl bg-white p-4 flex flex-col justify-center gap-2">
-            <div className="h-3 bg-gray-800 rounded w-3/4" />
-            <div className="h-2 bg-gray-400 rounded w-full" />
-            <div className="h-2 bg-gray-400 rounded w-2/3" />
-            <div className="h-2 bg-gray-400 rounded w-5/6" />
+          <div className="w-full h-28 rounded-xl bg-white p-4 flex flex-col justify-center gap-1.5">
+            <div className="h-2.5 bg-gray-800 rounded w-3/4" />
+            <div className="h-1.5 bg-gray-400 rounded w-full" />
+            <div className="h-1.5 bg-gray-400 rounded w-2/3" />
+            <div className="h-1.5 bg-gray-400 rounded w-5/6" />
           </div>
         );
       case "visual":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-[#9AA48C] to-[#7A8575] flex items-center justify-center">
-            <ImageIcon className="w-12 h-12 text-white/80" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-[#9AA48C] to-[#7A8575] flex items-center justify-center">
+            <ImageIcon className="w-10 h-10 text-white/80" />
           </div>
         );
       case "structured":
         return (
-          <div className="w-full h-32 rounded-xl bg-white p-3 grid grid-cols-3 gap-2">
+          <div className="w-full h-28 rounded-xl bg-white p-2.5 grid grid-cols-3 gap-1.5">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-gray-200 rounded" />
             ))}
@@ -2207,55 +2199,55 @@ function VisualInstinctStep({
         );
       case "expressive":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 relative overflow-hidden">
-            <div className="absolute top-2 left-4 w-8 h-8 rounded-full bg-white/30 -rotate-12" />
-            <div className="absolute bottom-4 right-2 w-12 h-12 rounded-full bg-white/20 rotate-45" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 relative overflow-hidden">
+            <div className="absolute top-2 left-4 w-6 h-6 rounded-full bg-white/30 -rotate-12" />
+            <div className="absolute bottom-3 right-2 w-10 h-10 rounded-full bg-white/20 rotate-45" />
           </div>
         );
       case "calm":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-            <div className="w-20 h-1 bg-blue-300 rounded" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+            <div className="w-16 h-1 bg-blue-300 rounded" />
           </div>
         );
       case "energetic":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center gap-1">
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className={`w-2 bg-white rounded-full`} style={{ height: `${20 + Math.random() * 60}%` }} />
+              <div key={i} className="w-1.5 bg-white rounded-full" style={{ height: `${20 + (i % 3) * 20}%` }} />
             ))}
           </div>
         );
       case "minimal":
         return (
-          <div className="w-full h-32 rounded-xl bg-white flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-gray-900 rounded-full" />
+          <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-900 rounded-full" />
           </div>
         );
       case "dense":
         return (
-          <div className="w-full h-32 rounded-xl bg-gray-900 p-2 grid grid-cols-4 gap-1">
-            {[...Array(16)].map((_, i) => (
+          <div className="w-full h-28 rounded-xl bg-gray-900 p-2 grid grid-cols-4 gap-1">
+            {[...Array(12)].map((_, i) => (
               <div key={i} className="bg-gradient-to-br from-gray-700 to-gray-800 rounded" />
             ))}
           </div>
         );
       case "geometric":
         return (
-          <div className="w-full h-32 rounded-xl bg-white flex items-center justify-center gap-2">
-            <div className="w-10 h-10 bg-gray-900" />
-            <div className="w-10 h-10 bg-gray-900 rotate-45" />
-            <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-b-[34px] border-l-transparent border-r-transparent border-b-gray-900" />
+          <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center gap-2">
+            <div className="w-8 h-8 bg-gray-900" />
+            <div className="w-8 h-8 bg-gray-900 rotate-45" />
+            <div className="w-0 h-0 border-l-[16px] border-r-[16px] border-b-[28px] border-l-transparent border-r-transparent border-b-gray-900" />
           </div>
         );
       case "organic":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-            <div className="w-16 h-12 bg-green-400 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+            <div className="w-14 h-10 bg-green-400 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]" />
           </div>
         );
       default:
-        return <div className="w-full h-32 rounded-xl bg-gray-200" />;
+        return <div className="w-full h-28 rounded-xl bg-gray-200" />;
     }
   };
 
@@ -2266,66 +2258,83 @@ function VisualInstinctStep({
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={staggerItem} className="text-left mb-8">
-          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+        <motion.div variants={staggerItem} className="text-left mb-6">
+          <h1 className="text-2xl sm:text-3xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
             What feels right to you?
           </h1>
           <p className="text-white/50 text-sm">
-            Don&apos;t overthink it. Go with your first reaction.
+            Go with your gut. There are no wrong answers.
           </p>
         </motion.div>
 
         {/* Progress */}
-        <motion.div variants={staggerItem} className="flex gap-1 mb-8">
+        <motion.div variants={staggerItem} className="flex gap-1.5 mb-6">
           {VISUAL_COMPARISON_PAIRS.map((_, i) => (
             <div
               key={i}
-              className={`h-1 w-8 rounded-full transition-all ${
-                i < currentPairIndex ? "bg-[#9AA48C]" : i === currentPairIndex ? "bg-white/50" : "bg-white/10"
+              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                i < currentPairIndex ? "bg-[#9AA48C]" : i === currentPairIndex ? "bg-white/40" : "bg-white/10"
               }`}
             />
           ))}
         </motion.div>
 
-        <motion.div variants={staggerItem} className="grid grid-cols-2 gap-6">
-          <button
-            onClick={() => handleChoice("A")}
-            className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPairIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-2 gap-4"
           >
-            {getVisualComponent(currentPair.optionA.visual)}
-            <div className="mt-4 text-left">
-              <h3 className="text-white font-medium">{currentPair.optionA.label}</h3>
-              <p className="text-white/40 text-sm">{currentPair.optionA.description}</p>
-            </div>
-          </button>
+            <button
+              onClick={() => handleChoice("A")}
+              className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+              style={{
+                background: "rgba(40, 40, 40, 0.4)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              {getVisualComponent(currentPair.optionA.visual)}
+              <div className="mt-3 text-left">
+                <h3 className="text-white font-medium text-sm">{currentPair.optionA.label}</h3>
+                <p className="text-white/40 text-xs">{currentPair.optionA.description}</p>
+              </div>
+            </button>
 
-          <button
-            onClick={() => handleChoice("B")}
-            className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
-          >
-            {getVisualComponent(currentPair.optionB.visual)}
-            <div className="mt-4 text-left">
-              <h3 className="text-white font-medium">{currentPair.optionB.label}</h3>
-              <p className="text-white/40 text-sm">{currentPair.optionB.description}</p>
-            </div>
-          </button>
-        </motion.div>
+            <button
+              onClick={() => handleChoice("B")}
+              className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+              style={{
+                background: "rgba(40, 40, 40, 0.4)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              {getVisualComponent(currentPair.optionB.visual)}
+              <div className="mt-3 text-left">
+                <h3 className="text-white font-medium text-sm">{currentPair.optionB.label}</h3>
+                <p className="text-white/40 text-xs">{currentPair.optionB.description}</p>
+              </div>
+            </button>
+          </motion.div>
+        </AnimatePresence>
 
-        <motion.div variants={staggerItem} className="flex justify-between mt-8">
+        <motion.div variants={staggerItem} className="flex gap-3 mt-6">
           <button
             onClick={onBack}
-            className="py-3 px-6 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
           </button>
           <button
             onClick={onContinue}
-            className="py-3 px-6 rounded-xl font-medium text-sm text-white/50 hover:text-white transition-colors"
+            className="flex-1 py-3 rounded-xl font-medium text-sm transition-all hover:opacity-90"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
-            Skip this step
+            Skip to directions
+            <ArrowRight className="w-4 h-4 inline ml-2" />
           </button>
         </motion.div>
       </motion.div>
@@ -2454,22 +2463,22 @@ function AIDirectionsStep({
       <GlowingCard>
         <div className="text-left">
           <motion.div
-            className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
-            style={{ background: "rgba(139, 181, 139, 0.2)" }}
+            className="w-16 h-16 rounded-full mb-6 flex items-center justify-center"
+            style={{ background: "rgba(154, 164, 140, 0.2)" }}
             animate={{
               scale: [1, 1.1, 1],
               opacity: [0.8, 1, 0.8],
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Sparkles className="w-10 h-10 text-[#9AA48C]" />
+            <Sparkles className="w-8 h-8 text-[#9AA48C]" />
           </motion.div>
 
           <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
-            Generating brand directions
+            Creating your brand directions
           </h1>
           <p className="text-white/50 text-sm">
-            Creating personalized options based on your preferences...
+            Building personalized options based on your preferences...
           </p>
         </div>
       </GlowingCard>
@@ -2483,68 +2492,124 @@ function AIDirectionsStep({
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={staggerItem} className="text-left mb-8">
-          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-            Here are a few directions we&apos;d explore
+        <motion.div variants={staggerItem} className="text-left mb-6">
+          <h1 className="text-2xl sm:text-3xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
+            Choose a direction
           </h1>
           <p className="text-white/50 text-sm">
-            These aren&apos;t final — they&apos;re starting points.
+            Pick the one that feels right. You can always refine it later.
           </p>
         </motion.div>
 
-        <div className="space-y-4 mb-8">
-          {directions.map((direction) => (
-            <motion.button
-              key={direction.id}
-              variants={staggerItem}
-              onClick={() => onSelectDirection(direction)}
-              className={`w-full p-6 rounded-2xl text-left transition-all ${
-                selectedDirection?.id === direction.id
-                  ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
-                  : "hover:bg-white/5"
-              }`}
-              style={{
-                border: selectedDirection?.id === direction.id
-                  ? "1px solid rgba(139, 181, 139, 0.5)"
-                  : "1px solid rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex gap-1 flex-shrink-0">
-                  {direction.colorPalette.slice(0, 4).map((color, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-lg"
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
+        <div className="space-y-6 mb-8">
+          {directions.map((direction) => {
+            const isSelected = selectedDirection?.id === direction.id;
+            const getFontFamilyCSS = (fontName: string) => {
+              const font = FONT_OPTIONS.find(f => f.value === fontName);
+              return font?.family || `'${fontName}', sans-serif`;
+            };
+            return (
+              <motion.button
+                key={direction.id}
+                variants={staggerItem}
+                onClick={() => onSelectDirection(direction)}
+                className={`w-full rounded-2xl text-left transition-all overflow-hidden ${
+                  isSelected ? "ring-2 ring-[#9AA48C]" : "hover:ring-1 hover:ring-white/20"
+                }`}
+                style={{
+                  background: "rgba(20, 20, 20, 0.8)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                }}
+              >
+                {/* Header with name and check */}
+                <div className="p-5 pb-4 flex items-center justify-between border-b border-white/5">
+                  <div>
+                    <p className="text-white/30 text-xs mb-1">Direction</p>
+                    <h3 className="text-white text-lg font-medium">{direction.name}</h3>
+                  </div>
+                  {isSelected && (
+                    <div className="w-8 h-8 rounded-full bg-[#9AA48C]/20 flex items-center justify-center">
+                      <Check className="w-4 h-4 text-[#9AA48C]" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-medium mb-1">{direction.name}</h3>
-                  <p className="text-white/50 text-sm mb-3">{direction.narrative}</p>
+
+                {/* Color Palette Section */}
+                <div className="p-5 border-b border-white/5">
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider mb-4">Color Palette</p>
+                  <div className="flex justify-between gap-2">
+                    {direction.colorPalette.slice(0, 5).map((color, i) => (
+                      <div key={i} className="flex-1 text-center">
+                        <div
+                          className="w-full aspect-square rounded-full mb-2 mx-auto max-w-[48px]"
+                          style={{
+                            backgroundColor: color,
+                            boxShadow: color === "#ffffff" || color === "#fafaf9" || color === "#f5f5f5" || color === "#f5f5f4"
+                              ? "inset 0 0 0 1px rgba(0,0,0,0.08)"
+                              : undefined
+                          }}
+                        />
+                        <p className="text-white/60 text-[10px] leading-tight mb-0.5 truncate">
+                          {direction.colorNames?.[i] || "Color"}
+                        </p>
+                        <p className="text-white/30 text-[9px] font-mono">
+                          {color.replace("#", "").toLowerCase()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Typography Section */}
+                <div className="p-5 border-b border-white/5">
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider mb-4">Typography</p>
+                  <div className="flex gap-8">
+                    {/* Primary Font */}
+                    <div className="flex-1">
+                      <div
+                        className="text-4xl text-white/90 mb-1"
+                        style={{ fontFamily: getFontFamilyCSS(direction.primaryFont) }}
+                      >
+                        Aa
+                      </div>
+                      <p className="text-white/50 text-xs">{direction.primaryFont}</p>
+                    </div>
+                    {/* Secondary Font */}
+                    <div className="flex-1">
+                      <div
+                        className="text-4xl text-white/90 mb-1"
+                        style={{ fontFamily: getFontFamilyCSS(direction.secondaryFont) }}
+                      >
+                        Aa
+                      </div>
+                      <p className="text-white/50 text-xs">{direction.secondaryFont}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description & Keywords */}
+                <div className="p-5">
+                  <p className="text-white/50 text-sm mb-4">{direction.narrative}</p>
                   <div className="flex flex-wrap gap-2">
                     {direction.moodKeywords.map((keyword) => (
                       <span
                         key={keyword}
-                        className="px-2 py-0.5 rounded-full text-xs text-white/40 bg-white/5"
+                        className="px-3 py-1 rounded-full text-xs text-white/50 border border-white/10"
                       >
                         {keyword}
                       </span>
                     ))}
                   </div>
                 </div>
-                {selectedDirection?.id === direction.id && (
-                  <Check className="w-5 h-5 text-[#9AA48C] flex-shrink-0" />
-                )}
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            );
+          })}
         </div>
 
         <motion.div variants={staggerItem} className="flex gap-3">
           <button
             onClick={onBack}
-            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
@@ -2552,10 +2617,10 @@ function AIDirectionsStep({
           <button
             onClick={onContinue}
             disabled={!selectedDirection}
-            className="flex-1 py-4 rounded-xl font-medium text-sm disabled:opacity-40"
+            className="flex-1 py-3 rounded-xl font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
-            Use this direction
+            Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
           </button>
         </motion.div>
@@ -2690,27 +2755,36 @@ function OnboardingContent() {
       {
         id: "1",
         name: "Modern Confidence",
-        narrative: `This direction feels confident and modern, designed for ${brandData.targetAudience || "your audience"} who value clarity and speed.`,
-        colorPalette: ["#1a1a1a", "#3b82f6", "#f5f5f5", "#64748b"],
+        narrative: `A confident, forward-thinking identity designed for ${brandData.targetAudience || "your audience"} who value clarity and precision.`,
+        colorPalette: ["#f5f5f5", "#3b82f6", "#1a1a1a", "#64748b", "#0ea5e9"],
+        colorNames: ["Cloud White", "Electric Blue", "Midnight", "Steel Gray", "Sky Blue"],
         typographyStyle: "modern",
+        primaryFont: "Inter",
+        secondaryFont: "DM Sans",
         visualStyle: "Clean, geometric, with bold accents",
         moodKeywords: ["Professional", "Trustworthy", "Modern", "Clean"],
       },
       {
         id: "2",
         name: "Warm Innovation",
-        narrative: "A friendly, approachable feel that balances warmth with innovation. Perfect for building trust while staying current.",
-        colorPalette: ["#f97316", "#fbbf24", "#1f2937", "#f5f5f4"],
+        narrative: "An approachable feel that balances warmth with innovation. Perfect for building genuine connections.",
+        colorPalette: ["#c8d69b", "#f6e6a5", "#3971b8", "#fbfcee", "#343b1b"],
+        colorNames: ["Tea Green", "Vanilla", "Celtic Blue", "Ivory", "Dark Brown"],
         typographyStyle: "bold",
+        primaryFont: "Poppins",
+        secondaryFont: "Lato",
         visualStyle: "Rounded, warm, inviting",
         moodKeywords: ["Friendly", "Innovative", "Approachable", "Dynamic"],
       },
       {
         id: "3",
         name: "Refined Elegance",
-        narrative: "Sophisticated and premium, this direction communicates quality and attention to detail.",
-        colorPalette: ["#18181b", "#a78bfa", "#fafaf9", "#78716c"],
+        narrative: "Sophisticated and premium, communicating quality and meticulous attention to detail.",
+        colorPalette: ["#fafaf9", "#a78bfa", "#18181b", "#78716c", "#e4e4e7"],
+        colorNames: ["Pearl White", "Soft Violet", "Onyx", "Warm Stone", "Silver Mist"],
         typographyStyle: "elegant",
+        primaryFont: "Cormorant Garamond",
+        secondaryFont: "Outfit",
         visualStyle: "Minimal, luxurious, refined",
         moodKeywords: ["Premium", "Elegant", "Sophisticated", "Quality"],
       },
@@ -2874,7 +2948,7 @@ function OnboardingContent() {
                 brandData={brandData}
                 setBrandData={setBrandData}
                 onContinue={handleSaveOnboarding}
-                onBack={() => setStep("fine-tune")}
+                onBack={() => setStep(route === "create" ? "ai-directions" : "fine-tune")}
                 isLoading={isLoading}
               />
             </motion.div>
@@ -2914,19 +2988,8 @@ function OnboardingContent() {
               <VisualInstinctStep
                 brandData={brandData}
                 setBrandData={setBrandData}
-                onContinue={() => setStep("tone-of-voice")}
-                onBack={() => setStep("brand-personality")}
-              />
-            </motion.div>
-          )}
-
-          {step === "tone-of-voice" && (
-            <motion.div key="tone-of-voice" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              <ToneOfVoiceStep
-                brandData={brandData}
-                setBrandData={setBrandData}
                 onContinue={generateBrandDirections}
-                onBack={() => setStep("visual-instinct")}
+                onBack={() => setStep("brand-personality")}
               />
             </motion.div>
           )}
@@ -2946,10 +3009,12 @@ function OnboardingContent() {
                     secondaryColor: dir.colorPalette[1],
                     accentColor: dir.colorPalette[2],
                     backgroundColor: dir.colorPalette[3],
+                    primaryFont: dir.primaryFont,
+                    secondaryFont: dir.secondaryFont,
                   });
                 }}
-                onContinue={() => setStep("fine-tune")}
-                onBack={() => setStep("tone-of-voice")}
+                onContinue={() => setStep("creative-focus")}
+                onBack={() => setStep("visual-instinct")}
                 isGenerating={isGeneratingDirections}
               />
             </motion.div>

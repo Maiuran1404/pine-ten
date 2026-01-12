@@ -117,12 +117,12 @@ export const ROUTE_A_STEPS = [
 
 // Route B step configuration
 export const ROUTE_B_STEPS = [
-  { id: "brand-intent", label: "Intent" },
+  { id: "brand-intent", label: "Brand" },
   { id: "brand-personality", label: "Feel" },
   { id: "visual-instinct", label: "Visual" },
-  { id: "tone-of-voice", label: "Tone" },
-  { id: "ai-directions", label: "Directions" },
-  { id: "confirm-direction", label: "Confirm" },
+  { id: "ai-directions", label: "Direction" },
+  { id: "creative-focus", label: "Focus" },
+  { id: "brand-ready", label: "Ready" },
 ] as const;
 
 // Keep for backward compatibility
@@ -202,7 +202,10 @@ export interface BrandDirection {
   name: string;
   narrative: string;
   colorPalette: string[];
+  colorNames: string[]; // Names for each color (e.g., "Ocean Blue", "Soft Cream")
   typographyStyle: "modern" | "classic" | "bold" | "elegant" | "playful";
+  primaryFont: string;
+  secondaryFont: string;
   visualStyle: string;
   moodKeywords: string[];
 }
