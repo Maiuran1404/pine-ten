@@ -51,6 +51,11 @@ export interface BrandData {
   // Additional feel preferences for Route B
   feelFriendlyProfessional: number;
   feelPremiumAccessible: number;
+  // Brand signal sliders (0-100 scale, used in fine-tune step)
+  signalTone?: number; // Serious (0) ↔ Playful (100)
+  signalDensity?: number; // Minimal (0) ↔ Rich (100)
+  signalWarmth?: number; // Cold (0) ↔ Warm (100)
+  signalPremium?: number; // Accessible (0) ↔ Premium (100)
   // Creative focus areas
   creativeFocus: string[];
   // Brand assets (uploaded files)
@@ -225,6 +230,11 @@ export const defaultBrandData: BrandData = {
   feelExperimentalClassic: 50,
   feelFriendlyProfessional: 50,
   feelPremiumAccessible: 50,
+  // Brand signal sliders default to middle (50)
+  signalTone: 50,
+  signalDensity: 50,
+  signalWarmth: 50,
+  signalPremium: 50,
   creativeFocus: [],
   brandAssets: [],
   productType: "",

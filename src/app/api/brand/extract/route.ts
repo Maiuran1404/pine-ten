@@ -51,6 +51,17 @@ interface BrandExtraction {
   contactEmail: string | null;
   contactPhone: string | null;
   keywords: string[];
+  // Brand personality/feel values (0-100 scale)
+  feelPlayfulSerious: number; // 0 = Playful, 100 = Serious
+  feelBoldMinimal: number; // 0 = Bold, 100 = Minimal
+  feelExperimentalClassic: number; // 0 = Experimental, 100 = Classic
+  feelFriendlyProfessional: number; // 0 = Friendly, 100 = Professional
+  feelPremiumAccessible: number; // 0 = Accessible, 100 = Premium
+  // Brand signal sliders
+  signalTone: number; // 0 = Serious, 100 = Playful
+  signalDensity: number; // 0 = Minimal, 100 = Rich
+  signalWarmth: number; // 0 = Cold, 100 = Warm
+  signalPremium: number; // 0 = Accessible, 100 = Premium
 }
 
 // Extract social links from page links
@@ -144,6 +155,17 @@ function createDefaultBrandData(
     contactEmail: null,
     contactPhone: null,
     keywords: [],
+    // Default feel values (neutral)
+    feelPlayfulSerious: 50,
+    feelBoldMinimal: 50,
+    feelExperimentalClassic: 50,
+    feelFriendlyProfessional: 50,
+    feelPremiumAccessible: 50,
+    // Default signal values (neutral)
+    signalTone: 50,
+    signalDensity: 50,
+    signalWarmth: 50,
+    signalPremium: 50,
   };
 }
 
@@ -260,7 +282,7 @@ export async function POST(request: NextRequest) {
     const contentParts: Anthropic.Messages.ContentBlockParam[] = [];
 
     // Add text content for context (always include this)
-    const textPrompt = `Analyze this website and extract comprehensive brand information.
+    const textPrompt = `Analyze this website and extract comprehensive brand information including visual personality.
 
 Website URL: ${normalizedUrl}
 Page Title: ${metadata?.title || "Unknown"}
@@ -294,6 +316,22 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
 8. **Social Links**: Any social media profile URLs found
 9. **Contact Info**: Email and phone if found
 10. **Keywords**: 5-10 keywords that describe this brand
+11. **Brand Personality** (ALL values 0-100 scale, analyze carefully based on visual style, copy tone, and overall feel):
+   - feelPlayfulSerious: 0 = Very playful/fun/casual, 100 = Very serious/formal/corporate
+   - feelBoldMinimal: 0 = Bold/loud/maximalist with lots of visual elements, 100 = Minimal/clean/whitespace-heavy
+   - feelExperimentalClassic: 0 = Experimental/edgy/unconventional, 100 = Classic/traditional/timeless
+   - feelFriendlyProfessional: 0 = Friendly/warm/approachable, 100 = Professional/formal/businesslike
+   - feelPremiumAccessible: 0 = Budget/accessible/everyday, 100 = Premium/luxury/exclusive
+   - signalTone: 0 = Serious/corporate, 100 = Playful/casual (inverse of feelPlayfulSerious)
+   - signalDensity: 0 = Minimal/sparse, 100 = Rich/dense (inverse of feelBoldMinimal)
+   - signalWarmth: 0 = Cold/technical/distant, 100 = Warm/human/inviting
+   - signalPremium: 0 = Accessible/budget, 100 = Premium/luxury
+
+IMPORTANT: Do NOT default all personality values to 50. Analyze the actual visual design:
+- A tech startup with bold colors and playful copy should have LOW feelPlayfulSerious (e.g., 20-40)
+- A law firm with serif fonts and dark colors should have HIGH feelPlayfulSerious (e.g., 70-90)
+- A site with lots of whitespace should have HIGH feelBoldMinimal (e.g., 70-90)
+- A site with dense content and many elements should have LOW feelBoldMinimal (e.g., 20-40)
 
 Return ONLY a valid JSON object with this exact structure:
 {
@@ -320,7 +358,16 @@ Return ONLY a valid JSON object with this exact structure:
   },
   "contactEmail": "string or null",
   "contactPhone": "string or null",
-  "keywords": ["keyword1", "keyword2"]
+  "keywords": ["keyword1", "keyword2"],
+  "feelPlayfulSerious": number,
+  "feelBoldMinimal": number,
+  "feelExperimentalClassic": number,
+  "feelFriendlyProfessional": number,
+  "feelPremiumAccessible": number,
+  "signalTone": number,
+  "signalDensity": number,
+  "signalWarmth": number,
+  "signalPremium": number
 }`;
 
     // Try to include screenshot, but be prepared to retry without it if it fails
@@ -441,10 +488,23 @@ Return ONLY a valid JSON object with this exact structure:
     const extractedSocial = extractSocialLinks(links);
     brandData.socialLinks = { ...extractedSocial, ...brandData.socialLinks };
 
+    // Ensure feel values have defaults if Claude didn't return them
+    // Use type assertion since brandData may be a parsed JSON that doesn't have all fields
+    const brandDataWithFeels = brandData as BrandExtraction;
+    brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50;
+    brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50;
+    brandDataWithFeels.feelExperimentalClassic = brandData.feelExperimentalClassic ?? 50;
+    brandDataWithFeels.feelFriendlyProfessional = brandData.feelFriendlyProfessional ?? 50;
+    brandDataWithFeels.feelPremiumAccessible = brandData.feelPremiumAccessible ?? 50;
+    brandDataWithFeels.signalTone = brandData.signalTone ?? 50;
+    brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50;
+    brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
+    brandDataWithFeels.signalPremium = brandData.signalPremium ?? 50;
+
     return NextResponse.json({
       success: true,
       data: {
-        ...brandData,
+        ...brandDataWithFeels,
         website: normalizedUrl,
         screenshotUrl: screenshot || null,
       },

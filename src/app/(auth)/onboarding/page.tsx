@@ -143,7 +143,7 @@ function GlowingCard({ children, glowColor = "#9AA48C", className = "" }: { chil
         }}
       />
       <div
-        className="relative rounded-2xl p-10 sm:p-14 min-h-[400px] flex flex-col justify-center"
+        className="relative rounded-2xl p-8 sm:p-10 flex flex-col justify-center"
         style={{
           background: "rgba(15, 15, 15, 0.9)",
           backdropFilter: "blur(20px)",
@@ -156,7 +156,7 @@ function GlowingCard({ children, glowColor = "#9AA48C", className = "" }: { chil
   );
 }
 
-function ProgressIndicator({ steps, currentStep }: { steps: readonly { id: string; label: string }[]; currentStep: string }) {
+function ProgressIndicator({ steps, currentStep, accentColor = "#9AA48C" }: { steps: readonly { id: string; label: string }[]; currentStep: string; accentColor?: string }) {
   const currentIndex = steps.findIndex(s => s.id === currentStep);
 
   return (
@@ -165,17 +165,21 @@ function ProgressIndicator({ steps, currentStep }: { steps: readonly { id: strin
         <div key={step.id} className="flex items-center gap-2">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-              index < currentIndex
-                ? "bg-[#9AA48C] text-black"
-                : index === currentIndex
+              index === currentIndex
                 ? "bg-white/20 text-white border border-white/40"
-                : "bg-white/5 text-white/40"
+                : index > currentIndex
+                ? "bg-white/5 text-white/40"
+                : "text-black"
             }`}
+            style={index < currentIndex ? { backgroundColor: accentColor } : undefined}
           >
             {index < currentIndex ? <Check className="w-4 h-4" /> : index + 1}
           </div>
           {index < steps.length - 1 && (
-            <div className={`w-8 h-0.5 ${index < currentIndex ? "bg-[#9AA48C]" : "bg-white/10"}`} />
+            <div
+              className="w-8 h-0.5"
+              style={{ backgroundColor: index < currentIndex ? accentColor : "rgba(255, 255, 255, 0.1)" }}
+            />
           )}
         </div>
       ))}
@@ -196,35 +200,35 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
       exit={{ opacity: 0, y: -20 }}
       className="w-full"
     >
-      <motion.div variants={staggerItem} className="text-left mb-12">
+      <motion.div variants={staggerItem} className="text-left mb-8">
         <h1
-          className="text-4xl sm:text-5xl text-white mb-4"
+          className="text-3xl sm:text-4xl text-white mb-3"
           style={{ fontFamily: "'Times New Roman', serif" }}
         >
           Welcome to Crafted
         </h1>
-        <p className="text-white/60 text-lg">
+        <p className="text-white/60 text-base">
           Let&apos;s set up your brand so everything you create stays consistent.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Option A - Existing Brand */}
         <motion.button
           variants={staggerItem}
           onClick={() => onSelectRoute("existing")}
-          className="group relative p-8 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
+          className="group relative p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
             background: "rgba(15, 15, 15, 0.9)",
             border: "1px solid rgba(139, 181, 139, 0.3)",
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-[#9AA48C]/20 flex items-center justify-center mb-6">
-            <Building2 className="w-7 h-7 text-[#9AA48C]" />
+          <div className="w-12 h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-4">
+            <Building2 className="w-6 h-6 text-[#9AA48C]" />
           </div>
-          <h2 className="text-xl text-white font-medium mb-2">I already have a brand</h2>
-          <p className="text-white/50 text-sm mb-6">
+          <h2 className="text-lg text-white font-medium mb-1.5">I already have a brand</h2>
+          <p className="text-white/50 text-sm mb-4">
             Share your website or upload assets — we&apos;ll extract your brand DNA automatically.
           </p>
           <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
@@ -237,25 +241,25 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
         <motion.button
           variants={staggerItem}
           onClick={() => onSelectRoute("create")}
-          className="group relative p-8 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
+          className="group relative p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
             background: "rgba(15, 15, 15, 0.9)",
             border: "1px solid rgba(139, 181, 139, 0.3)",
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-[#9AA48C]/20 flex items-center justify-center mb-6">
-            <Sparkles className="w-7 h-7 text-[#9AA48C]" />
+          <div className="w-12 h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-4">
+            <Sparkles className="w-6 h-6 text-[#9AA48C]" />
           </div>
-          <h2 className="text-xl text-white font-medium mb-2">I want to create a brand</h2>
-          <p className="text-white/50 text-sm mb-6">
+          <h2 className="text-lg text-white font-medium mb-1.5">I want to create a brand</h2>
+          <p className="text-white/50 text-sm mb-4">
             Answer a few questions and we&apos;ll generate brand directions for you to choose from.
           </p>
           <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
             <span>Start building</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
-          <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-xs">
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-xs">
             ~5 min
           </div>
         </motion.button>
@@ -497,8 +501,7 @@ function BrandDNARevealStep({
               {brandData.name || "Your Brand"}
             </h1>
             <p className="text-white/40 text-sm leading-relaxed">
-              {brandData.description?.slice(0, 100) || brandData.industry || "Your brand story will appear here."}
-              {brandData.description && brandData.description.length > 100 ? "..." : ""}
+              {brandData.description || brandData.industry || "Your brand story will appear here."}
             </p>
           </div>
 
@@ -1124,21 +1127,6 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
           ))}
         </div>
 
-        {/* Left fade */}
-        <div
-          className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10"
-          style={{
-            background: "linear-gradient(90deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
-          }}
-        />
-
-        {/* Right fade */}
-        <div
-          className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10"
-          style={{
-            background: "linear-gradient(270deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
-          }}
-        />
       </div>
 
       {/* Archetype Name and Similar Brands */}
@@ -1177,7 +1165,7 @@ const BRAND_SIGNAL_SLIDERS = [
     leftLabel: "Serious",
     rightLabel: "Playful",
     description: "Emotional seriousness of expression",
-    levels: ["Serious", "A bit serious", "Neutral", "A bit playful", "Playful"],
+    levels: ["Serious", "Composed", "Balanced", "Spirited", "Playful"],
   },
   {
     id: "signalDensity",
@@ -1185,7 +1173,7 @@ const BRAND_SIGNAL_SLIDERS = [
     leftLabel: "Minimal",
     rightLabel: "Rich",
     description: "Amount of visual information per surface",
-    levels: ["Minimal", "A bit minimal", "Neutral", "A bit rich", "Rich"],
+    levels: ["Minimal", "Clean", "Balanced", "Detailed", "Rich"],
   },
   {
     id: "signalWarmth",
@@ -1201,7 +1189,7 @@ const BRAND_SIGNAL_SLIDERS = [
     leftLabel: "Accessible",
     rightLabel: "Premium",
     description: "Price perception and craftsmanship",
-    levels: ["Accessible", "A bit accessible", "Neutral", "A bit premium", "Premium"],
+    levels: ["Accessible", "Approachable", "Balanced", "Elevated", "Premium"],
   },
 ];
 
@@ -1209,6 +1197,22 @@ const BRAND_SIGNAL_SLIDERS = [
 function getSliderLevelLabel(value: number, levels: string[]): string {
   const index = Math.min(Math.floor(value / (100 / levels.length)), levels.length - 1);
   return levels[index];
+}
+
+// Snap a value to the nearest valid position based on number of levels
+function snapToNearestLevel(value: number, numLevels: number): number {
+  const positions = Array.from({ length: numLevels }, (_, i) => (i / (numLevels - 1)) * 100);
+  let nearest = positions[0];
+  let minDistance = Math.abs(value - nearest);
+
+  for (const pos of positions) {
+    const distance = Math.abs(value - pos);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = pos;
+    }
+  }
+  return nearest;
 }
 
 // Custom styled slider component with haptic feedback and snapping
@@ -1430,18 +1434,30 @@ function FineTuneStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
+  // Get the number of levels for a slider by id
+  const getNumLevels = (id: string): number => {
+    const slider = BRAND_SIGNAL_SLIDERS.find(s => s.id === id);
+    return slider?.levels.length || 5;
+  };
+
   // Initialize signal values if not present (4 signals)
+  // Always snap to nearest valid position to ensure proper alignment
   const getSignalValue = (id: string): number => {
+    const numLevels = getNumLevels(id);
     const value = brandData[id as keyof BrandData];
-    if (typeof value === 'number') return value;
-    // Map from old values if available
-    switch (id) {
-      case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
-      case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
-      case 'signalWarmth': return 50;
-      case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
-      default: return 50;
+    if (typeof value === 'number') {
+      return snapToNearestLevel(value, numLevels);
     }
+    // Map from old values if available, then snap
+    let rawValue: number;
+    switch (id) {
+      case 'signalTone': rawValue = brandData.feelPlayfulSerious as number || 50; break;
+      case 'signalDensity': rawValue = brandData.feelBoldMinimal as number || 50; break;
+      case 'signalWarmth': rawValue = 50; break;
+      case 'signalPremium': rawValue = brandData.feelExperimentalClassic as number || 50; break;
+      default: rawValue = 50;
+    }
+    return snapToNearestLevel(rawValue, numLevels);
   };
 
   return (
@@ -1522,8 +1538,11 @@ function CreativeFocusStep({
     "brand-guidelines": BookOpen,
   };
 
+  // Use brand primary color or fallback to default
+  const accentColor = brandData.primaryColor || "#9AA48C";
+
   return (
-    <GlowingCard>
+    <GlowingCard glowColor={accentColor}>
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -1548,17 +1567,18 @@ function CreativeFocusStep({
                 key={option.id}
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
-                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
-                  isSelected ? "bg-[#9AA48C]/20 border-[#9AA48C]/50" : "hover:bg-white/5"
-                }`}
+                className="w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 hover:bg-white/5"
                 style={{
-                  border: isSelected ? "1px solid rgba(139, 181, 139, 0.5)" : "1px solid rgba(255, 255, 255, 0.1)",
+                  backgroundColor: isSelected ? `${accentColor}20` : undefined,
+                  border: isSelected ? `1px solid ${accentColor}80` : "1px solid rgba(255, 255, 255, 0.1)",
                 }}
               >
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    isSelected ? "bg-[#9AA48C] text-black" : "bg-white/10 text-white/50"
-                  }`}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{
+                    backgroundColor: isSelected ? accentColor : "rgba(255, 255, 255, 0.1)",
+                    color: isSelected ? "#000" : "rgba(255, 255, 255, 0.5)",
+                  }}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
@@ -1566,7 +1586,7 @@ function CreativeFocusStep({
                   <h3 className="text-white font-medium text-sm">{option.title}</h3>
                   <p className="text-white/40 text-xs">{option.description}</p>
                 </div>
-                {isSelected && <Check className="w-5 h-5 text-[#9AA48C]" />}
+                {isSelected && <Check className="w-5 h-5" style={{ color: accentColor }} />}
               </motion.button>
             );
           })}
@@ -1615,8 +1635,10 @@ function BrandReadyStep({
   brandData: BrandData;
   onComplete: () => void;
 }) {
+  const accentColor = brandData.primaryColor || "#9AA48C";
+
   return (
-    <GlowingCard>
+    <GlowingCard glowColor={accentColor}>
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -1624,7 +1646,8 @@ function BrandReadyStep({
         className="text-left"
       >
         <motion.div
-          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center bg-[#9AA48C]"
+          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
+          style={{ backgroundColor: accentColor }}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
@@ -1643,8 +1666,8 @@ function BrandReadyStep({
 
         <div className="space-y-4 mb-8 text-left">
           <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-            <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-[#9AA48C]" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}30` }}>
+              <Sparkles className="w-5 h-5" style={{ color: accentColor }} />
             </div>
             <div>
               <h3 className="text-white font-medium text-sm">Your Brand DNA</h3>
@@ -1654,8 +1677,8 @@ function BrandReadyStep({
 
           {brandData.creativeFocus.length > 0 && (
             <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-              <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
-                <Target className="w-5 h-5 text-[#9AA48C]" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}30` }}>
+                <Target className="w-5 h-5" style={{ color: accentColor }} />
               </div>
               <div>
                 <h3 className="text-white font-medium text-sm">Focus Areas</h3>
@@ -1667,8 +1690,8 @@ function BrandReadyStep({
           )}
 
           <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-            <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-[#9AA48C]" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}30` }}>
+              <Zap className="w-5 h-5" style={{ color: accentColor }} />
             </div>
             <div>
               <h3 className="text-white font-medium text-sm">Available Credits</h3>
@@ -2381,6 +2404,8 @@ function OnboardingContent() {
   const [brandDirections, setBrandDirections] = useState<BrandDirection[]>([]);
   const [selectedDirection, setSelectedDirection] = useState<BrandDirection | null>(null);
   const [isGeneratingDirections, setIsGeneratingDirections] = useState(false);
+  const [showingCompletionScreen, setShowingCompletionScreen] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const scanningTexts = [
     "Studying colors and type",
@@ -2413,11 +2438,16 @@ function OnboardingContent() {
       return;
     }
 
+    // Skip redirect if we're intentionally showing the completion screen
+    if (showingCompletionScreen) {
+      return;
+    }
+
     const user = session?.user as { onboardingCompleted?: boolean; role?: string } | undefined;
     if (user?.onboardingCompleted) {
       router.push("/dashboard");
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, showingCompletionScreen]);
 
   // Brand extraction
   const handleBrandExtraction = async () => {
@@ -2533,6 +2563,8 @@ function OnboardingContent() {
         throw new Error("Failed to save onboarding");
       }
 
+      // Set flag before refetching to prevent auto-redirect
+      setShowingCompletionScreen(true);
       await refetchSession();
       setStep("brand-ready");
     } catch (error) {
@@ -2544,7 +2576,11 @@ function OnboardingContent() {
   };
 
   const handleComplete = () => {
-    router.push("/dashboard");
+    setIsExiting(true);
+    // Wait for exit animation to complete before navigating
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 500);
   };
 
   // Route selection handler
@@ -2573,12 +2609,15 @@ function OnboardingContent() {
   const currentSteps = route === "existing" ? ROUTE_A_STEPS : ROUTE_B_STEPS;
 
   return (
-    <div
-      className="min-h-screen relative flex items-center"
+    <motion.div
+      className="h-screen relative flex items-center overflow-hidden"
       style={{
         fontFamily: "'Satoshi', sans-serif",
         backgroundColor: "#0a0a0a",
       }}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: isExiting ? 0 : 1 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
     >
       {/* Infinite Grid Background - uses brand colors on brand-dna-reveal step */}
       <InfiniteGrid
@@ -2594,11 +2633,11 @@ function OnboardingContent() {
       />
       <Header userEmail={userEmail} />
 
-      <main className="relative z-10 px-4 py-24 ml-[10%] max-w-2xl">
+      <main className="relative z-10 px-4 py-16 ml-[10%] max-w-2xl">
         {/* Progress indicator for non-welcome steps */}
         {step !== "welcome" && step !== "scanning" && step !== "brand-ready" && step !== "complete" && (
           <div className="mb-6">
-            <ProgressIndicator steps={currentSteps} currentStep={step} />
+            <ProgressIndicator steps={currentSteps} currentStep={step} accentColor={brandData.primaryColor || "#9AA48C"} />
           </div>
         )}
 
@@ -2751,7 +2790,7 @@ function OnboardingContent() {
       <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30">
         <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
       </footer>
-    </div>
+    </motion.div>
   );
 }
 

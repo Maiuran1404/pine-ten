@@ -59,6 +59,18 @@ interface InfiniteGridProps {
   className?: string;
   /** Children to render on top of the grid */
   children?: React.ReactNode;
+  /** Duration of sphere color cycling animation in seconds (lower = faster/more playful) */
+  sphereAnimationDuration?: number;
+  /** Movement range for spheres in pixels (higher = more playful) */
+  sphereMovementRange?: number;
+  /** Base opacity for spheres (0-1, higher = richer/denser) */
+  sphereOpacity?: number;
+  /** Scale variation range for spheres (higher = more dynamic) */
+  sphereScaleRange?: number;
+  /** Blur intensity for spheres in pixels */
+  sphereBlur?: number;
+  /** Size multiplier for spheres (1 = normal) */
+  sphereSizeMultiplier?: number;
 }
 
 /**
@@ -88,6 +100,12 @@ export const InfiniteGrid = ({
   sphereColors,
   className,
   children,
+  sphereAnimationDuration = 25,
+  sphereMovementRange = 25,
+  sphereOpacity = 0.32,
+  sphereScaleRange = 0.05,
+  sphereBlur = 150,
+  sphereSizeMultiplier = 1,
 }: InfiniteGridProps) => {
   // Default colors: Sahara, Green sage, Sea light
   const defaultColors: [string, string, string] = ["#EDBA8D", "#9AA48C", "#D2ECF2"];
