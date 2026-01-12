@@ -607,6 +607,373 @@ function BrandDNARevealStep({
   );
 }
 
+// Brand archetype image sets - images that work together as a cohesive direction
+const BRAND_ARCHETYPE_IMAGES = {
+  // Playful + Energetic + Warm = "Bold Explorer"
+  boldExplorer: [
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=300&h=450&fit=crop",
+  ],
+  // Serious + Calm + Cold = "Refined Authority"
+  refinedAuthority: [
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=300&h=450&fit=crop",
+  ],
+  // Playful + Calm + Warm = "Friendly Guide"
+  friendlyGuide: [
+    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=300&h=450&fit=crop",
+  ],
+  // Serious + Energetic + Cold = "Tech Disruptor"
+  techDisruptor: [
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=300&h=450&fit=crop",
+  ],
+  // Minimal + Premium + Cold = "Elegant Minimalist"
+  elegantMinimalist: [
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=300&h=450&fit=crop",
+  ],
+  // Rich + Warm + Premium = "Luxury Storyteller"
+  luxuryStoryteller: [
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=450&fit=crop",
+  ],
+  // Neutral balanced = "Versatile Classic"
+  versatileClassic: [
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop",
+  ],
+  // Playful + Accessible + Rich = "Creative Rebel"
+  creativeRebel: [
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=300&h=450&fit=crop",
+  ],
+  // Serious + Warm + Premium = "Trusted Advisor"
+  trustedAdvisor: [
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=300&h=450&fit=crop",
+  ],
+};
+
+// Brand archetype definitions with names and similar brands
+const BRAND_ARCHETYPES = {
+  boldExplorer: {
+    name: "Bold Explorer",
+    brands: ["Red Bull", "GoPro", "Spotify"],
+  },
+  refinedAuthority: {
+    name: "Refined Authority",
+    brands: ["McKinsey", "Bloomberg", "IBM"],
+  },
+  friendlyGuide: {
+    name: "Friendly Guide",
+    brands: ["Airbnb", "Mailchimp", "Slack"],
+  },
+  techDisruptor: {
+    name: "Tech Disruptor",
+    brands: ["Tesla", "SpaceX", "Stripe"],
+  },
+  elegantMinimalist: {
+    name: "Elegant Minimalist",
+    brands: ["Apple", "Muji", "Aesop"],
+  },
+  luxuryStoryteller: {
+    name: "Luxury Storyteller",
+    brands: ["Hermès", "Rolex", "Louis Vuitton"],
+  },
+  versatileClassic: {
+    name: "Versatile Classic",
+    brands: ["Google", "Microsoft", "Adobe"],
+  },
+  creativeRebel: {
+    name: "Creative Rebel",
+    brands: ["Figma", "Notion", "Discord"],
+  },
+  trustedAdvisor: {
+    name: "Trusted Advisor",
+    brands: ["Deloitte", "Salesforce", "HubSpot"],
+  },
+};
+
+// Function to determine brand archetype based on slider values
+function getBrandArchetype(signals: {
+  tone: number;
+  energy: number;
+  density: number;
+  warmth: number;
+  premium: number;
+}): keyof typeof BRAND_ARCHETYPES {
+  const { tone, energy, density, warmth, premium } = signals;
+
+  // Playful (tone > 60) + Energetic (energy > 60) + Warm (warmth > 60)
+  if (tone > 60 && energy > 60 && warmth > 60) return "boldExplorer";
+
+  // Serious (tone < 40) + Calm (energy < 40) + Cold (warmth < 40)
+  if (tone < 40 && energy < 40 && warmth < 40) return "refinedAuthority";
+
+  // Playful (tone > 60) + Calm (energy < 40) + Warm (warmth > 60)
+  if (tone > 60 && energy < 40 && warmth > 60) return "friendlyGuide";
+
+  // Serious (tone < 40) + Energetic (energy > 60) + Cold (warmth < 40)
+  if (tone < 40 && energy > 60 && warmth < 40) return "techDisruptor";
+
+  // Minimal (density < 40) + Premium (premium > 60) + Cold (warmth < 50)
+  if (density < 40 && premium > 60 && warmth < 50) return "elegantMinimalist";
+
+  // Rich (density > 60) + Warm (warmth > 60) + Premium (premium > 60)
+  if (density > 60 && warmth > 60 && premium > 60) return "luxuryStoryteller";
+
+  // Playful (tone > 60) + Accessible (premium < 40) + Rich (density > 60)
+  if (tone > 60 && premium < 40 && density > 60) return "creativeRebel";
+
+  // Serious (tone < 40) + Warm (warmth > 50) + Premium (premium > 50)
+  if (tone < 40 && warmth > 50 && premium > 50) return "trustedAdvisor";
+
+  // Default to versatile classic for balanced/neutral values
+  return "versatileClassic";
+}
+
+function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
+  // Get slider values for all signals
+  const getSignalValue = (id: string): number => {
+    const value = brandData[id as keyof BrandData];
+    if (typeof value === 'number') return value;
+    // Fallback to old values
+    switch (id) {
+      case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
+      case 'signalEnergy': return brandData.feelBoldMinimal as number || 50;
+      case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
+      case 'signalWarmth': return 50;
+      case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
+      default: return 50;
+    }
+  };
+
+  // Get all signal values
+  const signals = {
+    tone: getSignalValue('signalTone'),
+    energy: getSignalValue('signalEnergy'),
+    density: getSignalValue('signalDensity'),
+    warmth: getSignalValue('signalWarmth'),
+    premium: getSignalValue('signalPremium'),
+  };
+
+  // Get the current brand archetype
+  const archetypeKey = getBrandArchetype(signals);
+  const archetype = BRAND_ARCHETYPES[archetypeKey];
+  const images = BRAND_ARCHETYPE_IMAGES[archetypeKey];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="w-full max-w-2xl"
+    >
+      {/* Scrolling Image Columns - all showing cohesive archetype images */}
+      <div className="relative">
+        <div className="flex gap-3 justify-center">
+          {images.map((imageSrc, index) => (
+            <motion.div
+              key={`column-${index}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              className="relative flex-shrink-0"
+              style={{ width: "110px" }}
+            >
+              {/* Scrolling container */}
+              <div
+                className="relative h-[320px] overflow-hidden rounded-xl"
+                style={{
+                  background: "rgba(15, 15, 15, 0.4)",
+                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                }}
+              >
+                {/* Top fade gradient */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-20 z-10 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.6) 50%, transparent 100%)",
+                  }}
+                />
+
+                {/* Bottom fade gradient */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.6) 50%, transparent 100%)",
+                  }}
+                />
+
+                {/* Scrolling images */}
+                <motion.div
+                  key={`scroll-${archetypeKey}-${index}`}
+                  className="flex flex-col gap-2 p-2"
+                  animate={{
+                    y: index % 2 === 0
+                      ? [0, -(images.length * (150 + 8))]
+                      : [-(images.length * (150 + 8)), 0],
+                  }}
+                  transition={{
+                    y: {
+                      duration: 18 + index * 3,
+                      repeat: Infinity,
+                      ease: "linear",
+                    },
+                  }}
+                >
+                  {/* Repeat all archetype images for seamless scrolling */}
+                  {[...images, ...images, ...images].map((src, imgIndex) => (
+                    <AnimatePresence mode="wait" key={`${archetypeKey}-${imgIndex}`}>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="relative flex-shrink-0 rounded-lg overflow-hidden"
+                        style={{
+                          width: "100%",
+                          height: "150px",
+                        }}
+                      >
+                        <img
+                          src={src}
+                          alt={`${archetype.name} design ${imgIndex + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Left fade */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+          style={{
+            background: "linear-gradient(90deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
+          }}
+        />
+
+        {/* Right fade */}
+        <div
+          className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+          style={{
+            background: "linear-gradient(270deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
+          }}
+        />
+      </div>
+
+      {/* Archetype Name and Similar Brands */}
+      <motion.div
+        key={archetypeKey}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="mt-8 text-center"
+      >
+        {/* Archetype Name */}
+        <h3
+          className="text-2xl text-white mb-2"
+          style={{ fontFamily: "'Times New Roman', serif" }}
+        >
+          {archetype.name}
+        </h3>
+
+        {/* Similar Brands */}
+        <p className="text-white/40 text-sm">
+          Similar to{" "}
+          <span className="text-white/60">
+            {archetype.brands.join(", ")}
+          </span>
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Core brand signal sliders configuration
+const BRAND_SIGNAL_SLIDERS = [
+  {
+    id: "signalTone",
+    name: "Tone",
+    leftLabel: "Serious",
+    rightLabel: "Playful",
+    description: "Emotional seriousness of expression",
+    levels: ["Serious", "A bit serious", "Neutral", "A bit playful", "Playful"],
+  },
+  {
+    id: "signalEnergy",
+    name: "Energy",
+    leftLabel: "Calm",
+    rightLabel: "Energetic",
+    description: "Motion, contrast, intensity, pacing",
+    levels: ["Calm", "A bit calm", "Neutral", "A bit energetic", "Energetic"],
+  },
+  {
+    id: "signalDensity",
+    name: "Visual Density",
+    leftLabel: "Minimal",
+    rightLabel: "Rich",
+    description: "Amount of visual information per surface",
+    levels: ["Minimal", "A bit minimal", "Neutral", "A bit rich", "Rich"],
+  },
+  {
+    id: "signalWarmth",
+    name: "Warmth",
+    leftLabel: "Cold",
+    rightLabel: "Warm",
+    description: "How human and inviting the visual language feels",
+    levels: ["Cold", "Neutral", "Warm"],
+  },
+  {
+    id: "signalPremium",
+    name: "Premium Feel",
+    leftLabel: "Accessible",
+    rightLabel: "Premium",
+    description: "Price perception and craftsmanship",
+    levels: ["Accessible", "A bit accessible", "Neutral", "A bit premium", "Premium"],
+  },
+];
+
+// Get current level label based on slider value
+function getSliderLevelLabel(value: number, levels: string[]): string {
+  const index = Math.min(Math.floor(value / (100 / levels.length)), levels.length - 1);
+  return levels[index];
+}
+
 function FineTuneStep({
   brandData,
   setBrandData,
@@ -618,82 +985,84 @@ function FineTuneStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
-  const sliders = [
-    {
-      id: "feelPlayfulSerious",
-      leftLabel: "More playful",
-      rightLabel: "More serious",
-      leftDesc: "Fun, friendly",
-      rightDesc: "Professional",
-    },
-    {
-      id: "feelBoldMinimal",
-      leftLabel: "More bold",
-      rightLabel: "More minimal",
-      leftDesc: "Impactful",
-      rightDesc: "Refined",
-    },
-    {
-      id: "feelExperimentalClassic",
-      leftLabel: "More experimental",
-      rightLabel: "More classic",
-      leftDesc: "Cutting-edge",
-      rightDesc: "Timeless",
-    },
-  ];
+  // Initialize signal values if not present
+  const getSignalValue = (id: string): number => {
+    const value = brandData[id as keyof BrandData];
+    if (typeof value === 'number') return value;
+    // Map from old values if available
+    switch (id) {
+      case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
+      case 'signalEnergy': return brandData.feelBoldMinimal as number || 50;
+      case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
+      case 'signalWarmth': return 50;
+      case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
+      default: return 50;
+    }
+  };
 
   return (
-    <GlowingCard>
+    <GlowingCard glowColor="#9AA48C" className="max-w-lg">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={staggerItem} className="text-left mb-8">
-          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+        <motion.div variants={staggerItem} className="text-left mb-6">
+          <h1 className="text-2xl sm:text-3xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
             Let&apos;s dial it in
           </h1>
           <p className="text-white/50 text-sm">
-            These small tweaks help us match your taste.
+            Adjust these core signals to match your brand feel.
           </p>
         </motion.div>
 
-        <div className="space-y-8 mb-8">
-          {sliders.map((slider) => (
-            <motion.div key={slider.id} variants={staggerItem} className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <div>
-                  <span className="text-white">{slider.leftLabel}</span>
-                  <span className="text-white/40 ml-2">{slider.leftDesc}</span>
+        <div className="space-y-5 mb-6">
+          {BRAND_SIGNAL_SLIDERS.map((slider) => {
+            const value = getSignalValue(slider.id);
+            const currentLevel = getSliderLevelLabel(value, slider.levels);
+
+            return (
+              <motion.div key={slider.id} variants={staggerItem} className="space-y-2">
+                {/* Slider header */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-sm font-medium">{slider.name}</span>
+                    <span className="text-white/30 text-xs">·</span>
+                    <span className="text-[#9AA48C] text-xs">{currentLevel}</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-white/40 mr-2">{slider.rightDesc}</span>
-                  <span className="text-white">{slider.rightLabel}</span>
+
+                {/* Labels */}
+                <div className="flex justify-between text-xs text-white/40">
+                  <span>{slider.leftLabel}</span>
+                  <span>{slider.rightLabel}</span>
                 </div>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={brandData[slider.id as keyof BrandData] as number}
-                onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
-              />
-            </motion.div>
-          ))}
+
+                {/* Slider */}
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={value}
+                  onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
+                  className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
+                />
+              </motion.div>
+            );
+          })}
         </div>
 
         <motion.div variants={staggerItem} className="flex gap-3">
           <button
             onClick={onBack}
-            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            className="flex-1 py-3 rounded-xl font-medium text-sm"
             style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
             Save & continue
@@ -1950,9 +2319,13 @@ function OnboardingContent() {
         </AnimatePresence>
       </main>
 
-      {/* Right side - space for animation */}
-      <div className="relative z-10 flex-1 h-full">
-        {/* Animation placeholder */}
+      {/* Right side - mood preview for fine-tune step */}
+      <div className="relative z-10 flex-1 h-full hidden lg:flex items-center justify-center pr-[10%]">
+        <AnimatePresence mode="wait">
+          {step === "fine-tune" && (
+            <MoodPreviewPanel key="mood-preview" brandData={brandData} />
+          )}
+        </AnimatePresence>
       </div>
 
       <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30">
