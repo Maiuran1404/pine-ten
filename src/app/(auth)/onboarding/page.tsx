@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -875,134 +875,133 @@ const BRAND_ARCHETYPES: Record<string, { name: string; brands: string[] }> = {
   boldAccessible: { name: "Bold Accessible", brands: ["Canva", "Wix", "Shopify"] },
 };
 
-// Function to determine brand archetype based on slider values
+// Function to determine brand archetype based on slider values (4 signals: tone, density, warmth, premium)
 function getBrandArchetype(signals: {
   tone: number;
-  energy: number;
   density: number;
   warmth: number;
   premium: number;
 }): string {
-  const { tone, energy, density, warmth, premium } = signals;
+  const { tone, density, warmth, premium } = signals;
 
-  // Serious (< 35), Neutral (35-65), Playful (> 65)
-  const isSerious = tone < 35;
-  const isBitSerious = tone >= 35 && tone < 45;
+  // Tone: Serious (< 25), A bit serious (25-45), Neutral (45-55), A bit playful (55-75), Playful (> 75)
+  const isSerious = tone < 25;
+  const isBitSerious = tone >= 25 && tone < 45;
   const isNeutralTone = tone >= 45 && tone <= 55;
-  const isBitPlayful = tone > 55 && tone <= 65;
-  const isPlayful = tone > 65;
+  const isBitPlayful = tone > 55 && tone <= 75;
+  const isPlayful = tone > 75;
 
-  // Calm (< 35), Neutral (35-65), Energetic (> 65)
-  const isCalm = energy < 35;
-  const isBitCalm = energy >= 35 && energy < 45;
-  const isNeutralEnergy = energy >= 45 && energy <= 55;
-  const isBitEnergetic = energy > 55 && energy <= 65;
-  const isEnergetic = energy > 65;
-
-  // Minimal (< 35), Neutral (35-65), Rich (> 65)
-  const isMinimal = density < 35;
-  const isBitMinimal = density >= 35 && density < 45;
+  // Density: Minimal (< 25), A bit minimal (25-45), Neutral (45-55), A bit rich (55-75), Rich (> 75)
+  const isMinimal = density < 25;
+  const isBitMinimal = density >= 25 && density < 45;
   const isNeutralDensity = density >= 45 && density <= 55;
-  const isBitRich = density > 55 && density <= 65;
-  const isRich = density > 65;
+  const isBitRich = density > 55 && density <= 75;
+  const isRich = density > 75;
 
-  // Cold (< 35), Neutral (35-65), Warm (> 65)
+  // Warmth: Cold (< 35), Neutral (35-65), Warm (> 65)
   const isCold = warmth < 35;
   const isNeutralWarmth = warmth >= 35 && warmth <= 65;
   const isWarm = warmth > 65;
 
-  // Accessible (< 35), Neutral (35-65), Premium (> 65)
-  const isAccessible = premium < 35;
-  const isBitAccessible = premium >= 35 && premium < 45;
+  // Premium: Accessible (< 25), A bit accessible (25-45), Neutral (45-55), A bit premium (55-75), Premium (> 75)
+  const isAccessible = premium < 25;
+  const isBitAccessible = premium >= 25 && premium < 45;
   const isNeutralPremium = premium >= 45 && premium <= 55;
-  const isBitPremium = premium > 55 && premium <= 65;
-  const isPremium = premium > 65;
+  const isBitPremium = premium > 55 && premium <= 75;
+  const isPremium = premium > 75;
 
   // === PLAYFUL COMBINATIONS ===
-  if (isPlayful && isEnergetic && isWarm) return "boldExplorer";
-  if (isPlayful && isEnergetic && isCold) return "neonFuturist";
-  if (isPlayful && isEnergetic && isNeutralWarmth) return "digitalNative";
-  if (isPlayful && isCalm && isWarm) return "friendlyGuide";
-  if (isPlayful && isCalm && isCold) return "calmCreative";
-  if (isPlayful && isCalm && isNeutralWarmth) return "everydayJoy";
-  if (isPlayful && isNeutralEnergy && isWarm) return "humanFirst";
-  if (isPlayful && isNeutralEnergy && isCold) return "vibrantMinimal";
-  if (isPlayful && isAccessible) return "accessibleFun";
-  if (isPlayful && isPremium && isRich) return "richStoryteller";
+  if (isPlayful && isWarm && isPremium) return "boldExplorer";
+  if (isPlayful && isWarm && isAccessible) return "everydayJoy";
+  if (isPlayful && isWarm && isRich) return "richStoryteller";
+  if (isPlayful && isWarm) return "friendlyGuide";
+  if (isPlayful && isCold && isPremium) return "neonFuturist";
+  if (isPlayful && isCold && isAccessible) return "digitalNative";
+  if (isPlayful && isCold) return "vibrantMinimal";
   if (isPlayful && isMinimal) return "playfulPop";
+  if (isPlayful && isRich) return "creativeRebel";
+  if (isPlayful && isAccessible) return "accessibleFun";
+  if (isPlayful && isPremium) return "softLuxury";
+  if (isPlayful) return "humanFirst";
 
   // === SERIOUS COMBINATIONS ===
-  if (isSerious && isCalm && isCold) return "refinedAuthority";
-  if (isSerious && isCalm && isWarm) return "classicTrust";
-  if (isSerious && isCalm && isNeutralWarmth) return "quietConfidence";
-  if (isSerious && isEnergetic && isCold) return "techDisruptor";
-  if (isSerious && isEnergetic && isWarm) return "dynamicLeader";
-  if (isSerious && isEnergetic && isNeutralWarmth) return "energeticPro";
-  if (isSerious && isPremium && isMinimal) return "elegantMinimalist";
-  if (isSerious && isPremium && isRich) return "luxuryStoryteller";
-  if (isSerious && isPremium && isWarm) return "organicLuxury";
+  if (isSerious && isCold && isPremium && isMinimal) return "elegantMinimalist";
+  if (isSerious && isCold && isPremium) return "refinedAuthority";
+  if (isSerious && isCold && isMinimal) return "industrialChic";
+  if (isSerious && isCold) return "techDisruptor";
+  if (isSerious && isWarm && isPremium && isRich) return "luxuryStoryteller";
+  if (isSerious && isWarm && isPremium) return "organicLuxury";
+  if (isSerious && isWarm && isRich) return "modernHeritage";
+  if (isSerious && isWarm) return "trustedAdvisor";
+  if (isSerious && isPremium && isMinimal) return "premiumTech";
+  if (isSerious && isPremium) return "quietConfidence";
   if (isSerious && isAccessible) return "corporateChic";
-  if (isSerious && isNeutralEnergy && isCold) return "industrialChic";
-  if (isSerious && isNeutralEnergy && isWarm) return "trustedAdvisor";
+  if (isSerious && isMinimal) return "cleanSlate";
+  if (isSerious && isRich) return "seriousCraft";
+  if (isSerious) return "classicTrust";
 
   // === BIT PLAYFUL COMBINATIONS ===
-  if (isBitPlayful && isEnergetic) return "urbanEdge";
-  if (isBitPlayful && isCalm && isWarm) return "warmCraftsman";
-  if (isBitPlayful && isPremium) return "softLuxury";
-  if (isBitPlayful && isAccessible) return "boldAccessible";
+  if (isBitPlayful && isWarm && isPremium) return "warmCraftsman";
+  if (isBitPlayful && isWarm && isAccessible) return "boldAccessible";
+  if (isBitPlayful && isWarm) return "humanFirst";
+  if (isBitPlayful && isCold && isPremium) return "boldMinimalist";
+  if (isBitPlayful && isCold) return "urbanEdge";
   if (isBitPlayful && isMinimal) return "cleanSlate";
+  if (isBitPlayful && isRich) return "richStoryteller";
+  if (isBitPlayful && isPremium) return "softLuxury";
+  if (isBitPlayful && isAccessible) return "accessibleFun";
 
   // === BIT SERIOUS COMBINATIONS ===
-  if (isBitSerious && isPremium && isMinimal) return "premiumTech";
-  if (isBitSerious && isPremium && isWarm) return "modernHeritage";
-  if (isBitSerious && isEnergetic) return "techWarm";
-  if (isBitSerious && isCalm) return "seriousCraft";
-  if (isBitSerious && isAccessible) return "warmProfessional";
+  if (isBitSerious && isCold && isPremium) return "premiumTech";
+  if (isBitSerious && isCold) return "industrialChic";
+  if (isBitSerious && isWarm && isPremium) return "modernHeritage";
+  if (isBitSerious && isWarm) return "warmProfessional";
+  if (isBitSerious && isPremium && isMinimal) return "elegantMinimalist";
+  if (isBitSerious && isPremium) return "quietConfidence";
+  if (isBitSerious && isAccessible) return "corporateChic";
+  if (isBitSerious && isMinimal) return "seriousCraft";
+  if (isBitSerious && isRich) return "dynamicLeader";
 
   // === MINIMAL COMBINATIONS ===
   if (isMinimal && isPremium && isCold) return "elegantMinimalist";
-  if (isMinimal && isPremium && isWarm) return "softLuxury";
+  if (isMinimal && isPremium && isWarm) return "organicLuxury";
+  if (isMinimal && isPremium) return "premiumTech";
+  if (isMinimal && isAccessible && isWarm) return "zenMaster";
   if (isMinimal && isAccessible) return "cleanSlate";
-  if (isMinimal && isEnergetic) return "boldMinimalist";
-  if (isMinimal && isCalm) return "zenMaster";
+  if (isMinimal && isWarm) return "calmCreative";
+  if (isMinimal && isCold) return "boldMinimalist";
 
   // === RICH COMBINATIONS ===
   if (isRich && isPremium && isWarm) return "luxuryStoryteller";
   if (isRich && isPremium && isCold) return "modernHeritage";
-  if (isRich && isAccessible && isPlayful) return "creativeRebel";
-  if (isRich && isEnergetic) return "richStoryteller";
+  if (isRich && isPremium) return "richStoryteller";
+  if (isRich && isAccessible && isWarm) return "everydayJoy";
+  if (isRich && isAccessible) return "creativeRebel";
+  if (isRich && isWarm) return "warmCraftsman";
+  if (isRich && isCold) return "dynamicLeader";
 
   // === PREMIUM COMBINATIONS ===
-  if (isPremium && isCold && isEnergetic) return "premiumTech";
-  if (isPremium && isWarm && isCalm) return "organicLuxury";
-  if (isPremium && isNeutralWarmth) return "quietConfidence";
+  if (isPremium && isCold) return "refinedAuthority";
+  if (isPremium && isWarm) return "organicLuxury";
+  if (isPremium) return "quietConfidence";
 
   // === ACCESSIBLE COMBINATIONS ===
-  if (isAccessible && isWarm && isEnergetic) return "boldAccessible";
+  if (isAccessible && isWarm) return "humanFirst";
   if (isAccessible && isCold) return "digitalNative";
-  if (isAccessible && isNeutralWarmth) return "humanFirst";
+  if (isAccessible) return "boldAccessible";
 
-  // === CALM COMBINATIONS ===
-  if (isCalm && isWarm && isMinimal) return "zenMaster";
-  if (isCalm && isCold && isMinimal) return "quietConfidence";
-  if (isCalm && isNeutralWarmth) return "calmCreative";
-
-  // === ENERGETIC COMBINATIONS ===
-  if (isEnergetic && isWarm) return "energeticPro";
-  if (isEnergetic && isCold) return "urbanEdge";
-  if (isEnergetic && isNeutralWarmth) return "dynamicLeader";
+  // === WARMTH COMBINATIONS ===
+  if (isWarm && isNeutralDensity) return "friendlyGuide";
+  if (isCold && isNeutralDensity) return "techDisruptor";
 
   // === NEUTRAL / DEFAULT ===
-  if (isNeutralTone && isNeutralEnergy && isNeutralDensity) return "versatileClassic";
-  if (isNeutralTone && isNeutralPremium) return "versatileClassic";
+  if (isNeutralTone && isNeutralDensity && isNeutralPremium) return "versatileClassic";
 
   // Fallback based on strongest signal
   if (isPremium) return "quietConfidence";
   if (isAccessible) return "humanFirst";
   if (isPlayful) return "playfulPop";
   if (isSerious) return "trustedAdvisor";
-  if (isEnergetic) return "dynamicLeader";
-  if (isCalm) return "zenMaster";
   if (isMinimal) return "cleanSlate";
   if (isRich) return "richStoryteller";
   if (isWarm) return "warmCraftsman";
@@ -1012,14 +1011,13 @@ function getBrandArchetype(signals: {
 }
 
 function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
-  // Get slider values for all signals
+  // Get slider values for all signals (4 signals now)
   const getSignalValue = (id: string): number => {
     const value = brandData[id as keyof BrandData];
     if (typeof value === 'number') return value;
     // Fallback to old values
     switch (id) {
       case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
-      case 'signalEnergy': return brandData.feelBoldMinimal as number || 50;
       case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
       case 'signalWarmth': return 50;
       case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
@@ -1027,10 +1025,9 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
     }
   };
 
-  // Get all signal values
+  // Get all signal values (4 signals)
   const signals = {
     tone: getSignalValue('signalTone'),
-    energy: getSignalValue('signalEnergy'),
     density: getSignalValue('signalDensity'),
     warmth: getSignalValue('signalWarmth'),
     premium: getSignalValue('signalPremium'),
@@ -1049,10 +1046,10 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       transition={{ duration: 0.5, delay: 0.2 }}
       className="w-full max-w-3xl"
     >
-      {/* Scrolling Image Columns - all showing cohesive archetype images */}
+      {/* Scrolling Image Columns - 4 columns showing cohesive archetype images */}
       <div className="relative">
         <div className="flex gap-4 justify-center">
-          {images.map((imageSrc, index) => (
+          {images.slice(0, 4).map((imageSrc, index) => (
             <motion.div
               key={`column-${archetypeKey}-${index}`}
               initial={{ opacity: 0, y: 20 }}
@@ -1172,7 +1169,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
   );
 }
 
-// Core brand signal sliders configuration
+// Core brand signal sliders configuration (4 signals)
 const BRAND_SIGNAL_SLIDERS = [
   {
     id: "signalTone",
@@ -1181,14 +1178,6 @@ const BRAND_SIGNAL_SLIDERS = [
     rightLabel: "Playful",
     description: "Emotional seriousness of expression",
     levels: ["Serious", "A bit serious", "Neutral", "A bit playful", "Playful"],
-  },
-  {
-    id: "signalEnergy",
-    name: "Energy",
-    leftLabel: "Calm",
-    rightLabel: "Energetic",
-    description: "Motion, contrast, intensity, pacing",
-    levels: ["Calm", "A bit calm", "Neutral", "A bit energetic", "Energetic"],
   },
   {
     id: "signalDensity",
@@ -1222,6 +1211,214 @@ function getSliderLevelLabel(value: number, levels: string[]): string {
   return levels[index];
 }
 
+// Custom styled slider component with haptic feedback and snapping
+function BrandSignalSlider({
+  slider,
+  value,
+  onChange,
+}: {
+  slider: typeof BRAND_SIGNAL_SLIDERS[0];
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [displayValue, setDisplayValue] = useState(value);
+  const lastHapticStep = useRef(-1);
+  const numSteps = slider.levels.length;
+
+  // Calculate snap positions (tick marks)
+  const getSnapPositions = useCallback(() => {
+    return slider.levels.map((_, index) => (index / (numSteps - 1)) * 100);
+  }, [numSteps, slider.levels]);
+
+  // Snap to nearest tick mark
+  const snapToNearest = useCallback((val: number) => {
+    const positions = getSnapPositions();
+    let nearest = positions[0];
+    let minDistance = Math.abs(val - nearest);
+
+    for (const pos of positions) {
+      const distance = Math.abs(val - pos);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = pos;
+      }
+    }
+    return nearest;
+  }, [getSnapPositions]);
+
+  // Get step index from value
+  const getStepIndex = useCallback((val: number) => {
+    const positions = getSnapPositions();
+    for (let i = 0; i < positions.length; i++) {
+      if (Math.abs(val - positions[i]) < 1) return i;
+    }
+    return Math.round((val / 100) * (numSteps - 1));
+  }, [getSnapPositions, numSteps]);
+
+  const currentLevel = slider.levels[getStepIndex(value)];
+
+  // Trigger haptic feedback
+  const triggerHaptic = useCallback(() => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(5);
+    }
+  }, []);
+
+  // Handle slider change with haptic feedback at level boundaries
+  const handleChange = (newValue: number) => {
+    setDisplayValue(newValue);
+
+    // Check if we crossed a step boundary for haptic
+    const currentStep = getStepIndex(snapToNearest(newValue));
+    if (currentStep !== lastHapticStep.current) {
+      triggerHaptic();
+      lastHapticStep.current = currentStep;
+    }
+  };
+
+  // Snap on release
+  const handleRelease = () => {
+    setIsDragging(false);
+    const snappedValue = snapToNearest(displayValue);
+    setDisplayValue(snappedValue);
+    onChange(snappedValue);
+  };
+
+  // Sync display value with prop
+  useEffect(() => {
+    if (!isDragging) {
+      setDisplayValue(value);
+    }
+  }, [value, isDragging]);
+
+  // Calculate thumb position percentage
+  const thumbPosition = displayValue;
+
+  return (
+    <div className="space-y-3">
+      {/* Slider header */}
+      <div className="flex justify-between items-center">
+        <span className="text-white text-sm font-medium">{slider.name}</span>
+        <motion.span
+          key={currentLevel}
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-[#9AA48C] text-xs font-medium px-2 py-0.5 rounded-full"
+          style={{
+            background: "rgba(154, 164, 140, 0.15)",
+            border: "1px solid rgba(154, 164, 140, 0.3)",
+          }}
+        >
+          {currentLevel}
+        </motion.span>
+      </div>
+
+      {/* Labels */}
+      <div className="flex justify-between text-[11px] text-white/40 font-medium">
+        <span>{slider.leftLabel}</span>
+        <span>{slider.rightLabel}</span>
+      </div>
+
+      {/* Custom Slider Track */}
+      <div className="relative h-10 flex items-center">
+        {/* Track background */}
+        <div
+          className="absolute inset-x-0 h-2 rounded-full overflow-hidden"
+          style={{
+            background: "rgba(255, 255, 255, 0.06)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          {/* Filled portion */}
+          <motion.div
+            className="h-full rounded-full"
+            style={{
+              width: `${thumbPosition}%`,
+              background: "linear-gradient(90deg, rgba(154, 164, 140, 0.3) 0%, rgba(154, 164, 140, 0.6) 100%)",
+            }}
+            animate={{ width: `${thumbPosition}%` }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          />
+        </div>
+
+        {/* Tick marks */}
+        <div className="absolute inset-x-0 flex justify-between px-1">
+          {slider.levels.map((_, index) => {
+            const tickPosition = (index / (numSteps - 1)) * 100;
+            const isActive = value >= tickPosition - (50 / numSteps);
+            return (
+              <div
+                key={index}
+                className="w-0.5 h-2 rounded-full transition-colors duration-200"
+                style={{
+                  background: isActive ? "rgba(154, 164, 140, 0.6)" : "rgba(255, 255, 255, 0.15)",
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Custom thumb */}
+        <motion.div
+          className="absolute w-5 h-5 -ml-2.5 pointer-events-none"
+          style={{
+            left: `${thumbPosition}%`,
+          }}
+          animate={{
+            left: `${thumbPosition}%`,
+            scale: isDragging ? 1.2 : 1,
+          }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        >
+          {/* Outer glow */}
+          <div
+            className="absolute inset-0 rounded-full transition-opacity duration-200"
+            style={{
+              background: "rgba(154, 164, 140, 0.3)",
+              filter: "blur(6px)",
+              opacity: isDragging ? 1 : 0,
+            }}
+          />
+          {/* Main thumb */}
+          <div
+            className="relative w-5 h-5 rounded-full shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, #b8c4a8 0%, #9AA48C 100%)",
+              boxShadow: isDragging
+                ? "0 0 20px rgba(154, 164, 140, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3)"
+                : "0 2px 8px rgba(0, 0, 0, 0.3)",
+            }}
+          >
+            {/* Inner highlight */}
+            <div
+              className="absolute inset-1 rounded-full"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)",
+              }}
+            />
+          </div>
+        </motion.div>
+
+        {/* Hidden native input for accessibility */}
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={displayValue}
+          onChange={(e) => handleChange(parseInt(e.target.value))}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={handleRelease}
+          onMouseLeave={() => { if (isDragging) handleRelease(); }}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={handleRelease}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
+    </div>
+  );
+}
+
 function FineTuneStep({
   brandData,
   setBrandData,
@@ -1233,14 +1430,13 @@ function FineTuneStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
-  // Initialize signal values if not present
+  // Initialize signal values if not present (4 signals)
   const getSignalValue = (id: string): number => {
     const value = brandData[id as keyof BrandData];
     if (typeof value === 'number') return value;
     // Map from old values if available
     switch (id) {
       case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
-      case 'signalEnergy': return brandData.feelBoldMinimal as number || 50;
       case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
       case 'signalWarmth': return 50;
       case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
@@ -1255,7 +1451,7 @@ function FineTuneStep({
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={staggerItem} className="text-left mb-6">
+        <motion.div variants={staggerItem} className="text-left mb-8">
           <h1 className="text-2xl sm:text-3xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
             Let&apos;s dial it in
           </h1>
@@ -1264,53 +1460,29 @@ function FineTuneStep({
           </p>
         </motion.div>
 
-        <div className="space-y-5 mb-6">
-          {BRAND_SIGNAL_SLIDERS.map((slider) => {
-            const value = getSignalValue(slider.id);
-            const currentLevel = getSliderLevelLabel(value, slider.levels);
-
-            return (
-              <motion.div key={slider.id} variants={staggerItem} className="space-y-2">
-                {/* Slider header */}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white text-sm font-medium">{slider.name}</span>
-                    <span className="text-white/30 text-xs">·</span>
-                    <span className="text-[#9AA48C] text-xs">{currentLevel}</span>
-                  </div>
-                </div>
-
-                {/* Labels */}
-                <div className="flex justify-between text-xs text-white/40">
-                  <span>{slider.leftLabel}</span>
-                  <span>{slider.rightLabel}</span>
-                </div>
-
-                {/* Slider */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={value}
-                  onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
-                />
-              </motion.div>
-            );
-          })}
+        <div className="space-y-6 mb-8">
+          {BRAND_SIGNAL_SLIDERS.map((slider) => (
+            <motion.div key={slider.id} variants={staggerItem}>
+              <BrandSignalSlider
+                slider={slider}
+                value={getSignalValue(slider.id)}
+                onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
+              />
+            </motion.div>
+          ))}
         </div>
 
         <motion.div variants={staggerItem} className="flex gap-3">
           <button
             onClick={onBack}
-            className="flex-1 py-3 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3.5 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-3 rounded-xl font-medium text-sm"
+            className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
             style={{ background: "#f5f5f0", color: "#1a1a1a" }}
           >
             Save & continue
