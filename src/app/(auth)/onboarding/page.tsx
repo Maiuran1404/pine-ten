@@ -608,119 +608,271 @@ function BrandDNARevealStep({
 }
 
 // Brand archetype image sets - images that work together as a cohesive direction
-const BRAND_ARCHETYPE_IMAGES = {
-  // Playful + Energetic + Warm = "Bold Explorer"
+const BRAND_ARCHETYPE_IMAGES: Record<string, string[]> = {
   boldExplorer: [
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
   ],
-  // Serious + Calm + Cold = "Refined Authority"
   refinedAuthority: [
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
   ],
-  // Playful + Calm + Warm = "Friendly Guide"
   friendlyGuide: [
-    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
   ],
-  // Serious + Energetic + Cold = "Tech Disruptor"
   techDisruptor: [
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
   ],
-  // Minimal + Premium + Cold = "Elegant Minimalist"
   elegantMinimalist: [
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
   ],
-  // Rich + Warm + Premium = "Luxury Storyteller"
   luxuryStoryteller: [
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
   ],
-  // Neutral balanced = "Versatile Classic"
   versatileClassic: [
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
   ],
-  // Playful + Accessible + Rich = "Creative Rebel"
   creativeRebel: [
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
   ],
-  // Serious + Warm + Premium = "Trusted Advisor"
   trustedAdvisor: [
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=450&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=300&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
+  ],
+  // New archetypes for more coverage
+  zenMaster: [
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=600&fit=crop",
+  ],
+  urbanEdge: [
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
+  ],
+  warmCraftsman: [
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+  ],
+  neonFuturist: [
+    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+  ],
+  cleanSlate: [
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop",
+  ],
+  corporateChic: [
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
+  ],
+  playfulPop: [
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
+  ],
+  seriousCraft: [
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
+  ],
+  dynamicLeader: [
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+  ],
+  softLuxury: [
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+  ],
+  boldMinimalist: [
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+  ],
+  humanFirst: [
+    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+  ],
+  techWarm: [
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+  ],
+  accessibleFun: [
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+  ],
+  quietConfidence: [
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+  ],
+  richStoryteller: [
+    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+  ],
+  premiumTech: [
+    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+  ],
+  everydayJoy: [
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+  ],
+  modernHeritage: [
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+  ],
+  energeticPro: [
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
+  ],
+  calmCreative: [
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop",
+  ],
+  industrialChic: [
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+  ],
+  organicLuxury: [
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+  ],
+  digitalNative: [
+    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+  ],
+  classicTrust: [
+    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
+  ],
+  vibrantMinimal: [
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+  ],
+  warmProfessional: [
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+  ],
+  boldAccessible: [
+    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
   ],
 };
 
 // Brand archetype definitions with names and similar brands
-const BRAND_ARCHETYPES = {
-  boldExplorer: {
-    name: "Bold Explorer",
-    brands: ["Red Bull", "GoPro", "Spotify"],
-  },
-  refinedAuthority: {
-    name: "Refined Authority",
-    brands: ["McKinsey", "Bloomberg", "IBM"],
-  },
-  friendlyGuide: {
-    name: "Friendly Guide",
-    brands: ["Airbnb", "Mailchimp", "Slack"],
-  },
-  techDisruptor: {
-    name: "Tech Disruptor",
-    brands: ["Tesla", "SpaceX", "Stripe"],
-  },
-  elegantMinimalist: {
-    name: "Elegant Minimalist",
-    brands: ["Apple", "Muji", "Aesop"],
-  },
-  luxuryStoryteller: {
-    name: "Luxury Storyteller",
-    brands: ["Hermès", "Rolex", "Louis Vuitton"],
-  },
-  versatileClassic: {
-    name: "Versatile Classic",
-    brands: ["Google", "Microsoft", "Adobe"],
-  },
-  creativeRebel: {
-    name: "Creative Rebel",
-    brands: ["Figma", "Notion", "Discord"],
-  },
-  trustedAdvisor: {
-    name: "Trusted Advisor",
-    brands: ["Deloitte", "Salesforce", "HubSpot"],
-  },
+const BRAND_ARCHETYPES: Record<string, { name: string; brands: string[] }> = {
+  boldExplorer: { name: "Bold Explorer", brands: ["Red Bull", "GoPro", "Spotify"] },
+  refinedAuthority: { name: "Refined Authority", brands: ["McKinsey", "Bloomberg", "IBM"] },
+  friendlyGuide: { name: "Friendly Guide", brands: ["Airbnb", "Mailchimp", "Slack"] },
+  techDisruptor: { name: "Tech Disruptor", brands: ["Tesla", "SpaceX", "Stripe"] },
+  elegantMinimalist: { name: "Elegant Minimalist", brands: ["Apple", "Muji", "Aesop"] },
+  luxuryStoryteller: { name: "Luxury Storyteller", brands: ["Hermès", "Rolex", "Cartier"] },
+  versatileClassic: { name: "Versatile Classic", brands: ["Google", "Microsoft", "Adobe"] },
+  creativeRebel: { name: "Creative Rebel", brands: ["Figma", "Notion", "Discord"] },
+  trustedAdvisor: { name: "Trusted Advisor", brands: ["Deloitte", "Salesforce", "HubSpot"] },
+  zenMaster: { name: "Zen Master", brands: ["Headspace", "Calm", "Patagonia"] },
+  urbanEdge: { name: "Urban Edge", brands: ["Nike", "Adidas", "Supreme"] },
+  warmCraftsman: { name: "Warm Craftsman", brands: ["Etsy", "Anthropologie", "West Elm"] },
+  neonFuturist: { name: "Neon Futurist", brands: ["Cyberpunk", "Razer", "Alienware"] },
+  cleanSlate: { name: "Clean Slate", brands: ["Everlane", "Glossier", "Away"] },
+  corporateChic: { name: "Corporate Chic", brands: ["WeWork", "LinkedIn", "Dropbox"] },
+  playfulPop: { name: "Playful Pop", brands: ["Duolingo", "Snapchat", "TikTok"] },
+  seriousCraft: { name: "Serious Craft", brands: ["Monocle", "Kinfolk", "Cereal"] },
+  dynamicLeader: { name: "Dynamic Leader", brands: ["Amazon", "Netflix", "Uber"] },
+  softLuxury: { name: "Soft Luxury", brands: ["Goop", "Net-a-Porter", "Mejuri"] },
+  boldMinimalist: { name: "Bold Minimalist", brands: ["Tesla", "Bang & Olufsen", "Rimowa"] },
+  humanFirst: { name: "Human First", brands: ["Warby Parker", "Casper", "Allbirds"] },
+  techWarm: { name: "Tech Warm", brands: ["Spotify", "Asana", "Monday.com"] },
+  accessibleFun: { name: "Accessible Fun", brands: ["Target", "IKEA", "Trader Joe's"] },
+  quietConfidence: { name: "Quiet Confidence", brands: ["Porsche", "Montblanc", "Leica"] },
+  richStoryteller: { name: "Rich Storyteller", brands: ["National Geographic", "Airbnb", "Patagonia"] },
+  premiumTech: { name: "Premium Tech", brands: ["Apple", "Sonos", "Dyson"] },
+  everydayJoy: { name: "Everyday Joy", brands: ["Coca-Cola", "McDonald's", "Disney"] },
+  modernHeritage: { name: "Modern Heritage", brands: ["Burberry", "Coach", "Ralph Lauren"] },
+  energeticPro: { name: "Energetic Pro", brands: ["Gatorade", "Under Armour", "Peloton"] },
+  calmCreative: { name: "Calm Creative", brands: ["Pinterest", "Squarespace", "Behance"] },
+  industrialChic: { name: "Industrial Chic", brands: ["Caterpillar", "Carhartt", "Yeti"] },
+  organicLuxury: { name: "Organic Luxury", brands: ["Aesop", "Le Labo", "Byredo"] },
+  digitalNative: { name: "Digital Native", brands: ["Twitch", "Discord", "Roblox"] },
+  classicTrust: { name: "Classic Trust", brands: ["Goldman Sachs", "Morgan Stanley", "Vanguard"] },
+  vibrantMinimal: { name: "Vibrant Minimal", brands: ["Stripe", "Linear", "Vercel"] },
+  warmProfessional: { name: "Warm Professional", brands: ["Zendesk", "Intercom", "Drift"] },
+  boldAccessible: { name: "Bold Accessible", brands: ["Canva", "Wix", "Shopify"] },
 };
 
 // Function to determine brand archetype based on slider values
@@ -730,34 +882,132 @@ function getBrandArchetype(signals: {
   density: number;
   warmth: number;
   premium: number;
-}): keyof typeof BRAND_ARCHETYPES {
+}): string {
   const { tone, energy, density, warmth, premium } = signals;
 
-  // Playful (tone > 60) + Energetic (energy > 60) + Warm (warmth > 60)
-  if (tone > 60 && energy > 60 && warmth > 60) return "boldExplorer";
+  // Serious (< 35), Neutral (35-65), Playful (> 65)
+  const isSerious = tone < 35;
+  const isBitSerious = tone >= 35 && tone < 45;
+  const isNeutralTone = tone >= 45 && tone <= 55;
+  const isBitPlayful = tone > 55 && tone <= 65;
+  const isPlayful = tone > 65;
 
-  // Serious (tone < 40) + Calm (energy < 40) + Cold (warmth < 40)
-  if (tone < 40 && energy < 40 && warmth < 40) return "refinedAuthority";
+  // Calm (< 35), Neutral (35-65), Energetic (> 65)
+  const isCalm = energy < 35;
+  const isBitCalm = energy >= 35 && energy < 45;
+  const isNeutralEnergy = energy >= 45 && energy <= 55;
+  const isBitEnergetic = energy > 55 && energy <= 65;
+  const isEnergetic = energy > 65;
 
-  // Playful (tone > 60) + Calm (energy < 40) + Warm (warmth > 60)
-  if (tone > 60 && energy < 40 && warmth > 60) return "friendlyGuide";
+  // Minimal (< 35), Neutral (35-65), Rich (> 65)
+  const isMinimal = density < 35;
+  const isBitMinimal = density >= 35 && density < 45;
+  const isNeutralDensity = density >= 45 && density <= 55;
+  const isBitRich = density > 55 && density <= 65;
+  const isRich = density > 65;
 
-  // Serious (tone < 40) + Energetic (energy > 60) + Cold (warmth < 40)
-  if (tone < 40 && energy > 60 && warmth < 40) return "techDisruptor";
+  // Cold (< 35), Neutral (35-65), Warm (> 65)
+  const isCold = warmth < 35;
+  const isNeutralWarmth = warmth >= 35 && warmth <= 65;
+  const isWarm = warmth > 65;
 
-  // Minimal (density < 40) + Premium (premium > 60) + Cold (warmth < 50)
-  if (density < 40 && premium > 60 && warmth < 50) return "elegantMinimalist";
+  // Accessible (< 35), Neutral (35-65), Premium (> 65)
+  const isAccessible = premium < 35;
+  const isBitAccessible = premium >= 35 && premium < 45;
+  const isNeutralPremium = premium >= 45 && premium <= 55;
+  const isBitPremium = premium > 55 && premium <= 65;
+  const isPremium = premium > 65;
 
-  // Rich (density > 60) + Warm (warmth > 60) + Premium (premium > 60)
-  if (density > 60 && warmth > 60 && premium > 60) return "luxuryStoryteller";
+  // === PLAYFUL COMBINATIONS ===
+  if (isPlayful && isEnergetic && isWarm) return "boldExplorer";
+  if (isPlayful && isEnergetic && isCold) return "neonFuturist";
+  if (isPlayful && isEnergetic && isNeutralWarmth) return "digitalNative";
+  if (isPlayful && isCalm && isWarm) return "friendlyGuide";
+  if (isPlayful && isCalm && isCold) return "calmCreative";
+  if (isPlayful && isCalm && isNeutralWarmth) return "everydayJoy";
+  if (isPlayful && isNeutralEnergy && isWarm) return "humanFirst";
+  if (isPlayful && isNeutralEnergy && isCold) return "vibrantMinimal";
+  if (isPlayful && isAccessible) return "accessibleFun";
+  if (isPlayful && isPremium && isRich) return "richStoryteller";
+  if (isPlayful && isMinimal) return "playfulPop";
 
-  // Playful (tone > 60) + Accessible (premium < 40) + Rich (density > 60)
-  if (tone > 60 && premium < 40 && density > 60) return "creativeRebel";
+  // === SERIOUS COMBINATIONS ===
+  if (isSerious && isCalm && isCold) return "refinedAuthority";
+  if (isSerious && isCalm && isWarm) return "classicTrust";
+  if (isSerious && isCalm && isNeutralWarmth) return "quietConfidence";
+  if (isSerious && isEnergetic && isCold) return "techDisruptor";
+  if (isSerious && isEnergetic && isWarm) return "dynamicLeader";
+  if (isSerious && isEnergetic && isNeutralWarmth) return "energeticPro";
+  if (isSerious && isPremium && isMinimal) return "elegantMinimalist";
+  if (isSerious && isPremium && isRich) return "luxuryStoryteller";
+  if (isSerious && isPremium && isWarm) return "organicLuxury";
+  if (isSerious && isAccessible) return "corporateChic";
+  if (isSerious && isNeutralEnergy && isCold) return "industrialChic";
+  if (isSerious && isNeutralEnergy && isWarm) return "trustedAdvisor";
 
-  // Serious (tone < 40) + Warm (warmth > 50) + Premium (premium > 50)
-  if (tone < 40 && warmth > 50 && premium > 50) return "trustedAdvisor";
+  // === BIT PLAYFUL COMBINATIONS ===
+  if (isBitPlayful && isEnergetic) return "urbanEdge";
+  if (isBitPlayful && isCalm && isWarm) return "warmCraftsman";
+  if (isBitPlayful && isPremium) return "softLuxury";
+  if (isBitPlayful && isAccessible) return "boldAccessible";
+  if (isBitPlayful && isMinimal) return "cleanSlate";
 
-  // Default to versatile classic for balanced/neutral values
+  // === BIT SERIOUS COMBINATIONS ===
+  if (isBitSerious && isPremium && isMinimal) return "premiumTech";
+  if (isBitSerious && isPremium && isWarm) return "modernHeritage";
+  if (isBitSerious && isEnergetic) return "techWarm";
+  if (isBitSerious && isCalm) return "seriousCraft";
+  if (isBitSerious && isAccessible) return "warmProfessional";
+
+  // === MINIMAL COMBINATIONS ===
+  if (isMinimal && isPremium && isCold) return "elegantMinimalist";
+  if (isMinimal && isPremium && isWarm) return "softLuxury";
+  if (isMinimal && isAccessible) return "cleanSlate";
+  if (isMinimal && isEnergetic) return "boldMinimalist";
+  if (isMinimal && isCalm) return "zenMaster";
+
+  // === RICH COMBINATIONS ===
+  if (isRich && isPremium && isWarm) return "luxuryStoryteller";
+  if (isRich && isPremium && isCold) return "modernHeritage";
+  if (isRich && isAccessible && isPlayful) return "creativeRebel";
+  if (isRich && isEnergetic) return "richStoryteller";
+
+  // === PREMIUM COMBINATIONS ===
+  if (isPremium && isCold && isEnergetic) return "premiumTech";
+  if (isPremium && isWarm && isCalm) return "organicLuxury";
+  if (isPremium && isNeutralWarmth) return "quietConfidence";
+
+  // === ACCESSIBLE COMBINATIONS ===
+  if (isAccessible && isWarm && isEnergetic) return "boldAccessible";
+  if (isAccessible && isCold) return "digitalNative";
+  if (isAccessible && isNeutralWarmth) return "humanFirst";
+
+  // === CALM COMBINATIONS ===
+  if (isCalm && isWarm && isMinimal) return "zenMaster";
+  if (isCalm && isCold && isMinimal) return "quietConfidence";
+  if (isCalm && isNeutralWarmth) return "calmCreative";
+
+  // === ENERGETIC COMBINATIONS ===
+  if (isEnergetic && isWarm) return "energeticPro";
+  if (isEnergetic && isCold) return "urbanEdge";
+  if (isEnergetic && isNeutralWarmth) return "dynamicLeader";
+
+  // === NEUTRAL / DEFAULT ===
+  if (isNeutralTone && isNeutralEnergy && isNeutralDensity) return "versatileClassic";
+  if (isNeutralTone && isNeutralPremium) return "versatileClassic";
+
+  // Fallback based on strongest signal
+  if (isPremium) return "quietConfidence";
+  if (isAccessible) return "humanFirst";
+  if (isPlayful) return "playfulPop";
+  if (isSerious) return "trustedAdvisor";
+  if (isEnergetic) return "dynamicLeader";
+  if (isCalm) return "zenMaster";
+  if (isMinimal) return "cleanSlate";
+  if (isRich) return "richStoryteller";
+  if (isWarm) return "warmCraftsman";
+  if (isCold) return "industrialChic";
+
   return "versatileClassic";
 }
 
@@ -797,56 +1047,56 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full max-w-2xl"
+      className="w-full max-w-3xl"
     >
       {/* Scrolling Image Columns - all showing cohesive archetype images */}
       <div className="relative">
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-4 justify-center">
           {images.map((imageSrc, index) => (
             <motion.div
-              key={`column-${index}`}
+              key={`column-${archetypeKey}-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
               className="relative flex-shrink-0"
-              style={{ width: "110px" }}
+              style={{ width: "140px" }}
             >
               {/* Scrolling container */}
               <div
-                className="relative h-[320px] overflow-hidden rounded-xl"
+                className="relative h-[420px] overflow-hidden rounded-2xl"
                 style={{
                   background: "rgba(15, 15, 15, 0.4)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
                 }}
               >
                 {/* Top fade gradient */}
                 <div
-                  className="absolute top-0 left-0 right-0 h-20 z-10 pointer-events-none"
+                  className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
                   style={{
-                    background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.6) 50%, transparent 100%)",
+                    background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
                   }}
                 />
 
                 {/* Bottom fade gradient */}
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none"
+                  className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
                   style={{
-                    background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.6) 50%, transparent 100%)",
+                    background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
                   }}
                 />
 
                 {/* Scrolling images */}
                 <motion.div
                   key={`scroll-${archetypeKey}-${index}`}
-                  className="flex flex-col gap-2 p-2"
+                  className="flex flex-col gap-3 p-2"
                   animate={{
                     y: index % 2 === 0
-                      ? [0, -(images.length * (150 + 8))]
-                      : [-(images.length * (150 + 8)), 0],
+                      ? [0, -(images.length * (200 + 12))]
+                      : [-(images.length * (200 + 12)), 0],
                   }}
                   transition={{
                     y: {
-                      duration: 18 + index * 3,
+                      duration: 20 + index * 4,
                       repeat: Infinity,
                       ease: "linear",
                     },
@@ -854,24 +1104,22 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                 >
                   {/* Repeat all archetype images for seamless scrolling */}
                   {[...images, ...images, ...images].map((src, imgIndex) => (
-                    <AnimatePresence mode="wait" key={`${archetypeKey}-${imgIndex}`}>
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="relative flex-shrink-0 rounded-lg overflow-hidden"
-                        style={{
-                          width: "100%",
-                          height: "150px",
-                        }}
-                      >
-                        <img
-                          src={src}
-                          alt={`${archetype.name} design ${imgIndex + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </motion.div>
-                    </AnimatePresence>
+                    <motion.div
+                      key={`${archetypeKey}-${index}-${imgIndex}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-lg"
+                      style={{
+                        width: "100%",
+                        height: "200px",
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt={`${archetype.name} design ${imgIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
                   ))}
                 </motion.div>
               </div>
@@ -881,7 +1129,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
 
         {/* Left fade */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+          className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10"
           style={{
             background: "linear-gradient(90deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
           }}
@@ -889,7 +1137,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
 
         {/* Right fade */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+          className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10"
           style={{
             background: "linear-gradient(270deg, rgba(10, 10, 10, 1) 0%, transparent 100%)",
           }}
