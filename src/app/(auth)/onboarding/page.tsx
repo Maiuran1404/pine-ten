@@ -186,7 +186,7 @@ const staggerContainer = {
       delayChildren: 0.1,
     },
   },
-};
+} as const;
 
 const staggerItem = {
   hidden: { opacity: 0, y: 20 },
@@ -194,7 +194,7 @@ const staggerItem = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 24,
     },
@@ -207,7 +207,7 @@ const fadeInUp = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 24,
     },
@@ -279,9 +279,9 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
       initial="hidden"
       animate="show"
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-2xl"
+      className="w-full"
     >
-      <motion.div variants={staggerItem} className="text-center mb-12">
+      <motion.div variants={staggerItem} className="text-left mb-12">
         <h1
           className="text-4xl sm:text-5xl text-white mb-4"
           style={{ fontFamily: "'Times New Roman', serif" }}
@@ -388,7 +388,7 @@ function BrandInputStep({
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={staggerItem} className="text-center mb-8">
+        <motion.div variants={staggerItem} className="text-left mb-8">
           <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
             Show us your brand
           </h1>
@@ -496,7 +496,7 @@ function BrandInputStep({
           )}
 
           {/* Microcopy */}
-          <motion.p variants={staggerItem} className="text-white/30 text-xs text-center">
+          <motion.p variants={staggerItem} className="text-white/30 text-xs text-left">
             We&apos;ll use this to understand how your brand looks, sounds, and feels.
           </motion.p>
 
@@ -529,9 +529,9 @@ function BrandInputStep({
 function ScanningStep({ progress, scanningTexts }: { progress: number; scanningTexts: string[] }) {
   return (
     <GlowingCard>
-      <div className="text-center">
+      <div className="text-left">
         <motion.div
-          className="w-20 h-20 rounded-full mx-auto mb-8 flex items-center justify-center"
+          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
           style={{ background: "rgba(139, 181, 139, 0.2)" }}
           animate={{
             scale: [1, 1.1, 1],
@@ -568,7 +568,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
             return (
               <motion.div
                 key={text}
-                className={`flex items-center justify-center gap-3 text-sm transition-all ${
+                className={`flex items-center gap-3 text-sm transition-all ${
                   isComplete ? "text-[#8bb58b]" : isActive ? "text-white" : "text-white/30"
                 }`}
                 initial={{ opacity: 0, y: 10 }}
@@ -646,76 +646,81 @@ function BrandDNARevealStep({
   ];
 
   return (
-    <GlowingCard className="max-w-2xl">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          This is your Brand DNA
-        </h1>
-        <p className="text-white/50 text-sm">
-          It&apos;s how Crafted keeps everything you make consistent.
-        </p>
-      </div>
+    <GlowingCard>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            This is your Brand DNA
+          </h1>
+          <p className="text-white/50 text-sm">
+            It&apos;s how Crafted keeps everything you make consistent.
+          </p>
+        </motion.div>
 
-      <div className="space-y-4 mb-8">
-        {dnaCards.map((card) => (
-          <motion.div
-            key={card.id}
-            className="p-4 rounded-xl flex items-start gap-4"
-            style={{ background: "rgba(40, 40, 40, 0.6)" }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center flex-shrink-0">
-              <card.icon className="w-5 h-5 text-[#8bb58b]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-white font-medium text-sm">{card.title}</h3>
-              <p className="text-white/40 text-xs mt-0.5">{card.description}</p>
-              {card.colors ? (
-                <div className="flex gap-2 mt-2">
-                  {card.colors.map((color, i) => (
-                    <div
-                      key={i}
-                      className="w-6 h-6 rounded-lg"
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-white/70 text-sm mt-1">{card.value}</p>
-              )}
-            </div>
-            <button
-              onClick={() => onAdjust(card.id)}
-              className="text-white/40 hover:text-white text-xs underline underline-offset-2 transition-colors"
+        <div className="space-y-4 mb-8">
+          {dnaCards.map((card, index) => (
+            <motion.div
+              key={card.id}
+              className="p-4 rounded-xl flex items-start gap-4"
+              style={{ background: "rgba(40, 40, 40, 0.6)" }}
+              variants={staggerItem}
             >
-              Adjust
-            </button>
-          </motion.div>
-        ))}
-      </div>
+              <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center flex-shrink-0">
+                <card.icon className="w-5 h-5 text-[#8bb58b]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-medium text-sm">{card.title}</h3>
+                <p className="text-white/40 text-xs mt-0.5">{card.description}</p>
+                {card.colors ? (
+                  <div className="flex gap-2 mt-2">
+                    {card.colors.map((color, i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-6 rounded-lg"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/70 text-sm mt-1">{card.value}</p>
+                )}
+              </div>
+              <button
+                onClick={() => onAdjust(card.id)}
+                className="text-white/40 hover:text-white text-xs underline underline-offset-2 transition-colors"
+              >
+                Adjust
+              </button>
+            </motion.div>
+          ))}
+        </div>
 
-      <p className="text-white/30 text-xs text-center mb-6">
-        Nothing here is locked. This evolves as you do.
-      </p>
+        <motion.p variants={staggerItem} className="text-white/30 text-xs text-left mb-6">
+          Nothing here is locked. This evolves as you do.
+        </motion.p>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Looks right
-          <Check className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Looks right
+            <Check className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -757,57 +762,63 @@ function FineTuneStep({
 
   return (
     <GlowingCard>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          Let&apos;s dial it in
-        </h1>
-        <p className="text-white/50 text-sm">
-          These small tweaks help us match your taste.
-        </p>
-      </div>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            Let&apos;s dial it in
+          </h1>
+          <p className="text-white/50 text-sm">
+            These small tweaks help us match your taste.
+          </p>
+        </motion.div>
 
-      <div className="space-y-8 mb-8">
-        {sliders.map((slider) => (
-          <div key={slider.id} className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <div>
-                <span className="text-white">{slider.leftLabel}</span>
-                <span className="text-white/40 ml-2">{slider.leftDesc}</span>
+        <div className="space-y-8 mb-8">
+          {sliders.map((slider) => (
+            <motion.div key={slider.id} variants={staggerItem} className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <div>
+                  <span className="text-white">{slider.leftLabel}</span>
+                  <span className="text-white/40 ml-2">{slider.leftDesc}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-white/40 mr-2">{slider.rightDesc}</span>
+                  <span className="text-white">{slider.rightLabel}</span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-white/40 mr-2">{slider.rightDesc}</span>
-                <span className="text-white">{slider.rightLabel}</span>
-              </div>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={brandData[slider.id as keyof BrandData] as number}
-              onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-              className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
-            />
-          </div>
-        ))}
-      </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={brandData[slider.id as keyof BrandData] as number}
+                onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
+                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+            </motion.div>
+          ))}
+        </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Save & continue
-          <ArrowRight className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Save & continue
+            <ArrowRight className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -842,79 +853,86 @@ function CreativeFocusStep({
 
   return (
     <GlowingCard>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          What do you want to improve first?
-        </h1>
-        <p className="text-white/50 text-sm">
-          Pick what matters right now. You can always add more later.
-        </p>
-      </div>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            What do you want to improve first?
+          </h1>
+          <p className="text-white/50 text-sm">
+            Pick what matters right now. You can always add more later.
+          </p>
+        </motion.div>
 
-      <div className="space-y-3 mb-6">
-        {CREATIVE_FOCUS_OPTIONS.map((option) => {
-          const isSelected = brandData.creativeFocus.includes(option.id);
-          const Icon = iconMap[option.id] || Zap;
+        <div className="space-y-3 mb-6">
+          {CREATIVE_FOCUS_OPTIONS.map((option) => {
+            const isSelected = brandData.creativeFocus.includes(option.id);
+            const Icon = iconMap[option.id] || Zap;
 
-          return (
-            <button
-              key={option.id}
-              onClick={() => toggleFocus(option.id)}
-              className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
-                isSelected ? "bg-[#8bb58b]/20 border-[#8bb58b]/50" : "hover:bg-white/5"
-              }`}
-              style={{
-                border: isSelected ? "1px solid rgba(139, 181, 139, 0.5)" : "1px solid rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  isSelected ? "bg-[#8bb58b] text-black" : "bg-white/10 text-white/50"
+            return (
+              <motion.button
+                key={option.id}
+                variants={staggerItem}
+                onClick={() => toggleFocus(option.id)}
+                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
+                  isSelected ? "bg-[#8bb58b]/20 border-[#8bb58b]/50" : "hover:bg-white/5"
                 }`}
+                style={{
+                  border: isSelected ? "1px solid rgba(139, 181, 139, 0.5)" : "1px solid rgba(255, 255, 255, 0.1)",
+                }}
               >
-                <Icon className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-white font-medium text-sm">{option.title}</h3>
-                <p className="text-white/40 text-xs">{option.description}</p>
-              </div>
-              {isSelected && <Check className="w-5 h-5 text-[#8bb58b]" />}
-            </button>
-          );
-        })}
-      </div>
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isSelected ? "bg-[#8bb58b] text-black" : "bg-white/10 text-white/50"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white font-medium text-sm">{option.title}</h3>
+                  <p className="text-white/40 text-xs">{option.description}</p>
+                </div>
+                {isSelected && <Check className="w-5 h-5 text-[#8bb58b]" />}
+              </motion.button>
+            );
+          })}
+        </div>
 
-      <p className="text-white/30 text-xs text-center mb-6">
-        Most teams start with 1–3.
-      </p>
+        <motion.p variants={staggerItem} className="text-white/30 text-xs text-left mb-6">
+          Most teams start with 1–3.
+        </motion.p>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          disabled={isLoading}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <LoadingSpinner size="sm" />
-              Saving...
-            </span>
-          ) : (
-            <>
-              Continue
-              <ArrowRight className="w-4 h-4 inline ml-2" />
-            </>
-          )}
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            disabled={isLoading}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" />
+                Saving...
+              </span>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 inline ml-2" />
+              </>
+            )}
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -928,25 +946,32 @@ function BrandReadyStep({
 }) {
   return (
     <GlowingCard>
-      <div className="text-center">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="text-left"
+      >
         <motion.div
-          className="w-20 h-20 rounded-full mx-auto mb-8 flex items-center justify-center bg-[#8bb58b]"
+          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center bg-[#8bb58b]"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200 }}
+          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         >
           <Check className="w-10 h-10 text-black" />
         </motion.div>
 
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          You&apos;re all set
-        </h1>
-        <p className="text-white/50 text-sm mb-8">
-          Crafted now understands your brand — and will protect it as you create.
-        </p>
+        <motion.div variants={staggerItem}>
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            You&apos;re all set
+          </h1>
+          <p className="text-white/50 text-sm mb-8">
+            Crafted now understands your brand — and will protect it as you create.
+          </p>
+        </motion.div>
 
         <div className="space-y-4 mb-8 text-left">
-          <div className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
+          <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
             <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-[#8bb58b]" />
             </div>
@@ -954,10 +979,10 @@ function BrandReadyStep({
               <h3 className="text-white font-medium text-sm">Your Brand DNA</h3>
               <p className="text-white/40 text-xs">{brandData.name} • {brandData.industry || "Ready to go"}</p>
             </div>
-          </div>
+          </motion.div>
 
           {brandData.creativeFocus.length > 0 && (
-            <div className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
+            <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
               <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
                 <Target className="w-5 h-5 text-[#8bb58b]" />
               </div>
@@ -967,10 +992,10 @@ function BrandReadyStep({
                   {brandData.creativeFocus.length} area{brandData.creativeFocus.length > 1 ? "s" : ""} selected
                 </p>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          <div className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
+          <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
             <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
               <Zap className="w-5 h-5 text-[#8bb58b]" />
             </div>
@@ -978,18 +1003,19 @@ function BrandReadyStep({
               <h3 className="text-white font-medium text-sm">Available Credits</h3>
               <p className="text-white/40 text-xs">Ready to create your first asset</p>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <button
+        <motion.button
+          variants={staggerItem}
           onClick={onComplete}
           className="w-full py-4 rounded-xl font-medium text-sm"
           style={{ background: "#f5f5f0", color: "#1a1a1a" }}
         >
           Create your first asset
           <ArrowRight className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1020,105 +1046,111 @@ function BrandIntentStep({
   };
 
   return (
-    <GlowingCard className="max-w-xl">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          First, tell us what you&apos;re building
-        </h1>
-        <p className="text-white/50 text-sm">
-          This helps us design a brand that actually fits.
-        </p>
-      </div>
+    <GlowingCard>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            First, tell us what you&apos;re building
+          </h1>
+          <p className="text-white/50 text-sm">
+            This helps us design a brand that actually fits.
+          </p>
+        </motion.div>
 
-      <div className="space-y-6">
-        {/* Product Type */}
-        <div className="space-y-3">
-          <label className="text-white/70 text-sm font-medium">What are you building?</label>
-          <div className="grid grid-cols-3 gap-2">
-            {PRODUCT_TYPES.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setBrandData({ ...brandData, productType: type.id })}
-                className={`p-3 rounded-xl text-left transition-all ${
-                  brandData.productType === type.id
-                    ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
-                    : "hover:bg-white/5"
-                }`}
-                style={{
-                  border: brandData.productType === type.id
-                    ? "1px solid rgba(139, 181, 139, 0.5)"
-                    : "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-              >
-                <span className="text-white text-sm font-medium">{type.label}</span>
-              </button>
-            ))}
-          </div>
+        <div className="space-y-6">
+          {/* Product Type */}
+          <motion.div variants={staggerItem} className="space-y-3">
+            <label className="text-white/70 text-sm font-medium">What are you building?</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRODUCT_TYPES.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setBrandData({ ...brandData, productType: type.id })}
+                  className={`p-3 rounded-xl text-left transition-all ${
+                    brandData.productType === type.id
+                      ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
+                      : "hover:bg-white/5"
+                  }`}
+                  style={{
+                    border: brandData.productType === type.id
+                      ? "1px solid rgba(139, 181, 139, 0.5)"
+                      : "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
+                  <span className="text-white text-sm font-medium">{type.label}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Company Name */}
+          <motion.div variants={staggerItem} className="space-y-2">
+            <label className="text-white/70 text-sm font-medium">What&apos;s the product or company called?</label>
+            <div
+              className="relative rounded-xl overflow-hidden"
+              style={{
+                background: "rgba(40, 40, 40, 0.6)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <input
+                type="text"
+                value={brandData.name}
+                onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
+                className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none"
+                placeholder="If undecided, that's okay"
+              />
+            </div>
+          </motion.div>
+
+          {/* Target Audience */}
+          <motion.div variants={staggerItem} className="space-y-3">
+            <label className="text-white/70 text-sm font-medium">Who is this for?</label>
+            <div className="flex flex-wrap gap-2">
+              {TARGET_AUDIENCES.map((audience) => (
+                <button
+                  key={audience.id}
+                  onClick={() => toggleAudience(audience.id)}
+                  className={`px-4 py-2 rounded-full text-sm transition-all ${
+                    selectedAudiences.includes(audience.id)
+                      ? "bg-[#8bb58b]/20 text-[#8bb58b] border-[#8bb58b]/50"
+                      : "text-white/70 hover:bg-white/5"
+                  }`}
+                  style={{
+                    border: selectedAudiences.includes(audience.id)
+                      ? "1px solid rgba(139, 181, 139, 0.5)"
+                      : "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
+                  {audience.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
         </div>
 
-        {/* Company Name */}
-        <div className="space-y-2">
-          <label className="text-white/70 text-sm font-medium">What&apos;s the product or company called?</label>
-          <div
-            className="relative rounded-xl overflow-hidden"
-            style={{
-              background: "rgba(40, 40, 40, 0.6)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-            }}
+        <motion.div variants={staggerItem} className="flex gap-3 mt-8">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
-            <input
-              type="text"
-              value={brandData.name}
-              onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
-              className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none"
-              placeholder="If undecided, that's okay"
-            />
-          </div>
-        </div>
-
-        {/* Target Audience */}
-        <div className="space-y-3">
-          <label className="text-white/70 text-sm font-medium">Who is this for?</label>
-          <div className="flex flex-wrap gap-2">
-            {TARGET_AUDIENCES.map((audience) => (
-              <button
-                key={audience.id}
-                onClick={() => toggleAudience(audience.id)}
-                className={`px-4 py-2 rounded-full text-sm transition-all ${
-                  selectedAudiences.includes(audience.id)
-                    ? "bg-[#8bb58b]/20 text-[#8bb58b] border-[#8bb58b]/50"
-                    : "text-white/70 hover:bg-white/5"
-                }`}
-                style={{
-                  border: selectedAudiences.includes(audience.id)
-                    ? "1px solid rgba(139, 181, 139, 0.5)"
-                    : "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-              >
-                {audience.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 mt-8">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Continue
-          <ArrowRight className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Continue
+            <ArrowRight className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1172,56 +1204,62 @@ function BrandPersonalityStep({
   ];
 
   return (
-    <GlowingCard className="max-w-xl">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          How should your brand feel?
-        </h1>
-        <p className="text-white/50 text-sm">
-          There are no right answers. Trust your instinct.
-        </p>
-      </div>
+    <GlowingCard>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            How should your brand feel?
+          </h1>
+          <p className="text-white/50 text-sm">
+            There are no right answers. Trust your instinct.
+          </p>
+        </motion.div>
 
-      <div className="space-y-6">
-        {sliders.map((slider) => {
-          const value = brandData[slider.id as keyof BrandData] as number;
-          return (
-            <div key={slider.id} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-white/70 text-sm">{slider.left}</span>
-                <span className="text-[#8bb58b] text-xs">{getSliderLabel(value, slider.id)}</span>
-                <span className="text-white/70 text-sm">{slider.right}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={value}
-                onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
-              />
-            </div>
-          );
-        })}
-      </div>
+        <div className="space-y-6">
+          {sliders.map((slider) => {
+            const value = brandData[slider.id as keyof BrandData] as number;
+            return (
+              <motion.div key={slider.id} variants={staggerItem} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/70 text-sm">{slider.left}</span>
+                  <span className="text-[#8bb58b] text-xs">{getSliderLabel(value, slider.id)}</span>
+                  <span className="text-white/70 text-sm">{slider.right}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={value}
+                  onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
+                />
+              </motion.div>
+            );
+          })}
+        </div>
 
-      <div className="flex gap-3 mt-8">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Continue
-          <ArrowRight className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex gap-3 mt-8">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Continue
+            <ArrowRight className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1350,69 +1388,75 @@ function VisualInstinctStep({
   };
 
   return (
-    <GlowingCard className="max-w-2xl">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          What feels right to you?
-        </h1>
-        <p className="text-white/50 text-sm">
-          Don&apos;t overthink it. Go with your first reaction.
-        </p>
-      </div>
+    <GlowingCard>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            What feels right to you?
+          </h1>
+          <p className="text-white/50 text-sm">
+            Don&apos;t overthink it. Go with your first reaction.
+          </p>
+        </motion.div>
 
-      {/* Progress */}
-      <div className="flex gap-1 mb-8 justify-center">
-        {VISUAL_COMPARISON_PAIRS.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 w-8 rounded-full transition-all ${
-              i < currentPairIndex ? "bg-[#8bb58b]" : i === currentPairIndex ? "bg-white/50" : "bg-white/10"
-            }`}
-          />
-        ))}
-      </div>
+        {/* Progress */}
+        <motion.div variants={staggerItem} className="flex gap-1 mb-8">
+          {VISUAL_COMPARISON_PAIRS.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 w-8 rounded-full transition-all ${
+                i < currentPairIndex ? "bg-[#8bb58b]" : i === currentPairIndex ? "bg-white/50" : "bg-white/10"
+              }`}
+            />
+          ))}
+        </motion.div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <button
-          onClick={() => handleChoice("A")}
-          className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
-          style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
-        >
-          {getVisualComponent(currentPair.optionA.visual)}
-          <div className="mt-4 text-left">
-            <h3 className="text-white font-medium">{currentPair.optionA.label}</h3>
-            <p className="text-white/40 text-sm">{currentPair.optionA.description}</p>
-          </div>
-        </button>
+        <motion.div variants={staggerItem} className="grid grid-cols-2 gap-6">
+          <button
+            onClick={() => handleChoice("A")}
+            className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
+            style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
+          >
+            {getVisualComponent(currentPair.optionA.visual)}
+            <div className="mt-4 text-left">
+              <h3 className="text-white font-medium">{currentPair.optionA.label}</h3>
+              <p className="text-white/40 text-sm">{currentPair.optionA.description}</p>
+            </div>
+          </button>
 
-        <button
-          onClick={() => handleChoice("B")}
-          className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
-          style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
-        >
-          {getVisualComponent(currentPair.optionB.visual)}
-          <div className="mt-4 text-left">
-            <h3 className="text-white font-medium">{currentPair.optionB.label}</h3>
-            <p className="text-white/40 text-sm">{currentPair.optionB.description}</p>
-          </div>
-        </button>
-      </div>
+          <button
+            onClick={() => handleChoice("B")}
+            className="group p-4 rounded-2xl transition-all hover:scale-[1.02] hover:bg-white/5"
+            style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
+          >
+            {getVisualComponent(currentPair.optionB.visual)}
+            <div className="mt-4 text-left">
+              <h3 className="text-white font-medium">{currentPair.optionB.label}</h3>
+              <p className="text-white/40 text-sm">{currentPair.optionB.description}</p>
+            </div>
+          </button>
+        </motion.div>
 
-      <div className="flex justify-between mt-8">
-        <button
-          onClick={onBack}
-          className="py-3 px-6 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="py-3 px-6 rounded-xl font-medium text-sm text-white/50 hover:text-white transition-colors"
-        >
-          Skip this step
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex justify-between mt-8">
+          <button
+            onClick={onBack}
+            className="py-3 px-6 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="py-3 px-6 rounded-xl font-medium text-sm text-white/50 hover:text-white transition-colors"
+          >
+            Skip this step
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1438,72 +1482,80 @@ function ToneOfVoiceStep({
 
   return (
     <GlowingCard>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          One last thing
-        </h1>
-        <p className="text-white/50 text-sm">
-          What should people immediately understand when they see your brand?
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div
-          className="relative rounded-xl overflow-hidden"
-          style={{
-            background: "rgba(40, 40, 40, 0.6)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <textarea
-            value={brandData.brandPositioning || ""}
-            onChange={(e) => setBrandData({ ...brandData, brandPositioning: e.target.value })}
-            className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none min-h-[120px] resize-none"
-            placeholder="Describe your brand in a sentence..."
-          />
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-white/40 text-xs">Examples:</p>
-          <div className="flex flex-wrap gap-2">
-            {examples.map((example) => (
-              <button
-                key={example}
-                onClick={() => setBrandData({ ...brandData, brandPositioning: example })}
-                className="px-3 py-1.5 rounded-full text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 mt-8">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          className="flex-1 py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Generate Directions
-          <Sparkles className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
-
-      <button
-        onClick={onContinue}
-        className="w-full mt-3 py-2 text-white/40 hover:text-white/70 text-sm transition-colors"
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
       >
-        Skip this step
-      </button>
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            One last thing
+          </h1>
+          <p className="text-white/50 text-sm">
+            What should people immediately understand when they see your brand?
+          </p>
+        </motion.div>
+
+        <div className="space-y-6">
+          <motion.div
+            variants={staggerItem}
+            className="relative rounded-xl overflow-hidden"
+            style={{
+              background: "rgba(40, 40, 40, 0.6)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <textarea
+              value={brandData.brandPositioning || ""}
+              onChange={(e) => setBrandData({ ...brandData, brandPositioning: e.target.value })}
+              className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none min-h-[120px] resize-none"
+              placeholder="Describe your brand in a sentence..."
+            />
+          </motion.div>
+
+          <motion.div variants={staggerItem} className="space-y-2">
+            <p className="text-white/40 text-xs">Examples:</p>
+            <div className="flex flex-wrap gap-2">
+              {examples.map((example) => (
+                <button
+                  key={example}
+                  onClick={() => setBrandData({ ...brandData, brandPositioning: example })}
+                  className="px-3 py-1.5 rounded-full text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                  style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.div variants={staggerItem} className="flex gap-3 mt-8">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            className="flex-1 py-4 rounded-xl font-medium text-sm"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Generate Directions
+            <Sparkles className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+
+        <motion.button
+          variants={staggerItem}
+          onClick={onContinue}
+          className="w-full mt-3 py-2 text-white/40 hover:text-white/70 text-sm transition-colors"
+        >
+          Skip this step
+        </motion.button>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1528,9 +1580,9 @@ function AIDirectionsStep({
   if (isGenerating) {
     return (
       <GlowingCard>
-        <div className="text-center">
+        <div className="text-left">
           <motion.div
-            className="w-20 h-20 rounded-full mx-auto mb-8 flex items-center justify-center"
+            className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
             style={{ background: "rgba(139, 181, 139, 0.2)" }}
             animate={{
               scale: [1, 1.1, 1],
@@ -1553,82 +1605,89 @@ function AIDirectionsStep({
   }
 
   return (
-    <GlowingCard className="max-w-3xl">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-          Here are a few directions we&apos;d explore
-        </h1>
-        <p className="text-white/50 text-sm">
-          These aren&apos;t final — they&apos;re starting points.
-        </p>
-      </div>
+    <GlowingCard>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem} className="text-left mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
+            Here are a few directions we&apos;d explore
+          </h1>
+          <p className="text-white/50 text-sm">
+            These aren&apos;t final — they&apos;re starting points.
+          </p>
+        </motion.div>
 
-      <div className="space-y-4 mb-8">
-        {directions.map((direction) => (
-          <button
-            key={direction.id}
-            onClick={() => onSelectDirection(direction)}
-            className={`w-full p-6 rounded-2xl text-left transition-all ${
-              selectedDirection?.id === direction.id
-                ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
-                : "hover:bg-white/5"
-            }`}
-            style={{
-              border: selectedDirection?.id === direction.id
-                ? "1px solid rgba(139, 181, 139, 0.5)"
-                : "1px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex gap-1 flex-shrink-0">
-                {direction.colorPalette.slice(0, 4).map((color, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-lg"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-medium mb-1">{direction.name}</h3>
-                <p className="text-white/50 text-sm mb-3">{direction.narrative}</p>
-                <div className="flex flex-wrap gap-2">
-                  {direction.moodKeywords.map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="px-2 py-0.5 rounded-full text-xs text-white/40 bg-white/5"
-                    >
-                      {keyword}
-                    </span>
+        <div className="space-y-4 mb-8">
+          {directions.map((direction) => (
+            <motion.button
+              key={direction.id}
+              variants={staggerItem}
+              onClick={() => onSelectDirection(direction)}
+              className={`w-full p-6 rounded-2xl text-left transition-all ${
+                selectedDirection?.id === direction.id
+                  ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
+                  : "hover:bg-white/5"
+              }`}
+              style={{
+                border: selectedDirection?.id === direction.id
+                  ? "1px solid rgba(139, 181, 139, 0.5)"
+                  : "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex gap-1 flex-shrink-0">
+                  {direction.colorPalette.slice(0, 4).map((color, i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-lg"
+                      style={{ backgroundColor: color }}
+                    />
                   ))}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-medium mb-1">{direction.name}</h3>
+                  <p className="text-white/50 text-sm mb-3">{direction.narrative}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {direction.moodKeywords.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="px-2 py-0.5 rounded-full text-xs text-white/40 bg-white/5"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {selectedDirection?.id === direction.id && (
+                  <Check className="w-5 h-5 text-[#8bb58b] flex-shrink-0" />
+                )}
               </div>
-              {selectedDirection?.id === direction.id && (
-                <Check className="w-5 h-5 text-[#8bb58b] flex-shrink-0" />
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
+            </motion.button>
+          ))}
+        </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 inline mr-2" />
-          Back
-        </button>
-        <button
-          onClick={onContinue}
-          disabled={!selectedDirection}
-          className="flex-1 py-4 rounded-xl font-medium text-sm disabled:opacity-40"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-        >
-          Use this direction
-          <ArrowRight className="w-4 h-4 inline ml-2" />
-        </button>
-      </div>
+        <motion.div variants={staggerItem} className="flex gap-3">
+          <button
+            onClick={onBack}
+            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 inline mr-2" />
+            Back
+          </button>
+          <button
+            onClick={onContinue}
+            disabled={!selectedDirection}
+            className="flex-1 py-4 rounded-xl font-medium text-sm disabled:opacity-40"
+            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          >
+            Use this direction
+            <ArrowRight className="w-4 h-4 inline ml-2" />
+          </button>
+        </motion.div>
+      </motion.div>
     </GlowingCard>
   );
 }
@@ -1885,10 +1944,10 @@ function OnboardingContent() {
       <ParticleDots />
       <Header userEmail={userEmail} />
 
-      <main className="relative z-10 w-full px-4 py-24 ml-[10%]">
+      <main className="relative z-10 px-4 py-24 ml-[10%] max-w-2xl">
         {/* Progress indicator for non-welcome steps */}
         {step !== "welcome" && step !== "scanning" && step !== "brand-ready" && step !== "complete" && (
-          <div className="max-w-xl mb-6">
+          <div className="mb-6">
             <ProgressIndicator steps={currentSteps} currentStep={step} />
           </div>
         )}
