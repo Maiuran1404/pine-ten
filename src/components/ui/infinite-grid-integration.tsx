@@ -53,11 +53,25 @@ interface InfiniteGridProps {
   highlightOpacity?: number;
   /** Whether to show decorative blur spheres */
   showBlurSpheres?: boolean;
+  /** Custom colors for the blur spheres (array of 3 hex colors) */
+  sphereColors?: [string, string, string];
   /** Additional className for the container */
   className?: string;
   /** Children to render on top of the grid */
   children?: React.ReactNode;
 }
+
+/**
+ * Helper to convert hex color to rgba with opacity
+ */
+const hexToRgba = (hex: string, opacity: number): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return `rgba(154, 164, 140, ${opacity})`; // fallback to sage green
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
 
 /**
  * The Infinite Grid Component
@@ -71,9 +85,13 @@ export const InfiniteGrid = ({
   backgroundOpacity = 0.05,
   highlightOpacity = 0.4,
   showBlurSpheres = true,
+  sphereColors,
   className,
   children,
 }: InfiniteGridProps) => {
+  // Default colors: Sahara, Green sage, Sea light
+  const defaultColors: [string, string, string] = ["#EDBA8D", "#9AA48C", "#D2ECF2"];
+  const colors = sphereColors || defaultColors;
   const containerRef = useRef<HTMLDivElement>(null);
   const patternId = useId();
   const bgPatternId = `bg-${patternId}`;
@@ -140,31 +158,25 @@ export const InfiniteGrid = ({
         <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} size={gridSize} patternId={hlPatternId} />
       </motion.div>
 
-      {/* Decorative Animated Gradient Spheres */}
-      {/*
-        Three gradient palettes - all spheres change color together:
-        - Sahara: #EDBA8D (peach)
-        - Green: #9AA48C (sage)
-        - Sea: #D2ECF2 (light blue)
-      */}
+      {/* Decorative Animated Gradient Spheres - subtle and muted */}
       {showBlurSpheres && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Top right sphere */}
           <motion.div
-            className="absolute right-[-5%] top-[-5%] w-[35%] h-[35%] rounded-full blur-[120px]"
+            className="absolute right-[-5%] top-[-5%] w-[35%] h-[35%] rounded-full blur-[150px]"
             animate={{
               x: [0, 30, -20, 0],
               y: [0, -30, 20, 0],
               scale: [1, 1.05, 0.98, 1],
               backgroundColor: [
-                "rgba(237, 186, 141, 0.7)",  // Sahara peach
-                "rgba(154, 164, 140, 0.7)",  // Green sage
-                "rgba(210, 236, 242, 0.7)",  // Sea light
-                "rgba(237, 186, 141, 0.7)",  // Back to Sahara
+                hexToRgba(colors[0], 0.35),
+                hexToRgba(colors[1], 0.35),
+                hexToRgba(colors[2], 0.35),
+                hexToRgba(colors[0], 0.35),
               ],
             }}
             transition={{
-              duration: 20,
+              duration: 25,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -172,20 +184,20 @@ export const InfiniteGrid = ({
 
           {/* Left sphere */}
           <motion.div
-            className="absolute left-[-8%] top-[10%] w-[30%] h-[30%] rounded-full blur-[120px]"
+            className="absolute left-[-8%] top-[10%] w-[30%] h-[30%] rounded-full blur-[150px]"
             animate={{
               x: [0, 25, -15, 0],
               y: [0, 20, -25, 0],
               scale: [1, 0.98, 1.03, 1],
               backgroundColor: [
-                "rgba(237, 186, 141, 0.6)",  // Sahara peach
-                "rgba(154, 164, 140, 0.6)",  // Green sage
-                "rgba(210, 236, 242, 0.6)",  // Sea light
-                "rgba(237, 186, 141, 0.6)",  // Back to Sahara
+                hexToRgba(colors[0], 0.3),
+                hexToRgba(colors[1], 0.3),
+                hexToRgba(colors[2], 0.3),
+                hexToRgba(colors[0], 0.3),
               ],
             }}
             transition={{
-              duration: 20,
+              duration: 25,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -193,20 +205,20 @@ export const InfiniteGrid = ({
 
           {/* Bottom left sphere */}
           <motion.div
-            className="absolute left-[-5%] bottom-[-5%] w-[32%] h-[32%] rounded-full blur-[120px]"
+            className="absolute left-[-5%] bottom-[-5%] w-[32%] h-[32%] rounded-full blur-[150px]"
             animate={{
               x: [0, 20, -25, 0],
               y: [0, -20, 25, 0],
               scale: [1, 1.02, 0.97, 1],
               backgroundColor: [
-                "rgba(237, 186, 141, 0.65)", // Sahara peach
-                "rgba(154, 164, 140, 0.65)", // Green sage
-                "rgba(210, 236, 242, 0.65)", // Sea light
-                "rgba(237, 186, 141, 0.65)", // Back to Sahara
+                hexToRgba(colors[0], 0.32),
+                hexToRgba(colors[1], 0.32),
+                hexToRgba(colors[2], 0.32),
+                hexToRgba(colors[0], 0.32),
               ],
             }}
             transition={{
-              duration: 20,
+              duration: 25,
               repeat: Infinity,
               ease: "easeInOut",
             }}

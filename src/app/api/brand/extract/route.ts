@@ -88,16 +88,42 @@ function extractSocialLinks(links: string[] | undefined): BrandExtraction["socia
 function createDefaultBrandData(
   metadata: { title?: string; description?: string; ogImage?: string; favicon?: string } | undefined,
   branding: {
-    colors?: { primary?: string; secondary?: string; accent?: string; background?: string; textPrimary?: string; [key: string]: string | undefined };
+    colors?: { primary?: string; secondary?: string; accent?: string; background?: string; textPrimary?: string; link?: string; [key: string]: string | undefined };
     typography?: { fontFamilies?: { primary?: string } };
     fonts?: Array<{ family: string }>;
     images?: { logo?: string | null; favicon?: string | null };
   } | undefined,
   links: string[] | undefined
 ): BrandExtraction {
+
+  // Get all hex colors from branding, excluding background and text colors
   const brandColors: string[] = branding?.colors
     ? Object.values(branding.colors).filter((c): c is string => typeof c === "string" && c.startsWith("#"))
     : [];
+
+  // Get primary color
+  const primaryColor = branding?.colors?.primary || "#6366f1";
+
+  // Firecrawl returns: primary, accent, background, textPrimary, link
+  // We need: primaryColor, secondaryColor, accentColor
+  // Map: primary -> primaryColor, accent -> secondaryColor, link -> accentColor (if different)
+
+  // Secondary color: use Firecrawl's accent as our secondary (it's typically the 2nd brand color)
+  const secondaryColor: string | null = branding?.colors?.accent || branding?.colors?.secondary || null;
+
+  // Accent color: use link if it's different from what we've already used, otherwise null
+  let accentColor: string | null = null;
+  if (branding?.colors?.link && branding?.colors?.link !== primaryColor && branding?.colors?.link !== secondaryColor) {
+    accentColor = branding.colors.link;
+  }
+
+  // If we still don't have an accent but have textPrimary that's not too dark/light, consider it
+  if (!accentColor && branding?.colors?.textPrimary && branding.colors.textPrimary !== primaryColor && branding.colors.textPrimary !== secondaryColor) {
+    // Only use textPrimary as accent if it's not pure black/white
+    if (branding.colors.textPrimary !== "#000000" && branding.colors.textPrimary !== "#ffffff") {
+      accentColor = branding.colors.textPrimary;
+    }
+  }
 
   return {
     name: metadata?.title?.split("|")[0]?.split("-")[0]?.split("–")[0]?.trim() || "Unknown Company",
@@ -106,9 +132,9 @@ function createDefaultBrandData(
     industry: null,
     logoUrl: branding?.images?.logo || metadata?.ogImage || null,
     faviconUrl: branding?.images?.favicon || metadata?.favicon || null,
-    primaryColor: branding?.colors?.primary || "#6366f1",
-    secondaryColor: branding?.colors?.secondary || null,
-    accentColor: branding?.colors?.accent || null,
+    primaryColor,
+    secondaryColor,
+    accentColor,
     backgroundColor: branding?.colors?.background || "#ffffff",
     textColor: branding?.colors?.textPrimary || "#1f2937",
     brandColors,
@@ -184,6 +210,7 @@ export async function POST(request: NextRequest) {
           accent?: string;
           background?: string;
           textPrimary?: string;
+          link?: string;
           [key: string]: string | undefined;
         };
         typography?: {
@@ -196,11 +223,24 @@ export async function POST(request: NextRequest) {
           logo?: string | null;
           favicon?: string | null;
         };
+        confidence?: {
+          colors?: number;
+          buttons?: number;
+          overall?: number;
+        };
       };
     };
 
-    // If Firecrawl returned good branding data, we can use it directly without Claude
-    const hasBrandingColors = branding?.colors && Object.keys(branding.colors).length > 2;
+    // Check if Firecrawl has good branding data with reasonable confidence
+    // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
+    const colorConfidence = branding?.confidence?.colors ?? 0;
+    const hasColorsWithConfidence = branding?.colors &&
+      Object.keys(branding.colors).length > 2 &&
+      colorConfidence >= 0.3;
+
+    // If confidence is too low, use Claude for better color extraction
+    const hasBrandingColors = hasColorsWithConfidence;
+    console.log(`Brand extraction for ${normalizedUrl}: Using ${hasBrandingColors ? "Firecrawl" : "Claude"} (color confidence: ${colorConfidence})`);
 
     if (hasBrandingColors) {
       // Firecrawl's branding is sufficient, use it directly
@@ -356,16 +396,20 @@ Return ONLY a valid JSON object with this exact structure:
       brandData = createDefaultBrandData(metadata, branding, links);
     }
 
-    // Enhance with Firecrawl branding data if available
-    if (branding?.colors) {
+    // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
+    // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
+    const firecrawlColorConfidence = branding?.confidence?.colors ?? 0;
+    if (branding?.colors && firecrawlColorConfidence >= 0.1) {
+      // Only use Firecrawl colors as fallback when Claude returned defaults
       if (branding.colors.primary && brandData.primaryColor === "#6366f1") {
         brandData.primaryColor = branding.colors.primary;
       }
-      if (branding.colors.secondary && !brandData.secondaryColor) {
-        brandData.secondaryColor = branding.colors.secondary;
+      // Use Firecrawl accent as secondary since they don't have a 'secondary' key
+      if (branding.colors.accent && !brandData.secondaryColor) {
+        brandData.secondaryColor = branding.colors.accent;
       }
-      if (branding.colors.accent && !brandData.accentColor) {
-        brandData.accentColor = branding.colors.accent;
+      if (branding.colors.link && !brandData.accentColor && branding.colors.link !== brandData.secondaryColor) {
+        brandData.accentColor = branding.colors.link;
       }
       if (branding.colors.background && brandData.backgroundColor === "#ffffff") {
         brandData.backgroundColor = branding.colors.background;

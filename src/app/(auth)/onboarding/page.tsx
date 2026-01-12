@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -10,7 +10,6 @@ import {
   Check,
   ChevronDown,
   Globe,
-  Upload,
   ArrowRight,
   ArrowLeft,
   Sparkles,
@@ -25,9 +24,6 @@ import {
   BookOpen,
   Zap,
   Building2,
-  Users,
-  X,
-  FileText,
   Image as ImageIcon,
 } from "lucide-react";
 import {
@@ -44,88 +40,7 @@ import {
   ROUTE_A_STEPS,
   ROUTE_B_STEPS,
 } from "@/components/onboarding/types";
-
-// ============================================================================
-// BACKGROUND EFFECTS
-// ============================================================================
-
-function FloatingBlobs() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div
-        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full opacity-30 blur-3xl"
-        style={{
-          background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
-        style={{
-          background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)",
-          transform: "rotate(-20deg)",
-        }}
-      />
-      <div
-        className="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
-        style={{
-          background: "radial-gradient(ellipse, #8bb58b 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute bottom-20 left-10 w-[200px] h-[200px] rounded-full opacity-30 blur-2xl"
-        style={{
-          background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
-        style={{
-          background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)",
-        }}
-      />
-    </div>
-  );
-}
-
-function ParticleDots() {
-  const particles = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      opacity: Math.random() * 0.5 + 0.1,
-      delay: Math.random() * 2,
-    }));
-  }, []);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
-            opacity: p.opacity,
-          }}
-          animate={{
-            opacity: [p.opacity, p.opacity * 0.3, p.opacity],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: p.delay,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
 // ============================================================================
 // HEADER
@@ -138,10 +53,10 @@ function Header({ userEmail }: { userEmail?: string }) {
     <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 sm:p-8">
       <div className="flex items-center gap-3">
         <div className="grid grid-cols-2 gap-1">
-          <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-          <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-          <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-          <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
+          <div className="w-2 h-2 rounded-full bg-[#EDBA8D]" />
+          <div className="w-2 h-2 rounded-full bg-[#9AA48C]" />
+          <div className="w-2 h-2 rounded-full bg-[#D2ECF2]" />
+          <div className="w-2 h-2 rounded-full bg-[#EDBA8D]" />
         </div>
         <span className="text-white/90 text-sm font-medium tracking-wide uppercase">
           Crafted
@@ -218,7 +133,7 @@ const fadeInUp = {
 // UI COMPONENTS
 // ============================================================================
 
-function GlowingCard({ children, glowColor = "#8bb58b", className = "" }: { children: React.ReactNode; glowColor?: string; className?: string }) {
+function GlowingCard({ children, glowColor = "#9AA48C", className = "" }: { children: React.ReactNode; glowColor?: string; className?: string }) {
   return (
     <div className={`relative ${className}`}>
       <div
@@ -251,7 +166,7 @@ function ProgressIndicator({ steps, currentStep }: { steps: readonly { id: strin
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
               index < currentIndex
-                ? "bg-[#8bb58b] text-black"
+                ? "bg-[#9AA48C] text-black"
                 : index === currentIndex
                 ? "bg-white/20 text-white border border-white/40"
                 : "bg-white/5 text-white/40"
@@ -260,7 +175,7 @@ function ProgressIndicator({ steps, currentStep }: { steps: readonly { id: strin
             {index < currentIndex ? <Check className="w-4 h-4" /> : index + 1}
           </div>
           {index < steps.length - 1 && (
-            <div className={`w-8 h-0.5 ${index < currentIndex ? "bg-[#8bb58b]" : "bg-white/10"}`} />
+            <div className={`w-8 h-0.5 ${index < currentIndex ? "bg-[#9AA48C]" : "bg-white/10"}`} />
           )}
         </div>
       ))}
@@ -305,14 +220,14 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-[#8bb58b]/20 flex items-center justify-center mb-6">
-            <Building2 className="w-7 h-7 text-[#8bb58b]" />
+          <div className="w-14 h-14 rounded-2xl bg-[#9AA48C]/20 flex items-center justify-center mb-6">
+            <Building2 className="w-7 h-7 text-[#9AA48C]" />
           </div>
           <h2 className="text-xl text-white font-medium mb-2">I already have a brand</h2>
           <p className="text-white/50 text-sm mb-6">
             Share your website or upload assets — we&apos;ll extract your brand DNA automatically.
           </p>
-          <div className="flex items-center gap-2 text-[#8bb58b] text-sm font-medium">
+          <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
             <span>Get started</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
@@ -329,18 +244,18 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-[#8bb58b]/20 flex items-center justify-center mb-6">
-            <Sparkles className="w-7 h-7 text-[#8bb58b]" />
+          <div className="w-14 h-14 rounded-2xl bg-[#9AA48C]/20 flex items-center justify-center mb-6">
+            <Sparkles className="w-7 h-7 text-[#9AA48C]" />
           </div>
           <h2 className="text-xl text-white font-medium mb-2">I want to create a brand</h2>
           <p className="text-white/50 text-sm mb-6">
             Answer a few questions and we&apos;ll generate brand directions for you to choose from.
           </p>
-          <div className="flex items-center gap-2 text-[#8bb58b] text-sm font-medium">
+          <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
             <span>Start building</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
-          <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-[#8bb58b]/20 text-[#8bb58b] text-xs">
+          <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-xs">
             ~5 min
           </div>
         </motion.button>
@@ -356,31 +271,14 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
 function BrandInputStep({
   websiteUrl,
   setWebsiteUrl,
-  uploadedFiles,
-  onFileUpload,
-  onRemoveFile,
   onContinue,
   isLoading,
 }: {
   websiteUrl: string;
   setWebsiteUrl: (url: string) => void;
-  uploadedFiles: { name: string; url: string; type: string }[];
-  onFileUpload: (files: FileList) => void;
-  onRemoveFile: (index: number) => void;
   onContinue: () => void;
   isLoading: boolean;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files.length > 0) {
-      onFileUpload(e.dataTransfer.files);
-    }
-  };
-
   return (
     <GlowingCard>
       <motion.div
@@ -422,92 +320,14 @@ function BrandInputStep({
             </div>
           </motion.div>
 
-          {/* Divider */}
-          <motion.div variants={staggerItem} className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-[#0f0f0f] px-4 text-white/40">Or upload anything you already have</span>
-            </div>
-          </motion.div>
-
-          {/* File Upload Area */}
-          <motion.div
-            variants={staggerItem}
-            className={`relative rounded-xl p-6 text-center transition-all cursor-pointer ${
-              isDragging ? "border-[#8bb58b] bg-[#8bb58b]/10" : ""
-            }`}
-            style={{
-              background: isDragging ? "rgba(139, 181, 139, 0.1)" : "rgba(40, 40, 40, 0.4)",
-              border: isDragging ? "2px dashed rgba(139, 181, 139, 0.6)" : "2px dashed rgba(255, 255, 255, 0.1)",
-            }}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.pptx,.ppt,.ai,.eps,.svg"
-              className="hidden"
-              onChange={(e) => e.target.files && onFileUpload(e.target.files)}
-            />
-            <Upload className="w-8 h-8 text-white/30 mx-auto mb-3" />
-            <p className="text-white/50 text-sm">
-              Logos, decks, designs, brand docs
-            </p>
-            <p className="text-white/30 text-xs mt-1">
-              Drop files here or click to browse
-            </p>
-          </motion.div>
-
-          {/* Uploaded Files */}
-          {uploadedFiles.length > 0 && (
-            <motion.div variants={staggerItem} className="space-y-2">
-              {uploadedFiles.map((file, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-3 rounded-lg"
-                  style={{ background: "rgba(40, 40, 40, 0.6)" }}
-                >
-                  <div className="flex items-center gap-3">
-                    {file.type.startsWith("image/") ? (
-                      <ImageIcon className="w-4 h-4 text-white/50" />
-                    ) : (
-                      <FileText className="w-4 h-4 text-white/50" />
-                    )}
-                    <span className="text-white/70 text-sm truncate max-w-[200px]">{file.name}</span>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemoveFile(index); }}
-                    className="text-white/30 hover:text-white/70 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-
-          {/* Microcopy */}
-          <motion.p variants={staggerItem} className="text-white/30 text-xs text-left">
-            We&apos;ll use this to understand how your brand looks, sounds, and feels.
-          </motion.p>
-
           {/* Continue Button */}
           <motion.button
             variants={staggerItem}
             onClick={onContinue}
-            disabled={!websiteUrl.trim() && uploadedFiles.length === 0}
+            disabled={!websiteUrl.trim()}
             className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: (websiteUrl.trim() || uploadedFiles.length > 0) ? "#f5f5f0" : "rgba(245, 245, 240, 0.3)",
+              background: websiteUrl.trim() ? "#f5f5f0" : "rgba(245, 245, 240, 0.3)",
               color: "#1a1a1a",
             }}
           >
@@ -539,7 +359,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Sparkles className="w-10 h-10 text-[#8bb58b]" />
+          <Sparkles className="w-10 h-10 text-[#9AA48C]" />
         </motion.div>
 
         <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
@@ -552,7 +372,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
         {/* Progress bar */}
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-8">
           <motion.div
-            className="h-full bg-[#8bb58b] rounded-full"
+            className="h-full bg-[#9AA48C] rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -569,7 +389,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
               <motion.div
                 key={text}
                 className={`flex items-center gap-3 text-sm transition-all ${
-                  isComplete ? "text-[#8bb58b]" : isActive ? "text-white" : "text-white/30"
+                  isComplete ? "text-[#9AA48C]" : isActive ? "text-white" : "text-white/30"
                 }`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -607,121 +427,183 @@ function BrandDNARevealStep({
   onContinue: () => void;
   onBack: () => void;
 }) {
-  const dnaCards = [
-    {
-      id: "snapshot",
-      icon: Building2,
-      title: "Brand Snapshot",
-      description: brandData.description || "Your brand at a glance",
-      value: brandData.industry || "Your industry",
-    },
-    {
-      id: "colors",
-      icon: Palette,
-      title: "Colors",
-      description: "The palette your brand uses",
-      colors: [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean),
-    },
-    {
-      id: "typography",
-      icon: Type,
-      title: "Typography Direction",
-      description: "How text should feel and flow",
-      value: brandData.primaryFont || "Modern, clean typography",
-    },
-    {
-      id: "visual",
-      icon: Eye,
-      title: "Visual Style",
-      description: "Your design aesthetic",
-      value: brandData.feelBoldMinimal < 50 ? "Bold & Impactful" : "Minimal & Clean",
-    },
-    {
-      id: "tone",
-      icon: MessageSquare,
-      title: "Tone of Voice",
-      description: "How your brand speaks",
-      value: brandData.feelPlayfulSerious < 50 ? "Friendly & Approachable" : "Professional & Trustworthy",
-    },
-  ];
+  const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean);
+  const primaryColor = colors[0] || "#3b82f6";
+  const secondaryColor = colors[1] || "#8b5cf6";
+  const visualStyle = brandData.feelBoldMinimal < 50 ? "Bold & Impactful" : "Minimal & Clean";
+  const toneStyle = brandData.feelPlayfulSerious < 50 ? "Friendly & Approachable" : "Professional & Trustworthy";
+  const fontFamily = brandData.primaryFont?.toLowerCase().includes("serif") ? "'Times New Roman', serif" : "'Satoshi', sans-serif";
 
   return (
-    <GlowingCard>
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+      className="w-full max-w-md"
+    >
+      {/* Glassmorphic Card */}
       <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
+        variants={staggerItem}
+        className="relative rounded-2xl overflow-hidden"
+        style={{
+          background: "rgba(20, 20, 20, 0.7)",
+          backdropFilter: "blur(40px)",
+          WebkitBackdropFilter: "blur(40px)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
+        }}
       >
-        <motion.div variants={staggerItem} className="text-left mb-8">
-          <h1 className="text-2xl sm:text-3xl text-white mb-3" style={{ fontFamily: "'Times New Roman', serif" }}>
-            This is your Brand DNA
-          </h1>
-          <p className="text-white/50 text-sm">
-            It&apos;s how Crafted keeps everything you make consistent.
-          </p>
-        </motion.div>
+        {/* Subtle brand color glow at top */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-20 rounded-full opacity-15 blur-[60px]"
+          style={{ background: `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})` }}
+        />
 
-        <div className="space-y-4 mb-8">
-          {dnaCards.map((card, index) => (
-            <motion.div
-              key={card.id}
-              className="p-4 rounded-xl flex items-start gap-4"
-              style={{ background: "rgba(40, 40, 40, 0.6)" }}
-              variants={staggerItem}
+        <div className="relative p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            {/* Logo/Initial */}
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.08)"
+              }}
             >
-              <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center flex-shrink-0">
-                <card.icon className="w-5 h-5 text-[#8bb58b]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-medium text-sm">{card.title}</h3>
-                <p className="text-white/40 text-xs mt-0.5">{card.description}</p>
-                {card.colors ? (
-                  <div className="flex gap-2 mt-2">
-                    {card.colors.map((color, i) => (
-                      <div
-                        key={i}
-                        className="w-6 h-6 rounded-lg"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-white/70 text-sm mt-1">{card.value}</p>
-                )}
-              </div>
-              <button
-                onClick={() => onAdjust(card.id)}
-                className="text-white/40 hover:text-white text-xs underline underline-offset-2 transition-colors"
-              >
-                Adjust
-              </button>
-            </motion.div>
-          ))}
+              <span className="text-white/90 font-semibold text-base" style={{ fontFamily }}>
+                {brandData.name?.[0]?.toUpperCase() || "B"}
+              </span>
+            </div>
+
+            {/* Edit button */}
+            <button
+              onClick={() => onAdjust("all")}
+              className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.08)"
+              }}
+            >
+              Edit
+            </button>
+          </div>
+
+          {/* Brand Name & Description */}
+          <div className="mb-6">
+            <p className="text-white/30 text-xs mb-1" style={{ fontFamily: "'Times New Roman', serif", fontStyle: "italic" }}>
+              This is
+            </p>
+            <h1 className="text-2xl text-white font-medium mb-2" style={{ fontFamily }}>
+              {brandData.name || "Your Brand"}
+            </h1>
+            <p className="text-white/40 text-sm leading-relaxed">
+              {brandData.description?.slice(0, 100) || brandData.industry || "Your brand story will appear here."}
+              {brandData.description && brandData.description.length > 100 ? "..." : ""}
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-white/[0.06] mb-5" />
+
+          {/* Color Palette */}
+          <div className="flex items-center gap-3 mb-5">
+            {colors.length > 0 ? colors.map((color, i) => (
+              <motion.div
+                key={i}
+                className="w-8 h-8 rounded-lg"
+                style={{
+                  backgroundColor: color,
+                  boxShadow: `0 2px 12px ${color}30`
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+              />
+            )) : (
+              <>
+                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
+                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
+                <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
+              </>
+            )}
+            <span className="text-white/20 text-xs ml-1">Colors</span>
+          </div>
+
+          {/* Typography & Style Row */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div
+              className="p-3 rounded-xl"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.05)"
+              }}
+            >
+              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Type</span>
+              <p className="text-white text-sm font-medium" style={{ fontFamily }}>
+                {brandData.primaryFont || "Sans-serif"}
+              </p>
+            </div>
+
+            <div
+              className="p-3 rounded-xl"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.05)"
+              }}
+            >
+              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Style</span>
+              <p className="text-white text-sm font-medium">
+                {visualStyle}
+              </p>
+            </div>
+          </div>
+
+          {/* Tone */}
+          <div
+            className="p-3 rounded-xl mb-6"
+            style={{
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.05)"
+            }}
+          >
+            <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Tone</span>
+            <p className="text-white text-sm font-medium">
+              {toneStyle}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={onBack}
+              className="flex-1 py-3 rounded-xl font-medium text-xs text-white/40 hover:text-white/70 transition-colors"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)"
+              }}
+            >
+              <ArrowLeft className="w-3 h-3 inline mr-1" />
+              Back
+            </button>
+            <button
+              onClick={onContinue}
+              className="flex-1 py-3 rounded-xl font-medium text-xs transition-all hover:bg-white text-black/80"
+              style={{
+                background: "rgba(245, 245, 240, 0.9)",
+              }}
+            >
+              Looks right
+              <Check className="w-3 h-3 inline ml-1" />
+            </button>
+          </div>
         </div>
-
-        <motion.p variants={staggerItem} className="text-white/30 text-xs text-left mb-6">
-          Nothing here is locked. This evolves as you do.
-        </motion.p>
-
-        <motion.div variants={staggerItem} className="flex gap-3">
-          <button
-            onClick={onBack}
-            className="flex-1 py-4 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 inline mr-2" />
-            Back
-          </button>
-          <button
-            onClick={onContinue}
-            className="flex-1 py-4 rounded-xl font-medium text-sm"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
-          >
-            Looks right
-            <Check className="w-4 h-4 inline ml-2" />
-          </button>
-        </motion.div>
       </motion.div>
-    </GlowingCard>
+
+      {/* Footer text */}
+      <p className="text-white/20 text-[10px] text-center mt-4">
+        Nothing here is locked. Your brand evolves as you do.
+      </p>
+    </motion.div>
   );
 }
 
@@ -795,7 +677,7 @@ function FineTuneStep({
                 max="100"
                 value={brandData[slider.id as keyof BrandData] as number}
                 onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
+                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
               />
             </motion.div>
           ))}
@@ -878,7 +760,7 @@ function CreativeFocusStep({
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
                 className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
-                  isSelected ? "bg-[#8bb58b]/20 border-[#8bb58b]/50" : "hover:bg-white/5"
+                  isSelected ? "bg-[#9AA48C]/20 border-[#9AA48C]/50" : "hover:bg-white/5"
                 }`}
                 style={{
                   border: isSelected ? "1px solid rgba(139, 181, 139, 0.5)" : "1px solid rgba(255, 255, 255, 0.1)",
@@ -886,7 +768,7 @@ function CreativeFocusStep({
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    isSelected ? "bg-[#8bb58b] text-black" : "bg-white/10 text-white/50"
+                    isSelected ? "bg-[#9AA48C] text-black" : "bg-white/10 text-white/50"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -895,7 +777,7 @@ function CreativeFocusStep({
                   <h3 className="text-white font-medium text-sm">{option.title}</h3>
                   <p className="text-white/40 text-xs">{option.description}</p>
                 </div>
-                {isSelected && <Check className="w-5 h-5 text-[#8bb58b]" />}
+                {isSelected && <Check className="w-5 h-5 text-[#9AA48C]" />}
               </motion.button>
             );
           })}
@@ -953,7 +835,7 @@ function BrandReadyStep({
         className="text-left"
       >
         <motion.div
-          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center bg-[#8bb58b]"
+          className="w-20 h-20 rounded-full mb-8 flex items-center justify-center bg-[#9AA48C]"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
@@ -972,8 +854,8 @@ function BrandReadyStep({
 
         <div className="space-y-4 mb-8 text-left">
           <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-            <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-[#8bb58b]" />
+            <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-[#9AA48C]" />
             </div>
             <div>
               <h3 className="text-white font-medium text-sm">Your Brand DNA</h3>
@@ -983,8 +865,8 @@ function BrandReadyStep({
 
           {brandData.creativeFocus.length > 0 && (
             <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-              <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
-                <Target className="w-5 h-5 text-[#8bb58b]" />
+              <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
+                <Target className="w-5 h-5 text-[#9AA48C]" />
               </div>
               <div>
                 <h3 className="text-white font-medium text-sm">Focus Areas</h3>
@@ -996,8 +878,8 @@ function BrandReadyStep({
           )}
 
           <motion.div variants={staggerItem} className="p-4 rounded-xl flex items-center gap-4" style={{ background: "rgba(40, 40, 40, 0.6)" }}>
-            <div className="w-10 h-10 rounded-lg bg-[#8bb58b]/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-[#8bb58b]" />
+            <div className="w-10 h-10 rounded-lg bg-[#9AA48C]/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-[#9AA48C]" />
             </div>
             <div>
               <h3 className="text-white font-medium text-sm">Available Credits</h3>
@@ -1072,7 +954,7 @@ function BrandIntentStep({
                   onClick={() => setBrandData({ ...brandData, productType: type.id })}
                   className={`p-3 rounded-xl text-left transition-all ${
                     brandData.productType === type.id
-                      ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
+                      ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
                       : "hover:bg-white/5"
                   }`}
                   style={{
@@ -1117,7 +999,7 @@ function BrandIntentStep({
                   onClick={() => toggleAudience(audience.id)}
                   className={`px-4 py-2 rounded-full text-sm transition-all ${
                     selectedAudiences.includes(audience.id)
-                      ? "bg-[#8bb58b]/20 text-[#8bb58b] border-[#8bb58b]/50"
+                      ? "bg-[#9AA48C]/20 text-[#9AA48C] border-[#9AA48C]/50"
                       : "text-white/70 hover:bg-white/5"
                   }`}
                   style={{
@@ -1226,7 +1108,7 @@ function BrandPersonalityStep({
               <motion.div key={slider.id} variants={staggerItem} className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-white/70 text-sm">{slider.left}</span>
-                  <span className="text-[#8bb58b] text-xs">{getSliderLabel(value, slider.id)}</span>
+                  <span className="text-[#9AA48C] text-xs">{getSliderLabel(value, slider.id)}</span>
                   <span className="text-white/70 text-sm">{slider.right}</span>
                 </div>
                 <input
@@ -1235,7 +1117,7 @@ function BrandPersonalityStep({
                   max="100"
                   value={value}
                   onChange={(e) => setBrandData({ ...brandData, [slider.id]: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#8bb58b] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
+                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-[#9AA48C] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
                 />
               </motion.div>
             );
@@ -1321,7 +1203,7 @@ function VisualInstinctStep({
         );
       case "visual":
         return (
-          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-[#8bb58b] to-[#4a7c4a] flex items-center justify-center">
+          <div className="w-full h-32 rounded-xl bg-gradient-to-br from-[#9AA48C] to-[#7A8575] flex items-center justify-center">
             <ImageIcon className="w-12 h-12 text-white/80" />
           </div>
         );
@@ -1409,7 +1291,7 @@ function VisualInstinctStep({
             <div
               key={i}
               className={`h-1 w-8 rounded-full transition-all ${
-                i < currentPairIndex ? "bg-[#8bb58b]" : i === currentPairIndex ? "bg-white/50" : "bg-white/10"
+                i < currentPairIndex ? "bg-[#9AA48C]" : i === currentPairIndex ? "bg-white/50" : "bg-white/10"
               }`}
             />
           ))}
@@ -1590,7 +1472,7 @@ function AIDirectionsStep({
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Sparkles className="w-10 h-10 text-[#8bb58b]" />
+            <Sparkles className="w-10 h-10 text-[#9AA48C]" />
           </motion.div>
 
           <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
@@ -1628,7 +1510,7 @@ function AIDirectionsStep({
               onClick={() => onSelectDirection(direction)}
               className={`w-full p-6 rounded-2xl text-left transition-all ${
                 selectedDirection?.id === direction.id
-                  ? "bg-[#8bb58b]/20 border-[#8bb58b]/50"
+                  ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
                   : "hover:bg-white/5"
               }`}
               style={{
@@ -1662,7 +1544,7 @@ function AIDirectionsStep({
                   </div>
                 </div>
                 {selectedDirection?.id === direction.id && (
-                  <Check className="w-5 h-5 text-[#8bb58b] flex-shrink-0" />
+                  <Check className="w-5 h-5 text-[#9AA48C] flex-shrink-0" />
                 )}
               </div>
             </motion.button>
@@ -1705,7 +1587,6 @@ function OnboardingContent() {
   const [step, setStep] = useState<OnboardingStep>("welcome");
   const [brandData, setBrandData] = useState<BrandData>(defaultBrandData);
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string; type: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [brandDirections, setBrandDirections] = useState<BrandDirection[]>([]);
@@ -1718,6 +1599,23 @@ function OnboardingContent() {
     "Noticing layout patterns",
     "Learning your visual style",
   ];
+
+  // Compute sphere colors based on brand data for steps after brand extraction
+  // Must be defined here before any early returns to follow Rules of Hooks
+  const brandColorSteps: OnboardingStep[] = ["brand-dna-reveal", "fine-tune", "creative-focus", "brand-ready"];
+  const sphereColors = useMemo((): [string, string, string] | undefined => {
+    if (brandColorSteps.includes(step)) {
+      const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean);
+      if (colors.length >= 2) {
+        return [
+          colors[0] || "#3b82f6",
+          colors[1] || colors[0] || "#8b5cf6",
+          colors[2] || colors[1] || colors[0] || "#f59e0b"
+        ] as [string, string, string];
+      }
+    }
+    return undefined;
+  }, [step, brandData.primaryColor, brandData.secondaryColor, brandData.accentColor]);
 
   // Handle redirects
   useEffect(() => {
@@ -1732,56 +1630,9 @@ function OnboardingContent() {
     }
   }, [session, isPending, router]);
 
-  // File upload handler
-  const handleFileUpload = async (files: FileList) => {
-    setIsLoading(true);
-    const newFiles: { name: string; url: string; type: string }[] = [];
-
-    for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "brand-assets");
-
-      try {
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          newFiles.push({
-            name: file.name,
-            url: result.data.file.fileUrl,
-            type: file.type,
-          });
-        }
-      } catch (error) {
-        console.error("Upload failed:", error);
-        toast.error(`Failed to upload ${file.name}`);
-      }
-    }
-
-    setUploadedFiles([...uploadedFiles, ...newFiles]);
-    setBrandData({
-      ...brandData,
-      brandAssets: [...brandData.brandAssets, ...newFiles.map((f) => f.url)],
-    });
-    setIsLoading(false);
-  };
-
-  const removeFile = (index: number) => {
-    const newFiles = uploadedFiles.filter((_, i) => i !== index);
-    setUploadedFiles(newFiles);
-    setBrandData({
-      ...brandData,
-      brandAssets: newFiles.map((f) => f.url),
-    });
-  };
-
   // Brand extraction
   const handleBrandExtraction = async () => {
-    if (!websiteUrl.trim() && uploadedFiles.length === 0) return;
+    if (!websiteUrl.trim()) return;
 
     setStep("scanning");
     setIsLoading(true);
@@ -1940,8 +1791,18 @@ function OnboardingContent() {
         backgroundColor: "#0a0a0a",
       }}
     >
-      <FloatingBlobs />
-      <ParticleDots />
+      {/* Infinite Grid Background - uses brand colors on brand-dna-reveal step */}
+      <InfiniteGrid
+        gridSize={50}
+        speedX={0.3}
+        speedY={0.3}
+        spotlightRadius={250}
+        backgroundOpacity={0.03}
+        highlightOpacity={0.15}
+        showBlurSpheres={true}
+        sphereColors={sphereColors}
+        className="!fixed inset-0"
+      />
       <Header userEmail={userEmail} />
 
       <main className="relative z-10 px-4 py-24 ml-[10%] max-w-2xl">
@@ -1966,9 +1827,6 @@ function OnboardingContent() {
               <BrandInputStep
                 websiteUrl={websiteUrl}
                 setWebsiteUrl={setWebsiteUrl}
-                uploadedFiles={uploadedFiles}
-                onFileUpload={handleFileUpload}
-                onRemoveFile={removeFile}
                 onContinue={handleBrandExtraction}
                 isLoading={isLoading}
               />
