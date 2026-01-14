@@ -327,6 +327,21 @@ export const deliverableStyleReferences = pgTable(
     // Rich metadata for AI enhancement
     semanticTags: jsonb("semantic_tags").$type<string[]>().default([]),
 
+    // Extended AI classification (similar to brand library buckets)
+    colorTemperature: text("color_temperature"), // warm, cool, neutral
+    energyLevel: text("energy_level"), // calm, balanced, energetic
+    densityLevel: text("density_level"), // minimal, balanced, rich
+    formalityLevel: text("formality_level"), // casual, balanced, formal
+    colorSamples: jsonb("color_samples").$type<string[]>().default([]), // hex colors
+
+    // Industry & audience targeting
+    industries: jsonb("industries").$type<string[]>().default([]), // tech, fashion, food, etc.
+    targetAudience: text("target_audience"), // b2b, b2c, enterprise, startup, consumer
+
+    // Visual element tags
+    visualElements: jsonb("visual_elements").$type<string[]>().default([]), // typography-heavy, photo-centric, etc.
+    moodKeywords: jsonb("mood_keywords").$type<string[]>().default([]), // professional, playful, elegant, etc.
+
     // Ordering
     featuredOrder: integer("featured_order").notNull().default(0),
     displayOrder: integer("display_order").notNull().default(0),

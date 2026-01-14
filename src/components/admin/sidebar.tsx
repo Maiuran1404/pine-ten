@@ -109,6 +109,11 @@ const navigationGroups: NavigationGroup[] = [
     label: "Tools",
     items: [
       {
+        name: "Chat Logs",
+        href: "/admin/chat-logs",
+        icon: MessageSquare,
+      },
+      {
         name: "Quick Design",
         href: "/admin/orshot-templates",
         icon: Wand2,
@@ -116,7 +121,7 @@ const navigationGroups: NavigationGroup[] = [
       {
         name: "Chat Setup",
         href: "/admin/chat-setup",
-        icon: MessageSquare,
+        icon: Cog,
       },
       {
         name: "Coupons",

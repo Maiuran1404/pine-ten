@@ -13,11 +13,28 @@ export interface DeliverableStyleClassification {
   subStyle: string | null;
   semanticTags: string[];
   confidence: number;
+
+  // Extended classification fields
+  colorTemperature?: "warm" | "cool" | "neutral";
+  energyLevel?: "calm" | "balanced" | "energetic";
+  densityLevel?: "minimal" | "balanced" | "rich";
+  formalityLevel?: "casual" | "balanced" | "formal";
+  colorSamples?: string[]; // hex colors
+
+  // Industry & audience targeting
+  industries?: string[];
+  targetAudience?: "b2b" | "b2c" | "enterprise" | "startup" | "consumer";
+
+  // Visual element tags
+  visualElements?: string[];
+  moodKeywords?: string[];
 }
 
-const CLASSIFICATION_PROMPT = `You are a design style expert. Analyze this design reference image and classify it for use as a style suggestion in design conversations.
+const CLASSIFICATION_PROMPT = `You are a design style expert. Analyze this design reference image and classify it comprehensively for use as a style suggestion in design conversations.
 
-First, identify what TYPE of deliverable this design is most suited for (choose ONE):
+## PRIMARY CLASSIFICATION
+
+**Deliverable Type** (choose ONE - what format is this design best suited for):
 - instagram_post: Square format social media post
 - instagram_story: Vertical story format
 - instagram_reel: Vertical video format cover
@@ -32,7 +49,7 @@ First, identify what TYPE of deliverable this design is most suited for (choose 
 - static_ad: General static advertisement
 - video_ad: Video advertisement frame
 
-Then, classify the STYLE AXIS (choose ONE that best describes the overall visual approach):
+**Style Axis** (choose ONE - the overall visual approach):
 - minimal: Clean, simple, lots of whitespace, sparse elements
 - bold: Strong contrasts, impactful visuals, large typography
 - editorial: Magazine-style, content-rich, grid-based layouts
@@ -42,21 +59,55 @@ Then, classify the STYLE AXIS (choose ONE that best describes the overall visual
 - organic: Natural, flowing, earthy, soft textures
 - tech: Modern, digital, futuristic, geometric
 
-Also provide:
-- A short descriptive name for this style (2-4 words)
-- A brief 1-sentence description
-- Optional sub-style (e.g., "dark-mode", "gradient", "3d-elements")
-- 3-6 semantic tags that describe the aesthetic (e.g., "gen-z", "luxury", "startup", "tech-forward", "minimalist")
+## VISUAL PERSONALITY (choose ONE for each)
+
+**Color Temperature**: warm (reds, oranges, yellows), cool (blues, greens, purples), neutral (grays, blacks, whites)
+**Energy Level**: calm (quiet, subdued), balanced (moderate), energetic (dynamic, vibrant)
+**Density Level**: minimal (sparse, whitespace), balanced (moderate), rich (dense, layered)
+**Formality Level**: casual (relaxed, friendly), balanced (versatile), formal (professional, corporate)
+
+## TARGETING
+
+**Industries** (select 1-3 that would use this style):
+tech, fashion, food, healthcare, finance, education, entertainment, sports, retail, luxury, real-estate, travel, beauty, fitness, automotive
+
+**Target Audience** (choose ONE):
+- b2b: Business-to-business
+- b2c: Business-to-consumer (general)
+- enterprise: Large corporations
+- startup: New/growing companies
+- consumer: Direct consumer brands
+
+## VISUAL ELEMENTS & MOOD
+
+**Visual Elements** (select all that apply): typography-heavy, photo-centric, illustration-based, gradient, 3d-elements, geometric, abstract, minimalist-icons, data-viz, texture-rich
+
+**Mood Keywords** (3-5 adjectives): e.g., professional, playful, elegant, bold, sophisticated, edgy, warm, clean, dynamic, luxurious
+
+## COLORS
+
+Extract 3-5 dominant hex colors from the image.
+
+## OUTPUT
 
 Respond in this exact JSON format (no markdown, no explanation):
 {
   "name": "Style Name",
-  "description": "Brief description of the visual style",
+  "description": "Brief 1-sentence description",
   "deliverableType": "instagram_post",
   "styleAxis": "minimal",
   "subStyle": "dark-mode" or null,
   "semanticTags": ["tag1", "tag2", "tag3"],
-  "confidence": 0.85
+  "confidence": 0.85,
+  "colorTemperature": "warm" | "cool" | "neutral",
+  "energyLevel": "calm" | "balanced" | "energetic",
+  "densityLevel": "minimal" | "balanced" | "rich",
+  "formalityLevel": "casual" | "balanced" | "formal",
+  "colorSamples": ["#hex1", "#hex2", "#hex3"],
+  "industries": ["tech", "startup"],
+  "targetAudience": "b2b" | "b2c" | "enterprise" | "startup" | "consumer",
+  "visualElements": ["typography-heavy", "gradient"],
+  "moodKeywords": ["professional", "modern", "clean"]
 }`;
 
 export async function classifyDeliverableStyle(
@@ -66,7 +117,7 @@ export async function classifyDeliverableStyle(
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
+      max_tokens: 2048, // Increased for comprehensive classification
       messages: [
         {
           role: "user",
@@ -119,6 +170,15 @@ export async function classifyDeliverableStyle(
       subStyle: null,
       semanticTags: [],
       confidence: 0,
+      colorTemperature: "neutral",
+      energyLevel: "balanced",
+      densityLevel: "balanced",
+      formalityLevel: "balanced",
+      colorSamples: [],
+      industries: [],
+      targetAudience: "b2c",
+      visualElements: [],
+      moodKeywords: [],
     };
   }
 }

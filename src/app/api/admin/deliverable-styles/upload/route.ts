@@ -51,6 +51,16 @@ export async function POST(request: NextRequest) {
           subStyle: string | null;
           semanticTags: string[];
           confidence: number;
+          // Extended fields
+          colorTemperature?: string;
+          energyLevel?: string;
+          densityLevel?: string;
+          formalityLevel?: string;
+          colorSamples?: string[];
+          industries?: string[];
+          targetAudience?: string;
+          visualElements?: string[];
+          moodKeywords?: string[];
         };
       };
       error?: string;
@@ -126,7 +136,7 @@ export async function POST(request: NextRequest) {
 
         const imageUrl = urlData.publicUrl;
 
-        // Insert into database
+        // Insert into database with all classification fields
         const [newStyle] = await db
           .insert(deliverableStyleReferences)
           .values({
@@ -137,6 +147,16 @@ export async function POST(request: NextRequest) {
             styleAxis: classification.styleAxis,
             subStyle: classification.subStyle,
             semanticTags: classification.semanticTags,
+            // Extended classification fields
+            colorTemperature: classification.colorTemperature,
+            energyLevel: classification.energyLevel,
+            densityLevel: classification.densityLevel,
+            formalityLevel: classification.formalityLevel,
+            colorSamples: classification.colorSamples || [],
+            industries: classification.industries || [],
+            targetAudience: classification.targetAudience,
+            visualElements: classification.visualElements || [],
+            moodKeywords: classification.moodKeywords || [],
             isActive: true,
           })
           .returning();
@@ -154,6 +174,16 @@ export async function POST(request: NextRequest) {
               subStyle: classification.subStyle,
               semanticTags: classification.semanticTags,
               confidence: classification.confidence,
+              // Extended fields
+              colorTemperature: classification.colorTemperature,
+              energyLevel: classification.energyLevel,
+              densityLevel: classification.densityLevel,
+              formalityLevel: classification.formalityLevel,
+              colorSamples: classification.colorSamples,
+              industries: classification.industries,
+              targetAudience: classification.targetAudience,
+              visualElements: classification.visualElements,
+              moodKeywords: classification.moodKeywords,
             },
           },
         });
