@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -14,15 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -37,120 +28,52 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
-  AlertCircle,
+  AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   Clock,
+  ExternalLink,
+  Loader2,
   Play,
-  Plus,
   RefreshCw,
   Shield,
   ShieldAlert,
   ShieldCheck,
-  ShieldX,
-  Timer,
-  TrendingDown,
-  TrendingUp,
-  Users,
   XCircle,
-  Calendar,
-  Activity,
-  Eye,
-  Trash2,
-  Settings,
-  Loader2,
-  Sparkles,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Info,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Types
-interface SecurityOverview {
-  snapshot: {
-    id: string;
-    overallScore: string;
-    categoryScores: Record<string, { score: number; passed: number; failed: number }>;
-    criticalIssues: number;
-    highIssues: number;
-    mediumIssues: number;
-    lowIssues: number;
-    createdAt: string;
-  } | null;
-  recentRuns: Array<{
-    id: string;
-    status: string;
-    targetUrl: string;
-    environment: string;
-    totalTests: number;
-    passedTests: number;
-    failedTests: number;
-    errorTests: number;
-    score: string | null;
-    startedAt: string | null;
-    completedAt: string | null;
-    durationMs: number | null;
-    createdAt: string;
-  }>;
-  schedules: Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    frequency: string;
-    isActive: boolean;
-    lastRunAt: string | null;
-    nextRunAt: string | null;
-  }>;
-  testCategories: Array<{ category: string; count: number }>;
-  testUsers: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    isActive: boolean;
-  }>;
-  summary: {
-    totalTests: number;
-    activeSchedules: number;
-    testUsers: number;
-    runsLast24h: number;
-    lastRunAt: string | null;
-    lastRunScore: number | null;
-    averagePassRate: number | null;
-  };
-}
-
-interface SecurityTest {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  testType: string;
+interface SecurityFinding {
+  type: string;
   severity: string;
-  isActive: boolean;
-  createdAt: string;
+  message: string;
+  location?: string;
 }
 
-interface TestSchedule {
+interface TestResult {
   id: string;
-  name: string;
-  description: string | null;
-  frequency: string;
-  timezone: string;
-  testIds: string[];
-  categories: string[];
-  testUserId: string | null;
-  targetEnvironment: string;
-  isActive: boolean;
-  lastRunAt: string | null;
-  nextRunAt: string | null;
-  testUser?: { name: string; email: string } | null;
+  testName: string;
+  category: string;
+  severity: string;
+  status: "PENDING" | "RUNNING" | "PASSED" | "FAILED" | "ERROR" | "SKIPPED";
+  errorMessage?: string;
+  findings?: SecurityFinding[];
+  durationMs?: number;
 }
 
 interface TestRun {
@@ -162,73 +85,94 @@ interface TestRun {
   passedTests: number;
   failedTests: number;
   errorTests: number;
-  skippedTests: number;
   score: string | null;
   startedAt: string | null;
   completedAt: string | null;
   durationMs: number | null;
   createdAt: string;
-  schedule?: { name: string } | null;
-  testUser?: { name: string; email: string } | null;
 }
 
-interface TestUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  isActive: boolean;
-  hasCredentials: boolean;
-  lastUsedAt: string | null;
+interface CategorySummary {
+  category: string;
+  total: number;
+  passed: number;
+  failed: number;
+  errors: number;
 }
+
+interface SecurityOverview {
+  summary: {
+    totalTests: number;
+    lastRunScore: number | null;
+    lastRunAt: string | null;
+    runsLast24h: number;
+  };
+  recentRuns: TestRun[];
+  testCategories: Array<{ category: string; count: number }>;
+}
+
+// Remediation guidance for different finding types
+const remediationGuides: Record<string, { title: string; steps: string[] }> = {
+  missing_header: {
+    title: "Add Missing Security Headers",
+    steps: [
+      "Add the security header to your server configuration or middleware",
+      "For Next.js, add headers to next.config.js or middleware.ts",
+      "Test the header is present using browser dev tools",
+    ],
+  },
+  cors_misconfiguration: {
+    title: "Fix CORS Configuration",
+    steps: [
+      "Review your CORS policy in API routes or middleware",
+      "Specify explicit allowed origins instead of '*'",
+      "Never reflect arbitrary Origin headers",
+    ],
+  },
+  unprotected_endpoint: {
+    title: "Secure API Endpoint",
+    steps: [
+      "Add authentication middleware to the endpoint",
+      "Verify session/token before processing requests",
+      "Return 401 for unauthenticated requests",
+    ],
+  },
+  insecure_transport: {
+    title: "Enable HTTPS",
+    steps: [
+      "Configure SSL certificate on your server",
+      "Redirect HTTP to HTTPS",
+      "Add HSTS header for security",
+    ],
+  },
+  test_failure: {
+    title: "Investigate Test Failure",
+    steps: [
+      "Review the test requirements and expected behavior",
+      "Check application logs for related errors",
+      "Run the test manually to reproduce the issue",
+    ],
+  },
+};
 
 export default function SecurityPage() {
-  const router = useRouter();
   const [overview, setOverview] = useState<SecurityOverview | null>(null);
-  const [tests, setTests] = useState<SecurityTest[]>([]);
-  const [schedules, setSchedules] = useState<TestSchedule[]>([]);
-  const [runs, setRuns] = useState<TestRun[]>([]);
-  const [testUsers, setTestUsers] = useState<TestUser[]>([]);
+  const [latestRun, setLatestRun] = useState<TestRun | null>(null);
+  const [latestResults, setLatestResults] = useState<TestResult[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategorySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [isSeeding, setIsSeeding] = useState(false);
-
-  // Dialog states
-  const [showNewTestDialog, setShowNewTestDialog] = useState(false);
-  const [showNewScheduleDialog, setShowNewScheduleDialog] = useState(false);
-  const [showNewUserDialog, setShowNewUserDialog] = useState(false);
   const [showRunDialog, setShowRunDialog] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set());
 
-  // Form states
-  const [newTest, setNewTest] = useState({
-    name: "",
-    description: "",
-    category: "auth",
-    testType: "deterministic",
-    severity: "medium",
-  });
-  const [newSchedule, setNewSchedule] = useState({
-    name: "",
-    description: "",
-    frequency: "DAILY",
-    testUserId: "",
-    targetEnvironment: "production",
-  });
-  const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
-    role: "client",
-  });
+  // Run config
   const [runConfig, setRunConfig] = useState({
     targetUrl: "",
     environment: "production",
-    testUserId: "",
   });
-
   const [isRunning, setIsRunning] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Execution progress state
+  // Execution progress
   const [executionProgress, setExecutionProgress] = useState<{
     isExecuting: boolean;
     runId: string | null;
@@ -251,7 +195,7 @@ export default function SecurityPage() {
     percentage: 0,
   });
 
-  // Fetch functions
+  // Fetch overview
   const fetchOverview = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/security");
@@ -264,65 +208,57 @@ export default function SecurityPage() {
     }
   }, []);
 
-  const fetchTests = useCallback(async () => {
+  // Fetch latest run results
+  const fetchLatestRunResults = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/security/tests");
-      if (res.ok) {
-        const data = await res.json();
-        setTests(data.tests || []);
+      const runsRes = await fetch("/api/admin/security/runs?limit=1");
+      if (runsRes.ok) {
+        const { runs } = await runsRes.json();
+        if (runs && runs.length > 0) {
+          const run = runs[0];
+          setLatestRun(run);
+
+          // Fetch detailed results for the latest run
+          if (run.status === "COMPLETED") {
+            const resultsRes = await fetch(`/api/admin/security/execute?runId=${run.id}`);
+            if (resultsRes.ok) {
+              const data = await resultsRes.json();
+              setLatestResults(data.results || []);
+
+              // Calculate category stats
+              const catMap = new Map<string, CategorySummary>();
+              for (const result of data.results || []) {
+                const cat = result.category || "unknown";
+                if (!catMap.has(cat)) {
+                  catMap.set(cat, { category: cat, total: 0, passed: 0, failed: 0, errors: 0 });
+                }
+                const stats = catMap.get(cat)!;
+                stats.total++;
+                if (result.status === "PASSED") stats.passed++;
+                else if (result.status === "FAILED") stats.failed++;
+                else if (result.status === "ERROR") stats.errors++;
+              }
+              setCategoryStats(Array.from(catMap.values()).sort((a, b) => {
+                // Sort by failures first
+                const aIssues = a.failed + a.errors;
+                const bIssues = b.failed + b.errors;
+                return bIssues - aIssues;
+              }));
+            }
+          }
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch tests:", error);
+      console.error("Failed to fetch latest run:", error);
     }
   }, []);
 
-  const fetchSchedules = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/security/schedules");
-      if (res.ok) {
-        const data = await res.json();
-        setSchedules(data.schedules || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch schedules:", error);
-    }
-  }, []);
-
-  const fetchRuns = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/security/runs");
-      if (res.ok) {
-        const data = await res.json();
-        setRuns(data.runs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch runs:", error);
-    }
-  }, []);
-
-  const fetchTestUsers = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/security/test-users");
-      if (res.ok) {
-        const data = await res.json();
-        setTestUsers(data.testUsers || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch test users:", error);
-    }
-  }, []);
-
+  // Refresh all data
   const refreshAll = useCallback(async () => {
     setIsLoading(true);
-    await Promise.all([
-      fetchOverview(),
-      fetchTests(),
-      fetchSchedules(),
-      fetchRuns(),
-      fetchTestUsers(),
-    ]);
+    await Promise.all([fetchOverview(), fetchLatestRunResults()]);
     setIsLoading(false);
-  }, [fetchOverview, fetchTests, fetchSchedules, fetchRuns, fetchTestUsers]);
+  }, [fetchOverview, fetchLatestRunResults]);
 
   useEffect(() => {
     refreshAll();
@@ -333,7 +269,6 @@ export default function SecurityPage() {
 
   useEffect(() => {
     if (executionProgress.isExecuting && executionProgress.runId) {
-      // Poll for progress every 500ms
       const pollProgress = async () => {
         try {
           const res = await fetch(`/api/admin/security/execute?runId=${executionProgress.runId}`);
@@ -352,9 +287,7 @@ export default function SecurityPage() {
             }));
 
             if (data.run.status === "COMPLETED") {
-              // Refresh data after completion
-              await fetchRuns();
-              await fetchOverview();
+              await refreshAll();
             }
           }
         } catch (error) {
@@ -363,112 +296,28 @@ export default function SecurityPage() {
       };
 
       pollingRef.current = setInterval(pollProgress, 500);
-      pollProgress(); // Initial poll
+      pollProgress();
 
       return () => {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-        }
+        if (pollingRef.current) clearInterval(pollingRef.current);
       };
     }
-  }, [executionProgress.isExecuting, executionProgress.runId, fetchRuns, fetchOverview]);
+  }, [executionProgress.isExecuting, executionProgress.runId, refreshAll]);
 
-  // Action handlers
-  const handleCreateTest = async () => {
-    setIsSaving(true);
-    try {
-      const res = await fetch("/api/admin/security/tests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTest),
-      });
-      if (res.ok) {
-        setShowNewTestDialog(false);
-        setNewTest({
-          name: "",
-          description: "",
-          category: "auth",
-          testType: "deterministic",
-          severity: "medium",
-        });
-        await fetchTests();
-        await fetchOverview();
-      }
-    } catch (error) {
-      console.error("Failed to create test:", error);
-    }
-    setIsSaving(false);
-  };
-
-  const handleCreateSchedule = async () => {
-    setIsSaving(true);
-    try {
-      const res = await fetch("/api/admin/security/schedules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newSchedule,
-          testUserId: newSchedule.testUserId && newSchedule.testUserId !== "none" ? newSchedule.testUserId : null,
-        }),
-      });
-      if (res.ok) {
-        setShowNewScheduleDialog(false);
-        setNewSchedule({
-          name: "",
-          description: "",
-          frequency: "DAILY",
-          testUserId: "",
-          targetEnvironment: "production",
-        });
-        await fetchSchedules();
-        await fetchOverview();
-      }
-    } catch (error) {
-      console.error("Failed to create schedule:", error);
-    }
-    setIsSaving(false);
-  };
-
-  const handleCreateUser = async () => {
-    setIsSaving(true);
-    try {
-      const res = await fetch("/api/admin/security/test-users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUser),
-      });
-      if (res.ok) {
-        setShowNewUserDialog(false);
-        setNewUser({ name: "", email: "", role: "client" });
-        await fetchTestUsers();
-        await fetchOverview();
-      }
-    } catch (error) {
-      console.error("Failed to create user:", error);
-    }
-    setIsSaving(false);
-  };
-
+  // Start test run
   const handleStartRun = async () => {
     if (!runConfig.targetUrl) return;
     setIsRunning(true);
     try {
-      // Create the run
       const createRes = await fetch("/api/admin/security/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetUrl: runConfig.targetUrl,
-          environment: runConfig.environment,
-          testUserId: runConfig.testUserId && runConfig.testUserId !== "none" ? runConfig.testUserId : null,
-        }),
+        body: JSON.stringify(runConfig),
       });
       if (createRes.ok) {
         const { run } = await createRes.json();
         setShowRunDialog(false);
-        setRunConfig({ targetUrl: "", environment: "production", testUserId: "" });
 
-        // Initialize execution progress
         setExecutionProgress({
           isExecuting: true,
           runId: run.id,
@@ -481,7 +330,6 @@ export default function SecurityPage() {
           percentage: 0,
         });
 
-        // Start execution in background
         fetch("/api/admin/security/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -499,23 +347,13 @@ export default function SecurityPage() {
               currentTest: null,
               percentage: 100,
             }));
-            await fetchRuns();
-            await fetchOverview();
           } else {
             setExecutionProgress((prev) => ({
               ...prev,
               isExecuting: false,
               status: "error",
-              currentTest: null,
             }));
           }
-        }).catch(() => {
-          setExecutionProgress((prev) => ({
-            ...prev,
-            isExecuting: false,
-            status: "error",
-            currentTest: null,
-          }));
         });
       } else {
         const errorData = await createRes.json();
@@ -528,53 +366,15 @@ export default function SecurityPage() {
     setIsRunning(false);
   };
 
-  const handleDeleteTest = async (id: string) => {
-    if (!confirm("Delete this test?")) return;
-    try {
-      await fetch(`/api/admin/security/tests?id=${id}`, { method: "DELETE" });
-      await fetchTests();
-      await fetchOverview();
-    } catch (error) {
-      console.error("Failed to delete test:", error);
+  // Quick run with last URL
+  const handleQuickRun = async () => {
+    const lastUrl = latestRun?.targetUrl || localStorage.getItem("lastSecurityTestUrl");
+    if (lastUrl) {
+      setRunConfig({ targetUrl: lastUrl, environment: "production" });
+      setShowRunDialog(true);
+    } else {
+      setShowRunDialog(true);
     }
-  };
-
-  const handleToggleSchedule = async (schedule: TestSchedule) => {
-    try {
-      await fetch("/api/admin/security/schedules", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: schedule.id, isActive: !schedule.isActive }),
-      });
-      await fetchSchedules();
-      await fetchOverview();
-    } catch (error) {
-      console.error("Failed to toggle schedule:", error);
-    }
-  };
-
-  const handleSeedTests = async () => {
-    if (!confirm("This will add default security tests. Continue?")) return;
-    setIsSeeding(true);
-    try {
-      const res = await fetch("/api/admin/security/seed", { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Successfully seeded ${data.tests?.length || 0} security tests!`);
-        await fetchTests();
-        await fetchOverview();
-      } else {
-        const error = await res.json();
-        alert(`Failed to seed tests: ${error.error}`);
-      }
-    } catch (error) {
-      console.error("Failed to seed tests:", error);
-    }
-    setIsSeeding(false);
-  };
-
-  const handleViewRun = (runId: string) => {
-    router.push(`/admin/security/runs/${runId}`);
   };
 
   // Helper functions
@@ -585,87 +385,89 @@ export default function SecurityPage() {
     return "text-red-600";
   };
 
-  const getScoreBg = (score: number) => {
-    if (score >= 90) return "bg-green-100";
-    if (score >= 70) return "bg-yellow-100";
-    if (score >= 50) return "bg-orange-100";
-    return "bg-red-100";
+  const getScoreBgColor = (score: number) => {
+    if (score >= 90) return "bg-green-500";
+    if (score >= 70) return "bg-yellow-500";
+    if (score >= 50) return "bg-orange-500";
+    return "bg-red-500";
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case "RUNNING":
-        return <Badge className="bg-blue-100 text-blue-800">Running</Badge>;
-      case "PENDING":
-        return <Badge className="bg-gray-100 text-gray-800">Pending</Badge>;
-      case "FAILED":
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      case "CANCELLED":
-        return <Badge className="bg-gray-100 text-gray-600">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  const getSeverityBadge = (severity: string) => {
+  const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case "critical":
-        return <Badge className="bg-red-100 text-red-800">Critical</Badge>;
+        return <XCircle className="h-4 w-4 text-red-600" />;
       case "high":
-        return <Badge className="bg-orange-100 text-orange-800">High</Badge>;
+        return <AlertTriangle className="h-4 w-4 text-orange-600" />;
       case "medium":
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
-      case "low":
-        return <Badge className="bg-gray-100 text-gray-800">Low</Badge>;
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       default:
-        return <Badge>{severity}</Badge>;
+        return <Info className="h-4 w-4 text-blue-600" />;
     }
   };
 
-  const formatDuration = (ms: number | null) => {
-    if (!ms) return "-";
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+  const formatTime = (dateStr: string | null) => {
+    if (!dateStr) return "Never";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString();
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
   };
+
+  const toggleFinding = (id: string) => {
+    setExpandedFindings((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Get all failed tests with findings
+  const failedTests = latestResults.filter(
+    (r) => r.status === "FAILED" || r.status === "ERROR"
+  );
+
+  const score = latestRun?.score ? parseFloat(latestRun.score) : 0;
+  const hasRun = !!latestRun && latestRun.status === "COMPLETED";
 
   if (isLoading && !overview) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Security</h1>
-            <p className="text-muted-foreground">Loading security dashboard...</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40 md:col-span-2" />
         </div>
       </div>
     );
   }
 
-  const score = overview?.snapshot?.overallScore
-    ? parseFloat(overview.snapshot.overallScore)
-    : overview?.summary.lastRunScore || 0;
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Quick Actions */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Security</h1>
           <p className="text-muted-foreground">
-            Monitor and test platform security
+            {hasRun
+              ? `Last scan ${formatTime(latestRun.completedAt)} on ${latestRun.targetUrl}`
+              : "Run your first security scan to see results"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -673,1055 +475,531 @@ export default function SecurityPage() {
             <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
             Refresh
           </Button>
-          <Dialog open={showRunDialog} onOpenChange={setShowRunDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Play className="h-4 w-4 mr-2" />
-                Run Tests
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Start Test Run</DialogTitle>
-                <DialogDescription>
-                  Configure and start a new security test run
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Target URL</Label>
-                  <Input
-                    placeholder="https://your-site.com"
-                    value={runConfig.targetUrl}
-                    onChange={(e) =>
-                      setRunConfig({ ...runConfig, targetUrl: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Environment</Label>
-                  <Select
-                    value={runConfig.environment}
-                    onValueChange={(v) =>
-                      setRunConfig({ ...runConfig, environment: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="production">Production</SelectItem>
-                      <SelectItem value="staging">Staging</SelectItem>
-                      <SelectItem value="development">Development</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Test User (Optional)</Label>
-                  <Select
-                    value={runConfig.testUserId}
-                    onValueChange={(v) =>
-                      setRunConfig({ ...runConfig, testUserId: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select test user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No specific user</SelectItem>
-                      {testUsers.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name} ({u.role})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowRunDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleStartRun}
-                  disabled={!runConfig.targetUrl || isRunning}
-                >
-                  {isRunning ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Starting...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Start Run
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={handleQuickRun} className="gap-2">
+            <Zap className="h-4 w-4" />
+            {latestRun?.targetUrl ? "Re-run Scan" : "Run Scan"}
+          </Button>
         </div>
       </div>
 
-      {/* Execution Progress Dialog */}
-      <Dialog
-        open={executionProgress.isExecuting || executionProgress.status === "completed"}
-        onOpenChange={(open) => {
-          if (!open && !executionProgress.isExecuting) {
-            setExecutionProgress((prev) => ({ ...prev, status: "idle" }));
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {executionProgress.isExecuting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                  Running Security Tests
-                </>
-              ) : executionProgress.status === "completed" ? (
-                <>
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  Tests Completed
-                </>
-              ) : executionProgress.status === "error" ? (
-                <>
-                  <XCircle className="h-5 w-5 text-red-500" />
-                  Execution Failed
-                </>
-              ) : (
-                "Test Execution"
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {executionProgress.isExecuting
-                ? "Please wait while security tests are being executed..."
-                : executionProgress.status === "completed"
-                ? "All tests have finished running."
-                : "Test execution status"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{executionProgress.percentage}%</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-500",
-                    executionProgress.status === "completed"
-                      ? "bg-green-500"
-                      : executionProgress.status === "error"
-                      ? "bg-red-500"
-                      : "bg-blue-500"
-                  )}
-                  style={{ width: `${executionProgress.percentage}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Current Test */}
-            {executionProgress.currentTest && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="truncate">{executionProgress.currentTest}</span>
-              </div>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 pt-2">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold">{executionProgress.totalTests}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
-              </div>
-              <div className="text-center p-3 bg-green-500/10 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{executionProgress.passedTests}</div>
-                <div className="text-xs text-muted-foreground">Passed</div>
-              </div>
-              <div className="text-center p-3 bg-red-500/10 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">{executionProgress.failedTests}</div>
-                <div className="text-xs text-muted-foreground">Failed</div>
-              </div>
-            </div>
-
-            {/* Score (when completed) */}
-            {executionProgress.status === "completed" && executionProgress.totalTests > 0 && (
-              <div className="text-center pt-2">
-                <div className="text-sm text-muted-foreground">Security Score</div>
-                <div className={cn(
-                  "text-3xl font-bold",
-                  executionProgress.passedTests / executionProgress.totalTests >= 0.9
-                    ? "text-green-600"
-                    : executionProgress.passedTests / executionProgress.totalTests >= 0.7
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                )}>
-                  {Math.round((executionProgress.passedTests / executionProgress.totalTests) * 100)}%
+      {/* Execution Progress Banner */}
+      {executionProgress.isExecuting && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Running Security Scan...</span>
+                  <span className="text-sm text-muted-foreground">
+                    {executionProgress.completedTests}/{executionProgress.totalTests} tests
+                  </span>
                 </div>
+                <Progress value={executionProgress.percentage} className="h-2" />
+                {executionProgress.currentTest && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Testing: {executionProgress.currentTest}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          <DialogFooter>
-            {!executionProgress.isExecuting && (
-              <Button
-                onClick={() => setExecutionProgress((prev) => ({ ...prev, status: "idle" }))}
-              >
-                Close
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Score Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className={cn("col-span-1", getScoreBg(score))}>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Security Score Card */}
+        <Card className={cn(
+          "relative overflow-hidden",
+          hasRun ? (score >= 70 ? "border-green-200" : "border-red-200") : "border-gray-200"
+        )}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+              {hasRun ? (
+                score >= 70 ? (
+                  <ShieldCheck className="h-4 w-4 text-green-600" />
+                ) : (
+                  <ShieldAlert className="h-4 w-4 text-red-600" />
+                )
+              ) : (
+                <Shield className="h-4 w-4 text-gray-400" />
+              )}
               Security Score
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-4xl font-bold", getScoreColor(score))}>
-              {score.toFixed(0)}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {score >= 90
-                ? "Excellent"
-                : score >= 70
-                ? "Good"
-                : score >= 50
-                ? "Needs Improvement"
-                : "Critical"}
-            </p>
+            {hasRun ? (
+              <>
+                <div className={cn("text-5xl font-bold", getScoreColor(score))}>
+                  {score.toFixed(0)}%
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Passed</span>
+                    <span className="font-medium text-green-600">
+                      {latestRun.passedTests} tests
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Failed</span>
+                    <span className="font-medium text-red-600">
+                      {latestRun.failedTests} tests
+                    </span>
+                  </div>
+                </div>
+                {/* Score trend indicator */}
+                {overview && overview.recentRuns.length > 1 && (
+                  <div className="mt-4 pt-4 border-t">
+                    {(() => {
+                      const prevRun = overview.recentRuns[1];
+                      const prevScore = prevRun?.score ? parseFloat(prevRun.score) : 0;
+                      const diff = score - prevScore;
+                      return (
+                        <div className="flex items-center gap-2 text-sm">
+                          {diff > 0 ? (
+                            <>
+                              <TrendingUp className="h-4 w-4 text-green-600" />
+                              <span className="text-green-600">+{diff.toFixed(0)}%</span>
+                            </>
+                          ) : diff < 0 ? (
+                            <>
+                              <TrendingDown className="h-4 w-4 text-red-600" />
+                              <span className="text-red-600">{diff.toFixed(0)}%</span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">No change</span>
+                          )}
+                          <span className="text-muted-foreground">vs previous scan</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-8 text-center">
+                <Shield className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-muted-foreground">No scans yet</p>
+                <Button variant="link" onClick={handleQuickRun} className="mt-2">
+                  Run your first scan <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
           </CardContent>
+          {hasRun && (
+            <div
+              className={cn("absolute bottom-0 left-0 right-0 h-1", getScoreBgColor(score))}
+            />
+          )}
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Tests (24h)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {overview?.summary.runsLast24h || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {overview?.summary.totalTests || 0} total tests defined
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Active Schedules
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {overview?.summary.activeSchedules || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Automated test cadences
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Issues Found
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              {overview?.snapshot && (
-                <>
-                  {overview.snapshot.criticalIssues > 0 && (
-                    <Badge className="bg-red-100 text-red-800">
-                      {overview.snapshot.criticalIssues} Critical
-                    </Badge>
+        {/* Issues Found Panel */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {failedTests.length > 0 ? (
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  ) : hasRun ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-gray-400" />
                   )}
-                  {overview.snapshot.highIssues > 0 && (
-                    <Badge className="bg-orange-100 text-orange-800">
-                      {overview.snapshot.highIssues} High
-                    </Badge>
-                  )}
-                  {overview.snapshot.criticalIssues === 0 &&
-                    overview.snapshot.highIssues === 0 && (
-                      <span className="text-sm text-green-600 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4" />
-                        No critical issues
-                      </span>
-                    )}
-                </>
-              )}
-              {!overview?.snapshot && (
-                <span className="text-sm text-muted-foreground">
-                  No tests run yet
-                </span>
-              )}
+                  {failedTests.length > 0
+                    ? `${failedTests.length} Issues Found`
+                    : hasRun
+                    ? "All Tests Passed"
+                    : "Issues"}
+                </CardTitle>
+                <CardDescription>
+                  {failedTests.length > 0
+                    ? "Click each issue to see details and how to fix"
+                    : hasRun
+                    ? "No security issues detected in the last scan"
+                    : "Run a scan to detect security issues"}
+                </CardDescription>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            {!hasRun ? (
+              <div className="py-8 text-center border-2 border-dashed rounded-lg">
+                <ShieldAlert className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">
+                  No security scan results yet
+                </p>
+                <Button onClick={handleQuickRun}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Run Security Scan
+                </Button>
+              </div>
+            ) : failedTests.length === 0 ? (
+              <div className="py-6 text-center">
+                <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
+                <p className="font-medium text-green-700">
+                  Excellent! No security issues detected
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All {latestRun.totalTests} tests passed successfully
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {failedTests.map((test) => (
+                  <Collapsible
+                    key={test.id}
+                    open={expandedFindings.has(test.id)}
+                    onOpenChange={() => toggleFinding(test.id)}
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border text-left hover:bg-muted/50 transition-colors",
+                          test.severity === "critical"
+                            ? "border-red-200 bg-red-50/50"
+                            : test.severity === "high"
+                            ? "border-orange-200 bg-orange-50/50"
+                            : "border-yellow-200 bg-yellow-50/50"
+                        )}
+                      >
+                        {getSeverityIcon(test.severity)}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{test.testName}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {test.category} &middot; {test.severity}
+                          </div>
+                        </div>
+                        {expandedFindings.has(test.id) ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-2 ml-7 p-4 bg-muted/30 rounded-lg space-y-4">
+                        {/* Error message */}
+                        {test.errorMessage && (
+                          <div>
+                            <div className="text-sm font-medium mb-1">Error</div>
+                            <div className="text-sm text-red-600 font-mono bg-red-50 p-2 rounded">
+                              {test.errorMessage}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Findings */}
+                        {test.findings && test.findings.length > 0 && (
+                          <div>
+                            <div className="text-sm font-medium mb-2">Findings</div>
+                            <div className="space-y-2">
+                              {test.findings.map((finding, idx) => (
+                                <div
+                                  key={idx}
+                                  className="text-sm p-2 bg-white rounded border"
+                                >
+                                  <div className="flex items-start gap-2">
+                                    {getSeverityIcon(finding.severity)}
+                                    <div>
+                                      <div>{finding.message}</div>
+                                      {finding.location && (
+                                        <div className="text-xs text-muted-foreground mt-1 font-mono">
+                                          {finding.location}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Remediation */}
+                        {test.findings && test.findings[0] && (
+                          <div>
+                            <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <Zap className="h-4 w-4 text-blue-600" />
+                              How to Fix
+                            </div>
+                            <div className="text-sm bg-blue-50 p-3 rounded-lg">
+                              {(() => {
+                                const guide =
+                                  remediationGuides[test.findings[0].type] ||
+                                  remediationGuides.test_failure;
+                                return (
+                                  <div>
+                                    <div className="font-medium mb-2">{guide.title}</div>
+                                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                                      {guide.steps.map((step, i) => (
+                                        <li key={i}>{step}</li>
+                                      ))}
+                                    </ol>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tests">Tests</TabsTrigger>
-          <TabsTrigger value="schedules">Schedules</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="users">Test Users</TabsTrigger>
-        </TabsList>
+      {/* Category Breakdown */}
+      {hasRun && categoryStats.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Test Results by Category</CardTitle>
+            <CardDescription>
+              Click a category to see detailed test results
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {categoryStats.map((cat) => {
+                const passRate = cat.total > 0 ? (cat.passed / cat.total) * 100 : 0;
+                const hasIssues = cat.failed > 0 || cat.errors > 0;
+                const isExpanded = expandedCategories.has(cat.category);
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Recent Runs */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Test Runs</CardTitle>
-                <CardDescription>Latest security test executions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {overview?.recentRuns.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No test runs yet. Click &quot;Run Tests&quot; to start.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {overview?.recentRuns.slice(0, 5).map((run) => (
-                      <div
-                        key={run.id}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(run.status)}
-                            <span className="text-sm font-medium">
-                              {run.environment}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDate(run.createdAt)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          {run.score && (
-                            <div
-                              className={cn(
-                                "text-lg font-bold",
-                                getScoreColor(parseFloat(run.score))
-                              )}
-                            >
-                              {parseFloat(run.score).toFixed(0)}%
-                            </div>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {run.passedTests}/{run.totalTests} passed
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Category Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Categories</CardTitle>
-                <CardDescription>Tests organized by security area</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {overview?.testCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No tests defined yet.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {overview?.testCategories.map((cat) => (
-                      <div
-                        key={cat.category}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium capitalize">
-                            {cat.category}
-                          </span>
-                        </div>
-                        <Badge variant="secondary">{cat.count} tests</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Active Schedules */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Schedules</CardTitle>
-              <CardDescription>Automated test cadences</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {overview?.schedules.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No schedules configured. Create one to run tests automatically.
-                </p>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {overview?.schedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className="p-4 rounded-lg border space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{schedule.name}</span>
-                        <Badge variant="outline">{schedule.frequency}</Badge>
-                      </div>
-                      {schedule.nextRunAt && (
-                        <p className="text-xs text-muted-foreground">
-                          Next: {formatDate(schedule.nextRunAt)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tests Tab */}
-        <TabsContent value="tests" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Security Tests</CardTitle>
-                  <CardDescription>
-                    Define deterministic and exploratory tests
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleSeedTests}
-                    disabled={isSeeding}
+                return (
+                  <Collapsible
+                    key={cat.category}
+                    open={isExpanded}
+                    onOpenChange={() => toggleCategory(cat.category)}
                   >
-                    {isSeeding ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 mr-2" />
-                    )}
-                    Seed Default Tests
-                  </Button>
-                  <Dialog open={showNewTestDialog} onOpenChange={setShowNewTestDialog}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Test
-                      </Button>
-                    </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create Security Test</DialogTitle>
-                      <DialogDescription>
-                        Define a new security test case
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Test Name</Label>
-                        <Input
-                          placeholder="Login flow validation"
-                          value={newTest.name}
-                          onChange={(e) =>
-                            setNewTest({ ...newTest, name: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          placeholder="Describe what this test verifies"
-                          value={newTest.description}
-                          onChange={(e) =>
-                            setNewTest({ ...newTest, description: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Category</Label>
-                          <Select
-                            value={newTest.category}
-                            onValueChange={(v) =>
-                              setNewTest({ ...newTest, category: v })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="auth">Authentication</SelectItem>
-                              <SelectItem value="payment">Payment</SelectItem>
-                              <SelectItem value="navigation">Navigation</SelectItem>
-                              <SelectItem value="forms">Forms</SelectItem>
-                              <SelectItem value="api">API</SelectItem>
-                              <SelectItem value="permissions">Permissions</SelectItem>
-                              <SelectItem value="data">Data Integrity</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Test Type</Label>
-                          <Select
-                            value={newTest.testType}
-                            onValueChange={(v) =>
-                              setNewTest({ ...newTest, testType: v })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="deterministic">
-                                Deterministic
-                              </SelectItem>
-                              <SelectItem value="exploratory">Exploratory</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Severity</Label>
-                        <Select
-                          value={newTest.severity}
-                          onValueChange={(v) =>
-                            setNewTest({ ...newTest, severity: v })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="critical">Critical</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowNewTestDialog(false)}
+                    <CollapsibleTrigger className="w-full">
+                      <div
+                        className={cn(
+                          "p-4 rounded-lg border transition-colors hover:bg-muted/50",
+                          hasIssues ? "border-red-200" : "border-green-200"
+                        )}
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleCreateTest}
-                        disabled={!newTest.name || isSaving}
-                      >
-                        {isSaving ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Create Test
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {tests.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No tests defined yet. Create your first security test.
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Severity</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tests.map((test) => (
-                      <TableRow key={test.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{test.name}</div>
-                            {test.description && (
-                              <div className="text-xs text-muted-foreground">
-                                {test.description}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="capitalize">{test.category}</TableCell>
-                        <TableCell className="capitalize">{test.testType}</TableCell>
-                        <TableCell>{getSeverityBadge(test.severity)}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={test.isActive ? "default" : "secondary"}
-                          >
-                            {test.isActive ? "Active" : "Disabled"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteTest(test.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Schedules Tab */}
-        <TabsContent value="schedules" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Test Schedules</CardTitle>
-                  <CardDescription>
-                    Configure automated test cadences
-                  </CardDescription>
-                </div>
-                <Dialog
-                  open={showNewScheduleDialog}
-                  onOpenChange={setShowNewScheduleDialog}
-                >
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Schedule
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create Schedule</DialogTitle>
-                      <DialogDescription>
-                        Set up an automated test cadence
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Schedule Name</Label>
-                        <Input
-                          placeholder="Daily production tests"
-                          value={newSchedule.name}
-                          onChange={(e) =>
-                            setNewSchedule({ ...newSchedule, name: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          placeholder="Optional description"
-                          value={newSchedule.description}
-                          onChange={(e) =>
-                            setNewSchedule({
-                              ...newSchedule,
-                              description: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Frequency</Label>
-                          <Select
-                            value={newSchedule.frequency}
-                            onValueChange={(v) =>
-                              setNewSchedule({ ...newSchedule, frequency: v })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="HOURLY">Hourly</SelectItem>
-                              <SelectItem value="DAILY">Daily</SelectItem>
-                              <SelectItem value="WEEKLY">Weekly</SelectItem>
-                              <SelectItem value="MONTHLY">Monthly</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Environment</Label>
-                          <Select
-                            value={newSchedule.targetEnvironment}
-                            onValueChange={(v) =>
-                              setNewSchedule({
-                                ...newSchedule,
-                                targetEnvironment: v,
-                              })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="production">Production</SelectItem>
-                              <SelectItem value="staging">Staging</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Test User (Optional)</Label>
-                        <Select
-                          value={newSchedule.testUserId}
-                          onValueChange={(v) =>
-                            setNewSchedule({ ...newSchedule, testUserId: v })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select test user" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No specific user</SelectItem>
-                            {testUsers.map((u) => (
-                              <SelectItem key={u.id} value={u.id}>
-                                {u.name} ({u.role})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowNewScheduleDialog(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleCreateSchedule}
-                        disabled={!newSchedule.name || isSaving}
-                      >
-                        {isSaving ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Create Schedule
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {schedules.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No schedules configured. Create one to run tests automatically.
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Frequency</TableHead>
-                      <TableHead>Environment</TableHead>
-                      <TableHead>Test User</TableHead>
-                      <TableHead>Next Run</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {schedules.map((schedule) => (
-                      <TableRow key={schedule.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{schedule.name}</div>
-                            {schedule.description && (
-                              <div className="text-xs text-muted-foreground">
-                                {schedule.description}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{schedule.frequency}</Badge>
-                        </TableCell>
-                        <TableCell className="capitalize">
-                          {schedule.targetEnvironment}
-                        </TableCell>
-                        <TableCell>
-                          {schedule.testUser ? schedule.testUser.name : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {schedule.nextRunAt
-                            ? formatDate(schedule.nextRunAt)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={schedule.isActive ? "default" : "secondary"}
-                          >
-                            {schedule.isActive ? "Active" : "Paused"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleSchedule(schedule)}
-                          >
-                            {schedule.isActive ? "Pause" : "Resume"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* History Tab */}
-        <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Run History</CardTitle>
-              <CardDescription>View past test executions and results</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {runs.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No test runs yet. Click &quot;Run Tests&quot; to start.
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Environment</TableHead>
-                      <TableHead>Tests</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {runs.map((run) => (
-                      <TableRow key={run.id}>
-                        <TableCell>{formatDate(run.createdAt)}</TableCell>
-                        <TableCell>{getStatusBadge(run.status)}</TableCell>
-                        <TableCell className="capitalize">{run.environment}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-green-600">{run.passedTests}</span>
-                            <span>/</span>
-                            <span className="text-red-600">{run.failedTests}</span>
-                            <span>/</span>
-                            <span>{run.totalTests}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {run.score ? (
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium capitalize">{cat.category}</span>
+                          <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "font-bold",
-                                getScoreColor(parseFloat(run.score))
+                                "text-sm font-medium",
+                                passRate >= 90
+                                  ? "text-green-600"
+                                  : passRate >= 70
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
                               )}
                             >
-                              {parseFloat(run.score).toFixed(0)}%
+                              {passRate.toFixed(0)}%
                             </span>
-                          ) : (
-                            "-"
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <Progress
+                          value={passRate}
+                          className={cn(
+                            "h-2",
+                            passRate >= 90
+                              ? "[&>div]:bg-green-500"
+                              : passRate >= 70
+                              ? "[&>div]:bg-yellow-500"
+                              : "[&>div]:bg-red-500"
                           )}
-                        </TableCell>
-                        <TableCell>{formatDuration(run.durationMs)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewRun(run.id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                        />
+                        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                          <span>{cat.passed} passed</span>
+                          {hasIssues && (
+                            <span className="text-red-600">{cat.failed + cat.errors} failed</span>
+                          )}
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-2 space-y-1">
+                        {latestResults
+                          .filter((r) => r.category === cat.category)
+                          .map((result) => (
+                            <div
+                              key={result.id}
+                              className={cn(
+                                "flex items-center gap-2 p-2 rounded text-sm",
+                                result.status === "PASSED"
+                                  ? "bg-green-50"
+                                  : result.status === "FAILED"
+                                  ? "bg-red-50"
+                                  : "bg-gray-50"
+                              )}
+                            >
+                              {result.status === "PASSED" ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : result.status === "FAILED" ? (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                              )}
+                              <span className="flex-1 truncate">{result.testName}</span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-xs",
+                                  result.severity === "critical"
+                                    ? "border-red-300 text-red-700"
+                                    : result.severity === "high"
+                                    ? "border-orange-300 text-orange-700"
+                                    : "border-gray-300"
+                                )}
+                              >
+                                {result.severity}
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Test Users Tab */}
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Test Users</CardTitle>
-                  <CardDescription>
-                    Manage accounts used for automated testing
-                  </CardDescription>
-                </div>
-                <Dialog open={showNewUserDialog} onOpenChange={setShowNewUserDialog}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Test User
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create Test User</DialogTitle>
-                      <DialogDescription>
-                        Add a user account for automated testing
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Name</Label>
-                        <Input
-                          placeholder="Test Client User"
-                          value={newUser.name}
-                          onChange={(e) =>
-                            setNewUser({ ...newUser, name: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input
-                          type="email"
-                          placeholder="test@example.com"
-                          value={newUser.email}
-                          onChange={(e) =>
-                            setNewUser({ ...newUser, email: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Role</Label>
-                        <Select
-                          value={newUser.role}
-                          onValueChange={(v) => setNewUser({ ...newUser, role: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="client">Client</SelectItem>
-                            <SelectItem value="freelancer">Freelancer</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
+      {/* Recent Scan History */}
+      {overview && overview.recentRuns.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Scans</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {overview.recentRuns.slice(0, 5).map((run) => {
+                const runScore = run.score ? parseFloat(run.score) : 0;
+                return (
+                  <div
+                    key={run.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {run.status === "COMPLETED" ? (
+                        runScore >= 70 ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                        )
+                      ) : run.status === "RUNNING" ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-gray-400" />
+                      )}
+                      <div>
+                        <div className="font-medium">{run.targetUrl}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatTime(run.completedAt || run.createdAt)} &middot;{" "}
+                          {run.environment}
+                        </div>
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowNewUserDialog(false)}
+                    <div className="flex items-center gap-4">
+                      {run.status === "COMPLETED" && (
+                        <>
+                          <div className="text-right">
+                            <div className={cn("font-bold", getScoreColor(runScore))}>
+                              {runScore.toFixed(0)}%
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {run.passedTests}/{run.totalTests} passed
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <Badge
+                        variant={
+                          run.status === "COMPLETED"
+                            ? "default"
+                            : run.status === "RUNNING"
+                            ? "secondary"
+                            : "outline"
+                        }
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleCreateUser}
-                        disabled={!newUser.name || !newUser.email || isSaving}
-                      >
-                        {isSaving ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Create User
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {testUsers.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No test users configured. Create one to use in automated tests.
-                </p>
+                        {run.status}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Run Dialog */}
+      <Dialog open={showRunDialog} onOpenChange={setShowRunDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Run Security Scan</DialogTitle>
+            <DialogDescription>
+              Enter the URL to scan for security vulnerabilities
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Target URL</Label>
+              <Input
+                placeholder="https://your-site.com"
+                value={runConfig.targetUrl}
+                onChange={(e) =>
+                  setRunConfig({ ...runConfig, targetUrl: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Environment</Label>
+              <Select
+                value={runConfig.environment}
+                onValueChange={(v) => setRunConfig({ ...runConfig, environment: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Production</SelectItem>
+                  <SelectItem value="staging">Staging</SelectItem>
+                  <SelectItem value="development">Development</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRunDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStartRun}
+              disabled={!runConfig.targetUrl || isRunning}
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Starting...
+                </>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last Used</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {testUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell className="capitalize">{user.role}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.isActive ? "default" : "secondary"}>
-                            {user.isActive ? "Active" : "Disabled"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {user.lastUsedAt ? formatDate(user.lastUsedAt) : "Never"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Scan
+                </>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
