@@ -68,6 +68,7 @@ import {
   type StyleAxis,
 } from "@/lib/constants/reference-libraries";
 import { DeliverableStyleUploader } from "@/components/admin/deliverable-style-uploader";
+import { DeliverableStyleScraper } from "@/components/admin/deliverable-style-scraper";
 import { StatCard } from "@/components/admin/stat-card";
 import { cn } from "@/lib/utils";
 
@@ -763,7 +764,10 @@ export default function DeliverableStylesPage() {
               </CardContent>
             </Card>
           )}
-          <DeliverableStyleUploader onUploadComplete={fetchStyles} />
+          <div className="grid lg:grid-cols-2 gap-6">
+            <DeliverableStyleUploader onUploadComplete={fetchStyles} />
+            <DeliverableStyleScraper onUploadComplete={fetchStyles} />
+          </div>
         </TabsContent>
 
         {/* Browse Tab */}

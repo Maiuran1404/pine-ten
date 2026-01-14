@@ -5,14 +5,18 @@ dotenv.config({ path: ".env.local" });
 async function makeAdmin() {
   const { db } = await import("../src/db");
   const { users } = await import("../src/db/schema");
-  const { eq } = await import("drizzle-orm");
+  const { like } = await import("drizzle-orm");
 
-  const allUsers = await db.select().from(users).limit(5);
-  console.log('Users:', allUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+  const allUsers = await db.select().from(users);
+  console.log('All Users:');
+  allUsers.forEach(u => console.log(`  - ${u.name} (${u.email}) - ${u.role}`));
 
-  if (allUsers.length > 0) {
-    await db.update(users).set({ role: 'ADMIN' }).where(eq(users.id, allUsers[0].id));
-    console.log('Updated user to ADMIN:', allUsers[0].email);
+  // Make all users admin for testing
+  for (const u of allUsers) {
+    if (u.role !== 'ADMIN') {
+      await db.update(users).set({ role: 'ADMIN' }).where(like(users.id, u.id));
+      console.log(`Updated ${u.email} to ADMIN`);
+    }
   }
   process.exit(0);
 }
