@@ -31,7 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, CheckCircle, XCircle, Coins, Plus, Trash2 } from "lucide-react";
+import { Search, CheckCircle, XCircle, Coins, Plus, Trash2, Users, TrendingUp, DollarSign, UserCheck } from "lucide-react";
+import { StatCard } from "@/components/admin/stat-card";
 
 interface Client {
   id: string;
@@ -179,44 +180,42 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{clients.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {clients.filter((c) => c.totalTasks > 0).length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Credits Purchased</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {clients.reduce((sum, c) => sum + c.totalCreditsPurchased, 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Clients"
+            value={clients.length}
+            subtext={`${clients.filter((c) => c.onboardingCompleted).length} onboarded`}
+            icon={Users}
+          />
+          <StatCard
+            label="Active Clients"
+            value={clients.filter((c) => c.totalTasks > 0).length}
+            subtext="With at least 1 task"
+            icon={UserCheck}
+            trend={clients.filter((c) => c.totalTasks > 0).length > 0 ? "up" : "neutral"}
+          />
+          <StatCard
+            label="Credits Purchased"
+            value={clients.reduce((sum, c) => sum + c.totalCreditsPurchased, 0)}
+            subtext="Total across all clients"
+            icon={TrendingUp}
+          />
+          <StatCard
+            label="Total Revenue"
+            value={`$${totalRevenue.toLocaleString()}`}
+            subtext="From credit purchases"
+            icon={DollarSign}
+            trend="up"
+          />
+        </div>
+      )}
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">

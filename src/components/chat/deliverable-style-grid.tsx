@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight, RefreshCw } from "lucide-react";
+import { Check, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,9 @@ export interface DeliverableStyle {
   styleAxis: string;
   subStyle: string | null;
   semanticTags: string[];
+  // Brand-aware scoring fields
+  brandMatchScore?: number;
+  matchReason?: string;
 }
 
 interface DeliverableStyleGridProps {
@@ -42,11 +45,23 @@ export function DeliverableStyleGrid({
     return STYLE_AXES.find((a) => a.value === value)?.label || value;
   };
 
+  // Check if any styles have brand match scores
+  const hasBrandScoring = styles.some(s => s.brandMatchScore !== undefined);
+
   return (
     <div className="space-y-3">
+      {/* Show personalization hint if brand scoring is active */}
+      {hasBrandScoring && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span>Sorted by match to your brand</span>
+        </div>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {styles.map((style) => {
+        {styles.map((style, index) => {
           const isSelected = selectedStyles.includes(style.id);
+          const isTopMatch = hasBrandScoring && index === 0 && (style.brandMatchScore || 0) >= 70;
+          const isGoodMatch = (style.brandMatchScore || 0) >= 60;
 
           return (
             <button
@@ -56,6 +71,8 @@ export function DeliverableStyleGrid({
                 "group relative rounded-xl overflow-hidden border-2 transition-all duration-200 text-left",
                 isSelected
                   ? "border-primary ring-2 ring-primary/20"
+                  : isTopMatch
+                  ? "border-amber-400/50 ring-1 ring-amber-400/20"
                   : "border-border hover:border-primary/50"
               )}
             >
@@ -79,6 +96,15 @@ export function DeliverableStyleGrid({
                     </div>
                   </div>
                 )}
+                {/* Top match indicator */}
+                {isTopMatch && !isSelected && (
+                  <div className="absolute top-2 left-2">
+                    <Badge className="text-xs bg-amber-500 hover:bg-amber-500 text-white border-0">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Best match
+                    </Badge>
+                  </div>
+                )}
                 {/* Style axis badge */}
                 <div className="absolute top-2 right-2">
                   <Badge variant="secondary" className="text-xs bg-background/80 backdrop-blur-sm">
@@ -90,11 +116,15 @@ export function DeliverableStyleGrid({
               {/* Info */}
               <div className="p-2.5">
                 <h4 className="font-medium text-sm truncate">{style.name}</h4>
-                {style.description && (
+                {style.matchReason && isGoodMatch ? (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 line-clamp-1 mt-0.5">
+                    {style.matchReason}
+                  </p>
+                ) : style.description ? (
                   <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                     {style.description}
                   </p>
-                )}
+                ) : null}
               </div>
             </button>
           );

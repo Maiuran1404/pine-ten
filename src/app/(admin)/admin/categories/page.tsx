@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Tags, Coins, CheckCircle2, XCircle } from "lucide-react";
+import { StatCard } from "@/components/admin/stat-card";
 
 interface Category {
   id: string;
@@ -122,6 +123,12 @@ export default function CategoriesPage() {
       setIsSaving(false);
     }
   };
+
+  const activeCount = categories.filter((c) => c.isActive).length;
+  const inactiveCount = categories.filter((c) => !c.isActive).length;
+  const avgCredits = categories.length > 0
+    ? Math.round(categories.reduce((sum, c) => sum + c.baseCredits, 0) / categories.length)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -220,6 +227,44 @@ export default function CategoriesPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Stats */}
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Categories"
+            value={categories.length}
+            subtext="Task types available"
+            icon={Tags}
+          />
+          <StatCard
+            label="Active"
+            value={activeCount}
+            subtext="Available for new tasks"
+            icon={CheckCircle2}
+            trend="up"
+          />
+          <StatCard
+            label="Inactive"
+            value={inactiveCount}
+            subtext={inactiveCount === 0 ? "All categories active" : "Hidden from users"}
+            icon={XCircle}
+            trend={inactiveCount === 0 ? "up" : "warning"}
+          />
+          <StatCard
+            label="Avg Base Credits"
+            value={avgCredits}
+            subtext="Per category"
+            icon={Coins}
+          />
+        </div>
+      )}
 
       <Card>
         <CardHeader>

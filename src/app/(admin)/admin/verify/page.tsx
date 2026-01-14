@@ -20,8 +20,12 @@ import {
   FileText,
   ArrowRight,
   RefreshCw,
-  Inbox,
+  ClipboardCheck,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { StatCard } from "@/components/admin/stat-card";
 
 interface PendingTask {
   id: string;
@@ -69,49 +73,30 @@ export default function AdminVerifyListPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Verify Deliverables</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and approve deliverables before they&apos;re sent to clients
-          </p>
-        </div>
-        <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="py-6">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-5 w-48" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                  <Skeleton className="h-10 w-24" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Get unique clients and artists
+  const uniqueClients = new Set(tasks.map(t => t.client?.email).filter(Boolean)).size;
+  const uniqueArtists = new Set(tasks.map(t => t.freelancer?.email).filter(Boolean)).size;
+  const totalFiles = tasks.reduce((sum, t) => sum + t.deliverableCount, 0);
 
   if (error) {
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Verify Deliverables</h1>
+          <p className="text-muted-foreground">
+            Review and approve deliverables before they&apos;re sent to clients
+          </p>
         </div>
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
             <h2 className="text-xl font-semibold mb-2">Error Loading Tasks</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">{error}</p>
             <Button onClick={fetchPendingTasks}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
+              Try Again
             </Button>
           </CardContent>
         </Card>
@@ -125,91 +110,163 @@ export default function AdminVerifyListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Verify Deliverables</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground">
             Review and approve deliverables before they&apos;re sent to clients
           </p>
         </div>
-        <Button variant="outline" onClick={fetchPendingTasks}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button variant="outline" onClick={fetchPendingTasks} disabled={isLoading}>
+          <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
           Refresh
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Pending Review"
+            value={tasks.length}
+            subtext={tasks.length === 0 ? "All caught up!" : "Awaiting your review"}
+            icon={Clock}
+            trend={tasks.length > 5 ? "warning" : tasks.length > 0 ? "neutral" : "up"}
+          />
+          <StatCard
+            label="Total Files"
+            value={totalFiles}
+            subtext="Across all submissions"
+            icon={FileText}
+          />
+          <StatCard
+            label="From Artists"
+            value={uniqueArtists}
+            subtext="Unique submitters"
+            icon={Users}
+          />
+          <StatCard
+            label="For Clients"
+            value={uniqueClients}
+            subtext="Awaiting delivery"
+            icon={TrendingUp}
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      {isLoading ? (
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <Clock className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{tasks.length}</p>
-                <p className="text-sm text-muted-foreground">Pending Review</p>
-              </div>
+          <CardHeader>
+            <CardTitle>Submissions Queue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-lg border">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Pending Tasks List */}
-      {tasks.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Inbox className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No Pending Verifications</h2>
-            <p className="text-muted-foreground">
-              All deliverables have been reviewed. Check back later for new submissions.
+      ) : tasks.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+            <h2 className="text-2xl font-semibold mb-2">All Caught Up!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              There are no deliverables waiting for review. Check back later for new submissions from artists.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {tasks.map((task) => (
-            <Card key={task.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="py-6">
-                <div className="flex items-center justify-between">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              Submissions Queue
+            </CardTitle>
+            <CardDescription>
+              {tasks.length} submission{tasks.length !== 1 ? "s" : ""} ready for review
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {tasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-xl border bg-card transition-all hover:shadow-md hover:border-primary/30",
+                    index === 0 && "ring-2 ring-primary/20"
+                  )}
+                >
                   <div className="flex items-center gap-4">
+                    {/* Priority indicator for first item */}
+                    {index === 0 && (
+                      <div className="w-1 h-12 bg-primary rounded-full" />
+                    )}
+
+                    {/* Avatar with status */}
                     <div className="relative">
-                      <Avatar className="h-12 w-12">
+                      <Avatar className="h-12 w-12 border-2 border-background">
                         <AvatarImage src={task.freelancer?.image || undefined} />
-                        <AvatarFallback>
-                          {task.freelancer?.name?.[0]?.toUpperCase() || "F"}
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {task.freelancer?.name?.[0]?.toUpperCase() || "A"}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 bg-red-500 rounded-full p-1">
+                      <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-1 ring-2 ring-background">
                         <Clock className="h-3 w-3 text-white" />
                       </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{task.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>by {task.freelancer?.name || "Unknown"}</span>
-                        <span>•</span>
-                        <span>for {task.client?.name || "Unknown"}</span>
+
+                    {/* Task info */}
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate max-w-[300px]">{task.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                        <span className="truncate">by {task.freelancer?.name || "Unknown Artist"}</span>
+                        <span className="text-muted-foreground/50">→</span>
+                        <span className="truncate">for {task.client?.name || "Unknown Client"}</span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center gap-3 mt-2">
+                        <Badge variant="secondary" className="text-xs font-normal">
                           <FileText className="h-3 w-3 mr-1" />
                           {task.deliverableCount} file{task.deliverableCount !== 1 ? "s" : ""}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          Submitted {new Date(task.updatedAt).toLocaleDateString()}
+                          {new Date(task.updatedAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <Button asChild>
+
+                  {/* Action */}
+                  <Button asChild size="sm">
                     <Link href={`/admin/verify/${task.id}`}>
                       Review
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

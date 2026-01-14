@@ -37,7 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye, AlertTriangle, FolderOpen, Clock, CheckCircle2, Play } from "lucide-react";
 import {
   calculateWorkingDeadline,
   getTaskProgressPercent,
@@ -45,6 +45,7 @@ import {
   getDeadlineUrgency,
   formatTimeRemaining,
 } from "@/lib/utils";
+import { StatCard } from "@/components/admin/stat-card";
 
 interface Task {
   id: string;
@@ -206,6 +207,10 @@ export default function AllTasksPage() {
     );
   });
 
+  const pendingTasks = tasks.filter((t) => t.status === "PENDING").length;
+  const inProgressTasks = tasks.filter((t) => ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "REVISION_REQUESTED"].includes(t.status)).length;
+  const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -214,6 +219,66 @@ export default function AllTasksPage() {
           View and manage all tasks on the platform
         </p>
       </div>
+
+      {/* Stats */}
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Tasks"
+            value={tasks.length}
+            subtext="Submitted tasks"
+            icon={FolderOpen}
+          />
+          <StatCard
+            label="Pending"
+            value={pendingTasks}
+            subtext="Awaiting assignment"
+            icon={Clock}
+            trend={pendingTasks > 5 ? "warning" : pendingTasks > 0 ? "neutral" : "up"}
+          />
+          <StatCard
+            label="In Progress"
+            value={inProgressTasks}
+            subtext="Being worked on"
+            icon={Play}
+          />
+          <StatCard
+            label="Completed"
+            value={completedTasks}
+            subtext="Delivered to clients"
+            icon={CheckCircle2}
+            trend="up"
+          />
+        </div>
+      )}
+
+      {/* In-Progress Chats */}
+      {drafts.length > 0 && (
+        <Card className="border-dashed border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{drafts.length} In-Progress Chat{drafts.length !== 1 ? "s" : ""}</p>
+                  <p className="text-sm text-muted-foreground">Conversations not yet submitted as tasks</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab("drafts")}>
+                View Chats
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Top-level tabs for Tasks vs Drafts */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "tasks" | "drafts"); setPage(0); }}>

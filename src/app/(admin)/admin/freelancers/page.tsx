@@ -33,8 +33,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Check, X, ExternalLink, Users } from "lucide-react";
+import { Check, X, ExternalLink, Users, Clock, UserCheck, Star, CheckCircle2 } from "lucide-react";
 import { useBulkSelection } from "@/hooks/use-bulk-selection";
+import { StatCard } from "@/components/admin/stat-card";
 
 interface Freelancer {
   id: string;
@@ -219,6 +220,13 @@ export default function FreelancersPage() {
     return <Badge variant={variants[status] || "secondary"}>{labels[status] || status}</Badge>;
   };
 
+  const pendingCount = freelancers.filter((f) => f.status === "PENDING").length;
+  const approvedCount = freelancers.filter((f) => f.status === "APPROVED").length;
+  const totalCompletedTasks = freelancers.reduce((sum, f) => sum + f.completedTasks, 0);
+  const avgRating = freelancers.filter((f) => f.rating).length > 0
+    ? freelancers.filter((f) => f.rating).reduce((sum, f) => sum + parseFloat(f.rating || "0"), 0) / freelancers.filter((f) => f.rating).length
+    : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -227,6 +235,45 @@ export default function FreelancersPage() {
           Manage artist applications and profiles
         </p>
       </div>
+
+      {/* Stats */}
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Pending Review"
+            value={pendingCount}
+            subtext={pendingCount === 0 ? "All caught up!" : "Awaiting approval"}
+            icon={Clock}
+            trend={pendingCount > 5 ? "warning" : pendingCount > 0 ? "neutral" : "up"}
+          />
+          <StatCard
+            label="Approved Artists"
+            value={approvedCount}
+            subtext="Active on platform"
+            icon={UserCheck}
+            trend="up"
+          />
+          <StatCard
+            label="Tasks Completed"
+            value={totalCompletedTasks}
+            subtext="Across all artists"
+            icon={CheckCircle2}
+          />
+          <StatCard
+            label="Avg Rating"
+            value={avgRating > 0 ? avgRating.toFixed(1) : "—"}
+            subtext={avgRating > 0 ? "Out of 5.0" : "No ratings yet"}
+            icon={Star}
+            trend={avgRating >= 4 ? "up" : avgRating > 0 ? "neutral" : undefined}
+          />
+        </div>
+      )}
 
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList>

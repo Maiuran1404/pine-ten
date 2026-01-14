@@ -9,6 +9,10 @@ import {
   getMoreOfStyle,
   getDifferentStyles,
 } from "@/lib/ai/deliverable-styles";
+import {
+  getBrandAwareStyles,
+  getBrandAwareStylesOfAxis,
+} from "@/lib/ai/brand-style-scoring";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 
 async function handler(request: NextRequest) {
@@ -37,16 +41,26 @@ async function handler(request: NextRequest) {
 
       try {
         if (type === "more" && styleAxis) {
-          deliverableStyles = await getMoreOfStyle(
+          // Use brand-aware scoring for more styles
+          deliverableStyles = await getBrandAwareStylesOfAxis(
             deliverableType as DeliverableType,
             styleAxis as StyleAxis,
+            session.user.id,
             styleOffset || 0
           );
         } else if (type === "different") {
-          deliverableStyles = await getDifferentStyles(
+          // For different styles, get brand-aware styles excluding already shown axes
+          deliverableStyles = await getBrandAwareStyles(
             deliverableType as DeliverableType,
-            excludeStyleAxes || []
+            session.user.id,
+            { includeAllAxes: true, limit: 4 }
           );
+          // Filter out excluded axes
+          if (excludeStyleAxes?.length) {
+            deliverableStyles = deliverableStyles.filter(
+              s => !excludeStyleAxes.includes(s.styleAxis)
+            );
+          }
         }
       } catch (err) {
         console.error("Error fetching deliverable styles:", err);
@@ -73,6 +87,7 @@ async function handler(request: NextRequest) {
     }
 
     // Get deliverable styles if marker was present from AI response
+    // Now using brand-aware scoring for personalized recommendations
     let deliverableStyles = undefined;
     if (response.deliverableStyleMarker) {
       const { type, deliverableType, styleAxis } = response.deliverableStyleMarker;
@@ -80,22 +95,33 @@ async function handler(request: NextRequest) {
       try {
         switch (type) {
           case "initial":
-            deliverableStyles = await getInitialDeliverableStyles(
-              deliverableType as DeliverableType
+            // Use brand-aware styles with one per axis, sorted by brand match
+            deliverableStyles = await getBrandAwareStyles(
+              deliverableType as DeliverableType,
+              session.user.id,
+              { includeAllAxes: true }
             );
             break;
           case "more":
-            deliverableStyles = await getMoreOfStyle(
+            deliverableStyles = await getBrandAwareStylesOfAxis(
               deliverableType as DeliverableType,
               styleAxis as StyleAxis,
+              session.user.id,
               styleOffset || 0
             );
             break;
           case "different":
-            deliverableStyles = await getDifferentStyles(
+            deliverableStyles = await getBrandAwareStyles(
               deliverableType as DeliverableType,
-              excludeStyleAxes || []
+              session.user.id,
+              { includeAllAxes: true, limit: 4 }
             );
+            // Filter out excluded axes
+            if (excludeStyleAxes?.length) {
+              deliverableStyles = deliverableStyles.filter(
+                s => !excludeStyleAxes.includes(s.styleAxis)
+              );
+            }
             break;
         }
       } catch (err) {

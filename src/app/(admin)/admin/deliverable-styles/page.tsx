@@ -37,7 +37,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Plus, Trash2, Search, LayoutTemplate, Pencil, ToggleLeft, ToggleRight, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Search, LayoutTemplate, Pencil, ToggleLeft, ToggleRight, ChevronDown, ChevronRight, ImageIcon, TrendingUp, Layers, MessageSquare } from "lucide-react";
 import {
   DELIVERABLE_TYPES,
   STYLE_AXES,
@@ -45,6 +45,8 @@ import {
   type StyleAxis,
 } from "@/lib/constants/reference-libraries";
 import { DeliverableStyleUploader } from "@/components/admin/deliverable-style-uploader";
+import { StatCard } from "@/components/admin/stat-card";
+import { cn } from "@/lib/utils";
 
 interface DeliverableStyleReference {
   id: string;
@@ -480,6 +482,37 @@ export default function DeliverableStylesPage() {
         </Select>
       </div>
 
+      {/* Stats Overview */}
+      {!isLoading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Styles"
+            value={styles.length}
+            subtext={`${styles.filter(s => s.isActive).length} active`}
+            icon={ImageIcon}
+          />
+          <StatCard
+            label="Deliverable Types"
+            value={new Set(styles.map(s => s.deliverableType)).size}
+            subtext={`of ${DELIVERABLE_TYPES.length} available`}
+            icon={Layers}
+          />
+          <StatCard
+            label="Style Axes"
+            value={new Set(styles.map(s => s.styleAxis)).size}
+            subtext={`of ${STYLE_AXES.length} covered`}
+            icon={TrendingUp}
+          />
+          <StatCard
+            label="Total Usage"
+            value={styles.reduce((sum, s) => sum + s.usageCount, 0)}
+            subtext="Times shown in chat"
+            icon={MessageSquare}
+            trend="up"
+          />
+        </div>
+      )}
+
       {/* Bulk Upload Section */}
       <DeliverableStyleUploader onUploadComplete={fetchStyles} />
 
@@ -494,15 +527,21 @@ export default function DeliverableStylesPage() {
           </CardContent>
         </Card>
       ) : Object.keys(groupedStyles).length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <LayoutTemplate className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No deliverable styles found</p>
-              <Button variant="outline" className="mt-4" onClick={openCreateDialog}>
-                Add your first style
-              </Button>
+        <Card className="border-dashed">
+          <CardContent className="py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <LayoutTemplate className="h-10 w-10 text-primary" />
             </div>
+            <h2 className="text-2xl font-semibold mb-2">No Styles Found</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              {searchTerm || typeFilter !== "all" || axisFilter !== "all"
+                ? "Try adjusting your filters to see more results."
+                : "Add style references that will be shown to clients during chat conversations."}
+            </p>
+            <Button onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Style
+            </Button>
           </CardContent>
         </Card>
       ) : (

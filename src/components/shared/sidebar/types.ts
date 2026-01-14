@@ -6,6 +6,11 @@ export interface NavigationItem {
   icon: LucideIcon;
 }
 
+export interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+}
+
 export interface RecentItem {
   id: string;
   title: string;

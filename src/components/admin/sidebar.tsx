@@ -26,94 +26,129 @@ import {
   Palette,
   LayoutTemplate,
   Shield,
+  BarChart3,
+  ClipboardCheck,
+  Image,
+  Sparkles,
+  Cog,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
-  SidebarNavigation,
+  SidebarGroupedNavigation,
   SidebarRecents,
-  type NavigationItem,
+  type NavigationGroup,
 } from "@/components/shared/sidebar";
 
-const navigation: NavigationItem[] = [
+const navigationGroups: NavigationGroup[] = [
   {
-    name: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
+    label: "Overview",
+    items: [
+      {
+        name: "Dashboard",
+        href: "/admin",
+        icon: LayoutDashboard,
+      },
+      {
+        name: "Revenue",
+        href: "/admin/revenue",
+        icon: DollarSign,
+      },
+    ],
   },
   {
-    name: "Revenue",
-    href: "/admin/revenue",
-    icon: DollarSign,
+    label: "Operations",
+    items: [
+      {
+        name: "All Tasks",
+        href: "/admin/tasks",
+        icon: FolderOpen,
+      },
+      {
+        name: "Verify",
+        href: "/admin/verify",
+        icon: ClipboardCheck,
+      },
+    ],
   },
   {
-    name: "All Tasks",
-    href: "/admin/tasks",
-    icon: FolderOpen,
+    label: "People",
+    items: [
+      {
+        name: "Clients",
+        href: "/admin/clients",
+        icon: Users,
+      },
+      {
+        name: "Artists",
+        href: "/admin/freelancers",
+        icon: UserCheck,
+      },
+    ],
   },
   {
-    name: "Verify",
-    href: "/admin/verify",
-    icon: ShieldCheck,
+    label: "Libraries",
+    items: [
+      {
+        name: "Categories",
+        href: "/admin/categories",
+        icon: Tags,
+      },
+      {
+        name: "Brand Library",
+        href: "/admin/brand-references",
+        icon: Palette,
+      },
+      {
+        name: "Reference Library",
+        href: "/admin/deliverable-styles",
+        icon: LayoutTemplate,
+      },
+    ],
   },
   {
-    name: "Clients",
-    href: "/admin/clients",
-    icon: Users,
+    label: "Tools",
+    items: [
+      {
+        name: "Quick Design",
+        href: "/admin/orshot-templates",
+        icon: Wand2,
+      },
+      {
+        name: "Chat Setup",
+        href: "/admin/chat-setup",
+        icon: MessageSquare,
+      },
+      {
+        name: "Coupons",
+        href: "/admin/coupons",
+        icon: Ticket,
+      },
+    ],
   },
   {
-    name: "Artists",
-    href: "/admin/freelancers",
-    icon: UserCheck,
-  },
-  {
-    name: "Categories",
-    href: "/admin/categories",
-    icon: Tags,
-  },
-  {
-    name: "Brand Library",
-    href: "/admin/brand-references",
-    icon: Palette,
-  },
-  {
-    name: "Reference Library",
-    href: "/admin/deliverable-styles",
-    icon: LayoutTemplate,
-  },
-  {
-    name: "Quick Design",
-    href: "/admin/orshot-templates",
-    icon: Wand2,
-  },
-  {
-    name: "Coupons",
-    href: "/admin/coupons",
-    icon: Ticket,
-  },
-  {
-    name: "Chat Setup",
-    href: "/admin/chat-setup",
-    icon: MessageSquare,
-  },
-  {
-    name: "Notifications",
-    href: "/admin/notifications",
-    icon: Bell,
-  },
-  {
-    name: "Security",
-    href: "/admin/security",
-    icon: Shield,
-  },
-  {
-    name: "Database",
-    href: "/admin/database",
-    icon: Database,
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
+    label: "System",
+    items: [
+      {
+        name: "Notifications",
+        href: "/admin/notifications",
+        icon: Bell,
+      },
+      {
+        name: "Security",
+        href: "/admin/security",
+        icon: Shield,
+      },
+      {
+        name: "Database",
+        href: "/admin/database",
+        icon: Database,
+      },
+      {
+        name: "Settings",
+        href: "/admin/settings",
+        icon: Settings,
+      },
+    ],
   },
 ];
 
@@ -145,8 +180,8 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarNavigation
-              items={navigation}
+            <SidebarGroupedNavigation
+              groups={navigationGroups}
               basePath="/admin"
               accentColor="rose"
             />
@@ -161,8 +196,8 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
 
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
         <div className="px-2 py-2">
-          <p className="text-xs opacity-50">Super Admin Panel</p>
-          <p className="text-xs opacity-70">Full platform control</p>
+          <p className="text-xs opacity-50">Admin Panel</p>
+          <p className="text-xs opacity-70">Platform Control</p>
         </div>
       </SidebarFooter>
     </Sidebar>

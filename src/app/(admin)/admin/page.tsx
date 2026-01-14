@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   DollarSign,
   Tags,
-  Image,
   ArrowRight,
   LogOut,
 } from "lucide-react";
@@ -51,8 +50,8 @@ const QUICK_ACTIONS = [
     id: "freelancers",
     href: "/admin/freelancers",
     icon: UserCheck,
-    title: "Freelancers",
-    description: "Manage freelancer approvals",
+    title: "Artists",
+    description: "Manage artist approvals",
     gridClass: "col-span-1 md:col-span-3",
   },
   {
@@ -64,11 +63,11 @@ const QUICK_ACTIONS = [
     gridClass: "col-span-1 md:col-span-3",
   },
   {
-    id: "styles",
-    href: "/admin/styles",
-    icon: Image,
-    title: "Style Library",
-    description: "Manage style references",
+    id: "verify",
+    href: "/admin/verify",
+    icon: CheckCircle,
+    title: "Verify",
+    description: "Review pending deliverables",
     gridClass: "col-span-1 md:col-span-3",
   },
 ];
