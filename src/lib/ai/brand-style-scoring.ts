@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 import { analyzeColorBucketFromHex, type ColorBucket } from "@/lib/constants/reference-libraries";
 import { getHistoryBoostScores } from "./selection-history";
+import { extractStyleDNA, type StyleDNA } from "./style-dna";
 
 /**
  * Multi-Factor Scoring Weights
@@ -237,11 +238,38 @@ function calculateMultiFactorScore(factors: {
   );
 }
 
+/**
+ * Get Style DNA boost for a style axis
+ * Uses the pre-extracted DNA to provide additional confidence scoring
+ */
+function getStyleDNABoost(
+  styleAxis: StyleAxis,
+  styleDNA: StyleDNA | null
+): { boost: number; reason: string | null } {
+  if (!styleDNA) return { boost: 0, reason: null };
+
+  const axisRecommendation = styleDNA.recommendedAxes.find(r => r.axis === styleAxis);
+  if (!axisRecommendation) return { boost: 0, reason: null };
+
+  // Convert confidence (0-100) to boost (0-15)
+  // Only apply boost if confidence is above 60
+  if (axisRecommendation.confidence >= 60) {
+    const boost = Math.round((axisRecommendation.confidence - 50) * 0.3);
+    return {
+      boost,
+      reason: axisRecommendation.reason,
+    };
+  }
+
+  return { boost: 0, reason: null };
+}
+
 export interface ScoreFactors {
   brand: number;
   history: number;
   popularity: number;
   freshness: number;
+  dnaBoost?: number;  // Additional boost from Style DNA analysis
 }
 
 export interface BrandAwareStyle {
@@ -355,6 +383,15 @@ export async function getBrandAwareStyles(
     brandColors: company.brandColors,
   });
 
+  // Extract Style DNA for enhanced recommendations
+  let styleDNA: StyleDNA | null = null;
+  try {
+    styleDNA = await extractStyleDNA(userId);
+  } catch (error) {
+    console.error("Error extracting Style DNA:", error);
+    // Continue without DNA analysis
+  }
+
   // Get history-based boosts for personalization
   let historyBoosts = new Map<string, number>();
   try {
@@ -384,15 +421,21 @@ export async function getBrandAwareStyles(
     const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
     const freshnessScore = calculateFreshnessScore(style.createdAt);
 
+    // Get Style DNA boost for this axis
+    const dnaResult = getStyleDNABoost(style.styleAxis as StyleAxis, styleDNA);
+
     // Calculate multi-factor total score
     const scoreFactors: ScoreFactors = {
       brand: brandScore,
       history: historyScore,
       popularity: popularityScore,
       freshness: freshnessScore,
+      dnaBoost: dnaResult.boost,
     };
 
-    const totalScore = calculateMultiFactorScore(scoreFactors, hasHistory);
+    // Apply DNA boost to total score
+    const baseScore = calculateMultiFactorScore(scoreFactors, hasHistory);
+    const totalScore = Math.min(100, baseScore + dnaResult.boost);
 
     // Generate match reasons
     const matchReasons: string[] = [];
@@ -400,6 +443,11 @@ export async function getBrandAwareStyles(
     // History-based reason (highest priority)
     if (historyScore >= 50) {
       matchReasons.push("Based on your preferences");
+    }
+
+    // DNA-based reason
+    if (dnaResult.reason && dnaResult.boost >= 5) {
+      matchReasons.push(dnaResult.reason);
     }
 
     // Brand-based reasons
