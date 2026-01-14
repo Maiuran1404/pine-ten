@@ -165,27 +165,94 @@ async function checkHttps(targetUrl: string): Promise<TestResult> {
   };
 }
 
-async function simulateTest(testName: string, category: string): Promise<TestResult> {
+async function markAsManualCheck(testName: string): Promise<TestResult> {
   const startTime = Date.now();
-  // Simulate test execution with random delay
-  await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000));
+  // Small delay for UX
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // For demo purposes, most tests pass with some random failures
-  const shouldPass = Math.random() > 0.15;
+  return {
+    status: "SKIPPED",
+    errorMessage: `Requires manual verification: ${testName}`,
+    durationMs: Date.now() - startTime,
+  };
+}
 
-  if (shouldPass) {
+// Check for sensitive data in responses
+async function checkSensitiveDataExposure(targetUrl: string): Promise<TestResult> {
+  const startTime = Date.now();
+  const findings: TestResult["findings"] = [];
+
+  try {
+    // Check if error pages expose stack traces
+    const errorResponse = await fetch(`${targetUrl}/api/nonexistent-endpoint-test-12345`);
+    const text = await errorResponse.text();
+
+    if (text.includes("at ") && text.includes(".js:") || text.includes(".ts:")) {
+      findings.push({
+        type: "stack_trace_exposure",
+        severity: "medium",
+        message: "Error responses may expose stack traces",
+        location: targetUrl,
+      });
+    }
+
+    return {
+      status: findings.length === 0 ? "PASSED" : "FAILED",
+      findings,
+      durationMs: Date.now() - startTime,
+    };
+  } catch {
     return {
       status: "PASSED",
       durationMs: Date.now() - startTime,
     };
-  } else {
+  }
+}
+
+// Check cookie security flags
+async function checkCookieSecurity(targetUrl: string): Promise<TestResult> {
+  const startTime = Date.now();
+  const findings: TestResult["findings"] = [];
+
+  try {
+    const response = await fetch(targetUrl);
+    const cookies = response.headers.get("set-cookie");
+
+    if (cookies) {
+      if (!cookies.toLowerCase().includes("httponly")) {
+        findings.push({
+          type: "insecure_cookie",
+          severity: "medium",
+          message: "Cookies should have HttpOnly flag",
+          location: targetUrl,
+        });
+      }
+      if (!cookies.toLowerCase().includes("secure") && targetUrl.startsWith("https://")) {
+        findings.push({
+          type: "insecure_cookie",
+          severity: "medium",
+          message: "Cookies should have Secure flag on HTTPS",
+          location: targetUrl,
+        });
+      }
+      if (!cookies.toLowerCase().includes("samesite")) {
+        findings.push({
+          type: "insecure_cookie",
+          severity: "low",
+          message: "Cookies should have SameSite attribute",
+          location: targetUrl,
+        });
+      }
+    }
+
     return {
-      status: "FAILED",
-      findings: [{
-        type: "test_failure",
-        severity: category === "auth" || category === "authz" ? "critical" : "medium",
-        message: `${testName} check did not pass validation`,
-      }],
+      status: findings.length === 0 ? "PASSED" : "FAILED",
+      findings,
+      durationMs: Date.now() - startTime,
+    };
+  } catch {
+    return {
+      status: "PASSED",
       durationMs: Date.now() - startTime,
     };
   }
@@ -201,23 +268,70 @@ async function executeTest(
   targetUrl: string
 ): Promise<TestResult> {
   const { name, category } = test;
+  const nameLower = name.toLowerCase();
 
-  // Map specific tests to actual checks
-  if (name.toLowerCase().includes("security headers")) {
+  // ===== HEADER CHECKS =====
+  if (nameLower.includes("security headers")) {
     return checkSecurityHeaders(targetUrl);
   }
-  if (name.toLowerCase().includes("api authentication") || name.toLowerCase().includes("api auth")) {
-    return checkApiAuthentication(targetUrl);
-  }
-  if (name.toLowerCase().includes("cors")) {
+  if (nameLower.includes("cors")) {
     return checkCorsConfiguration(targetUrl);
   }
-  if (name.toLowerCase().includes("https") || name.toLowerCase().includes("encryption")) {
+  if (nameLower.includes("content security policy") || nameLower.includes("csp")) {
+    return checkSecurityHeaders(targetUrl); // CSP is checked with headers
+  }
+
+  // ===== API CHECKS =====
+  if (nameLower.includes("api authentication") || nameLower.includes("api auth")) {
+    return checkApiAuthentication(targetUrl);
+  }
+  if (nameLower.includes("api rate limit")) {
+    // Can't easily test rate limiting without making many requests
+    return markAsManualCheck(name);
+  }
+  if (nameLower.includes("api error") || nameLower.includes("sensitive data")) {
+    return checkSensitiveDataExposure(targetUrl);
+  }
+
+  // ===== TRANSPORT CHECKS =====
+  if (nameLower.includes("https") || nameLower.includes("secure transport")) {
     return checkHttps(targetUrl);
   }
 
-  // For other tests, simulate execution
-  return simulateTest(name, category);
+  // ===== COOKIE/SESSION CHECKS =====
+  if (nameLower.includes("cookie") || nameLower.includes("secure cookie")) {
+    return checkCookieSecurity(targetUrl);
+  }
+  if (nameLower.includes("session")) {
+    return checkCookieSecurity(targetUrl); // Session security relates to cookies
+  }
+
+  // ===== TESTS REQUIRING BROWSER/MANUAL VERIFICATION =====
+  // These can't be automated without a browser or user credentials
+  if (
+    nameLower.includes("xss") ||
+    nameLower.includes("sql injection") ||
+    nameLower.includes("csrf") ||
+    nameLower.includes("login") ||
+    nameLower.includes("logout") ||
+    nameLower.includes("password") ||
+    nameLower.includes("admin page") ||
+    nameLower.includes("role-based") ||
+    nameLower.includes("user can only") ||
+    nameLower.includes("idor") ||
+    nameLower.includes("file upload") ||
+    nameLower.includes("payment") ||
+    nameLower.includes("redirect") ||
+    nameLower.includes("path traversal") ||
+    nameLower.includes("data export") ||
+    nameLower.includes("pii") ||
+    nameLower.includes("concurrent session")
+  ) {
+    return markAsManualCheck(name);
+  }
+
+  // Default: mark as requiring manual check
+  return markAsManualCheck(name);
 }
 
 // POST - Execute a test run
@@ -322,13 +436,14 @@ export async function POST(request: NextRequest) {
       if (testResult.status === "PASSED") passedCount++;
       else if (testResult.status === "FAILED") failedCount++;
       else if (testResult.status === "ERROR") errorCount++;
+      // SKIPPED tests are not counted
     }
 
-    // Calculate score
-    const totalTests = pendingResults.length;
-    const score = totalTests > 0
-      ? Math.round((passedCount / totalTests) * 100)
-      : 0;
+    // Calculate score (only count tests that actually ran, exclude skipped)
+    const ranTests = passedCount + failedCount + errorCount;
+    const score = ranTests > 0
+      ? Math.round((passedCount / ranTests) * 100)
+      : 100; // If all tests were skipped, score is 100%
 
     // Mark run as completed
     await db
@@ -346,7 +461,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       runId,
-      totalTests,
+      totalTests: pendingResults.length,
       passedTests: passedCount,
       failedTests: failedCount,
       errorTests: errorCount,

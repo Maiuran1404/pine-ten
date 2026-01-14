@@ -44,6 +44,7 @@ import {
   type DeliverableType,
   type StyleAxis,
 } from "@/lib/constants/reference-libraries";
+import { DeliverableStyleUploader } from "@/components/admin/deliverable-style-uploader";
 
 interface DeliverableStyleReference {
   id: string;
@@ -277,9 +278,9 @@ export default function DeliverableStylesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Deliverable Styles</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Reference Library</h1>
           <p className="text-muted-foreground">
-            Manage style references shown in chat for deliverable requests
+            Manage design style references shown in chat conversations
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -478,6 +479,9 @@ export default function DeliverableStylesPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Bulk Upload Section */}
+      <DeliverableStyleUploader onUploadComplete={fetchStyles} />
 
       {isLoading ? (
         <Card>

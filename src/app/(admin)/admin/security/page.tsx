@@ -225,9 +225,12 @@ export default function SecurityPage() {
               const data = await resultsRes.json();
               setLatestResults(data.results || []);
 
-              // Calculate category stats
+              // Calculate category stats (exclude skipped tests)
               const catMap = new Map<string, CategorySummary>();
               for (const result of data.results || []) {
+                // Skip SKIPPED tests in category stats
+                if (result.status === "SKIPPED") continue;
+
                 const cat = result.category || "unknown";
                 if (!catMap.has(cat)) {
                   catMap.set(cat, { category: cat, total: 0, passed: 0, failed: 0, errors: 0 });
@@ -438,9 +441,17 @@ export default function SecurityPage() {
     });
   };
 
-  // Get all failed tests with findings
+  // Get all failed tests with findings (exclude skipped)
   const failedTests = latestResults.filter(
     (r) => r.status === "FAILED" || r.status === "ERROR"
+  );
+
+  // Get skipped tests count
+  const skippedTests = latestResults.filter((r) => r.status === "SKIPPED");
+
+  // Get tests that actually ran
+  const ranTests = latestResults.filter(
+    (r) => r.status === "PASSED" || r.status === "FAILED" || r.status === "ERROR"
   );
 
   const score = latestRun?.score ? parseFloat(latestRun.score) : 0;
@@ -547,6 +558,14 @@ export default function SecurityPage() {
                       {latestRun.failedTests} tests
                     </span>
                   </div>
+                  {skippedTests.length > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Skipped</span>
+                      <span className="font-medium text-gray-500">
+                        {skippedTests.length} tests
+                      </span>
+                    </div>
+                  )}
                 </div>
                 {/* Score trend indicator */}
                 {(() => {
@@ -832,7 +851,7 @@ export default function SecurityPage() {
                     <CollapsibleContent>
                       <div className="mt-2 space-y-1">
                         {latestResults
-                          .filter((r) => r.category === cat.category)
+                          .filter((r) => r.category === cat.category && r.status !== "SKIPPED")
                           .map((result) => (
                             <div
                               key={result.id}

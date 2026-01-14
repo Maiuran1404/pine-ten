@@ -14,7 +14,6 @@ import {
   Users,
   FolderOpen,
   UserCheck,
-  Image,
   Settings,
   Tags,
   Database,
@@ -72,17 +71,12 @@ const navigation: NavigationItem[] = [
     icon: Tags,
   },
   {
-    name: "Style Library",
-    href: "/admin/styles",
-    icon: Image,
-  },
-  {
     name: "Brand Library",
     href: "/admin/brand-references",
     icon: Palette,
   },
   {
-    name: "Deliverable Styles",
+    name: "Reference Library",
     href: "/admin/deliverable-styles",
     icon: LayoutTemplate,
   },
