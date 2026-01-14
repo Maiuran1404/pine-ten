@@ -480,7 +480,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
                       <Input
                         value={upload.classification.subStyle || ""}
                         onChange={(e) =>
-                          updateClassification(upload.id, "subStyle", e.target.value || null)
+                          updateClassification(upload.id, "subStyle", e.target.value || "")
                         }
                         placeholder="e.g., dark-mode"
                         className="h-8 mt-1"

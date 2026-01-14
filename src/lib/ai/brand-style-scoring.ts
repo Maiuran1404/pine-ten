@@ -231,8 +231,9 @@ export async function getBrandAwareStyles(
 
   // If no company data, return styles with neutral scoring
   if (!company) {
-    const neutralScored = styles.map(style => ({
+    const neutralScored: BrandAwareStyle[] = styles.map(style => ({
       ...style,
+      semanticTags: style.semanticTags || [],
       brandMatchScore: 50,
       matchReason: "No brand profile available",
     }));
@@ -285,6 +286,7 @@ export async function getBrandAwareStyles(
 
     return {
       ...style,
+      semanticTags: style.semanticTags || [],
       brandMatchScore: score,
       matchReason,
     };
@@ -382,6 +384,7 @@ export async function getBrandAwareStylesOfAxis(
 
     return styles.map(style => ({
       ...style,
+      semanticTags: style.semanticTags || [],
       brandMatchScore: calculateStyleScore(styleAxis, colorProfile, company.industry),
       matchReason: `More ${styleAxis} options`,
     }));
@@ -389,6 +392,7 @@ export async function getBrandAwareStylesOfAxis(
 
   return styles.map(style => ({
     ...style,
+    semanticTags: style.semanticTags || [],
     brandMatchScore: 50,
     matchReason: `More ${styleAxis} options`,
   }));
