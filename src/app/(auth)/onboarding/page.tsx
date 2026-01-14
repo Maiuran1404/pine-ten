@@ -1399,7 +1399,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                     }}
                     transition={{
                       y: {
-                        duration: 20 + index * 4,
+                        duration: 60 + index * 10,
                         repeat: Infinity,
                         ease: "linear",
                       },
