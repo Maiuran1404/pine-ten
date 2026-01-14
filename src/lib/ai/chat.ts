@@ -135,7 +135,26 @@ After user selects a style direction, you can:
 - Ask clarifying questions about that style
 - Suggest more variations: [MORE_STYLES: deliverable_type, style_axis]
   Example: [MORE_STYLES: instagram_post, minimal]
-- Show different directions: [DIFFERENT_STYLES: deliverable_type]`;
+- Show different directions: [DIFFERENT_STYLES: deliverable_type]
+
+SEMANTIC STYLE SEARCH:
+When user expresses a style preference using descriptive words (not just asking for a category),
+use semantic search to find styles that match their description:
+
+[SEARCH_STYLES: search_query, deliverable_type]
+
+Examples of when to use semantic search:
+- User says "something more playful and colorful" → [SEARCH_STYLES: playful colorful, instagram_post]
+- User says "I want a clean tech startup vibe" → [SEARCH_STYLES: clean tech startup minimal, linkedin_post]
+- User says "show me premium luxury styles" → [SEARCH_STYLES: premium luxury elegant, instagram_post]
+- User says "something warmer and friendlier" → [SEARCH_STYLES: warm friendly approachable, instagram_post]
+
+The semantic search understands synonyms and related concepts:
+- "cozy" → matches warm, friendly, approachable
+- "sleek" → matches modern, minimal, professional
+- "vibrant" → matches bold, colorful, energetic
+
+Use SEARCH_STYLES when user describes a feeling/mood, not just a style axis.`;
 
 const DEFAULT_STATIC_ADS_TREE = `=== STATIC ADS / GRAPHICS DECISION TREE ===
 
@@ -590,9 +609,10 @@ export interface ChatMessage {
 }
 
 export interface DeliverableStyleMarker {
-  type: "initial" | "more" | "different";
+  type: "initial" | "more" | "different" | "semantic";
   deliverableType: string;
   styleAxis?: string;
+  searchQuery?: string;  // For semantic search queries
 }
 
 export async function chat(
@@ -704,6 +724,16 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     };
   }
 
+  // Check for semantic style search: [SEARCH_STYLES: query, type]
+  const searchStylesMatch = content.match(/\[SEARCH_STYLES: ([^,]+),\s*([^\]]+)\]/);
+  if (searchStylesMatch) {
+    deliverableStyleMarker = {
+      type: "semantic",
+      searchQuery: searchStylesMatch[1].trim(),
+      deliverableType: searchStylesMatch[2].trim(),
+    };
+  }
+
   // Extract quick options if present
   const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/);
   let quickOptions: { question: string; options: string[] } | undefined;
@@ -721,6 +751,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, "")
     .replace(/\[MORE_STYLES: [^\]]+\]/g, "")
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, "")
+    .replace(/\[SEARCH_STYLES: [^\]]+\]/g, "")
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();
 

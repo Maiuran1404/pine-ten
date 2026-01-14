@@ -13,6 +13,10 @@ import {
   getBrandAwareStyles,
   getBrandAwareStylesOfAxis,
 } from "@/lib/ai/brand-style-scoring";
+import {
+  searchStylesByQuery,
+  aiEnhancedStyleSearch,
+} from "@/lib/ai/semantic-style-search";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 
 async function handler(request: NextRequest) {
@@ -121,6 +125,41 @@ async function handler(request: NextRequest) {
               deliverableStyles = deliverableStyles.filter(
                 s => !excludeStyleAxes.includes(s.styleAxis)
               );
+            }
+            break;
+          case "semantic":
+            // Use semantic search based on the query
+            const { searchQuery } = response.deliverableStyleMarker;
+            if (searchQuery) {
+              // First try keyword-based semantic search
+              const semanticResults = await searchStylesByQuery(
+                searchQuery,
+                deliverableType as DeliverableType,
+                8
+              );
+
+              // If we get good results, use them; otherwise fall back to AI-enhanced search
+              if (semanticResults.length >= 3 && semanticResults[0].semanticScore >= 40) {
+                deliverableStyles = semanticResults.map(s => ({
+                  ...s,
+                  brandMatchScore: s.semanticScore,
+                  matchReason: s.matchedKeywords.length > 0
+                    ? `Matches: ${s.matchedKeywords.slice(0, 3).join(", ")}`
+                    : "Semantic match",
+                }));
+              } else {
+                // Use AI-enhanced search for complex queries
+                const aiResults = await aiEnhancedStyleSearch(
+                  searchQuery,
+                  deliverableType as DeliverableType,
+                  6
+                );
+                deliverableStyles = aiResults.map(s => ({
+                  ...s,
+                  brandMatchScore: s.semanticScore,
+                  matchReason: "AI-matched to your description",
+                }));
+              }
             }
             break;
         }
