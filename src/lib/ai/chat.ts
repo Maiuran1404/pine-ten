@@ -367,9 +367,12 @@ BRIEF STATUS:
 const DEFAULT_SOCIAL_MEDIA_TREE = `=== SOCIAL MEDIA CONTENT DECISION TREE ===
 
 IMPORTANT: Parse the user's request FIRST. Skip questions already answered:
-- "Instagram post" → Platform is Instagram, content type is Feed post
-- "Instagram story" → Platform is Instagram, content type is Story
-- "LinkedIn post" → Platform is LinkedIn, content type is Feed post
+- "Instagram post" → Platform is Instagram, content type is Feed post → Use [DELIVERABLE_STYLES: instagram_post]
+- "Instagram story" → Platform is Instagram, content type is Story → Use [DELIVERABLE_STYLES: instagram_story]
+- "Instagram reel" → Platform is Instagram, content type is Reel → Use [DELIVERABLE_STYLES: instagram_reel]
+- "LinkedIn post" → Platform is LinkedIn, content type is Feed post → Use [DELIVERABLE_STYLES: linkedin_post]
+- "LinkedIn banner" → Platform is LinkedIn, content type is Banner → Use [DELIVERABLE_STYLES: linkedin_banner]
+- "Twitter/X post" → Platform is Twitter/X → Use [DELIVERABLE_STYLES: twitter_post]
 - "TikTok" → Platform is TikTok
 - "carousel" → Content type is Carousel
 
@@ -377,8 +380,14 @@ STEP 1 - STYLE DIRECTION (ALWAYS ASK THIS FIRST):
 
 Say: "**[Specific content type]** 📱 — let's make it scroll-stopping! Here are some style directions."
 
-Then IMMEDIATELY output this marker:
-[STYLE_REFERENCES: social_media]
+CRITICAL: Use the appropriate DELIVERABLE_STYLES marker based on the specific deliverable:
+- For Instagram post: [DELIVERABLE_STYLES: instagram_post]
+- For Instagram story: [DELIVERABLE_STYLES: instagram_story]
+- For Instagram reel: [DELIVERABLE_STYLES: instagram_reel]
+- For LinkedIn post: [DELIVERABLE_STYLES: linkedin_post]
+- For LinkedIn banner: [DELIVERABLE_STYLES: linkedin_banner]
+- For Twitter/X post: [DELIVERABLE_STYLES: twitter_post]
+- For general/unspecified social: [STYLE_REFERENCES: social_media]
 
 Then say: "**Pick what fits your vibe**, or tell me your vision."
 
