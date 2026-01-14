@@ -850,6 +850,54 @@ export const securitySnapshots = pgTable(
   (table) => [index("security_snapshots_created_at_idx").on(table.createdAt)]
 );
 
+// Style selection history (for learning from user preferences)
+export const styleSelectionHistory = pgTable(
+  "style_selection_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    styleId: uuid("style_id")
+      .notNull()
+      .references(() => deliverableStyleReferences.id, { onDelete: "cascade" }),
+
+    // Context of selection
+    deliverableType: text("deliverable_type").notNull(),
+    styleAxis: text("style_axis").notNull(),
+
+    // Selection metadata
+    selectionContext: text("selection_context").notNull().default("chat"), // chat, browse, refinement
+    wasConfirmed: boolean("was_confirmed").notNull().default(false), // Did they proceed with this style?
+
+    // Session tracking
+    draftId: uuid("draft_id").references(() => chatDrafts.id, { onDelete: "set null" }),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("ssh_user_id_idx").on(table.userId),
+    index("ssh_user_style_idx").on(table.userId, table.styleAxis),
+    index("ssh_user_type_idx").on(table.userId, table.deliverableType),
+  ]
+);
+
+// Relations for style selection history
+export const styleSelectionHistoryRelations = relations(styleSelectionHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [styleSelectionHistory.userId],
+    references: [users.id],
+  }),
+  style: one(deliverableStyleReferences, {
+    fields: [styleSelectionHistory.styleId],
+    references: [deliverableStyleReferences.id],
+  }),
+  draft: one(chatDrafts, {
+    fields: [styleSelectionHistory.draftId],
+    references: [chatDrafts.id],
+  }),
+}));
+
 // Relations for security tables
 export const securityTestsRelations = relations(securityTests, ({ many }) => ({
   results: many(securityTestResults),

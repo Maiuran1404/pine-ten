@@ -582,11 +582,29 @@ export function ChatInterface({
   };
 
   const handleDeliverableStyleSelect = (style: DeliverableStyle) => {
+    const isSelecting = !selectedDeliverableStyles.includes(style.id);
+
     setSelectedDeliverableStyles((prev) =>
       prev.includes(style.id)
         ? prev.filter((s) => s !== style.id)
         : [...prev, style.id]
     );
+
+    // Record selection to history (fire-and-forget, don't block UI)
+    if (isSelecting) {
+      fetch("/api/style-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          styleId: style.id,
+          deliverableType: style.deliverableType,
+          styleAxis: style.styleAxis,
+          selectionContext: "chat",
+          wasConfirmed: false,
+          // Note: draftId not sent since local drafts aren't in database
+        }),
+      }).catch(err => console.error("Failed to record style selection:", err));
+    }
   };
 
   const handleShowMoreStyles = async (styleAxis: string) => {

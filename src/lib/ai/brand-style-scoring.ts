@@ -3,6 +3,7 @@ import { deliverableStyleReferences, users, companies } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 import { analyzeColorBucketFromHex, type ColorBucket } from "@/lib/constants/reference-libraries";
+import { getHistoryBoostScores } from "./selection-history";
 
 /**
  * Style axis characteristics for brand matching
@@ -179,6 +180,7 @@ export interface BrandAwareStyle {
   semanticTags: string[];
   brandMatchScore: number;
   matchReason?: string;
+  historyBoost?: number;  // Bonus from user's selection history
 }
 
 /**
@@ -252,19 +254,34 @@ export async function getBrandAwareStyles(
     brandColors: company.brandColors,
   });
 
+  // Get history-based boosts for personalization
+  let historyBoosts = new Map<string, number>();
+  try {
+    historyBoosts = await getHistoryBoostScores(userId, deliverableType);
+  } catch (error) {
+    console.error("Error fetching history boosts:", error);
+    // Continue without history boosts
+  }
+
   // Score each style
   const scoredStyles: BrandAwareStyle[] = styles.map(style => {
-    const score = calculateStyleScore(
+    const brandScore = calculateStyleScore(
       style.styleAxis as StyleAxis,
       colorProfile,
       company.industry
     );
 
+    // Add history boost (0-30 points)
+    const historyBoost = historyBoosts.get(style.styleAxis) || 0;
+    const totalScore = Math.min(100, brandScore + historyBoost);
+
     // Generate match reason
     const characteristics = STYLE_CHARACTERISTICS[style.styleAxis as StyleAxis];
     let matchReason = "";
 
-    if (score >= 70) {
+    if (historyBoost >= 15) {
+      matchReason = "Based on your preferences";
+    } else if (totalScore >= 70) {
       if (characteristics.colorAffinity.includes(colorProfile.dominant)) {
         matchReason = `Matches your ${colorProfile.dominant} brand palette`;
       }
@@ -278,7 +295,7 @@ export async function getBrandAwareStyles(
             : `Popular in ${company.industry}`;
         }
       }
-    } else if (score >= 50) {
+    } else if (totalScore >= 50) {
       matchReason = "Versatile style option";
     } else {
       matchReason = "Alternative direction";
@@ -287,8 +304,9 @@ export async function getBrandAwareStyles(
     return {
       ...style,
       semanticTags: style.semanticTags || [],
-      brandMatchScore: score,
+      brandMatchScore: totalScore,
       matchReason,
+      historyBoost: historyBoost > 0 ? historyBoost : undefined,
     };
   });
 
