@@ -281,11 +281,14 @@ export const brandReferences = pgTable("brand_references", {
   imageUrl: text("image_url").notNull(),
 
   // Bucket dimensions (mapped from personality sliders)
+  // Each bucket has 3 values representing the spectrum endpoints and middle
   toneBucket: text("tone_bucket").notNull(), // "playful" | "balanced" | "serious"
-  energyBucket: text("energy_bucket").notNull(), // "bold" | "balanced" | "minimal"
+  energyBucket: text("energy_bucket").notNull(), // "calm" | "balanced" | "energetic"
+  densityBucket: text("density_bucket").notNull().default("balanced"), // "minimal" | "balanced" | "rich"
+  premiumBucket: text("premium_bucket").notNull().default("balanced"), // "accessible" | "balanced" | "premium"
 
   // Color characteristics
-  colorBucket: text("color_bucket").notNull(), // "warm" | "cool" | "neutral" | "vibrant" | "muted"
+  colorBucket: text("color_bucket").notNull(), // "warm" | "cool" | "neutral"
   colorSamples: jsonb("color_samples").$type<string[]>().default([]), // hex values
 
   // Categorical

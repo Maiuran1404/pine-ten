@@ -1,13 +1,18 @@
 // Reference Libraries Constants
 
 // Bucket options for Brand References
+// Each bucket maps to a slider axis in onboarding with 3 values (low, middle, high)
 export const TONE_BUCKETS = ["playful", "balanced", "serious"] as const;
-export const ENERGY_BUCKETS = ["bold", "balanced", "minimal"] as const;
-export const COLOR_BUCKETS = ["warm", "cool", "neutral", "vibrant", "muted"] as const;
+export const ENERGY_BUCKETS = ["calm", "balanced", "energetic"] as const;
+export const DENSITY_BUCKETS = ["minimal", "balanced", "rich"] as const;
+export const COLOR_BUCKETS = ["cool", "neutral", "warm"] as const;
+export const PREMIUM_BUCKETS = ["accessible", "balanced", "premium"] as const;
 
 export type ToneBucket = (typeof TONE_BUCKETS)[number];
 export type EnergyBucket = (typeof ENERGY_BUCKETS)[number];
+export type DensityBucket = (typeof DENSITY_BUCKETS)[number];
 export type ColorBucket = (typeof COLOR_BUCKETS)[number];
+export type PremiumBucket = (typeof PREMIUM_BUCKETS)[number];
 
 // Deliverable types for chat
 export const DELIVERABLE_TYPES = [
@@ -43,20 +48,39 @@ export const STYLE_AXES = [
 export type StyleAxis = (typeof STYLE_AXES)[number]["value"];
 
 // Helper to get bucket from personality slider value (0-100)
-export function getToneBucket(feelPlayfulSerious: number): ToneBucket {
-  if (feelPlayfulSerious < 35) return "playful";
-  if (feelPlayfulSerious > 65) return "serious";
+// Low values (0-35) = first bucket option, High values (65-100) = last bucket option
+export function getToneBucket(sliderValue: number): ToneBucket {
+  if (sliderValue < 35) return "playful";
+  if (sliderValue > 65) return "serious";
   return "balanced";
 }
 
-export function getEnergyBucket(feelBoldMinimal: number): EnergyBucket {
-  if (feelBoldMinimal < 35) return "bold";
-  if (feelBoldMinimal > 65) return "minimal";
+export function getEnergyBucket(sliderValue: number): EnergyBucket {
+  if (sliderValue < 35) return "calm";
+  if (sliderValue > 65) return "energetic";
   return "balanced";
 }
 
-// Helper to analyze color warmth from hex
-export function analyzeColorBucket(hexColor: string): ColorBucket {
+export function getDensityBucket(sliderValue: number): DensityBucket {
+  if (sliderValue < 35) return "minimal";
+  if (sliderValue > 65) return "rich";
+  return "balanced";
+}
+
+export function getColorBucket(sliderValue: number): ColorBucket {
+  if (sliderValue < 35) return "cool";
+  if (sliderValue > 65) return "warm";
+  return "neutral";
+}
+
+export function getPremiumBucket(sliderValue: number): PremiumBucket {
+  if (sliderValue < 35) return "accessible";
+  if (sliderValue > 65) return "premium";
+  return "balanced";
+}
+
+// Helper to analyze color warmth from hex (for extracting from brand colors)
+export function analyzeColorBucketFromHex(hexColor: string): ColorBucket {
   if (!hexColor) return "neutral";
   const hex = hexColor.replace("#", "");
 
@@ -66,19 +90,12 @@ export function analyzeColorBucket(hexColor: string): ColorBucket {
     : hex;
 
   const r = parseInt(fullHex.slice(0, 2), 16);
-  const g = parseInt(fullHex.slice(2, 4), 16);
   const b = parseInt(fullHex.slice(4, 6), 16);
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const saturation = max === 0 ? 0 : (max - min) / max;
   const warmth = (r - b) / 255;
 
-  if (saturation < 0.15) return "neutral";
-  if (saturation > 0.65) return "vibrant";
-  if (warmth > 0.25) return "warm";
-  if (warmth < -0.25) return "cool";
-  return "muted";
+  if (warmth > 0.2) return "warm";
+  if (warmth < -0.2) return "cool";
+  return "neutral";
 }
 
 // Labels for display
@@ -89,15 +106,25 @@ export const TONE_BUCKET_LABELS: Record<ToneBucket, string> = {
 };
 
 export const ENERGY_BUCKET_LABELS: Record<EnergyBucket, string> = {
-  bold: "Bold",
+  calm: "Calm",
   balanced: "Balanced",
+  energetic: "Energetic",
+};
+
+export const DENSITY_BUCKET_LABELS: Record<DensityBucket, string> = {
   minimal: "Minimal",
+  balanced: "Balanced",
+  rich: "Rich",
 };
 
 export const COLOR_BUCKET_LABELS: Record<ColorBucket, string> = {
-  warm: "Warm",
   cool: "Cool",
   neutral: "Neutral",
-  vibrant: "Vibrant",
-  muted: "Muted",
+  warm: "Warm",
+};
+
+export const PREMIUM_BUCKET_LABELS: Record<PremiumBucket, string> = {
+  accessible: "Accessible",
+  balanced: "Balanced",
+  premium: "Premium",
 };

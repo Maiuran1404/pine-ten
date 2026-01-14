@@ -405,9 +405,13 @@ export default function SecurityPage() {
         // The run is now created with PENDING status
         // The admin can use the Playwright MCP to execute tests
         alert(`Test run created! Run ID: ${run.id}\n\nUse the Playwright MCP to execute the tests.`);
+      } else {
+        const errorData = await createRes.json();
+        alert(errorData.error || "Failed to start test run");
       }
     } catch (error) {
       console.error("Failed to start run:", error);
+      alert("Failed to start test run");
     }
     setIsRunning(false);
   };

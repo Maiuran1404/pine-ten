@@ -32,7 +32,9 @@ export async function PATCH(
       imageUrl,
       toneBucket,
       energyBucket,
+      densityBucket,
       colorBucket,
+      premiumBucket,
       colorSamples,
       visualStyles,
       industries,
@@ -49,7 +51,9 @@ export async function PATCH(
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (toneBucket !== undefined) updateData.toneBucket = toneBucket;
     if (energyBucket !== undefined) updateData.energyBucket = energyBucket;
+    if (densityBucket !== undefined) updateData.densityBucket = densityBucket;
     if (colorBucket !== undefined) updateData.colorBucket = colorBucket;
+    if (premiumBucket !== undefined) updateData.premiumBucket = premiumBucket;
     if (colorSamples !== undefined) updateData.colorSamples = colorSamples;
     if (visualStyles !== undefined) updateData.visualStyles = visualStyles;
     if (industries !== undefined) updateData.industries = industries;

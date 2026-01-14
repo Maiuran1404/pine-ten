@@ -7,7 +7,7 @@ dotenv.config({ path: ".env.local" });
 async function seed() {
   // Dynamic imports to ensure env is loaded first
   const { db } = await import("../src/db");
-  const { taskCategories, styleReferences, platformSettings, users } = await import("../src/db/schema");
+  const { taskCategories, styleReferences, platformSettings, users, securityTests } = await import("../src/db/schema");
   const { defaultTaskCategories, styleReferenceCategories } = await import("../src/lib/config");
   const { eq } = await import("drizzle-orm");
 
@@ -103,6 +103,332 @@ async function seed() {
       .values(setting)
       .onConflictDoNothing();
   }
+
+  // Seed security tests
+  console.log("Seeding security tests...");
+  const securityTestData = [
+    // Authentication Tests
+    {
+      name: "Login with valid credentials",
+      description: "Verify that users can log in with valid email and password",
+      category: "auth",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "User should be redirected to dashboard after successful login",
+    },
+    {
+      name: "Login with invalid credentials",
+      description: "Verify that login fails with incorrect password and shows appropriate error",
+      category: "auth",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Should display error message without revealing if email exists",
+    },
+    {
+      name: "Login rate limiting",
+      description: "Test that multiple failed login attempts trigger rate limiting",
+      category: "auth",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "After 5 failed attempts, should show rate limit message",
+    },
+    {
+      name: "Session timeout",
+      description: "Verify that inactive sessions expire after the configured timeout",
+      category: "auth",
+      testType: "deterministic",
+      severity: "medium",
+      expectedOutcome: "Session should expire and redirect to login",
+    },
+    {
+      name: "Logout functionality",
+      description: "Verify that logout properly clears session and cookies",
+      category: "auth",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Session cookie should be cleared, back button should not restore session",
+    },
+    {
+      name: "Password reset flow",
+      description: "Test the complete password reset flow from request to completion",
+      category: "auth",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "User should receive reset email and be able to set new password",
+    },
+
+    // Authorization Tests
+    {
+      name: "Admin page access control",
+      description: "Verify that non-admin users cannot access admin routes",
+      category: "authz",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Non-admin users should be redirected or shown 403 error",
+    },
+    {
+      name: "User can only access own data",
+      description: "Test that users cannot access other users' data by manipulating IDs",
+      category: "authz",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Accessing other user data should return 403 or 404",
+    },
+    {
+      name: "Role-based feature access",
+      description: "Verify that features are properly restricted based on user roles",
+      category: "authz",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Features should only be visible/accessible to authorized roles",
+    },
+    {
+      name: "API endpoint authorization",
+      description: "Test that API endpoints enforce proper authorization checks",
+      category: "authz",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Unauthorized API calls should return 401 or 403",
+    },
+
+    // Input Validation & XSS Tests
+    {
+      name: "XSS in text inputs",
+      description: "Test that script injection is properly sanitized in all text inputs",
+      category: "forms",
+      testType: "exploratory",
+      severity: "critical",
+      exploratoryConfig: {
+        targetAreas: ["input fields", "text areas", "search boxes"],
+        testPayloads: ["<script>alert(1)</script>", "<img onerror=alert(1) src=x>", "javascript:alert(1)"],
+      },
+      expectedOutcome: "All script payloads should be sanitized or escaped",
+    },
+    {
+      name: "SQL injection prevention",
+      description: "Test that SQL injection attempts are blocked",
+      category: "forms",
+      testType: "exploratory",
+      severity: "critical",
+      exploratoryConfig: {
+        targetAreas: ["search", "filters", "ID parameters"],
+        testPayloads: ["' OR '1'='1", "1; DROP TABLE users--", "UNION SELECT * FROM users"],
+      },
+      expectedOutcome: "SQL payloads should not affect database queries",
+    },
+    {
+      name: "Form CSRF protection",
+      description: "Verify that forms are protected against cross-site request forgery",
+      category: "forms",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Forms without valid CSRF tokens should be rejected",
+    },
+    {
+      name: "File upload validation",
+      description: "Test that file uploads validate type, size, and content",
+      category: "forms",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Malicious files and oversized uploads should be rejected",
+    },
+    {
+      name: "Input length limits",
+      description: "Verify that excessively long inputs are rejected",
+      category: "forms",
+      testType: "deterministic",
+      severity: "medium",
+      expectedOutcome: "Inputs exceeding limits should be truncated or rejected",
+    },
+
+    // API Security Tests
+    {
+      name: "API authentication required",
+      description: "Test that all API endpoints require authentication",
+      category: "api",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Unauthenticated requests should return 401",
+    },
+    {
+      name: "API rate limiting",
+      description: "Verify that API endpoints are protected by rate limiting",
+      category: "api",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Excessive requests should return 429 Too Many Requests",
+    },
+    {
+      name: "Sensitive data in API responses",
+      description: "Check that API responses don't leak sensitive data like passwords or tokens",
+      category: "api",
+      testType: "exploratory",
+      severity: "critical",
+      expectedOutcome: "No passwords, tokens, or internal IDs in responses",
+    },
+    {
+      name: "API error handling",
+      description: "Verify that API errors don't expose stack traces or internal details",
+      category: "api",
+      testType: "deterministic",
+      severity: "medium",
+      expectedOutcome: "Errors should return generic messages, not stack traces",
+    },
+
+    // Session Security Tests
+    {
+      name: "Session fixation prevention",
+      description: "Test that session ID is regenerated after login",
+      category: "session",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Session ID should change after successful authentication",
+    },
+    {
+      name: "Secure cookie flags",
+      description: "Verify that session cookies have Secure, HttpOnly, and SameSite flags",
+      category: "session",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Cookies should have all security flags set",
+    },
+    {
+      name: "Concurrent session handling",
+      description: "Test behavior when user logs in from multiple devices",
+      category: "session",
+      testType: "deterministic",
+      severity: "medium",
+      expectedOutcome: "Should either allow or explicitly handle multiple sessions",
+    },
+
+    // Navigation & URL Security Tests
+    {
+      name: "Direct URL access control",
+      description: "Test that protected pages cannot be accessed by direct URL entry",
+      category: "navigation",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Direct access to protected URLs should redirect to login",
+    },
+    {
+      name: "Open redirect prevention",
+      description: "Test that redirect parameters cannot be abused for phishing",
+      category: "navigation",
+      testType: "exploratory",
+      severity: "high",
+      exploratoryConfig: {
+        targetAreas: ["redirect parameters", "return URLs", "callback URLs"],
+        testPayloads: ["//evil.com", "https://evil.com", "/\\evil.com"],
+      },
+      expectedOutcome: "Redirects to external domains should be blocked",
+    },
+    {
+      name: "Path traversal prevention",
+      description: "Test that file/path parameters cannot traverse directories",
+      category: "navigation",
+      testType: "exploratory",
+      severity: "critical",
+      exploratoryConfig: {
+        targetAreas: ["file parameters", "path parameters"],
+        testPayloads: ["../../../etc/passwd", "..\\..\\..\\windows\\system32"],
+      },
+      expectedOutcome: "Path traversal attempts should be blocked",
+    },
+
+    // Data Protection Tests
+    {
+      name: "IDOR vulnerability check",
+      description: "Test for Insecure Direct Object References by manipulating resource IDs",
+      category: "data",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Accessing resources with other users' IDs should fail",
+    },
+    {
+      name: "Sensitive data encryption",
+      description: "Verify that sensitive data is encrypted at rest and in transit",
+      category: "data",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Passwords should be hashed, sensitive data encrypted",
+    },
+    {
+      name: "Data export authorization",
+      description: "Test that data export features enforce proper authorization",
+      category: "data",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Users should only export their own data",
+    },
+    {
+      name: "PII data masking",
+      description: "Verify that PII is masked in logs and non-essential displays",
+      category: "data",
+      testType: "exploratory",
+      severity: "medium",
+      expectedOutcome: "Emails, phone numbers, etc. should be partially masked",
+    },
+
+    // Payment Security Tests
+    {
+      name: "Payment amount tampering",
+      description: "Test that payment amounts cannot be manipulated client-side",
+      category: "payment",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Server should validate amounts against expected values",
+    },
+    {
+      name: "Payment double-submit prevention",
+      description: "Verify that payments cannot be submitted multiple times",
+      category: "payment",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Duplicate payment attempts should be rejected",
+    },
+    {
+      name: "Payment webhook validation",
+      description: "Test that payment webhooks validate signatures properly",
+      category: "payment",
+      testType: "deterministic",
+      severity: "critical",
+      expectedOutcome: "Unsigned or tampered webhooks should be rejected",
+    },
+
+    // Security Headers Tests
+    {
+      name: "Security headers present",
+      description: "Verify that essential security headers are set",
+      category: "headers",
+      testType: "deterministic",
+      severity: "medium",
+      expectedOutcome: "X-Frame-Options, X-Content-Type-Options, CSP should be present",
+    },
+    {
+      name: "CORS configuration",
+      description: "Test that CORS is properly configured to prevent unauthorized access",
+      category: "headers",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Only allowed origins should be able to make requests",
+    },
+    {
+      name: "Content Security Policy",
+      description: "Verify CSP prevents loading of unauthorized scripts",
+      category: "headers",
+      testType: "deterministic",
+      severity: "high",
+      expectedOutcome: "Inline scripts and unauthorized sources should be blocked",
+    },
+  ];
+
+  for (const test of securityTestData) {
+    await db
+      .insert(securityTests)
+      .values(test)
+      .onConflictDoNothing();
+  }
+  console.log(`✓ Seeded ${securityTestData.length} security tests`);
 
   // Create admin user
   console.log("Creating admin user...");

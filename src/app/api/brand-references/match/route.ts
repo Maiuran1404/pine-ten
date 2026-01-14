@@ -7,7 +7,7 @@ import { eq, sql, desc, and } from "drizzle-orm";
 import {
   getToneBucket,
   getEnergyBucket,
-  analyzeColorBucket,
+  analyzeColorBucketFromHex,
   type ToneBucket,
   type EnergyBucket,
   type ColorBucket,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Determine buckets from personality sliders
     const toneBucket: ToneBucket = getToneBucket(feelPlayfulSerious ?? 50);
     const energyBucket: EnergyBucket = getEnergyBucket(feelBoldMinimal ?? 50);
-    const colorBucket: ColorBucket = analyzeColorBucket(primaryColor || "");
+    const colorBucket: ColorBucket = analyzeColorBucketFromHex(primaryColor || "");
 
     // Build a scoring query using SQL CASE statements
     // Score breakdown:

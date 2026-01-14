@@ -78,6 +78,13 @@
       "when": 1768477200000,
       "tag": "0010_security_testing",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1768396022962,
+      "tag": "0011_lean_black_panther",
+      "breakpoints": true
     }
   ]
 }
