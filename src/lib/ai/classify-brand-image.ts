@@ -4,7 +4,6 @@ import type {
   EnergyBucket,
   DensityBucket,
   ColorBucket,
-  PremiumBucket,
 } from "@/lib/constants/reference-libraries";
 
 const anthropic = new Anthropic({
@@ -18,12 +17,11 @@ export interface BrandClassification {
   energyBucket: EnergyBucket;
   densityBucket: DensityBucket;
   colorBucket: ColorBucket;
-  premiumBucket: PremiumBucket;
   colorSamples: string[]; // hex colors
   confidence: number; // 0-1
 }
 
-const CLASSIFICATION_PROMPT = `You are a brand design expert. Analyze this brand reference image and classify it across 5 visual personality axes.
+const CLASSIFICATION_PROMPT = `You are a brand design expert. Analyze this brand reference image and classify it across 4 visual personality axes.
 
 For each axis, choose ONE value:
 
@@ -47,11 +45,6 @@ For each axis, choose ONE value:
    - "neutral" = Grays, blacks, whites, beiges - muted/achromatic
    - "warm" = Reds, oranges, yellows, pinks - warm color palette
 
-5. **Premium Feel**:
-   - "accessible" = Approachable, everyday, mass-market appeal
-   - "balanced" = Mid-market positioning
-   - "premium" = Luxury, high-end, exclusive, refined, sophisticated
-
 Also:
 - Extract a brand name from the image if visible (or suggest one based on the style)
 - Write a brief 1-sentence description of the brand's visual style
@@ -65,7 +58,6 @@ Respond in this exact JSON format (no markdown, no explanation):
   "energyBucket": "calm" | "balanced" | "energetic",
   "densityBucket": "minimal" | "balanced" | "rich",
   "colorBucket": "cool" | "neutral" | "warm",
-  "premiumBucket": "accessible" | "balanced" | "premium",
   "colorSamples": ["#hex1", "#hex2", "#hex3"],
   "confidence": 0.85
 }`;
@@ -118,8 +110,7 @@ export async function classifyBrandImage(
       !classification.toneBucket ||
       !classification.energyBucket ||
       !classification.densityBucket ||
-      !classification.colorBucket ||
-      !classification.premiumBucket
+      !classification.colorBucket
     ) {
       throw new Error("Missing required classification fields");
     }
@@ -135,7 +126,6 @@ export async function classifyBrandImage(
       energyBucket: "balanced",
       densityBucket: "balanced",
       colorBucket: "neutral",
-      premiumBucket: "balanced",
       colorSamples: [],
       confidence: 0,
     };

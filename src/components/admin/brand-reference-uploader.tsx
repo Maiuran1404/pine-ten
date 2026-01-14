@@ -30,17 +30,14 @@ import {
   ENERGY_BUCKETS,
   DENSITY_BUCKETS,
   COLOR_BUCKETS,
-  PREMIUM_BUCKETS,
   TONE_BUCKET_LABELS,
   ENERGY_BUCKET_LABELS,
   DENSITY_BUCKET_LABELS,
   COLOR_BUCKET_LABELS,
-  PREMIUM_BUCKET_LABELS,
   type ToneBucket,
   type EnergyBucket,
   type DensityBucket,
   type ColorBucket,
-  type PremiumBucket,
 } from "@/lib/constants/reference-libraries";
 
 interface PendingUpload {
@@ -55,7 +52,6 @@ interface PendingUpload {
     energyBucket: EnergyBucket;
     densityBucket: DensityBucket;
     colorBucket: ColorBucket;
-    premiumBucket: PremiumBucket;
     colorSamples: string[];
     confidence: number;
   };
@@ -443,7 +439,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
                     <div>
                       <label className="text-xs text-muted-foreground">Tone</label>
                       <Select
@@ -511,24 +507,6 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
                           {COLOR_BUCKETS.map((b) => (
                             <SelectItem key={b} value={b}>
                               {COLOR_BUCKET_LABELS[b]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Premium</label>
-                      <Select
-                        value={upload.classification.premiumBucket}
-                        onValueChange={(v) => updateClassification(upload.id, "premiumBucket", v)}
-                      >
-                        <SelectTrigger className="h-8 mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PREMIUM_BUCKETS.map((b) => (
-                            <SelectItem key={b} value={b}>
-                              {PREMIUM_BUCKET_LABELS[b]}
                             </SelectItem>
                           ))}
                         </SelectContent>

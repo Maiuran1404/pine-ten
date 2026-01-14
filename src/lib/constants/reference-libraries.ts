@@ -2,17 +2,16 @@
 
 // Bucket options for Brand References
 // Each bucket maps to a slider axis in onboarding with 3 values (low, middle, high)
+// 4 Categories: Tone, Energy, Density, Color (Warmth)
 export const TONE_BUCKETS = ["playful", "balanced", "serious"] as const;
 export const ENERGY_BUCKETS = ["calm", "balanced", "energetic"] as const;
 export const DENSITY_BUCKETS = ["minimal", "balanced", "rich"] as const;
 export const COLOR_BUCKETS = ["cool", "neutral", "warm"] as const;
-export const PREMIUM_BUCKETS = ["accessible", "balanced", "premium"] as const;
 
 export type ToneBucket = (typeof TONE_BUCKETS)[number];
 export type EnergyBucket = (typeof ENERGY_BUCKETS)[number];
 export type DensityBucket = (typeof DENSITY_BUCKETS)[number];
 export type ColorBucket = (typeof COLOR_BUCKETS)[number];
-export type PremiumBucket = (typeof PREMIUM_BUCKETS)[number];
 
 // Deliverable types for chat
 export const DELIVERABLE_TYPES = [
@@ -73,12 +72,6 @@ export function getColorBucket(sliderValue: number): ColorBucket {
   return "neutral";
 }
 
-export function getPremiumBucket(sliderValue: number): PremiumBucket {
-  if (sliderValue < 35) return "accessible";
-  if (sliderValue > 65) return "premium";
-  return "balanced";
-}
-
 // Helper to analyze color warmth from hex (for extracting from brand colors)
 export function analyzeColorBucketFromHex(hexColor: string): ColorBucket {
   if (!hexColor) return "neutral";
@@ -121,10 +114,4 @@ export const COLOR_BUCKET_LABELS: Record<ColorBucket, string> = {
   cool: "Cool",
   neutral: "Neutral",
   warm: "Warm",
-};
-
-export const PREMIUM_BUCKET_LABELS: Record<PremiumBucket, string> = {
-  accessible: "Accessible",
-  balanced: "Balanced",
-  premium: "Premium",
 };

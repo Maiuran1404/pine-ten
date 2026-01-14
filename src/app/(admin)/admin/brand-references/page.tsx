@@ -38,17 +38,14 @@ import {
   ENERGY_BUCKETS,
   DENSITY_BUCKETS,
   COLOR_BUCKETS,
-  PREMIUM_BUCKETS,
   TONE_BUCKET_LABELS,
   ENERGY_BUCKET_LABELS,
   DENSITY_BUCKET_LABELS,
   COLOR_BUCKET_LABELS,
-  PREMIUM_BUCKET_LABELS,
   type ToneBucket,
   type EnergyBucket,
   type DensityBucket,
   type ColorBucket,
-  type PremiumBucket,
 } from "@/lib/constants/reference-libraries";
 import { VISUAL_STYLE_OPTIONS } from "@/components/onboarding/types";
 import { BrandReferenceUploader } from "@/components/admin/brand-reference-uploader";
@@ -62,7 +59,6 @@ interface BrandReference {
   energyBucket: EnergyBucket;
   densityBucket: DensityBucket;
   colorBucket: ColorBucket;
-  premiumBucket: PremiumBucket;
   colorSamples: string[];
   visualStyles: string[];
   industries: string[];
@@ -80,7 +76,6 @@ const defaultFormState = {
   energyBucket: "balanced" as EnergyBucket,
   densityBucket: "balanced" as DensityBucket,
   colorBucket: "neutral" as ColorBucket,
-  premiumBucket: "balanced" as PremiumBucket,
   colorSamples: "",
   visualStyles: [] as string[],
   industries: "",
@@ -136,7 +131,6 @@ export default function BrandReferencesPage() {
       energyBucket: ref.energyBucket,
       densityBucket: ref.densityBucket || "balanced",
       colorBucket: ref.colorBucket,
-      premiumBucket: ref.premiumBucket || "balanced",
       colorSamples: ref.colorSamples.join(", "),
       visualStyles: ref.visualStyles,
       industries: ref.industries.join(", "),
@@ -161,7 +155,6 @@ export default function BrandReferencesPage() {
         energyBucket: formState.energyBucket,
         densityBucket: formState.densityBucket,
         colorBucket: formState.colorBucket,
-        premiumBucket: formState.premiumBucket,
         colorSamples: formState.colorSamples.split(",").map((s) => s.trim()).filter(Boolean),
         visualStyles: formState.visualStyles,
         industries: formState.industries.split(",").map((s) => s.trim()).filter(Boolean),
@@ -352,7 +345,7 @@ export default function BrandReferencesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div className="space-y-2">
                   <Label>Tone *</Label>
                   <Select
@@ -420,24 +413,6 @@ export default function BrandReferencesPage() {
                       {COLOR_BUCKETS.map((bucket) => (
                         <SelectItem key={bucket} value={bucket}>
                           {COLOR_BUCKET_LABELS[bucket]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Premium *</Label>
-                  <Select
-                    value={formState.premiumBucket}
-                    onValueChange={(value) => setFormState({ ...formState, premiumBucket: value as PremiumBucket })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PREMIUM_BUCKETS.map((bucket) => (
-                        <SelectItem key={bucket} value={bucket}>
-                          {PREMIUM_BUCKET_LABELS[bucket]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -639,6 +614,9 @@ export default function BrandReferencesPage() {
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {ENERGY_BUCKET_LABELS[ref.energyBucket]}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {DENSITY_BUCKET_LABELS[ref.densityBucket]}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {COLOR_BUCKET_LABELS[ref.colorBucket]}

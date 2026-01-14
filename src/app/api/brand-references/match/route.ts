@@ -7,9 +7,11 @@ import { eq, sql, desc, and } from "drizzle-orm";
 import {
   getToneBucket,
   getEnergyBucket,
-  analyzeColorBucketFromHex,
+  getDensityBucket,
+  getColorBucket,
   type ToneBucket,
   type EnergyBucket,
+  type DensityBucket,
   type ColorBucket,
 } from "@/lib/constants/reference-libraries";
 
@@ -25,25 +27,32 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      // Accept both old and new parameter names for backwards compatibility
       feelPlayfulSerious,
       feelBoldMinimal,
-      primaryColor,
+      signalTone,
+      signalDensity,
+      signalWarmth,
+      signalEnergy,
       visualStyle,
       limit = 12,
       offset = 0,
     } = body;
 
-    // Determine buckets from personality sliders
-    const toneBucket: ToneBucket = getToneBucket(feelPlayfulSerious ?? 50);
-    const energyBucket: EnergyBucket = getEnergyBucket(feelBoldMinimal ?? 50);
-    const colorBucket: ColorBucket = analyzeColorBucketFromHex(primaryColor || "");
+    // Determine buckets from slider values (0-100 scale)
+    // Use new names if provided, fall back to old names for backwards compatibility
+    const toneBucket: ToneBucket = getToneBucket(signalTone ?? feelPlayfulSerious ?? 50);
+    const densityBucket: DensityBucket = getDensityBucket(signalDensity ?? feelBoldMinimal ?? 50);
+    const colorBucket: ColorBucket = getColorBucket(signalWarmth ?? 50);
+    const energyBucket: EnergyBucket = getEnergyBucket(signalEnergy ?? 50);
 
     // Build a scoring query using SQL CASE statements
-    // Score breakdown:
+    // Score breakdown (total 10 points possible):
     // - Exact tone match: 3 points
+    // - Exact density match: 2 points
+    // - Exact color/warmth match: 2 points
     // - Exact energy match: 2 points
-    // - Exact color match: 1 point
-    // - Visual style match: 2 points
+    // - Visual style match: 1 point
     const references = await db
       .select({
         id: brandReferences.id,
@@ -52,6 +61,7 @@ export async function POST(request: NextRequest) {
         imageUrl: brandReferences.imageUrl,
         toneBucket: brandReferences.toneBucket,
         energyBucket: brandReferences.energyBucket,
+        densityBucket: brandReferences.densityBucket,
         colorBucket: brandReferences.colorBucket,
         colorSamples: brandReferences.colorSamples,
         visualStyles: brandReferences.visualStyles,
@@ -60,9 +70,10 @@ export async function POST(request: NextRequest) {
         usageCount: brandReferences.usageCount,
         score: sql<number>`
           (CASE WHEN ${brandReferences.toneBucket} = ${toneBucket} THEN 3 ELSE 0 END) +
+          (CASE WHEN ${brandReferences.densityBucket} = ${densityBucket} THEN 2 ELSE 0 END) +
+          (CASE WHEN ${brandReferences.colorBucket} = ${colorBucket} THEN 2 ELSE 0 END) +
           (CASE WHEN ${brandReferences.energyBucket} = ${energyBucket} THEN 2 ELSE 0 END) +
-          (CASE WHEN ${brandReferences.colorBucket} = ${colorBucket} THEN 1 ELSE 0 END) +
-          (CASE WHEN ${visualStyle ? sql`${visualStyle} = ANY(${brandReferences.visualStyles})` : sql`false`} THEN 2 ELSE 0 END)
+          (CASE WHEN ${visualStyle ? sql`${visualStyle} = ANY(${brandReferences.visualStyles})` : sql`false`} THEN 1 ELSE 0 END)
         `.as("score"),
       })
       .from(brandReferences)
@@ -86,8 +97,9 @@ export async function POST(request: NextRequest) {
       total: countResult?.count || 0,
       buckets: {
         tone: toneBucket,
-        energy: energyBucket,
+        density: densityBucket,
         color: colorBucket,
+        energy: energyBucket,
       },
     });
   } catch (error) {
@@ -112,8 +124,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const toneBucket = searchParams.get("toneBucket") as ToneBucket | null;
-    const energyBucket = searchParams.get("energyBucket") as EnergyBucket | null;
+    const densityBucket = searchParams.get("densityBucket") as DensityBucket | null;
     const colorBucket = searchParams.get("colorBucket") as ColorBucket | null;
+    const energyBucket = searchParams.get("energyBucket") as EnergyBucket | null;
     const limit = parseInt(searchParams.get("limit") || "12");
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -122,11 +135,14 @@ export async function GET(request: NextRequest) {
     if (toneBucket) {
       conditions.push(eq(brandReferences.toneBucket, toneBucket));
     }
-    if (energyBucket) {
-      conditions.push(eq(brandReferences.energyBucket, energyBucket));
+    if (densityBucket) {
+      conditions.push(eq(brandReferences.densityBucket, densityBucket));
     }
     if (colorBucket) {
       conditions.push(eq(brandReferences.colorBucket, colorBucket));
+    }
+    if (energyBucket) {
+      conditions.push(eq(brandReferences.energyBucket, energyBucket));
     }
 
     const references = await db

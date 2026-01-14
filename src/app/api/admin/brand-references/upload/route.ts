@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
           energyBucket: string;
           densityBucket: string;
           colorBucket: string;
-          premiumBucket: string;
           colorSamples: string[];
           confidence: number;
         };
@@ -139,7 +138,6 @@ export async function POST(request: NextRequest) {
             energyBucket: classification.energyBucket,
             densityBucket: classification.densityBucket,
             colorBucket: classification.colorBucket,
-            premiumBucket: classification.premiumBucket,
             colorSamples: classification.colorSamples,
             isActive: true,
           })
@@ -157,7 +155,6 @@ export async function POST(request: NextRequest) {
               energyBucket: classification.energyBucket,
               densityBucket: classification.densityBucket,
               colorBucket: classification.colorBucket,
-              premiumBucket: classification.premiumBucket,
               colorSamples: classification.colorSamples,
               confidence: classification.confidence,
             },

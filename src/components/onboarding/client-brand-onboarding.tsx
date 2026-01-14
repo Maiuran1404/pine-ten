@@ -76,8 +76,9 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     description: string | null;
     imageUrl: string;
     toneBucket: string;
-    energyBucket: string;
+    densityBucket: string;
     colorBucket: string;
+    energyBucket: string;
   }>>([]);
   const [isLoadingReferences, setIsLoadingReferences] = useState(false);
   const [detectedStyleName, setDetectedStyleName] = useState("Your Brand Style");
@@ -90,9 +91,10 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          feelPlayfulSerious: brandData.signalTone ?? 50,
-          feelBoldMinimal: brandData.signalDensity ?? 50,
-          primaryColor: brandData.primaryColor,
+          signalTone: brandData.signalTone ?? 50,
+          signalDensity: brandData.signalDensity ?? 50,
+          signalWarmth: brandData.signalWarmth ?? 50,
+          signalEnergy: brandData.signalEnergy ?? 50,
           limit: 12,
         }),
       });
@@ -130,7 +132,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
     } finally {
       setIsLoadingReferences(false);
     }
-  }, [brandData.signalTone, brandData.signalDensity, brandData.primaryColor]);
+  }, [brandData.signalTone, brandData.signalDensity, brandData.signalWarmth, brandData.signalEnergy]);
 
   // Fetch brand references when on fine-tune step and sliders change
   useEffect(() => {
@@ -873,23 +875,23 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                       </div>
                     </div>
 
-                    {/* Premium Feel Slider */}
+                    {/* Energy Slider */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm font-semibold">Premium Feel</Label>
+                        <Label className="text-sm font-semibold">Energy</Label>
                         <span className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground">
-                          {getSliderLabel(brandData.signalPremium ?? 50, "Accessible", "Elevated")}
+                          {getSliderLabel(brandData.signalEnergy ?? 50, "Calm", "Energetic")}
                         </span>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Accessible</span>
-                          <span>Premium</span>
+                          <span>Calm</span>
+                          <span>Energetic</span>
                         </div>
                         <Slider
-                          value={[brandData.signalPremium ?? 50]}
+                          value={[brandData.signalEnergy ?? 50]}
                           onValueChange={([value]) =>
-                            setBrandData((prev) => ({ ...prev, signalPremium: value }))
+                            setBrandData((prev) => ({ ...prev, signalEnergy: value }))
                           }
                           max={100}
                           step={1}

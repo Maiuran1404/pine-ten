@@ -55,7 +55,7 @@ export interface BrandData {
   signalTone?: number; // Serious (0) ↔ Playful (100)
   signalDensity?: number; // Minimal (0) ↔ Rich (100)
   signalWarmth?: number; // Cold (0) ↔ Warm (100)
-  signalPremium?: number; // Accessible (0) ↔ Premium (100)
+  signalEnergy?: number; // Calm (0) ↔ Energetic (100)
   // Creative focus areas
   creativeFocus: string[];
   // Brand assets (uploaded files)
@@ -240,7 +240,7 @@ export const defaultBrandData: BrandData = {
   signalTone: 50,
   signalDensity: 50,
   signalWarmth: 50,
-  signalPremium: 50,
+  signalEnergy: 50,
   creativeFocus: [],
   brandAssets: [],
   productType: "",
