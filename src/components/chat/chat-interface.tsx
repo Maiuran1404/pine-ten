@@ -790,6 +790,74 @@ export function ChatInterface({
     }
   };
 
+  const handleSubmitDeliverableStyles = async (deliverableStyles: Array<{ id: string; name: string }>) => {
+    if (selectedDeliverableStyles.length === 0 || isLoading) return;
+
+    const selectedStyleNames = deliverableStyles
+      .filter(s => selectedDeliverableStyles.includes(s.id))
+      .map(s => s.name);
+
+    const styleMessage = selectedStyleNames.length === 1
+      ? `I like the ${selectedStyleNames[0]} style`
+      : `I like these styles: ${selectedStyleNames.join(", ")}`;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: styleMessage,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedDeliverableStyles,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+
+      if (data.deliverableStyleMarker) {
+        setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
+      }
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleQuickOptionClick = async (option: string) => {
     if (isLoading) return;
 
@@ -1295,16 +1363,7 @@ export function ChatInterface({
                             {selectedDeliverableStyles.length > 0 && (
                               <div className="flex justify-end mt-3">
                                 <Button
-                                  onClick={() => {
-                                    const selectedStyleNames = message.deliverableStyles
-                                      ?.filter(s => selectedDeliverableStyles.includes(s.id))
-                                      .map(s => s.name) || [];
-                                    const styleMessage = selectedStyleNames.length === 1
-                                      ? `I like the ${selectedStyleNames[0]} style`
-                                      : `I like these styles: ${selectedStyleNames.join(", ")}`;
-                                    setInput(styleMessage);
-                                    handleSend();
-                                  }}
+                                  onClick={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
                                   disabled={isLoading}
                                   size="sm"
                                   className="gap-2"
