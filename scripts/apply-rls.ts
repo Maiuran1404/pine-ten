@@ -29,10 +29,12 @@ async function applyRLS() {
 
   // All tables that need RLS enabled
   const tables = [
+    // Auth-related tables (managed by BetterAuth)
     "users",
     "sessions",
     "accounts",
     "verifications",
+    // Business tables
     "companies",
     "freelancer_profiles",
     "tasks",
@@ -40,10 +42,29 @@ async function applyRLS() {
     "task_messages",
     "task_categories",
     "chat_drafts",
+    // Reference and settings tables
     "style_references",
     "platform_settings",
+    // Transaction and notification tables
     "credit_transactions",
     "notifications",
+    // Template and design tables
+    "generated_designs",
+    "orshot_templates",
+    "brand_references",
+    "deliverable_style_references",
+    "style_selection_history",
+    // Webhook events (system table)
+    "webhook_events",
+    // Notification settings (admin table)
+    "notification_settings",
+    // Security testing tables
+    "test_users",
+    "test_schedules",
+    "security_tests",
+    "security_test_runs",
+    "security_test_results",
+    "security_snapshots",
   ];
 
   try {
@@ -82,7 +103,62 @@ async function applyRLS() {
       }
     }
 
-    console.log("\n3. Verifying RLS status...\n");
+    console.log("\n3. Creating authenticated user policies...\n");
+
+    // Policies for public read access to reference tables
+    const publicReadPolicies = [
+      { table: "orshot_templates", condition: "is_active = true" },
+      { table: "brand_references", condition: "is_active = true" },
+      { table: "deliverable_style_references", condition: "is_active = true" },
+    ];
+
+    for (const { table, condition } of publicReadPolicies) {
+      const policyName = `authenticated_read_${table}`;
+      try {
+        await sql.unsafe(`
+          CREATE POLICY "${policyName}" ON "${table}"
+            FOR SELECT
+            TO authenticated
+            USING (${condition})
+        `);
+        console.log(`✓ Created policy: ${policyName}`);
+      } catch (error: unknown) {
+        const err = error as { code?: string; message?: string };
+        if (err.code === "42710" || err.message?.includes("already exists")) {
+          console.log(`⚠ Policy exists: ${policyName}`);
+        } else {
+          console.log(`✗ Error for ${policyName}: ${err.message}`);
+        }
+      }
+    }
+
+    // User-specific read policies
+    const userReadPolicies = [
+      { table: "generated_designs", userColumn: "client_id" },
+      { table: "style_selection_history", userColumn: "user_id" },
+    ];
+
+    for (const { table, userColumn } of userReadPolicies) {
+      const policyName = `users_read_own_${table}`;
+      try {
+        await sql.unsafe(`
+          CREATE POLICY "${policyName}" ON "${table}"
+            FOR SELECT
+            TO authenticated
+            USING (${userColumn} = auth.uid()::text)
+        `);
+        console.log(`✓ Created policy: ${policyName}`);
+      } catch (error: unknown) {
+        const err = error as { code?: string; message?: string };
+        if (err.code === "42710" || err.message?.includes("already exists")) {
+          console.log(`⚠ Policy exists: ${policyName}`);
+        } else {
+          console.log(`✗ Error for ${policyName}: ${err.message}`);
+        }
+      }
+    }
+
+    console.log("\n4. Verifying RLS status...\n");
 
     const result = await sql`
       SELECT tablename, rowsecurity

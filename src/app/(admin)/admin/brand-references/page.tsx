@@ -67,6 +67,7 @@ import {
 } from "@/lib/constants/reference-libraries";
 import { VISUAL_STYLE_OPTIONS } from "@/components/onboarding/types";
 import { BrandReferenceUploader } from "@/components/admin/brand-reference-uploader";
+import { BrandReferenceScraper } from "@/components/admin/brand-reference-scraper";
 import { cn } from "@/lib/utils";
 
 interface BrandReference {
@@ -794,18 +795,23 @@ export default function BrandReferencesPage() {
 
         {/* Upload Tab */}
         <TabsContent value="upload" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Brand References</CardTitle>
-              <CardDescription>
-                Drag and drop images to automatically classify them using AI.
-                You can review and adjust classifications before saving.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BrandReferenceUploader onUploadComplete={fetchReferences} />
-            </CardContent>
-          </Card>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* File Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Files</CardTitle>
+                <CardDescription>
+                  Drag and drop images to automatically classify them using AI.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BrandReferenceUploader onUploadComplete={fetchReferences} />
+              </CardContent>
+            </Card>
+
+            {/* Web Import / Scraper */}
+            <BrandReferenceScraper onUploadComplete={fetchReferences} />
+          </div>
 
           {/* Tips */}
           <Card className="bg-muted/50">
@@ -827,6 +833,10 @@ export default function BrandReferencesPage() {
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                   Review AI classifications and adjust if needed
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  Scrape from Dribbble, Behance, or design blogs for inspiration
                 </li>
               </ul>
             </CardContent>
