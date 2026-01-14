@@ -6,6 +6,18 @@ import { analyzeColorBucketFromHex, type ColorBucket } from "@/lib/constants/ref
 import { getHistoryBoostScores } from "./selection-history";
 
 /**
+ * Multi-Factor Scoring Weights
+ * These control the relative importance of each scoring factor.
+ * All weights should sum to 1.0
+ */
+const SCORING_WEIGHTS = {
+  brand: 0.35,      // Brand color + industry match
+  history: 0.30,    // User selection history
+  popularity: 0.20, // Overall usage popularity
+  freshness: 0.15,  // Recently added bonus
+};
+
+/**
  * Style axis characteristics for brand matching
  * Maps each style to its typical color temperature, energy level, and density
  */
@@ -169,6 +181,69 @@ function calculateStyleScore(
   return Math.min(100, score);
 }
 
+/**
+ * Calculate popularity score (0-100)
+ * Based on usage count relative to the most popular style
+ */
+function calculatePopularityScore(usageCount: number, maxUsageCount: number): number {
+  if (maxUsageCount === 0) return 50;
+
+  const normalizedPopularity = usageCount / maxUsageCount;
+  // Use sqrt to give a boost to moderately popular items
+  return Math.round(Math.sqrt(normalizedPopularity) * 100);
+}
+
+/**
+ * Calculate freshness score (0-100)
+ * Gives bonus to recently added styles
+ */
+function calculateFreshnessScore(createdAt: Date | null): number {
+  if (!createdAt) return 50;
+
+  const now = new Date();
+  const ageInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Brand new styles get 100, decays over 60 days to 50
+  if (ageInDays <= 7) return 100;
+  if (ageInDays <= 14) return 90;
+  if (ageInDays <= 30) return 75;
+  if (ageInDays <= 60) return 60;
+  return 50;
+}
+
+/**
+ * Calculate multi-factor score with configurable weights
+ */
+function calculateMultiFactorScore(factors: {
+  brand: number;
+  history: number;
+  popularity: number;
+  freshness: number;
+}, hasHistory: boolean): number {
+  const weights = { ...SCORING_WEIGHTS };
+
+  // If no history, redistribute that weight
+  if (!hasHistory) {
+    weights.brand += weights.history * 0.5;
+    weights.popularity += weights.history * 0.5;
+    weights.history = 0;
+  }
+
+  return Math.round(
+    factors.brand * weights.brand +
+    factors.history * weights.history +
+    factors.popularity * weights.popularity +
+    factors.freshness * weights.freshness
+  );
+}
+
+export interface ScoreFactors {
+  brand: number;
+  history: number;
+  popularity: number;
+  freshness: number;
+}
+
 export interface BrandAwareStyle {
   id: string;
   name: string;
@@ -180,7 +255,9 @@ export interface BrandAwareStyle {
   semanticTags: string[];
   brandMatchScore: number;
   matchReason?: string;
+  matchReasons?: string[];  // Multiple reasons for rich tooltips
   historyBoost?: number;  // Bonus from user's selection history
+  scoreFactors?: ScoreFactors;  // Breakdown of scoring factors
 }
 
 /**
@@ -218,6 +295,7 @@ export async function getBrandAwareStyles(
       featuredOrder: deliverableStyleReferences.featuredOrder,
       displayOrder: deliverableStyleReferences.displayOrder,
       usageCount: deliverableStyleReferences.usageCount,
+      createdAt: deliverableStyleReferences.createdAt,
     })
     .from(deliverableStyleReferences)
     .where(
@@ -231,14 +309,37 @@ export async function getBrandAwareStyles(
       deliverableStyleReferences.displayOrder
     );
 
-  // If no company data, return styles with neutral scoring
+  // Calculate max usage for popularity normalization
+  const maxUsage = Math.max(...styles.map(s => s.usageCount || 0), 1);
+
+  // If no company data, use popularity and freshness scoring only
   if (!company) {
-    const neutralScored: BrandAwareStyle[] = styles.map(style => ({
-      ...style,
-      semanticTags: style.semanticTags || [],
-      brandMatchScore: 50,
-      matchReason: "No brand profile available",
-    }));
+    const neutralScored: BrandAwareStyle[] = styles.map(style => {
+      const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
+      const freshnessScore = calculateFreshnessScore(style.createdAt);
+
+      // Use multi-factor with no brand/history, redistributed weights
+      const totalScore = calculateMultiFactorScore(
+        { brand: 50, history: 0, popularity: popularityScore, freshness: freshnessScore },
+        false
+      );
+
+      const matchReasons: string[] = [];
+      if (popularityScore >= 70) matchReasons.push("Popular choice");
+      if (freshnessScore >= 90) matchReasons.push("Recently added");
+
+      return {
+        ...style,
+        semanticTags: style.semanticTags || [],
+        brandMatchScore: totalScore,
+        matchReason: matchReasons.length > 0 ? matchReasons[0] : "No brand profile available",
+        matchReasons,
+        scoreFactors: { brand: 50, history: 0, popularity: popularityScore, freshness: freshnessScore },
+      };
+    });
+
+    // Sort by score
+    neutralScored.sort((a, b) => b.brandMatchScore - a.brandMatchScore);
 
     if (options?.includeAllAxes) {
       return getTopPerAxis(neutralScored, options.limit);
@@ -263,41 +364,72 @@ export async function getBrandAwareStyles(
     // Continue without history boosts
   }
 
-  // Score each style
+  const hasHistory = historyBoosts.size > 0;
+
+  // Score each style using multi-factor scoring
   const scoredStyles: BrandAwareStyle[] = styles.map(style => {
+    const characteristics = STYLE_CHARACTERISTICS[style.styleAxis as StyleAxis];
+
+    // Calculate individual factor scores
     const brandScore = calculateStyleScore(
       style.styleAxis as StyleAxis,
       colorProfile,
       company.industry
     );
 
-    // Add history boost (0-30 points)
+    // Convert history boost (0-30) to 0-100 scale
     const historyBoost = historyBoosts.get(style.styleAxis) || 0;
-    const totalScore = Math.min(100, brandScore + historyBoost);
+    const historyScore = Math.round((historyBoost / 30) * 100);
 
-    // Generate match reason
-    const characteristics = STYLE_CHARACTERISTICS[style.styleAxis as StyleAxis];
-    let matchReason = "";
+    const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
+    const freshnessScore = calculateFreshnessScore(style.createdAt);
 
-    if (historyBoost >= 15) {
-      matchReason = "Based on your preferences";
-    } else if (totalScore >= 70) {
-      if (characteristics.colorAffinity.includes(colorProfile.dominant)) {
-        matchReason = `Matches your ${colorProfile.dominant} brand palette`;
+    // Calculate multi-factor total score
+    const scoreFactors: ScoreFactors = {
+      brand: brandScore,
+      history: historyScore,
+      popularity: popularityScore,
+      freshness: freshnessScore,
+    };
+
+    const totalScore = calculateMultiFactorScore(scoreFactors, hasHistory);
+
+    // Generate match reasons
+    const matchReasons: string[] = [];
+
+    // History-based reason (highest priority)
+    if (historyScore >= 50) {
+      matchReasons.push("Based on your preferences");
+    }
+
+    // Brand-based reasons
+    if (characteristics && characteristics.colorAffinity.includes(colorProfile.dominant)) {
+      matchReasons.push(`Matches your ${colorProfile.dominant} palette`);
+    }
+    if (company.industry) {
+      const industryMatch = characteristics?.industryAffinity.some(ind =>
+        company.industry!.toLowerCase().includes(ind)
+      );
+      if (industryMatch) {
+        matchReasons.push(`Popular in ${company.industry}`);
       }
-      if (company.industry) {
-        const industryMatch = characteristics.industryAffinity.some(ind =>
-          company.industry!.toLowerCase().includes(ind)
-        );
-        if (industryMatch) {
-          matchReason = matchReason
-            ? `${matchReason} and ${company.industry} industry`
-            : `Popular in ${company.industry}`;
-        }
-      }
-    } else if (totalScore >= 50) {
-      matchReason = "Versatile style option";
-    } else {
+    }
+
+    // Popularity-based reason
+    if (popularityScore >= 70) {
+      matchReasons.push("Popular choice");
+    }
+
+    // Freshness-based reason
+    if (freshnessScore >= 90) {
+      matchReasons.push("Recently added");
+    }
+
+    // Determine primary match reason
+    let matchReason = "Versatile style option";
+    if (matchReasons.length > 0) {
+      matchReason = matchReasons[0];
+    } else if (totalScore < 50) {
       matchReason = "Alternative direction";
     }
 
@@ -306,17 +438,14 @@ export async function getBrandAwareStyles(
       semanticTags: style.semanticTags || [],
       brandMatchScore: totalScore,
       matchReason,
+      matchReasons,
       historyBoost: historyBoost > 0 ? historyBoost : undefined,
+      scoreFactors,
     };
   });
 
-  // Sort by brand match score (descending), then by featured/display order
-  scoredStyles.sort((a, b) => {
-    if (b.brandMatchScore !== a.brandMatchScore) {
-      return b.brandMatchScore - a.brandMatchScore;
-    }
-    return 0; // Keep original order for same scores
-  });
+  // Sort by total score (descending)
+  scoredStyles.sort((a, b) => b.brandMatchScore - a.brandMatchScore);
 
   if (options?.includeAllAxes) {
     return getTopPerAxis(scoredStyles, options.limit);
