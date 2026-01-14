@@ -340,7 +340,7 @@ export default function SecurityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newSchedule,
-          testUserId: newSchedule.testUserId || null,
+          testUserId: newSchedule.testUserId && newSchedule.testUserId !== "none" ? newSchedule.testUserId : null,
         }),
       });
       if (res.ok) {
@@ -392,7 +392,7 @@ export default function SecurityPage() {
         body: JSON.stringify({
           targetUrl: runConfig.targetUrl,
           environment: runConfig.environment,
-          testUserId: runConfig.testUserId || null,
+          testUserId: runConfig.testUserId && runConfig.testUserId !== "none" ? runConfig.testUserId : null,
         }),
       });
       if (createRes.ok) {
@@ -612,7 +612,7 @@ export default function SecurityPage() {
                       <SelectValue placeholder="Select test user" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific user</SelectItem>
+                      <SelectItem value="none">No specific user</SelectItem>
                       {testUsers.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name} ({u.role})
@@ -1186,7 +1186,7 @@ export default function SecurityPage() {
                             <SelectValue placeholder="Select test user" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No specific user</SelectItem>
+                            <SelectItem value="none">No specific user</SelectItem>
                             {testUsers.map((u) => (
                               <SelectItem key={u.id} value={u.id}>
                                 {u.name} ({u.role})
