@@ -16,6 +16,7 @@ import {
 import {
   searchStylesByQuery,
   aiEnhancedStyleSearch,
+  refineStyleSearch,
 } from "@/lib/ai/semantic-style-search";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 
@@ -158,6 +159,66 @@ async function handler(request: NextRequest) {
                   ...s,
                   brandMatchScore: s.semanticScore,
                   matchReason: "AI-matched to your description",
+                }));
+              }
+            }
+            break;
+          case "refine":
+            // Use style refinement based on base style and user feedback
+            const { baseStyleId, refinementQuery } = response.deliverableStyleMarker;
+            if (baseStyleId && refinementQuery) {
+              // First, get the base style's details (can be ID or name)
+              const { db } = await import("@/db");
+              const { deliverableStyleReferences } = await import("@/db/schema");
+              const { eq, ilike } = await import("drizzle-orm");
+
+              // Try to find by ID first, then by name
+              let baseStyles = await db
+                .select()
+                .from(deliverableStyleReferences)
+                .where(eq(deliverableStyleReferences.id, baseStyleId))
+                .limit(1);
+
+              // If not found by ID, try by name (case-insensitive)
+              if (baseStyles.length === 0) {
+                baseStyles = await db
+                  .select()
+                  .from(deliverableStyleReferences)
+                  .where(ilike(deliverableStyleReferences.name, `%${baseStyleId}%`))
+                  .limit(1);
+              }
+
+              if (baseStyles.length > 0) {
+                const baseStyle = baseStyles[0];
+                const refinedResults = await refineStyleSearch(
+                  {
+                    id: baseStyle.id,
+                    name: baseStyle.name,
+                    styleAxis: baseStyle.styleAxis,
+                    semanticTags: baseStyle.semanticTags || [],
+                    description: baseStyle.description,
+                  },
+                  refinementQuery,
+                  deliverableType as DeliverableType,
+                  6
+                );
+
+                deliverableStyles = refinedResults.map(s => ({
+                  ...s,
+                  brandMatchScore: s.semanticScore,
+                  matchReason: `Refined: ${s.matchedKeywords.slice(0, 2).join(", ") || "based on your feedback"}`,
+                }));
+              } else {
+                // Base style not found, fall back to semantic search
+                const fallbackResults = await searchStylesByQuery(
+                  refinementQuery,
+                  deliverableType as DeliverableType,
+                  6
+                );
+                deliverableStyles = fallbackResults.map(s => ({
+                  ...s,
+                  brandMatchScore: s.semanticScore,
+                  matchReason: "Matched to your refinement",
                 }));
               }
             }

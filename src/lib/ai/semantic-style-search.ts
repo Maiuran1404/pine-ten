@@ -345,3 +345,231 @@ export function detectStylePreferences(message: string): {
     preferences: [...new Set(preferences)],
   };
 }
+
+/**
+ * Refinement modifiers and their effect on style characteristics
+ */
+const REFINEMENT_MODIFIERS: Record<string, {
+  boost: string[];     // Tags to boost in scoring
+  suppress: string[];  // Tags to suppress in scoring
+  axisShift?: string;  // Suggest shifting to a different axis
+}> = {
+  cleaner: { boost: ["clean", "minimal", "simple", "whitespace"], suppress: ["busy", "complex", "rich"] },
+  simpler: { boost: ["minimal", "simple", "clean"], suppress: ["complex", "detailed", "rich"] },
+  bolder: { boost: ["bold", "strong", "impactful", "contrast"], suppress: ["subtle", "minimal", "soft"] },
+  darker: { boost: ["dark", "moody", "dramatic", "contrast"], suppress: ["light", "bright", "airy"] },
+  lighter: { boost: ["light", "bright", "airy", "soft"], suppress: ["dark", "moody", "dramatic"] },
+  warmer: { boost: ["warm", "cozy", "friendly", "earthy"], suppress: ["cool", "cold", "corporate"] },
+  cooler: { boost: ["cool", "modern", "sleek", "professional"], suppress: ["warm", "cozy", "earthy"] },
+  "more professional": { boost: ["professional", "corporate", "business", "trustworthy"], suppress: ["playful", "casual", "fun"] },
+  "more playful": { boost: ["playful", "fun", "creative", "colorful"], suppress: ["corporate", "serious", "formal"] },
+  "more premium": { boost: ["premium", "luxury", "elegant", "sophisticated"], suppress: ["casual", "playful", "simple"] },
+  "more modern": { boost: ["modern", "contemporary", "sleek", "digital"], suppress: ["traditional", "classic", "vintage"] },
+  "more minimal": { boost: ["minimal", "clean", "simple", "whitespace"], suppress: ["busy", "complex", "detailed"], axisShift: "minimal" },
+  "more organic": { boost: ["organic", "natural", "earthy", "wellness"], suppress: ["digital", "tech", "corporate"], axisShift: "organic" },
+  "more tech": { boost: ["tech", "digital", "futuristic", "modern"], suppress: ["traditional", "organic", "earthy"], axisShift: "tech" },
+};
+
+/**
+ * Detect refinement intent from user message
+ * Returns the base style they're referring to and the refinement direction
+ */
+export function detectStyleRefinement(message: string): {
+  isRefinement: boolean;
+  refinementType?: string;
+  baseStyleReference?: "this" | "selected" | "previous";
+} {
+  const messageLower = message.toLowerCase();
+
+  // Patterns that indicate refinement of a previous/selected style
+  const refinementPatterns = [
+    /more\s+like\s+(this|that)\s+but\s+(\w+)/i,
+    /similar\s+(to\s+)?(this|that)\s+but\s+(\w+)/i,
+    /like\s+(this|the selected one)\s+but\s+(\w+)/i,
+    /(this|that)\s+but\s+(more\s+)?(\w+)/i,
+    /same\s+style\s+but\s+(\w+)/i,
+    /keep\s+(this|the)\s+(\w+)\s+but\s+make\s+it\s+(\w+)/i,
+    /can\s+you\s+make\s+(it|this)\s+(more\s+)?(\w+)/i,
+  ];
+
+  for (const pattern of refinementPatterns) {
+    const match = messageLower.match(pattern);
+    if (match) {
+      // Find the refinement word (usually the last capture group)
+      const refinementWord = match[match.length - 1];
+
+      // Determine what style they're referring to
+      let baseRef: "this" | "selected" | "previous" = "this";
+      if (messageLower.includes("selected") || messageLower.includes("chosen")) {
+        baseRef = "selected";
+      } else if (messageLower.includes("previous") || messageLower.includes("last")) {
+        baseRef = "previous";
+      }
+
+      return {
+        isRefinement: true,
+        refinementType: refinementWord,
+        baseStyleReference: baseRef,
+      };
+    }
+  }
+
+  // Check for standalone refinement modifiers with context
+  for (const modifier of Object.keys(REFINEMENT_MODIFIERS)) {
+    if (messageLower.includes(modifier)) {
+      return {
+        isRefinement: true,
+        refinementType: modifier,
+        baseStyleReference: "this",
+      };
+    }
+  }
+
+  return { isRefinement: false };
+}
+
+export interface StyleRefinementResult extends SemanticStyleResult {
+  refinementMatch: number;  // Score for how well it matches the refinement
+  baseStyleSimilarity: number;  // Score for similarity to base style
+}
+
+/**
+ * Refine style search based on a base style and user feedback
+ * Combines the base style's characteristics with refinement modifiers
+ */
+export async function refineStyleSearch(
+  baseStyle: {
+    id: string;
+    name: string;
+    styleAxis: string;
+    semanticTags: string[];
+    description: string | null;
+  },
+  refinementQuery: string,
+  deliverableType: DeliverableType,
+  limit: number = 6
+): Promise<StyleRefinementResult[]> {
+  // Extract refinement modifiers from query
+  const queryLower = refinementQuery.toLowerCase();
+  let boostTags: string[] = [];
+  let suppressTags: string[] = [];
+  let preferredAxis: string | undefined;
+
+  // Check for known refinement modifiers
+  for (const [modifier, effects] of Object.entries(REFINEMENT_MODIFIERS)) {
+    if (queryLower.includes(modifier)) {
+      boostTags.push(...effects.boost);
+      suppressTags.push(...effects.suppress);
+      if (effects.axisShift) {
+        preferredAxis = effects.axisShift;
+      }
+    }
+  }
+
+  // Also extract any additional keywords from the query
+  const additionalKeywords = extractKeywords(refinementQuery);
+  boostTags.push(...additionalKeywords);
+
+  // Combine base style tags with boost tags (removing suppressed ones)
+  const combinedTags = [
+    ...baseStyle.semanticTags.filter(tag => !suppressTags.includes(tag.toLowerCase())),
+    ...boostTags,
+  ];
+
+  // Fetch all styles for this deliverable type
+  const styles = await db
+    .select({
+      id: deliverableStyleReferences.id,
+      name: deliverableStyleReferences.name,
+      description: deliverableStyleReferences.description,
+      imageUrl: deliverableStyleReferences.imageUrl,
+      deliverableType: deliverableStyleReferences.deliverableType,
+      styleAxis: deliverableStyleReferences.styleAxis,
+      subStyle: deliverableStyleReferences.subStyle,
+      semanticTags: deliverableStyleReferences.semanticTags,
+    })
+    .from(deliverableStyleReferences)
+    .where(
+      and(
+        eq(deliverableStyleReferences.deliverableType, deliverableType),
+        eq(deliverableStyleReferences.isActive, true)
+      )
+    );
+
+  // Score each style based on:
+  // 1. Similarity to base style
+  // 2. Match to refinement modifiers
+  const scoredStyles: StyleRefinementResult[] = styles
+    .filter(style => style.id !== baseStyle.id)  // Exclude the base style itself
+    .map(style => {
+      const tags = style.semanticTags || [];
+      const normalizedTags = tags.map(t => t.toLowerCase());
+
+      // Calculate base style similarity (how similar to the original selection)
+      const baseTagMatch = baseStyle.semanticTags.filter(bt =>
+        normalizedTags.some(t => t.includes(bt.toLowerCase()) || bt.toLowerCase().includes(t))
+      ).length;
+      const baseSimilarity = Math.round((baseTagMatch / Math.max(baseStyle.semanticTags.length, 1)) * 100);
+
+      // Calculate refinement match (how well it matches the refinement direction)
+      let refinementScore = 0;
+      let boostMatches = 0;
+      let suppressMatches = 0;
+
+      boostTags.forEach(boost => {
+        if (normalizedTags.some(t => t.includes(boost) || boost.includes(t))) {
+          boostMatches++;
+        }
+      });
+
+      suppressTags.forEach(suppress => {
+        if (normalizedTags.some(t => t.includes(suppress) || suppress.includes(t))) {
+          suppressMatches++;
+        }
+      });
+
+      refinementScore = boostTags.length > 0
+        ? Math.round(((boostMatches - suppressMatches * 0.5) / boostTags.length) * 100)
+        : 50;
+      refinementScore = Math.max(0, Math.min(100, refinementScore));
+
+      // Bonus for matching preferred axis
+      if (preferredAxis && style.styleAxis === preferredAxis) {
+        refinementScore += 20;
+      }
+
+      // Also bonus for same axis as base (similarity)
+      if (style.styleAxis === baseStyle.styleAxis && !preferredAxis) {
+        refinementScore += 10;
+      }
+
+      // Calculate combined semantic score
+      const combinedScore = calculateSemanticScore(combinedTags, tags, style.description);
+
+      // Final score is weighted combination
+      const semanticScore = Math.round(
+        combinedScore * 0.4 +
+        refinementScore * 0.4 +
+        baseSimilarity * 0.2
+      );
+
+      // Determine matched keywords for display
+      const matchedKeywords = boostTags.filter(boost =>
+        normalizedTags.some(t => t.includes(boost) || boost.includes(t))
+      );
+
+      return {
+        ...style,
+        semanticTags: tags,
+        semanticScore,
+        refinementMatch: refinementScore,
+        baseStyleSimilarity: baseSimilarity,
+        matchedKeywords,
+      };
+    });
+
+  // Sort by semantic score (which now includes refinement matching)
+  scoredStyles.sort((a, b) => b.semanticScore - a.semanticScore);
+
+  return scoredStyles.slice(0, limit);
+}

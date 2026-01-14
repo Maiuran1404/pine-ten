@@ -154,7 +154,31 @@ The semantic search understands synonyms and related concepts:
 - "sleek" → matches modern, minimal, professional
 - "vibrant" → matches bold, colorful, energetic
 
-Use SEARCH_STYLES when user describes a feeling/mood, not just a style axis.`;
+Use SEARCH_STYLES when user describes a feeling/mood, not just a style axis.
+
+STYLE REFINEMENT:
+When user wants to refine a style they previously selected or were shown, use:
+
+[REFINE_STYLE: refinement_feedback, base_style_id, deliverable_type]
+
+Examples of when to use style refinement:
+- User says "I like this but make it cleaner" → [REFINE_STYLE: cleaner, {selected_style_id}, instagram_post]
+- User says "Similar to that but bolder" → [REFINE_STYLE: bolder, {shown_style_id}, instagram_post]
+- User says "Can you make it more professional?" → [REFINE_STYLE: more professional, {current_style_id}, linkedin_post]
+- User says "This but darker and moodier" → [REFINE_STYLE: darker moodier, {style_id}, instagram_post]
+
+The refinement system understands modifiers like:
+- cleaner, simpler, bolder, darker, lighter
+- warmer, cooler, more professional, more playful
+- more premium, more modern, more minimal, more organic, more tech
+
+Use REFINE_STYLE when user refers to a previously shown/selected style and wants adjustments.
+The base_style_name can be the NAME of the style they're referring to (e.g., "Natural & Organic", "Clean Grid", "Tech Forward").
+
+Example with actual style names:
+- "I like Natural & Organic but cleaner" → [REFINE_STYLE: cleaner, Natural & Organic, instagram_post]
+- "Tech Forward but warmer" → [REFINE_STYLE: warmer, Tech Forward, instagram_post]
+- "Make Clean Grid more premium" → [REFINE_STYLE: more premium, Clean Grid, linkedin_post]`;
 
 const DEFAULT_STATIC_ADS_TREE = `=== STATIC ADS / GRAPHICS DECISION TREE ===
 
@@ -609,10 +633,12 @@ export interface ChatMessage {
 }
 
 export interface DeliverableStyleMarker {
-  type: "initial" | "more" | "different" | "semantic";
+  type: "initial" | "more" | "different" | "semantic" | "refine";
   deliverableType: string;
   styleAxis?: string;
   searchQuery?: string;  // For semantic search queries
+  baseStyleId?: string;  // For style refinement (id of style being refined)
+  refinementQuery?: string;  // For style refinement (user's refinement feedback)
 }
 
 export async function chat(
@@ -734,6 +760,17 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     };
   }
 
+  // Check for style refinement: [REFINE_STYLE: refinement_query, base_style_id, type]
+  const refineStyleMatch = content.match(/\[REFINE_STYLE: ([^,]+),\s*([^,]+),\s*([^\]]+)\]/);
+  if (refineStyleMatch) {
+    deliverableStyleMarker = {
+      type: "refine",
+      refinementQuery: refineStyleMatch[1].trim(),
+      baseStyleId: refineStyleMatch[2].trim(),
+      deliverableType: refineStyleMatch[3].trim(),
+    };
+  }
+
   // Extract quick options if present
   const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/);
   let quickOptions: { question: string; options: string[] } | undefined;
@@ -752,6 +789,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\[MORE_STYLES: [^\]]+\]/g, "")
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, "")
     .replace(/\[SEARCH_STYLES: [^\]]+\]/g, "")
+    .replace(/\[REFINE_STYLE: [^\]]+\]/g, "")
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();
 
