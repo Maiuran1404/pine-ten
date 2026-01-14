@@ -549,33 +549,39 @@ export default function SecurityPage() {
                   </div>
                 </div>
                 {/* Score trend indicator */}
-                {overview && overview.recentRuns.length > 1 && (
-                  <div className="mt-4 pt-4 border-t">
-                    {(() => {
-                      const prevRun = overview.recentRuns[1];
-                      const prevScore = prevRun?.score ? parseFloat(prevRun.score) : 0;
-                      const diff = score - prevScore;
-                      return (
-                        <div className="flex items-center gap-2 text-sm">
-                          {diff > 0 ? (
-                            <>
-                              <TrendingUp className="h-4 w-4 text-green-600" />
-                              <span className="text-green-600">+{diff.toFixed(0)}%</span>
-                            </>
-                          ) : diff < 0 ? (
-                            <>
-                              <TrendingDown className="h-4 w-4 text-red-600" />
-                              <span className="text-red-600">{diff.toFixed(0)}%</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground">No change</span>
-                          )}
-                          <span className="text-muted-foreground">vs previous scan</span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                {(() => {
+                  // Find a previous COMPLETED run (not the current one)
+                  const completedRuns = overview?.recentRuns.filter(
+                    (r) => r.status === "COMPLETED" && r.id !== latestRun?.id
+                  ) || [];
+                  const prevRun = completedRuns[0];
+
+                  if (!prevRun || !prevRun.score) return null;
+
+                  const prevScore = parseFloat(prevRun.score);
+                  const diff = score - prevScore;
+
+                  if (diff === 0) return null;
+
+                  return (
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-2 text-sm">
+                        {diff > 0 ? (
+                          <>
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <span className="text-green-600">+{diff.toFixed(0)}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <TrendingDown className="h-4 w-4 text-red-600" />
+                            <span className="text-red-600">{diff.toFixed(0)}%</span>
+                          </>
+                        )}
+                        <span className="text-muted-foreground">vs previous scan</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             ) : (
               <div className="py-8 text-center">

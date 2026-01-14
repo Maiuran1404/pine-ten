@@ -1250,7 +1250,22 @@ function getBrandArchetype(signals: {
   return "versatileClassic";
 }
 
+interface BrandReference {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string;
+  toneBucket: string;
+  energyBucket: string;
+  densityBucket: string;
+  colorBucket: string;
+  score?: number;
+}
+
 function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
+  const [brandReferences, setBrandReferences] = useState<BrandReference[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Get slider values for all signals (4 signals now)
   const getSignalValue = (id: string): number => {
     const value = brandData[id as keyof BrandData];
@@ -1273,10 +1288,52 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
     energy: getSignalValue('signalEnergy'),
   };
 
-  // Get the current brand archetype
+  // Fetch brand references from the database based on current slider values
+  useEffect(() => {
+    const fetchBrandReferences = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/brand-references/match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            signalTone: signals.tone,
+            signalDensity: signals.density,
+            signalWarmth: signals.warmth,
+            signalEnergy: signals.energy,
+            limit: 12,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setBrandReferences(data.references || []);
+        }
+      } catch (error) {
+        console.error('Error fetching brand references:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBrandReferences();
+  }, [signals.tone, signals.density, signals.warmth, signals.energy]);
+
+  // Get the current brand archetype for displaying name/description
   const archetypeKey = getBrandArchetype(signals);
   const archetype = BRAND_ARCHETYPES[archetypeKey];
-  const images = BRAND_ARCHETYPE_IMAGES[archetypeKey];
+
+  // Use fetched brand reference images, or show loading state
+  const images = brandReferences.map(ref => ref.imageUrl);
+
+  // If we have fewer than 4 images, duplicate them to fill 4 columns
+  const displayImages = images.length > 0
+    ? images.length >= 4
+      ? images.slice(0, 4)
+      : [...images, ...images, ...images, ...images].slice(0, 4)
+    : [];
 
   return (
     <motion.div
@@ -1286,84 +1343,93 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       transition={{ duration: 0.5, delay: 0.2 }}
       className="w-full max-w-3xl"
     >
-      {/* Scrolling Image Columns - 4 columns showing cohesive archetype images */}
+      {/* Scrolling Image Columns - 4 columns showing brand reference images from database */}
       <div className="relative">
-        <div className="flex gap-4 justify-center">
-          {images.slice(0, 4).map((imageSrc, index) => (
-            <motion.div
-              key={`column-${archetypeKey}-${index}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.08 }}
-              className="relative flex-shrink-0"
-              style={{ width: "140px" }}
-            >
-              {/* Scrolling container */}
-              <div
-                className="relative h-[420px] overflow-hidden rounded-2xl"
-                style={{
-                  background: "rgba(15, 15, 15, 0.4)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                }}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-[420px]">
+            <div className="text-white/40">Loading brand references...</div>
+          </div>
+        ) : displayImages.length === 0 ? (
+          <div className="flex items-center justify-center h-[420px]">
+            <div className="text-white/40">No brand references available</div>
+          </div>
+        ) : (
+          <div className="flex gap-4 justify-center">
+            {displayImages.map((imageSrc, index) => (
+              <motion.div
+                key={`column-${index}-${imageSrc}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08 }}
+                className="relative flex-shrink-0"
+                style={{ width: "140px" }}
               >
-                {/* Top fade gradient */}
+                {/* Scrolling container */}
                 <div
-                  className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
+                  className="relative h-[420px] overflow-hidden rounded-2xl"
                   style={{
-                    background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
-                  }}
-                />
-
-                {/* Bottom fade gradient */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
-                  style={{
-                    background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
-                  }}
-                />
-
-                {/* Scrolling images */}
-                <motion.div
-                  key={`scroll-${archetypeKey}-${index}`}
-                  className="flex flex-col gap-3 p-2"
-                  animate={{
-                    y: index % 2 === 0
-                      ? [0, -(images.length * (200 + 12))]
-                      : [-(images.length * (200 + 12)), 0],
-                  }}
-                  transition={{
-                    y: {
-                      duration: 20 + index * 4,
-                      repeat: Infinity,
-                      ease: "linear",
-                    },
+                    background: "rgba(15, 15, 15, 0.4)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                   }}
                 >
-                  {/* Repeat all archetype images for seamless scrolling */}
-                  {[...images, ...images, ...images].map((src, imgIndex) => (
-                    <motion.div
-                      key={`${archetypeKey}-${index}-${imgIndex}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-lg"
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                      }}
-                    >
-                      <img
-                        src={src}
-                        alt={`${archetype.name} design ${imgIndex + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  {/* Top fade gradient */}
+                  <div
+                    className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+                    }}
+                  />
 
+                  {/* Bottom fade gradient */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
+                    style={{
+                      background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+                    }}
+                  />
+
+                  {/* Scrolling images - use all brand references for seamless scrolling */}
+                  <motion.div
+                    key={`scroll-${index}`}
+                    className="flex flex-col gap-3 p-2"
+                    animate={{
+                      y: index % 2 === 0
+                        ? [0, -(images.length * (200 + 12))]
+                        : [-(images.length * (200 + 12)), 0],
+                    }}
+                    transition={{
+                      y: {
+                        duration: 20 + index * 4,
+                        repeat: Infinity,
+                        ease: "linear",
+                      },
+                    }}
+                  >
+                    {/* Repeat all brand reference images for seamless scrolling */}
+                    {[...images, ...images, ...images].map((src, imgIndex) => (
+                      <motion.div
+                        key={`${index}-${imgIndex}-${src}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-lg"
+                        style={{
+                          width: "100%",
+                          height: "200px",
+                        }}
+                      >
+                        <img
+                          src={src}
+                          alt={brandReferences[imgIndex % brandReferences.length]?.name || `Brand reference ${imgIndex + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Archetype Name and Similar Brands */}
