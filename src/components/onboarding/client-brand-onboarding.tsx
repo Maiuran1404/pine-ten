@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { LoadingSpinner } from "@/components/shared/loading";
 import {
   Popover,
@@ -67,6 +68,86 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
   const [hasScannedWebsite, setHasScannedWebsite] = useState(false);
   const [industryOpen, setIndustryOpen] = useState(false);
   const [industrySearch, setIndustrySearch] = useState("");
+
+  // Brand references state
+  const [brandReferences, setBrandReferences] = useState<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    imageUrl: string;
+    toneBucket: string;
+    energyBucket: string;
+    colorBucket: string;
+  }>>([]);
+  const [isLoadingReferences, setIsLoadingReferences] = useState(false);
+  const [detectedStyleName, setDetectedStyleName] = useState("Your Brand Style");
+
+  // Fetch brand references based on slider values
+  const fetchBrandReferences = useCallback(async () => {
+    setIsLoadingReferences(true);
+    try {
+      const response = await fetch("/api/brand-references/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          feelPlayfulSerious: brandData.signalTone ?? 50,
+          feelBoldMinimal: brandData.signalDensity ?? 50,
+          primaryColor: brandData.primaryColor,
+          limit: 12,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBrandReferences(data.references || []);
+
+        // Determine style name based on buckets
+        const { tone, energy } = data.buckets || {};
+        if (tone === "playful" && energy === "bold") {
+          setDetectedStyleName("Vibrant Bold");
+        } else if (tone === "playful" && energy === "minimal") {
+          setDetectedStyleName("Playful Minimal");
+        } else if (tone === "serious" && energy === "bold") {
+          setDetectedStyleName("Professional Impact");
+        } else if (tone === "serious" && energy === "minimal") {
+          setDetectedStyleName("Elegant Refined");
+        } else if (tone === "balanced" && energy === "balanced") {
+          setDetectedStyleName("Versatile Classic");
+        } else if (tone === "playful") {
+          setDetectedStyleName("Spirited Modern");
+        } else if (tone === "serious") {
+          setDetectedStyleName("Corporate Clean");
+        } else if (energy === "bold") {
+          setDetectedStyleName("Bold Statement");
+        } else if (energy === "minimal") {
+          setDetectedStyleName("Clean Minimal");
+        } else {
+          setDetectedStyleName("Your Brand Style");
+        }
+      }
+    } catch {
+      // Silently fail - brand references are enhancement only
+    } finally {
+      setIsLoadingReferences(false);
+    }
+  }, [brandData.signalTone, brandData.signalDensity, brandData.primaryColor]);
+
+  // Fetch brand references when on fine-tune step and sliders change
+  useEffect(() => {
+    if (step === "fine-tune") {
+      const debounceTimer = setTimeout(() => {
+        fetchBrandReferences();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [step, fetchBrandReferences]);
+
+  // Helper to get slider label based on value
+  const getSliderLabel = (value: number, lowLabel: string, highLabel: string): string => {
+    if (value < 35) return lowLabel;
+    if (value > 65) return highLabel;
+    return "Balanced";
+  };
 
   // Animate scanning progress
   useEffect(() => {
@@ -696,7 +777,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 </motion.div>
               )}
 
-              {/* Fine-tune the Feel Step - Visual "This or That" Selection */}
+              {/* Fine-tune the Feel Step - Sliders with Brand Reference Preview */}
               {step === "fine-tune" && (
                 <motion.div
                   key="fine-tune"
@@ -708,170 +789,113 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 >
                   <div className="space-y-2">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                      Which feels more like you?
+                      Let&apos;s dial it in
                     </h1>
                     <p className="text-muted-foreground">
-                      Pick the style that matches your brand&apos;s vibe.
+                      Adjust these core signals to match your brand feel.
                     </p>
                   </div>
 
-                  {/* Visual "This or That" Cards */}
-                  <div className="space-y-4">
-                    {/* Playful vs Serious */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelPlayfulSerious: 0 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelPlayfulSerious < 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Playful */}
-                        <div className="mb-3 flex items-center gap-1">
-                          <div className="w-4 h-4 rounded-full bg-yellow-400" />
-                          <div className="w-3 h-3 rounded-full bg-pink-400" />
-                          <div className="w-5 h-5 rounded-full bg-cyan-400" />
+                  {/* Slider Controls */}
+                  <div className="space-y-8">
+                    {/* Tone Slider */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Tone</Label>
+                        <span className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                          {getSliderLabel(brandData.signalTone ?? 50, "Serious", "Spirited")}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Serious</span>
+                          <span>Playful</span>
                         </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Playful</span>
-                          <p className="text-xs text-muted-foreground">Fun, friendly, approachable</p>
-                        </div>
-                        {brandData.feelPlayfulSerious < 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelPlayfulSerious: 100 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelPlayfulSerious >= 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Serious */}
-                        <div className="mb-3 flex items-center gap-2">
-                          <div className="w-8 h-1 bg-gray-800 rounded" />
-                          <div className="w-4 h-1 bg-gray-400 rounded" />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Serious</span>
-                          <p className="text-xs text-muted-foreground">Professional, trustworthy</p>
-                        </div>
-                        {brandData.feelPlayfulSerious >= 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
+                        <Slider
+                          value={[brandData.signalTone ?? 50]}
+                          onValueChange={([value]) =>
+                            setBrandData((prev) => ({ ...prev, signalTone: value }))
+                          }
+                          max={100}
+                          step={1}
+                          className="cursor-pointer"
+                        />
+                      </div>
                     </div>
 
-                    {/* Bold vs Minimal */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelBoldMinimal: 0 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelBoldMinimal < 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Bold */}
-                        <div className="mb-3">
-                          <div className="text-2xl font-black tracking-tight text-foreground">Aa</div>
+                    {/* Visual Density Slider */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Visual Density</Label>
+                        <span className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                          {getSliderLabel(brandData.signalDensity ?? 50, "Clean", "Rich")}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Minimal</span>
+                          <span>Rich</span>
                         </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Bold</span>
-                          <p className="text-xs text-muted-foreground">Strong, impactful, loud</p>
-                        </div>
-                        {brandData.feelBoldMinimal < 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelBoldMinimal: 100 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelBoldMinimal >= 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Minimal */}
-                        <div className="mb-3">
-                          <div className="text-2xl font-light tracking-wide text-muted-foreground">Aa</div>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Minimal</span>
-                          <p className="text-xs text-muted-foreground">Clean, refined, subtle</p>
-                        </div>
-                        {brandData.feelBoldMinimal >= 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
+                        <Slider
+                          value={[brandData.signalDensity ?? 50]}
+                          onValueChange={([value]) =>
+                            setBrandData((prev) => ({ ...prev, signalDensity: value }))
+                          }
+                          max={100}
+                          step={1}
+                          className="cursor-pointer"
+                        />
+                      </div>
                     </div>
 
-                    {/* Experimental vs Classic */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelExperimentalClassic: 0 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelExperimentalClassic < 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Experimental */}
-                        <div className="mb-3 flex items-end gap-1">
-                          <div className="w-3 h-6 bg-gradient-to-t from-violet-500 to-pink-500 rounded-sm -rotate-12" />
-                          <div className="w-3 h-4 bg-gradient-to-t from-cyan-500 to-blue-500 rounded-sm rotate-6" />
-                          <div className="w-3 h-8 bg-gradient-to-t from-orange-500 to-yellow-500 rounded-sm -rotate-3" />
+                    {/* Warmth Slider */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Warmth</Label>
+                        <span className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                          {getSliderLabel(brandData.signalWarmth ?? 50, "Cool", "Warm")}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Cold</span>
+                          <span>Warm</span>
                         </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Experimental</span>
-                          <p className="text-xs text-muted-foreground">Edgy, creative, unique</p>
+                        <Slider
+                          value={[brandData.signalWarmth ?? 50]}
+                          onValueChange={([value]) =>
+                            setBrandData((prev) => ({ ...prev, signalWarmth: value }))
+                          }
+                          max={100}
+                          step={1}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Premium Feel Slider */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Premium Feel</Label>
+                        <span className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                          {getSliderLabel(brandData.signalPremium ?? 50, "Accessible", "Elevated")}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Accessible</span>
+                          <span>Premium</span>
                         </div>
-                        {brandData.feelExperimentalClassic < 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setBrandData((prev) => ({ ...prev, feelExperimentalClassic: 100 }))}
-                        className={cn(
-                          "relative p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                          brandData.feelExperimentalClassic >= 50
-                            ? "border-foreground bg-foreground/5"
-                            : "border-border hover:border-foreground/50"
-                        )}
-                      >
-                        {/* Visual representation - Classic */}
-                        <div className="mb-3 flex items-end gap-1">
-                          <div className="w-3 h-4 bg-gray-700 rounded-sm" />
-                          <div className="w-3 h-6 bg-gray-700 rounded-sm" />
-                          <div className="w-3 h-5 bg-gray-700 rounded-sm" />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="font-semibold text-foreground">Classic</span>
-                          <p className="text-xs text-muted-foreground">Timeless, elegant, proven</p>
-                        </div>
-                        {brandData.feelExperimentalClassic >= 50 && (
-                          <div className="absolute top-3 right-3">
-                            <Check className="w-4 h-4 text-foreground" />
-                          </div>
-                        )}
-                      </button>
+                        <Slider
+                          value={[brandData.signalPremium ?? 50]}
+                          onValueChange={([value]) =>
+                            setBrandData((prev) => ({ ...prev, signalPremium: value }))
+                          }
+                          max={100}
+                          step={1}
+                          className="cursor-pointer"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1349,7 +1373,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
               </motion.div>
             )}
 
-            {/* Fine-tune Step - Style spectrum preview */}
+            {/* Fine-tune Step - Brand Reference Masonry Grid */}
             {step === "fine-tune" && (
               <motion.div
                 key="preview-fine-tune"
@@ -1357,72 +1381,92 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.4 }}
-                className="w-full max-w-sm"
+                className="w-full flex flex-col items-center justify-center h-full"
               >
-                {/* Style visualization */}
-                <motion.div
-                  className="bg-background rounded-3xl border border-border shadow-xl p-8 space-y-6"
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                >
-                  <div className="text-center space-y-2">
-                    <h3 className="text-lg font-semibold text-foreground">Your brand feel</h3>
-                    <p className="text-sm text-muted-foreground">Adjusting in real-time</p>
-                  </div>
+                {/* Brand Reference Masonry Grid */}
+                {brandReferences.length > 0 ? (
+                  <div className="space-y-6 w-full max-w-2xl">
+                    {/* Masonry Grid - 4 columns */}
+                    <div className="grid grid-cols-4 gap-3">
+                      {brandReferences.slice(0, 12).map((ref, index) => {
+                        // Create varying heights for masonry effect
+                        const heights = ["h-24", "h-32", "h-28", "h-36", "h-24", "h-32"];
+                        const heightClass = heights[index % heights.length];
 
-                  {/* Visual representation of sliders */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Playful</span>
-                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                          animate={{ width: `${brandData.feelPlayfulSerious}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Serious</span>
+                        return (
+                          <motion.div
+                            key={ref.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={cn(
+                              "rounded-xl overflow-hidden bg-muted/50",
+                              heightClass
+                            )}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={ref.imageUrl}
+                              alt={ref.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/200x200?text=Brand";
+                              }}
+                            />
+                          </motion.div>
+                        );
+                      })}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Bold</span>
-                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                          animate={{ width: `${brandData.feelBoldMinimal}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Minimal</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Experimental</span>
-                      <div className="flex-1 mx-3 h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
-                          animate={{ width: `${brandData.feelExperimentalClassic}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Classic</span>
-                    </div>
-                  </div>
 
-                  {/* Brand identity badge */}
-                  <div className="flex items-center justify-center gap-2 pt-4">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: brandData.primaryColor || "#14b8a6" }}
+                    {/* Style Name Label */}
+                    <motion.div
+                      className="text-center space-y-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
                     >
-                      <span className="text-white font-bold text-sm">
-                        {brandData.name?.charAt(0)?.toUpperCase() || "C"}
-                      </span>
-                    </div>
-                    <span className="font-medium text-foreground">{brandData.name || "Your Brand"}</span>
+                      <h3 className="text-2xl font-semibold text-foreground">
+                        {detectedStyleName}
+                      </h3>
+                      {brandReferences.length > 0 && (
+                        <p className="text-muted-foreground text-sm">
+                          Similar to{" "}
+                          {brandReferences.slice(0, 3).map((r, i) => (
+                            <span key={r.id}>
+                              <span className="text-foreground">{r.name}</span>
+                              {i < Math.min(brandReferences.length - 1, 2) ? ", " : ""}
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                    </motion.div>
                   </div>
-                </motion.div>
+                ) : (
+                  /* Loading State or Empty State */
+                  <div className="text-center space-y-4">
+                    {isLoadingReferences ? (
+                      <>
+                        <LoadingSpinner size="lg" />
+                        <p className="text-muted-foreground">Finding matching styles...</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                          <Sparkles className="w-10 h-10 text-muted-foreground" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold text-foreground">
+                            {detectedStyleName}
+                          </h3>
+                          <p className="text-muted-foreground text-sm">
+                            Adjust the sliders to see matching brand styles
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </motion.div>
             )}
 

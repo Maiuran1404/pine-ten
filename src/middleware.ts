@@ -65,6 +65,7 @@ function getSubdomain(request: NextRequest): SubdomainType | null {
 const publicPaths = [
   "/login",
   "/register",
+  "/onboarding",
   "/auth-error",
   "/api/auth",
   "/api/webhooks",

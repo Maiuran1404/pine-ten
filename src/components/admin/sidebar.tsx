@@ -26,6 +26,7 @@ import {
   Wand2,
   Palette,
   LayoutTemplate,
+  Shield,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -104,6 +105,11 @@ const navigation: NavigationItem[] = [
     name: "Notifications",
     href: "/admin/notifications",
     icon: Bell,
+  },
+  {
+    name: "Security",
+    href: "/admin/security",
+    icon: Shield,
   },
   {
     name: "Database",
