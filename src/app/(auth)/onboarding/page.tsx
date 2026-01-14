@@ -1115,14 +1115,14 @@ const BRAND_ARCHETYPES: Record<string, { name: string; brands: string[] }> = {
   boldAccessible: { name: "Bold Accessible", brands: ["Canva", "Wix", "Shopify"] },
 };
 
-// Function to determine brand archetype based on slider values (4 signals: tone, density, warmth, premium)
+// Function to determine brand archetype based on slider values (4 signals: tone, density, warmth, energy)
 function getBrandArchetype(signals: {
   tone: number;
   density: number;
   warmth: number;
-  premium: number;
+  energy: number;
 }): string {
-  const { tone, density, warmth, premium } = signals;
+  const { tone, density, warmth, energy } = signals;
 
   // Tone: Serious (< 25), A bit serious (25-45), Neutral (45-55), A bit playful (55-75), Playful (> 75)
   const isSerious = tone < 25;
@@ -1143,103 +1143,103 @@ function getBrandArchetype(signals: {
   const isNeutralWarmth = warmth >= 35 && warmth <= 65;
   const isWarm = warmth > 65;
 
-  // Premium: Accessible (< 25), A bit accessible (25-45), Neutral (45-55), A bit premium (55-75), Premium (> 75)
-  const isAccessible = premium < 25;
-  const isBitAccessible = premium >= 25 && premium < 45;
-  const isNeutralPremium = premium >= 45 && premium <= 55;
-  const isBitPremium = premium > 55 && premium <= 75;
-  const isPremium = premium > 75;
+  // Energy: Calm (< 25), A bit calm (25-45), Neutral (45-55), A bit energetic (55-75), Energetic (> 75)
+  const isCalm = energy < 25;
+  const isBitCalm = energy >= 25 && energy < 45;
+  const isNeutralEnergy = energy >= 45 && energy <= 55;
+  const isBitEnergetic = energy > 55 && energy <= 75;
+  const isEnergetic = energy > 75;
 
   // === PLAYFUL COMBINATIONS ===
-  if (isPlayful && isWarm && isPremium) return "boldExplorer";
-  if (isPlayful && isWarm && isAccessible) return "everydayJoy";
+  if (isPlayful && isWarm && isEnergetic) return "boldExplorer";
+  if (isPlayful && isWarm && isCalm) return "everydayJoy";
   if (isPlayful && isWarm && isRich) return "richStoryteller";
   if (isPlayful && isWarm) return "friendlyGuide";
-  if (isPlayful && isCold && isPremium) return "neonFuturist";
-  if (isPlayful && isCold && isAccessible) return "digitalNative";
+  if (isPlayful && isCold && isEnergetic) return "neonFuturist";
+  if (isPlayful && isCold && isCalm) return "digitalNative";
   if (isPlayful && isCold) return "vibrantMinimal";
   if (isPlayful && isMinimal) return "playfulPop";
   if (isPlayful && isRich) return "creativeRebel";
-  if (isPlayful && isAccessible) return "accessibleFun";
-  if (isPlayful && isPremium) return "softLuxury";
+  if (isPlayful && isCalm) return "accessibleFun";
+  if (isPlayful && isEnergetic) return "softLuxury";
   if (isPlayful) return "humanFirst";
 
   // === SERIOUS COMBINATIONS ===
-  if (isSerious && isCold && isPremium && isMinimal) return "elegantMinimalist";
-  if (isSerious && isCold && isPremium) return "refinedAuthority";
+  if (isSerious && isCold && isEnergetic && isMinimal) return "elegantMinimalist";
+  if (isSerious && isCold && isEnergetic) return "refinedAuthority";
   if (isSerious && isCold && isMinimal) return "industrialChic";
   if (isSerious && isCold) return "techDisruptor";
-  if (isSerious && isWarm && isPremium && isRich) return "luxuryStoryteller";
-  if (isSerious && isWarm && isPremium) return "organicLuxury";
+  if (isSerious && isWarm && isEnergetic && isRich) return "luxuryStoryteller";
+  if (isSerious && isWarm && isEnergetic) return "organicLuxury";
   if (isSerious && isWarm && isRich) return "modernHeritage";
   if (isSerious && isWarm) return "trustedAdvisor";
-  if (isSerious && isPremium && isMinimal) return "premiumTech";
-  if (isSerious && isPremium) return "quietConfidence";
-  if (isSerious && isAccessible) return "corporateChic";
+  if (isSerious && isEnergetic && isMinimal) return "premiumTech";
+  if (isSerious && isEnergetic) return "quietConfidence";
+  if (isSerious && isCalm) return "corporateChic";
   if (isSerious && isMinimal) return "cleanSlate";
   if (isSerious && isRich) return "seriousCraft";
   if (isSerious) return "classicTrust";
 
   // === BIT PLAYFUL COMBINATIONS ===
-  if (isBitPlayful && isWarm && isPremium) return "warmCraftsman";
-  if (isBitPlayful && isWarm && isAccessible) return "boldAccessible";
+  if (isBitPlayful && isWarm && isEnergetic) return "warmCraftsman";
+  if (isBitPlayful && isWarm && isCalm) return "boldAccessible";
   if (isBitPlayful && isWarm) return "humanFirst";
-  if (isBitPlayful && isCold && isPremium) return "boldMinimalist";
+  if (isBitPlayful && isCold && isEnergetic) return "boldMinimalist";
   if (isBitPlayful && isCold) return "urbanEdge";
   if (isBitPlayful && isMinimal) return "cleanSlate";
   if (isBitPlayful && isRich) return "richStoryteller";
-  if (isBitPlayful && isPremium) return "softLuxury";
-  if (isBitPlayful && isAccessible) return "accessibleFun";
+  if (isBitPlayful && isEnergetic) return "softLuxury";
+  if (isBitPlayful && isCalm) return "accessibleFun";
 
   // === BIT SERIOUS COMBINATIONS ===
-  if (isBitSerious && isCold && isPremium) return "premiumTech";
+  if (isBitSerious && isCold && isEnergetic) return "premiumTech";
   if (isBitSerious && isCold) return "industrialChic";
-  if (isBitSerious && isWarm && isPremium) return "modernHeritage";
+  if (isBitSerious && isWarm && isEnergetic) return "modernHeritage";
   if (isBitSerious && isWarm) return "warmProfessional";
-  if (isBitSerious && isPremium && isMinimal) return "elegantMinimalist";
-  if (isBitSerious && isPremium) return "quietConfidence";
-  if (isBitSerious && isAccessible) return "corporateChic";
+  if (isBitSerious && isEnergetic && isMinimal) return "elegantMinimalist";
+  if (isBitSerious && isEnergetic) return "quietConfidence";
+  if (isBitSerious && isCalm) return "corporateChic";
   if (isBitSerious && isMinimal) return "seriousCraft";
   if (isBitSerious && isRich) return "dynamicLeader";
 
   // === MINIMAL COMBINATIONS ===
-  if (isMinimal && isPremium && isCold) return "elegantMinimalist";
-  if (isMinimal && isPremium && isWarm) return "organicLuxury";
-  if (isMinimal && isPremium) return "premiumTech";
-  if (isMinimal && isAccessible && isWarm) return "zenMaster";
-  if (isMinimal && isAccessible) return "cleanSlate";
+  if (isMinimal && isEnergetic && isCold) return "elegantMinimalist";
+  if (isMinimal && isEnergetic && isWarm) return "organicLuxury";
+  if (isMinimal && isEnergetic) return "premiumTech";
+  if (isMinimal && isCalm && isWarm) return "zenMaster";
+  if (isMinimal && isCalm) return "cleanSlate";
   if (isMinimal && isWarm) return "calmCreative";
   if (isMinimal && isCold) return "boldMinimalist";
 
   // === RICH COMBINATIONS ===
-  if (isRich && isPremium && isWarm) return "luxuryStoryteller";
-  if (isRich && isPremium && isCold) return "modernHeritage";
-  if (isRich && isPremium) return "richStoryteller";
-  if (isRich && isAccessible && isWarm) return "everydayJoy";
-  if (isRich && isAccessible) return "creativeRebel";
+  if (isRich && isEnergetic && isWarm) return "luxuryStoryteller";
+  if (isRich && isEnergetic && isCold) return "modernHeritage";
+  if (isRich && isEnergetic) return "richStoryteller";
+  if (isRich && isCalm && isWarm) return "everydayJoy";
+  if (isRich && isCalm) return "creativeRebel";
   if (isRich && isWarm) return "warmCraftsman";
   if (isRich && isCold) return "dynamicLeader";
 
-  // === PREMIUM COMBINATIONS ===
-  if (isPremium && isCold) return "refinedAuthority";
-  if (isPremium && isWarm) return "organicLuxury";
-  if (isPremium) return "quietConfidence";
+  // === ENERGETIC COMBINATIONS ===
+  if (isEnergetic && isCold) return "refinedAuthority";
+  if (isEnergetic && isWarm) return "organicLuxury";
+  if (isEnergetic) return "quietConfidence";
 
-  // === ACCESSIBLE COMBINATIONS ===
-  if (isAccessible && isWarm) return "humanFirst";
-  if (isAccessible && isCold) return "digitalNative";
-  if (isAccessible) return "boldAccessible";
+  // === CALM COMBINATIONS ===
+  if (isCalm && isWarm) return "humanFirst";
+  if (isCalm && isCold) return "digitalNative";
+  if (isCalm) return "boldAccessible";
 
   // === WARMTH COMBINATIONS ===
   if (isWarm && isNeutralDensity) return "friendlyGuide";
   if (isCold && isNeutralDensity) return "techDisruptor";
 
   // === NEUTRAL / DEFAULT ===
-  if (isNeutralTone && isNeutralDensity && isNeutralPremium) return "versatileClassic";
+  if (isNeutralTone && isNeutralDensity && isNeutralEnergy) return "versatileClassic";
 
   // Fallback based on strongest signal
-  if (isPremium) return "quietConfidence";
-  if (isAccessible) return "humanFirst";
+  if (isEnergetic) return "quietConfidence";
+  if (isCalm) return "humanFirst";
   if (isPlayful) return "playfulPop";
   if (isSerious) return "trustedAdvisor";
   if (isMinimal) return "cleanSlate";
@@ -1260,7 +1260,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       case 'signalTone': return brandData.feelPlayfulSerious as number || 50;
       case 'signalDensity': return brandData.feelBoldMinimal as number || 50;
       case 'signalWarmth': return 50;
-      case 'signalPremium': return brandData.feelExperimentalClassic as number || 50;
+      case 'signalEnergy': return 50;
       default: return 50;
     }
   };
@@ -1270,7 +1270,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
     tone: getSignalValue('signalTone'),
     density: getSignalValue('signalDensity'),
     warmth: getSignalValue('signalWarmth'),
-    premium: getSignalValue('signalPremium'),
+    energy: getSignalValue('signalEnergy'),
   };
 
   // Get the current brand archetype
@@ -1421,12 +1421,12 @@ const BRAND_SIGNAL_SLIDERS = [
     levels: ["Cold", "Neutral", "Warm"],
   },
   {
-    id: "signalPremium",
-    name: "Premium Feel",
-    leftLabel: "Accessible",
-    rightLabel: "Premium",
-    description: "Price perception and craftsmanship",
-    levels: ["Accessible", "Approachable", "Balanced", "Elevated", "Premium"],
+    id: "signalEnergy",
+    name: "Energy",
+    leftLabel: "Calm",
+    rightLabel: "Energetic",
+    description: "How dynamic and vibrant the visual language feels",
+    levels: ["Calm", "Relaxed", "Balanced", "Dynamic", "Energetic"],
   },
 ];
 
@@ -1635,7 +1635,7 @@ function FineTuneStep({
       case 'signalTone': rawValue = brandData.feelPlayfulSerious as number || 50; break;
       case 'signalDensity': rawValue = brandData.feelBoldMinimal as number || 50; break;
       case 'signalWarmth': rawValue = 50; break;
-      case 'signalPremium': rawValue = brandData.feelExperimentalClassic as number || 50; break;
+      case 'signalEnergy': rawValue = 50; break;
       default: rawValue = 50;
     }
     return snapToStep(rawValue, numLevels);
@@ -2071,7 +2071,7 @@ function BrandPersonalityStep({
       case 'signalTone': rawValue = brandData.feelPlayfulSerious as number || 50; break;
       case 'signalDensity': rawValue = brandData.feelBoldMinimal as number || 50; break;
       case 'signalWarmth': rawValue = 50; break;
-      case 'signalPremium': rawValue = brandData.feelExperimentalClassic as number || 50; break;
+      case 'signalEnergy': rawValue = 50; break;
       default: rawValue = 50;
     }
     return snapToStep(rawValue, numLevels);

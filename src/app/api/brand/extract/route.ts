@@ -96,7 +96,7 @@ interface BrandExtraction {
   signalTone: number; // 0 = Serious, 100 = Playful
   signalDensity: number; // 0 = Minimal, 100 = Rich
   signalWarmth: number; // 0 = Cold, 100 = Warm
-  signalPremium: number; // 0 = Accessible, 100 = Premium
+  signalEnergy: number; // 0 = Calm, 100 = Energetic
 }
 
 // Extract social links from page links
@@ -203,7 +203,7 @@ function createDefaultBrandData(
     signalTone: 50,
     signalDensity: 50,
     signalWarmth: 50,
-    signalPremium: 50,
+    signalEnergy: 50,
   };
 }
 
@@ -392,7 +392,7 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - signalTone: 0 = Serious/corporate, 100 = Playful/casual (inverse of feelPlayfulSerious)
    - signalDensity: 0 = Minimal/sparse, 100 = Rich/dense (inverse of feelBoldMinimal)
    - signalWarmth: 0 = Cold/technical/distant, 100 = Warm/human/inviting
-   - signalPremium: 0 = Accessible/budget, 100 = Premium/luxury
+   - signalEnergy: 0 = Calm/quiet/subdued, 100 = Energetic/dynamic/vibrant
 
 IMPORTANT: Do NOT default all personality values to 50 and DO NOT always pick generic options. Analyze the actual visual design:
 - A tech startup with bold colors and playful copy should have visualStyle "playful-vibrant" or "tech-futuristic", brandTone "bold-confident" or "playful-witty"
@@ -437,7 +437,7 @@ Return ONLY a valid JSON object with this exact structure:
   "signalTone": number,
   "signalDensity": number,
   "signalWarmth": number,
-  "signalPremium": number
+  "signalEnergy": number
 }`;
 
     // Try to include screenshot, but be prepared to retry without it if it fails
@@ -569,7 +569,7 @@ Return ONLY a valid JSON object with this exact structure:
     brandDataWithFeels.signalTone = brandData.signalTone ?? 50;
     brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50;
     brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
-    brandDataWithFeels.signalPremium = brandData.signalPremium ?? 50;
+    brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50;
 
     // Validate and set defaults for visualStyle and brandTone
     const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(brandData.visualStyle as typeof VISUAL_STYLE_VALUES[number]);

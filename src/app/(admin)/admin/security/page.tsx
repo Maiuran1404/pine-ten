@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -228,6 +228,29 @@ export default function SecurityPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Execution progress state
+  const [executionProgress, setExecutionProgress] = useState<{
+    isExecuting: boolean;
+    runId: string | null;
+    status: string;
+    totalTests: number;
+    completedTests: number;
+    passedTests: number;
+    failedTests: number;
+    currentTest: string | null;
+    percentage: number;
+  }>({
+    isExecuting: false,
+    runId: null,
+    status: "idle",
+    totalTests: 0,
+    completedTests: 0,
+    passedTests: 0,
+    failedTests: 0,
+    currentTest: null,
+    percentage: 0,
+  });
+
   // Fetch functions
   const fetchOverview = useCallback(async () => {
     try {
@@ -304,6 +327,51 @@ export default function SecurityPage() {
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);
+
+  // Polling for execution progress
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (executionProgress.isExecuting && executionProgress.runId) {
+      // Poll for progress every 500ms
+      const pollProgress = async () => {
+        try {
+          const res = await fetch(`/api/admin/security/execute?runId=${executionProgress.runId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setExecutionProgress((prev) => ({
+              ...prev,
+              totalTests: data.progress.total,
+              completedTests: data.progress.completed,
+              passedTests: data.run.passedTests || 0,
+              failedTests: data.run.failedTests || 0,
+              currentTest: data.progress.currentTest?.name || null,
+              percentage: data.progress.percentage,
+              status: data.run.status === "COMPLETED" ? "completed" : "running",
+              isExecuting: data.run.status === "RUNNING",
+            }));
+
+            if (data.run.status === "COMPLETED") {
+              // Refresh data after completion
+              await fetchRuns();
+              await fetchOverview();
+            }
+          }
+        } catch (error) {
+          console.error("Failed to poll progress:", error);
+        }
+      };
+
+      pollingRef.current = setInterval(pollProgress, 500);
+      pollProgress(); // Initial poll
+
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+      };
+    }
+  }, [executionProgress.isExecuting, executionProgress.runId, fetchRuns, fetchOverview]);
 
   // Action handlers
   const handleCreateTest = async () => {
@@ -399,12 +467,56 @@ export default function SecurityPage() {
         const { run } = await createRes.json();
         setShowRunDialog(false);
         setRunConfig({ targetUrl: "", environment: "production", testUserId: "" });
-        await fetchRuns();
-        await fetchOverview();
 
-        // The run is now created with PENDING status
-        // The admin can use the Playwright MCP to execute tests
-        alert(`Test run created! Run ID: ${run.id}\n\nUse the Playwright MCP to execute the tests.`);
+        // Initialize execution progress
+        setExecutionProgress({
+          isExecuting: true,
+          runId: run.id,
+          status: "running",
+          totalTests: run.totalTests || 0,
+          completedTests: 0,
+          passedTests: 0,
+          failedTests: 0,
+          currentTest: "Starting...",
+          percentage: 0,
+        });
+
+        // Start execution in background
+        fetch("/api/admin/security/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ runId: run.id }),
+        }).then(async (res) => {
+          if (res.ok) {
+            const result = await res.json();
+            setExecutionProgress((prev) => ({
+              ...prev,
+              isExecuting: false,
+              status: "completed",
+              completedTests: result.totalTests,
+              passedTests: result.passedTests,
+              failedTests: result.failedTests,
+              currentTest: null,
+              percentage: 100,
+            }));
+            await fetchRuns();
+            await fetchOverview();
+          } else {
+            setExecutionProgress((prev) => ({
+              ...prev,
+              isExecuting: false,
+              status: "error",
+              currentTest: null,
+            }));
+          }
+        }).catch(() => {
+          setExecutionProgress((prev) => ({
+            ...prev,
+            isExecuting: false,
+            status: "error",
+            currentTest: null,
+          }));
+        });
       } else {
         const errorData = await createRes.json();
         alert(errorData.error || "Failed to start test run");
@@ -651,6 +763,122 @@ export default function SecurityPage() {
           </Dialog>
         </div>
       </div>
+
+      {/* Execution Progress Dialog */}
+      <Dialog
+        open={executionProgress.isExecuting || executionProgress.status === "completed"}
+        onOpenChange={(open) => {
+          if (!open && !executionProgress.isExecuting) {
+            setExecutionProgress((prev) => ({ ...prev, status: "idle" }));
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {executionProgress.isExecuting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                  Running Security Tests
+                </>
+              ) : executionProgress.status === "completed" ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  Tests Completed
+                </>
+              ) : executionProgress.status === "error" ? (
+                <>
+                  <XCircle className="h-5 w-5 text-red-500" />
+                  Execution Failed
+                </>
+              ) : (
+                "Test Execution"
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {executionProgress.isExecuting
+                ? "Please wait while security tests are being executed..."
+                : executionProgress.status === "completed"
+                ? "All tests have finished running."
+                : "Test execution status"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Progress</span>
+                <span>{executionProgress.percentage}%</span>
+              </div>
+              <div className="h-3 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-500",
+                    executionProgress.status === "completed"
+                      ? "bg-green-500"
+                      : executionProgress.status === "error"
+                      ? "bg-red-500"
+                      : "bg-blue-500"
+                  )}
+                  style={{ width: `${executionProgress.percentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Current Test */}
+            {executionProgress.currentTest && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="truncate">{executionProgress.currentTest}</span>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 pt-2">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold">{executionProgress.totalTests}</div>
+                <div className="text-xs text-muted-foreground">Total</div>
+              </div>
+              <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{executionProgress.passedTests}</div>
+                <div className="text-xs text-muted-foreground">Passed</div>
+              </div>
+              <div className="text-center p-3 bg-red-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">{executionProgress.failedTests}</div>
+                <div className="text-xs text-muted-foreground">Failed</div>
+              </div>
+            </div>
+
+            {/* Score (when completed) */}
+            {executionProgress.status === "completed" && executionProgress.totalTests > 0 && (
+              <div className="text-center pt-2">
+                <div className="text-sm text-muted-foreground">Security Score</div>
+                <div className={cn(
+                  "text-3xl font-bold",
+                  executionProgress.passedTests / executionProgress.totalTests >= 0.9
+                    ? "text-green-600"
+                    : executionProgress.passedTests / executionProgress.totalTests >= 0.7
+                    ? "text-yellow-600"
+                    : "text-red-600"
+                )}>
+                  {Math.round((executionProgress.passedTests / executionProgress.totalTests) * 100)}%
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            {!executionProgress.isExecuting && (
+              <Button
+                onClick={() => setExecutionProgress((prev) => ({ ...prev, status: "idle" }))}
+              >
+                Close
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Score Overview */}
       <div className="grid gap-4 md:grid-cols-4">
