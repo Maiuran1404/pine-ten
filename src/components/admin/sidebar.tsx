@@ -24,6 +24,8 @@ import {
   Bell,
   ShieldCheck,
   Wand2,
+  Palette,
+  LayoutTemplate,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -72,6 +74,16 @@ const navigation: NavigationItem[] = [
     name: "Style Library",
     href: "/admin/styles",
     icon: Image,
+  },
+  {
+    name: "Brand Library",
+    href: "/admin/brand-references",
+    icon: Palette,
+  },
+  {
+    name: "Deliverable Styles",
+    href: "/admin/deliverable-styles",
+    icon: LayoutTemplate,
   },
   {
     name: "Quick Design",

@@ -60,6 +60,8 @@ import {
   type UploadedFile,
   type QuickOptions as QuickOptionsType,
   type StyleReference,
+  type DeliverableStyle,
+  type DeliverableStyleMarker,
   type TaskProposal,
   type ChatMessage as Message,
   getDeliveryDateString,
@@ -67,6 +69,7 @@ import {
 import { TaskProposalCard } from "./task-proposal-card";
 import { FileAttachmentList } from "./file-attachment";
 import { QuickOptions } from "./quick-options";
+import { DeliverableStyleGrid } from "./deliverable-style-grid";
 
 // Task data types for when viewing an active task
 export interface TaskFile {
@@ -164,6 +167,10 @@ export function ChatInterface({
   const [isUploading, setIsUploading] = useState(false);
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<string[]>([]);
+  const [currentDeliverableType, setCurrentDeliverableType] = useState<string | null>(null);
+  const [styleOffset, setStyleOffset] = useState<Record<string, number>>({});
+  const [excludedStyleAxes, setExcludedStyleAxes] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -318,6 +325,8 @@ export function ChatInterface({
           content: data.content,
           timestamp: new Date(),
           styleReferences: data.styleReferences,
+          deliverableStyles: data.deliverableStyles,
+          deliverableStyleMarker: data.deliverableStyleMarker,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions,
         };
@@ -326,6 +335,11 @@ export function ChatInterface({
 
         if (data.taskProposal) {
           setPendingTask(data.taskProposal);
+        }
+
+        // Track deliverable type for pagination
+        if (data.deliverableStyleMarker) {
+          setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
         }
       } catch {
         toast.error("Failed to continue conversation. Please try again.");
@@ -526,6 +540,8 @@ export function ChatInterface({
         content: data.content,
         timestamp: new Date(),
         styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -563,6 +579,133 @@ export function ChatInterface({
         ? prev.filter((s) => s !== styleName)
         : [...prev, styleName]
     );
+  };
+
+  const handleDeliverableStyleSelect = (style: DeliverableStyle) => {
+    setSelectedDeliverableStyles((prev) =>
+      prev.includes(style.id)
+        ? prev.filter((s) => s !== style.id)
+        : [...prev, style.id]
+    );
+  };
+
+  const handleShowMoreStyles = async (styleAxis: string) => {
+    if (!currentDeliverableType || isLoading) return;
+
+    const currentOffset = styleOffset[styleAxis] || 0;
+    const newOffset = currentOffset + 4;
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedStyles,
+          styleOffset: newOffset,
+          deliverableStyleMarker: {
+            type: "more",
+            deliverableType: currentDeliverableType,
+            styleAxis,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get more styles");
+      }
+
+      const data = await response.json();
+
+      if (data.deliverableStyles && data.deliverableStyles.length > 0) {
+        // Update offset for this style axis
+        setStyleOffset((prev) => ({
+          ...prev,
+          [styleAxis]: newOffset,
+        }));
+
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: `Here are more ${styleAxis} style options:`,
+          timestamp: new Date(),
+          deliverableStyles: data.deliverableStyles,
+          deliverableStyleMarker: data.deliverableStyleMarker,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        toast.info("No more styles available in this direction");
+      }
+    } catch {
+      toast.error("Failed to load more styles");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleShowDifferentStyles = async () => {
+    if (!currentDeliverableType || isLoading) return;
+
+    // Track which style axes we've already shown
+    const lastMessage = messages.filter(m => m.deliverableStyles && m.deliverableStyles.length > 0).pop();
+    const currentAxes = lastMessage?.deliverableStyles?.map(s => s.styleAxis) || [];
+    const newExcludedAxes = [...new Set([...excludedStyleAxes, ...currentAxes])];
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedStyles,
+          excludeStyleAxes: newExcludedAxes,
+          deliverableStyleMarker: {
+            type: "different",
+            deliverableType: currentDeliverableType,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get different styles");
+      }
+
+      const data = await response.json();
+
+      if (data.deliverableStyles && data.deliverableStyles.length > 0) {
+        setExcludedStyleAxes(newExcludedAxes);
+
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Here are some different style directions:",
+          timestamp: new Date(),
+          deliverableStyles: data.deliverableStyles,
+          deliverableStyleMarker: data.deliverableStyleMarker,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        toast.info("No more style directions available");
+        // Reset excluded axes to allow cycling through again
+        setExcludedStyleAxes([]);
+      }
+    } catch {
+      toast.error("Failed to load different styles");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmitStyles = async () => {
@@ -607,6 +750,8 @@ export function ChatInterface({
         content: data.content,
         timestamp: new Date(),
         styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -615,6 +760,10 @@ export function ChatInterface({
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
+      }
+
+      if (data.deliverableStyleMarker) {
+        setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
       }
     } catch {
       toast.error("Failed to send message. Please try again.");
@@ -661,6 +810,8 @@ export function ChatInterface({
         content: data.content,
         timestamp: new Date(),
         styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -669,6 +820,10 @@ export function ChatInterface({
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
+      }
+
+      if (data.deliverableStyleMarker) {
+        setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
       }
     } catch {
       toast.error("Failed to send message. Please try again.");
@@ -1102,6 +1257,45 @@ export function ChatInterface({
                                 </Button>
                               )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Deliverable Style References */}
+                        {message.deliverableStyles && message.deliverableStyles.length > 0 && (
+                          <div className="mt-5 ml-8">
+                            <p className="text-sm font-medium mb-4 text-foreground">
+                              What style direction speaks to you?
+                            </p>
+                            <DeliverableStyleGrid
+                              styles={message.deliverableStyles}
+                              selectedStyles={selectedDeliverableStyles}
+                              onSelectStyle={handleDeliverableStyleSelect}
+                              onShowMore={handleShowMoreStyles}
+                              onShowDifferent={handleShowDifferentStyles}
+                              isLoading={isLoading}
+                            />
+                            {selectedDeliverableStyles.length > 0 && (
+                              <div className="flex justify-end mt-3">
+                                <Button
+                                  onClick={() => {
+                                    const selectedStyleNames = message.deliverableStyles
+                                      ?.filter(s => selectedDeliverableStyles.includes(s.id))
+                                      .map(s => s.name) || [];
+                                    const styleMessage = selectedStyleNames.length === 1
+                                      ? `I like the ${selectedStyleNames[0]} style`
+                                      : `I like these styles: ${selectedStyleNames.join(", ")}`;
+                                    setInput(styleMessage);
+                                    handleSend();
+                                  }}
+                                  disabled={isLoading}
+                                  size="sm"
+                                  className="gap-2"
+                                >
+                                  Continue with {selectedDeliverableStyles.length === 1 ? "style" : `${selectedDeliverableStyles.length} styles`}
+                                  <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
 

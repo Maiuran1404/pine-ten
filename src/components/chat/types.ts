@@ -21,6 +21,23 @@ export interface StyleReference {
   imageUrl: string;
 }
 
+export interface DeliverableStyle {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string;
+  deliverableType: string;
+  styleAxis: string;
+  subStyle: string | null;
+  semanticTags: string[];
+}
+
+export interface DeliverableStyleMarker {
+  type: "initial" | "more" | "different";
+  deliverableType: string;
+  styleAxis?: string;
+}
+
 export interface TaskProposal {
   title: string;
   description: string;
@@ -37,6 +54,8 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   styleReferences?: StyleReference[];
+  deliverableStyles?: DeliverableStyle[];
+  deliverableStyleMarker?: DeliverableStyleMarker;
   taskProposal?: TaskProposal;
   attachments?: UploadedFile[];
   quickOptions?: QuickOptions;

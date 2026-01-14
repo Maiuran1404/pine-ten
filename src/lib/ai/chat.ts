@@ -117,7 +117,25 @@ Example: When showing styles for static ads, output exactly:
 [STYLE_REFERENCES: static_ads]
 
 Do NOT describe styles in text. The marker triggers a visual card display.
-Available categories: static_ads, video_motion, social_media, ui_ux`;
+Available categories: static_ads, video_motion, social_media, ui_ux
+
+DELIVERABLE STYLE REFERENCES:
+When user requests a specific deliverable type (Instagram post, LinkedIn post, etc.),
+use the deliverable style marker instead of STYLE_REFERENCES for more specific results:
+
+[DELIVERABLE_STYLES: deliverable_type]
+
+Example: [DELIVERABLE_STYLES: instagram_post]
+
+Available deliverable types: instagram_post, instagram_story, instagram_reel, linkedin_post,
+linkedin_banner, facebook_ad, twitter_post, youtube_thumbnail, email_header,
+presentation_slide, web_banner, static_ad, video_ad
+
+After user selects a style direction, you can:
+- Ask clarifying questions about that style
+- Suggest more variations: [MORE_STYLES: deliverable_type, style_axis]
+  Example: [MORE_STYLES: instagram_post, minimal]
+- Show different directions: [DIFFERENT_STYLES: deliverable_type]`;
 
 const DEFAULT_STATIC_ADS_TREE = `=== STATIC ADS / GRAPHICS DECISION TREE ===
 
@@ -562,10 +580,21 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface DeliverableStyleMarker {
+  type: "initial" | "more" | "different";
+  deliverableType: string;
+  styleAxis?: string;
+}
+
 export async function chat(
   messages: ChatMessage[],
   userId: string
-): Promise<{ content: string; styleReferences?: string[]; quickOptions?: { question: string; options: string[] } }> {
+): Promise<{
+  content: string;
+  styleReferences?: string[];
+  quickOptions?: { question: string; options: string[] };
+  deliverableStyleMarker?: DeliverableStyleMarker;
+}> {
   // Fetch user's company/brand data
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
@@ -635,6 +664,37 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     ? styleMatch[1].split(",").map((s) => s.trim())
     : undefined;
 
+  // Extract deliverable style markers
+  let deliverableStyleMarker: DeliverableStyleMarker | undefined;
+
+  // Check for initial deliverable styles: [DELIVERABLE_STYLES: type]
+  const deliverableMatch = content.match(/\[DELIVERABLE_STYLES: ([^\]]+)\]/);
+  if (deliverableMatch) {
+    deliverableStyleMarker = {
+      type: "initial",
+      deliverableType: deliverableMatch[1].trim(),
+    };
+  }
+
+  // Check for more styles: [MORE_STYLES: type, axis]
+  const moreStylesMatch = content.match(/\[MORE_STYLES: ([^,]+),\s*([^\]]+)\]/);
+  if (moreStylesMatch) {
+    deliverableStyleMarker = {
+      type: "more",
+      deliverableType: moreStylesMatch[1].trim(),
+      styleAxis: moreStylesMatch[2].trim(),
+    };
+  }
+
+  // Check for different styles: [DIFFERENT_STYLES: type]
+  const differentMatch = content.match(/\[DIFFERENT_STYLES: ([^\]]+)\]/);
+  if (differentMatch) {
+    deliverableStyleMarker = {
+      type: "different",
+      deliverableType: differentMatch[1].trim(),
+    };
+  }
+
   // Extract quick options if present
   const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/);
   let quickOptions: { question: string; options: string[] } | undefined;
@@ -649,6 +709,9 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   // Clean the content (use global flag to remove ALL occurrences)
   const cleanContent = content
     .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, "")
+    .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, "")
+    .replace(/\[MORE_STYLES: [^\]]+\]/g, "")
+    .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, "")
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();
 
@@ -656,6 +719,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     content: cleanContent,
     styleReferences: mentionedStyles,
     quickOptions,
+    deliverableStyleMarker,
   };
 }
 
