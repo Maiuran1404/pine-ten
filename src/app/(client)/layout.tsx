@@ -6,7 +6,6 @@ import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
-import { useSubdomain } from "@/hooks/use-subdomain";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 
@@ -23,10 +22,10 @@ export default function ClientLayout({
 }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const portal = useSubdomain();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
-  // Redirect based on auth state and role
+  // Redirect based on auth state only (NOT role)
+  // Users stay on the subdomain they logged into - no role-based redirects
   useEffect(() => {
     if (isPending) return;
 
@@ -36,34 +35,13 @@ export default function ClientLayout({
       return;
     }
 
-    // Wait for subdomain detection
-    if (!portal.isHydrated) return;
-
     const user = session.user as { role?: string; onboardingCompleted?: boolean };
 
-    // Only redirect based on role in development (localhost)
-    // In production, users should stay on their subdomain's dashboard
-    const isLocalhost = typeof window !== "undefined" && window.location.hostname.includes("localhost");
-
-    if (isLocalhost) {
-      // In development, redirect non-CLIENT users to their appropriate portal
-      if (user.role === "ADMIN") {
-        router.replace("/admin");
-        return;
-      }
-      if (user.role === "FREELANCER") {
-        router.replace("/portal");
-        return;
-      }
-    }
-    // In production on app subdomain, allow any role to use the dashboard
-    // (ADMIN users who log in here stay here, they should use superadmin subdomain for admin access)
-
-    // Check onboarding for clients
+    // Check onboarding for clients only
     if (user.role === "CLIENT" && !user.onboardingCompleted) {
       router.replace("/onboarding");
     }
-  }, [session, isPending, router, portal.isHydrated]);
+  }, [session, isPending, router]);
 
   // Function to fetch tasks
   const fetchTasks = () => {
@@ -111,12 +89,6 @@ export default function ClientLayout({
   }
 
   const user = session.user as { role?: string; onboardingCompleted?: boolean; credits?: number };
-
-  // In development, don't render if user is not a CLIENT (redirect will happen)
-  const isLocalhost = typeof window !== "undefined" && window.location.hostname.includes("localhost");
-  if (isLocalhost && (user.role === "ADMIN" || user.role === "FREELANCER")) {
-    return <FullPageLoader />;
-  }
 
   // Don't render if onboarding not completed for clients (redirect will happen)
   if (user.role === "CLIENT" && !user.onboardingCompleted) {

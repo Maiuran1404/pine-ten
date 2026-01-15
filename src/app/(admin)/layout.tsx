@@ -47,10 +47,10 @@ export default function AdminLayout({
         return;
       }
 
-      // In production, must be on superadmin subdomain to access admin pages
-      // In development (localhost without subdomain prefix), allow admin access based on role only
-      const isProduction = typeof window !== "undefined" && !window.location.hostname.includes("localhost");
-      if (isProduction && portal.type !== "superadmin") {
+      // Must be on superadmin subdomain to access admin pages (both dev and prod)
+      // This means localhost:3000/admin and app.localhost:3000/admin will redirect to /dashboard
+      // Only superadmin.localhost:3000/admin will work
+      if (portal.type !== "superadmin") {
         router.push("/dashboard");
       }
     }

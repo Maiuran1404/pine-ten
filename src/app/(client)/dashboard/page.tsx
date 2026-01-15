@@ -1,14 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
-  ArrowUp,
+  ArrowRight,
   Sparkles,
   Image as ImageIcon,
   Upload,
@@ -17,31 +16,15 @@ import {
   FileArchive,
   File,
   X,
-  MoreHorizontal,
-  MessageSquare,
-  Clock,
-  FolderKanban,
-  Download,
   Megaphone,
   Share2,
   PenTool,
   LayoutGrid,
-  ArrowRight,
-  Trash2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
-import { getDrafts, deleteDraft, type ChatDraft } from "@/lib/chat-drafts";
-
-// TODO: Remove after testing onboarding
-const SHOW_DEV_RESET_BUTTON = true;
+import { getImageVariantUrls } from "@/lib/image/utils";
 
 interface UploadedFile {
   fileName: string;
@@ -50,23 +33,12 @@ interface UploadedFile {
   fileSize: number;
 }
 
-interface BrandData {
+interface StyleReference {
   id: string;
   name: string;
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
-  accentColor: string | null;
-  backgroundColor: string | null;
-  textColor: string | null;
-  brandColors: string[];
-  primaryFont: string | null;
-  secondaryFont: string | null;
-  brandAssets: {
-    images?: string[];
-    documents?: string[];
-  } | null;
+  imageUrl: string;
+  deliverableType: string | null;
+  styleAxis: string | null;
 }
 
 // Prompt templates organized by category
@@ -75,177 +47,23 @@ const PROMPT_TEMPLATES = [
     category: "Social Media",
     icon: Share2,
     color: "blue",
-    templates: [
-      {
-        title: "Instagram Post",
-        prompt: "I need social media content - an Instagram post design with eye-catching visuals.",
-      },
-      {
-        title: "Instagram Story",
-        prompt: "I need social media content - Instagram story designs that are engaging.",
-      },
-      {
-        title: "LinkedIn Post",
-        prompt: "I need social media content - a professional LinkedIn post graphic.",
-      },
-      {
-        title: "TikTok/Reels",
-        prompt: "I need video/motion content - short-form video content for TikTok or Reels.",
-      },
-    ],
   },
   {
     category: "Advertising",
     icon: Megaphone,
     color: "emerald",
-    templates: [
-      {
-        title: "Facebook Ad",
-        prompt: "I need static ads/graphics - a Facebook ad design with a clear CTA.",
-      },
-      {
-        title: "Google Display Ad",
-        prompt: "I need static ads/graphics - Google Display ads in standard sizes.",
-      },
-      {
-        title: "Video Ad",
-        prompt: "I need video/motion content - a short video ad for social media.",
-      },
-      {
-        title: "Banner Ads",
-        prompt: "I need static ads/graphics - web banner ads for a campaign.",
-      },
-    ],
   },
   {
     category: "Branding",
     icon: PenTool,
     color: "violet",
-    templates: [
-      {
-        title: "Logo Design",
-        prompt: "I need static ads/graphics - logo variations (primary, icon-only, single-color).",
-      },
-      {
-        title: "Brand Guidelines",
-        prompt: "I need static ads/graphics - a brand guidelines document with logo usage and colors.",
-      },
-      {
-        title: "Business Card",
-        prompt: "I need static ads/graphics - a professional business card design.",
-      },
-      {
-        title: "Brand Assets",
-        prompt: "I need static ads/graphics - brand asset designs (letterhead, social covers).",
-      },
-    ],
   },
   {
     category: "Marketing",
     icon: LayoutGrid,
     color: "amber",
-    templates: [
-      {
-        title: "Email Design",
-        prompt: "I need UI/UX design - an email newsletter template design.",
-      },
-      {
-        title: "Landing Page",
-        prompt: "I need UI/UX design - a landing page design with hero section and CTA.",
-      },
-      {
-        title: "Presentation",
-        prompt: "I need static ads/graphics - a presentation deck template.",
-      },
-      {
-        title: "Infographic",
-        prompt: "I need static ads/graphics - an infographic to visualize data.",
-      },
-    ],
   },
 ];
-
-// Brand asset display component
-const BrandAssetCard = ({
-  brand,
-  type,
-}: {
-  brand: BrandData | null;
-  type: "logo" | "primary" | "secondary" | "accent" | "fonts";
-}) => {
-  const companyInitial = brand?.name?.charAt(0)?.toUpperCase() || "C";
-
-  switch (type) {
-    case "logo":
-      return (
-        <div className="flex flex-col items-center gap-2">
-          {brand?.logoUrl ? (
-            <div className="w-10 h-10 rounded-lg overflow-hidden border border-border/50">
-              <img
-                src={brand.logoUrl}
-                alt="Logo"
-                className="object-cover w-full h-full"
-              />
-            </div>
-          ) : (
-            <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 flex items-center justify-center">
-              <span className="text-muted-foreground font-semibold text-lg">
-                {companyInitial}
-              </span>
-            </div>
-          )}
-          <span className="text-xs text-muted-foreground">Logo</span>
-        </div>
-      );
-    case "primary":
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
-            style={{ backgroundColor: brand?.primaryColor || "#e5e5e5" }}
-          />
-          <span className="text-xs text-muted-foreground">Primary</span>
-        </div>
-      );
-    case "secondary":
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
-            style={{ backgroundColor: brand?.secondaryColor || "#d4d4d4" }}
-          />
-          <span className="text-xs text-muted-foreground">Secondary</span>
-        </div>
-      );
-    case "accent":
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-lg border border-border/30 shadow-sm"
-            style={{ backgroundColor: brand?.accentColor || "#c4c4c4" }}
-          />
-          <span className="text-xs text-muted-foreground">Accent</span>
-        </div>
-      );
-    case "fonts":
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-lg bg-muted border border-border/50 flex items-center justify-center">
-            <span
-              className="text-foreground/80 text-lg font-semibold"
-              style={{ fontFamily: brand?.primaryFont || "Inter" }}
-            >
-              Aa
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground">Fonts</span>
-        </div>
-      );
-    default:
-      return null;
-  }
-};
-
 
 function DashboardContent() {
   const router = useRouter();
@@ -255,14 +73,11 @@ function DashboardContent() {
   const [isSending, setIsSending] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [showCreditDialog, setShowCreditDialog] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(PROMPT_TEMPLATES[0].category);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [recentChats, setRecentChats] = useState<ChatDraft[]>([]);
-  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; title: string; status: string; createdAt: string }>>([]);
-  const [brandData, setBrandData] = useState<BrandData | null>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [styleReferences, setStyleReferences] = useState<StyleReference[]>([]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
@@ -284,49 +99,25 @@ function DashboardContent() {
       .then((data) => setCredits(data.credits))
       .catch(console.error);
 
-    // Fetch brand data
-    fetch("/api/brand")
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.success && data?.data) {
-          setBrandData(data.data);
-        }
-      })
-      .catch(console.error);
-
-    // Fetch recent tasks
-    fetch("/api/tasks?limit=5")
+    // Fetch brand-matched style references
+    fetch("/api/style-references/match?limit=24")
       .then((res) => res.json())
       .then((data) => {
-        if (data.tasks) {
-          setRecentTasks(data.tasks);
+        if (data?.success && data?.data) {
+          setStyleReferences(data.data);
         }
       })
       .catch(console.error);
-
-    // Load chat drafts
-    setRecentChats(getDrafts().slice(0, 5));
   }, [searchParams]);
 
-  // Auto-resize textarea when template is selected
+  // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current && chatInput) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 150) + 'px';
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height =
+        Math.min(inputRef.current.scrollHeight, 150) + "px";
     }
   }, [chatInput]);
-
-  // Credit indicator colors
-  const getCreditColor = () => {
-    if (credits === null) return { dot: "bg-gray-500", text: "text-muted-foreground" };
-    if (credits === 0) return { dot: "bg-red-500", text: "text-red-500" };
-    if (credits <= 2) return { dot: "bg-yellow-500", text: "text-yellow-500" };
-    return { dot: "bg-green-500", text: "text-green-500" };
-  };
-  const creditColors = getCreditColor();
 
   // File upload logic
   const uploadFiles = async (files: FileList | File[]) => {
@@ -348,7 +139,9 @@ function DashboardContent() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || errorData.message || "Upload failed");
+          throw new Error(
+            errorData.error?.message || errorData.message || "Upload failed"
+          );
         }
 
         const data = await response.json();
@@ -359,7 +152,9 @@ function DashboardContent() {
       setUploadedFiles((prev) => [...prev, ...newFiles]);
       toast.success(`${newFiles.length} file(s) uploaded successfully`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to upload files");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload files"
+      );
     } finally {
       setIsUploading(false);
     }
@@ -432,55 +227,42 @@ function DashboardContent() {
     setUploadedFiles([]);
     setChatInput("");
 
-    router.push(`/dashboard/chat?message=${encodeURIComponent(finalMessage || `Attached ${uploadedFiles.length} file(s)`)}`);
+    router.push(
+      `/dashboard/chat?message=${encodeURIComponent(finalMessage || `Attached ${uploadedFiles.length} file(s)`)}`
+    );
+  };
+
+  const handleCategoryClick = (category: string) => {
+    const prompts: Record<string, string> = {
+      "Social Media": "I need social media content",
+      Advertising: "I need advertising content",
+      Branding: "I need branding materials",
+      Marketing: "I need marketing materials",
+    };
+    setChatInput(prompts[category] || "");
+    inputRef.current?.focus();
   };
 
   const getFileIcon = (fileType: string) => {
-    if (fileType?.startsWith("image/")) return <ImageIcon className="h-5 w-5 text-foreground" />;
-    if (fileType?.startsWith("video/")) return <FileVideo className="h-5 w-5 text-foreground" />;
-    if (fileType === "application/pdf") return <FileText className="h-5 w-5 text-foreground" />;
-    if (fileType?.includes("zip") || fileType?.includes("archive")) return <FileArchive className="h-5 w-5 text-foreground" />;
+    if (fileType?.startsWith("image/"))
+      return <ImageIcon className="h-5 w-5 text-foreground" />;
+    if (fileType?.startsWith("video/"))
+      return <FileVideo className="h-5 w-5 text-foreground" />;
+    if (fileType === "application/pdf")
+      return <FileText className="h-5 w-5 text-foreground" />;
+    if (fileType?.includes("zip") || fileType?.includes("archive"))
+      return <FileArchive className="h-5 w-5 text-foreground" />;
     return <File className="h-5 w-5 text-foreground" />;
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      PENDING: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400",
-      ASSIGNED: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
-      IN_PROGRESS: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400",
-      IN_REVIEW: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400",
-      COMPLETED: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
-    };
-    return statusColors[status] || "bg-muted text-muted-foreground";
-  };
-
-  const formatStatus = (status: string) => {
-    return status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    deleteDraft(chatId);
-    setRecentChats((prev) => prev.filter((chat) => chat.id !== chatId));
-    toast.success("Chat deleted");
   };
 
   return (
     <div
-      className="relative flex flex-col min-h-full px-6 md:px-10 pt-48 md:pt-60 pb-10 overflow-auto"
+      className="relative min-h-screen bg-background"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Content wrapper */}
-      <div className="relative flex flex-col flex-1">
       {/* Hidden file input */}
       <input
         type="file"
@@ -505,26 +287,37 @@ function DashboardContent() {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                 <Upload className="h-10 w-10 text-primary" />
               </div>
-              <p className="text-xl font-medium text-foreground">Drop files here</p>
-              <p className="text-sm text-muted-foreground mt-2">Images, videos, PDFs, and more</p>
+              <p className="text-xl font-medium text-foreground">
+                Drop files here
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Images, videos, PDFs, and more
+              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Hero Section - Chat as Main CTA */}
-      <div className="flex flex-col items-center text-center mb-12 pt-6">
+      {/* Main Content */}
+      <div className="flex flex-col items-center px-6 pt-32 md:pt-40 pb-8">
         {/* Welcome Header */}
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-          Welcome back, {userName}!
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground mb-8">
-          What would you like to create today?
-        </p>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-semibold text-foreground mb-2">
+            Welcome back,{" "}
+            <span className="underline decoration-2 underline-offset-4">
+              {userName}
+            </span>
+            !
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground">
+            What would you like to create{" "}
+            <span className="font-semibold text-foreground">today</span>?
+          </p>
+        </div>
 
-        {/* Main Chat Input - Hero CTA */}
-        <div className="w-full max-w-3xl">
-          <div className="relative rounded-2xl overflow-hidden border border-border/60 bg-card shadow-xl shadow-primary/5 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300">
+        {/* Main Input Card */}
+        <div className="w-full max-w-2xl mb-6">
+          <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
               <div className="px-4 py-3 border-b border-border/50">
@@ -541,7 +334,9 @@ function DashboardContent() {
                           className="h-6 w-6 rounded object-cover"
                         />
                       ) : (
-                        <span className="[&>svg]:h-4 [&>svg]:w-4">{getFileIcon(file.fileType)}</span>
+                        <span className="[&>svg]:h-4 [&>svg]:w-4">
+                          {getFileIcon(file.fileType)}
+                        </span>
                       )}
                       <span className="text-xs max-w-[120px] truncate text-foreground">
                         {file.fileName}
@@ -559,16 +354,16 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Input Row */}
-            <div className="relative flex items-start gap-2 px-5 pt-4 pb-2">
+            {/* Text Input Area */}
+            <div className="px-5 pt-4 pb-2">
               <textarea
                 ref={inputRef}
                 value={chatInput}
                 onChange={(e) => {
                   setChatInput(e.target.value);
-                  // Auto-resize textarea
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                  e.target.style.height = "auto";
+                  e.target.style.height =
+                    Math.min(e.target.scrollHeight, 150) + "px";
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -576,295 +371,148 @@ function DashboardContent() {
                     handleSubmit();
                   }
                 }}
-                placeholder={uploadedFiles.length > 0 ? "Add a message or just send..." : "Describe what you want to create..."}
-                className="flex-1 bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base resize-none min-h-[28px] max-h-[150px]"
+                placeholder={
+                  uploadedFiles.length > 0
+                    ? "Add a message or just send..."
+                    : "Describe what you want to create..."
+                }
+                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base resize-none min-h-[28px] max-h-[150px]"
                 rows={1}
               />
-              <button
-                onClick={() => handleSubmit()}
-                disabled={isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)}
-                className="p-2 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0 mt-0.5"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </button>
             </div>
 
             {/* Toolbar Row */}
-            <div className="flex items-center gap-1 px-4 pb-3 pt-1">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <Paperclip className="h-4 w-4" />
-                )}
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <ImageIcon className="h-4 w-4" />
-              </button>
-
-              <div className="w-px h-4 bg-border mx-1" />
-
-              {/* Improve Prompt button */}
-              <button
-                disabled={!chatInput.trim()}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Improve Prompt</span>
-              </button>
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Credits indicator */}
-              <button
-                onClick={() => credits === 0 && setShowCreditDialog(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${creditColors.dot}`}></span>
-                <span>{credits === null ? "..." : credits} credits</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Template Categories */}
-        <div className="mt-8 w-full max-w-6xl">
-          {/* Category Tabs */}
-          <div className="flex justify-center gap-2 mb-4 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {PROMPT_TEMPLATES.map((cat) => {
-              const isActive = selectedCategory === cat.category;
-              const colorClasses = {
-                blue: isActive ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30" : "",
-                emerald: isActive ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30" : "",
-                violet: isActive ? "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30" : "",
-                amber: isActive ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30" : "",
-              };
-
-              return (
+            <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+              {/* Left side - attachment icons */}
+              <div className="flex items-center gap-1">
                 <button
-                  key={cat.category}
-                  onClick={() => setSelectedCategory(cat.category)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
-                    isActive
-                      ? colorClasses[cat.color as keyof typeof colorClasses]
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 hover:bg-muted/50"
-                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  title="Attach file"
                 >
-                  <cat.icon className="h-4 w-4" />
-                  {cat.category}
+                  {isUploading ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Paperclip className="h-5 w-5" />
+                  )}
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Template Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PROMPT_TEMPLATES.find(c => c.category === selectedCategory)?.templates.map((template, idx) => {
-              const currentCategory = PROMPT_TEMPLATES.find(c => c.category === selectedCategory);
-              const categoryColor = currentCategory?.color || "emerald";
-              const bgClasses = {
-                blue: "bg-blue-50 dark:bg-blue-500/10",
-                emerald: "bg-emerald-50 dark:bg-emerald-500/10",
-                violet: "bg-violet-50 dark:bg-violet-500/10",
-                amber: "bg-amber-50 dark:bg-amber-500/10",
-              };
-              const iconClasses = {
-                blue: "text-blue-600 dark:text-blue-400",
-                emerald: "text-emerald-600 dark:text-emerald-400",
-                violet: "text-violet-600 dark:text-violet-400",
-                amber: "text-amber-600 dark:text-amber-400",
-              };
-              const hoverClasses = {
-                blue: "hover:border-blue-300 dark:hover:border-blue-500/40",
-                emerald: "hover:border-emerald-300 dark:hover:border-emerald-500/40",
-                violet: "hover:border-violet-300 dark:hover:border-violet-500/40",
-                amber: "hover:border-amber-300 dark:hover:border-amber-500/40",
-              };
-
-              return (
                 <button
-                  key={idx}
-                  onClick={() => {
-                    setChatInput(template.prompt);
-                    inputRef.current?.focus();
-                  }}
-                  className={`group flex items-start gap-3 p-5 rounded-xl border border-border/50 bg-card text-left transition-all duration-200 ${hoverClasses[categoryColor as keyof typeof hoverClasses]} hover:shadow-md`}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  title="Add image"
                 >
-                  <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${bgClasses[categoryColor as keyof typeof bgClasses]}`}>
-                    {currentCategory?.icon && <currentCategory.icon className={`h-5 w-5 ${iconClasses[categoryColor as keyof typeof iconClasses]}`} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-foreground mb-0.5 group-hover:text-primary transition-colors">
-                      {template.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {template.prompt}
-                    </p>
-                  </div>
+                  <ImageIcon className="h-5 w-5" />
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
-      {/* Brand Assets Section */}
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Your Brand</h2>
-          <Link
-            href="/dashboard/brand"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Manage brand →
-          </Link>
-        </div>
-        <Link
-          href="/dashboard/brand"
-          className="group block rounded-xl border border-border/50 hover:border-primary/30 hover:shadow-md transition-all bg-card overflow-hidden"
-        >
-          <div className="px-5 py-4">
-            <div className="flex items-center justify-between gap-6">
-              {/* Brand assets in a row */}
-              <div className="flex items-center gap-6 md:gap-8">
-                <BrandAssetCard brand={brandData} type="logo" />
-                <div className="w-px h-12 bg-border/50 hidden sm:block" />
-                <BrandAssetCard brand={brandData} type="primary" />
-                <BrandAssetCard brand={brandData} type="secondary" />
-                <BrandAssetCard brand={brandData} type="accent" />
-                <div className="w-px h-12 bg-border/50 hidden sm:block" />
-                <BrandAssetCard brand={brandData} type="fonts" />
+                <div className="w-px h-5 bg-border mx-2" />
+
+                {/* Credits indicator */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      credits === null
+                        ? "bg-gray-400"
+                        : credits === 0
+                          ? "bg-red-500"
+                          : credits <= 2
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                    }`}
+                  />
+                  <span>{credits === null ? "..." : credits} credits</span>
+                </div>
               </div>
 
-              {/* Arrow on hover */}
-              <div className="hidden md:flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                <span className="text-sm">Edit</span>
-                <Download className="w-4 h-4 -rotate-90" />
-              </div>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Recent Items Section */}
-      {(recentChats.length > 0 || recentTasks.length > 0) && (
-        <div className="w-full">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Recent</h2>
-
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              <div className="col-span-5">Name</div>
-              <div className="col-span-3">Type</div>
-              <div className="col-span-3">Created</div>
-              <div className="col-span-1"></div>
-            </div>
-
-            {/* Chat Drafts */}
-            {recentChats.map((chat) => (
-              <div
-                key={chat.id}
-                className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border hover:bg-muted/50 transition-colors items-center"
-              >
-                <Link
-                  href={`/dashboard/chat?draft=${chat.id}`}
-                  className="col-span-5 flex items-center gap-3"
+              {/* Right side - Improve Prompt + Submit */}
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={!chatInput.trim()}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <MessageSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{chat.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Last edited {formatDate(chat.updatedAt)}
-                    </p>
-                  </div>
-                </Link>
-                <div className="col-span-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Chat
-                  </span>
-                </div>
-                <div className="col-span-3 text-sm text-muted-foreground">
-                  {formatDate(chat.createdAt)}
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={(e) => handleDeleteChat(chat.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            ))}
+                  <Sparkles className="h-4 w-4" />
+                  <span>Improve Prompt</span>
+                </button>
 
-            {/* Tasks */}
-            {recentTasks.map((task) => (
-              <Link
-                key={task.id}
-                href={`/dashboard/tasks/${task.id}`}
-                className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors items-center"
-              >
-                <div className="col-span-5 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <FolderKanban className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatStatus(task.status)}
-                    </p>
-                  </div>
-                </div>
-                <div className="col-span-3">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadge(task.status)}`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
-                    Task
-                  </span>
-                </div>
-                <div className="col-span-3 text-sm text-muted-foreground">
-                  {formatDate(task.createdAt)}
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  <button className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-                </div>
-              </Link>
-            ))}
-
-            {/* Empty state */}
-            {recentChats.length === 0 && recentTasks.length === 0 && (
-              <div className="px-4 py-8 text-center text-muted-foreground">
-                <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No recent items yet</p>
+                <button
+                  onClick={() => handleSubmit()}
+                  disabled={
+                    isSending ||
+                    isUploading ||
+                    (!chatInput.trim() && uploadedFiles.length === 0)
+                  }
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span>Submit</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
-      )}
-      </div>{/* End content wrapper */}
+
+        {/* Category Pills */}
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
+          {PROMPT_TEMPLATES.map((cat) => {
+            const Icon = cat.icon;
+            const colorClasses = {
+              blue: "hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 dark:hover:bg-blue-500/10 dark:hover:border-blue-500/30 dark:hover:text-blue-400",
+              emerald:
+                "hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/30 dark:hover:text-emerald-400",
+              violet:
+                "hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:border-violet-500/30 dark:hover:text-violet-400",
+              amber:
+                "hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:border-amber-500/30 dark:hover:text-amber-400",
+            };
+
+            return (
+              <button
+                key={cat.category}
+                onClick={() => handleCategoryClick(cat.category)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border border-border bg-white dark:bg-card text-muted-foreground text-sm font-medium transition-all ${colorClasses[cat.color as keyof typeof colorClasses]}`}
+              >
+                <Icon className="h-4 w-4" />
+                {cat.category}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Continue to explore section */}
+        {styleReferences.length > 0 && (
+          <div className="w-full max-w-6xl">
+            <p className="text-sm text-muted-foreground mb-4 px-2">
+              Continue to explore...
+            </p>
+
+            {/* Masonry Grid with Fade */}
+            <div className="relative">
+              <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
+                {styleReferences.map((ref, idx) => {
+                  const variantUrls = getImageVariantUrls(ref.imageUrl);
+                  return (
+                    <div
+                      key={ref.id}
+                      className="break-inside-avoid rounded-xl overflow-hidden bg-muted/30"
+                    >
+                      <img
+                        src={variantUrls.preview}
+                        alt={ref.name}
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Fade overlay at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none z-10" />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog
@@ -873,54 +521,34 @@ function DashboardContent() {
         currentCredits={credits || 0}
         requiredCredits={1}
       />
-
-      {/* TODO: Remove after testing onboarding */}
-      {SHOW_DEV_RESET_BUTTON && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={async () => {
-              try {
-                const res = await fetch("/api/dev/reset-onboarding", { method: "POST" });
-                if (res.ok) {
-                  toast.success("Onboarding reset! Redirecting...");
-                  setTimeout(() => {
-                    window.location.href = "/onboarding";
-                  }, 500);
-                } else {
-                  toast.error("Failed to reset onboarding");
-                }
-              } catch {
-                toast.error("Failed to reset onboarding");
-              }
-            }}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors"
-          >
-            Reset Onboarding (Dev)
-          </button>
-        </div>
-      )}
-
     </div>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col min-h-full px-6 md:px-10 py-10 bg-background">
-      <div className="mb-8">
-        <Skeleton className="h-10 w-72 mb-2" />
-        <Skeleton className="h-6 w-56" />
+    <div className="flex flex-col items-center min-h-screen px-6 pt-32 md:pt-40 pb-8 bg-background">
+      <div className="text-center mb-8">
+        <Skeleton className="h-10 w-72 mx-auto mb-2" />
+        <Skeleton className="h-6 w-56 mx-auto" />
       </div>
-      <Skeleton className="h-32 w-full max-w-3xl rounded-2xl mb-6" />
+      <Skeleton className="h-36 w-full max-w-2xl rounded-2xl mb-6" />
       <div className="flex gap-2 mb-12">
-        <Skeleton className="h-10 w-48 rounded-full" />
-        <Skeleton className="h-10 w-44 rounded-full" />
-        <Skeleton className="h-10 w-52 rounded-full" />
+        <Skeleton className="h-10 w-32 rounded-full" />
+        <Skeleton className="h-10 w-32 rounded-full" />
+        <Skeleton className="h-10 w-28 rounded-full" />
+        <Skeleton className="h-10 w-32 rounded-full" />
       </div>
-      <Skeleton className="h-6 w-24 mb-4" />
-      <Skeleton className="h-[88px] w-full rounded-xl mb-12" />
-      <Skeleton className="h-6 w-24 mb-4" />
-      <Skeleton className="h-48 w-full rounded-xl" />
+      <Skeleton className="h-4 w-32 mb-4" />
+      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3 w-full max-w-6xl">
+        {[...Array(15)].map((_, i) => (
+          <Skeleton
+            key={i}
+            className="break-inside-avoid rounded-xl"
+            style={{ height: `${150 + Math.random() * 100}px` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

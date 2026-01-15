@@ -24,6 +24,7 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
   // Helper to resolve relative URLs
   const resolveUrl = (src: string): string | null => {
     try {
+      if (!src || src.length < 5) return null;
       if (src.startsWith("data:")) return null;
       if (src.startsWith("//")) return `https:${src}`;
       if (src.startsWith("/")) return new URL(src, baseUrl).href;
@@ -34,24 +35,45 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     }
   };
 
-  // Extract from <img> tags
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  // Helper to check if URL looks like a valid image
+  const isImageUrl = (url: string): boolean => {
+    const lower = url.toLowerCase();
+    if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|$)/i.test(lower)) return true;
+    if (lower.includes("behance.net") && lower.includes("project_modules")) return true;
+    if (lower.includes("behance.net") && lower.includes("/projects/")) return true;
+    if (lower.includes("cdn") && lower.includes("image")) return true;
+    if (lower.includes("images.") || lower.includes("/images/")) return true;
+    return false;
+  };
+
+  // Helper to add image if valid and not seen
+  const addImage = (url: string | null, source: ScrapedImage["source"], alt?: string, width?: number, height?: number) => {
+    if (!url || seenUrls.has(url)) return;
+    seenUrls.add(url);
+    images.push({ url, alt, width, height, source });
+  };
+
   let match;
+
+  // Extract from <img> tags - multiple patterns
+  const imgRegex = /<img[^>]*>/gi;
   while ((match = imgRegex.exec(html)) !== null) {
-    const url = resolveUrl(match[1]);
-    if (url && !seenUrls.has(url)) {
-      seenUrls.add(url);
-      // Try to extract dimensions
-      const widthMatch = match[0].match(/width=["']?(\d+)/i);
-      const heightMatch = match[0].match(/height=["']?(\d+)/i);
-      const altMatch = match[0].match(/alt=["']([^"']*)["']/i);
-      images.push({
-        url,
-        alt: altMatch?.[1],
-        width: widthMatch ? parseInt(widthMatch[1]) : undefined,
-        height: heightMatch ? parseInt(heightMatch[1]) : undefined,
-        source: "img",
-      });
+    const imgTag = match[0];
+    const srcAttrs = ['src', 'data-src', 'data-original', 'data-lazy-src'];
+    for (const attr of srcAttrs) {
+      const attrMatch = imgTag.match(new RegExp(`${attr}=["']([^"']+)["']`, 'i'));
+      if (attrMatch) {
+        const url = resolveUrl(attrMatch[1]);
+        if (url) {
+          const widthMatch = imgTag.match(/width=["']?(\d+)/i);
+          const heightMatch = imgTag.match(/height=["']?(\d+)/i);
+          const altMatch = imgTag.match(/alt=["']([^"']*)["']/i);
+          addImage(url, "img", altMatch?.[1],
+            widthMatch ? parseInt(widthMatch[1]) : undefined,
+            heightMatch ? parseInt(heightMatch[1]) : undefined
+          );
+        }
+      }
     }
   }
 
@@ -59,55 +81,74 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
   const srcsetRegex = /srcset=["']([^"']+)["']/gi;
   while ((match = srcsetRegex.exec(html)) !== null) {
     const srcset = match[1];
-    const sources = srcset.split(",").map((s) => s.trim().split(/\s+/)[0]);
-    for (const src of sources) {
-      const url = resolveUrl(src);
-      if (url && !seenUrls.has(url)) {
-        seenUrls.add(url);
-        images.push({ url, source: "img" });
+    const sources = srcset.split(",").map((s) => {
+      const parts = s.trim().split(/\s+/);
+      return { url: parts[0], size: parts[1] ? parseInt(parts[1]) : 0 };
+    });
+    sources.sort((a, b) => b.size - a.size);
+    for (const src of sources.slice(0, 1)) {
+      const url = resolveUrl(src.url);
+      addImage(url, "img");
+    }
+  }
+
+  // Extract from data attributes
+  const dataAttrs = ['data-src', 'data-original', 'data-lazy', 'data-image'];
+  for (const attr of dataAttrs) {
+    const dataRegex = new RegExp(`${attr}=["']([^"']+)["']`, 'gi');
+    while ((match = dataRegex.exec(html)) !== null) {
+      const url = resolveUrl(match[1]);
+      if (url && isImageUrl(url)) {
+        addImage(url, "img");
       }
     }
   }
 
-  // Extract from data-src (lazy loading)
-  const dataSrcRegex = /data-src=["']([^"']+)["']/gi;
-  while ((match = dataSrcRegex.exec(html)) !== null) {
-    const url = resolveUrl(match[1]);
-    if (url && !seenUrls.has(url)) {
-      seenUrls.add(url);
-      images.push({ url, source: "img" });
-    }
-  }
-
   // Extract from og:image meta tags
-  const ogImageRegex =
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
+  const ogImageRegex = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
   while ((match = ogImageRegex.exec(html)) !== null) {
     const url = resolveUrl(match[1]);
-    if (url && !seenUrls.has(url)) {
-      seenUrls.add(url);
-      images.push({ url, source: "og" });
-    }
+    addImage(url, "og");
   }
 
   // Alternative og:image format
-  const ogImageAltRegex =
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi;
+  const ogImageAltRegex = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi;
   while ((match = ogImageAltRegex.exec(html)) !== null) {
     const url = resolveUrl(match[1]);
-    if (url && !seenUrls.has(url)) {
-      seenUrls.add(url);
-      images.push({ url, source: "og" });
-    }
+    addImage(url, "og");
   }
 
   // Extract from background-image CSS
   const bgImageRegex = /background(?:-image)?:\s*url\(["']?([^"')]+)["']?\)/gi;
   while ((match = bgImageRegex.exec(html)) !== null) {
     const url = resolveUrl(match[1]);
-    if (url && !seenUrls.has(url)) {
-      seenUrls.add(url);
-      images.push({ url, source: "background" });
+    if (url && isImageUrl(url)) {
+      addImage(url, "background");
+    }
+  }
+
+  // Behance project module URLs
+  const behanceModuleRegex = /https?:\/\/mir-s3-cdn-cf\.behance\.net\/project_modules\/[^"'\s\\]+/gi;
+  while ((match = behanceModuleRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Behance project thumbnails - convert to larger versions
+  const behanceProjectRegex = /https?:\/\/mir-s3-cdn-cf\.behance\.net\/projects\/\d+\/[^"'\s\\]+/gi;
+  while ((match = behanceProjectRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    url = url.replace(/\/projects\/\d+\//, '/projects/max_808/');
+    addImage(url, "img");
+  }
+
+  // Generic CDN image URLs in JSON
+  const cdnImageRegex = /"(https?:\/\/[^"]+(?:\.jpg|\.jpeg|\.png|\.webp|\.gif)[^"]*)"/gi;
+  while ((match = cdnImageRegex.exec(html)) !== null) {
+    let url = match[1].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    const resolved = resolveUrl(url);
+    if (resolved && isImageUrl(resolved)) {
+      addImage(resolved, "img");
     }
   }
 
@@ -123,6 +164,11 @@ function filterContentImages(images: ScrapedImage[], minSize = 200): ScrapedImag
 
     // Skip common non-content patterns
     const url = img.url.toLowerCase();
+
+    // Always allow Behance project images
+    if (url.includes('mir-s3-cdn-cf.behance.net/projects/')) return true;
+    if (url.includes('mir-s3-cdn-cf.behance.net/project_modules/')) return true;
+
     if (url.includes("avatar")) return false;
     if (url.includes("icon")) return false;
     if (url.includes("logo") && !url.includes("brand")) return false;
@@ -200,12 +246,22 @@ export async function POST(request: NextRequest) {
       try {
         const scrapeResult = await firecrawl.scrape(url, {
           formats: ["html"],
+          waitFor: 3000, // Wait for JS to render
+          actions: [
+            // Scroll down to trigger lazy loading
+            { type: "scroll", direction: "down" },
+            { type: "wait", milliseconds: 1500 },
+            { type: "scroll", direction: "down" },
+            { type: "wait", milliseconds: 1500 },
+            { type: "scroll", direction: "down" },
+            { type: "wait", milliseconds: 1000 },
+          ],
         });
 
-        // The result is a Document type with optional html field
         const htmlContent = scrapeResult.html;
         if (htmlContent) {
           images = extractImagesFromHtml(htmlContent, baseUrl);
+          console.log(`Firecrawl extracted ${images.length} images from ${url}`);
         }
       } catch (error) {
         console.error("Firecrawl error:", error);
