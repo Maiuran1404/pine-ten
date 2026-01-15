@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
+import { auditHelpers, actorFromUser } from "@/lib/audit";
 import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -23,7 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const body = await request.json();
     const { key, value, description } = body;
@@ -39,6 +40,8 @@ export async function POST(request: NextRequest) {
       .where(eq(platformSettings.key, key))
       .limit(1);
 
+    const previousValue = existing.length > 0 ? existing[0].value : null;
+
     if (existing.length > 0) {
       await db
         .update(platformSettings)
@@ -51,6 +54,15 @@ export async function POST(request: NextRequest) {
         description,
       });
     }
+
+    // Audit log: Track settings changes for compliance
+    auditHelpers.settingsUpdate(
+      actorFromUser(session.user),
+      key,
+      previousValue,
+      value,
+      "POST /api/admin/settings"
+    );
 
     return successResponse({ success: true });
   }, { endpoint: "POST /api/admin/settings" });

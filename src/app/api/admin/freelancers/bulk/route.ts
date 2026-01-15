@@ -7,6 +7,7 @@ import { config } from "@/lib/config";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { auditHelpers, actorFromUser } from "@/lib/audit";
 import { z } from "zod";
 
 // Security: Limit bulk operations to prevent DoS attacks
@@ -23,7 +24,7 @@ const bulkActionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const body = await request.json();
     const { freelancerIds, action, reason } = bulkActionSchema.parse(body);
@@ -129,6 +130,16 @@ export async function POST(request: NextRequest) {
         reason
       },
       "Bulk freelancer action completed"
+    );
+
+    // Audit log: Track bulk freelancer actions for compliance
+    auditHelpers.freelancerBulkAction(
+      actorFromUser(session.user),
+      action,
+      freelancerIds,
+      results.success.length,
+      results.failed.length,
+      "POST /api/admin/freelancers/bulk"
     );
 
     return successResponse({

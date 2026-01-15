@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
+import { auditHelpers, actorFromUser } from "@/lib/audit";
 import {
   users,
   sessions,
@@ -74,7 +75,7 @@ type TableName = keyof typeof tableConfig;
 
 export async function GET(request: NextRequest) {
   return withErrorHandling(async () => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const tableName = searchParams.get("table") as TableName | null;
@@ -129,6 +130,14 @@ export async function GET(request: NextRequest) {
 
     // Sanitize data to remove sensitive fields before returning
     const sanitizedData = sanitizeData(tableName, data as Record<string, unknown>[]);
+
+    // Audit log: Track database access for security monitoring
+    // Fire-and-forget to avoid blocking the response
+    auditHelpers.databaseAccess(
+      actorFromUser(session.user),
+      tableName,
+      "GET /api/admin/database"
+    );
 
     return successResponse({
       table: tableName,

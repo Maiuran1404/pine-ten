@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { stripe } from "@/lib/stripe";
+import { auditHelpers, actorFromUser } from "@/lib/audit";
 import { z } from "zod";
 
 // Validation schemas for coupon operations
@@ -82,7 +83,7 @@ export async function GET() {
 // POST - Create a new coupon with promotion code
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const body = await request.json();
 
@@ -160,6 +161,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Audit log: Track coupon creation for billing compliance
+    auditHelpers.couponCreate(
+      actorFromUser(session.user),
+      coupon.id,
+      coupon.name || name,
+      "POST /api/admin/coupons"
+    );
+
     return successResponse({
       coupon: {
         id: coupon.id,
@@ -180,7 +189,7 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete a coupon
 export async function DELETE(request: NextRequest) {
   return withErrorHandling(async () => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const couponId = searchParams.get("id");
@@ -190,6 +199,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     await stripe.coupons.del(couponId);
+
+    // Audit log: Track coupon deletion for billing compliance
+    auditHelpers.couponDelete(
+      actorFromUser(session.user),
+      couponId,
+      "DELETE /api/admin/coupons"
+    );
 
     return successResponse({ success: true });
   }, { endpoint: "DELETE /api/admin/coupons" });

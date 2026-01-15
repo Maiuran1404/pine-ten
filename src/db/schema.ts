@@ -953,3 +953,95 @@ export const securityTestResultsRelations = relations(securityTestResults, ({ on
     references: [securityTests.id],
   }),
 }));
+
+// ============================================
+// Audit Logging Tables
+// ============================================
+
+// Audit log action types
+export const auditActionTypeEnum = pgEnum("audit_action_type", [
+  // Authentication
+  "AUTH_LOGIN",
+  "AUTH_LOGOUT",
+  "AUTH_FAILED_LOGIN",
+  "AUTH_PASSWORD_CHANGE",
+  "AUTH_2FA_ENABLED",
+  "AUTH_2FA_DISABLED",
+  // User management
+  "USER_CREATE",
+  "USER_UPDATE",
+  "USER_DELETE",
+  "USER_ROLE_CHANGE",
+  // Freelancer management
+  "FREELANCER_APPROVE",
+  "FREELANCER_REJECT",
+  "FREELANCER_SUSPEND",
+  "FREELANCER_BULK_ACTION",
+  // Task management
+  "TASK_CREATE",
+  "TASK_ASSIGN",
+  "TASK_STATUS_CHANGE",
+  "TASK_DELETE",
+  // Credit/billing
+  "CREDIT_PURCHASE",
+  "CREDIT_USAGE",
+  "CREDIT_REFUND",
+  "CREDIT_MANUAL_ADJUST",
+  // Settings
+  "SETTINGS_UPDATE",
+  "COUPON_CREATE",
+  "COUPON_DELETE",
+  // Admin actions
+  "ADMIN_DATABASE_ACCESS",
+  "ADMIN_EXPORT_DATA",
+  "ADMIN_IMPERSONATE",
+  // Security
+  "SECURITY_TEST_RUN",
+  "SECURITY_ALERT",
+]);
+
+// Audit logs table
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    // Who performed the action
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorEmail: text("actor_email"), // Stored separately for persistence even if user deleted
+    actorRole: text("actor_role"),
+    // What action was performed
+    action: auditActionTypeEnum("action").notNull(),
+    // What resource was affected
+    resourceType: text("resource_type").notNull(), // user, task, freelancer, coupon, settings, etc.
+    resourceId: text("resource_id"), // The ID of the affected resource
+    // Details
+    details: jsonb("details").$type<Record<string, unknown>>(), // Additional context
+    previousValue: jsonb("previous_value"), // Before state for updates
+    newValue: jsonb("new_value"), // After state for updates
+    // Result
+    success: boolean("success").notNull().default(true),
+    errorMessage: text("error_message"),
+    // Request context
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    endpoint: text("endpoint"), // API endpoint that triggered this
+    // Timestamp
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("audit_logs_actor_id_idx").on(table.actorId),
+    index("audit_logs_action_idx").on(table.action),
+    index("audit_logs_resource_type_idx").on(table.resourceType),
+    index("audit_logs_resource_id_idx").on(table.resourceId),
+    index("audit_logs_created_at_idx").on(table.createdAt),
+    index("audit_logs_actor_action_idx").on(table.actorId, table.action),
+  ]
+);
+
+// Relations for audit logs
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  actor: one(users, {
+    fields: [auditLogs.actorId],
+    references: [users.id],
+  }),
+}));
