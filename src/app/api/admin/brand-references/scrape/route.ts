@@ -43,8 +43,18 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     if (lower.includes("behance.net") && lower.includes("/projects/")) return true;
     // Pinterest CDN
     if (lower.includes("pinimg.com")) return true;
+    // Cosmos.so CDN patterns
+    if (lower.includes("cosmos.so") && (lower.includes("/i/") || lower.includes("/image"))) return true;
+    if (lower.includes("cosmoscdn") || lower.includes("cosmos-cdn")) return true;
+    // Common image CDNs
+    if (lower.includes("cloudinary.com")) return true;
+    if (lower.includes("imgix.net")) return true;
+    if (lower.includes("imagedelivery.net")) return true;
+    if (lower.includes("cloudfront.net") && /\.(jpg|jpeg|png|gif|webp)/i.test(lower)) return true;
+    if (lower.includes("amazonaws.com") && /\.(jpg|jpeg|png|gif|webp)/i.test(lower)) return true;
     if (lower.includes("cdn") && lower.includes("image")) return true;
     if (lower.includes("images.") || lower.includes("/images/")) return true;
+    if (lower.includes("media.") || lower.includes("/media/")) return true;
     return false;
   };
 
@@ -195,6 +205,46 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     }
   }
 
+  // Cosmos.so image extraction
+  // Pattern: cosmos CDN URLs
+  const cosmosImageRegex = /https?:\/\/[^"'\s]*cosmos[^"'\s]*\/[^"'\s]*\.(jpg|jpeg|png|gif|webp)[^"'\s]*/gi;
+  while ((match = cosmosImageRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Cloudinary image extraction
+  const cloudinaryRegex = /https?:\/\/res\.cloudinary\.com\/[^"'\s]+\.(jpg|jpeg|png|gif|webp)[^"'\s]*/gi;
+  while ((match = cloudinaryRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Imgix image extraction
+  const imgixRegex = /https?:\/\/[^"'\s]+\.imgix\.net\/[^"'\s]+/gi;
+  while ((match = imgixRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    if (/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url) || url.includes('?')) {
+      addImage(url, "img");
+    }
+  }
+
+  // CloudFront/AWS S3 image extraction
+  const awsRegex = /https?:\/\/[^"'\s]+\.(cloudfront\.net|amazonaws\.com)\/[^"'\s]+\.(jpg|jpeg|png|gif|webp)[^"'\s]*/gi;
+  while ((match = awsRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Generic high-quality image URLs in JSON (looking for larger dimensions in URL)
+  const largeImageRegex = /"(https?:\/\/[^"]+(?:\/(?:large|full|original|max|1080|1200|1600|2000)[^"]*)?\.(?:jpg|jpeg|png|webp)[^"]*)"/gi;
+  while ((match = largeImageRegex.exec(html)) !== null) {
+    let url = match[1].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    if (isImageUrl(url)) {
+      addImage(url, "img");
+    }
+  }
+
   return images;
 }
 
@@ -218,6 +268,12 @@ function filterContentImages(images: ScrapedImage[], minSize = 200): ScrapedImag
     if (url.includes('i.pinimg.com/60x60/')) return false;
     if (url.includes('i.pinimg.com/75x75/')) return false;
     if (url.includes('i.pinimg.com/150x150/')) return false;
+    // Always allow Cosmos.so images
+    if (url.includes('cosmos.so') || url.includes('cosmos-cdn') || url.includes('cosmoscdn')) return true;
+    // Always allow major CDN images
+    if (url.includes('cloudinary.com')) return true;
+    if (url.includes('imgix.net')) return true;
+    if (url.includes('imagedelivery.net')) return true;
 
     if (url.includes("avatar")) return false;
     if (url.includes("icon")) return false;
@@ -294,18 +350,18 @@ export async function POST(request: NextRequest) {
     // Option 1: Use Firecrawl for JS-heavy sites
     if (useFirecrawl && firecrawl) {
       try {
+        // Build extensive scroll actions to load more content
+        const scrollActions: Array<{ type: "scroll"; direction: "down" } | { type: "wait"; milliseconds: number }> = [];
+        // Scroll 15 times to load lots of content
+        for (let i = 0; i < 15; i++) {
+          scrollActions.push({ type: "scroll", direction: "down" });
+          scrollActions.push({ type: "wait", milliseconds: 1200 });
+        }
+
         const scrapeResult = await firecrawl.scrape(url, {
           formats: ["html"],
-          waitFor: 3000, // Wait for JS to render
-          actions: [
-            // Scroll down to trigger lazy loading
-            { type: "scroll", direction: "down" },
-            { type: "wait", milliseconds: 1500 },
-            { type: "scroll", direction: "down" },
-            { type: "wait", milliseconds: 1500 },
-            { type: "scroll", direction: "down" },
-            { type: "wait", milliseconds: 1000 },
-          ],
+          waitFor: 5000, // Wait 5 seconds for initial JS to render
+          actions: scrollActions,
         });
 
         const htmlContent = scrapeResult.html;
