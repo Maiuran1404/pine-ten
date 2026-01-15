@@ -178,31 +178,37 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     }
   }
 
-  // Pinterest-specific image extraction
-  // Pattern 1: Direct pinimg.com URLs in HTML/JSON
-  const pinterestImageRegex = /https?:\/\/i\.pinimg\.com\/(?:originals|736x|474x|236x|150x150|60x60|75x75)\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]+\.[a-z]+/gi;
-  while ((match = pinterestImageRegex.exec(html)) !== null) {
-    let url = match[0];
-    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '');
+  // Pinterest-specific image extraction - use permissive patterns
+  // Pattern 1: Any pinimg.com URL with image extension (most permissive)
+  const pinterestAnyImageRegex = /https?:\/\/i\.pinimg\.com\/[^"'\s<>]+\.(jpg|jpeg|png|gif|webp)/gi;
+  while ((match = pinterestAnyImageRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    // Clean up any trailing characters that aren't part of the extension
+    url = url.replace(/[^a-z]$/i, '');
     addImage(url, "img");
   }
 
   // Pattern 2: Pinterest video thumbnails
-  const pinterestVideoRegex = /https?:\/\/i\.pinimg\.com\/videos\/thumbnails\/originals\/[^"'\s\\]+\.[a-z]+/gi;
+  const pinterestVideoRegex = /https?:\/\/i\.pinimg\.com\/videos\/thumbnails\/[^"'\s<>]+\.(jpg|jpeg|png)/gi;
   while ((match = pinterestVideoRegex.exec(html)) !== null) {
-    let url = match[0];
-    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '');
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
     addImage(url, "img");
   }
 
-  // Pattern 3: Pinterest URLs with escaped slashes in JSON
-  const pinterestEscapedRegex = /https?:\\?\/\\?\/i\.pinimg\.com\\?\/[^"'\s]+/gi;
+  // Pattern 3: Pinterest URLs from srcset attributes (highest quality versions)
+  const srcsetPinterestRegex = /https?:\/\/i\.pinimg\.com\/(?:originals|736x)\/[^"'\s,]+\.(jpg|jpeg|png|gif|webp)/gi;
+  while ((match = srcsetPinterestRegex.exec(html)) !== null) {
+    let url = match[0].replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Pattern 4: Pinterest URLs with escaped characters in JSON
+  const pinterestEscapedRegex = /i\.pinimg\.com[^"'\s]*\.(jpg|jpeg|png|gif|webp)/gi;
   while ((match = pinterestEscapedRegex.exec(html)) !== null) {
-    let url = match[0];
-    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '/').replace(/\/\//g, '/').replace('https:/', 'https://');
-    if (url.includes('pinimg.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
-      addImage(url, "img");
-    }
+    let url = 'https://' + match[0].replace(/\\u002F/g, '/').replace(/\\/g, '/');
+    // Clean double slashes except after https:
+    url = url.replace(/([^:])\/\//g, '$1/');
+    addImage(url, "img");
   }
 
   // Cosmos.so image extraction
@@ -261,9 +267,11 @@ function filterContentImages(images: ScrapedImage[], minSize = 200): ScrapedImag
     // Always allow Behance project images
     if (url.includes('mir-s3-cdn-cf.behance.net/projects/')) return true;
     if (url.includes('mir-s3-cdn-cf.behance.net/project_modules/')) return true;
-    // Always allow Pinterest images (736x size)
+    // Always allow Pinterest images (will be upgraded to 736x)
     if (url.includes('i.pinimg.com/736x/')) return true;
     if (url.includes('i.pinimg.com/originals/')) return true;
+    if (url.includes('i.pinimg.com/474x/')) return true;
+    if (url.includes('i.pinimg.com/236x/')) return true;
     // Skip small Pinterest thumbnails
     if (url.includes('i.pinimg.com/60x60/')) return false;
     if (url.includes('i.pinimg.com/75x75/')) return false;

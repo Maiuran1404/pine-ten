@@ -18,6 +18,39 @@ async function handler(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Security: Get current user from database to check actual state
+    // This prevents race conditions and ensures we have accurate data
+    const [currentUser] = await db
+      .select({
+        role: users.role,
+        onboardingCompleted: users.onboardingCompleted,
+      })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Security: Prevent re-submission of onboarding
+    // Once completed, users cannot change their role or re-onboard
+    if (currentUser.onboardingCompleted) {
+      return NextResponse.json(
+        { error: "Onboarding already completed. Contact support to make changes." },
+        { status: 403 }
+      );
+    }
+
+    // Security: Only CLIENT role users can go through onboarding
+    // ADMIN and FREELANCER users should not be able to re-onboard
+    if (currentUser.role !== "CLIENT") {
+      return NextResponse.json(
+        { error: "Only new users can complete onboarding" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { type, data } = body;
 
