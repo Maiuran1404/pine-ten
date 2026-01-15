@@ -9,8 +9,14 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
+// Security: Limit bulk operations to prevent DoS attacks
+const MAX_BULK_SIZE = 100;
+
 const bulkActionSchema = z.object({
-  freelancerIds: z.array(z.string()).min(1, "At least one freelancer ID is required"),
+  freelancerIds: z
+    .array(z.string())
+    .min(1, "At least one freelancer ID is required")
+    .max(MAX_BULK_SIZE, `Cannot process more than ${MAX_BULK_SIZE} items at once`),
   action: z.enum(["approve", "reject"]),
   reason: z.string().optional(),
 });
