@@ -42,17 +42,33 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|$)/i.test(lower)) return true;
     // CDN patterns (Behance uses mir-s3-cdn-cf.behance.net)
     if (lower.includes("behance.net") && lower.includes("project_modules")) return true;
+    // Pinterest CDN
+    if (lower.includes("pinimg.com")) return true;
     if (lower.includes("cdn") && lower.includes("image")) return true;
     if (lower.includes("images.") || lower.includes("/images/")) return true;
     if (lower.includes("img.") || lower.includes("/img/")) return true;
     return false;
   };
 
+  // Helper to convert Pinterest URLs to larger sizes
+  const upgradePinterestUrl = (url: string): string => {
+    if (!url.includes("pinimg.com")) return url;
+    // Convert small sizes to 736x (large) - available sizes: 60x60, 75x75, 236x, 474x, 736x, originals
+    return url
+      .replace(/\/60x60\//g, '/736x/')
+      .replace(/\/75x75\//g, '/736x/')
+      .replace(/\/236x\//g, '/736x/')
+      .replace(/\/474x\//g, '/736x/');
+  };
+
   // Helper to add image if valid and not seen
   const addImage = (url: string | null, source: ScrapedImage["source"], alt?: string, width?: number, height?: number) => {
-    if (!url || seenUrls.has(url)) return;
-    seenUrls.add(url);
-    images.push({ url, alt, width, height, source });
+    if (!url) return;
+    // Upgrade Pinterest URLs to larger sizes
+    const finalUrl = upgradePinterestUrl(url);
+    if (seenUrls.has(finalUrl)) return;
+    seenUrls.add(finalUrl);
+    images.push({ url: finalUrl, alt, width, height, source });
   };
 
   let match;
@@ -166,6 +182,33 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
     }
   }
 
+  // Pinterest-specific image extraction
+  // Pattern 1: Direct pinimg.com URLs in HTML/JSON
+  const pinterestImageRegex = /https?:\/\/i\.pinimg\.com\/(?:originals|736x|474x|236x|150x150|60x60|75x75)\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]+\.[a-z]+/gi;
+  while ((match = pinterestImageRegex.exec(html)) !== null) {
+    let url = match[0];
+    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Pattern 2: Pinterest video thumbnails
+  const pinterestVideoRegex = /https?:\/\/i\.pinimg\.com\/videos\/thumbnails\/originals\/[^"'\s\\]+\.[a-z]+/gi;
+  while ((match = pinterestVideoRegex.exec(html)) !== null) {
+    let url = match[0];
+    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '');
+    addImage(url, "img");
+  }
+
+  // Pattern 3: Pinterest URLs with escaped slashes in JSON
+  const pinterestEscapedRegex = /https?:\\?\/\\?\/i\.pinimg\.com\\?\/[^"'\s]+/gi;
+  while ((match = pinterestEscapedRegex.exec(html)) !== null) {
+    let url = match[0];
+    url = url.replace(/\\u002F/g, '/').replace(/\\/g, '/').replace(/\/\//g, '/').replace('https:/', 'https://');
+    if (url.includes('pinimg.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
+      addImage(url, "img");
+    }
+  }
+
   return images;
 }
 
@@ -182,6 +225,13 @@ function filterContentImages(images: ScrapedImage[], minSize = 200): ScrapedImag
     // Always allow Behance project images
     if (url.includes('mir-s3-cdn-cf.behance.net/projects/')) return true;
     if (url.includes('mir-s3-cdn-cf.behance.net/project_modules/')) return true;
+    // Always allow Pinterest images (736x size)
+    if (url.includes('i.pinimg.com/736x/')) return true;
+    if (url.includes('i.pinimg.com/originals/')) return true;
+    // Skip small Pinterest thumbnails
+    if (url.includes('i.pinimg.com/60x60/')) return false;
+    if (url.includes('i.pinimg.com/75x75/')) return false;
+    if (url.includes('i.pinimg.com/150x150/')) return false;
     if (url.includes("avatar")) return false;
     if (url.includes("icon")) return false;
     if (url.includes("logo") && !url.includes("brand")) return false;
