@@ -1,32 +1,19 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 import { db } from "@/db";
 import {
   securityTests,
   securityTestRuns,
-  securityTestResults,
   securitySnapshots,
   testSchedules,
   testUsers,
 } from "@/db/schema";
-import { desc, count, eq, and, gte, sql } from "drizzle-orm";
+import { desc, count, eq, gte, sql } from "drizzle-orm";
 
 // GET - Get security overview dashboard data
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get data in parallel
     const [
@@ -116,7 +103,7 @@ export async function GET() {
           }, 0) / recentRuns.filter((r) => r.totalTests > 0).length
         : null;
 
-    return NextResponse.json({
+    return successResponse({
       snapshot: latestSnapshot[0] || null,
       recentRuns,
       schedules: activeSchedules,
@@ -132,11 +119,5 @@ export async function GET() {
         averagePassRate: passRate ? Math.round(passRate * 10) / 10 : null,
       },
     });
-  } catch (error) {
-    console.error("Security overview error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch security overview" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/security" });
 }

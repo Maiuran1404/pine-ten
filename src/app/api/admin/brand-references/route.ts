@@ -1,25 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { desc, eq, and } from "drizzle-orm";
 import type { ToneBucket, EnergyBucket, ColorBucket } from "@/lib/constants/reference-libraries";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get optional filters from query params
     const { searchParams } = new URL(request.url);
@@ -45,30 +34,13 @@ export async function GET(request: NextRequest) {
       ? await query.where(and(...conditions)).orderBy(desc(brandReferences.createdAt))
       : await query.orderBy(desc(brandReferences.createdAt));
 
-    return NextResponse.json({ references });
-  } catch (error) {
-    console.error("Admin brand references error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch brand references" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ references });
+  }, { endpoint: "GET /api/admin/brand-references" });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const {
@@ -87,10 +59,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name || !imageUrl || !toneBucket || !energyBucket || !colorBucket) {
-      return NextResponse.json(
-        { error: "Name, imageUrl, toneBucket, energyBucket, and colorBucket are required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Name, imageUrl, toneBucket, energyBucket, and colorBucket are required");
     }
 
     const [newReference] = await db
@@ -112,46 +81,23 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ reference: newReference }, { status: 201 });
-  } catch (error) {
-    console.error("Admin create brand reference error:", error);
-    return NextResponse.json(
-      { error: "Failed to create brand reference" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ reference: newReference }, 201);
+  }, { endpoint: "POST /api/admin/brand-references" });
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Reference ID is required" }, { status: 400 });
+      throw Errors.badRequest("Reference ID is required");
     }
 
     await db.delete(brandReferences).where(eq(brandReferences.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Admin delete brand reference error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete brand reference" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/brand-references" });
 }

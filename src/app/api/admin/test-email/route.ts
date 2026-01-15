@@ -1,23 +1,11 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireAdmin, SessionUser } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 import { sendEmail } from "@/lib/notifications";
 
 // GET - Test email sending (admin only)
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string; email?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    const { user } = await requireAdmin();
 
     // Try to send a test email to the admin
     const result = await sendEmail({
@@ -33,17 +21,11 @@ export async function GET() {
       `,
     });
 
-    return NextResponse.json({
+    return successResponse({
       success: result.success,
       error: result.error,
       sentTo: user.email,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error("Test email error:", error);
-    return NextResponse.json(
-      { error: "Failed to send test email", details: String(error) },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/test-email" });
 }

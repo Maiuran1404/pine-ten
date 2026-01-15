@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { classifyBrandImage } from "@/lib/ai/classify-brand-image";
@@ -16,27 +16,15 @@ const supabase = createClient(
 const BUCKET_NAME = "brand-references";
 
 export async function POST(request: NextRequest) {
-  try {
-    // Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get form data
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No files provided" }, { status: 400 });
+      throw Errors.badRequest("No files provided");
     }
 
     const results: Array<{
@@ -189,52 +177,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       processed: results.length,
       successful: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
       results,
     });
-  } catch (error) {
-    console.error("Brand reference upload error:", error);
-    return NextResponse.json(
-      { error: "Failed to process upload" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/brand-references/upload" });
 }
 
 // Endpoint to classify an image without saving (preview)
 export async function PUT(request: NextRequest) {
-  try {
-    // Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      throw Errors.badRequest("No file provided");
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Invalid file type. Only images are allowed." },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Invalid file type. Only images are allowed.");
     }
 
     // Convert to base64
@@ -254,15 +220,6 @@ export async function PUT(request: NextRequest) {
     // Classify with AI (preview only, don't save)
     const classification = await classifyBrandImage(base64, mediaType);
 
-    return NextResponse.json({
-      success: true,
-      classification,
-    });
-  } catch (error) {
-    console.error("Brand reference preview error:", error);
-    return NextResponse.json(
-      { error: "Failed to classify image" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ classification });
+  }, { endpoint: "PUT /api/admin/brand-references/upload" });
 }

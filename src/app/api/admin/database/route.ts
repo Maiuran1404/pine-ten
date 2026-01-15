@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { db } from "@/db";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import {
   users,
   sessions,
@@ -73,19 +73,8 @@ const tableConfig = {
 type TableName = keyof typeof tableConfig;
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const tableName = searchParams.get("table") as TableName | null;
@@ -122,12 +111,12 @@ export async function GET(request: NextRequest) {
         safeCount("platformSettings", db.select({ count: count() }).from(platformSettings)),
       ]);
 
-      return NextResponse.json({ tables: tableCounts });
+      return successResponse({ tables: tableCounts });
     }
 
     // Validate table name
     if (!(tableName in tableConfig)) {
-      return NextResponse.json({ error: "Invalid table name" }, { status: 400 });
+      throw Errors.badRequest("Invalid table name");
     }
 
     const config = tableConfig[tableName];
@@ -141,18 +130,12 @@ export async function GET(request: NextRequest) {
     // Sanitize data to remove sensitive fields before returning
     const sanitizedData = sanitizeData(tableName, data as Record<string, unknown>[]);
 
-    return NextResponse.json({
+    return successResponse({
       table: tableName,
       total: countResult[0].count,
       data: sanitizedData,
       limit,
       offset,
     });
-  } catch (error) {
-    console.error("Admin database error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch database data" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/database" });
 }

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import {
   securityTestRuns,
@@ -9,23 +9,12 @@ import {
   testUsers,
   testSchedules,
 } from "@/db/schema";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 // GET - List test runs with optional filtering
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const runId = searchParams.get("id");
@@ -40,7 +29,7 @@ export async function GET(request: NextRequest) {
         .where(eq(securityTestRuns.id, runId));
 
       if (!run) {
-        return NextResponse.json({ error: "Run not found" }, { status: 404 });
+        throw Errors.notFound("Run");
       }
 
       // Get all results for this run
@@ -54,7 +43,7 @@ export async function GET(request: NextRequest) {
         .where(eq(securityTestResults.runId, runId))
         .orderBy(securityTestResults.createdAt);
 
-      return NextResponse.json({
+      return successResponse({
         run,
         results: results.map((r) => ({
           ...r.result,
@@ -77,37 +66,20 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    return NextResponse.json({
+    return successResponse({
       runs: runs.map((r) => ({
         ...r.run,
         schedule: r.schedule,
         testUser: r.testUser ? { name: r.testUser.name, email: r.testUser.email } : null,
       })),
     });
-  } catch (error) {
-    console.error("Failed to fetch test runs:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch test runs" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/security/runs" });
 }
 
 // POST - Start a new test run
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string; id?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    const { user } = await requireAdmin();
 
     const body = await request.json();
     const {
@@ -120,7 +92,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!targetUrl) {
-      return NextResponse.json({ error: "Target URL is required" }, { status: 400 });
+      throw Errors.badRequest("Target URL is required");
     }
 
     // Get tests to run
@@ -140,10 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (testsToRun.length === 0) {
-      return NextResponse.json(
-        { error: "No tests to run. Create some tests first." },
-        { status: 400 }
-      );
+      throw Errors.badRequest("No tests to run. Create some tests first.");
     }
 
     // Create the test run
@@ -173,43 +142,26 @@ export async function POST(request: NextRequest) {
       }))
     );
 
-    return NextResponse.json(
+    return successResponse(
       {
         run,
         message: `Test run created with ${testsToRun.length} tests. Run ID: ${run.id}`,
       },
-      { status: 201 }
+      201
     );
-  } catch (error) {
-    console.error("Failed to create test run:", error);
-    return NextResponse.json(
-      { error: "Failed to create test run" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/security/runs" });
 }
 
 // PUT - Update a test run (for updating status/results)
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Run ID is required" }, { status: 400 });
+      throw Errors.badRequest("Run ID is required");
     }
 
     const [run] = await db
@@ -219,40 +171,23 @@ export async function PUT(request: NextRequest) {
       .returning();
 
     if (!run) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+      throw Errors.notFound("Run");
     }
 
-    return NextResponse.json({ run });
-  } catch (error) {
-    console.error("Failed to update test run:", error);
-    return NextResponse.json(
-      { error: "Failed to update test run" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ run });
+  }, { endpoint: "PUT /api/admin/security/runs" });
 }
 
 // DELETE - Cancel/delete a test run
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Run ID is required" }, { status: 400 });
+      throw Errors.badRequest("Run ID is required");
     }
 
     // Cancel if running, otherwise delete
@@ -262,7 +197,7 @@ export async function DELETE(request: NextRequest) {
       .where(eq(securityTestRuns.id, id));
 
     if (!run) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+      throw Errors.notFound("Run");
     }
 
     if (run.status === "RUNNING") {
@@ -272,18 +207,12 @@ export async function DELETE(request: NextRequest) {
         .set({ status: "CANCELLED", completedAt: new Date() })
         .where(eq(securityTestRuns.id, id));
 
-      return NextResponse.json({ success: true, message: "Run cancelled" });
+      return successResponse({ success: true, message: "Run cancelled" });
     }
 
     // Delete the run (results will cascade delete)
     await db.delete(securityTestRuns).where(eq(securityTestRuns.id, id));
 
-    return NextResponse.json({ success: true, message: "Run deleted" });
-  } catch (error) {
-    console.error("Failed to delete test run:", error);
-    return NextResponse.json(
-      { error: "Failed to delete test run" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true, message: "Run deleted" });
+  }, { endpoint: "DELETE /api/admin/security/runs" });
 }

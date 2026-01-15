@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import {
   securityTestRuns,
@@ -8,29 +8,18 @@ import {
   securityTests,
   securitySnapshots,
 } from "@/db/schema";
-import { eq, count, sql } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 
 // POST - Complete a test run and calculate final scores
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { runId } = body;
 
     if (!runId) {
-      return NextResponse.json({ error: "Run ID is required" }, { status: 400 });
+      throw Errors.badRequest("Run ID is required");
     }
 
     // Get the run
@@ -40,7 +29,7 @@ export async function POST(request: NextRequest) {
       .where(eq(securityTestRuns.id, runId));
 
     if (!run) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+      throw Errors.notFound("Run");
     }
 
     // Get result counts by status
@@ -193,7 +182,7 @@ export async function POST(request: NextRequest) {
       lastTestRunId: runId,
     });
 
-    return NextResponse.json({
+    return successResponse({
       run: updatedRun,
       summary: {
         totalTests,
@@ -206,11 +195,5 @@ export async function POST(request: NextRequest) {
         categoryScores,
       },
     });
-  } catch (error) {
-    console.error("Failed to complete test run:", error);
-    return NextResponse.json(
-      { error: "Failed to complete test run" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/security/execute/complete" });
 }

@@ -1,25 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "20");
@@ -48,12 +37,6 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    return NextResponse.json({ tasks: taskList });
-  } catch (error) {
-    console.error("Admin tasks error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch tasks" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ tasks: taskList });
+  }, { endpoint: "GET /api/admin/tasks" });
 }

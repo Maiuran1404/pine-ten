@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,19 +9,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
     const body = await request.json();
@@ -61,47 +50,24 @@ export async function PATCH(
       .returning();
 
     if (!updatedStyle) {
-      return NextResponse.json({ error: "Style not found" }, { status: 404 });
+      throw Errors.notFound("Style");
     }
 
-    return NextResponse.json({ style: updatedStyle });
-  } catch (error) {
-    console.error("Admin update deliverable style error:", error);
-    return NextResponse.json(
-      { error: "Failed to update deliverable style" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ style: updatedStyle });
+  }, { endpoint: "PATCH /api/admin/deliverable-styles/[id]" });
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
 
     await db.delete(deliverableStyleReferences).where(eq(deliverableStyleReferences.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Admin delete deliverable style error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete deliverable style" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/deliverable-styles/[id]" });
 }

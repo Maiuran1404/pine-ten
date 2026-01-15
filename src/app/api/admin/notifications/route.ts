@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { notificationSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -143,19 +143,8 @@ const defaultSettings = [
 ];
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get all notification settings
     let settings = await db.select().from(notificationSettings);
@@ -166,36 +155,19 @@ export async function GET() {
       settings = await db.select().from(notificationSettings);
     }
 
-    return NextResponse.json({ settings });
-  } catch (error) {
-    console.error("Notification settings fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch notification settings" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ settings });
+  }, { endpoint: "GET /api/admin/notifications" });
 }
 
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    const { user } = await requireAdmin();
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Setting ID required" }, { status: 400 });
+      throw Errors.badRequest("Setting ID required");
     }
 
     // Update the setting
@@ -204,47 +176,24 @@ export async function PUT(request: NextRequest) {
       .set({
         ...updates,
         updatedAt: new Date(),
-        updatedBy: session.user.id,
+        updatedBy: user.id,
       })
       .where(eq(notificationSettings.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Notification settings update error:", error);
-    return NextResponse.json(
-      { error: "Failed to update notification settings" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "PUT /api/admin/notifications" });
 }
 
 // Reset to defaults
 export async function POST() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Delete all and re-seed
     await db.delete(notificationSettings);
     await db.insert(notificationSettings).values(defaultSettings);
 
     const settings = await db.select().from(notificationSettings);
-    return NextResponse.json({ settings, message: "Reset to defaults" });
-  } catch (error) {
-    console.error("Notification settings reset error:", error);
-    return NextResponse.json(
-      { error: "Failed to reset notification settings" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ settings, message: "Reset to defaults" });
+  }, { endpoint: "POST /api/admin/notifications" });
 }

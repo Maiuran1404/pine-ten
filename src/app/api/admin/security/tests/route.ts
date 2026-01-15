@@ -1,56 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { securityTests } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 // GET - List all security tests
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const tests = await db
       .select()
       .from(securityTests)
       .orderBy(desc(securityTests.createdAt));
 
-    return NextResponse.json({ tests });
-  } catch (error) {
-    console.error("Failed to fetch security tests:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch tests" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ tests });
+  }, { endpoint: "GET /api/admin/security/tests" });
 }
 
 // POST - Create a new security test
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const {
@@ -65,10 +37,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name || !category || !testType) {
-      return NextResponse.json(
-        { error: "Name, category, and testType are required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Name, category, and testType are required");
     }
 
     const [test] = await db
@@ -85,37 +54,20 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ test }, { status: 201 });
-  } catch (error) {
-    console.error("Failed to create security test:", error);
-    return NextResponse.json(
-      { error: "Failed to create test" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ test }, 201);
+  }, { endpoint: "POST /api/admin/security/tests" });
 }
 
 // PUT - Update a security test
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Test ID is required" }, { status: 400 });
+      throw Errors.badRequest("Test ID is required");
     }
 
     const [test] = await db
@@ -128,50 +80,27 @@ export async function PUT(request: NextRequest) {
       .returning();
 
     if (!test) {
-      return NextResponse.json({ error: "Test not found" }, { status: 404 });
+      throw Errors.notFound("Test");
     }
 
-    return NextResponse.json({ test });
-  } catch (error) {
-    console.error("Failed to update security test:", error);
-    return NextResponse.json(
-      { error: "Failed to update test" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ test });
+  }, { endpoint: "PUT /api/admin/security/tests" });
 }
 
 // DELETE - Delete a security test
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Test ID is required" }, { status: 400 });
+      throw Errors.badRequest("Test ID is required");
     }
 
     await db.delete(securityTests).where(eq(securityTests.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to delete security test:", error);
-    return NextResponse.json(
-      { error: "Failed to delete test" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/security/tests" });
 }

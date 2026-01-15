@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { orshotTemplates } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,19 +14,8 @@ interface RouteParams {
  * Get a single Orshot template preset
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
 
@@ -37,20 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .limit(1);
 
     if (!template) {
-      return NextResponse.json(
-        { error: "Template not found" },
-        { status: 404 }
-      );
+      throw Errors.notFound("Template");
     }
 
-    return NextResponse.json({ template });
-  } catch (error) {
-    console.error("Admin get orshot template error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch template" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ template });
+  }, { endpoint: "GET /api/admin/orshot-templates/[id]" });
 }
 
 /**
@@ -58,19 +38,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Update an Orshot template preset
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
     const body = await request.json();
@@ -83,10 +52,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .limit(1);
 
     if (!existingTemplate) {
-      return NextResponse.json(
-        { error: "Template not found" },
-        { status: 404 }
-      );
+      throw Errors.notFound("Template");
     }
 
     // Build update object with only provided fields
@@ -100,9 +66,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.category !== undefined) {
       const validCategories = ["social_media", "marketing", "brand_assets"];
       if (!validCategories.includes(body.category)) {
-        return NextResponse.json(
-          { error: `Category must be one of: ${validCategories.join(", ")}` },
-          { status: 400 }
+        throw Errors.badRequest(
+          `Category must be one of: ${validCategories.join(", ")}`
         );
       }
       updateData.category = body.category;
@@ -112,10 +77,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         typeof body.orshotTemplateId !== "number" ||
         body.orshotTemplateId <= 0
       ) {
-        return NextResponse.json(
-          { error: "orshotTemplateId must be a positive number" },
-          { status: 400 }
-        );
+        throw Errors.badRequest("orshotTemplateId must be a positive number");
       }
       updateData.orshotTemplateId = body.orshotTemplateId;
     }
@@ -126,9 +88,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.outputFormat !== undefined) {
       const validFormats = ["png", "jpg", "webp", "pdf"];
       if (!validFormats.includes(body.outputFormat)) {
-        return NextResponse.json(
-          { error: `Output format must be one of: ${validFormats.join(", ")}` },
-          { status: 400 }
+        throw Errors.badRequest(
+          `Output format must be one of: ${validFormats.join(", ")}`
         );
       }
       updateData.outputFormat = body.outputFormat;
@@ -141,12 +102,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .where(eq(orshotTemplates.id, id))
       .returning();
 
-    return NextResponse.json({ template: updatedTemplate });
-  } catch (error) {
-    console.error("Admin update orshot template error:", error);
-    return NextResponse.json(
-      { error: "Failed to update template" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ template: updatedTemplate });
+  }, { endpoint: "PATCH /api/admin/orshot-templates/[id]" });
 }

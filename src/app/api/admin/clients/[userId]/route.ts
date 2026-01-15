@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { users, tasks, taskFiles, taskMessages } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,19 +9,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { userId } = await params;
 
@@ -33,15 +22,12 @@ export async function DELETE(
       .limit(1);
 
     if (userToDelete.length === 0) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw Errors.notFound("User");
     }
 
     // Prevent deleting admin users
     if (userToDelete[0].role === "ADMIN") {
-      return NextResponse.json(
-        { error: "Cannot delete admin users" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Cannot delete admin users");
     }
 
     // For freelancers, unassign them from any tasks first
@@ -61,12 +47,6 @@ export async function DELETE(
     // Delete the user (cascades to sessions, accounts, notifications, creditTransactions, chatDrafts, freelancerProfiles, and tasks as client)
     await db.delete(users).where(eq(users.id, userId));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Delete user error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/clients/[userId]" });
 }

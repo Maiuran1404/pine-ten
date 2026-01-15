@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { testSchedules, testUsers } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -35,19 +35,8 @@ function calculateNextRun(frequency: string, timezone: string = "UTC"): Date {
 
 // GET - List all test schedules
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const schedules = await db
       .select({
@@ -58,36 +47,19 @@ export async function GET() {
       .leftJoin(testUsers, eq(testSchedules.testUserId, testUsers.id))
       .orderBy(desc(testSchedules.createdAt));
 
-    return NextResponse.json({
+    return successResponse({
       schedules: schedules.map((s) => ({
         ...s.schedule,
         testUser: s.testUser,
       })),
     });
-  } catch (error) {
-    console.error("Failed to fetch schedules:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch schedules" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/security/schedules" });
 }
 
 // POST - Create a new schedule
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const {
@@ -103,7 +75,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      throw Errors.badRequest("Name is required");
     }
 
     const nextRunAt = frequency !== "MANUAL"
@@ -126,37 +98,20 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ schedule }, { status: 201 });
-  } catch (error) {
-    console.error("Failed to create schedule:", error);
-    return NextResponse.json(
-      { error: "Failed to create schedule" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ schedule }, 201);
+  }, { endpoint: "POST /api/admin/security/schedules" });
 }
 
 // PUT - Update a schedule
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Schedule ID is required" }, { status: 400 });
+      throw Errors.badRequest("Schedule ID is required");
     }
 
     // Recalculate next run if frequency changed
@@ -176,50 +131,27 @@ export async function PUT(request: NextRequest) {
       .returning();
 
     if (!schedule) {
-      return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
+      throw Errors.notFound("Schedule");
     }
 
-    return NextResponse.json({ schedule });
-  } catch (error) {
-    console.error("Failed to update schedule:", error);
-    return NextResponse.json(
-      { error: "Failed to update schedule" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ schedule });
+  }, { endpoint: "PUT /api/admin/security/schedules" });
 }
 
 // DELETE - Delete a schedule
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Schedule ID is required" }, { status: 400 });
+      throw Errors.badRequest("Schedule ID is required");
     }
 
     await db.delete(testSchedules).where(eq(testSchedules.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to delete schedule:", error);
-    return NextResponse.json(
-      { error: "Failed to delete schedule" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/security/schedules" });
 }

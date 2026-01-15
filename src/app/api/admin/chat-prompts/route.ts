@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -8,19 +8,8 @@ import { eq } from "drizzle-orm";
 const CHAT_PROMPTS_KEY = "chat_prompts";
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const result = await db
       .select()
@@ -29,42 +18,22 @@ export async function GET() {
       .limit(1);
 
     if (result.length > 0) {
-      return NextResponse.json({ prompts: result[0].value });
+      return successResponse({ prompts: result[0].value });
     }
 
-    return NextResponse.json({ prompts: null });
-  } catch (error) {
-    console.error("Fetch chat prompts error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch chat prompts" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ prompts: null });
+  }, { endpoint: "GET /api/admin/chat-prompts" });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { prompts } = body;
 
     if (!prompts) {
-      return NextResponse.json(
-        { error: "Prompts are required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Prompts are required");
     }
 
     // Upsert the chat prompts
@@ -91,12 +60,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Update chat prompts error:", error);
-    return NextResponse.json(
-      { error: "Failed to update chat prompts" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "POST /api/admin/chat-prompts" });
 }

@@ -368,8 +368,14 @@ export async function POST(request: NextRequest) {
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
     let images: ScrapedImage[] = [];
 
-    // Option 1: Use Firecrawl for JS-heavy sites
-    if (useFirecrawl && firecrawl) {
+    // Check if site is unsupported by Firecrawl (non-enterprise plans)
+    const isPinterest = url.includes('pinterest.com') || url.includes('pin.it');
+    const isCosmos = url.includes('cosmos.so');
+    const isUnsupportedSite = isPinterest || isCosmos;
+    let firecrawlError: string | null = null;
+
+    // Option 1: Use Firecrawl for JS-heavy sites (not unsupported sites)
+    if (useFirecrawl && firecrawl && !isUnsupportedSite) {
       try {
         // Build extensive scroll actions to load more content
         const scrollActions: Array<{ type: "scroll"; direction: "down" } | { type: "wait"; milliseconds: number }> = [];
@@ -391,18 +397,28 @@ export async function POST(request: NextRequest) {
           console.log(`Firecrawl returned HTML with ${htmlContent.length} characters for ${url}`);
           images = extractImagesFromHtml(htmlContent, baseUrl);
           console.log(`Firecrawl extracted ${images.length} raw images from ${url}`);
-
-          // Debug: Log Pinterest-specific matches
-          if (url.includes('pinterest')) {
-            const pinterestMatches = htmlContent.match(/i\.pinimg\.com/g);
-            console.log(`Pinterest CDN references found: ${pinterestMatches?.length || 0}`);
-          }
         } else {
           console.log(`Firecrawl returned no HTML content for ${url}`);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Firecrawl error:", error);
+        // Check if it's a "website not supported" error
+        if (error && typeof error === 'object' && 'details' in error) {
+          const details = (error as { details?: { error?: string } }).details;
+          if (details?.error?.includes('not currently supported')) {
+            firecrawlError = 'This website is not supported by Firecrawl. Try using the "Paste Image URLs" tab instead.';
+          }
+        }
         // Fall back to simple fetch
+      }
+    }
+
+    // For unsupported sites, return a helpful error message
+    if (isUnsupportedSite && images.length === 0) {
+      if (isPinterest) {
+        firecrawlError = 'Pinterest requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import Pinterest images directly. You can right-click images on Pinterest and copy their URLs.';
+      } else if (isCosmos) {
+        firecrawlError = 'Cosmos.so requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import images directly. You can right-click images on Cosmos and copy their URLs.';
       }
     }
 
@@ -458,11 +474,13 @@ export async function POST(request: NextRequest) {
       totalFound: images.length,
       filtered: filteredImages.length,
       images: limitedImages,
-      firecrawlUsed: useFirecrawl && firecrawl !== null,
+      firecrawlUsed: useFirecrawl && firecrawl !== null && !isUnsupportedSite,
       firecrawlAvailable: firecrawl !== null,
+      warning: firecrawlError,
       debug: {
         rawImagesCount: images.length,
         filteredCount: filteredImages.length,
+        isUnsupportedSite,
         sources: images.reduce((acc, img) => {
           acc[img.source] = (acc[img.source] || 0) + 1;
           return acc;

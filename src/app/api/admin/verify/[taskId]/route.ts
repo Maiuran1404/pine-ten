@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { tasks, users, taskFiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -12,19 +12,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { taskId } = await params;
 
@@ -44,7 +33,7 @@ export async function GET(
       .limit(1);
 
     if (!task) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound("Task");
     }
 
     // Get client info
@@ -81,7 +70,7 @@ export async function GET(
       .from(taskFiles)
       .where(eq(taskFiles.taskId, taskId));
 
-    return NextResponse.json({
+    return successResponse({
       task: {
         ...task,
         client,
@@ -90,13 +79,7 @@ export async function GET(
         attachments: deliverables.filter((f) => !f.isDeliverable),
       },
     });
-  } catch (error) {
-    console.error("Fetch task for verification error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch task" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/verify/[taskId]" });
 }
 
 // POST - Approve or reject deliverables
@@ -104,29 +87,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { taskId } = await params;
     const body = await request.json();
     const { action, feedback } = body;
 
     if (!action || !["approve", "reject"].includes(action)) {
-      return NextResponse.json(
-        { error: "Invalid action. Must be 'approve' or 'reject'" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Invalid action. Must be 'approve' or 'reject'");
     }
 
     // Fetch the task
@@ -137,14 +106,11 @@ export async function POST(
       .limit(1);
 
     if (!task) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound("Task");
     }
 
     if (task.status !== "PENDING_ADMIN_REVIEW") {
-      return NextResponse.json(
-        { error: "Task is not pending admin review" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Task is not pending admin review");
     }
 
     // Get client and freelancer info for notifications
@@ -189,8 +155,7 @@ export async function POST(
         }
       }
 
-      return NextResponse.json({
-        success: true,
+      return successResponse({
         message: "Deliverable approved and client notified",
       });
     } else {
@@ -223,16 +188,9 @@ export async function POST(
         }
       }
 
-      return NextResponse.json({
-        success: true,
+      return successResponse({
         message: "Deliverable rejected and freelancer notified",
       });
     }
-  } catch (error) {
-    console.error("Verify deliverable error:", error);
-    return NextResponse.json(
-      { error: "Failed to process verification" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/verify/[taskId]" });
 }

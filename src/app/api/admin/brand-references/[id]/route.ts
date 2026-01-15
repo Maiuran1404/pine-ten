@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,19 +9,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
     const body = await request.json();
@@ -67,47 +56,24 @@ export async function PATCH(
       .returning();
 
     if (!updatedReference) {
-      return NextResponse.json({ error: "Reference not found" }, { status: 404 });
+      throw Errors.notFound("Reference");
     }
 
-    return NextResponse.json({ reference: updatedReference });
-  } catch (error) {
-    console.error("Admin update brand reference error:", error);
-    return NextResponse.json(
-      { error: "Failed to update brand reference" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ reference: updatedReference });
+  }, { endpoint: "PATCH /api/admin/brand-references/[id]" });
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { id } = await params;
 
     await db.delete(brandReferences).where(eq(brandReferences.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Admin delete brand reference error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete brand reference" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/brand-references/[id]" });
 }

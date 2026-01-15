@@ -1,25 +1,13 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse } from "@/lib/errors";
 import { db } from "@/db";
 import { tasks, users, taskFiles } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 
 // GET - List all tasks pending admin verification
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get all tasks pending admin review
     const pendingTasks = await db
@@ -84,12 +72,6 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ tasks: enrichedTasks });
-  } catch (error) {
-    console.error("Fetch pending verifications error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch pending verifications" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ tasks: enrichedTasks });
+  }, { endpoint: "GET /api/admin/verify" });
 }

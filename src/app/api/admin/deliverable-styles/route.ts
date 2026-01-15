@@ -1,25 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
-import { desc, eq, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Get optional filters from query params
     const { searchParams } = new URL(request.url);
@@ -51,30 +40,13 @@ export async function GET(request: NextRequest) {
           deliverableStyleReferences.displayOrder
         );
 
-    return NextResponse.json({ styles });
-  } catch (error) {
-    console.error("Admin deliverable styles error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch deliverable styles" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ styles });
+  }, { endpoint: "GET /api/admin/deliverable-styles" });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const {
@@ -90,10 +62,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name || !imageUrl || !deliverableType || !styleAxis) {
-      return NextResponse.json(
-        { error: "Name, imageUrl, deliverableType, and styleAxis are required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Name, imageUrl, deliverableType, and styleAxis are required");
     }
 
     const [newStyle] = await db
@@ -112,46 +81,23 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ style: newStyle }, { status: 201 });
-  } catch (error) {
-    console.error("Admin create deliverable style error:", error);
-    return NextResponse.json(
-      { error: "Failed to create deliverable style" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ style: newStyle }, 201);
+  }, { endpoint: "POST /api/admin/deliverable-styles" });
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Style ID is required" }, { status: 400 });
+      throw Errors.badRequest("Style ID is required");
     }
 
     await db.delete(deliverableStyleReferences).where(eq(deliverableStyleReferences.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Admin delete deliverable style error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete deliverable style" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/deliverable-styles" });
 }

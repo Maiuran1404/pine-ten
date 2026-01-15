@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import {
   securityTestRuns,
@@ -336,25 +336,14 @@ async function executeTest(
 
 // POST - Execute a test run
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { runId } = body;
 
     if (!runId) {
-      return NextResponse.json({ error: "Run ID is required" }, { status: 400 });
+      throw Errors.badRequest("Run ID is required");
     }
 
     // Get the run
@@ -364,14 +353,11 @@ export async function POST(request: NextRequest) {
       .where(eq(securityTestRuns.id, runId));
 
     if (!run) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+      throw Errors.notFound("Run");
     }
 
     if (run.status !== "PENDING" && run.status !== "RUNNING") {
-      return NextResponse.json(
-        { error: `Run is already ${run.status}` },
-        { status: 400 }
-      );
+      throw Errors.badRequest(`Run is already ${run.status}`);
     }
 
     // Mark run as started
@@ -458,7 +444,7 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(securityTestRuns.id, runId));
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       runId,
       totalTests: pendingResults.length,
@@ -467,36 +453,19 @@ export async function POST(request: NextRequest) {
       errorTests: errorCount,
       score,
     });
-  } catch (error) {
-    console.error("Failed to execute tests:", error);
-    return NextResponse.json(
-      { error: "Failed to execute tests" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/security/execute" });
 }
 
 // GET - Get execution status for a run
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const runId = searchParams.get("runId");
 
     if (!runId) {
-      return NextResponse.json({ error: "Run ID is required" }, { status: 400 });
+      throw Errors.badRequest("Run ID is required");
     }
 
     // Get run status
@@ -506,7 +475,7 @@ export async function GET(request: NextRequest) {
       .where(eq(securityTestRuns.id, runId));
 
     if (!run) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+      throw Errors.notFound("Run");
     }
 
     // Get test results with their test definitions
@@ -528,7 +497,7 @@ export async function GET(request: NextRequest) {
     // Find currently running test
     const currentTest = results.find((r) => r.result.status === "RUNNING");
 
-    return NextResponse.json({
+    return successResponse({
       run: {
         id: run.id,
         status: run.status,
@@ -562,30 +531,13 @@ export async function GET(request: NextRequest) {
         durationMs: r.result.durationMs,
       })),
     });
-  } catch (error) {
-    console.error("Failed to get execution status:", error);
-    return NextResponse.json(
-      { error: "Failed to get status" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "GET /api/admin/security/execute" });
 }
 
 // PUT - Update individual test result (for manual updates)
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const {
@@ -597,7 +549,7 @@ export async function PUT(request: NextRequest) {
     } = body;
 
     if (!resultId) {
-      return NextResponse.json({ error: "Result ID is required" }, { status: 400 });
+      throw Errors.badRequest("Result ID is required");
     }
 
     const updateData: Record<string, unknown> = {};
@@ -615,15 +567,9 @@ export async function PUT(request: NextRequest) {
       .returning();
 
     if (!result) {
-      return NextResponse.json({ error: "Result not found" }, { status: 404 });
+      throw Errors.notFound("Result");
     }
 
-    return NextResponse.json({ result });
-  } catch (error) {
-    console.error("Failed to update test result:", error);
-    return NextResponse.json(
-      { error: "Failed to update result" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ result });
+  }, { endpoint: "PUT /api/admin/security/execute" });
 }

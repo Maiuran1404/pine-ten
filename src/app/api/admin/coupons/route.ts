@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { stripe } from "@/lib/stripe";
 import { z } from "zod";
 
@@ -28,19 +28,8 @@ const updateCouponSchema = z.object({
 
 // GET - List all coupons with their promotion codes
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     // Fetch coupons from Stripe
     const coupons = await stripe.coupons.list({ limit: 100 });
@@ -86,31 +75,14 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ coupons: couponsWithCodes });
-  } catch (error) {
-    console.error("Failed to fetch coupons:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch coupons" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ coupons: couponsWithCodes });
+  }, { endpoint: "GET /api/admin/coupons" });
 }
 
 // POST - Create a new coupon with promotion code
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
 
@@ -118,10 +90,7 @@ export async function POST(request: NextRequest) {
     const parseResult = createCouponSchema.safeParse(body);
     if (!parseResult.success) {
       const firstError = parseResult.error.issues[0];
-      return NextResponse.json(
-        { error: firstError?.message || "Invalid input" },
-        { status: 400 }
-      );
+      throw Errors.badRequest(firstError?.message || "Invalid input");
     }
 
     const {
@@ -191,8 +160,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       coupon: {
         id: coupon.id,
         name: coupon.name,
@@ -206,68 +174,31 @@ export async function POST(request: NextRequest) {
           }
         : null,
     });
-  } catch (error) {
-    console.error("Failed to create coupon:", error);
-    return NextResponse.json(
-      { error: "Failed to create coupon" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/coupons" });
 }
 
 // DELETE - Delete a coupon
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const { searchParams } = new URL(request.url);
     const couponId = searchParams.get("id");
 
     if (!couponId) {
-      return NextResponse.json(
-        { error: "Coupon ID is required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("Coupon ID is required");
     }
 
     await stripe.coupons.del(couponId);
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to delete coupon:", error);
-    return NextResponse.json(
-      { error: "Failed to delete coupon" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "DELETE /api/admin/coupons" });
 }
 
 // PATCH - Update a coupon (limited - can only update name and metadata)
 export async function PATCH(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
 
@@ -275,10 +206,7 @@ export async function PATCH(request: NextRequest) {
     const parseResult = updateCouponSchema.safeParse(body);
     if (!parseResult.success) {
       const firstError = parseResult.error.issues[0];
-      return NextResponse.json(
-        { error: firstError?.message || "Invalid input" },
-        { status: 400 }
-      );
+      throw Errors.badRequest(firstError?.message || "Invalid input");
     }
 
     const { couponId, name, promotionCodeId, active } = parseResult.data;
@@ -293,12 +221,6 @@ export async function PATCH(request: NextRequest) {
       await stripe.promotionCodes.update(promotionCodeId, { active });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to update coupon:", error);
-    return NextResponse.json(
-      { error: "Failed to update coupon" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true });
+  }, { endpoint: "PATCH /api/admin/coupons" });
 }

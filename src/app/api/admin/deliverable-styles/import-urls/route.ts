@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-auth";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { classifyDeliverableStyle } from "@/lib/ai/classify-deliverable-style";
@@ -42,29 +42,14 @@ interface ImportResult {
 
 // POST: Import images from URLs (fetch, classify, and save)
 export async function POST(request: NextRequest) {
-  try {
-    // Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { urls } = body as { urls: string[] };
 
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
-      return NextResponse.json(
-        { error: "No URLs provided" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("No URLs provided");
     }
 
     // Limit to 20 URLs per request
@@ -244,47 +229,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       processed: results.length,
       successful: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
       results,
     });
-  } catch (error) {
-    console.error("URL import error:", error);
-    return NextResponse.json(
-      { error: "Failed to process URL import" },
-      { status: 500 }
-    );
-  }
+  }, { endpoint: "POST /api/admin/deliverable-styles/import-urls" });
 }
 
 // PUT: Preview/classify URLs without saving (for review step)
 export async function PUT(request: NextRequest) {
-  try {
-    // Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as { role?: string };
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  return withErrorHandling(async () => {
+    await requireAdmin();
 
     const body = await request.json();
     const { urls } = body as { urls: string[] };
 
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
-      return NextResponse.json(
-        { error: "No URLs provided" },
-        { status: 400 }
-      );
+      throw Errors.badRequest("No URLs provided");
     }
 
     // Limit to 20 URLs per request
@@ -384,15 +347,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      results,
-    });
-  } catch (error) {
-    console.error("URL preview error:", error);
-    return NextResponse.json(
-      { error: "Failed to preview URLs" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ results });
+  }, { endpoint: "PUT /api/admin/deliverable-styles/import-urls" });
 }
