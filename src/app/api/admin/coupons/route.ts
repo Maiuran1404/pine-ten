@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
+import { z } from "zod";
+
+// Validation schemas for coupon operations
+const createCouponSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  percentOff: z.number().min(1).max(100).optional(),
+  amountOff: z.number().min(1).optional(),
+  currency: z.string().length(3).default("aud").optional(),
+  duration: z.enum(["forever", "once", "repeating"]).default("forever"),
+  durationInMonths: z.number().min(1).max(36).optional(),
+  maxRedemptions: z.number().min(1).optional(),
+  code: z.string().min(3).max(25).regex(/^[A-Z0-9_-]+$/i, "Code must be alphanumeric").optional(),
+}).refine(
+  (data) => data.percentOff || data.amountOff,
+  { message: "Either percentOff or amountOff is required" }
+);
+
+const updateCouponSchema = z.object({
+  couponId: z.string().min(1, "Coupon ID is required"),
+  name: z.string().min(1).max(200).optional(),
+  promotionCodeId: z.string().optional(),
+  active: z.boolean().optional(),
+});
 
 // GET - List all coupons with their promotion codes
 export async function GET() {
@@ -90,6 +113,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Validate input with Zod schema
+    const parseResult = createCouponSchema.safeParse(body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0];
+      return NextResponse.json(
+        { error: firstError?.message || "Invalid input" },
+        { status: 400 }
+      );
+    }
+
     const {
       name,
       percentOff,
@@ -99,19 +133,7 @@ export async function POST(request: NextRequest) {
       durationInMonths,
       maxRedemptions,
       code,
-    } = body;
-
-    // Validate input
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    }
-
-    if (!percentOff && !amountOff) {
-      return NextResponse.json(
-        { error: "Either percentOff or amountOff is required" },
-        { status: 400 }
-      );
-    }
+    } = parseResult.data;
 
     // Create coupon
     const couponData: {
@@ -248,14 +270,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { couponId, name, promotionCodeId, active } = body;
 
-    if (!couponId && !promotionCodeId) {
+    // Validate input with Zod schema
+    const parseResult = updateCouponSchema.safeParse(body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0];
       return NextResponse.json(
-        { error: "Coupon ID or Promotion Code ID is required" },
+        { error: firstError?.message || "Invalid input" },
         { status: 400 }
       );
     }
+
+    const { couponId, name, promotionCodeId, active } = parseResult.data;
 
     // Update coupon name if provided
     if (couponId && name) {
