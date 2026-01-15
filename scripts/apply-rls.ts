@@ -65,6 +65,8 @@ async function applyRLS() {
     "security_test_runs",
     "security_test_results",
     "security_snapshots",
+    // Audit logging table
+    "audit_logs",
   ];
 
   try {

@@ -231,8 +231,9 @@ export default function DeliverableStylesPage() {
       const response = await fetch("/api/admin/deliverable-styles");
       if (response.ok) {
         const data = await response.json();
-        setStyles(data.styles || []);
-        const types = new Set<string>(data.styles.map((s: DeliverableStyleReference) => s.deliverableType));
+        const styles = data.styles || [];
+        setStyles(styles);
+        const types = new Set<string>(styles.map((s: DeliverableStyleReference) => s.deliverableType));
         setExpandedTypes(types);
       }
     } catch (error) {
