@@ -380,15 +380,25 @@ export async function POST(request: NextRequest) {
         }
 
         const scrapeResult = await firecrawl.scrape(url, {
-          formats: ["html"],
-          waitFor: 5000, // Wait 5 seconds for initial JS to render
+          formats: ["html", "rawHtml"],
+          waitFor: 8000, // Wait 8 seconds for initial JS to render
           actions: scrollActions,
         });
 
-        const htmlContent = scrapeResult.html;
+        // Use rawHtml first (more complete), fall back to html
+        const htmlContent = scrapeResult.rawHtml || scrapeResult.html;
         if (htmlContent) {
+          console.log(`Firecrawl returned HTML with ${htmlContent.length} characters for ${url}`);
           images = extractImagesFromHtml(htmlContent, baseUrl);
-          console.log(`Firecrawl extracted ${images.length} images from ${url}`);
+          console.log(`Firecrawl extracted ${images.length} raw images from ${url}`);
+
+          // Debug: Log Pinterest-specific matches
+          if (url.includes('pinterest')) {
+            const pinterestMatches = htmlContent.match(/i\.pinimg\.com/g);
+            console.log(`Pinterest CDN references found: ${pinterestMatches?.length || 0}`);
+          }
+        } else {
+          console.log(`Firecrawl returned no HTML content for ${url}`);
         }
       } catch (error) {
         console.error("Firecrawl error:", error);
@@ -450,6 +460,14 @@ export async function POST(request: NextRequest) {
       images: limitedImages,
       firecrawlUsed: useFirecrawl && firecrawl !== null,
       firecrawlAvailable: firecrawl !== null,
+      debug: {
+        rawImagesCount: images.length,
+        filteredCount: filteredImages.length,
+        sources: images.reduce((acc, img) => {
+          acc[img.source] = (acc[img.source] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
     });
   } catch (error) {
     console.error("Scrape error:", error);
