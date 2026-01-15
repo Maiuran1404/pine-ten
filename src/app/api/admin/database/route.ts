@@ -20,6 +20,38 @@ import {
 } from "@/db/schema";
 import { count, desc } from "drizzle-orm";
 
+// Sensitive fields that should NEVER be exposed via the API
+// These could be used for session hijacking, account takeover, etc.
+const SENSITIVE_FIELDS: Record<string, string[]> = {
+  sessions: ["token"], // Session token - would allow session hijacking
+  accounts: ["accessToken", "refreshToken", "idToken", "password"], // OAuth tokens and passwords
+  verifications: ["value"], // Verification tokens - could be used to bypass email verification
+};
+
+/**
+ * Sanitize data by removing sensitive fields
+ * This prevents accidental exposure of tokens, passwords, etc.
+ */
+function sanitizeData<T extends Record<string, unknown>>(
+  tableName: string,
+  data: T[]
+): Partial<T>[] {
+  const fieldsToRemove = SENSITIVE_FIELDS[tableName];
+  if (!fieldsToRemove || fieldsToRemove.length === 0) {
+    return data;
+  }
+
+  return data.map((row) => {
+    const sanitized = { ...row };
+    for (const field of fieldsToRemove) {
+      if (field in sanitized) {
+        delete sanitized[field];
+      }
+    }
+    return sanitized;
+  });
+}
+
 // Table configuration for DRY code
 const tableConfig = {
   users: { table: users, orderBy: users.createdAt },
@@ -106,10 +138,13 @@ export async function GET(request: NextRequest) {
       db.select().from(config.table).orderBy(desc(config.orderBy)).limit(limit).offset(offset),
     ]);
 
+    // Sanitize data to remove sensitive fields before returning
+    const sanitizedData = sanitizeData(tableName, data as Record<string, unknown>[]);
+
     return NextResponse.json({
       table: tableName,
       total: countResult[0].count,
-      data,
+      data: sanitizedData,
       limit,
       offset,
     });

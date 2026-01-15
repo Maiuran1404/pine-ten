@@ -20,6 +20,7 @@ import {
   Share2,
   PenTool,
   LayoutGrid,
+  Search,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -453,7 +454,7 @@ function DashboardContent() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
           {PROMPT_TEMPLATES.map((cat) => {
             const Icon = cat.icon;
             const colorClasses = {
@@ -478,23 +479,32 @@ function DashboardContent() {
             );
           })}
         </div>
+      </div>
 
-        {/* Continue to explore section */}
-        {styleReferences.length > 0 && (
-          <div className="w-full max-w-6xl">
-            <p className="text-sm text-muted-foreground mb-4 px-2">
-              Continue to explore...
-            </p>
+      {/* Continue to explore section - outside main container for full width gradient */}
+      {styleReferences.length > 0 && (
+        <div className="relative w-full">
+          {/* Gradient transition area */}
+          <div className="relative h-40 bg-gradient-to-b from-white via-gray-100/80 to-gray-200/60 dark:from-background dark:via-zinc-900/80 dark:to-zinc-800/60">
+            {/* Centered pill button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button className="flex items-center gap-2 px-6 py-3 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-border shadow-md text-gray-500 dark:text-muted-foreground text-sm font-medium hover:text-gray-700 dark:hover:text-foreground hover:shadow-lg transition-all">
+                <Search className="h-4 w-4" />
+                <span>Continue to explore...</span>
+              </button>
+            </div>
+          </div>
 
-            {/* Masonry Grid with Fade */}
-            <div className="relative">
+          {/* Masonry Grid */}
+          <div className="relative bg-gray-200/60 dark:bg-zinc-800/60 pb-8">
+            <div className="max-w-6xl mx-auto px-6">
               <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
-                {styleReferences.map((ref, idx) => {
+                {styleReferences.map((ref) => {
                   const variantUrls = getImageVariantUrls(ref.imageUrl);
                   return (
                     <div
                       key={ref.id}
-                      className="break-inside-avoid rounded-xl overflow-hidden bg-muted/30"
+                      className="break-inside-avoid rounded-xl overflow-hidden shadow-sm"
                     >
                       <img
                         src={variantUrls.preview}
@@ -506,13 +516,13 @@ function DashboardContent() {
                   );
                 })}
               </div>
-
-              {/* Fade overlay at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none z-10" />
             </div>
+
+            {/* Fade overlay at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-gray-200/60 via-gray-200/40 to-transparent dark:from-zinc-800/60 dark:via-zinc-800/40 pointer-events-none z-10" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog
