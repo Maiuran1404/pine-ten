@@ -6,6 +6,7 @@ import { AdminSidebar } from "@/components/admin/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
+import { useSubdomain } from "@/hooks/use-subdomain";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 interface Task {
@@ -20,6 +21,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const portal = useSubdomain();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   // Set page title for admin portal
@@ -31,14 +33,20 @@ export default function AdminLayout({
     if (!isPending && !session) {
       router.push("/login");
     }
-    // Check if user is an admin
+    // Check if user is an admin AND on the correct subdomain
     if (session?.user) {
       const user = session.user as { role?: string };
+      // Must be on superadmin subdomain to access admin pages
+      if (portal.type !== "superadmin") {
+        router.push("/dashboard");
+        return;
+      }
+      // Must have ADMIN role
       if (user.role !== "ADMIN") {
         router.push("/dashboard");
       }
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, portal.type]);
 
   // Fetch recent tasks for sidebar
   useEffect(() => {

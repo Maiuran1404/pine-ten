@@ -118,33 +118,23 @@ function LoginContent() {
   const isArtist = portal.type === "artist";
   const showSocialLogin = !isSuperadmin && !isArtist;
 
-  // Get redirect destination based on user role
-  const getRedirectUrl = (userRole?: string) => {
+  // Get redirect destination based on SUBDOMAIN (not user role)
+  // Users should be redirected to the appropriate page for the subdomain they're on
+  const getRedirectUrl = () => {
     const redirect = searchParams.get("redirect");
     if (redirect && redirect !== "/" && !redirect.includes("login")) {
       return redirect;
     }
 
-    if (userRole) {
-      switch (userRole) {
-        case "ADMIN":
-          return "/admin";
-        case "FREELANCER":
-          return "/portal";
-        case "CLIENT":
-        default:
-          return "/dashboard";
-      }
-    }
-
+    // Always use subdomain's default redirect, not role-based routing
+    // This ensures users on app.craftedstudio.ai go to /dashboard, not /admin
     return portal.defaultRedirect;
   };
 
   // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const user = session.user as { role?: string };
-      const redirectUrl = getRedirectUrl(user.role);
+      const redirectUrl = getRedirectUrl();
       router.replace(redirectUrl);
     }
   }, [session, isPending, router]);
