@@ -9,6 +9,15 @@ const COOKIE_PREFIX = "crafted";
 
 /**
  * Subdomain configuration
+ *
+ * NOTE: Role enforcement is handled at the layout/API level, not middleware.
+ * Middleware runs in Edge Runtime and cannot access the database to get user roles.
+ *
+ * Security model:
+ * 1. Cookies are isolated per subdomain (no cross-subdomain session sharing)
+ * 2. Middleware checks for valid session cookie existence
+ * 3. Layout components (e.g., /app/(admin)/layout.tsx) enforce role-based access
+ * 4. API routes check roles before processing requests
  */
 const subdomainConfig = {
   app: {

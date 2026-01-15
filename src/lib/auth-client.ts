@@ -9,7 +9,7 @@ const getAuthBaseURL = () => {
   }
 
   // Client-side: use current origin (all subdomains share the same Next.js app)
-  // Cookies are shared across subdomains via domain: .craftedstudio.ai
+  // Each subdomain has isolated sessions (cookies are NOT shared across subdomains)
   return window.location.origin;
 };
 

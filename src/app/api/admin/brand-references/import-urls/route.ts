@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { classifyBrandImage } from "@/lib/ai/classify-brand-image";
 import { createClient } from "@supabase/supabase-js";
+import { optimizeImage } from "@/lib/image/optimize";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -105,7 +106,6 @@ export async function POST(request: NextRequest) {
         // Convert to buffer and base64
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const base64 = buffer.toString("base64");
 
         // Check file size (max 10MB)
         if (buffer.length > 10 * 1024 * 1024) {
@@ -117,65 +117,79 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Determine media type
-        let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" =
-          "image/png";
-        if (contentType.includes("jpeg") || contentType.includes("jpg")) {
-          mediaType = "image/jpeg";
-        } else if (contentType.includes("gif")) {
-          mediaType = "image/gif";
-        } else if (contentType.includes("webp")) {
-          mediaType = "image/webp";
-        } else if (contentType.includes("png")) {
-          mediaType = "image/png";
-        }
+        // Optimize image - creates WebP variants (full, preview, thumbnail)
+        const variants = await optimizeImage(buffer);
+
+        // Use optimized full image for AI classification (smaller = faster)
+        const base64 = variants.full.buffer.toString("base64");
+        const mediaType = "image/webp" as const;
 
         // Classify with AI
         const classification = await classifyBrandImage(base64, mediaType);
 
-        // Generate filename from URL
+        // Generate folder name from URL
         const urlPath = parsedUrl.pathname;
         const originalFilename =
           urlPath.split("/").pop() || `imported-${Date.now()}`;
-        const cleanFilename = originalFilename.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const cleanFilename = originalFilename
+          .replace(/\.[^.]+$/, "") // Remove extension
+          .replace(/[^a-zA-Z0-9-]/g, "_");
         const timestamp = Date.now();
-        const storagePath = `${timestamp}-${cleanFilename}`;
+        const folderPath = `${timestamp}-${cleanFilename}`;
 
-        // Upload to Supabase Storage
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET_NAME)
-          .upload(storagePath, buffer, {
-            contentType: mediaType,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          // If bucket doesn't exist, try to create it
-          if (uploadError.message.includes("not found")) {
-            await supabase.storage.createBucket(BUCKET_NAME, {
-              public: true,
+        // Helper to upload a variant
+        const uploadVariant = async (
+          variantName: string,
+          variantBuffer: Buffer
+        ) => {
+          const path = `${folderPath}/${variantName}.webp`;
+          const { error } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(path, variantBuffer, {
+              contentType: "image/webp",
+              upsert: false,
             });
-            // Retry upload
-            const { error: retryError } = await supabase.storage
-              .from(BUCKET_NAME)
-              .upload(storagePath, buffer, {
-                contentType: mediaType,
-                upsert: false,
-              });
-            if (retryError) {
-              throw retryError;
-            }
-          } else {
-            throw uploadError;
-          }
-        }
 
-        // Get public URL
+          if (error) {
+            // If bucket doesn't exist, create it and retry
+            if (error.message.includes("not found")) {
+              await supabase.storage.createBucket(BUCKET_NAME, {
+                public: true,
+              });
+              const { error: retryError } = await supabase.storage
+                .from(BUCKET_NAME)
+                .upload(path, variantBuffer, {
+                  contentType: "image/webp",
+                  upsert: false,
+                });
+              if (retryError) throw retryError;
+            } else {
+              throw error;
+            }
+          }
+          return path;
+        };
+
+        // Upload all variants in parallel
+        await Promise.all([
+          uploadVariant("full", variants.full.buffer),
+          uploadVariant("preview", variants.preview.buffer),
+          uploadVariant("thumbnail", variants.thumbnail.buffer),
+        ]);
+
+        // Get public URL for full image (main imageUrl)
         const { data: urlData } = supabase.storage
           .from(BUCKET_NAME)
-          .getPublicUrl(storagePath);
+          .getPublicUrl(`${folderPath}/full.webp`);
 
         const imageUrl = urlData.publicUrl;
+
+        // Log size savings
+        const originalSize = buffer.length;
+        const optimizedSize = variants.full.size + variants.preview.size + variants.thumbnail.size;
+        console.log(
+          `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(optimizedSize / 1024).toFixed(0)}KB (${((1 - optimizedSize / originalSize) * 100).toFixed(0)}% saved)`
+        );
 
         // Insert into database
         const [newReference] = await db

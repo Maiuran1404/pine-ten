@@ -5,7 +5,7 @@ import * as schema from "@/db/schema";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-// Base domain for cookie sharing across subdomains
+// Base domain used for OAuth callbacks and trusted origins
 const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
 
 // The canonical auth URL - ALL OAuth callbacks go through this domain
@@ -131,8 +131,8 @@ export const auth = betterAuth({
       secure: isProduction,
       httpOnly: true,
       path: "/",
-      // CRITICAL: Set domain for cross-subdomain cookie sharing in production
-      ...(isProduction && { domain: `.${baseDomain}` }),
+      // NOTE: No domain set - cookies are isolated per subdomain (superadmin, app, artist)
+      // This prevents session bleeding between subdomains for security
     },
   },
   trustedOrigins,
