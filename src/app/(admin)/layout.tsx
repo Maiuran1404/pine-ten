@@ -33,20 +33,28 @@ export default function AdminLayout({
     if (!isPending && !session) {
       router.push("/login");
     }
+    // Wait for subdomain detection to complete before checking
+    if (!portal.isHydrated) {
+      return;
+    }
     // Check if user is an admin AND on the correct subdomain
     if (session?.user) {
       const user = session.user as { role?: string };
-      // Must be on superadmin subdomain to access admin pages
-      if (portal.type !== "superadmin") {
+
+      // Must have ADMIN role first
+      if (user.role !== "ADMIN") {
         router.push("/dashboard");
         return;
       }
-      // Must have ADMIN role
-      if (user.role !== "ADMIN") {
+
+      // In production, must be on superadmin subdomain to access admin pages
+      // In development (localhost without subdomain prefix), allow admin access based on role only
+      const isProduction = typeof window !== "undefined" && !window.location.hostname.includes("localhost");
+      if (isProduction && portal.type !== "superadmin") {
         router.push("/dashboard");
       }
     }
-  }, [session, isPending, router, portal.type]);
+  }, [session, isPending, router, portal.type, portal.isHydrated]);
 
   // Fetch recent tasks for sidebar
   useEffect(() => {
