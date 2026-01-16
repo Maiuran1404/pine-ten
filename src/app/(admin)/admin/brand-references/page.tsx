@@ -351,8 +351,8 @@ export default function BrandReferencesPage() {
     try {
       const response = await fetch("/api/admin/brand-references");
       if (response.ok) {
-        const data = await response.json();
-        setReferences(data.references || []);
+        const result = await response.json();
+        setReferences(result.data?.references || []);
       }
     } catch (error) {
       console.error("Failed to fetch brand references:", error);
@@ -462,9 +462,9 @@ export default function BrandReferencesPage() {
 
         if (!response.ok) throw new Error("Failed to update");
 
-        const data = await response.json();
+        const result = await response.json();
         setReferences((prev) =>
-          prev.map((r) => (r.id === editingRef.id ? data.reference : r))
+          prev.map((r) => (r.id === editingRef.id ? result.data.reference : r))
         );
         toast.success("Brand reference updated!");
       } else {
@@ -476,8 +476,8 @@ export default function BrandReferencesPage() {
 
         if (!response.ok) throw new Error("Failed to create");
 
-        const data = await response.json();
-        setReferences((prev) => [data.reference, ...prev]);
+        const result = await response.json();
+        setReferences((prev) => [result.data.reference, ...prev]);
         toast.success("Brand reference created!");
       }
 
@@ -524,12 +524,12 @@ export default function BrandReferencesPage() {
 
       if (!response.ok) throw new Error("Failed to toggle");
 
-      const data = await response.json();
+      const result = await response.json();
       setReferences((prev) =>
-        prev.map((r) => (r.id === ref.id ? data.reference : r))
+        prev.map((r) => (r.id === ref.id ? result.data.reference : r))
       );
       toast.success(
-        data.reference.isActive ? "Reference activated" : "Reference deactivated"
+        result.data.reference.isActive ? "Reference activated" : "Reference deactivated"
       );
     } catch {
       toast.error("Failed to toggle status");

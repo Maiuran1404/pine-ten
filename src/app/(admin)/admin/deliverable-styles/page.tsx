@@ -230,8 +230,8 @@ export default function DeliverableStylesPage() {
     try {
       const response = await fetch("/api/admin/deliverable-styles");
       if (response.ok) {
-        const data = await response.json();
-        const styles = data.styles || [];
+        const result = await response.json();
+        const styles = result.data?.styles || [];
         setStyles(styles);
         const types = new Set<string>(styles.map((s: DeliverableStyleReference) => s.deliverableType));
         setExpandedTypes(types);
@@ -295,9 +295,9 @@ export default function DeliverableStylesPage() {
 
         if (!response.ok) throw new Error("Failed to update");
 
-        const data = await response.json();
+        const result = await response.json();
         setStyles((prev) =>
-          prev.map((s) => (s.id === editingStyle.id ? data.style : s))
+          prev.map((s) => (s.id === editingStyle.id ? result.data.style : s))
         );
         toast.success("Deliverable style updated!");
       } else {
@@ -309,9 +309,9 @@ export default function DeliverableStylesPage() {
 
         if (!response.ok) throw new Error("Failed to create");
 
-        const data = await response.json();
-        setStyles((prev) => [data.style, ...prev]);
-        setExpandedTypes((prev) => new Set([...prev, data.style.deliverableType]));
+        const result = await response.json();
+        setStyles((prev) => [result.data.style, ...prev]);
+        setExpandedTypes((prev) => new Set([...prev, result.data.style.deliverableType]));
         toast.success("Deliverable style created!");
       }
 
@@ -354,11 +354,11 @@ export default function DeliverableStylesPage() {
 
       if (!response.ok) throw new Error("Failed to toggle");
 
-      const data = await response.json();
+      const result = await response.json();
       setStyles((prev) =>
-        prev.map((s) => (s.id === style.id ? data.style : s))
+        prev.map((s) => (s.id === style.id ? result.data.style : s))
       );
-      toast.success(data.style.isActive ? "Style activated" : "Style deactivated");
+      toast.success(result.data.style.isActive ? "Style activated" : "Style deactivated");
     } catch {
       toast.error("Failed to toggle status");
     } finally {

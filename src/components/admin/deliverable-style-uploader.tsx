@@ -106,7 +106,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
           throw new Error("Classification failed");
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
         setPendingUploads((prev) =>
           prev.map((u) =>
@@ -114,7 +114,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
               ? {
                   ...u,
                   status: "classified" as const,
-                  classification: data.classification,
+                  classification: result.data?.classification,
                 }
               : u
           )

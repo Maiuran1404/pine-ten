@@ -115,7 +115,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
           throw new Error("Classification failed");
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
         setPendingUploads((prev) =>
           prev.map((u) =>
@@ -123,7 +123,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
               ? {
                   ...u,
                   status: "classified" as const,
-                  classification: data.classification,
+                  classification: result.data?.classification,
                 }
               : u
           )
