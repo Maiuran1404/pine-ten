@@ -131,8 +131,10 @@ export const auth = betterAuth({
       secure: isProduction,
       httpOnly: true,
       path: "/",
-      // NOTE: No domain set - cookies are isolated per subdomain (superadmin, app, artist)
-      // This prevents session bleeding between subdomains for security
+      // Set domain for cookie sharing across subdomains in production
+      // Required for OAuth callback to work correctly since the state cookie
+      // needs to be readable after Google redirects back to the callback URL
+      ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },
   trustedOrigins,
