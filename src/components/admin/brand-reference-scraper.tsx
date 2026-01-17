@@ -83,7 +83,9 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
 
   // Page Scraper state
   const [pageUrl, setPageUrl] = useState("");
+  const [pageUrls, setPageUrls] = useState(""); // For bulk URL input
   const [isScrapingPage, setIsScrapingPage] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState({ current: 0, total: 0, currentUrl: "" });
   const [scrapedImages, setScrapedImages] = useState<ScrapedImage[]>([]);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [useFirecrawl, setUseFirecrawl] = useState(false);
@@ -110,7 +112,44 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
       });
   };
 
-  // Scrape a page for images
+  // Parse page URLs from textarea
+  const parsePageUrls = (input: string): string[] => {
+    return input
+      .split(/[\n,]/)
+      .map((url) => url.trim())
+      .filter((url) => {
+        try {
+          new URL(url);
+          return url.startsWith("http");
+        } catch {
+          return false;
+        }
+      });
+  };
+
+  // Scrape a single page for images
+  const scrapeSinglePage = async (url: string): Promise<ScrapedImage[]> => {
+    const response = await fetch("/api/admin/brand-references/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        useFirecrawl,
+        minSize: parseInt(minSize) || 200,
+        limit: 100,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Failed to scrape page");
+    }
+
+    const data = await response.json();
+    return data.images || [];
+  };
+
+  // Scrape a page for images (single URL)
   const handleScrapePage = async () => {
     if (!pageUrl) {
       toast.error("Please enter a URL");
@@ -120,37 +159,72 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     setIsScrapingPage(true);
     setScrapedImages([]);
     setSelectedImages(new Set());
+    setScrapeProgress({ current: 0, total: 1, currentUrl: pageUrl });
 
     try {
-      const response = await fetch("/api/admin/brand-references/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: pageUrl,
-          useFirecrawl,
-          minSize: parseInt(minSize) || 200,
-          limit: 100,
-        }),
-      });
+      const images = await scrapeSinglePage(pageUrl);
+      setScrapedImages(images);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to scrape page");
-      }
-
-      const data = await response.json();
-      setScrapedImages(data.images);
-
-      if (data.images.length === 0) {
+      if (images.length === 0) {
         toast.error("No images found on this page");
       } else {
-        toast.success(`Found ${data.images.length} images`);
+        toast.success(`Found ${images.length} images`);
         setStep("select");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to scrape page");
     } finally {
       setIsScrapingPage(false);
+      setScrapeProgress({ current: 0, total: 0, currentUrl: "" });
+    }
+  };
+
+  // Scrape multiple pages for images (bulk)
+  const handleBulkScrape = async () => {
+    const urls = parsePageUrls(pageUrls);
+    if (urls.length === 0) {
+      toast.error("No valid URLs found");
+      return;
+    }
+
+    setIsScrapingPage(true);
+    setScrapedImages([]);
+    setSelectedImages(new Set());
+
+    const allImages: ScrapedImage[] = [];
+    const seenUrls = new Set<string>();
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      setScrapeProgress({ current: i + 1, total: urls.length, currentUrl: url });
+
+      try {
+        const images = await scrapeSinglePage(url);
+        // Deduplicate images by URL
+        for (const img of images) {
+          if (!seenUrls.has(img.url)) {
+            seenUrls.add(img.url);
+            allImages.push(img);
+          }
+        }
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to scrape ${url}:`, error);
+        errorCount++;
+      }
+    }
+
+    setScrapedImages(allImages);
+    setIsScrapingPage(false);
+    setScrapeProgress({ current: 0, total: 0, currentUrl: "" });
+
+    if (allImages.length === 0) {
+      toast.error("No images found from any of the pages");
+    } else {
+      toast.success(`Found ${allImages.length} unique images from ${successCount} pages${errorCount > 0 ? ` (${errorCount} failed)` : ""}`);
+      setStep("select");
     }
   };
 
@@ -177,6 +251,35 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     setSelectedImages(new Set());
   };
 
+  // Fetch image client-side and convert to base64
+  const fetchImageAsBase64 = async (url: string): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" }> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "image/png";
+    const blob = await response.blob();
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(",")[1]; // Remove data:image/xxx;base64, prefix
+        let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/png";
+        if (contentType.includes("jpeg") || contentType.includes("jpg")) {
+          mediaType = "image/jpeg";
+        } else if (contentType.includes("gif")) {
+          mediaType = "image/gif";
+        } else if (contentType.includes("webp")) {
+          mediaType = "image/webp";
+        }
+        resolve({ base64, mediaType });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   // Start classification process
   const handleStartClassification = async () => {
     let urls: string[] = [];
@@ -201,54 +304,65 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     setIsProcessing(true);
     setProgress(0);
 
-    // Classify each image
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
+    // Process images in batches of 3 for parallel classification
+    const batchSize = 3;
+    for (let i = 0; i < urls.length; i += batchSize) {
+      const batch = urls.slice(i, i + batchSize);
 
+      // Mark batch as classifying
       setClassifiedImages((prev) =>
         prev.map((img) =>
-          img.url === url ? { ...img, status: "classifying" } : img
+          batch.includes(img.url) ? { ...img, status: "classifying" } : img
         )
       );
 
-      try {
-        const response = await fetch("/api/admin/brand-references/import-urls", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: [url] }),
-        });
+      // Process batch in parallel
+      await Promise.all(
+        batch.map(async (url) => {
+          try {
+            // Fetch image client-side and convert to base64
+            const { base64, mediaType } = await fetchImageAsBase64(url);
 
-        const data = await response.json();
-        const result = data.results?.[0];
+            // Send base64 to server for classification
+            const response = await fetch("/api/admin/brand-references/import-urls", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ images: [{ url, base64, mediaType }] }),
+            });
 
-        if (result?.success) {
-          setClassifiedImages((prev) =>
-            prev.map((img) =>
-              img.url === url
-                ? { ...img, status: "classified", classification: result.classification }
-                : img
-            )
-          );
-        } else {
-          setClassifiedImages((prev) =>
-            prev.map((img) =>
-              img.url === url
-                ? { ...img, status: "error", error: result?.error || "Classification failed" }
-                : img
-            )
-          );
-        }
-      } catch (error) {
-        setClassifiedImages((prev) =>
-          prev.map((img) =>
-            img.url === url
-              ? { ...img, status: "error", error: "Network error" }
-              : img
-          )
-        );
-      }
+            const data = await response.json();
+            const result = data.results?.[0];
 
-      setProgress(((i + 1) / urls.length) * 100);
+            if (result?.success) {
+              setClassifiedImages((prev) =>
+                prev.map((img) =>
+                  img.url === url
+                    ? { ...img, status: "classified", classification: result.classification }
+                    : img
+                )
+              );
+            } else {
+              setClassifiedImages((prev) =>
+                prev.map((img) =>
+                  img.url === url
+                    ? { ...img, status: "error", error: result?.error || "Classification failed" }
+                    : img
+                )
+              );
+            }
+          } catch (error) {
+            setClassifiedImages((prev) =>
+              prev.map((img) =>
+                img.url === url
+                  ? { ...img, status: "error", error: error instanceof Error ? error.message : "Network error" }
+                  : img
+              )
+            );
+          }
+        })
+      );
+
+      setProgress(((Math.min(i + batchSize, urls.length)) / urls.length) * 100);
     }
 
     setIsProcessing(false);
@@ -287,54 +401,72 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     let successCount = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < toUpload.length; i++) {
-      const img = toUpload[i];
+    // Process in batches of 2 (uploads are heavier than classification)
+    const batchSize = 2;
+    for (let i = 0; i < toUpload.length; i += batchSize) {
+      const batch = toUpload.slice(i, i + batchSize);
 
+      // Mark batch as uploading
       setClassifiedImages((prev) =>
         prev.map((item) =>
-          item.url === img.url ? { ...item, status: "uploading" } : item
+          batch.some((b) => b.url === item.url) ? { ...item, status: "uploading" } : item
         )
       );
 
-      try {
-        const response = await fetch("/api/admin/brand-references/import-urls", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: [img.url] }),
-        });
+      // Process batch in parallel
+      await Promise.all(
+        batch.map(async (img) => {
+          try {
+            // Fetch image client-side and convert to base64
+            const { base64, mediaType } = await fetchImageAsBase64(img.url);
 
-        const data = await response.json();
-        const result = data.results?.[0];
+            const response = await fetch("/api/admin/brand-references/import-urls", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                images: [{
+                  url: img.url,
+                  base64,
+                  mediaType,
+                  classification: img.classification,
+                }],
+              }),
+            });
 
-        if (result?.success) {
-          setClassifiedImages((prev) =>
-            prev.map((item) =>
-              item.url === img.url ? { ...item, status: "done" } : item
-            )
-          );
-          successCount++;
-        } else {
-          setClassifiedImages((prev) =>
-            prev.map((item) =>
-              item.url === img.url
-                ? { ...item, status: "error", error: result?.error || "Upload failed" }
-                : item
-            )
-          );
-          errorCount++;
-        }
-      } catch {
-        setClassifiedImages((prev) =>
-          prev.map((item) =>
-            item.url === img.url
-              ? { ...item, status: "error", error: "Network error" }
-              : item
-          )
-        );
-        errorCount++;
-      }
+            const data = await response.json();
+            const result = data.results?.[0];
 
-      setProgress(((i + 1) / toUpload.length) * 100);
+            if (result?.success) {
+              setClassifiedImages((prev) =>
+                prev.map((item) =>
+                  item.url === img.url ? { ...item, status: "done" } : item
+                )
+              );
+              successCount++;
+            } else {
+              setClassifiedImages((prev) =>
+                prev.map((item) =>
+                  item.url === img.url
+                    ? { ...item, status: "error", error: result?.error || "Upload failed" }
+                    : item
+                )
+              );
+              errorCount++;
+            }
+          } catch (error) {
+            setClassifiedImages((prev) =>
+              prev.map((item) =>
+                item.url === img.url
+                  ? { ...item, status: "error", error: error instanceof Error ? error.message : "Network error" }
+                  : item
+              )
+            );
+            errorCount++;
+          }
+        })
+      );
+
+      setProgress(((Math.min(i + batchSize, toUpload.length)) / toUpload.length) * 100);
     }
 
     setIsProcessing(false);
@@ -358,10 +490,12 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     setStep("input");
     setUrlInput("");
     setPageUrl("");
+    setPageUrls("");
     setScrapedImages([]);
     setSelectedImages(new Set());
     setClassifiedImages([]);
     setProgress(0);
+    setScrapeProgress({ current: 0, total: 0, currentUrl: "" });
   };
 
   const classifiedCount = classifiedImages.filter((img) => img.status === "classified").length;
@@ -442,20 +576,22 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
 
             <TabsContent value="scrape" className="space-y-4 mt-4">
               <div className="space-y-4">
+                {/* Single URL input */}
                 <div className="space-y-2">
-                  <Label>Page URL</Label>
+                  <Label>Single Page URL</Label>
                   <div className="flex gap-2">
                     <Input
                       value={pageUrl}
                       onChange={(e) => setPageUrl(e.target.value)}
                       placeholder="https://dribbble.com/shots/123456"
                       className="flex-1"
+                      disabled={isScrapingPage}
                     />
                     <Button
                       onClick={handleScrapePage}
                       disabled={!pageUrl || isScrapingPage}
                     >
-                      {isScrapingPage ? (
+                      {isScrapingPage && scrapeProgress.total === 1 ? (
                         <LoadingSpinner size="sm" />
                       ) : (
                         <>
@@ -467,10 +603,63 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                   </div>
                 </div>
 
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or bulk scrape</span>
+                  </div>
+                </div>
+
+                {/* Bulk URL input */}
+                <div className="space-y-2">
+                  <Label>Multiple Page URLs (one per line)</Label>
+                  <Textarea
+                    value={pageUrls}
+                    onChange={(e) => setPageUrls(e.target.value)}
+                    placeholder={`https://dribbble.com/shots/123456\nhttps://dribbble.com/shots/789012\nhttps://behance.net/gallery/123456`}
+                    rows={6}
+                    className="font-mono text-sm"
+                    disabled={isScrapingPage}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {parsePageUrls(pageUrls).length} valid URL(s) detected
+                  </p>
+                  <Button
+                    onClick={handleBulkScrape}
+                    disabled={parsePageUrls(pageUrls).length === 0 || isScrapingPage}
+                    className="w-full"
+                  >
+                    {isScrapingPage && scrapeProgress.total > 1 ? (
+                      <>
+                        <LoadingSpinner size="sm" className="mr-2" />
+                        Scraping {scrapeProgress.current}/{scrapeProgress.total}...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4 mr-2" />
+                        Scrape {parsePageUrls(pageUrls).length} Page(s)
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Progress indicator for bulk scrape */}
+                {isScrapingPage && scrapeProgress.total > 1 && (
+                  <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                    <Progress value={(scrapeProgress.current / scrapeProgress.total) * 100} />
+                    <p className="text-xs text-muted-foreground truncate">
+                      Processing: {scrapeProgress.currentUrl}
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-2">
                     <Label className="text-sm">Min size:</Label>
-                    <Select value={minSize} onValueChange={setMinSize}>
+                    <Select value={minSize} onValueChange={setMinSize} disabled={isScrapingPage}>
                       <SelectTrigger className="w-24 h-8">
                         <SelectValue />
                       </SelectTrigger>
@@ -487,6 +676,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                       id="firecrawl"
                       checked={useFirecrawl}
                       onCheckedChange={(checked) => setUseFirecrawl(checked === true)}
+                      disabled={isScrapingPage}
                     />
                     <Label htmlFor="firecrawl" className="text-sm cursor-pointer">
                       Use Firecrawl (for JS-heavy sites)
@@ -500,6 +690,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                     <li>Works with Dribbble shots, Behance projects, design blogs</li>
                     <li>Enable Firecrawl for sites that load images with JavaScript</li>
                     <li>Increase min size to filter out icons and thumbnails</li>
+                    <li>For bulk scraping, paste multiple URLs (one per line)</li>
                   </ul>
                 </div>
               </div>

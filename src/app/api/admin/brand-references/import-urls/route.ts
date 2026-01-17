@@ -33,21 +33,175 @@ interface ImportResult {
   error?: string;
 }
 
-// POST: Import images from URLs (fetch, classify, and save)
+// POST: Import images from URLs or base64 data (classify and save)
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     await requireAdmin();
 
     const body = await request.json();
-    const { urls } = body as { urls: string[] };
+    const { urls, images } = body as {
+      urls?: string[];
+      images?: Array<{
+        url: string;
+        base64: string;
+        mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+        classification?: {
+          name: string;
+          description: string;
+          toneBucket: string;
+          energyBucket: string;
+          densityBucket: string;
+          colorBucket: string;
+          colorSamples: string[];
+          confidence: number;
+        };
+      }>;
+    };
 
+    const results: ImportResult[] = [];
+
+    // Handle base64 images (client-side fetched)
+    if (images && Array.isArray(images) && images.length > 0) {
+      const imagesToProcess = images.slice(0, 5);
+
+      for (const image of imagesToProcess) {
+        try {
+          if (!image.base64 || !image.mediaType) {
+            results.push({
+              url: image.url,
+              success: false,
+              error: "Missing base64 or mediaType",
+            });
+            continue;
+          }
+
+          // Convert base64 to buffer
+          const buffer = Buffer.from(image.base64, "base64");
+
+          // Check file size (max 10MB)
+          if (buffer.length > 10 * 1024 * 1024) {
+            results.push({
+              url: image.url,
+              success: false,
+              error: "Image too large (max 10MB)",
+            });
+            continue;
+          }
+
+          // Optimize image - creates WebP variants
+          const variants = await optimizeImage(buffer);
+
+          // Use provided classification or classify with AI
+          let classification = image.classification;
+          if (!classification) {
+            const base64ForAI = variants.full.buffer.toString("base64");
+            classification = await classifyBrandImage(base64ForAI, "image/webp");
+          }
+
+          // Generate folder name
+          const urlPath = new URL(image.url).pathname;
+          const originalFilename = urlPath.split("/").pop() || `imported-${Date.now()}`;
+          const cleanFilename = originalFilename
+            .replace(/\.[^.]+$/, "")
+            .replace(/[^a-zA-Z0-9-]/g, "_");
+          const timestamp = Date.now();
+          const folderPath = `${timestamp}-${cleanFilename}`;
+
+          // Helper to upload a variant
+          const uploadVariant = async (variantName: string, variantBuffer: Buffer) => {
+            const path = `${folderPath}/${variantName}.webp`;
+            const { error } = await supabase.storage
+              .from(BUCKET_NAME)
+              .upload(path, variantBuffer, {
+                contentType: "image/webp",
+                upsert: false,
+              });
+
+            if (error) {
+              if (error.message.includes("not found")) {
+                await supabase.storage.createBucket(BUCKET_NAME, { public: true });
+                const { error: retryError } = await supabase.storage
+                  .from(BUCKET_NAME)
+                  .upload(path, variantBuffer, { contentType: "image/webp", upsert: false });
+                if (retryError) throw retryError;
+              } else {
+                throw error;
+              }
+            }
+            return path;
+          };
+
+          // Upload all variants
+          await Promise.all([
+            uploadVariant("full", variants.full.buffer),
+            uploadVariant("preview", variants.preview.buffer),
+            uploadVariant("thumbnail", variants.thumbnail.buffer),
+          ]);
+
+          const { data: urlData } = supabase.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(`${folderPath}/full.webp`);
+
+          const imageUrl = urlData.publicUrl;
+
+          // Insert into database
+          const [newReference] = await db
+            .insert(brandReferences)
+            .values({
+              name: classification.name,
+              description: classification.description,
+              imageUrl,
+              toneBucket: classification.toneBucket,
+              energyBucket: classification.energyBucket,
+              densityBucket: classification.densityBucket,
+              colorBucket: classification.colorBucket,
+              colorSamples: classification.colorSamples,
+              isActive: true,
+            })
+            .returning();
+
+          results.push({
+            url: image.url,
+            success: true,
+            data: {
+              id: newReference.id,
+              name: classification.name,
+              imageUrl,
+              classification: {
+                toneBucket: classification.toneBucket,
+                energyBucket: classification.energyBucket,
+                densityBucket: classification.densityBucket,
+                colorBucket: classification.colorBucket,
+                colorSamples: classification.colorSamples,
+                confidence: classification.confidence,
+              },
+            },
+          });
+        } catch (error) {
+          console.error(`Error processing base64 image ${image.url}:`, error);
+          results.push({
+            url: image.url,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      }
+
+      return successResponse({
+        processed: results.length,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
+        results,
+      });
+    }
+
+    // Handle URL-based import (legacy - may fail for some CDNs)
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
-      throw Errors.badRequest("No URLs provided");
+      throw Errors.badRequest("No URLs or images provided");
     }
 
     // Limit to 20 URLs per request
     const urlsToProcess = urls.slice(0, 20);
-    const results: ImportResult[] = [];
 
     for (const url of urlsToProcess) {
       try {
@@ -331,4 +485,73 @@ export async function PUT(request: NextRequest) {
 
     return successResponse({ results });
   }, { endpoint: "PUT /api/admin/brand-references/import-urls" });
+}
+
+// PATCH: Classify images from base64 data (client-side fetch to bypass CDN restrictions)
+export async function PATCH(request: NextRequest) {
+  return withErrorHandling(async () => {
+    await requireAdmin();
+
+    const body = await request.json();
+    const { images } = body as {
+      images: Array<{
+        url: string;
+        base64: string;
+        mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+      }>;
+    };
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      throw Errors.badRequest("No images provided");
+    }
+
+    // Limit to 5 images per request (classification is expensive)
+    const imagesToProcess = images.slice(0, 5);
+    const results: Array<{
+      url: string;
+      success: boolean;
+      classification?: {
+        name: string;
+        description: string;
+        toneBucket: string;
+        energyBucket: string;
+        densityBucket: string;
+        colorBucket: string;
+        colorSamples: string[];
+        confidence: number;
+      };
+      error?: string;
+    }> = [];
+
+    for (const image of imagesToProcess) {
+      try {
+        if (!image.base64 || !image.mediaType) {
+          results.push({
+            url: image.url,
+            success: false,
+            error: "Missing base64 or mediaType",
+          });
+          continue;
+        }
+
+        // Classify with AI directly from base64
+        const classification = await classifyBrandImage(image.base64, image.mediaType);
+
+        results.push({
+          url: image.url,
+          success: true,
+          classification,
+        });
+      } catch (error) {
+        console.error(`Error classifying image ${image.url}:`, error);
+        results.push({
+          url: image.url,
+          success: false,
+          error: error instanceof Error ? error.message : "Classification failed",
+        });
+      }
+    }
+
+    return successResponse({ results });
+  }, { endpoint: "PATCH /api/admin/brand-references/import-urls" });
 }
