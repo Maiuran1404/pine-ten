@@ -175,8 +175,10 @@ export default function ChatSetupPage() {
       const response = await fetch("/api/admin/chat-prompts");
       if (response.ok) {
         const data = await response.json();
-        if (data.prompts) {
-          const merged = { ...DEFAULT_PROMPTS, ...data.prompts };
+        // API returns { success: true, data: { prompts: {...} } }
+        const prompts = data.data?.prompts;
+        if (prompts) {
+          const merged = { ...DEFAULT_PROMPTS, ...prompts };
           setPrompts(merged);
           setSavedPrompts(merged);
         }
