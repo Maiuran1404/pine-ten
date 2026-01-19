@@ -195,7 +195,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <Sparkles className="w-4 h-4" />
                       <span>Designer Application</span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Join Crafted Studio</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Join Crafted</h1>
                     <p className="text-muted-foreground text-lg">
                       Tell us about yourself so we can match you with the perfect projects.
                     </p>
@@ -437,7 +437,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
 
         {/* Footer */}
         <footer className="p-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
         </footer>
       </div>
 
@@ -467,7 +467,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
               <span className="text-2xl font-bold">C</span>
             </div>
             <div>
-              <span className="text-xl font-semibold tracking-tight">Crafted Studio</span>
+              <span className="text-xl font-semibold tracking-tight">Crafted</span>
               <div className="text-sm text-white/70">Designer Portal</div>
             </div>
           </div>

@@ -1,17 +1,17 @@
 import { OpenAPIV3 } from "openapi-types";
 
 /**
- * OpenAPI 3.0 specification for Crafted Studio API
+ * OpenAPI 3.0 specification for Crafted API
  */
 export const apiSpec: OpenAPIV3.Document = {
   openapi: "3.0.0",
   info: {
-    title: "Crafted Studio API",
+    title: "Crafted API",
     version: "1.0.0",
-    description: "API documentation for Crafted Studio - a creative design platform",
+    description: "API documentation for Crafted - a creative design platform",
     contact: {
       name: "Support",
-      email: "support@craftedstudio.ai",
+      email: "support@getcrafted.ai",
     },
   },
   servers: [

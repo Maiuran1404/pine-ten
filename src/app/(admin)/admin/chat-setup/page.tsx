@@ -33,7 +33,7 @@ interface ChatPrompts {
 }
 
 const DEFAULT_PROMPTS: ChatPrompts = {
-  globalSystemPrompt: `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
+  globalSystemPrompt: `You are a design project coordinator for Crafted. Your job is to efficiently gather requirements for design tasks.
 
 WHAT YOU AUTOMATICALLY APPLY (never ask about these):
 - Brand colors, typography, logo rules, tone

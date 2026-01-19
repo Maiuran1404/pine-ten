@@ -435,7 +435,7 @@ function RegisterContent() {
 
       {/* Footer */}
       <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30">
-        <p>&copy; {new Date().getFullYear()} Crafted Studio. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </div>
   );

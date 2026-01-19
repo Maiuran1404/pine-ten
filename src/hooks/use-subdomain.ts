@@ -19,7 +19,7 @@ interface PortalConfig {
 const PORTAL_CONFIGS: Record<PortalType, Omit<PortalConfig, "isHydrated">> = {
   app: {
     type: "app",
-    name: "Crafted Studio",
+    name: "Crafted",
     description: "Client Portal",
     tagline: "Professional design on demand",
     accentColor: "from-violet-600 to-indigo-600",
@@ -29,7 +29,7 @@ const PORTAL_CONFIGS: Record<PortalType, Omit<PortalConfig, "isHydrated">> = {
   },
   artist: {
     type: "artist",
-    name: "Crafted Studio",
+    name: "Crafted",
     description: "Artist Portal",
     tagline: "Where creativity meets opportunity",
     accentColor: "from-emerald-600 to-teal-600",
@@ -39,7 +39,7 @@ const PORTAL_CONFIGS: Record<PortalType, Omit<PortalConfig, "isHydrated">> = {
   },
   superadmin: {
     type: "superadmin",
-    name: "Crafted Studio",
+    name: "Crafted",
     description: "Admin Console",
     tagline: "Manage your platform",
     accentColor: "from-rose-600 to-orange-600",
@@ -49,7 +49,7 @@ const PORTAL_CONFIGS: Record<PortalType, Omit<PortalConfig, "isHydrated">> = {
   },
   default: {
     type: "default",
-    name: "Crafted Studio",
+    name: "Crafted",
     description: "Welcome",
     tagline: "Professional design on demand",
     accentColor: "from-gray-800 to-gray-900",

@@ -9,7 +9,7 @@ export async function GET() {
 
     // Try to send a test email to the admin
     const result = await sendEmail({
-      to: user.email || "maiuran@craftedstudio.ai",
+      to: user.email || "maiuran@getcrafted.ai",
       subject: "Test Email from Crafted",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

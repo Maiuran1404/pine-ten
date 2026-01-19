@@ -18,39 +18,39 @@ const formatPrice = (price: number) => {
 
 const creditPackages = [
   {
-    id: "credits_5",
+    id: "credits_50",
     name: "Starter",
-    credits: 5,
+    credits: 50,
     price: 245,
-    pricePerCredit: 49,
-    description: "Perfect for trying out",
+    pricePerCredit: 4.9,
+    description: "5 designs or 1 ad campaign",
   },
   {
-    id: "credits_10",
+    id: "credits_100",
     name: "Standard",
-    credits: 10,
+    credits: 100,
     price: 490,
-    pricePerCredit: 49,
-    description: "Great for small projects",
+    pricePerCredit: 4.9,
+    description: "10 designs or 3 video ads",
     popular: true,
   },
   {
-    id: "credits_25",
+    id: "credits_250",
     name: "Professional",
-    credits: 25,
+    credits: 250,
     price: 1164,
-    pricePerCredit: 46.55,
+    pricePerCredit: 4.66,
     originalPrice: 1225,
-    description: "Save 5%",
+    description: "Save 5% - Month of content",
   },
   {
-    id: "credits_50",
+    id: "credits_500",
     name: "Business",
-    credits: 50,
+    credits: 500,
     price: 2205,
-    pricePerCredit: 44.1,
+    pricePerCredit: 4.41,
     originalPrice: 2450,
-    description: "Save 10%",
+    description: "Save 10% - Full brand refresh",
   },
 ];
 
@@ -68,7 +68,7 @@ export function CreditsPurchaseDialog({
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [credits, setCredits] = useState(initialCredits ?? 0);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(
-    "credits_10"
+    "credits_100"
   );
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export function CreditsPurchaseDialog({
 
   const getCreditColor = () => {
     if (credits === 0) return "text-red-500";
-    if (credits <= 2) return "text-yellow-500";
+    if (credits <= 20) return "text-yellow-500";
     return "text-emerald-500";
   };
 

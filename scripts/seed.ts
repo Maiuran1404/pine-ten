@@ -505,7 +505,7 @@ async function seed() {
         console.log(`║  Email:    ${adminEmail.padEnd(35)}║`);
         console.log(`║  Password: ${adminPassword.padEnd(35)}║`);
         console.log("╠════════════════════════════════════════════════╣");
-        console.log("║  Login at: superadmin.craftedstudio.ai/login   ║");
+        console.log("║  Login at: superadmin.getcrafted.ai/login       ║");
         console.log("╚════════════════════════════════════════════════╝");
         console.log("");
         console.log("⚠️  IMPORTANT: Store these credentials securely!");

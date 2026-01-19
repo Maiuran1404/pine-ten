@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 const isProduction = process.env.NODE_ENV === "production";
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai";
 
 // Cookie prefix must match auth.ts config
 const COOKIE_PREFIX = "crafted";

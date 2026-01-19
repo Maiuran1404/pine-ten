@@ -14,12 +14,12 @@ export const config = {
   app: {
     name: requireEnv("NEXT_PUBLIC_APP_NAME", "Crafted"),
     url: requireEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
-    baseDomain: process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai",
+    baseDomain: process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai",
   },
   credits: {
-    pricePerCredit: 49, // USD
+    pricePerCredit: 4.9, // USD (1 credit = $5)
     currency: "USD",
-    lowBalanceThreshold: 2, // Warn when below this
+    lowBalanceThreshold: 20, // Warn when below this (was 2 before 10x inflation)
   },
   tasks: {
     defaultMaxRevisions: 2,
@@ -63,26 +63,26 @@ export const defaultTaskCategories = [
     slug: "static-ads",
     description:
       "Static image advertisements for social media, display, and print",
-    baseCredits: 1,
+    baseCredits: 10,
   },
   {
     name: "Video/Motion Graphics",
     slug: "video-motion",
     description: "Animated content, video ads, and motion graphics",
-    baseCredits: 3,
+    baseCredits: 30,
   },
   {
     name: "Social Media Content",
     slug: "social-media",
     description: "Social media posts, stories, and carousel content",
-    baseCredits: 1,
+    baseCredits: 10,
   },
   {
     name: "UI/UX Design",
     slug: "ui-ux",
     description:
       "User interface and experience design for apps, websites, and digital products",
-    baseCredits: 5,
+    baseCredits: 50,
   },
 ] as const;
 

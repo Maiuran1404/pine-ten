@@ -46,35 +46,35 @@ export function getWebhookSecret(): string {
   return secret;
 }
 
-// Credit packages for purchase
+// Credit packages for purchase (10x credits, same price)
 export const creditPackages = [
-  {
-    id: "credits_5",
-    name: "5 Credits",
-    credits: 5,
-    price: 5 * config.credits.pricePerCredit * 100, // in cents
-    description: "Perfect for trying out the service",
-  },
-  {
-    id: "credits_10",
-    name: "10 Credits",
-    credits: 10,
-    price: 10 * config.credits.pricePerCredit * 100,
-    description: "Great for small projects",
-    popular: true,
-  },
-  {
-    id: "credits_25",
-    name: "25 Credits",
-    credits: 25,
-    price: 25 * config.credits.pricePerCredit * 100 * 0.95, // 5% discount
-    description: "Save 5% - Best for regular use",
-  },
   {
     id: "credits_50",
     name: "50 Credits",
     credits: 50,
-    price: 50 * config.credits.pricePerCredit * 100 * 0.9, // 10% discount
+    price: 50 * config.credits.pricePerCredit * 100, // in cents (~$245)
+    description: "Perfect for trying out the service",
+  },
+  {
+    id: "credits_100",
+    name: "100 Credits",
+    credits: 100,
+    price: 100 * config.credits.pricePerCredit * 100, // (~$490)
+    description: "Great for small projects",
+    popular: true,
+  },
+  {
+    id: "credits_250",
+    name: "250 Credits",
+    credits: 250,
+    price: 250 * config.credits.pricePerCredit * 100 * 0.95, // 5% discount (~$1164)
+    description: "Save 5% - Best for regular use",
+  },
+  {
+    id: "credits_500",
+    name: "500 Credits",
+    credits: 500,
+    price: 500 * config.credits.pricePerCredit * 100 * 0.9, // 10% discount (~$2205)
     description: "Save 10% - Best value for teams",
   },
 ] as const;

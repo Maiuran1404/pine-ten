@@ -69,14 +69,14 @@ async function clearAuthTables() {
     console.log("\n✅ Database cleared successfully!");
     console.log("\nNext steps:");
     console.log("1. Run: pnpm db:seed (to re-create admin user and seed data)");
-    console.log("2. Clear your browser cookies for craftedstudio.ai");
+    console.log("2. Clear your browser cookies for getcrafted.ai");
     console.log("3. Deploy to Vercel");
     console.log("\n=== Required Vercel Environment Variables ===");
-    console.log("  NEXT_PUBLIC_APP_URL = https://app.craftedstudio.ai");
-    console.log("  NEXT_PUBLIC_BASE_DOMAIN = craftedstudio.ai");
+    console.log("  NEXT_PUBLIC_APP_URL = https://app.getcrafted.ai");
+    console.log("  NEXT_PUBLIC_BASE_DOMAIN = getcrafted.ai");
     console.log("\n=== Required Google OAuth Console Settings ===");
     console.log("Authorized redirect URI:");
-    console.log("  https://app.craftedstudio.ai/api/auth/callback/google");
+    console.log("  https://app.getcrafted.ai/api/auth/callback/google");
 
   } catch (error) {
     console.error("Error clearing database:", error);

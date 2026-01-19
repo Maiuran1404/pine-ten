@@ -185,7 +185,7 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
         <div className="px-2 py-2">
           <p className="text-xs opacity-50">Need help?</p>
           <a
-            href="mailto:maiuran@craftedstudio.ai?subject=Support Request"
+            href="mailto:maiuran@getcrafted.ai?subject=Support Request"
             className="text-xs opacity-70 hover:opacity-100 underline underline-offset-4"
           >
             Contact support

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiSpec } from "@/lib/api-spec";
 
 const isProduction = process.env.NODE_ENV === "production";
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai";
 
 // Allowed origins for CORS
 const allowedOrigins = isProduction

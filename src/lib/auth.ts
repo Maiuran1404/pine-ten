@@ -6,7 +6,7 @@ import * as schema from "@/db/schema";
 const isProduction = process.env.NODE_ENV === "production";
 
 // Base domain used for OAuth callbacks and trusted origins
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "craftedstudio.ai";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai";
 
 // The canonical auth URL - ALL OAuth callbacks go through this domain
 // This MUST match what's registered in Google OAuth console

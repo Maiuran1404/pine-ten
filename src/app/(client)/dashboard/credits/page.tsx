@@ -13,39 +13,39 @@ const formatPrice = (price: number) => {
 
 const creditPackages = [
   {
-    id: "credits_5",
+    id: "credits_50",
     name: "Starter",
-    credits: 5,
+    credits: 50,
     price: 245,
-    pricePerCredit: 49,
-    description: "Perfect for trying out the service",
+    pricePerCredit: 4.90,
+    description: "5 social media designs or 1 ad campaign",
   },
   {
-    id: "credits_10",
+    id: "credits_100",
     name: "Standard",
-    credits: 10,
+    credits: 100,
     price: 490,
-    pricePerCredit: 49,
-    description: "Great for small projects",
+    pricePerCredit: 4.90,
+    description: "10 designs or 3 video ads",
     popular: true,
   },
   {
-    id: "credits_25",
+    id: "credits_250",
     name: "Professional",
-    credits: 25,
+    credits: 250,
     price: 1164,
-    pricePerCredit: 46.55,
+    pricePerCredit: 4.66,
     originalPrice: 1225,
-    description: "Save 5% - Best for regular use",
+    description: "Save 5% - A month of content",
   },
   {
-    id: "credits_50",
+    id: "credits_500",
     name: "Business",
-    credits: 50,
+    credits: 500,
     price: 2205,
-    pricePerCredit: 44.10,
+    pricePerCredit: 4.41,
     originalPrice: 2450,
-    description: "Save 10% - Best value for teams",
+    description: "Save 10% - Full brand refresh",
   },
 ];
 
@@ -58,7 +58,7 @@ export default function CreditsPage() {
 
   const getCreditColor = () => {
     if (currentCredits === 0) return "text-red-500";
-    if (currentCredits <= 2) return "text-yellow-500";
+    if (currentCredits <= 20) return "text-yellow-500";
     return "text-emerald-500";
   };
 
@@ -110,7 +110,7 @@ export default function CreditsPage() {
             <span className={cn("text-5xl font-bold", getCreditColor())}>{currentCredits}</span>
             <span className="text-muted-foreground">credits</span>
           </div>
-          {currentCredits <= 2 && (
+          {currentCredits <= 20 && (
             <p className="text-sm text-red-500 mt-3">
               Your balance is low. Purchase more credits to continue creating tasks.
             </p>
@@ -178,10 +178,65 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      {/* What You Get */}
+      {/* What Credits Get You */}
       <div className="rounded-xl overflow-hidden border border-border bg-card">
         <div className="p-5 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">What&apos;s Included</h2>
+          <h2 className="text-sm font-medium text-foreground">What Your Credits Get You</h2>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl font-bold text-primary">50</span>
+                <span className="text-sm text-muted-foreground">credits</span>
+              </div>
+              <ul className="space-y-1.5 text-sm text-foreground">
+                <li>5 social media posts with variants</li>
+                <li>1 complete ad campaign (5 concepts)</li>
+                <li>1 simple landing page design</li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl font-bold text-primary">100</span>
+                <span className="text-sm text-muted-foreground">credits</span>
+              </div>
+              <ul className="space-y-1.5 text-sm text-foreground">
+                <li>10 social media designs</li>
+                <li>3 animated video ads</li>
+                <li>2 landing pages or 1 small website</li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl font-bold text-primary">250</span>
+                <span className="text-sm text-muted-foreground">credits</span>
+              </div>
+              <ul className="space-y-1.5 text-sm text-foreground">
+                <li>A full month of social content</li>
+                <li>Complete multi-platform ad campaign</li>
+                <li>Medium-sized app or website design</li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl font-bold text-primary">500</span>
+                <span className="text-sm text-muted-foreground">credits</span>
+              </div>
+              <ul className="space-y-1.5 text-sm text-foreground">
+                <li>Full brand refresh with all assets</li>
+                <li>Quarterly content calendar</li>
+                <li>Complete app design with all screens</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* What's Included */}
+      <div className="rounded-xl overflow-hidden border border-border bg-card">
+        <div className="p-5 border-b border-border">
+          <h2 className="text-sm font-medium text-foreground">Every Task Includes</h2>
         </div>
         <div className="p-5">
           <ul className="space-y-3">
