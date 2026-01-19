@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Save,
   Building2,
   Palette,
@@ -24,6 +36,7 @@ import {
   Copy,
   Check,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,10 +93,12 @@ const COLOR_PRESETS = {
 };
 
 export default function BrandPage() {
+  const router = useRouter();
   const [brand, setBrand] = useState<BrandData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isRescanning, setIsRescanning] = useState(false);
+  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("company");
 
@@ -173,6 +188,25 @@ export default function BrandPage() {
     toast.success("Color copied to clipboard");
   };
 
+  const handleRedoOnboarding = async () => {
+    setIsResettingOnboarding(true);
+    try {
+      const response = await fetch("/api/brand/reset-onboarding", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reset onboarding");
+      }
+
+      toast.success("Redirecting to onboarding...");
+      router.push("/onboarding");
+    } catch {
+      toast.error("Failed to reset onboarding");
+      setIsResettingOnboarding(false);
+    }
+  };
+
   const updateField = (field: keyof BrandData, value: unknown) => {
     setBrand((prev) => (prev ? { ...prev, [field]: value } : null));
   };
@@ -253,6 +287,38 @@ export default function BrandPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isResettingOnboarding}
+                  >
+                    {isResettingOnboarding ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Redo onboarding
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Redo brand onboarding?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will reset your current brand settings and take you through the onboarding process again. Your existing brand data will be replaced with the new information you provide.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRedoOnboarding}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               {brand.website && (
                 <Button
                   variant="outline"
