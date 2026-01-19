@@ -16,26 +16,58 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Save, RotateCcw, Info, MessageSquare, Video, ImageIcon, Sparkles } from "lucide-react";
+import { Save, RotateCcw, Info, MessageSquare, Video, ImageIcon, Sparkles, Palette, Wand2 } from "lucide-react";
+
+interface CategoryPrompts {
+  systemPrompt: string;
+  decisionTree: string;
+}
 
 interface ChatPrompts {
-  systemPrompt: string;
-  staticAdsTree: string;
-  dynamicAdsTree: string;
-  socialMediaTree: string;
-  creditGuidelines: string;
+  globalSystemPrompt: string;
+  socialMediaContent: CategoryPrompts;
+  socialMediaAds: CategoryPrompts;
+  videoEdits: CategoryPrompts;
+  branding: CategoryPrompts;
+  custom: CategoryPrompts;
 }
 
 const DEFAULT_PROMPTS: ChatPrompts = {
-  systemPrompt: `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
+  globalSystemPrompt: `You are a design project coordinator for Crafted Studio. Your job is to efficiently gather requirements for design tasks.
 
 WHAT YOU AUTOMATICALLY APPLY (never ask about these):
 - Brand colors, typography, logo rules, tone
 - The brand's visual style (minimal/bold/editorial/playful)
 - Known do/don't rules from Brand DNA
-- Default export formats based on channel`,
+- Default export formats based on channel
 
-  staticAdsTree: `=== STATIC ADS DECISION TREE ===
+FIRST QUESTION: Always start by asking "What would you like to create today?"
+Options: Social Media Content, Social Media Ads, Video Edits, Branding, Something Custom`,
+
+  socialMediaContent: {
+    systemPrompt: `You are helping create organic social media content. Focus on engaging, shareable content that builds brand presence and community engagement.`,
+    decisionTree: `=== SOCIAL MEDIA CONTENT DECISION TREE ===
+
+Q1 - CONTENT TYPE: "What type of social content do you need?"
+Options: Feed posts, Stories, Carousel, Mix of everything
+
+Q2 - PLATFORM: "Which platform?"
+Options: Instagram, LinkedIn, Twitter/X, TikTok, Multiple platforms
+
+Q3 - QUANTITY: "How many pieces?"
+Options: Single post, Small batch (3-5), Weekly pack (7+), Monthly calendar
+
+Q4 - THEME/TOPIC: "What's the main focus?"
+Options: Product/service highlight, Educational/tips, Behind the scenes, Promotional/sale, Brand awareness
+
+BRIEF STATUS:
+🟢 GREEN - All info collected → Ready to produce
+🟡 YELLOW - Missing specifics → Can start with best guess`,
+  },
+
+  socialMediaAds: {
+    systemPrompt: `You are helping create paid social media advertisements. Focus on conversion-driven content with clear CTAs and measurable goals.`,
+    decisionTree: `=== SOCIAL MEDIA ADS DECISION TREE ===
 
 STEP 1 - THE 3 CORE QUESTIONS (always ask these in order):
 
@@ -71,23 +103,28 @@ BRIEF STATUS:
 🟢 GREEN - Goal ✓, Channel ✓, What to show ✓ → "Perfect. That's all I need."
 🟡 YELLOW - Goal is demo/sell but promise unclear → Ask or make best guess
 🔴 RED - Missing goal or channel → "One tiny thing before we go."`,
+  },
 
-  dynamicAdsTree: `=== DYNAMIC ADS / VIDEO DECISION TREE ===
+  videoEdits: {
+    systemPrompt: `You are helping create video content including motion graphics, video ads, and video edits. Focus on engaging motion that captures attention.`,
+    decisionTree: `=== VIDEO EDITS DECISION TREE ===
 
 OPENER: "Got it. Since I already have your Brand DNA, this is going to be quick. Give me 2-4 taps and I'll send a clean brief to production. I'll keep everything on-brand — motion included."
 
 STEP 1 - THE 2 MANDATORY QUESTIONS:
 
-Q1 - GOAL: "What do you want these ads to do?"
-Options: Get signups, Book a demo, Sell something, Bring people back (retargeting), Just get attention
+Q1 - GOAL: "What do you want this video to do?"
+Options: Get signups, Book a demo, Sell something, Bring people back (retargeting), Just get attention, Explain/educate
 
-Q2 - CHANNEL: "Where are these going?"
-Options: LinkedIn, Instagram / Facebook, TikTok / Reels
+Q2 - CHANNEL: "Where is this going?"
+Options: LinkedIn, Instagram / Facebook, TikTok / Reels, YouTube, Website
 
 AUTO-SET FORMATS:
 - LinkedIn: 1:1 + 4:5
 - Instagram/Facebook (Meta): 1:1 + 4:5
 - TikTok/Reels: 9:16
+- YouTube: 16:9
+- Website: 16:9
 
 STEP 2 - MOTION DIRECTION:
 
@@ -108,49 +145,61 @@ IF Motion = "Product Spotlight":
 Q4b - "Which part of the product should we spotlight?"
 Options: Onboarding, Main feature, Dashboard/results, Automation/magic moment, You pick
 
-IF Goal = "Bring people back" (retargeting):
-Q4c - "Who are we retargeting?"
-Options: Visited site, Started signup, Saw pricing, Watched demo, You pick
-
-Q4d - "What's the next step for them?"
-Options: Start trial, Book demo, Finish signup, Go to pricing, Learn more
-
-STEP 4 - OPTIONAL BOOST:
-Ask: "Want to make these hit harder? Two quick taps."
-BOOST 1 - PROOF: Customer logos, A metric/number, A quote, None yet
-BOOST 2 - OBJECTION: Too expensive, Too complex, Don't trust it, Already have a solution, None
-
 BRIEF STATUS:
 🟢 GREEN - Goal ✓, Channel ✓, Motion direction ✓ → "Perfect. We're moving."
 🟡 YELLOW - Missing promise or product highlight → "Want to answer or should I decide?"
 🔴 RED - Missing goal or channel → "One tiny thing before we go."`,
+  },
 
-  socialMediaTree: `=== SOCIAL MEDIA CONTENT TREE ===
+  branding: {
+    systemPrompt: `You are helping with branding projects including logos, brand guidelines, visual identity, and brand collateral.`,
+    decisionTree: `=== BRANDING DECISION TREE ===
 
-Q1 - CONTENT TYPE: "What type of social content do you need?"
-Options: Feed posts, Stories, Carousel, Mix of everything
+Q1 - PROJECT TYPE: "What branding work do you need?"
+Options: Logo design, Brand guidelines, Visual identity refresh, Brand collateral, Full rebrand
 
-Q2 - PLATFORM: "Which platform?"
-Options: Instagram, LinkedIn, Twitter/X, TikTok, Multiple platforms
+Q2 - SCOPE: "What's the scope of this project?"
+Options: Single deliverable, Small package (2-3 items), Comprehensive package
 
-Q3 - QUANTITY: "How many pieces?"
-Options: Single post, Small batch (3-5), Weekly pack (7+), Monthly calendar
+Q3 - EXISTING ASSETS: "Do you have existing brand assets?"
+Options: Starting from scratch, Have some basics (logo, colors), Have full brand guidelines
 
-Q4 - THEME/TOPIC: "What's the main focus?"
-Options: Product/service highlight, Educational/tips, Behind the scenes, Promotional/sale, Brand awareness
+Q4 - TIMELINE: "How urgent is this?"
+Options: Standard timeline, Need it soon, Rush delivery
+
+Q5 - STYLE DIRECTION: "What style direction are you thinking?"
+Options: Minimal & clean, Bold & vibrant, Classic & professional, Modern & edgy, Not sure — show me options
 
 BRIEF STATUS:
-🟢 GREEN - All info collected → Ready to produce
-🟡 YELLOW - Missing specifics → Can start with best guess`,
+🟢 GREEN - Project type ✓, Scope ✓, Style ✓ → Ready to brief
+🟡 YELLOW - Missing style direction → Can explore options
+🔴 RED - Missing project type or scope → Need more info`,
+  },
 
-  creditGuidelines: `Credit & delivery guidelines:
-- Static ad set (5 concepts + 2 variants each): 2-3 credits, 3 business days
-- Simple single ad: 1 credit, 2 business days
-- Complex multi-format campaign: 3-4 credits, 3 business days
-- Dynamic/video ads (3 concepts + 2 variants): 4-5 credits, 5 business days
-- Short video (15-30 sec): 3 credits, 5 business days
-- Longer video (30-60 sec): 5 credits, 7 business days
-- Social media content pack: 2-3 credits, 3 business days`,
+  custom: {
+    systemPrompt: `You are helping with a custom design project. Gather all necessary details to understand the unique requirements.`,
+    decisionTree: `=== CUSTOM PROJECT DECISION TREE ===
+
+Q1 - PROJECT DESCRIPTION: "What would you like us to create?"
+(Open-ended response)
+
+Q2 - USE CASE: "Where/how will this be used?"
+Options: Print, Digital, Presentation, Website, Marketing campaign, Other
+
+Q3 - DELIVERABLES: "What files/formats do you need?"
+Options: Design files (Figma/PSD), Export files (PNG/JPG/PDF), Both, Not sure
+
+Q4 - REFERENCE: "Do you have any examples or references?"
+Options: Yes, I'll share them, No references, Let me describe what I'm thinking
+
+Q5 - TIMELINE: "When do you need this?"
+Options: Standard timeline, Need it soon, Flexible
+
+BRIEF STATUS:
+🟢 GREEN - Clear description ✓, Use case ✓ → Ready to scope
+🟡 YELLOW - Need more details → Ask clarifying questions
+🔴 RED - Unclear request → Need more information`,
+  },
 };
 
 export default function ChatSetupPage() {
@@ -215,8 +264,22 @@ export default function ChatSetupPage() {
     toast.info("Reset to default prompts (not saved yet)");
   };
 
-  const updatePrompt = (key: keyof ChatPrompts, value: string) => {
-    setPrompts((prev) => ({ ...prev, [key]: value }));
+  const updateGlobalPrompt = (value: string) => {
+    setPrompts((prev) => ({ ...prev, globalSystemPrompt: value }));
+  };
+
+  const updateCategoryPrompt = (
+    category: keyof Omit<ChatPrompts, "globalSystemPrompt">,
+    field: keyof CategoryPrompts,
+    value: string
+  ) => {
+    setPrompts((prev) => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [field]: value,
+      },
+    }));
   };
 
   if (isLoading) {
@@ -269,26 +332,40 @@ export default function ChatSetupPage() {
             When a client starts a chat, the AI first asks what type of content they want to create,
             then follows the appropriate decision tree based on their choice.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <ImageIcon className="h-5 w-5 text-blue-400 mt-0.5" />
+              <MessageSquare className="h-5 w-5 text-blue-400 mt-0.5" />
               <div>
-                <p className="font-medium text-sm">Static Ads</p>
-                <p className="text-xs text-muted-foreground">Graphics, banners, social images</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <Video className="h-5 w-5 text-green-400 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Dynamic/Video</p>
-                <p className="text-xs text-muted-foreground">Motion graphics, video ads</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <MessageSquare className="h-5 w-5 text-orange-400 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Social Media</p>
+                <p className="font-medium text-sm">Social Content</p>
                 <p className="text-xs text-muted-foreground">Posts, stories, carousels</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+              <ImageIcon className="h-5 w-5 text-green-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Social Ads</p>
+                <p className="text-xs text-muted-foreground">Paid social campaigns</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+              <Video className="h-5 w-5 text-purple-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Video Edits</p>
+                <p className="text-xs text-muted-foreground">Motion & video content</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+              <Palette className="h-5 w-5 text-orange-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Branding</p>
+                <p className="text-xs text-muted-foreground">Logos & brand assets</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+              <Wand2 className="h-5 w-5 text-pink-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Custom</p>
+                <p className="text-xs text-muted-foreground">Unique projects</p>
               </div>
             </div>
           </div>
@@ -297,12 +374,13 @@ export default function ChatSetupPage() {
 
       {/* Decision Tree Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="static">Static Ads</TabsTrigger>
-          <TabsTrigger value="dynamic">Video/Motion</TabsTrigger>
-          <TabsTrigger value="social">Social Media</TabsTrigger>
-          <TabsTrigger value="credits">Credits</TabsTrigger>
+          <TabsTrigger value="social-content">Social Content</TabsTrigger>
+          <TabsTrigger value="social-ads">Social Ads</TabsTrigger>
+          <TabsTrigger value="video">Video Edits</TabsTrigger>
+          <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="custom">Custom</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -310,20 +388,20 @@ export default function ChatSetupPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                System Prompt
+                Global System Prompt
               </CardTitle>
               <CardDescription>
-                The base system prompt that sets the AI&apos;s personality and automatic behaviors
+                The base system prompt that sets the AI&apos;s personality and automatic behaviors across all categories
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <Label>System Prompt</Label>
                 <Textarea
-                  value={prompts.systemPrompt}
-                  onChange={(e) => updatePrompt("systemPrompt", e.target.value)}
+                  value={prompts.globalSystemPrompt}
+                  onChange={(e) => updateGlobalPrompt(e.target.value)}
                   className="min-h-[200px] font-mono text-sm"
-                  placeholder="Enter the system prompt..."
+                  placeholder="Enter the global system prompt..."
                 />
                 <p className="text-xs text-muted-foreground">
                   This prompt is always included at the start of every conversation. It sets the AI&apos;s role and what it should automatically apply.
@@ -341,24 +419,32 @@ export default function ChatSetupPage() {
               <div className="p-4 rounded-lg bg-muted/50">
                 <h4 className="font-medium mb-2">Step 0: Initial Question</h4>
                 <p className="text-sm text-muted-foreground mb-2">
-                  The AI first asks: <strong>&quot;What would you like to create?&quot;</strong>
+                  The AI first asks: <strong>&quot;What would you like to create today?&quot;</strong>
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">Static ads / graphics</Badge>
-                  <Badge variant="outline">Video / motion content</Badge>
-                  <Badge variant="outline">Social media content</Badge>
-                  <Badge variant="outline">Something else</Badge>
+                  <Badge variant="outline">Social Media Content</Badge>
+                  <Badge variant="outline">Social Media Ads</Badge>
+                  <Badge variant="outline">Video Edits</Badge>
+                  <Badge variant="outline">Branding</Badge>
+                  <Badge variant="outline">Custom</Badge>
                 </div>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h4 className="font-medium mb-2">Step 1: Follow Decision Tree</h4>
+                <h4 className="font-medium mb-2">Step 1: Apply Category System Prompt</h4>
                 <p className="text-sm text-muted-foreground">
-                  Based on the user&apos;s choice, the AI follows the appropriate decision tree
-                  (Static Ads, Dynamic/Video, or Social Media) asking targeted questions.
+                  Based on the user&apos;s choice, the AI applies the category-specific system prompt
+                  to set the right context for the conversation.
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h4 className="font-medium mb-2">Step 2: Generate Brief</h4>
+                <h4 className="font-medium mb-2">Step 2: Follow Decision Tree</h4>
+                <p className="text-sm text-muted-foreground">
+                  The AI follows the category&apos;s decision tree, asking targeted questions
+                  to gather all required information.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-2">Step 3: Generate Brief</h4>
                 <p className="text-sm text-muted-foreground">
                   Once enough information is gathered, the AI generates a task brief summary
                   and asks if the client wants to tweak anything before submitting.
@@ -368,101 +454,186 @@ export default function ChatSetupPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="static" className="space-y-4">
+        <TabsContent value="social-content" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-blue-400" />
-                Static Ads Decision Tree
+                <MessageSquare className="h-5 w-5 text-blue-400" />
+                Social Media Content
               </CardTitle>
               <CardDescription>
-                Questions and flow for static graphics, banners, and image ads
+                Organic social media content like posts, stories, and carousels
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Decision Tree Configuration</Label>
+                <Label>Category System Prompt</Label>
                 <Textarea
-                  value={prompts.staticAdsTree}
-                  onChange={(e) => updatePrompt("staticAdsTree", e.target.value)}
-                  className="min-h-[500px] font-mono text-sm"
-                  placeholder="Enter the static ads decision tree..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="dynamic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Video className="h-5 w-5 text-green-400" />
-                Dynamic/Video Decision Tree
-              </CardTitle>
-              <CardDescription>
-                Questions and flow for motion graphics and video ads
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label>Decision Tree Configuration</Label>
-                <Textarea
-                  value={prompts.dynamicAdsTree}
-                  onChange={(e) => updatePrompt("dynamicAdsTree", e.target.value)}
-                  className="min-h-[500px] font-mono text-sm"
-                  placeholder="Enter the dynamic ads decision tree..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="social" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-orange-400" />
-                Social Media Content Tree
-              </CardTitle>
-              <CardDescription>
-                Questions and flow for social media content creation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label>Decision Tree Configuration</Label>
-                <Textarea
-                  value={prompts.socialMediaTree}
-                  onChange={(e) => updatePrompt("socialMediaTree", e.target.value)}
-                  className="min-h-[400px] font-mono text-sm"
-                  placeholder="Enter the social media decision tree..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="credits" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Credit & Delivery Guidelines</CardTitle>
-              <CardDescription>
-                Define how many credits each type of task costs and delivery timelines
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label>Guidelines</Label>
-                <Textarea
-                  value={prompts.creditGuidelines}
-                  onChange={(e) => updatePrompt("creditGuidelines", e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
-                  placeholder="Enter credit and delivery guidelines..."
+                  value={prompts.socialMediaContent.systemPrompt}
+                  onChange={(e) => updateCategoryPrompt("socialMediaContent", "systemPrompt", e.target.value)}
+                  className="min-h-[100px] font-mono text-sm"
+                  placeholder="Enter the category-specific system prompt..."
                 />
                 <p className="text-xs text-muted-foreground">
-                  The AI uses these guidelines to estimate credits and delivery dates for each task.
+                  This prompt is added when the user selects Social Media Content.
                 </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Decision Tree</Label>
+                <Textarea
+                  value={prompts.socialMediaContent.decisionTree}
+                  onChange={(e) => updateCategoryPrompt("socialMediaContent", "decisionTree", e.target.value)}
+                  className="min-h-[400px] font-mono text-sm"
+                  placeholder="Enter the decision tree..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social-ads" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-green-400" />
+                Social Media Ads
+              </CardTitle>
+              <CardDescription>
+                Paid social media advertisements and campaigns
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Category System Prompt</Label>
+                <Textarea
+                  value={prompts.socialMediaAds.systemPrompt}
+                  onChange={(e) => updateCategoryPrompt("socialMediaAds", "systemPrompt", e.target.value)}
+                  className="min-h-[100px] font-mono text-sm"
+                  placeholder="Enter the category-specific system prompt..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  This prompt is added when the user selects Social Media Ads.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Decision Tree</Label>
+                <Textarea
+                  value={prompts.socialMediaAds.decisionTree}
+                  onChange={(e) => updateCategoryPrompt("socialMediaAds", "decisionTree", e.target.value)}
+                  className="min-h-[500px] font-mono text-sm"
+                  placeholder="Enter the decision tree..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="video" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-purple-400" />
+                Video Edits
+              </CardTitle>
+              <CardDescription>
+                Motion graphics, video ads, and video content
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Category System Prompt</Label>
+                <Textarea
+                  value={prompts.videoEdits.systemPrompt}
+                  onChange={(e) => updateCategoryPrompt("videoEdits", "systemPrompt", e.target.value)}
+                  className="min-h-[100px] font-mono text-sm"
+                  placeholder="Enter the category-specific system prompt..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  This prompt is added when the user selects Video Edits.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Decision Tree</Label>
+                <Textarea
+                  value={prompts.videoEdits.decisionTree}
+                  onChange={(e) => updateCategoryPrompt("videoEdits", "decisionTree", e.target.value)}
+                  className="min-h-[500px] font-mono text-sm"
+                  placeholder="Enter the decision tree..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="branding" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-orange-400" />
+                Branding
+              </CardTitle>
+              <CardDescription>
+                Logos, brand guidelines, visual identity, and brand collateral
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Category System Prompt</Label>
+                <Textarea
+                  value={prompts.branding.systemPrompt}
+                  onChange={(e) => updateCategoryPrompt("branding", "systemPrompt", e.target.value)}
+                  className="min-h-[100px] font-mono text-sm"
+                  placeholder="Enter the category-specific system prompt..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  This prompt is added when the user selects Branding.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Decision Tree</Label>
+                <Textarea
+                  value={prompts.branding.decisionTree}
+                  onChange={(e) => updateCategoryPrompt("branding", "decisionTree", e.target.value)}
+                  className="min-h-[400px] font-mono text-sm"
+                  placeholder="Enter the decision tree..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="custom" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-pink-400" />
+                Custom
+              </CardTitle>
+              <CardDescription>
+                Unique and custom design projects
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Category System Prompt</Label>
+                <Textarea
+                  value={prompts.custom.systemPrompt}
+                  onChange={(e) => updateCategoryPrompt("custom", "systemPrompt", e.target.value)}
+                  className="min-h-[100px] font-mono text-sm"
+                  placeholder="Enter the category-specific system prompt..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  This prompt is added when the user selects Custom.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Decision Tree</Label>
+                <Textarea
+                  value={prompts.custom.decisionTree}
+                  onChange={(e) => updateCategoryPrompt("custom", "decisionTree", e.target.value)}
+                  className="min-h-[400px] font-mono text-sm"
+                  placeholder="Enter the decision tree..."
+                />
               </div>
             </CardContent>
           </Card>
