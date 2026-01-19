@@ -74,11 +74,41 @@ interface DeliverableStyleScraperProps {
   onUploadComplete?: () => void;
 }
 
+interface DribbbleResult {
+  dribbbleUrl: string;
+  cdnUrl: string | null;
+  success: boolean;
+  imported?: {
+    id: string;
+    name: string;
+    imageUrl: string;
+    deliverableType: string;
+    styleAxis: string;
+  };
+  error?: string;
+  skipped?: boolean;
+  skipReason?: string;
+}
+
 export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleScraperProps) {
-  const [activeTab, setActiveTab] = useState<"urls" | "scrape">("urls");
+  const [activeTab, setActiveTab] = useState<"urls" | "scrape" | "dribbble">("urls");
 
   // URL Import state
   const [urlInput, setUrlInput] = useState("");
+
+  // Dribbble Import state
+  const [dribbbleInput, setDribbbleInput] = useState("");
+  const [isDribbbleProcessing, setIsDribbbleProcessing] = useState(false);
+  const [dribbbleDryRun, setDribbbleDryRun] = useState(false);
+  const [dribbbleResults, setDribbbleResults] = useState<DribbbleResult[]>([]);
+  const [dribbbleSummary, setDribbbleSummary] = useState<{
+    total: number;
+    successful: number;
+    skipped: number;
+    failed: number;
+    invalidUrls: number;
+    remaining: number;
+  } | null>(null);
 
   // Page Scraper state
   const [pageUrl, setPageUrl] = useState("");
@@ -107,6 +137,82 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
           return false;
         }
       });
+  };
+
+  // Parse Dribbble URLs from textarea
+  const parseDribbbleUrls = (input: string): string[] => {
+    return input
+      .split(/[\n,]/)
+      .map((url) => url.trim())
+      .filter((url) => {
+        try {
+          const parsed = new URL(url);
+          return (
+            parsed.hostname === "dribbble.com" &&
+            parsed.pathname.startsWith("/shots/")
+          );
+        } catch {
+          return false;
+        }
+      });
+  };
+
+  // Handle Dribbble import
+  const handleDribbbleImport = async () => {
+    const urls = parseDribbbleUrls(dribbbleInput);
+    if (urls.length === 0) {
+      toast.error("No valid Dribbble shot URLs found");
+      return;
+    }
+
+    setIsDribbbleProcessing(true);
+    setDribbbleResults([]);
+    setDribbbleSummary(null);
+
+    try {
+      const response = await fetch("/api/admin/deliverable-styles/scrape-dribbble", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urls,
+          dryRun: dribbbleDryRun,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to process Dribbble URLs");
+      }
+
+      const data = await response.json();
+      setDribbbleResults(data.results || []);
+      setDribbbleSummary(data.summary || null);
+
+      if (!dribbbleDryRun) {
+        const successCount = data.summary?.successful || 0;
+        if (successCount > 0) {
+          toast.success(`Successfully imported ${successCount} design reference(s)`);
+          onUploadComplete?.();
+        }
+        if (data.summary?.failed > 0) {
+          toast.error(`Failed to import ${data.summary.failed} URL(s)`);
+        }
+      } else {
+        toast.success(`Dry run complete. Found ${data.results?.length || 0} images ready for import.`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to process Dribbble URLs");
+    } finally {
+      setIsDribbbleProcessing(false);
+    }
+  };
+
+  // Reset Dribbble state
+  const handleDribbbleReset = () => {
+    setDribbbleInput("");
+    setDribbbleResults([]);
+    setDribbbleSummary(null);
+    setDribbbleDryRun(false);
   };
 
   // Scrape a page for images
@@ -403,15 +509,19 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
 
         {/* Input Step */}
         {step === "input" && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "urls" | "scrape")}>
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "urls" | "scrape" | "dribbble")}>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="urls" className="flex items-center gap-2">
                 <Link className="h-4 w-4" />
-                Paste Image URLs
+                Paste URLs
               </TabsTrigger>
               <TabsTrigger value="scrape" className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                Scrape from Page
+                Scrape Page
+              </TabsTrigger>
+              <TabsTrigger value="dribbble" className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Dribbble
               </TabsTrigger>
             </TabsList>
 
@@ -501,6 +611,166 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                     <li>Increase min size to filter out icons and thumbnails</li>
                   </ul>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="dribbble" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Dribbble Shot URLs (one per line)</Label>
+                  <Textarea
+                    value={dribbbleInput}
+                    onChange={(e) => setDribbbleInput(e.target.value)}
+                    placeholder={`https://dribbble.com/shots/123456-Design-Name\nhttps://dribbble.com/shots/789012-Another-Design`}
+                    rows={8}
+                    className="font-mono text-sm"
+                    disabled={isDribbbleProcessing}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {parseDribbbleUrls(dribbbleInput).length} valid Dribbble URL(s) detected
+                    {parseDribbbleUrls(dribbbleInput).length > 20 &&
+                      ` (max 20 per request, ${parseDribbbleUrls(dribbbleInput).length - 20} will be queued)`
+                    }
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="dribbble-dry-run"
+                      checked={dribbbleDryRun}
+                      onCheckedChange={(checked) => setDribbbleDryRun(checked === true)}
+                      disabled={isDribbbleProcessing}
+                    />
+                    <Label htmlFor="dribbble-dry-run" className="text-sm cursor-pointer">
+                      Dry run (preview only, don&apos;t import)
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                  <p className="font-medium mb-2">How it works:</p>
+                  <ul className="space-y-1 list-disc list-inside">
+                    <li>Paste Dribbble shot URLs (e.g., dribbble.com/shots/123456-Name)</li>
+                    <li>Server fetches og:image from each shot page</li>
+                    <li>AI classifies type, style, colors, and more</li>
+                    <li>Images are uploaded to storage and added to library</li>
+                    <li>Duplicates are automatically detected and skipped</li>
+                  </ul>
+                </div>
+
+                <Button
+                  onClick={handleDribbbleImport}
+                  disabled={parseDribbbleUrls(dribbbleInput).length === 0 || isDribbbleProcessing}
+                  className="w-full"
+                >
+                  {isDribbbleProcessing ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" />
+                      Processing...
+                    </>
+                  ) : dribbbleDryRun ? (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Preview {parseDribbbleUrls(dribbbleInput).length} URL(s)
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import {parseDribbbleUrls(dribbbleInput).length} URL(s)
+                    </>
+                  )}
+                </Button>
+
+                {/* Results display */}
+                {dribbbleSummary && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm">
+                        <span className="font-medium">Results: </span>
+                        {dribbbleSummary.successful > 0 && (
+                          <Badge className="bg-green-500 mr-1">{dribbbleSummary.successful} imported</Badge>
+                        )}
+                        {dribbbleSummary.skipped > 0 && (
+                          <Badge variant="secondary" className="mr-1">{dribbbleSummary.skipped} skipped</Badge>
+                        )}
+                        {dribbbleSummary.failed > 0 && (
+                          <Badge variant="destructive" className="mr-1">{dribbbleSummary.failed} failed</Badge>
+                        )}
+                        {dribbbleSummary.remaining > 0 && (
+                          <span className="text-muted-foreground ml-2">({dribbbleSummary.remaining} remaining in queue)</span>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={handleDribbbleReset}>
+                        Clear Results
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {dribbbleResults.map((result, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "border rounded-lg p-3 flex gap-3",
+                            result.success && result.imported && "bg-green-500/5 border-green-500/20",
+                            result.skipped && "bg-yellow-500/5 border-yellow-500/20",
+                            !result.success && "bg-red-500/5 border-red-500/20"
+                          )}
+                        >
+                          {result.cdnUrl && (
+                            <div className="w-16 h-12 rounded overflow-hidden bg-muted flex-shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={result.cdnUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs truncate text-muted-foreground">
+                              {result.dribbbleUrl.replace("https://dribbble.com/shots/", "")}
+                            </p>
+                            {result.imported && (
+                              <p className="text-sm font-medium truncate">{result.imported.name}</p>
+                            )}
+                            {result.skipped && (
+                              <p className="text-xs text-yellow-600">{result.skipReason}</p>
+                            )}
+                            {result.error && (
+                              <p className="text-xs text-red-500">{result.error}</p>
+                            )}
+                            {result.imported && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Badge variant="outline" className="text-[10px] py-0">
+                                  {result.imported.deliverableType}
+                                </Badge>
+                                <Badge variant="outline" className="text-[10px] py-0">
+                                  {result.imported.styleAxis}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0">
+                            {result.success && result.imported && (
+                              <Badge className="bg-green-500">
+                                <Check className="h-3 w-3" />
+                              </Badge>
+                            )}
+                            {result.skipped && (
+                              <Badge variant="secondary">Skipped</Badge>
+                            )}
+                            {!result.success && (
+                              <Badge variant="destructive">
+                                <AlertCircle className="h-3 w-3" />
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
