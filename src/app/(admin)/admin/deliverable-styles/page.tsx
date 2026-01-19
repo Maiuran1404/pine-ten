@@ -107,6 +107,8 @@ interface Stats {
   coverageScore: number;
   matrix: Record<string, number>;
   gaps: number;
+  missingColors: number;
+  missingColorsByType: Record<string, number>;
 }
 
 const defaultFormState = {
@@ -181,6 +183,8 @@ export default function DeliverableStylesPage() {
     coverageScore: 0,
     matrix: {},
     gaps: 0,
+    missingColors: 0,
+    missingColorsByType: {},
   });
 
   useEffect(() => {
@@ -214,6 +218,23 @@ export default function DeliverableStylesPage() {
     const gaps = Object.values(matrix).filter(count => count < 2).length;
     const coverageScore = Math.round(((totalCells - gaps) / totalCells) * 100);
 
+    // Calculate missing colors - styles without colorSamples data
+    const missingColors = active.filter(
+      s => !s.colorSamples || s.colorSamples.length === 0
+    ).length;
+
+    // Group missing colors by deliverable type
+    const missingColorsByType: Record<string, number> = {};
+    for (const type of DELIVERABLE_TYPES) {
+      const typeStyles = active.filter(s => s.deliverableType === type.value);
+      const missingCount = typeStyles.filter(
+        s => !s.colorSamples || s.colorSamples.length === 0
+      ).length;
+      if (missingCount > 0) {
+        missingColorsByType[type.value] = missingCount;
+      }
+    }
+
     setStats({
       total: styles.length,
       active: active.length,
@@ -223,6 +244,8 @@ export default function DeliverableStylesPage() {
       coverageScore,
       matrix,
       gaps,
+      missingColors,
+      missingColorsByType,
     });
   };
 
@@ -601,7 +624,7 @@ export default function DeliverableStylesPage() {
         <TabsContent value="overview" className="space-y-6">
           {/* Stats */}
           {!isLoading && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <StatCard
                 label="Total Styles"
                 value={stats.total}
@@ -628,7 +651,49 @@ export default function DeliverableStylesPage() {
                 icon={MessageSquare}
                 trend="up"
               />
+              <StatCard
+                label="Missing Colors"
+                value={stats.missingColors}
+                subtext={stats.missingColors === 0 ? "All styles have colors" : `of ${stats.active} active styles`}
+                icon={Palette}
+                trend={stats.missingColors === 0 ? "up" : stats.missingColors > stats.active / 2 ? "down" : "neutral"}
+              />
             </div>
+          )}
+
+          {/* Missing Colors Detail */}
+          {!isLoading && stats.missingColors > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <Palette className="h-5 w-5" />
+                  Color Data Missing
+                </CardTitle>
+                <CardDescription>
+                  These deliverable types have styles without color information. Add colorSamples to improve matching accuracy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(stats.missingColorsByType).map(([typeValue, count]) => (
+                    <div
+                      key={typeValue}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-background border border-amber-500/20"
+                    >
+                      <span className="text-sm font-medium">
+                        {getDeliverableTypeLabel(typeValue)}
+                      </span>
+                      <Badge variant="outline" className="text-amber-600 border-amber-500/30">
+                        {count} missing
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Tip: Edit styles in the Browse tab to add color hex codes (e.g., #FF5733, #2C3E50)
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Coverage Matrix */}
@@ -892,6 +957,13 @@ export default function DeliverableStylesPage() {
                                 {!style.isActive && (
                                   <div className="absolute top-2 left-2">
                                     <Badge variant="secondary">Inactive</Badge>
+                                  </div>
+                                )}
+                                {style.isActive && (!style.colorSamples || style.colorSamples.length === 0) && (
+                                  <div className="absolute top-2 left-2">
+                                    <Badge variant="outline" className="bg-amber-500/90 text-white border-0 text-[10px]">
+                                      No colors
+                                    </Badge>
                                   </div>
                                 )}
                                 <div className="absolute top-2 right-2">

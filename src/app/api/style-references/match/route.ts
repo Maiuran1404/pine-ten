@@ -29,6 +29,34 @@ function colorDistance(hex1: string, hex2: string): number {
   );
 }
 
+// Determine color temperature from hex color (warm, cool, neutral)
+function getColorTemperature(hex: string): "warm" | "cool" | "neutral" {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return "neutral";
+
+  // Calculate warmth based on red vs blue dominance
+  const warmth = rgb.r - rgb.b;
+
+  // If colors are close together (grays, whites, blacks), it's neutral
+  const colorRange = Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b);
+  if (colorRange < 30) return "neutral";
+
+  if (warmth > 30) return "warm";
+  if (warmth < -30) return "cool";
+  return "neutral";
+}
+
+// Get dominant temperature from array of colors
+function getDominantTemperature(colors: string[]): "warm" | "cool" | "neutral" {
+  const temps = colors.map(getColorTemperature);
+  const counts = { warm: 0, cool: 0, neutral: 0 };
+  temps.forEach(t => counts[t]++);
+
+  if (counts.warm > counts.cool && counts.warm > counts.neutral) return "warm";
+  if (counts.cool > counts.warm && counts.cool > counts.neutral) return "cool";
+  return "neutral";
+}
+
 // GET - Fetch style references that match user's brand
 export async function GET(request: NextRequest) {
   try {
@@ -88,14 +116,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Get dominant temperature from brand colors for fallback matching
+    const brandTemperature = getDominantTemperature(brandColors);
+
     // Score each reference based on color similarity
     const scoredReferences = allReferences.map((ref) => {
-      let totalScore = 0;
+      let colorScore = 0;
       let matchCount = 0;
+      let temperatureBonus = 0;
 
-      // Check colorSamples from reference
+      // Check colorSamples from reference for exact color matching
       const refColors = ref.colorSamples as string[] | null;
-      if (refColors && Array.isArray(refColors)) {
+      if (refColors && Array.isArray(refColors) && refColors.length > 0) {
         for (const brandColor of brandColors) {
           let minDistance = Infinity;
           for (const refColor of refColors) {
@@ -106,35 +138,61 @@ export async function GET(request: NextRequest) {
           }
           // Normalize distance to a score (0-100, lower distance = higher score)
           const score = Math.max(0, 100 - minDistance / 4);
-          totalScore += score;
+          colorScore += score;
           matchCount++;
         }
       }
 
+      // Fallback: Use color temperature matching if no colorSamples or low score
+      const refTemperature = ref.colorTemperature as string | null;
+      if (refTemperature && refTemperature === brandTemperature) {
+        temperatureBonus = 30; // Boost for matching temperature
+      } else if (refTemperature === "neutral" || brandTemperature === "neutral") {
+        temperatureBonus = 15; // Neutral matches everything moderately
+      }
+
+      // If reference has no color samples, rely more on temperature
+      const baseScore = matchCount > 0 ? colorScore / matchCount : 20; // Base score of 20 for items without color data
+      const totalScore = baseScore + temperatureBonus;
+
       return {
         ...ref,
-        matchScore: matchCount > 0 ? totalScore / matchCount : 0,
+        matchScore: totalScore,
+        hasColorData: refColors && refColors.length > 0,
       };
     });
 
     // Sort by match score and take top results
     scoredReferences.sort((a, b) => b.matchScore - a.matchScore);
-    const topMatches = scoredReferences.slice(0, limit);
 
-    // Shuffle the top matches a bit to add variety
-    const result = topMatches
+    // Ensure we always return results - mix high-scoring with some variety
+    // Take top 70% by score, and add 30% random for variety
+    const scoreThreshold = Math.floor(limit * 0.7);
+    const varietyCount = limit - scoreThreshold;
+
+    const topScored = scoredReferences.slice(0, scoreThreshold);
+    const remaining = scoredReferences.slice(scoreThreshold);
+
+    // Shuffle remaining and pick some for variety
+    const shuffledRemaining = remaining.sort(() => 0.5 - Math.random()).slice(0, varietyCount);
+
+    const combined = [...topScored, ...shuffledRemaining];
+
+    // Final shuffle to mix high-scored and variety items
+    const result = combined
       .map((ref) => ({
         ...ref,
-        sortKey: ref.matchScore + Math.random() * 20,
+        sortKey: ref.matchScore + Math.random() * 15,
       }))
       .sort((a, b) => b.sortKey - a.sortKey)
-      .map(({ sortKey, matchScore, ...ref }) => ref);
+      .map(({ sortKey, matchScore, hasColorData, ...ref }) => ref);
 
     return NextResponse.json({
       success: true,
       data: result,
       matchMethod: "color_similarity",
       brandColors,
+      brandTemperature,
     });
   } catch (error) {
     console.error("Style reference match error:", error);
