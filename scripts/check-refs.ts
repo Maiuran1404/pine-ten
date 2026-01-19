@@ -1,3 +1,7 @@
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env' });
+dotenv.config({ path: '.env.local' });
+
 import { db } from '../src/db';
 import { deliverableStyleReferences } from '../src/db/schema';
 import { desc } from 'drizzle-orm';
