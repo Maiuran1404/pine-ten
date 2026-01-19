@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { clearChatPromptsCache } from "@/lib/ai/chat";
 
 const CHAT_PROMPTS_KEY = "chat_prompts";
 
@@ -59,6 +60,9 @@ export async function POST(request: NextRequest) {
         description: "AI Chat decision tree prompts configuration",
       });
     }
+
+    // Clear the cache so chat immediately uses new prompts
+    clearChatPromptsCache();
 
     return successResponse({ success: true });
   }, { endpoint: "POST /api/admin/chat-prompts" });

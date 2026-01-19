@@ -18,6 +18,12 @@ let cachedPrompts: ChatPrompts | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Function to invalidate the cache (called when prompts are updated)
+export function clearChatPromptsCache(): void {
+  cachedPrompts = null;
+  cacheTimestamp = 0;
+}
+
 // Fetch chat prompts from database
 async function getChatPrompts(): Promise<ChatPrompts | null> {
   // Check cache first
