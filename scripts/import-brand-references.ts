@@ -4,99 +4,98 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: ".env" });
 dotenv.config({ path: ".env.local" });
 
-// All the URLs to import - deduplicated
-const DRIBBBLE_URLS = [
-  // Batch 1 - Shot pages
-  "https://dribbble.com/shots/22478283-SendingMe-Brand-book-for-decentralized-encrypted-messenger-app",
-  "https://dribbble.com/shots/26986550-Synthmol-Healthcare-Branding",
-  "https://dribbble.com/shots/26438737-Brand-Guidelines-for-a-Fintech-Platform",
-  "https://dribbble.com/shots/26375502-Brand-Identity-System-for-a-Fintech-Security-Platform",
-  "https://dribbble.com/shots/26869869-Promo-Landing-Page",
-  "https://dribbble.com/shots/26985008-NovaGrid-Tech-Branding",
-  "https://dribbble.com/shots/26241395-Mondus",
-  "https://dribbble.com/shots/26253419-Today-Finance-Branding-Art-Direction",
-  "https://dribbble.com/shots/26331144-Payscale-Re-Brand-ID",
-  "https://dribbble.com/shots/26307239-DSC-Labs-Mini-Brand-Guidelines",
-  // Batch 2
-  "https://dribbble.com/shots/26248529-DSC-Labs-Brand-Art-Direction",
-  "https://dribbble.com/shots/26972300-Openbook-Web",
-  "https://dribbble.com/shots/26963904-Openbook",
-  "https://dribbble.com/shots/26959707-Function-Health-Web",
-  "https://dribbble.com/shots/26410980-Infinite-Epigenetics-Hero",
-  "https://dribbble.com/shots/25552493-enso-homes",
-  "https://dribbble.com/shots/25516593-Vesna-Hypnotherapy",
-  "https://dribbble.com/shots/24533743-Turterra",
-  "https://dribbble.com/shots/24447271-Function-Health",
-  "https://dribbble.com/shots/25029326-Hero-Feldera",
-  // Batch 3
-  "https://dribbble.com/shots/23948056-TinyTalks-Brand-ID",
-  "https://dribbble.com/shots/23918509-TinyTalks-Socials",
-  "https://dribbble.com/shots/23695376-Special-ID",
-  "https://dribbble.com/shots/23702708-Special-ID",
-  "https://dribbble.com/shots/23688364-Special-xyz",
-  "https://dribbble.com/shots/23613899-Special-xyz",
-  "https://dribbble.com/shots/23585481-Formation",
-  "https://dribbble.com/shots/26988173-Savenfold-Visual-Identity",
-  "https://dribbble.com/shots/26852890-Logo-for-an-educational-platform",
-  "https://dribbble.com/shots/26827854-Logo-for-a-payment-system",
-  // Batch 4
-  "https://dribbble.com/shots/26833020-BrandGuide-for-a-payment-system",
-  "https://dribbble.com/shots/26836934-Logo-for-a-recruitment-platform",
-  "https://dribbble.com/shots/26820458-BrandGuide-for-AI-powered-lead-generation-and-data-enrichment",
-  "https://dribbble.com/shots/24331388-Brainforest-Logo-brand-identity-for-the-educational-platform",
-  "https://dribbble.com/shots/26774641-BrandGuide-for-a-Software-Technology-Company",
-  "https://dribbble.com/shots/26707634-Brand-Guide-for-an-online-learning-platform",
-  "https://dribbble.com/shots/26700005-Bold-Branding-for-a-Next-Gen-Crypto-Wallet",
-  "https://dribbble.com/shots/26973608-Healthline-Digital-Healthcare-Media-Platform-Branding",
-  "https://dribbble.com/shots/26989045-Teltopus",
-  "https://dribbble.com/shots/26862827-Unted-Brand-Identity",
-  // Batch 5
-  "https://dribbble.com/shots/25096065-Hetalum-Logo-Design",
-  "https://dribbble.com/shots/21678833-Bofar-Branding",
-  "https://dribbble.com/shots/26988904-Cloudpack",
-  "https://dribbble.com/shots/26985977-Branding-for-Productivity",
-  "https://dribbble.com/shots/26989718-Bookable-Logo-Branding-Identity-Booking-restaurants",
-  "https://dribbble.com/shots/26987699-Rolle-Beauty-Skincare-Brand-Logo-IkhStudio",
-  "https://dribbble.com/shots/26201788-360-Branding-Logo-for-AI",
-  "https://dribbble.com/shots/26781700-Student-Branding",
-  "https://dribbble.com/shots/26988094-Logo-Branding-Good-Food-Company",
-  "https://dribbble.com/shots/26984327-Saas-Brand-Identity",
-  // Batch 6
-  "https://dribbble.com/shots/26984079-Calma-Hotel-Brand-Identity",
-  "https://dribbble.com/shots/26984795-Wexgon-Visual-Identity-For-Technology-Web3-SaaS-Startup",
-  "https://dribbble.com/shots/26981993-Clivra-Freight-Logistic-Logo-Design",
-  "https://dribbble.com/shots/26975127-Creative-Campaign-Concept-Dribbble-s-Sweet-Sixteen-Illustration",
-  "https://dribbble.com/shots/26966119-Branding-for-Fintech",
-  "https://dribbble.com/shots/26910577-Our-Top-Five-Food-Branding-Projects-of-2025",
-  "https://dribbble.com/shots/26910417-Moodboard-for-Bagel-Brand-Oh-Brother-Bagels",
-  "https://dribbble.com/shots/26910384-Coasters-for-Stoa-Wine-Bar-Market-in-Los-Angeles",
-  "https://dribbble.com/shots/26855725-Cosmetics-mockups",
-  "https://dribbble.com/shots/24048969-Kaolin-Cosmetics-Mockups",
-  // Batch 7
-  "https://dribbble.com/shots/26983560-Stravo-Logo-Design",
-  "https://dribbble.com/shots/26982873-LP-LP-logo-PL-logomark-letter-PL-logo-For-sale",
-  "https://dribbble.com/shots/26985533-CRAVEA-Branding-Bento-Motion-Sleeko",
-  "https://dribbble.com/shots/26987962-Notorious-Caf",
-  "https://dribbble.com/shots/26982062-Travel-and-tour-logo-branding",
-  "https://dribbble.com/shots/26982437-DevConix-Modern-Fintech-Logo-Design",
-  "https://dribbble.com/shots/26983475-SPARK-Brand-Identity-Design-Logo-Visual-System-And-Color-Palette",
-  "https://dribbble.com/shots/26985679-Organic-Logo-and-Brand-Identity-Design-for-Refarm",
-  "https://dribbble.com/shots/23974482-Kaine-Branding-Mockups",
-  "https://dribbble.com/shots/26986504-ALPINE-Logo-Brand-Identity",
-  // Batch 8
-  "https://dribbble.com/shots/26978734-HYROS-brand-visual-identity-design",
-  "https://dribbble.com/shots/26977252-Naire-Logo-Branding-Design-for-a-Perfume-Fragnance-Brand",
-  "https://dribbble.com/shots/26976930-a-a-logo-logotype-letter-a-logo-For-sale",
-  "https://dribbble.com/shots/26977043-Cenix-Crypto-Exchange-Investment-Platform-Logo-Branding",
-  "https://dribbble.com/shots/26908930-web3-visual-identity",
-  "https://dribbble.com/shots/23931225-First-Digital-web3-brand-visual-identity",
-  "https://dribbble.com/shots/25040787-AI-SaaS-visual-identity",
-  // Direct image URLs
-  "https://cdn.dribbble.com/userupload/42697800/file/original-e603a52f6c10ce38e0c6c149bbf254e0.png?resize=400x300&vertical=center",
-  "https://cdn.dribbble.com/userupload/42854506/file/original-8205febfb24e98a01751bb0ffb4b129a.png?resize=400x300&vertical=center",
+// All direct CDN image URLs - scraped from Dribbble using Playwright
+const CDN_IMAGE_URLS = [
+  // Batch 1 (5 URLs)
+  "https://cdn.dribbble.com/userupload/9847977/file/original-29a12a71a46adba5bfd26132f5c696a9.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46398251/file/972868983ef1eaed4216af11c50bf835.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44627763/file/ae187367b75e860c4d0dad92690cd21f.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44418764/file/7383d026d18390e553b3e94070f9e9b5.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46016308/file/d7a13472059672c2c780628237bbacb1.jpeg?resize=1600x1200",
+  // Batch 2 (10 URLs)
+  "https://cdn.dribbble.com/userupload/46392804/file/still-4188259ff46abe632c1498a6f9ae2b2b.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/43996165/file/original-96afd7b9db88ec1933949cedcb1d3aa7.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44033988/file/original-96bcf4a73334404c5b7fcfacbe0f22d8.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44279835/file/7f0f96cdff9119740e923d5a91e90b5f.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44203958/file/original-864a7b002a41c8e95ed63582fc2a8b95.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44018592/file/original-9fb7db760e8111d33a170c8cd8936424.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46347824/file/c31cc52dbf667cb1b81565b4c1a08702.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46319650/file/3f4bff9dbe5c8c79e8c90af991b1028f.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46306493/file/8d90b601923f38d952e34c09de51c222.png?crop=0x0-1600x1200&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/44538833/file/fe305941c10ea63ce9fc7ae6968f4481.png?resize=1600x1200",
+  // Batch 3 (10 URLs)
+  "https://cdn.dribbble.com/userupload/19712834/file/original-98d35b25c98c2459d1cb201d04bf6504.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/18847103/file/original-6026bfdc39741968e48b958dfa582f60.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/15634143/file/original-67aea1d64c0a82fd5f4588f594fefbf4.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/15381287/file/original-01c6de41fe975e19f8965d75fe26e535.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/17083189/file/original-aa9d8179f1bd367ff4fc2dda67a9993b.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13929906/file/original-5f64235f6e072cf54f214c58c8d230f5.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13844959/file/original-d2bfbaea5d8b8480e4f464f3dc91bac0.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13206083/file/original-1f3ed72b5c2b7e2e545eedbf7878fc23.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13227299/file/original-1e5273ad7d60cf9b6d60b1808f857af2.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13185394/file/original-fac0d5e5d4f8a821cd76aea699736342.png?resize=1600x1200",
+  // Batch 4 (10 URLs)
+  "https://cdn.dribbble.com/userupload/12967020/file/original-3be1edb5eee2141d024a8fd19de97087.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/12887486/file/original-416f71e7569bd1e2ebbabb71642caf59.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46403495/file/922d7b4930ab6e8442e7417e596c6004.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45962504/file/72679d6139aa00ff7228db61515e4377.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45877804/file/d6b4db9edeab08aad892d9183babf6b6.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45896914/file/90a00bc924a62cb3242509d36a0122d3.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45910274/file/070d6a60acf139d8d568d09821556659.jpg?crop=0x0-3201x2401&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45853913/file/145c60c2878eaca4f882c3c36b405a61.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/15041895/file/original-9cca0eff20f1ee1568aa58e6496809be.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45710553/file/068d0153e91b5a886d385641f65bea8c.png?resize=1600x1200",
+  // Batch 5 (10 URLs)
+  "https://cdn.dribbble.com/userupload/45495645/file/6c10d1b0e8f874449dbf8e5a828e945d.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45472414/file/83e3296fadfaaa0cb7a83dc0a3a79786.webp?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46352559/file/still-2943f1cfe09e49ae430f25957a854901.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46406097/file/6c7ff107082ca8babd7ec0a390356285.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45993722/file/82697521279c743bf6b62d2d9c63ca18.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/17282554/file/original-b431b4434648232d70dbdee862afd09e.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/7648933/file/original-99fd20b3240632d96768e0d78d944a45.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46405680/file/64722e9773a8ee15554aadac9264d4a6.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46396239/file/b8bfa2d50922f2d7652edf0bb4a0012b.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46408259/file/7ad687d9c3add414643240f9ccb21bf7.png?crop=712x95-3166x1936&resize=1600x1200",
+  // Batch 6 (10 URLs)
+  "https://cdn.dribbble.com/userupload/46402062/file/fc4184645518e8dca617f0f29c8267c6.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/43865315/file/original-3703331142438ea510ed2fa4060acfd5.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45733231/file/2831ee9bf6a9d4a1083e27eedf4ec27a.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46403245/file/4f7bd93597d4f3e5f984dcc843bc93a3.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46390516/file/da27051bb199bd7a5192f3e768270417.webp?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46389618/file/bd97ba7b4caf8bfa5685faebdd4f5b68.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46391959/file/6ca01d63936c874490c3c150a5d185f7.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46381830/file/960c934d58ce5fdc0cb18d7c80225ae0.png?crop=0x0-4087x3065&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46356981/file/78f4e70fe1a6f79b6560009f3360c562.jpg?crop=0x0-3201x2401&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46326411/file/6521d1c4174180f63a1235d04a302b34.png?crop=0x0-3201x2401&resize=1600x1200",
+  // Batch 7 (10 URLs)
+  "https://cdn.dribbble.com/userupload/46145959/file/7d2102e5aa1c9b483ef32b2392669771.jpg?crop=0x0-3200x2400&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46145243/file/7cf21b595bf9116a4709d30a23ffcc1d.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46145150/file/b72ffdeca4a2153596dc93138c06bfe8.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/45971457/file/4c60d1a9c25a0d4934767881715990f2.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/14221674/file/original-2f61f1b5af1b40667194fd67cb094d81.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46387617/file/a2e83eb9796e0284df9a033461f8b292.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46384792/file/9052b0266e27371d9e857bf4008a0284.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46394884/file/still-54e0139334a3ce2f3d2f779f47ac4657.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46402859/file/5a3e5cc30f3378e13b82e5ab009d6733.jpg?crop=0x0-3201x2401&resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46382048/file/6b0d249e53f21eb500518d8cedf3ed2a.jpg?resize=1600x1200",
+  // Batch 8 (11 URLs)
+  "https://cdn.dribbble.com/userupload/46383037/file/1914bc6ee8d28997c35b004539dc1f8e.jpeg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46387348/file/66dd269a62307eadab15b2c6323f2016.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46395388/file/74e25d5c8942d5ed8fa651ece890d524.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/14006472/file/original-59c4e6b0a4fc4df4ce2a66660bfbd3ee.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46398096/file/a0a32e23c3fea46ff3c0456638b934a0.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46369815/file/5f7440f856c3da8e0b988854c7ca00ec.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46365225/file/0ed746703299b6831bc30a7a4e286f00.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46364167/file/f92263ac902e60aa36124ea637bfd733.jpg?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/46140290/file/still-fa14c26e93cc1d0fd3b3778ae20a26e7.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/13881414/file/original-f88f82e17d82490f801b9a3c4bd2d0d5.png?resize=1600x1200",
+  "https://cdn.dribbble.com/userupload/17117809/file/original-1eeb3b4efcbbba99e4d45e92b71ec35e.png?resize=1600x1200",
+  // Original direct URLs from the list
+  "https://cdn.dribbble.com/userupload/42697800/file/original-e603a52f6c10ce38e0c6c149bbf254e0.png",
+  "https://cdn.dribbble.com/userupload/42854506/file/original-8205febfb24e98a01751bb0ffb4b129a.png",
 ];
 
-// Profile URLs that need manual handling
+// Profile URLs that need manual handling via admin UI
 const PROFILE_URLS = [
   "https://dribbble.com/outcrowd",
   "https://dribbble.com/helen_jhones_design",
@@ -108,29 +107,6 @@ const PROFILE_URLS = [
 
 // Helper to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Extract image URL from Dribbble page HTML
-function extractDribbbleImageUrl(html: string): string | null {
-  // Look for og:image meta tag first (usually the best quality)
-  const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
-  if (ogImageMatch) {
-    return ogImageMatch[1];
-  }
-
-  // Alternative og:image format
-  const ogImageAltMatch = html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-  if (ogImageAltMatch) {
-    return ogImageAltMatch[1];
-  }
-
-  // Look for main shot image
-  const mainImageMatch = html.match(/https:\/\/cdn\.dribbble\.com\/userupload\/[^"'\s]+\.(png|jpg|jpeg|gif|webp)/i);
-  if (mainImageMatch) {
-    return mainImageMatch[0];
-  }
-
-  return null;
-}
 
 async function importBrandReferences() {
   console.log("╔════════════════════════════════════════════════════════════════╗");
@@ -144,7 +120,6 @@ async function importBrandReferences() {
   const { classifyBrandImage } = await import("../src/lib/ai/classify-brand-image");
   const { optimizeImage } = await import("../src/lib/image/optimize");
   const { createClient } = await import("@supabase/supabase-js");
-  const { eq } = await import("drizzle-orm");
 
   // Initialize Supabase
   const supabase = createClient(
@@ -153,8 +128,8 @@ async function importBrandReferences() {
   );
   const BUCKET_NAME = "brand-references";
 
-  console.log(`Total shot URLs to process: ${DRIBBBLE_URLS.length}`);
-  console.log(`Profile URLs (skip): ${PROFILE_URLS.length}`);
+  console.log(`Total CDN image URLs to process: ${CDN_IMAGE_URLS.length}`);
+  console.log(`Profile URLs (manual): ${PROFILE_URLS.length}`);
   console.log("");
 
   // Step 1: Get existing references to check for duplicates
@@ -171,10 +146,16 @@ async function importBrandReferences() {
 
   // Create set of existing names (lowercased) for deduplication
   const existingNames = new Set(existingRefs.map(r => r.name.toLowerCase()));
+  // Also track image URLs to prevent duplicates
+  const existingImageUrls = new Set(existingRefs.map(r => {
+    // Extract the userupload ID from the URL for comparison
+    const match = r.imageUrl.match(/userupload\/(\d+)/);
+    return match ? match[1] : r.imageUrl;
+  }));
 
   // Step 2: Process URLs in batches
   const BATCH_SIZE = 5;
-  const totalBatches = Math.ceil(DRIBBBLE_URLS.length / BATCH_SIZE);
+  const totalBatches = Math.ceil(CDN_IMAGE_URLS.length / BATCH_SIZE);
 
   console.log(`\nStep 2: Processing in ${totalBatches} batches of ${BATCH_SIZE}...\n`);
 
@@ -185,49 +166,22 @@ async function importBrandReferences() {
 
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
     const batchStart = batchIndex * BATCH_SIZE;
-    const batchUrls = DRIBBBLE_URLS.slice(batchStart, batchStart + BATCH_SIZE);
+    const batchUrls = CDN_IMAGE_URLS.slice(batchStart, batchStart + BATCH_SIZE);
 
     console.log(`\n═══════════════════════════════════════════════════════════`);
     console.log(`Batch ${batchIndex + 1}/${totalBatches}`);
     console.log(`═══════════════════════════════════════════════════════════`);
 
-    for (const url of batchUrls) {
+    for (const imageUrl of batchUrls) {
       try {
-        console.log(`\n  Processing: ${url.substring(0, 70)}...`);
+        console.log(`\n  Processing: ${imageUrl.substring(0, 70)}...`);
 
-        // Determine if direct image or page
-        const isDirectImage = url.includes("cdn.dribbble.com");
-        let imageUrl = url;
-
-        if (!isDirectImage) {
-          // Fetch the Dribbble page to extract image URL
-          console.log(`    → Fetching page...`);
-          const pageResponse = await fetch(url, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-          });
-
-          if (!pageResponse.ok) {
-            console.log(`    ✗ Failed to fetch page: ${pageResponse.status}`);
-            failedUrls.push({ url, reason: `HTTP ${pageResponse.status}` });
-            totalFailed++;
-            continue;
-          }
-
-          const html = await pageResponse.text();
-          const extractedUrl = extractDribbbleImageUrl(html);
-
-          if (!extractedUrl) {
-            console.log(`    ✗ No image found on page`);
-            failedUrls.push({ url, reason: "No image found" });
-            totalFailed++;
-            continue;
-          }
-
-          imageUrl = extractedUrl;
-          console.log(`    → Found image: ${imageUrl.substring(0, 60)}...`);
+        // Check if this image was already imported (by userupload ID)
+        const uploadIdMatch = imageUrl.match(/userupload\/(\d+)/);
+        if (uploadIdMatch && existingImageUrls.has(uploadIdMatch[1])) {
+          console.log(`    ⚠ Already imported (image ID: ${uploadIdMatch[1]}) - skipping`);
+          totalSkipped++;
+          continue;
         }
 
         // Fetch the image
@@ -240,7 +194,7 @@ async function importBrandReferences() {
 
         if (!imageResponse.ok) {
           console.log(`    ✗ Failed to download image: ${imageResponse.status}`);
-          failedUrls.push({ url, reason: `Image download failed: ${imageResponse.status}` });
+          failedUrls.push({ url: imageUrl, reason: `HTTP ${imageResponse.status}` });
           totalFailed++;
           continue;
         }
@@ -248,7 +202,7 @@ async function importBrandReferences() {
         const contentType = imageResponse.headers.get("content-type") || "";
         if (!contentType.startsWith("image/")) {
           console.log(`    ✗ Not an image: ${contentType}`);
-          failedUrls.push({ url, reason: `Not an image: ${contentType}` });
+          failedUrls.push({ url: imageUrl, reason: `Not an image: ${contentType}` });
           totalFailed++;
           continue;
         }
@@ -258,7 +212,7 @@ async function importBrandReferences() {
         // Check size
         if (imageBuffer.length > 10 * 1024 * 1024) {
           console.log(`    ✗ Image too large: ${(imageBuffer.length / 1024 / 1024).toFixed(1)}MB`);
-          failedUrls.push({ url, reason: "Image too large (>10MB)" });
+          failedUrls.push({ url: imageUrl, reason: "Image too large (>10MB)" });
           totalFailed++;
           continue;
         }
@@ -332,8 +286,11 @@ async function importBrandReferences() {
           isActive: true,
         });
 
-        // Add to existing names to prevent duplicates within this run
+        // Add to existing names and image URLs to prevent duplicates within this run
         existingNames.add(classification.name.toLowerCase());
+        if (uploadIdMatch) {
+          existingImageUrls.add(uploadIdMatch[1]);
+        }
 
         console.log(`    ✓ Imported: "${classification.name}" (${classification.toneBucket}/${classification.energyBucket})`);
         totalSuccess++;
@@ -344,7 +301,7 @@ async function importBrandReferences() {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.log(`    ✗ Error: ${errorMsg.substring(0, 100)}`);
-        failedUrls.push({ url, reason: errorMsg });
+        failedUrls.push({ url: imageUrl, reason: errorMsg });
         totalFailed++;
       }
     }
@@ -361,7 +318,7 @@ async function importBrandReferences() {
   console.log("╔════════════════════════════════════════════════════════════════╗");
   console.log("║                        IMPORT SUMMARY                          ║");
   console.log("╠════════════════════════════════════════════════════════════════╣");
-  console.log(`║  Total URLs processed:    ${DRIBBBLE_URLS.length.toString().padStart(5)}                              ║`);
+  console.log(`║  Total URLs processed:    ${CDN_IMAGE_URLS.length.toString().padStart(5)}                              ║`);
   console.log(`║  Successfully imported:   ${totalSuccess.toString().padStart(5)}                              ║`);
   console.log(`║  Failed:                  ${totalFailed.toString().padStart(5)}                              ║`);
   console.log(`║  Skipped (duplicates):    ${totalSkipped.toString().padStart(5)}                              ║`);
@@ -386,7 +343,7 @@ async function importBrandReferences() {
   if (failedUrls.length > 0) {
     console.log("\n❌ Failed URLs:");
     for (const failed of failedUrls) {
-      console.log(`   ${failed.url}`);
+      console.log(`   ${failed.url.substring(0, 70)}...`);
       console.log(`      Reason: ${failed.reason}`);
     }
   }
