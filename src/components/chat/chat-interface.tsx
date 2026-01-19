@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { TypingText } from "./typing-text";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -175,6 +176,7 @@ export function ChatInterface({
   const [isInitialized, setIsInitialized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
   const [showSidePanel, setShowSidePanel] = useState(true);
   const [sidePanelTab, setSidePanelTab] = useState<"info" | "files" | "deliverables">("info");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -332,6 +334,7 @@ export function ChatInterface({
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        setAnimatingMessageId(assistantMessage.id);
 
         if (data.taskProposal) {
           setPendingTask(data.taskProposal);
@@ -547,6 +550,7 @@ export function ChatInterface({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
@@ -657,6 +661,7 @@ export function ChatInterface({
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        setAnimatingMessageId(assistantMessage.id);
       } else {
         toast.info("No more styles available in this direction");
       }
@@ -714,6 +719,7 @@ export function ChatInterface({
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        setAnimatingMessageId(assistantMessage.id);
       } else {
         toast.info("No more style directions available");
         // Reset excluded axes to allow cycling through again
@@ -775,6 +781,7 @@ export function ChatInterface({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
@@ -843,6 +850,7 @@ export function ChatInterface({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
@@ -903,6 +911,7 @@ export function ChatInterface({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
 
       if (data.taskProposal) {
         setPendingTask(data.taskProposal);
@@ -972,6 +981,7 @@ export function ChatInterface({
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, successMessage]);
+      setAnimatingMessageId(successMessage.id);
 
       // Clear pending task UI
       setPendingTask(null);
@@ -1037,6 +1047,7 @@ export function ChatInterface({
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, clarifyMessage]);
+    setAnimatingMessageId(clarifyMessage.id);
   };
 
   // Generate smart chat title
@@ -1248,10 +1259,18 @@ export function ChatInterface({
                         <div className="flex items-start gap-3 mb-3">
                           <Quote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            {/* Message content */}
-                            <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground">
-                              <ReactMarkdown>{message.content}</ReactMarkdown>
-                            </div>
+                            {/* Message content with typing animation */}
+                            <TypingText
+                              content={message.content}
+                              animate={animatingMessageId === message.id}
+                              speed={25}
+                              onComplete={() => {
+                                if (animatingMessageId === message.id) {
+                                  setAnimatingMessageId(null);
+                                }
+                              }}
+                              className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
+                            />
                           </div>
                         </div>
 
