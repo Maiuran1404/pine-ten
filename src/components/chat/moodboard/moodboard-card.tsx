@@ -112,17 +112,11 @@ export function MoodboardCard({
         </div>
       )}
 
-      {/* Label overlay */}
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 p-1.5",
-          "bg-gradient-to-t from-black/60 to-transparent",
-          "opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        )}
-      >
-        <p className="text-[10px] text-white truncate">{item.name}</p>
+      {/* Label - always visible for better clarity */}
+      <div className="p-1.5 bg-background/80 border-t border-border">
+        <p className="text-[10px] font-medium text-foreground truncate">{item.name}</p>
         {item.metadata?.styleAxis && (
-          <p className="text-[9px] text-white/70 truncate">
+          <p className="text-[9px] text-muted-foreground truncate capitalize">
             {item.metadata.styleAxis}
           </p>
         )}

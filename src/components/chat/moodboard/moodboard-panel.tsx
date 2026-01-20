@@ -60,21 +60,41 @@ export function MoodboardPanel({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           {items.length === 0 ? (
-            /* Empty state */
+            /* Empty state with helpful tips */
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-8"
+              className="text-center py-6"
             >
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-                <Palette className="h-6 w-6 text-muted-foreground" />
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Palette className="h-7 w-7 text-primary" />
               </div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Your moodboard is empty
+              <p className="text-sm font-medium text-foreground mb-1">
+                Build your moodboard
               </p>
-              <p className="text-xs text-muted-foreground/70">
-                Select styles or upload images to build your vision
+              <p className="text-xs text-muted-foreground mb-4">
+                Collect styles that match your vision
               </p>
+              <div className="space-y-2 text-left max-w-[180px] mx-auto">
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px]">1</span>
+                  </div>
+                  <span>Click style cards to add them</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px]">2</span>
+                  </div>
+                  <span>Upload your own inspiration</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px]">3</span>
+                  </div>
+                  <span>Artists will use these as reference</span>
+                </div>
+              </div>
             </motion.div>
           ) : (
             <>
