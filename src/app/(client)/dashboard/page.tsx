@@ -300,25 +300,25 @@ function DashboardContent() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center px-6 pt-32 md:pt-40 pb-8">
+      <div className="flex flex-col items-center px-4 sm:px-6 pt-20 sm:pt-32 md:pt-40 pb-8">
         {/* Welcome Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-foreground mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-2">
             Welcome back,{" "}
             <span className="underline decoration-2 underline-offset-4">
               {userName}
             </span>
             !
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground">
             What would you like to create{" "}
             <span className="font-semibold text-foreground">today</span>?
           </p>
         </div>
 
         {/* Main Input Card */}
-        <div className="w-full max-w-2xl mb-6">
-          <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
+        <div className="w-full max-w-2xl mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
               <div className="px-4 py-3 border-b border-border/50">
@@ -356,7 +356,7 @@ function DashboardContent() {
             )}
 
             {/* Text Input Area */}
-            <div className="px-5 pt-4 pb-2">
+            <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2">
               <textarea
                 ref={inputRef}
                 value={chatInput}
@@ -383,36 +383,36 @@ function DashboardContent() {
             </div>
 
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 pb-3 sm:pb-4 pt-2">
               {/* Left side - attachment icons */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Attach file"
                 >
                   {isUploading ? (
                     <LoadingSpinner size="sm" />
                   ) : (
-                    <Paperclip className="h-5 w-5" />
+                    <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
                   )}
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="hidden sm:block p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Add image"
                 >
-                  <ImageIcon className="h-5 w-5" />
+                  <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
 
-                <div className="w-px h-5 bg-border mx-2" />
+                <div className="w-px h-4 sm:h-5 bg-border mx-1.5 sm:mx-2" />
 
                 {/* Credits indicator */}
-                <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-muted-foreground">
                   <span
-                    className={`w-2 h-2 rounded-full ${
+                    className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                       credits === null
                         ? "bg-gray-400"
                         : credits === 0
@@ -422,15 +422,15 @@ function DashboardContent() {
                             : "bg-green-500"
                     }`}
                   />
-                  <span>{credits === null ? "..." : credits} credits</span>
+                  <span>{credits === null ? "..." : credits} <span className="hidden sm:inline">credits</span></span>
                 </div>
               </div>
 
               {/* Right side - Improve Prompt + Submit */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   disabled={!chatInput.trim()}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Sparkles className="h-4 w-4" />
                   <span>Improve Prompt</span>
@@ -443,10 +443,10 @@ function DashboardContent() {
                     isUploading ||
                     (!chatInput.trim() && uploadedFiles.length === 0)
                   }
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm sm:text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Submit</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </button>
               </div>
             </div>
@@ -454,7 +454,7 @@ function DashboardContent() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
           {PROMPT_TEMPLATES.map((cat) => {
             const Icon = cat.icon;
             const colorClasses = {
@@ -471,9 +471,9 @@ function DashboardContent() {
               <button
                 key={cat.category}
                 onClick={() => handleCategoryClick(cat.category)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border border-border bg-white dark:bg-card text-muted-foreground text-sm font-medium transition-all ${colorClasses[cat.color as keyof typeof colorClasses]}`}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full border border-border bg-white dark:bg-card text-muted-foreground text-xs sm:text-sm font-medium transition-all ${colorClasses[cat.color as keyof typeof colorClasses]}`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {cat.category}
               </button>
             );
