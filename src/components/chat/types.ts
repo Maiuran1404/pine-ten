@@ -80,6 +80,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  thinkingTime?: number; // Time in seconds the AI took to respond
   styleReferences?: StyleReference[];
   deliverableStyles?: DeliverableStyle[];
   deliverableStyleMarker?: DeliverableStyleMarker;

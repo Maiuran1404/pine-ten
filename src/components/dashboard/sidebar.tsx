@@ -24,7 +24,6 @@ import {
   Zap,
   Sparkles,
   Wand2,
-  ChevronDown,
 } from "lucide-react";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 import {
@@ -188,27 +187,26 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     >
       <SidebarHeader className="h-16 px-3 py-2 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="h-10 px-2 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0"
-            >
-              <button className="flex items-center gap-2 w-full">
-                {/* Company Avatar */}
-                <div
-                  className="flex items-center justify-center size-6 rounded-md text-white text-xs font-semibold flex-shrink-0"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {getInitial(companyName)}
-                </div>
-                {/* Company Name - hidden when collapsed */}
-                <span className="flex-1 text-left font-medium text-sm truncate group-data-[collapsible=icon]:hidden">
-                  {displayName}
-                </span>
-                {/* Dropdown Icon - hidden when collapsed */}
-                <ChevronDown className="size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-              </button>
+          <SidebarMenuItem className="flex items-center gap-2">
+            {/* Sidebar Toggle */}
+            <SidebarMenuButton asChild className="size-8 p-2 flex-shrink-0">
+              <SidebarTrigger />
             </SidebarMenuButton>
+
+            {/* Company Info - hidden when collapsed */}
+            <div className="h-10 px-2 flex items-center gap-2 flex-1 group-data-[collapsible=icon]:hidden">
+              {/* Company Avatar */}
+              <div
+                className="flex items-center justify-center size-6 rounded-md text-white text-xs font-semibold flex-shrink-0"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {getInitial(companyName)}
+              </div>
+              {/* Company Name */}
+              <span className="flex-1 text-left font-medium text-sm truncate">
+                {displayName}
+              </span>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

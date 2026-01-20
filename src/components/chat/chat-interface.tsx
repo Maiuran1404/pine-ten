@@ -44,6 +44,7 @@ import {
   Timer,
   Download,
   ArrowRight,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
@@ -188,6 +189,7 @@ export function ChatInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounterRef = useRef(0);
+  const requestStartTimeRef = useRef<number | null>(null);
 
   // Moodboard state management
   const {
@@ -351,6 +353,7 @@ export function ChatInterface({
 
     const continueConversation = async () => {
       setIsLoading(true);
+      requestStartTimeRef.current = Date.now();
 
       try {
         const response = await fetch("/api/chat", {
@@ -372,11 +375,17 @@ export function ChatInterface({
 
         const data = await response.json();
 
+        // Calculate thinking time
+        const thinkingTime = requestStartTimeRef.current
+          ? Math.round((Date.now() - requestStartTimeRef.current) / 1000)
+          : undefined;
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: data.content,
           timestamp: new Date(),
+          thinkingTime,
           styleReferences: data.styleReferences,
           deliverableStyles: data.deliverableStyles,
           deliverableStyleMarker: data.deliverableStyleMarker,
@@ -399,6 +408,7 @@ export function ChatInterface({
         toast.error("Failed to continue conversation. Please try again.");
       } finally {
         setIsLoading(false);
+        requestStartTimeRef.current = null;
       }
     };
 
@@ -698,6 +708,7 @@ export function ChatInterface({
     setInput("");
     setUploadedFiles([]);
     setIsLoading(true);
+    requestStartTimeRef.current = Date.now();
 
     try {
       const response = await fetch("/api/chat", {
@@ -719,11 +730,17 @@ export function ChatInterface({
 
       const data = await response.json();
 
+      // Calculate thinking time
+      const thinkingTime = requestStartTimeRef.current
+        ? Math.round((Date.now() - requestStartTimeRef.current) / 1000)
+        : undefined;
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.content,
         timestamp: new Date(),
+        thinkingTime,
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
@@ -741,6 +758,7 @@ export function ChatInterface({
       toast.error("Failed to send message. Please try again.");
     } finally {
       setIsLoading(false);
+      requestStartTimeRef.current = null;
     }
   };
 
@@ -1651,6 +1669,15 @@ export function ChatInterface({
                   {message.role === "assistant" ? (
                     /* Assistant message - left aligned card */
                     <div className="group max-w-[85%]">
+                      {/* Thinking time indicator */}
+                      {message.thinkingTime && (
+                        <div className="flex items-center gap-1.5 mb-2 ml-1 text-muted-foreground">
+                          <Lightbulb className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            Thought for {message.thinkingTime}s
+                          </span>
+                        </div>
+                      )}
                       <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
                         {/* Quote icon */}
                         <div className="flex items-start gap-3 mb-3">

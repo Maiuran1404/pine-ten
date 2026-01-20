@@ -39,25 +39,64 @@ interface StyleReference {
   colorTemperature?: string;
 }
 
-// Example prompts - actionable call-to-actions
-const EXAMPLE_PROMPTS = [
-  {
-    prompt: "Set up 30 day Instagram content calendar",
-    image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400&h=300&fit=crop",
+// Template categories and prompts
+const TEMPLATE_CATEGORIES = {
+  "Social Media": {
+    icon: "📱",
+    templates: [
+      "Create 30-day Instagram content calendar with daily posts",
+      "Design LinkedIn carousel posts for thought leadership",
+      "Generate Instagram Stories for product launch campaign",
+      "Create Facebook ad creatives for e-commerce promotion",
+      "Develop TikTok video concepts for brand awareness",
+      "Design Pinterest pins for seasonal marketing",
+    ],
   },
-  {
-    prompt: "Create LinkedIn posts for 2 weeks",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
+  "Video & Animation": {
+    icon: "🎬",
+    templates: [
+      "Edit product demo video with professional transitions",
+      "Create animated explainer video for SaaS product",
+      "Design video ad for social media campaign",
+      "Develop Instagram Reels content series",
+      "Create YouTube thumbnail designs",
+      "Edit testimonial video compilation",
+    ],
   },
-  {
-    prompt: "Edit product demo video",
-    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop",
+  "Branding": {
+    icon: "🎨",
+    templates: [
+      "Design brand elements and comprehensive style guide",
+      "Create logo variations and brand identity system",
+      "Develop brand color palette with usage guidelines",
+      "Design business card and stationery set",
+      "Create brand presentation template",
+      "Design email signature with brand elements",
+    ],
   },
-  {
-    prompt: "Design brand elements and style guide",
-    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=300&fit=crop",
+  "Marketing": {
+    icon: "📊",
+    templates: [
+      "Create static ad designs for Google Display Network",
+      "Design email newsletter template with CTAs",
+      "Develop landing page design for campaign",
+      "Create presentation deck for investor pitch",
+      "Design infographic for blog post",
+      "Create promotional banner set for website",
+    ],
   },
-];
+  "More": {
+    icon: "✨",
+    templates: [
+      "Design packaging mockups for product launch",
+      "Create event invitation and promotional materials",
+      "Develop mobile app UI/UX design concepts",
+      "Design website homepage with modern layout",
+      "Create podcast cover art and episode graphics",
+      "Design menu and promotional materials for restaurant",
+    ],
+  },
+};
 
 function DashboardContent() {
   const router = useRouter();
@@ -71,6 +110,7 @@ function DashboardContent() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [styleReferences, setStyleReferences] = useState<StyleReference[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -457,29 +497,55 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Example Prompts - show users what they can create */}
-        <div className="w-full max-w-3xl mb-8 sm:mb-12 px-4">
-          <p className="text-center text-sm text-muted-foreground mb-4">Try an example</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {EXAMPLE_PROMPTS.map((example) => (
-              <button
-                key={example.prompt}
-                onClick={() => handleTemplateClick(example.prompt)}
-                className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-white dark:bg-card hover:shadow-lg hover:border-foreground/20 transition-all"
-              >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={example.image}
-                    alt=""
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-3 text-left">
-                  <p className="text-xs sm:text-sm text-foreground leading-snug">{example.prompt}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+        {/* Template System - Categories or Templates */}
+        <div className="w-full max-w-5xl mb-8 sm:mb-12 px-4">
+          {!selectedCategory ? (
+            /* Show Categories */
+            <>
+              <p className="text-center text-sm text-muted-foreground mb-4">What can I help you create?</p>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide justify-center">
+                {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon }]) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className="px-4 py-2.5 rounded-full border border-border bg-white dark:bg-card hover:bg-muted hover:border-foreground/30 transition-all text-sm text-foreground whitespace-nowrap flex-shrink-0 flex items-center gap-2"
+                  >
+                    <span>{icon}</span>
+                    <span>{category}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* Show Templates for Selected Category */
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-center gap-4 mb-4">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                >
+                  <span>←</span>
+                  <span>Back</span>
+                </button>
+                <p className="text-sm font-medium text-foreground">Sample prompts</p>
+              </div>
+              <div className="space-y-1">
+                {TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]?.templates.map((template, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      handleTemplateClick(template);
+                      setSelectedCategory(null);
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg bg-card/50 hover:bg-card border border-transparent hover:border-border transition-all text-sm text-foreground flex items-center justify-between group"
+                  >
+                    <span className="leading-relaxed">{template}</span>
+                    <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-4 flex-shrink-0">↗</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
