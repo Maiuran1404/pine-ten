@@ -50,6 +50,7 @@ import {
   CheckCircle,
   TrendingUp,
   ImageIcon,
+  History,
 } from "lucide-react";
 import {
   TONE_BUCKETS,
@@ -68,6 +69,7 @@ import {
 import { VISUAL_STYLE_OPTIONS } from "@/components/onboarding/types";
 import { BrandReferenceUploader } from "@/components/admin/brand-reference-uploader";
 import { BrandReferenceScraper } from "@/components/admin/brand-reference-scraper";
+import { ImportLogsViewer } from "@/components/admin/import-logs-viewer";
 import { cn } from "@/lib/utils";
 
 interface BrandReference {
@@ -604,7 +606,7 @@ export default function BrandReferencesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-xl grid-cols-4">
+        <TabsList className="grid w-full max-w-2xl grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -620,6 +622,10 @@ export default function BrandReferencesPage() {
           <TabsTrigger value="preview" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Preview
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            History
           </TabsTrigger>
         </TabsList>
 
@@ -1367,6 +1373,15 @@ export default function BrandReferencesPage() {
               </p>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Import History Tab */}
+        <TabsContent value="history" className="space-y-6 mt-6">
+          <ImportLogsViewer
+            target="brand_reference"
+            title="Brand Library Import History"
+            description="View all imports to the brand reference library"
+          />
         </TabsContent>
       </Tabs>
 

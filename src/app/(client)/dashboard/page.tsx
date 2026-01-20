@@ -305,8 +305,21 @@ function DashboardContent() {
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-2">
             Welcome back,{" "}
-            <span className="underline decoration-2 underline-offset-4">
+            <span className="relative inline-block">
               {userName}
+              <svg
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[85%] h-2 text-foreground"
+                viewBox="0 0 70 8"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 5.5C8 4 14 6 22 4.5C30 3 38 5.5 46 4C54 2.5 62 5 68 4"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
             </span>
             !
           </h1>

@@ -60,6 +60,7 @@ import {
   Grid3X3,
   Upload,
   Palette,
+  History,
 } from "lucide-react";
 import {
   DELIVERABLE_TYPES,
@@ -69,6 +70,8 @@ import {
 } from "@/lib/constants/reference-libraries";
 import { DeliverableStyleUploader } from "@/components/admin/deliverable-style-uploader";
 import { DeliverableStyleScraper } from "@/components/admin/deliverable-style-scraper";
+import { BiggedKeywordScraper } from "@/components/admin/bigged-keyword-scraper";
+import { ImportLogsViewer } from "@/components/admin/import-logs-viewer";
 import { StatCard } from "@/components/admin/stat-card";
 import { cn } from "@/lib/utils";
 
@@ -618,6 +621,10 @@ export default function DeliverableStylesPage() {
             <Palette className="h-4 w-4" />
             Browse
           </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Import History
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -830,10 +837,23 @@ export default function DeliverableStylesPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Bigged Ad Spy Scraper */}
+          <BiggedKeywordScraper onUploadComplete={fetchStyles} />
+
           <div className="grid lg:grid-cols-2 gap-6">
             <DeliverableStyleUploader onUploadComplete={fetchStyles} />
             <DeliverableStyleScraper onUploadComplete={fetchStyles} />
           </div>
+        </TabsContent>
+
+        {/* Import History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <ImportLogsViewer
+            target="deliverable_style"
+            title="Reference Library Import History"
+            description="View all imports to the deliverable style reference library"
+          />
         </TabsContent>
 
         {/* Browse Tab */}
