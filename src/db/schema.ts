@@ -1045,3 +1045,97 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Import log source type enum
+export const importLogSourceEnum = pgEnum("import_log_source", [
+  "bigged",
+  "dribbble",
+  "manual_url",
+  "file_upload",
+  "page_scrape",
+]);
+
+// Import log target type enum
+export const importLogTargetEnum = pgEnum("import_log_target", [
+  "deliverable_style",
+  "brand_reference",
+]);
+
+// Import logs table - tracks all imports to reference and brand libraries
+export const importLogs = pgTable(
+  "import_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    // Import source and target
+    source: importLogSourceEnum("source").notNull(),
+    target: importLogTargetEnum("target").notNull(),
+
+    // Who triggered the import
+    triggeredBy: text("triggered_by").references(() => users.id, { onDelete: "set null" }),
+    triggeredByEmail: text("triggered_by_email"),
+
+    // Import parameters
+    searchQuery: text("search_query"), // For bigged/scraper queries
+    sourceUrl: text("source_url"), // URL that was scraped
+
+    // Results summary
+    totalAttempted: integer("total_attempted").notNull().default(0),
+    totalSuccessful: integer("total_successful").notNull().default(0),
+    totalFailed: integer("total_failed").notNull().default(0),
+    totalSkipped: integer("total_skipped").notNull().default(0), // Duplicates
+
+    // Detailed results
+    importedItems: jsonb("imported_items").$type<Array<{
+      id: string;
+      name: string;
+      imageUrl: string;
+      deliverableType?: string;
+      styleAxis?: string;
+      toneBucket?: string;
+      energyBucket?: string;
+      confidence?: number;
+    }>>().default([]),
+
+    failedItems: jsonb("failed_items").$type<Array<{
+      url: string;
+      error: string;
+    }>>().default([]),
+
+    skippedItems: jsonb("skipped_items").$type<Array<{
+      url: string;
+      reason: string;
+    }>>().default([]),
+
+    // Processing details
+    processingTimeMs: integer("processing_time_ms"),
+    confidenceThreshold: decimal("confidence_threshold", { precision: 3, scale: 2 }),
+
+    // Status
+    status: text("status").notNull().default("completed"), // completed, partial, failed
+    errorMessage: text("error_message"),
+
+    // Timestamps
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("import_logs_source_idx").on(table.source),
+    index("import_logs_target_idx").on(table.target),
+    index("import_logs_triggered_by_idx").on(table.triggeredBy),
+    index("import_logs_created_at_idx").on(table.createdAt),
+    index("import_logs_source_target_idx").on(table.source, table.target),
+  ]
+);
+
+// Relations for import logs
+export const importLogsRelations = relations(importLogs, ({ one }) => ({
+  triggeredByUser: one(users, {
+    fields: [importLogs.triggeredBy],
+    references: [users.id],
+  }),
+}));
+
+// Add imageHash field to deliverableStyleReferences for duplicate detection
+// Note: This requires a migration to add the column
