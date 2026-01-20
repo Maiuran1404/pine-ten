@@ -205,10 +205,8 @@ function DashboardContent() {
     const finalMessage = message || chatInput.trim();
     if ((!finalMessage && uploadedFiles.length === 0) || isSending) return;
 
-    if (credits === 0) {
-      setShowCreditDialog(true);
-      return;
-    }
+    // Don't check credits here - let users start chatting freely
+    // Payment is only required when confirming/submitting the actual task
 
     setIsSending(true);
 

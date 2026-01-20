@@ -15,6 +15,7 @@ export default function ChatPage() {
   // Get current URL params
   const draftParam = searchParams.get("draft");
   const messageParam = searchParams.get("message");
+  const paymentParam = searchParams.get("payment");
 
   // Initialize drafts directly (only runs once on mount due to lazy initializer)
   const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
@@ -25,13 +26,26 @@ export default function ChatPage() {
   // Initialize state based on URL - always generate a draftId to avoid regenerating on every render
   const [currentDraftId, setCurrentDraftId] = useState<string>(() => {
     if (draftParam) return draftParam;
+    // Check for pending task state from payment return - restore draft ID
+    if (typeof window !== "undefined" && paymentParam === "success") {
+      try {
+        const savedState = sessionStorage.getItem("pending_task_state");
+        if (savedState) {
+          const { draftId } = JSON.parse(savedState);
+          if (draftId) return draftId;
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    }
     // Always generate a stable ID upfront
     return generateDraftId();
   });
 
   // Always use seamless transition (full-width) layout when there are params
   // This prevents the flash of the smaller layout during hydration
-  const hasUrlParams = !!draftParam || !!messageParam;
+  // Include payment param to handle return from Stripe checkout
+  const hasUrlParams = !!draftParam || !!messageParam || !!paymentParam;
   const [showDrafts, setShowDrafts] = useState(() => !hasUrlParams);
   const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
 
@@ -71,7 +85,7 @@ export default function ChatPage() {
 
   // Separate effect to handle showing drafts - runs after a delay to ensure URL params are loaded
   useEffect(() => {
-    // If we have URL params, never show drafts selection
+    // If we have URL params (including payment params), never show drafts selection
     if (hasUrlParams) {
       setShowDrafts(false);
       return;
@@ -79,13 +93,13 @@ export default function ChatPage() {
 
     // Wait for hydration to complete before deciding to show drafts
     const timer = setTimeout(() => {
-      if (!draftParam && !messageParam && drafts.length > 0) {
+      if (!draftParam && !messageParam && !paymentParam && drafts.length > 0) {
         setShowDrafts(true);
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [hasUrlParams, draftParam, messageParam, drafts.length]);
+  }, [hasUrlParams, draftParam, messageParam, paymentParam, drafts.length]);
 
   const handleStartNew = () => {
     const newId = generateDraftId();

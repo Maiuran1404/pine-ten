@@ -82,13 +82,25 @@ export const creditPackages = [
 export async function createCheckoutSession(
   userId: string,
   userEmail: string,
-  packageId: string
+  packageId: string,
+  returnUrl?: string
 ) {
   const creditPackage = creditPackages.find((p) => p.id === packageId);
 
   if (!creditPackage) {
     throw new Error("Invalid package selected");
   }
+
+  // Build success and cancel URLs
+  // If returnUrl is provided, redirect back there with payment params
+  // Otherwise default to dashboard
+  const baseReturnUrl = returnUrl || "/dashboard";
+  const successUrl = new URL(baseReturnUrl, config.app.url);
+  successUrl.searchParams.set("payment", "success");
+  successUrl.searchParams.set("credits", creditPackage.credits.toString());
+
+  const cancelUrl = new URL(baseReturnUrl, config.app.url);
+  cancelUrl.searchParams.set("payment", "cancelled");
 
   const session = await stripe.checkout.sessions.create({
     customer_email: userEmail,
@@ -107,8 +119,8 @@ export async function createCheckoutSession(
     ],
     mode: "payment",
     allow_promotion_codes: true,
-    success_url: `${config.app.url}/dashboard?payment=success&credits=${creditPackage.credits}`,
-    cancel_url: `${config.app.url}/dashboard?payment=cancelled`,
+    success_url: successUrl.toString(),
+    cancel_url: cancelUrl.toString(),
     metadata: {
       userId,
       credits: creditPackage.credits.toString(),

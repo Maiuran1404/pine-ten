@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { packageId } = body;
+    const { packageId, returnUrl } = body;
 
     if (!packageId) {
       return NextResponse.json(
@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const checkoutSession = await createCheckoutSession(
       session.user.id,
       session.user.email,
-      packageId
+      packageId,
+      returnUrl
     );
 
     return NextResponse.json({ url: checkoutSession.url });

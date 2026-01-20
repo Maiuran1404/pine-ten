@@ -51,11 +51,20 @@ const creditPackages = [
   },
 ];
 
+interface PendingTaskState {
+  taskProposal: unknown;
+  draftId?: string;
+}
+
 interface CreditPurchaseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   requiredCredits?: number;
   currentCredits?: number;
+  /** URL to return to after payment (defaults to current page) */
+  returnUrl?: string;
+  /** Pending task state to restore after payment */
+  pendingTaskState?: PendingTaskState;
 }
 
 export function CreditPurchaseDialog({
@@ -63,6 +72,8 @@ export function CreditPurchaseDialog({
   onOpenChange,
   requiredCredits = 0,
   currentCredits = 0,
+  returnUrl,
+  pendingTaskState,
 }: CreditPurchaseDialogProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
@@ -72,10 +83,18 @@ export function CreditPurchaseDialog({
     setIsLoading(packageId);
 
     try {
+      // Save pending task state to sessionStorage so we can restore it after payment
+      if (pendingTaskState) {
+        sessionStorage.setItem("pending_task_state", JSON.stringify(pendingTaskState));
+      }
+
+      // Get current URL path to return to after payment (without query params)
+      const currentPath = returnUrl || window.location.pathname;
+
       const response = await fetch("/api/webhooks/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageId }),
+        body: JSON.stringify({ packageId, returnUrl: currentPath }),
       });
 
       if (!response.ok) {

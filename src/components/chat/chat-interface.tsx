@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { TypingText } from "./typing-text";
@@ -159,9 +159,12 @@ export function ChatInterface({
   onTaskCreated,
 }: ChatInterfaceProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null);
+  const [paymentProcessed, setPaymentProcessed] = useState(false);
+  const [refreshedCredits, setRefreshedCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -384,6 +387,67 @@ export function ChatInterface({
     saveDraft(draft);
     onDraftUpdateRef.current?.();
   }, [messages, selectedStyles, pendingTask, draftId, isInitialized]);
+
+  // Handle payment success - auto-confirm task after successful payment
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const creditsParam = searchParams.get("credits");
+
+    if (payment === "success" && creditsParam && !paymentProcessed) {
+      setPaymentProcessed(true);
+      toast.success(`Successfully purchased ${creditsParam} credits!`);
+
+      // Clean up URL params without navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      url.searchParams.delete("credits");
+      window.history.replaceState({}, "", url.toString());
+
+      // Fetch fresh credits from database
+      const fetchFreshCredits = async () => {
+        try {
+          const response = await fetch("/api/user/credits");
+          if (response.ok) {
+            const data = await response.json();
+            setRefreshedCredits(data.credits);
+          }
+        } catch {
+          // Ignore fetch errors
+        }
+      };
+
+      // Check for pending task state that was saved before payment
+      try {
+        const savedState = sessionStorage.getItem("pending_task_state");
+        if (savedState) {
+          const { taskProposal } = JSON.parse(savedState);
+          sessionStorage.removeItem("pending_task_state");
+
+          // Restore pending task
+          if (taskProposal) {
+            setPendingTask(taskProposal);
+
+            // Fetch fresh credits and notify user
+            fetchFreshCredits().then(() => {
+              toast.info("Your task is ready to submit. Click 'Confirm & Submit' to proceed.");
+            });
+          }
+        } else {
+          // Just fetch fresh credits even if no pending task
+          fetchFreshCredits();
+        }
+      } catch {
+        // Ignore parsing errors, still try to fetch credits
+        fetchFreshCredits();
+      }
+    } else if (payment === "cancelled") {
+      toast.info("Payment was cancelled");
+      // Clean up URL params
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams, paymentProcessed]);
 
   // Helper function to scroll to bottom
   const scrollToBottom = useRef((smooth = false) => {
@@ -927,7 +991,9 @@ export function ChatInterface({
     }
   };
 
-  const userCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
+  // Use refreshed credits if available (after payment), otherwise fall back to session credits
+  const sessionCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
+  const userCredits = refreshedCredits !== null ? refreshedCredits : sessionCredits;
 
   const handleConfirmTask = async () => {
     if (!pendingTask) return;
@@ -2082,6 +2148,7 @@ export function ChatInterface({
         onOpenChange={setShowCreditDialog}
         requiredCredits={pendingTask?.creditsRequired || 0}
         currentCredits={userCredits}
+        pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
       />
     </div>
   );
