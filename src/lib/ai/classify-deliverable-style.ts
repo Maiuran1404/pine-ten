@@ -14,6 +14,10 @@ export interface DeliverableStyleClassification {
   semanticTags: string[];
   confidence: number;
 
+  // Content type filtering
+  isVideoThumbnail?: boolean; // True if this looks like a video thumbnail/UGC/TikTok/Reels content
+  contentType?: "designed_graphic" | "video_thumbnail" | "ugc_content" | "photo" | "screenshot";
+
   // Extended classification fields
   colorTemperature?: "warm" | "cool" | "neutral";
   energyLevel?: "calm" | "balanced" | "energetic";
@@ -31,6 +35,27 @@ export interface DeliverableStyleClassification {
 }
 
 const CLASSIFICATION_PROMPT = `You are a design style expert. Analyze this design reference image and classify it comprehensively for use as a style suggestion in design conversations.
+
+## CONTENT TYPE DETECTION (IMPORTANT - check this first)
+
+First, determine what type of content this is:
+
+**isVideoThumbnail**: Set to TRUE if this image is:
+- A TikTok/Instagram Reels/YouTube Shorts style video thumbnail
+- Shows a person (selfie, vlog-style, POV content)
+- User-generated content (UGC) with casual phone-shot appearance
+- Has video player UI elements or play buttons
+- Looks like a screenshot from a video or live stream
+- Has "POV:", talking head format, or influencer-style content
+
+**contentType** (choose ONE):
+- designed_graphic: Professional graphic design, marketing creative, branded content
+- video_thumbnail: Thumbnail from video content (TikTok, Reels, YouTube, etc.)
+- ugc_content: User-generated content, selfies, casual photos
+- photo: Stock photo or professional photography (not a designed graphic)
+- screenshot: Screenshot of an app, website, or other interface
+
+We ONLY want "designed_graphic" content for our library. Set isVideoThumbnail=true for anything that isn't a designed graphic.
 
 ## PRIMARY CLASSIFICATION
 
@@ -92,6 +117,8 @@ Extract 3-5 dominant hex colors from the image.
 
 Respond in this exact JSON format (no markdown, no explanation):
 {
+  "isVideoThumbnail": false,
+  "contentType": "designed_graphic",
   "name": "Style Name",
   "description": "Brief 1-sentence description",
   "deliverableType": "instagram_post",
@@ -108,7 +135,9 @@ Respond in this exact JSON format (no markdown, no explanation):
   "targetAudience": "b2b" | "b2c" | "enterprise" | "startup" | "consumer",
   "visualElements": ["typography-heavy", "gradient"],
   "moodKeywords": ["professional", "modern", "clean"]
-}`;
+}
+
+IMPORTANT: If isVideoThumbnail is true or contentType is not "designed_graphic", set confidence to 0.`;
 
 export async function classifyDeliverableStyle(
   imageBase64: string,
@@ -170,6 +199,8 @@ export async function classifyDeliverableStyle(
       subStyle: null,
       semanticTags: [],
       confidence: 0,
+      isVideoThumbnail: false,
+      contentType: "designed_graphic",
       colorTemperature: "neutral",
       energyLevel: "balanced",
       densityLevel: "balanced",

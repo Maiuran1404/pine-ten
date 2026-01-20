@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -46,7 +46,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft } from "@/lib/chat-drafts";
+import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,12 +65,20 @@ import {
   type DeliverableStyleMarker,
   type TaskProposal,
   type ChatMessage as Message,
+  type MoodboardItem,
+  type ChatStage,
   getDeliveryDateString,
 } from "./types";
 import { TaskProposalCard } from "./task-proposal-card";
 import { FileAttachmentList } from "./file-attachment";
 import { QuickOptions } from "./quick-options";
 import { DeliverableStyleGrid } from "./deliverable-style-grid";
+import { ChatLayout } from "./chat-layout";
+import { StyleSelectionGrid } from "./style-selection-grid";
+import { SimpleOptionChips } from "./option-chips";
+import { TaskSubmissionModal } from "./task-submission-modal";
+import { useMoodboard } from "@/lib/hooks/use-moodboard";
+import { calculateChatStage } from "@/lib/chat-progress";
 
 // Task data types for when viewing an active task
 export interface TaskFile {
@@ -162,6 +170,7 @@ export function ChatInterface({
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null);
   const [paymentProcessed, setPaymentProcessed] = useState(false);
   const [refreshedCredits, setRefreshedCredits] = useState<number | null>(null);
@@ -180,16 +189,47 @@ export function ChatInterface({
   const [isDragging, setIsDragging] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
-  const [showSidePanel, setShowSidePanel] = useState(true);
-  const [sidePanelTab, setSidePanelTab] = useState<"info" | "files" | "deliverables">("info");
+  const [taskSubmitted, setTaskSubmitted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounterRef = useRef(0);
 
+  // Moodboard state management
+  const {
+    items: moodboardItems,
+    addItem: addMoodboardItem,
+    removeItem: removeMoodboardItem,
+    clearAll: clearMoodboard,
+    hasItem: hasMoodboardItem,
+    addFromStyle,
+    addFromUpload,
+  } = useMoodboard();
+
+  // Calculate chat progress
+  const progressState = useMemo(
+    () =>
+      calculateChatStage({
+        messages,
+        selectedStyles: [...selectedStyles, ...selectedDeliverableStyles],
+        moodboardItems,
+        pendingTask,
+        taskSubmitted,
+      }),
+    [messages, selectedStyles, selectedDeliverableStyles, moodboardItems, pendingTask, taskSubmitted]
+  );
+
+  // Get moodboard style IDs for tracking what's already added
+  const moodboardStyleIds = useMemo(
+    () => moodboardItems.filter((i) => i.type === "style").map((i) => i.metadata?.styleId || ""),
+    [moodboardItems]
+  );
+
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false);
+  // Track if AI indicated readiness without formal [TASK_READY] block
+  const [showManualSubmit, setShowManualSubmit] = useState(false);
 
   // Sync taskData state with initialTaskData prop when it changes
   useEffect(() => {
@@ -379,6 +419,15 @@ export function ChatInterface({
         attachments: m.attachments,
       })),
       selectedStyles,
+      moodboardItems: moodboardItems.map((item) => ({
+        id: item.id,
+        type: item.type,
+        imageUrl: item.imageUrl,
+        name: item.name,
+        metadata: item.metadata,
+        order: item.order,
+        addedAt: item.addedAt.toISOString(),
+      })),
       pendingTask,
       createdAt: getDraft(draftId)?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -386,7 +435,7 @@ export function ChatInterface({
 
     saveDraft(draft);
     onDraftUpdateRef.current?.();
-  }, [messages, selectedStyles, pendingTask, draftId, isInitialized]);
+  }, [messages, selectedStyles, moodboardItems, pendingTask, draftId, isInitialized]);
 
   // Handle payment success - auto-confirm task after successful payment
   useEffect(() => {
@@ -449,6 +498,30 @@ export function ChatInterface({
     }
   }, [searchParams, paymentProcessed]);
 
+  // Detect "ready to execute" patterns when AI doesn't generate [TASK_READY] block
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === "assistant" && !pendingTask) {
+      const readyPatterns = [
+        /ready to execute/i,
+        /ready to submit/i,
+        /ready to move forward/i,
+        /sound good to move forward/i,
+        /shall i submit/i,
+        /ready to proceed/i,
+        /ready when you are/i,
+        /good to go/i,
+      ];
+
+      const hasReadyIndicator = readyPatterns.some((p) =>
+        p.test(lastMessage.content)
+      );
+      setShowManualSubmit(hasReadyIndicator);
+    } else {
+      setShowManualSubmit(false);
+    }
+  }, [messages, pendingTask]);
+
   // Helper function to scroll to bottom
   const scrollToBottom = useRef((smooth = false) => {
     if (scrollAreaRef.current) {
@@ -508,6 +581,14 @@ export function ChatInterface({
       // Filter out any undefined/null files
       const validFiles = newFiles.filter((f): f is UploadedFile => !!f && !!f.fileUrl);
       setUploadedFiles((prev) => [...prev, ...validFiles]);
+
+      // Auto-add image uploads to moodboard
+      validFiles.forEach((file) => {
+        if (file.fileType?.startsWith("image/")) {
+          addFromUpload(file);
+        }
+      });
+
       toast.success(`${validFiles.length} file(s) uploaded`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to upload files");
@@ -626,6 +707,65 @@ export function ChatInterface({
     }
   };
 
+  // Send a specific message (used for clickable options)
+  const handleSendOption = async (optionText: string) => {
+    if (isLoading || !optionText.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: optionText,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedStyles,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDiscard = () => {
     setInput("");
     setUploadedFiles([]);
@@ -658,6 +798,11 @@ export function ChatInterface({
         : [...prev, style.id]
     );
 
+    // Auto-add to moodboard when selecting
+    if (isSelecting && !hasMoodboardItem(style.id)) {
+      addFromStyle(style);
+    }
+
     // Record selection to history (fire-and-forget, don't block UI)
     if (isSelecting) {
       fetch("/api/style-history", {
@@ -672,6 +817,14 @@ export function ChatInterface({
           // Note: draftId not sent since local drafts aren't in database
         }),
       }).catch(err => console.error("Failed to record style selection:", err));
+    }
+  };
+
+  // Handle adding style to moodboard without selecting
+  const handleAddToMoodboard = (style: DeliverableStyle) => {
+    if (!hasMoodboardItem(style.id)) {
+      addFromStyle(style);
+      toast.success(`Added "${style.name}" to moodboard`);
     }
   };
 
@@ -1024,6 +1177,13 @@ export function ChatInterface({
           })),
           styleReferences: selectedStyles,
           attachments: allAttachments,
+          moodboardItems: moodboardItems.map((item) => ({
+            id: item.id,
+            type: item.type,
+            imageUrl: item.imageUrl,
+            name: item.name,
+            metadata: item.metadata,
+          })),
         }),
       });
 
@@ -1035,6 +1195,9 @@ export function ChatInterface({
       const result = await response.json();
       const taskId = result.data.taskId;
 
+      // Mark task as submitted for progress tracking
+      setTaskSubmitted(true);
+
       // Delete draft
       deleteDraft(draftId);
       onDraftUpdate?.();
@@ -1043,7 +1206,7 @@ export function ChatInterface({
       const successMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: `🎉 **Your task has been submitted!**\n\n${result.data.assignedTo ? `**${result.data.assignedTo}** has been assigned to work on your project.` : "We're finding the perfect artist for your project."} You'll receive updates as your design progresses.\n\nYou can view your task details in the panel on the right.`,
+        content: `**Your task has been submitted!**\n\n${result.data.assignedTo ? `**${result.data.assignedTo}** has been assigned to work on your project.` : "We're finding the perfect artist for your project."} You'll receive updates as your design progresses.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, successMessage]);
@@ -1098,9 +1261,20 @@ export function ChatInterface({
       toast.success("Task created successfully!");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create task");
+      throw error; // Re-throw for modal handling
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Open submission modal
+  const handleOpenSubmissionModal = () => {
+    if (!pendingTask) return;
+    if (userCredits < pendingTask.creditsRequired) {
+      setShowCreditDialog(true);
+      return;
+    }
+    setShowSubmissionModal(true);
   };
 
   const handleRejectTask = () => {
@@ -1114,6 +1288,22 @@ export function ChatInterface({
     };
     setMessages((prev) => [...prev, clarifyMessage]);
     setAnimatingMessageId(clarifyMessage.id);
+  };
+
+  // Request formal task summary when AI says "ready" but didn't generate [TASK_READY]
+  const handleRequestTaskSummary = async () => {
+    if (isLoading) return;
+
+    const requestMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: "Please generate the task summary so I can submit it.",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, requestMessage]);
+    setShowManualSubmit(false);
+    setNeedsAutoContinue(true);
   };
 
   // Generate smart chat title
@@ -1200,21 +1390,24 @@ export function ChatInterface({
       : new Date();
 
   return (
-    <div
-      className={cn(
-        "flex relative",
-        seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]"
-      )}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+    <ChatLayout
+      currentStage={progressState.currentStage}
+      completedStages={progressState.completedStages}
+      progressPercentage={progressState.progressPercentage}
+      moodboardItems={moodboardItems}
+      onRemoveMoodboardItem={removeMoodboardItem}
+      onClearMoodboard={clearMoodboard}
+      showProgress={seamlessTransition && !isTaskMode}
+      showMoodboard={seamlessTransition && !isTaskMode}
+      className={cn(seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]")}
     >
-      {/* Main chat area */}
-      <div className={cn(
-        "flex flex-col flex-1 min-w-0 transition-all duration-300",
-        showSidePanel ? "mr-80" : "mr-0"
-      )}>
+      <div
+        className="flex flex-col h-full relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         {/* Drag overlay */}
         <AnimatePresence>
           {isDragging && (
@@ -1242,7 +1435,7 @@ export function ChatInterface({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="shrink-0 mb-4 pb-4 border-b border-border flex items-center justify-between"
+            className="shrink-0 mb-4 pb-4 border-b border-border flex items-center justify-between px-2"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -1260,17 +1453,6 @@ export function ChatInterface({
                 aria-label="Delete chat"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setShowSidePanel(!showSidePanel)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                aria-label={showSidePanel ? "Hide panel" : "Show panel"}
-              >
-                {showSidePanel ? (
-                  <PanelRightClose className="h-4 w-4" />
-                ) : (
-                  <PanelRight className="h-4 w-4" />
-                )}
               </button>
             </div>
           </motion.div>
@@ -1333,6 +1515,12 @@ export function ChatInterface({
                               onComplete={() => {
                                 if (animatingMessageId === message.id) {
                                   setAnimatingMessageId(null);
+                                }
+                              }}
+                              onOptionClick={(option) => {
+                                // When user clicks an option, send it as their response
+                                if (!isLoading && !isUploading) {
+                                  handleSendOption(option);
                                 }
                               }}
                               className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
@@ -1437,10 +1625,12 @@ export function ChatInterface({
                             <p className="text-sm font-medium mb-4 text-foreground">
                               What style direction speaks to you?
                             </p>
-                            <DeliverableStyleGrid
+                            <StyleSelectionGrid
                               styles={message.deliverableStyles}
                               selectedStyles={selectedDeliverableStyles}
+                              moodboardStyleIds={moodboardStyleIds}
                               onSelectStyle={handleDeliverableStyleSelect}
+                              onAddToMoodboard={handleAddToMoodboard}
                               onShowMore={handleShowMoreStyles}
                               onShowDifferent={handleShowDifferentStyles}
                               isLoading={isLoading}
@@ -1540,6 +1730,41 @@ export function ChatInterface({
           </div>
         </ScrollArea>
 
+        {/* Manual submit fallback when AI says "ready" but no [TASK_READY] */}
+        {showManualSubmit && !pendingTask && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border border-amber-500/50 bg-amber-500/5 rounded-xl p-4 mb-4"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Ready to submit?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click to generate your task summary
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleRequestTaskSummary}
+                disabled={isLoading}
+                className="h-9"
+              >
+                {isLoading ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
+                Generate Summary
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Task Confirmation Bar */}
         {pendingTask && (
           <motion.div
@@ -1576,16 +1801,16 @@ export function ChatInterface({
                   Make Changes
                 </Button>
                 <Button
-                  onClick={handleConfirmTask}
+                  onClick={handleOpenSubmissionModal}
                   disabled={isLoading}
                   className="h-9"
                 >
                   {isLoading ? (
                     <LoadingSpinner size="sm" className="mr-2" />
                   ) : (
-                    <Check className="h-4 w-4 mr-2" />
+                    <Sparkles className="h-4 w-4 mr-2" />
                   )}
-                  {userCredits < pendingTask.creditsRequired ? "Buy Credits" : "Confirm & Submit"}
+                  {userCredits < pendingTask.creditsRequired ? "Buy Credits" : "Review & Submit"}
                 </Button>
               </div>
             </div>
@@ -1708,439 +1933,17 @@ export function ChatInterface({
         </div>
       </div>
 
-      {/* Side Panel */}
-      <AnimatePresence>
-        {showSidePanel && seamlessTransition && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-0 top-0 bottom-0 w-80 border-l border-border bg-card/50 backdrop-blur-sm overflow-hidden flex flex-col"
-          >
-            {/* Panel tabs */}
-            <div className="flex items-center gap-1 px-4 py-3 border-b border-border">
-              <button
-                onClick={() => setSidePanelTab("info")}
-                className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
-                  sidePanelTab === "info"
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Info
-              </button>
-              <button
-                onClick={() => setSidePanelTab("files")}
-                className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
-                  sidePanelTab === "files"
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Files
-              </button>
-              {isTaskMode && (
-                <button
-                  onClick={() => setSidePanelTab("deliverables")}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
-                    sidePanelTab === "deliverables"
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Deliverables
-                </button>
-              )}
-            </div>
-
-            {/* Panel content */}
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-6">
-                {sidePanelTab === "info" ? (
-                  <>
-                    {/* Assigned Artist Section - Only show in task mode when assigned */}
-                    {isTaskMode && assignedArtist && (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-foreground">Assigned Artist</h3>
-                        <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                          <div className="flex items-center gap-3">
-                            {assignedArtist.image ? (
-                              <img
-                                src={assignedArtist.image}
-                                alt={assignedArtist.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Palette className="h-5 w-5 text-primary" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">
-                                {assignedArtist.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {assignedArtist.email}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Main info section */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-foreground">Main info</h3>
-
-                      {/* Creator */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <User className="h-4 w-4" />
-                          <span className="text-sm">Creator</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                            {userInitial}
-                          </div>
-                          <span className="text-sm text-foreground">{userName.split(" ")[0]}</span>
-                        </div>
-                      </div>
-
-                      {/* Date of creation */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span className="text-sm">Created</span>
-                        </div>
-                        <span className="text-sm text-foreground">{formatDate(chatCreatedAt)}</span>
-                      </div>
-
-                      {/* Status - Enhanced for task mode */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Activity className="h-4 w-4" />
-                          <span className="text-sm">Status</span>
-                        </div>
-                        {isTaskMode && taskData ? (
-                          <span className={cn(
-                            "text-xs px-2 py-0.5 rounded-full flex items-center gap-1",
-                            getStatusDisplay(taskData.status).color
-                          )}>
-                            {getStatusDisplay(taskData.status).icon}
-                            {getStatusDisplay(taskData.status).label}
-                          </span>
-                        ) : (
-                          <span className={cn(
-                            "text-xs px-2 py-0.5 rounded-full",
-                            pendingTask
-                              ? "bg-green-500/10 text-green-500"
-                              : "bg-primary/10 text-primary"
-                          )}>
-                            {pendingTask ? "Ready" : "Draft"}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Credits Used - Only in task mode */}
-                      {isTaskMode && taskData && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Coins className="h-4 w-4" />
-                            <span className="text-sm">Credits used</span>
-                          </div>
-                          <span className="text-sm font-medium text-foreground">{taskData.creditsUsed}</span>
-                        </div>
-                      )}
-
-                      {/* Revisions - Only in task mode */}
-                      {isTaskMode && taskData && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <RotateCcw className="h-4 w-4" />
-                            <span className="text-sm">Revisions</span>
-                          </div>
-                          <span className="text-sm text-foreground">
-                            {taskData.revisionsUsed} / {taskData.maxRevisions}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Deadline - Only in task mode if set */}
-                      {isTaskMode && taskData?.deadline && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Timer className="h-4 w-4" />
-                            <span className="text-sm">Deadline</span>
-                          </div>
-                          <span className="text-sm text-foreground">{formatDate(taskData.deadline)}</span>
-                        </div>
-                      )}
-
-                      {/* Messages count */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Quote className="h-4 w-4" />
-                          <span className="text-sm">Messages</span>
-                        </div>
-                        <span className="text-sm text-foreground">{messages.length}</span>
-                      </div>
-
-                      {/* Files count - click to switch tab */}
-                      <button
-                        onClick={() => setSidePanelTab("files")}
-                        className="flex items-center justify-between w-full hover:bg-muted/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                      >
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm">Files</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm text-foreground">
-                            {isTaskMode ? taskFiles.length + allAttachments.length : allAttachments.length}
-                          </span>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </button>
-
-                      {/* Deliverables count - Only in task mode */}
-                      {isTaskMode && (
-                        <button
-                          onClick={() => setSidePanelTab("deliverables")}
-                          className="flex items-center justify-between w-full hover:bg-muted/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                        >
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Package className="h-4 w-4" />
-                            <span className="text-sm">Deliverables</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm text-foreground">{deliverables.length}</span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Selected styles */}
-                    {selectedStyles.length > 0 && (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-foreground">Selected styles</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedStyles.map((style) => (
-                            <span
-                              key={style}
-                              className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
-                            >
-                              {style}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Task summary if pending (draft mode) */}
-                    {!isTaskMode && pendingTask && (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-foreground">Task Summary</h3>
-                        <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
-                          <p className="text-sm font-medium text-foreground">{pendingTask.title}</p>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Credits required</span>
-                            <span className="text-foreground font-medium">{pendingTask.creditsRequired}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Est. hours</span>
-                            <span className="text-foreground font-medium">{pendingTask.estimatedHours}h</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Timeline - Only in task mode */}
-                    {isTaskMode && taskData && (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-foreground">Timeline</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-primary" />
-                            <div className="flex-1">
-                              <p className="text-xs text-muted-foreground">Created</p>
-                              <p className="text-sm text-foreground">{formatDate(taskData.createdAt)}</p>
-                            </div>
-                          </div>
-                          {taskData.assignedAt && (
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-blue-500" />
-                              <div className="flex-1">
-                                <p className="text-xs text-muted-foreground">Assigned</p>
-                                <p className="text-sm text-foreground">{formatDate(taskData.assignedAt)}</p>
-                              </div>
-                            </div>
-                          )}
-                          {taskData.completedAt && (
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-green-500" />
-                              <div className="flex-1">
-                                <p className="text-xs text-muted-foreground">Completed</p>
-                                <p className="text-sm text-foreground">{formatDate(taskData.completedAt)}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Process Timeline */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-foreground">Process</h3>
-                      <div className="space-y-0">
-                        {[
-                          { label: "Brief", done: messages.length >= 1 },
-                          { label: "Style", done: selectedStyles.length > 0 },
-                          { label: "Review", done: !!pendingTask },
-                          { label: "In Progress", done: isTaskMode && taskData?.status === "IN_PROGRESS" },
-                          { label: "Delivered", done: isTaskMode && taskData?.status === "COMPLETED" },
-                        ].map((step, i, arr) => (
-                          <div key={step.label} className="flex items-start gap-3">
-                            {/* Timeline line and dot */}
-                            <div className="flex flex-col items-center">
-                              <div className={cn(
-                                "w-2 h-2 rounded-full shrink-0 mt-1.5",
-                                step.done ? "bg-primary" : "bg-muted"
-                              )} />
-                              {i < arr.length - 1 && (
-                                <div className={cn(
-                                  "w-0.5 h-6",
-                                  step.done ? "bg-primary/30" : "bg-muted"
-                                )} />
-                              )}
-                            </div>
-                            {/* Label */}
-                            <span className={cn(
-                              "text-sm",
-                              step.done ? "text-foreground" : "text-muted-foreground"
-                            )}>
-                              {step.label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : sidePanelTab === "files" ? (
-                  /* Files tab */
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-foreground">Attached files</h3>
-                    {(isTaskMode ? [...taskFiles, ...allAttachments] : allAttachments).length > 0 ? (
-                      <div className="space-y-2">
-                        {(isTaskMode ? [...taskFiles.map(f => ({
-                          fileName: f.fileName,
-                          fileUrl: f.fileUrl,
-                          fileType: f.fileType,
-                          fileSize: f.fileSize,
-                        })), ...allAttachments] : allAttachments).map((file, idx) => (
-                          <a
-                            key={`${file.fileUrl}-${idx}`}
-                            href={file.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group"
-                          >
-                            {file.fileType?.startsWith("image/") ? (
-                              <img
-                                src={file.fileUrl}
-                                alt={file.fileName}
-                                className="w-10 h-10 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-                                <FileIcon className="h-5 w-5 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                                {file.fileName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {((file.fileSize || 0) / 1024).toFixed(1)} KB
-                              </p>
-                            </div>
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">No files attached yet</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Deliverables tab - Only available in task mode */
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-foreground">Deliverables</h3>
-                    {deliverables.length > 0 ? (
-                      <div className="space-y-3">
-                        {deliverables.map((file) => (
-                          <div
-                            key={file.id}
-                            className="p-3 rounded-lg border border-border bg-muted/30 space-y-2"
-                          >
-                            <div className="flex items-start gap-3">
-                              {file.fileType?.startsWith("image/") ? (
-                                <img
-                                  src={file.fileUrl}
-                                  alt={file.fileName}
-                                  className="w-16 h-16 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                                  <FileIcon className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">
-                                  {file.fileName}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {((file.fileSize || 0) / 1024).toFixed(1)} KB
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatDate(file.createdAt)}
-                                </p>
-                              </div>
-                            </div>
-                            <a
-                              href={file.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                            >
-                              <Download className="h-4 w-4" />
-                              Download
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">No deliverables yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Files will appear here once the artist submits their work
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Task Submission Modal */}
+      <TaskSubmissionModal
+        isOpen={showSubmissionModal}
+        onClose={() => setShowSubmissionModal(false)}
+        onConfirm={handleConfirmTask}
+        onMakeChanges={handleRejectTask}
+        taskProposal={pendingTask}
+        moodboardItems={moodboardItems}
+        userCredits={userCredits}
+        isSubmitting={isLoading}
+      />
 
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog
@@ -2150,6 +1953,6 @@ export function ChatInterface({
         currentCredits={userCredits}
         pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
       />
-    </div>
+    </ChatLayout>
   );
 }

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, deliverableStyleReferences } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Color distance calculation (simple RGB euclidean)
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -29,32 +29,99 @@ function colorDistance(hex1: string, hex2: string): number {
   );
 }
 
-// Determine color temperature from hex color (warm, cool, neutral)
-function getColorTemperature(hex: string): "warm" | "cool" | "neutral" {
+// Color family classification for grouping
+type ColorFamily = "red_pink" | "orange_yellow" | "green" | "blue_teal" | "purple" | "neutral" | "mixed";
+
+function getColorFamily(hex: string): ColorFamily {
   const rgb = hexToRgb(hex);
   if (!rgb) return "neutral";
 
-  // Calculate warmth based on red vs blue dominance
-  const warmth = rgb.r - rgb.b;
+  const { r, g, b } = rgb;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const chroma = max - min;
 
-  // If colors are close together (grays, whites, blacks), it's neutral
-  const colorRange = Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b);
-  if (colorRange < 30) return "neutral";
+  // If very low chroma, it's neutral (gray/white/black)
+  if (chroma < 30) return "neutral";
 
-  if (warmth > 30) return "warm";
-  if (warmth < -30) return "cool";
+  // Calculate hue
+  let hue = 0;
+  if (chroma > 0) {
+    if (max === r) {
+      hue = ((g - b) / chroma) % 6;
+    } else if (max === g) {
+      hue = (b - r) / chroma + 2;
+    } else {
+      hue = (r - g) / chroma + 4;
+    }
+    hue = Math.round(hue * 60);
+    if (hue < 0) hue += 360;
+  }
+
+  // Map hue to color family
+  if (hue >= 345 || hue < 15) return "red_pink";
+  if (hue >= 15 && hue < 45) return "orange_yellow";
+  if (hue >= 45 && hue < 75) return "orange_yellow";
+  if (hue >= 75 && hue < 165) return "green";
+  if (hue >= 165 && hue < 255) return "blue_teal";
+  if (hue >= 255 && hue < 285) return "purple";
+  if (hue >= 285 && hue < 345) return "red_pink"; // Magenta/Pink range
+
   return "neutral";
 }
 
-// Get dominant temperature from array of colors
-function getDominantTemperature(colors: string[]): "warm" | "cool" | "neutral" {
-  const temps = colors.map(getColorTemperature);
-  const counts = { warm: 0, cool: 0, neutral: 0 };
-  temps.forEach(t => counts[t]++);
+// Get dominant color family from array of colors
+function getDominantColorFamily(colors: string[]): ColorFamily {
+  if (colors.length === 0) return "neutral";
 
-  if (counts.warm > counts.cool && counts.warm > counts.neutral) return "warm";
-  if (counts.cool > counts.warm && counts.cool > counts.neutral) return "cool";
-  return "neutral";
+  const families = colors.map(getColorFamily);
+  const counts: Record<ColorFamily, number> = {
+    red_pink: 0,
+    orange_yellow: 0,
+    green: 0,
+    blue_teal: 0,
+    purple: 0,
+    neutral: 0,
+    mixed: 0,
+  };
+
+  families.forEach((f) => counts[f]++);
+
+  // Find the dominant non-neutral family
+  let maxFamily: ColorFamily = "neutral";
+  let maxCount = 0;
+  const nonNeutralFamilies: ColorFamily[] = ["red_pink", "orange_yellow", "green", "blue_teal", "purple"];
+
+  for (const family of nonNeutralFamilies) {
+    if (counts[family] > maxCount) {
+      maxCount = counts[family];
+      maxFamily = family;
+    }
+  }
+
+  // If multiple families have same count, it's mixed
+  const familiesWithMaxCount = nonNeutralFamilies.filter((f) => counts[f] === maxCount && maxCount > 0);
+  if (familiesWithMaxCount.length > 1) return "mixed";
+
+  return maxCount > 0 ? maxFamily : "neutral";
+}
+
+// Check if a color is very close to white or black (neutral)
+function isNeutralColor(hex: string): boolean {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return true;
+
+  const { r, g, b } = rgb;
+  // White-ish (all values high and similar)
+  if (r > 220 && g > 220 && b > 220) return true;
+  // Black-ish (all values low)
+  if (r < 35 && g < 35 && b < 35) return true;
+  // Gray-ish (all values similar)
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max - min < 30 && max < 200 && min > 55) return true;
+
+  return false;
 }
 
 // GET - Fetch style references that match user's brand
@@ -82,117 +149,178 @@ export async function GET(request: NextRequest) {
     // Get all active style references
     const allReferences = await db.query.deliverableStyleReferences.findMany({
       where: eq(deliverableStyleReferences.isActive, true),
-      limit: 100,
+      limit: 200,
     });
 
     if (!user?.company || allReferences.length === 0) {
-      // Return random references if no brand data
-      const shuffled = allReferences.sort(() => 0.5 - Math.random());
-      return NextResponse.json({
-        success: true,
-        data: shuffled.slice(0, limit),
-        matchMethod: "random",
-      });
+      // Return references grouped by color family if no brand data
+      return groupByColorFamily(allReferences, limit, null);
     }
 
     const company = user.company;
 
-    // Collect brand colors
+    // Collect brand colors (excluding pure white/black which match everything)
     const brandColors: string[] = [];
-    if (company.primaryColor) brandColors.push(company.primaryColor);
-    if (company.secondaryColor) brandColors.push(company.secondaryColor);
-    if (company.accentColor) brandColors.push(company.accentColor);
+    const brandColorsForMatching: string[] = [];
+    if (company.primaryColor) {
+      brandColors.push(company.primaryColor);
+      if (!isNeutralColor(company.primaryColor)) {
+        brandColorsForMatching.push(company.primaryColor);
+      }
+    }
+    if (company.secondaryColor) {
+      brandColors.push(company.secondaryColor);
+      if (!isNeutralColor(company.secondaryColor)) {
+        brandColorsForMatching.push(company.secondaryColor);
+      }
+    }
+    if (company.accentColor) {
+      brandColors.push(company.accentColor);
+      if (!isNeutralColor(company.accentColor)) {
+        brandColorsForMatching.push(company.accentColor);
+      }
+    }
     if (company.brandColors && Array.isArray(company.brandColors)) {
-      brandColors.push(...company.brandColors.filter((c): c is string => typeof c === 'string'));
+      const filtered = company.brandColors.filter((c): c is string => typeof c === "string");
+      brandColors.push(...filtered);
+      brandColorsForMatching.push(...filtered.filter((c) => !isNeutralColor(c)));
     }
 
-    if (brandColors.length === 0) {
-      // Return random references if no colors
-      const shuffled = allReferences.sort(() => 0.5 - Math.random());
-      return NextResponse.json({
-        success: true,
-        data: shuffled.slice(0, limit),
-        matchMethod: "random",
-      });
+    if (brandColorsForMatching.length === 0) {
+      // Return references grouped by color family if no meaningful colors
+      return groupByColorFamily(allReferences, limit, brandColors);
     }
 
-    // Get dominant temperature from brand colors for fallback matching
-    const brandTemperature = getDominantTemperature(brandColors);
+    // Get brand color families for matching
+    const brandColorFamilies = new Set(brandColorsForMatching.map(getColorFamily));
 
-    // Score each reference based on color similarity
+    // STRICT color matching: only match if reference has a color very close to brand colors
+    // Distance threshold: ~50 (fairly close in RGB space)
+    const STRICT_DISTANCE_THRESHOLD = 60;
+
     const scoredReferences = allReferences.map((ref) => {
-      let colorScore = 0;
-      let matchCount = 0;
-      let temperatureBonus = 0;
-
-      // Check colorSamples from reference for exact color matching
       const refColors = ref.colorSamples as string[] | null;
+      let bestMatchDistance = Infinity;
+      let matchedBrandColor: string | null = null;
+      let refDominantFamily: ColorFamily = "neutral";
+
       if (refColors && Array.isArray(refColors) && refColors.length > 0) {
-        for (const brandColor of brandColors) {
-          let minDistance = Infinity;
+        // Get dominant color family of the reference
+        refDominantFamily = getDominantColorFamily(refColors);
+
+        // Check for strict color matches
+        for (const brandColor of brandColorsForMatching) {
           for (const refColor of refColors) {
             const distance = colorDistance(brandColor, refColor);
-            if (distance < minDistance) {
-              minDistance = distance;
+            if (distance < bestMatchDistance) {
+              bestMatchDistance = distance;
+              matchedBrandColor = brandColor;
             }
           }
-          // Normalize distance to a score (0-100, lower distance = higher score)
-          const score = Math.max(0, 100 - minDistance / 4);
-          colorScore += score;
-          matchCount++;
         }
+      } else {
+        // If no color samples, use colorTemperature field to determine family
+        const temp = ref.colorTemperature as string | null;
+        if (temp === "warm") refDominantFamily = "orange_yellow";
+        else if (temp === "cool") refDominantFamily = "blue_teal";
+        else refDominantFamily = "neutral";
       }
-
-      // Fallback: Use color temperature matching if no colorSamples or low score
-      const refTemperature = ref.colorTemperature as string | null;
-      if (refTemperature && refTemperature === brandTemperature) {
-        temperatureBonus = 30; // Boost for matching temperature
-      } else if (refTemperature === "neutral" || brandTemperature === "neutral") {
-        temperatureBonus = 15; // Neutral matches everything moderately
-      }
-
-      // If reference has no color samples, rely more on temperature
-      const baseScore = matchCount > 0 ? colorScore / matchCount : 20; // Base score of 20 for items without color data
-      const totalScore = baseScore + temperatureBonus;
 
       return {
         ...ref,
-        matchScore: totalScore,
-        hasColorData: refColors && refColors.length > 0,
+        matchDistance: bestMatchDistance,
+        matchedBrandColor,
+        refDominantFamily,
+        isBrandMatch: bestMatchDistance < STRICT_DISTANCE_THRESHOLD,
       };
     });
 
-    // Sort by match score and take top results
-    scoredReferences.sort((a, b) => b.matchScore - a.matchScore);
+    // Separate into brand matches and others
+    const brandMatches = scoredReferences
+      .filter((r) => r.isBrandMatch)
+      .sort((a, b) => a.matchDistance - b.matchDistance);
 
-    // Ensure we always return results - mix high-scoring with some variety
-    // Take top 70% by score, and add 30% random for variety
-    const scoreThreshold = Math.floor(limit * 0.7);
-    const varietyCount = limit - scoreThreshold;
+    const otherRefs = scoredReferences.filter((r) => !r.isBrandMatch);
 
-    const topScored = scoredReferences.slice(0, scoreThreshold);
-    const remaining = scoredReferences.slice(scoreThreshold);
+    // Group others by their dominant color family
+    const colorFamilyGroups: Record<ColorFamily, typeof scoredReferences> = {
+      red_pink: [],
+      orange_yellow: [],
+      green: [],
+      blue_teal: [],
+      purple: [],
+      neutral: [],
+      mixed: [],
+    };
 
-    // Shuffle remaining and pick some for variety
-    const shuffledRemaining = remaining.sort(() => 0.5 - Math.random()).slice(0, varietyCount);
+    for (const ref of otherRefs) {
+      colorFamilyGroups[ref.refDominantFamily].push(ref);
+    }
 
-    const combined = [...topScored, ...shuffledRemaining];
+    // Build result
+    const result: Array<(typeof scoredReferences)[0] & { colorGroup: string }> = [];
 
-    // Final shuffle to mix high-scored and variety items
-    const result = combined
-      .map((ref) => ({
-        ...ref,
-        sortKey: ref.matchScore + Math.random() * 15,
-      }))
-      .sort((a, b) => b.sortKey - a.sortKey)
-      .map(({ sortKey, matchScore, hasColorData, ...ref }) => ref);
+    // Add brand matches first
+    for (const ref of brandMatches) {
+      if (result.length >= limit) break;
+      result.push({ ...ref, colorGroup: "matches_brand" });
+    }
+
+    // Define display order for color families (brand-related families first)
+    const familyOrder: ColorFamily[] = [];
+
+    // Put brand color families first
+    if (brandColorFamilies.has("red_pink")) familyOrder.push("red_pink");
+    if (brandColorFamilies.has("blue_teal")) familyOrder.push("blue_teal");
+    if (brandColorFamilies.has("green")) familyOrder.push("green");
+    if (brandColorFamilies.has("orange_yellow")) familyOrder.push("orange_yellow");
+    if (brandColorFamilies.has("purple")) familyOrder.push("purple");
+
+    // Then add remaining families
+    const allFamilies: ColorFamily[] = ["red_pink", "blue_teal", "green", "orange_yellow", "purple", "neutral", "mixed"];
+    for (const family of allFamilies) {
+      if (!familyOrder.includes(family)) {
+        familyOrder.push(family);
+      }
+    }
+
+    const familyLabels: Record<ColorFamily, string> = {
+      red_pink: "pink_coral",
+      orange_yellow: "orange_yellow",
+      green: "green",
+      blue_teal: "blue_teal",
+      purple: "purple",
+      neutral: "neutral_tones",
+      mixed: "colorful",
+    };
+
+    // Add from each color family
+    for (const family of familyOrder) {
+      const familyRefs = colorFamilyGroups[family];
+      // Shuffle within each family for variety
+      familyRefs.sort(() => 0.5 - Math.random());
+
+      for (const ref of familyRefs) {
+        if (result.length >= limit) break;
+        result.push({ ...ref, colorGroup: familyLabels[family] });
+      }
+    }
+
+    // Clean up internal scoring fields from response
+    const cleanResult = result.map(
+      ({ matchDistance, matchedBrandColor, refDominantFamily, isBrandMatch, ...ref }) => ref
+    );
 
     return NextResponse.json({
       success: true,
-      data: result,
-      matchMethod: "color_similarity",
+      data: cleanResult,
+      matchMethod: "color_grouped",
       brandColors,
-      brandTemperature,
+      brandColorFamilies: Array.from(brandColorFamilies),
+      groups: {
+        matchesBrand: brandMatches.length,
+        total: allReferences.length,
+      },
     });
   } catch (error) {
     console.error("Style reference match error:", error);
@@ -201,4 +329,75 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to group references by color family when no brand data
+function groupByColorFamily(
+  references: typeof deliverableStyleReferences.$inferSelect[],
+  limit: number,
+  brandColors: string[] | null
+) {
+  const colorFamilyGroups: Record<ColorFamily, typeof references> = {
+    red_pink: [],
+    orange_yellow: [],
+    green: [],
+    blue_teal: [],
+    purple: [],
+    neutral: [],
+    mixed: [],
+  };
+
+  for (const ref of references) {
+    const refColors = ref.colorSamples as string[] | null;
+    let family: ColorFamily = "neutral";
+
+    if (refColors && Array.isArray(refColors) && refColors.length > 0) {
+      family = getDominantColorFamily(refColors);
+    } else {
+      const temp = ref.colorTemperature as string | null;
+      if (temp === "warm") family = "orange_yellow";
+      else if (temp === "cool") family = "blue_teal";
+    }
+
+    colorFamilyGroups[family].push(ref);
+  }
+
+  const familyLabels: Record<ColorFamily, string> = {
+    red_pink: "pink_coral",
+    orange_yellow: "orange_yellow",
+    green: "green",
+    blue_teal: "blue_teal",
+    purple: "purple",
+    neutral: "neutral_tones",
+    mixed: "colorful",
+  };
+
+  const familyOrder: ColorFamily[] = [
+    "red_pink",
+    "blue_teal",
+    "green",
+    "orange_yellow",
+    "purple",
+    "neutral",
+    "mixed",
+  ];
+
+  const result: Array<(typeof references)[0] & { colorGroup: string }> = [];
+
+  for (const family of familyOrder) {
+    const familyRefs = colorFamilyGroups[family];
+    familyRefs.sort(() => 0.5 - Math.random());
+
+    for (const ref of familyRefs) {
+      if (result.length >= limit) break;
+      result.push({ ...ref, colorGroup: familyLabels[family] });
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: result,
+    matchMethod: "color_grouped",
+    brandColors,
+  });
 }

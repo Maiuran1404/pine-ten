@@ -48,6 +48,7 @@ export interface BiggedScraperOptions {
   minImageHeight?: number;
   parallelBatchSize?: number;
   preview?: boolean;
+  includeVideos?: boolean; // Default false - skip video thumbnails
   onProgress?: (current: number, total: number, item?: ImportResult) => void;
   triggeredBy?: string;
   triggeredByEmail?: string;
@@ -97,7 +98,8 @@ function getSupabaseClient() {
 export async function scrapeBiggedUrls(
   query: string,
   maxItems: number = DEFAULT_LIMIT,
-  onProgress?: (message: string) => void
+  onProgress?: (message: string) => void,
+  includeVideos: boolean = false
 ): Promise<ScrapedMedia[]> {
   let browser: Browser | null = null;
 
@@ -161,21 +163,27 @@ export async function scrapeBiggedUrls(
 
           if (!allMedia.has(key)) {
             if (type === "VIDEO") {
-              allMedia.set(key, {
-                thumbnailUrl: src.replace(".mp4", ".jpg").replace("/videos/", "/videos/thumbnails/"),
-                videoUrl: src,
-                pageId,
-                uuid,
-                type: "video",
-              });
+              // Skip videos unless includeVideos is true
+              if (includeVideos) {
+                allMedia.set(key, {
+                  thumbnailUrl: src.replace(".mp4", ".jpg").replace("/videos/", "/videos/thumbnails/"),
+                  videoUrl: src,
+                  pageId,
+                  uuid,
+                  type: "video",
+                });
+              }
             } else if (src.includes("/videos/thumbnails/")) {
-              allMedia.set(key, {
-                thumbnailUrl: src,
-                videoUrl: src.replace("/thumbnails/", "/").replace(".jpg", ".mp4"),
-                pageId,
-                uuid,
-                type: "video",
-              });
+              // Skip video thumbnails unless includeVideos is true
+              if (includeVideos) {
+                allMedia.set(key, {
+                  thumbnailUrl: src,
+                  videoUrl: src.replace("/thumbnails/", "/").replace(".jpg", ".mp4"),
+                  pageId,
+                  uuid,
+                  type: "video",
+                });
+              }
             } else if (src.includes("/images/")) {
               allMedia.set(key, {
                 thumbnailUrl: src,
@@ -400,6 +408,18 @@ async function processBatch(
         // Classify with AI
         const classification = await classifyDeliverableStyle(base64, mediaType);
 
+        // Filter out video thumbnails and UGC content
+        if (classification.isVideoThumbnail || (classification.contentType && classification.contentType !== "designed_graphic")) {
+          results.push({
+            url,
+            success: false,
+            skipped: true,
+            skipReason: `Not a designed graphic: ${classification.contentType || "video_thumbnail"}`,
+            confidence: classification.confidence,
+          });
+          return;
+        }
+
         // Check confidence threshold
         const confidenceThreshold = options.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
         if (classification.confidence < confidenceThreshold) {
@@ -513,11 +533,12 @@ export async function scrapeBigged(options: BiggedScraperOptions): Promise<Bigge
   const supabase = getSupabaseClient();
 
   try {
-    // Step 1: Scrape URLs
+    // Step 1: Scrape URLs (skip videos by default)
     const scraped = await scrapeBiggedUrls(
       options.query,
       options.limit || DEFAULT_LIMIT,
-      (msg) => options.onProgress?.(0, 0, { url: msg, success: true })
+      (msg) => options.onProgress?.(0, 0, { url: msg, success: true }),
+      options.includeVideos ?? false
     );
 
     if (scraped.length === 0) {

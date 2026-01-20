@@ -207,31 +207,219 @@ const deliverableStyleData = [
     featuredOrder: 0,
     displayOrder: 0,
   },
+  // Logo Design Styles
+  {
+    name: "Clean Wordmark",
+    description: "Minimal typography-focused logo with clean lines",
+    imageUrl: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "minimal",
+    subStyle: "wordmark",
+    semanticTags: ["minimal", "wordmark", "typography", "clean", "professional", "modern"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Bold Monogram",
+    description: "Strong lettermark with impactful presence",
+    imageUrl: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "bold",
+    subStyle: "monogram",
+    semanticTags: ["bold", "monogram", "lettermark", "strong", "impactful", "memorable"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Corporate Emblem",
+    description: "Professional badge-style logo for established businesses",
+    imageUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "corporate",
+    subStyle: "emblem",
+    semanticTags: ["corporate", "emblem", "badge", "professional", "trustworthy", "established"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Playful Mascot",
+    description: "Fun character-based logo with personality",
+    imageUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "playful",
+    subStyle: "mascot",
+    semanticTags: ["playful", "mascot", "character", "fun", "friendly", "approachable"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Luxury Crest",
+    description: "Premium heraldic-inspired logo with refined details",
+    imageUrl: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "premium",
+    subStyle: "crest",
+    semanticTags: ["premium", "luxury", "crest", "elegant", "sophisticated", "high-end"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Organic Hand-drawn",
+    description: "Natural, artisanal logo with hand-crafted feel",
+    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "organic",
+    subStyle: "handdrawn",
+    semanticTags: ["organic", "handdrawn", "artisanal", "natural", "craft", "authentic"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Tech Symbol",
+    description: "Modern geometric mark for tech companies",
+    imageUrl: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "tech",
+    subStyle: "symbol",
+    semanticTags: ["tech", "symbol", "geometric", "modern", "digital", "innovative"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Editorial Signature",
+    description: "Sophisticated script-based logo with editorial flair",
+    imageUrl: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=800&q=80",
+    deliverableType: "logo",
+    styleAxis: "editorial",
+    subStyle: "signature",
+    semanticTags: ["editorial", "signature", "script", "elegant", "sophisticated", "refined"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  // Brand Identity Styles
+  {
+    name: "Minimal Brand System",
+    description: "Clean, cohesive identity with restrained color palette",
+    imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "minimal",
+    subStyle: null,
+    semanticTags: ["minimal", "clean", "cohesive", "system", "simple", "modern"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Bold Brand Expression",
+    description: "High-impact identity with striking colors and typography",
+    imageUrl: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "bold",
+    subStyle: null,
+    semanticTags: ["bold", "impactful", "striking", "colorful", "energetic", "memorable"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Corporate Brand Kit",
+    description: "Professional identity system for B2B companies",
+    imageUrl: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "corporate",
+    subStyle: null,
+    semanticTags: ["corporate", "professional", "b2b", "trustworthy", "business", "enterprise"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Playful Brand World",
+    description: "Fun, creative identity with illustrations and patterns",
+    imageUrl: "https://images.unsplash.com/photo-1523726491678-bf852e717f6a?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "playful",
+    subStyle: null,
+    semanticTags: ["playful", "creative", "fun", "illustrated", "colorful", "friendly"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Premium Brand Suite",
+    description: "Luxury identity with refined details and premium materials",
+    imageUrl: "https://images.unsplash.com/photo-1493934558415-9d19f0b2b4d2?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "premium",
+    subStyle: null,
+    semanticTags: ["premium", "luxury", "refined", "elegant", "high-end", "sophisticated"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Organic Brand Language",
+    description: "Natural, sustainable brand identity with earthy textures",
+    imageUrl: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "organic",
+    subStyle: null,
+    semanticTags: ["organic", "natural", "sustainable", "earthy", "eco-friendly", "authentic"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Tech Brand System",
+    description: "Modern digital-first identity for tech startups",
+    imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "tech",
+    subStyle: null,
+    semanticTags: ["tech", "digital", "startup", "modern", "innovative", "saas"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
+  {
+    name: "Editorial Brand Identity",
+    description: "Magazine-inspired identity with strong typography",
+    imageUrl: "https://images.unsplash.com/photo-1586339949216-35c2747cc36d?w=800&q=80",
+    deliverableType: "brand_identity",
+    styleAxis: "editorial",
+    subStyle: null,
+    semanticTags: ["editorial", "magazine", "typography", "sophisticated", "content", "publishing"],
+    featuredOrder: 0,
+    displayOrder: 0,
+  },
 ];
 
 async function seedDeliverableStyles() {
   // Dynamic imports to ensure env is loaded first
   const { db } = await import("./index");
   const { deliverableStyleReferences } = await import("./schema");
+  const { eq } = await import("drizzle-orm");
 
-  console.log("Seeding deliverable style references...");
+  console.log("Seeding deliverable style references (APPEND mode)...");
 
   // Check existing count
   const existing = await db.select().from(deliverableStyleReferences);
   console.log(`Found ${existing.length} existing deliverable styles`);
 
-  if (existing.length > 0) {
-    console.log("Clearing existing deliverable styles...");
-    await db.delete(deliverableStyleReferences);
-  }
+  // Get existing names to avoid duplicates
+  const existingNames = new Set(existing.map(e => e.name.toLowerCase()));
 
-  // Insert new styles
+  // Insert only new styles (don't delete existing!)
+  let insertedCount = 0;
+  let skippedCount = 0;
+
   for (const style of deliverableStyleData) {
+    if (existingNames.has(style.name.toLowerCase())) {
+      console.log(`Skipped (exists): ${style.name}`);
+      skippedCount++;
+      continue;
+    }
+
     await db.insert(deliverableStyleReferences).values(style);
     console.log(`Inserted: ${style.name} (${style.deliverableType}/${style.styleAxis})`);
+    insertedCount++;
   }
 
-  console.log(`\nSeeded ${deliverableStyleData.length} deliverable style references successfully!`);
+  console.log(`\nSeeded ${insertedCount} new styles (skipped ${skippedCount} existing)`);
+  console.log(`Total styles in database: ${existing.length + insertedCount}`);
   process.exit(0);
 }
 

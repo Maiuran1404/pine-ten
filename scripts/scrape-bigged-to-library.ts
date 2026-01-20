@@ -26,12 +26,13 @@ const args = process.argv.slice(2);
 const queryIndex = args.indexOf("--query");
 const limitIndex = args.indexOf("--limit");
 const previewMode = args.includes("--preview");
+const includeVideos = args.includes("--include-videos");
 
 const searchQuery = queryIndex !== -1 ? args[queryIndex + 1] : "marketing";
 const limit = limitIndex !== -1 ? parseInt(args[limitIndex + 1]) : 20;
 
 if (!searchQuery) {
-  console.error("Usage: npx tsx scripts/scrape-bigged-to-library.ts --query <search_term> [--limit <number>] [--preview]");
+  console.error("Usage: npx tsx scripts/scrape-bigged-to-library.ts --query <search_term> [--limit <number>] [--preview] [--include-videos]");
   process.exit(1);
 }
 
@@ -60,8 +61,8 @@ interface ImportResult {
   error?: string;
 }
 
-async function scrapeUrls(query: string, maxItems: number): Promise<ScrapedMedia[]> {
-  console.log(`\n🔍 Scraping bigged.com/spy for: "${query}"`);
+async function scrapeUrls(query: string, maxItems: number, skipVideos: boolean = true): Promise<ScrapedMedia[]> {
+  console.log(`\n🔍 Scraping bigged.com/spy for: "${query}"${skipVideos ? " (skipping videos)" : ""}`);
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
@@ -86,7 +87,7 @@ async function scrapeUrls(query: string, maxItems: number): Promise<ScrapedMedia
 
     console.log("📜 Scrolling to load content...");
 
-    while (allMedia.size < maxItems && noChangeCount < 3) {
+    while (allMedia.size < maxItems && noChangeCount < 5) {
       // Extract media URLs
       const media = await iframe.locator("img, video").evaluateAll((elements) => {
         const results: Array<{ src: string; type: string }> = [];
@@ -112,21 +113,27 @@ async function scrapeUrls(query: string, maxItems: number): Promise<ScrapedMedia
 
           if (!allMedia.has(key)) {
             if (type === "VIDEO") {
-              allMedia.set(key, {
-                thumbnailUrl: src.replace(".mp4", ".jpg").replace("/videos/", "/videos/thumbnails/"),
-                videoUrl: src,
-                pageId,
-                uuid,
-                type: "video",
-              });
+              // Skip videos if skipVideos is true
+              if (!skipVideos) {
+                allMedia.set(key, {
+                  thumbnailUrl: src.replace(".mp4", ".jpg").replace("/videos/", "/videos/thumbnails/"),
+                  videoUrl: src,
+                  pageId,
+                  uuid,
+                  type: "video",
+                });
+              }
             } else if (src.includes("/videos/thumbnails/")) {
-              allMedia.set(key, {
-                thumbnailUrl: src,
-                videoUrl: src.replace("/thumbnails/", "/").replace(".jpg", ".mp4"),
-                pageId,
-                uuid,
-                type: "video",
-              });
+              // Skip video thumbnails if skipVideos is true
+              if (!skipVideos) {
+                allMedia.set(key, {
+                  thumbnailUrl: src,
+                  videoUrl: src.replace("/thumbnails/", "/").replace(".jpg", ".mp4"),
+                  pageId,
+                  uuid,
+                  type: "video",
+                });
+              }
             } else if (src.includes("/images/")) {
               allMedia.set(key, {
                 thumbnailUrl: src,
@@ -215,6 +222,13 @@ async function importToLibrary(items: ScrapedMedia[], preview: boolean): Promise
       // Classify with AI
       console.log("   🤖 Classifying with AI...");
       const classification = await classifyDeliverableStyle(base64, mediaType);
+
+      // Skip video thumbnails and UGC content
+      if (classification.isVideoThumbnail || (classification.contentType && classification.contentType !== "designed_graphic")) {
+        console.log(`   ⏭️  Skipped: Not a designed graphic (${classification.contentType || "video_thumbnail"})`);
+        results.push({ url, success: false, error: `Not a designed graphic: ${classification.contentType || "video_thumbnail"}` });
+        continue;
+      }
 
       console.log(`   📊 Type: ${classification.deliverableType}, Style: ${classification.styleAxis}`);
       console.log(`   📝 Name: ${classification.name}`);
@@ -318,11 +332,12 @@ async function main() {
   console.log(`  Query: "${searchQuery}"`);
   console.log(`  Limit: ${limit}`);
   console.log(`  Mode: ${previewMode ? "Preview (no save)" : "Import"}`);
+  console.log(`  Videos: ${includeVideos ? "Included" : "Skipped"}`);
   console.log("═══════════════════════════════════════════════════════════");
 
   try {
-    // Step 1: Scrape URLs
-    const scrapedItems = await scrapeUrls(searchQuery, limit);
+    // Step 1: Scrape URLs (skip videos by default)
+    const scrapedItems = await scrapeUrls(searchQuery, limit, !includeVideos);
     console.log(`\n✅ Scraped ${scrapedItems.length} items from bigged.com`);
 
     if (scrapedItems.length === 0) {

@@ -1,5 +1,20 @@
 // Chat drafts storage - uses server API with localStorage fallback for offline
 
+export interface MoodboardItemData {
+  id: string;
+  type: 'style' | 'color' | 'image' | 'upload';
+  imageUrl: string;
+  name: string;
+  metadata?: {
+    styleAxis?: string;
+    deliverableType?: string;
+    colorSamples?: string[];
+    styleId?: string;
+  };
+  order: number;
+  addedAt: string;
+}
+
 export interface ChatDraft {
   id: string;
   title: string;
@@ -16,6 +31,7 @@ export interface ChatDraft {
     }[];
   }[];
   selectedStyles: string[];
+  moodboardItems?: MoodboardItemData[];
   pendingTask: {
     title: string;
     description: string;

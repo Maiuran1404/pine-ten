@@ -9,6 +9,29 @@ export interface UploadedFile {
   fileSize: number;
 }
 
+/**
+ * Moodboard item for the visual moodboard panel
+ */
+export interface MoodboardItem {
+  id: string;
+  type: 'style' | 'color' | 'image' | 'upload';
+  imageUrl: string;
+  name: string;
+  metadata?: {
+    styleAxis?: string;
+    deliverableType?: string;
+    colorSamples?: string[];
+    styleId?: string;
+  };
+  order: number;
+  addedAt: Date;
+}
+
+/**
+ * Chat stages for progress tracking
+ */
+export type ChatStage = 'brief' | 'style' | 'details' | 'review' | 'submit';
+
 export interface QuickOptions {
   question: string;
   options: string[];
@@ -30,6 +53,9 @@ export interface DeliverableStyle {
   styleAxis: string;
   subStyle: string | null;
   semanticTags: string[];
+  // Brand-aware scoring fields
+  brandMatchScore?: number;
+  matchReason?: string;
 }
 
 export interface DeliverableStyleMarker {

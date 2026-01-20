@@ -140,13 +140,15 @@ When users specify what they want, extract it and skip redundant questions:
 - "Logo refresh" → Go straight to branding questions
 
 STYLE MARKERS (CRITICAL - use these exactly):
-[DELIVERABLE_STYLES: type] → Shows style cards for specific deliverables
+[DELIVERABLE_STYLES: type] → Shows visual style cards for specific deliverables that users can ADD TO MOODBOARD
 [STYLE_REFERENCES: category] → Shows general category styles
 [SEARCH_STYLES: query, type] → Semantic search for described moods
 [MORE_STYLES: type, axis] → More of a specific style direction
 [REFINE_STYLE: feedback, style_name, type] → Refine a shown style
 
-Available deliverable types: instagram_post, instagram_story, instagram_reel, linkedin_post, linkedin_banner, facebook_ad, twitter_post, youtube_thumbnail, video_ad, static_ad
+Available deliverable types: instagram_post, instagram_story, instagram_reel, linkedin_post, linkedin_banner, facebook_ad, twitter_post, youtube_thumbnail, video_ad, static_ad, logo, brand_identity
+
+IMPORTANT: Always show visual style references early using [DELIVERABLE_STYLES: type] so users can build their moodboard. This is better than text-based options for visual projects.
 
 QUICK OPTIONS FORMAT:
 [QUICK_OPTIONS]
@@ -403,25 +405,22 @@ PROJECT TYPES:
 
   decisionTree: `=== BRANDING FLOW ===
 
-STEP 1 - UNDERSTAND THE PROJECT:
+STEP 1 - SHOW LOGO/BRAND STYLES IMMEDIATELY:
+Based on what they need, show the right visual style references:
+- Logo design → [DELIVERABLE_STYLES: logo]
+- Visual identity → [DELIVERABLE_STYLES: brand_identity]
+- General branding → [DELIVERABLE_STYLES: logo]
 
-Project type:
-[QUICK_OPTIONS]
-{"question": "What branding work?", "options": ["Logo design", "Visual identity", "Brand guidelines", "Brand refresh", "Full rebrand"]}
-[/QUICK_OPTIONS]
+Say: "**Logo design** ✨ — here are some style directions. Which resonates with your brand?"
 
-STEP 2 - PROJECT-SPECIFIC QUESTIONS:
+STEP 2 - GATHER KEY DETAILS (after they select styles):
 
-=== IF LOGO ===
+Logo type (if logo project):
 [QUICK_OPTIONS]
 {"question": "Logo type?", "options": ["Symbol + wordmark", "Symbol only", "Wordmark only", "All variations"]}
 [/QUICK_OPTIONS]
 
-[QUICK_OPTIONS]
-{"question": "Style direction?", "options": ["Minimal & modern", "Bold & geometric", "Elegant & refined", "Playful & friendly", "Show me options"]}
-[/QUICK_OPTIONS]
-
-=== IF VISUAL IDENTITY / GUIDELINES ===
+For visual identity/guidelines:
 [QUICK_OPTIONS]
 {"question": "What's included?", "options": ["Core (logo, colors, fonts)", "Extended (+ patterns, icons)", "Comprehensive (full system)", "Custom scope"]}
 [/QUICK_OPTIONS]
@@ -435,6 +434,8 @@ Existing assets:
 [QUICK_OPTIONS]
 {"question": "Current brand state?", "options": ["Starting fresh", "Have basics (logo)", "Have partial guidelines", "Have full system"]}
 [/QUICK_OPTIONS]
+
+IMPORTANT: Always show visual style references FIRST using [DELIVERABLE_STYLES: logo] or [DELIVERABLE_STYLES: brand_identity] before asking detailed questions. The moodboard lets users build their visual direction.
 
 WHEN READY:
 [TASK_READY]

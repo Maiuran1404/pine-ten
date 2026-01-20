@@ -35,6 +35,8 @@ interface StyleReference {
   imageUrl: string;
   deliverableType: string | null;
   styleAxis: string | null;
+  colorGroup?: string;
+  colorTemperature?: string;
 }
 
 // Example prompts with preview images - show users what they can create
@@ -481,30 +483,87 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Inspiration Gallery */}
+      {/* Inspiration Gallery - Grouped by Color Match */}
       {styleReferences.length > 0 && (
         <div className="relative w-full bg-background pt-4">
-          {/* Masonry Grid */}
+          {/* Grouped Masonry Grid */}
           <div className="relative pb-8">
             <div className="max-w-6xl mx-auto px-6">
-              <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
-                {styleReferences.map((ref) => {
-                  const variantUrls = getImageVariantUrls(ref.imageUrl);
+              {/* Group references by colorGroup */}
+              {(() => {
+                const groups = styleReferences.reduce((acc, ref) => {
+                  const group = ref.colorGroup || "other";
+                  if (!acc[group]) acc[group] = [];
+                  acc[group].push(ref);
+                  return acc;
+                }, {} as Record<string, StyleReference[]>);
+
+                const groupLabels: Record<string, { label: string; icon: string }> = {
+                  matches_brand: { label: "Matches Your Brand Colors", icon: "✨" },
+                  pink_coral: { label: "Pink & Coral Tones", icon: "🌸" },
+                  blue_teal: { label: "Blue & Teal Tones", icon: "💎" },
+                  green: { label: "Green Tones", icon: "🌿" },
+                  orange_yellow: { label: "Orange & Yellow Tones", icon: "🔥" },
+                  purple: { label: "Purple Tones", icon: "💜" },
+                  neutral_tones: { label: "Neutral Tones", icon: "⚪" },
+                  colorful: { label: "Colorful & Mixed", icon: "🌈" },
+                  other: { label: "More Inspiration", icon: "💡" },
+                };
+
+                const orderedGroups = [
+                  "matches_brand",
+                  "pink_coral",
+                  "blue_teal",
+                  "green",
+                  "orange_yellow",
+                  "purple",
+                  "neutral_tones",
+                  "colorful",
+                  "other",
+                ];
+
+                return orderedGroups.map((groupKey, groupIndex) => {
+                  const refs = groups[groupKey];
+                  if (!refs || refs.length === 0) return null;
+                  const { label, icon } = groupLabels[groupKey] || { label: groupKey, icon: "📌" };
+                  const isBrandMatches = groupKey === "matches_brand";
+
                   return (
-                    <div
-                      key={ref.id}
-                      className="break-inside-avoid rounded-xl overflow-hidden shadow-sm"
-                    >
-                      <img
-                        src={variantUrls.preview}
-                        alt={ref.name}
-                        className="w-full h-auto object-cover"
-                        loading="lazy"
-                      />
+                    <div key={groupKey} className="mb-8">
+                      {/* Group Header */}
+                      <div className={`flex items-center gap-2 mb-4 ${groupIndex > 0 ? "mt-6" : ""}`}>
+                        <span className="text-lg">{icon}</span>
+                        <h3 className={`text-sm font-medium ${isBrandMatches ? "text-foreground" : "text-muted-foreground"}`}>
+                          {label}
+                        </h3>
+                        <div className={`flex-1 h-px ${isBrandMatches ? "bg-border" : "bg-border/50"} ml-2`} />
+                      </div>
+                      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
+                        {refs.map((ref) => {
+                          const variantUrls = getImageVariantUrls(ref.imageUrl);
+                          return (
+                            <div
+                              key={ref.id}
+                              className={`break-inside-avoid rounded-xl overflow-hidden shadow-sm transition-all ${
+                                isBrandMatches
+                                  ? "ring-2 ring-primary/30 shadow-md"
+                                  : ""
+                              }`}
+                            >
+                              <img
+                                src={variantUrls.preview}
+                                alt={ref.name}
+                                className="w-full h-auto object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
-                })}
-              </div>
+                });
+              })()}
             </div>
 
             {/* Fade overlay at bottom */}

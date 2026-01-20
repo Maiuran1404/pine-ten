@@ -28,6 +28,8 @@ export const DELIVERABLE_TYPES = [
   { value: "web_banner", label: "Web Banner" },
   { value: "static_ad", label: "Static Ad" },
   { value: "video_ad", label: "Video Ad" },
+  { value: "logo", label: "Logo" },
+  { value: "brand_identity", label: "Brand Identity" },
 ] as const;
 
 export type DeliverableType = (typeof DELIVERABLE_TYPES)[number]["value"];
@@ -115,3 +117,40 @@ export const COLOR_BUCKET_LABELS: Record<ColorBucket, string> = {
   neutral: "Neutral",
   warm: "Warm",
 };
+
+// Common aliases/variations that AI might generate
+export const DELIVERABLE_TYPE_ALIASES: Record<string, DeliverableType> = {
+  // Instagram variations
+  instagram_carousel: "instagram_post",
+  carousel: "instagram_post",
+  instagram_feed: "instagram_post",
+  ig_post: "instagram_post",
+  ig_story: "instagram_story",
+  ig_reel: "instagram_reel",
+  reels: "instagram_reel",
+
+  // LinkedIn variations
+  linkedin_ad: "static_ad",
+  linkedin_carousel: "linkedin_post",
+
+  // Generic variations
+  social_post: "instagram_post",
+  ad: "static_ad",
+  banner: "web_banner",
+};
+
+export function normalizeDeliverableType(type: string): DeliverableType {
+  const normalized = type.toLowerCase().trim();
+
+  // Check if it's already a valid type
+  const validType = DELIVERABLE_TYPES.find((t) => t.value === normalized);
+  if (validType) return validType.value;
+
+  // Check aliases
+  if (normalized in DELIVERABLE_TYPE_ALIASES) {
+    return DELIVERABLE_TYPE_ALIASES[normalized];
+  }
+
+  // Fallback to instagram_post as default
+  return "instagram_post";
+}

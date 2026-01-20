@@ -19,6 +19,7 @@ import {
   refineStyleSearch,
 } from "@/lib/ai/semantic-style-search";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import { normalizeDeliverableType } from "@/lib/constants/reference-libraries";
 
 async function handler(request: NextRequest) {
   try {
@@ -43,12 +44,14 @@ async function handler(request: NextRequest) {
     if (clientStyleMarker && (clientStyleMarker.type === "more" || clientStyleMarker.type === "different")) {
       let deliverableStyles = undefined;
       const { type, deliverableType, styleAxis } = clientStyleMarker;
+      // Normalize deliverable type in case AI generated an alias
+      const normalizedType = normalizeDeliverableType(deliverableType);
 
       try {
         if (type === "more" && styleAxis) {
           // Use brand-aware scoring for more styles
           deliverableStyles = await getBrandAwareStylesOfAxis(
-            deliverableType as DeliverableType,
+            normalizedType,
             styleAxis as StyleAxis,
             session.user.id,
             styleOffset || 0
@@ -56,7 +59,7 @@ async function handler(request: NextRequest) {
         } else if (type === "different") {
           // For different styles, get brand-aware styles excluding already shown axes
           deliverableStyles = await getBrandAwareStyles(
-            deliverableType as DeliverableType,
+            normalizedType,
             session.user.id,
             { includeAllAxes: true, limit: 4 }
           );
@@ -96,20 +99,22 @@ async function handler(request: NextRequest) {
     let deliverableStyles = undefined;
     if (response.deliverableStyleMarker) {
       const { type, deliverableType, styleAxis } = response.deliverableStyleMarker;
+      // Normalize deliverable type in case AI generated an alias
+      const normalizedType = normalizeDeliverableType(deliverableType);
 
       try {
         switch (type) {
           case "initial":
             // Use brand-aware styles with one per axis, sorted by brand match
             deliverableStyles = await getBrandAwareStyles(
-              deliverableType as DeliverableType,
+              normalizedType,
               session.user.id,
               { includeAllAxes: true }
             );
             break;
           case "more":
             deliverableStyles = await getBrandAwareStylesOfAxis(
-              deliverableType as DeliverableType,
+              normalizedType,
               styleAxis as StyleAxis,
               session.user.id,
               styleOffset || 0
@@ -117,7 +122,7 @@ async function handler(request: NextRequest) {
             break;
           case "different":
             deliverableStyles = await getBrandAwareStyles(
-              deliverableType as DeliverableType,
+              normalizedType,
               session.user.id,
               { includeAllAxes: true, limit: 4 }
             );
@@ -135,7 +140,7 @@ async function handler(request: NextRequest) {
               // First try keyword-based semantic search
               const semanticResults = await searchStylesByQuery(
                 searchQuery,
-                deliverableType as DeliverableType,
+                normalizedType,
                 8
               );
 
@@ -152,7 +157,7 @@ async function handler(request: NextRequest) {
                 // Use AI-enhanced search for complex queries
                 const aiResults = await aiEnhancedStyleSearch(
                   searchQuery,
-                  deliverableType as DeliverableType,
+                  normalizedType,
                   6
                 );
                 deliverableStyles = aiResults.map(s => ({
@@ -199,7 +204,7 @@ async function handler(request: NextRequest) {
                     description: baseStyle.description,
                   },
                   refinementQuery,
-                  deliverableType as DeliverableType,
+                  normalizedType,
                   6
                 );
 
@@ -212,7 +217,7 @@ async function handler(request: NextRequest) {
                 // Base style not found, fall back to semantic search
                 const fallbackResults = await searchStylesByQuery(
                   refinementQuery,
-                  deliverableType as DeliverableType,
+                  normalizedType,
                   6
                 );
                 deliverableStyles = fallbackResults.map(s => ({
