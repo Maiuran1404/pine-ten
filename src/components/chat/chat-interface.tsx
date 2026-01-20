@@ -138,7 +138,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi there! 👋 **What design project** can I help you get started with today?",
+    "**What design project** can I help you with today?",
   timestamp: new Date(),
 };
 
@@ -225,11 +225,28 @@ export function ChatInterface({
     [moodboardItems]
   );
 
+  // Check if moodboard has any style items - used to suppress repeated style grids
+  const moodboardHasStyles = useMemo(
+    () => moodboardItems.some((i) => i.type === "style"),
+    [moodboardItems]
+  );
+
+  // Find the index of the last message with deliverable styles (for collapsing older grids)
+  const lastStyleMessageIndex = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].deliverableStyles && messages[i].deliverableStyles!.length > 0) {
+        return i;
+      }
+    }
+    return -1;
+  }, [messages]);
+
   // Track if we need to auto-continue
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false);
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false);
   // Track if AI indicated readiness without formal [TASK_READY] block
   const [showManualSubmit, setShowManualSubmit] = useState(false);
+  const [hasRequestedTaskSummary, setHasRequestedTaskSummary] = useState(false);
 
   // Sync taskData state with initialTaskData prop when it changes
   useEffect(() => {
@@ -355,6 +372,7 @@ export function ChatInterface({
               content: m.content,
             })),
             selectedStyles,
+            moodboardHasStyles,
           }),
         });
 
@@ -408,9 +426,23 @@ export function ChatInterface({
     if (!isInitialized) return;
     if (messages.length <= 1 && messages[0]?.id === "welcome") return;
 
+    // Convert moodboard items for title generation
+    const moodboardItemsForTitle = moodboardItems.map((item) => ({
+      id: item.id,
+      type: item.type,
+      imageUrl: item.imageUrl,
+      name: item.name,
+      metadata: item.metadata,
+      order: item.order,
+      addedAt: item.addedAt.toISOString(),
+    }));
+
+    const existingDraft = getDraft(draftId);
+    const draftCreatedAt = existingDraft?.createdAt || new Date().toISOString();
+
     const draft: ChatDraft = {
       id: draftId,
-      title: generateDraftTitle(messages),
+      title: generateDraftTitle(messages, moodboardItemsForTitle, draftCreatedAt),
       messages: messages.map((m) => ({
         id: m.id,
         role: m.role,
@@ -429,7 +461,7 @@ export function ChatInterface({
         addedAt: item.addedAt.toISOString(),
       })),
       pendingTask,
-      createdAt: getDraft(draftId)?.createdAt || new Date().toISOString(),
+      createdAt: draftCreatedAt,
       updatedAt: new Date().toISOString(),
     };
 
@@ -501,6 +533,11 @@ export function ChatInterface({
   // Detect "ready to execute" patterns when AI doesn't generate [TASK_READY] block
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
+    // Don't show banner if we already requested a task summary (prevents infinite loop)
+    if (hasRequestedTaskSummary) {
+      setShowManualSubmit(false);
+      return;
+    }
     if (lastMessage?.role === "assistant" && !pendingTask) {
       const readyPatterns = [
         /ready to execute/i,
@@ -511,6 +548,15 @@ export function ChatInterface({
         /ready to proceed/i,
         /ready when you are/i,
         /good to go/i,
+        /ready to create/i,
+        /shall (i|we) create/i,
+        /let(')?s create this/i,
+        /creative brief.*complete/i,
+        /brief is ready/i,
+        /finalized.*brief/i,
+        /here's your.*brief/i,
+        /ready to get started/i,
+        /want (me|us) to (submit|create|proceed)/i,
       ];
 
       const hasReadyIndicator = readyPatterns.some((p) =>
@@ -520,7 +566,7 @@ export function ChatInterface({
     } else {
       setShowManualSubmit(false);
     }
-  }, [messages, pendingTask]);
+  }, [messages, pendingTask, hasRequestedTaskSummary]);
 
   // Helper function to scroll to bottom
   const scrollToBottom = useRef((smooth = false) => {
@@ -673,6 +719,7 @@ export function ChatInterface({
             content: m.content,
           })),
           selectedStyles,
+          moodboardHasStyles,
         }),
       });
 
@@ -732,6 +779,7 @@ export function ChatInterface({
             content: m.content,
           })),
           selectedStyles,
+          moodboardHasStyles,
         }),
       });
 
@@ -976,6 +1024,7 @@ export function ChatInterface({
             content: m.content,
           })),
           selectedStyles,
+          moodboardHasStyles,
         }),
       });
 
@@ -1045,6 +1094,7 @@ export function ChatInterface({
             content: m.content,
           })),
           selectedDeliverableStyles,
+          moodboardHasStyles,
         }),
       });
 
@@ -1106,6 +1156,7 @@ export function ChatInterface({
             content: m.content,
           })),
           selectedStyles,
+          moodboardHasStyles,
         }),
       });
 
@@ -1151,7 +1202,15 @@ export function ChatInterface({
   const handleConfirmTask = async () => {
     if (!pendingTask) return;
 
-    if (userCredits < pendingTask.creditsRequired) {
+    // Normalize task values with defaults before submission
+    const normalizedTask = {
+      ...pendingTask,
+      creditsRequired: pendingTask.creditsRequired ?? 15,
+      estimatedHours: pendingTask.estimatedHours ?? 24,
+      deliveryDays: pendingTask.deliveryDays ?? 3,
+    };
+
+    if (userCredits < normalizedTask.creditsRequired) {
       setShowCreditDialog(true);
       return;
     }
@@ -1168,7 +1227,7 @@ export function ChatInterface({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...pendingTask,
+          ...normalizedTask,
           chatHistory: messages.map((m) => ({
             role: m.role,
             content: m.content,
@@ -1270,7 +1329,8 @@ export function ChatInterface({
   // Open submission modal
   const handleOpenSubmissionModal = () => {
     if (!pendingTask) return;
-    if (userCredits < pendingTask.creditsRequired) {
+    const creditsNeeded = pendingTask.creditsRequired ?? 15;
+    if (userCredits < creditsNeeded) {
       setShowCreditDialog(true);
       return;
     }
@@ -1290,20 +1350,81 @@ export function ChatInterface({
     setAnimatingMessageId(clarifyMessage.id);
   };
 
-  // Request formal task summary when AI says "ready" but didn't generate [TASK_READY]
+  // When user clicks "Generate Summary", construct task directly from conversation
+  // This skips the summarize step and goes straight to review
   const handleRequestTaskSummary = async () => {
     if (isLoading) return;
 
-    const requestMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: "Please generate the task summary so I can submit it.",
-      timestamp: new Date(),
+    setShowManualSubmit(false);
+    setHasRequestedTaskSummary(true);
+
+    // Extract task info from conversation to construct task directly
+    const userMessages = messages.filter(m => m.role === "user");
+    const allContent = messages.map(m => m.content).join(" ");
+
+    // Extract title from first user message or moodboard context
+    let title = "Design Request";
+    const firstUserMsg = userMessages[0]?.content || "";
+
+    // Detect deliverable type for title
+    const contentLower = allContent.toLowerCase();
+    if (contentLower.includes("carousel")) {
+      title = "Instagram Carousel";
+    } else if (contentLower.includes("instagram") && contentLower.includes("story")) {
+      title = "Instagram Stories";
+    } else if (contentLower.includes("instagram") || contentLower.includes("post")) {
+      title = "Instagram Posts";
+    } else if (contentLower.includes("linkedin")) {
+      title = "LinkedIn Content";
+    } else if (contentLower.includes("video") || contentLower.includes("reel")) {
+      title = "Video Content";
+    } else if (contentLower.includes("logo")) {
+      title = "Logo Design";
+    } else if (contentLower.includes("banner") || contentLower.includes("ad")) {
+      title = "Banner/Ad Design";
+    }
+
+    // Add context from first message if available
+    const quotedMatch = firstUserMsg.match(/["']([^"']+)["']/);
+    if (quotedMatch && quotedMatch[1].length < 30) {
+      title = `${title} - ${quotedMatch[1]}`;
+    }
+
+    // Build description from conversation
+    let description = firstUserMsg;
+    if (description.length > 200) {
+      description = description.substring(0, 197) + "...";
+    }
+
+    // Determine category
+    let category = "Social Media";
+    if (contentLower.includes("logo")) category = "Logo Design";
+    else if (contentLower.includes("video") || contentLower.includes("reel")) category = "Video";
+    else if (contentLower.includes("banner") || contentLower.includes("ad")) category = "Advertising";
+    else if (contentLower.includes("brand")) category = "Branding";
+
+    // Calculate credits based on complexity (slides, etc.)
+    let creditsRequired = 15; // Base credits
+    const slideMatch = allContent.match(/(\d+)\s*(slides?|images?|posts?|frames?)/i);
+    if (slideMatch) {
+      const count = parseInt(slideMatch[1], 10);
+      if (count > 1) {
+        creditsRequired = Math.min(count * 5, 50); // 5 credits per slide, max 50
+      }
+    }
+
+    // Construct the task proposal directly
+    const constructedTask: TaskProposal = {
+      title,
+      description,
+      category,
+      estimatedHours: 24,
+      deliveryDays: 3,
+      creditsRequired,
     };
 
-    setMessages((prev) => [...prev, requestMessage]);
-    setShowManualSubmit(false);
-    setNeedsAutoContinue(true);
+    // Set pending task - this will show the Task Confirmation Bar
+    setPendingTask(constructedTask);
   };
 
   // Generate smart chat title
@@ -1508,6 +1629,9 @@ export function ChatInterface({
                           <Quote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
                             {/* Message content with typing animation */}
+                            {/* NOTE: Removed onOptionClick and multiSelect - markdown lists should render
+                                as plain text, not clickable options. Quick options are handled separately
+                                via the quickOptions system from the API response. */}
                             <TypingText
                               content={message.content}
                               animate={animatingMessageId === message.id}
@@ -1515,12 +1639,6 @@ export function ChatInterface({
                               onComplete={() => {
                                 if (animatingMessageId === message.id) {
                                   setAnimatingMessageId(null);
-                                }
-                              }}
-                              onOptionClick={(option) => {
-                                // When user clicks an option, send it as their response
-                                if (!isLoading && !isUploading) {
-                                  handleSendOption(option);
                                 }
                               }}
                               className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
@@ -1622,30 +1740,48 @@ export function ChatInterface({
                         {/* Deliverable Style References */}
                         {message.deliverableStyles && message.deliverableStyles.length > 0 && (
                           <div className="mt-5 ml-8">
-                            <p className="text-sm font-medium mb-4 text-foreground">
-                              What style direction speaks to you?
-                            </p>
-                            <StyleSelectionGrid
-                              styles={message.deliverableStyles}
-                              selectedStyles={selectedDeliverableStyles}
-                              moodboardStyleIds={moodboardStyleIds}
-                              onSelectStyle={handleDeliverableStyleSelect}
-                              onAddToMoodboard={handleAddToMoodboard}
-                              onShowMore={handleShowMoreStyles}
-                              onShowDifferent={handleShowDifferentStyles}
-                              isLoading={isLoading}
-                            />
-                            {selectedDeliverableStyles.length > 0 && (
-                              <div className="flex justify-end mt-3">
-                                <Button
-                                  onClick={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
-                                  disabled={isLoading}
-                                  size="sm"
-                                  className="gap-2"
-                                >
-                                  Continue with {selectedDeliverableStyles.length === 1 ? "style" : `${selectedDeliverableStyles.length} styles`}
-                                  <ArrowRight className="h-3.5 w-3.5" />
-                                </Button>
+                            {/* Only show full grid for the most recent message with styles */}
+                            {index === lastStyleMessageIndex ? (
+                              <>
+                                <p className="text-sm font-medium mb-4 text-foreground">
+                                  What style direction speaks to you?
+                                </p>
+                                <StyleSelectionGrid
+                                  styles={message.deliverableStyles}
+                                  selectedStyles={selectedDeliverableStyles}
+                                  moodboardStyleIds={moodboardStyleIds}
+                                  onSelectStyle={handleDeliverableStyleSelect}
+                                  onAddToMoodboard={handleAddToMoodboard}
+                                  onShowMore={handleShowMoreStyles}
+                                  onShowDifferent={handleShowDifferentStyles}
+                                  isLoading={isLoading}
+                                />
+                                {selectedDeliverableStyles.length > 0 && (
+                                  <div className="flex justify-end mt-3">
+                                    <Button
+                                      onClick={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
+                                      disabled={isLoading}
+                                      size="sm"
+                                      className="gap-2"
+                                    >
+                                      Continue with {selectedDeliverableStyles.length === 1 ? "style" : `${selectedDeliverableStyles.length} styles`}
+                                      <ArrowRight className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              /* Collapsed summary for older style messages */
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Palette className="h-4 w-4" />
+                                <span>{message.deliverableStyles.length} style options shown</span>
+                                {moodboardStyleIds.length > 0 && (
+                                  <span className="text-primary">
+                                    • {moodboardStyleIds.filter(id =>
+                                      message.deliverableStyles?.some(s => s.id === id)
+                                    ).length} added to moodboard
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1780,8 +1916,8 @@ export function ChatInterface({
                 <div>
                   <p className="font-medium text-foreground">Ready to submit this task?</p>
                   <p className="text-sm text-muted-foreground">
-                    {pendingTask.creditsRequired} credits required
-                    {userCredits < pendingTask.creditsRequired ? (
+                    {pendingTask.creditsRequired ?? 15} credits required
+                    {userCredits < (pendingTask.creditsRequired ?? 15) ? (
                       <span className="text-destructive ml-1">
                         (You have {userCredits} credits)
                       </span>
@@ -1810,7 +1946,7 @@ export function ChatInterface({
                   ) : (
                     <Sparkles className="h-4 w-4 mr-2" />
                   )}
-                  {userCredits < pendingTask.creditsRequired ? "Buy Credits" : "Review & Submit"}
+                  {userCredits < (pendingTask.creditsRequired ?? 15) ? "Buy Credits" : "Review & Submit"}
                 </Button>
               </div>
             </div>
