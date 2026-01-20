@@ -1754,13 +1754,13 @@ export function ChatInterface({
                                   onAddToMoodboard={handleAddToMoodboard}
                                   onShowMore={handleShowMoreStyles}
                                   onShowDifferent={handleShowDifferentStyles}
-                                  isLoading={isLoading}
+                                  isLoading={isLoading || index < messages.length - 1}
                                 />
                                 {selectedDeliverableStyles.length > 0 && (
                                   <div className="flex justify-end mt-3">
                                     <Button
                                       onClick={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
-                                      disabled={isLoading}
+                                      disabled={isLoading || index < messages.length - 1}
                                       size="sm"
                                       className="gap-2"
                                     >
@@ -1800,7 +1800,7 @@ export function ChatInterface({
                             <QuickOptions
                               options={message.quickOptions}
                               onSelect={handleQuickOptionClick}
-                              disabled={isLoading}
+                              disabled={isLoading || index < messages.length - 1}
                             />
                           </div>
                         )}
