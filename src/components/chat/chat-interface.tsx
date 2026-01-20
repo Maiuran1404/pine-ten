@@ -134,13 +134,7 @@ interface ChatInterfaceProps {
   onTaskCreated?: (taskId: string) => void;
 }
 
-const DEFAULT_WELCOME_MESSAGE: Message = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "**What design project** can I help you with today?",
-  timestamp: new Date(),
-};
+// Welcome message removed - chat now starts directly with user's message
 
 // Format relative time
 function formatTimeAgo(date: Date): string {
@@ -174,7 +168,7 @@ export function ChatInterface({
   const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null);
   const [paymentProcessed, setPaymentProcessed] = useState(false);
   const [refreshedCredits, setRefreshedCredits] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -282,12 +276,8 @@ export function ChatInterface({
         timestamp: new Date(m.timestamp),
         attachments: m.attachments,
       }));
-      // Ensure we have at least the welcome message
-      if (loadedMessages.length === 0) {
-        setMessages([DEFAULT_WELCOME_MESSAGE]);
-      } else {
-        setMessages(loadedMessages);
-      }
+      // Set loaded messages (may be empty for new chats)
+      setMessages(loadedMessages);
       setIsInitialized(true);
       return;
     }
@@ -308,7 +298,7 @@ export function ChatInterface({
         setNeedsAutoContinue(true);
       }
     } else {
-      setMessages([DEFAULT_WELCOME_MESSAGE]);
+      setMessages([]);
       setSelectedStyles([]);
       setPendingTask(null);
     }
@@ -340,9 +330,9 @@ export function ChatInterface({
       attachments: pendingFiles.length > 0 ? pendingFiles : undefined,
     };
 
-    // Always include user message - for seamless transition, prepend welcome message
+    // Start chat with user message directly
     if (seamlessTransition) {
-      setMessages([DEFAULT_WELCOME_MESSAGE, userMessage]);
+      setMessages([userMessage]);
     } else {
       setMessages((prev) => [...prev, userMessage]);
     }

@@ -51,8 +51,16 @@ export function TaskSubmissionModal({
   const [showConfetti, setShowConfetti] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  const hasEnoughCredits = taskProposal
-    ? userCredits >= taskProposal.creditsRequired
+  // Normalize task values with sensible defaults
+  const normalizedTask = taskProposal ? {
+    ...taskProposal,
+    creditsRequired: taskProposal.creditsRequired ?? 15,
+    estimatedHours: taskProposal.estimatedHours ?? 24,
+    deliveryDays: taskProposal.deliveryDays ?? 3,
+  } : null;
+
+  const hasEnoughCredits = normalizedTask
+    ? userCredits >= normalizedTask.creditsRequired
     : false;
 
   const displayMoodboardItems = moodboardItems.slice(0, 6);
@@ -79,7 +87,7 @@ export function TaskSubmissionModal({
     onClose();
   };
 
-  if (!taskProposal) return null;
+  if (!normalizedTask) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -145,15 +153,15 @@ export function TaskSubmissionModal({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-foreground truncate">
-                    {taskProposal.title}
+                    {normalizedTask.title}
                   </h4>
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                    {taskProposal.description}
+                    {normalizedTask.description}
                   </p>
                 </div>
                 <Badge variant="secondary" className="shrink-0">
                   <Tag className="h-3 w-3 mr-1" />
-                  {taskProposal.category}
+                  {normalizedTask.category}
                 </Badge>
               </div>
             </div>
@@ -217,9 +225,7 @@ export function TaskSubmissionModal({
                   <div>
                     <p className="text-xs text-muted-foreground">Delivery</p>
                     <p className="text-sm font-medium text-foreground">
-                      {taskProposal.deliveryDays
-                        ? getDeliveryDateString(taskProposal.deliveryDays)
-                        : `~${taskProposal.estimatedHours}h`}
+                      {getDeliveryDateString(normalizedTask.deliveryDays)}
                     </p>
                   </div>
                 </div>
@@ -264,7 +270,7 @@ export function TaskSubmissionModal({
                           : "text-destructive"
                       )}
                     >
-                      {taskProposal.creditsRequired} credits
+                      {normalizedTask.creditsRequired} credits
                     </p>
                   </div>
                   <div className="text-right">
@@ -293,7 +299,7 @@ export function TaskSubmissionModal({
                     Insufficient credits
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    You need {taskProposal.creditsRequired - userCredits} more
+                    You need {normalizedTask.creditsRequired - userCredits} more
                     credits to submit this request.
                   </p>
                 </div>

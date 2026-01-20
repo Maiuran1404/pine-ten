@@ -35,26 +35,26 @@ interface StyleReference {
   imageUrl: string;
   deliverableType: string | null;
   styleAxis: string | null;
-  colorGroup?: string;
+  contentCategory?: string;
   colorTemperature?: string;
 }
 
-// Example prompts with preview images - show users what they can create
+// Example prompts - actionable call-to-actions
 const EXAMPLE_PROMPTS = [
   {
-    prompt: "Instagram carousel for a product launch",
+    prompt: "Set up 30 day Instagram content calendar",
     image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400&h=300&fit=crop",
   },
   {
-    prompt: "Logo for a modern coffee shop",
-    image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop",
+    prompt: "Create LinkedIn posts for 2 weeks",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
   },
   {
-    prompt: "YouTube thumbnail for a tech review",
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop",
+    prompt: "Edit product demo video",
+    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop",
   },
   {
-    prompt: "Ad banner for a summer sale",
+    prompt: "Design brand elements and style guide",
     image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=300&fit=crop",
   },
 ];
@@ -93,8 +93,8 @@ function DashboardContent() {
       .then((data) => setCredits(data.credits))
       .catch(console.error);
 
-    // Fetch brand-matched style references
-    fetch("/api/style-references/match?limit=24")
+    // Fetch brand-matched style references (increased limit for all categories)
+    fetch("/api/style-references/match?limit=150")
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && data?.data) {
@@ -483,60 +483,75 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Inspiration Gallery - Grouped by Color Match */}
+      {/* Inspiration Gallery - Grouped by Content Type */}
       {styleReferences.length > 0 && (
         <div className="relative w-full bg-background pt-4">
           {/* Grouped Masonry Grid */}
           <div className="relative pb-8">
             <div className="max-w-6xl mx-auto px-6">
-              {/* Group references by colorGroup */}
+              {/* Group references by contentCategory */}
               {(() => {
                 const groups = styleReferences.reduce((acc, ref) => {
-                  const group = ref.colorGroup || "other";
+                  const group = ref.contentCategory || "other";
                   if (!acc[group]) acc[group] = [];
                   acc[group].push(ref);
                   return acc;
                 }, {} as Record<string, StyleReference[]>);
 
                 const groupLabels: Record<string, { label: string; icon: string }> = {
-                  matches_brand: { label: "Matches Your Brand Colors", icon: "✨" },
-                  pink_coral: { label: "Pink & Coral Tones", icon: "🌸" },
-                  blue_teal: { label: "Blue & Teal Tones", icon: "💎" },
-                  green: { label: "Green Tones", icon: "🌿" },
-                  orange_yellow: { label: "Orange & Yellow Tones", icon: "🔥" },
-                  purple: { label: "Purple Tones", icon: "💜" },
-                  neutral_tones: { label: "Neutral Tones", icon: "⚪" },
-                  colorful: { label: "Colorful & Mixed", icon: "🌈" },
-                  other: { label: "More Inspiration", icon: "💡" },
+                  instagram_post: { label: "Popular Instagram posts", icon: "📱" },
+                  instagram_story: { label: "Popular Instagram stories", icon: "📲" },
+                  instagram_reel: { label: "Popular Instagram reels", icon: "🎬" },
+                  linkedin_post: { label: "Popular LinkedIn posts", icon: "💼" },
+                  linkedin_banner: { label: "Popular LinkedIn banners", icon: "🖼️" },
+                  static_ad: { label: "Popular static ads", icon: "🎯" },
+                  facebook_ad: { label: "Popular Facebook ads", icon: "👥" },
+                  twitter_post: { label: "Popular Twitter posts", icon: "🐦" },
+                  youtube_thumbnail: { label: "Popular YouTube thumbnails", icon: "▶️" },
+                  email_header: { label: "Popular email headers", icon: "📧" },
+                  web_banner: { label: "Popular web banners", icon: "🌐" },
+                  presentation_slide: { label: "Popular presentation slides", icon: "📊" },
+                  video_ad: { label: "Popular video ads", icon: "🎥" },
+                  other: { label: "More inspiration", icon: "💡" },
                 };
 
                 const orderedGroups = [
-                  "matches_brand",
-                  "pink_coral",
-                  "blue_teal",
-                  "green",
-                  "orange_yellow",
-                  "purple",
-                  "neutral_tones",
-                  "colorful",
+                  "instagram_post",
+                  "instagram_story",
+                  "linkedin_post",
+                  "static_ad",
+                  "facebook_ad",
+                  "instagram_reel",
+                  "twitter_post",
+                  "youtube_thumbnail",
+                  "linkedin_banner",
+                  "email_header",
+                  "web_banner",
+                  "presentation_slide",
+                  "video_ad",
                   "other",
                 ];
 
                 return orderedGroups.map((groupKey, groupIndex) => {
-                  const refs = groups[groupKey];
-                  if (!refs || refs.length === 0) return null;
+                  const allRefs = groups[groupKey];
+                  if (!allRefs || allRefs.length === 0) return null;
+
+                  // Limit to 15 items per category for cleaner display
+                  const refs = allRefs.slice(0, 15);
                   const { label, icon } = groupLabels[groupKey] || { label: groupKey, icon: "📌" };
-                  const isBrandMatches = groupKey === "matches_brand";
 
                   return (
-                    <div key={groupKey} className="mb-8">
+                    <div key={groupKey} className="mb-10">
                       {/* Group Header */}
-                      <div className={`flex items-center gap-2 mb-4 ${groupIndex > 0 ? "mt-6" : ""}`}>
+                      <div className={`flex items-center gap-2 mb-4 ${groupIndex > 0 ? "mt-8" : ""}`}>
                         <span className="text-lg">{icon}</span>
-                        <h3 className={`text-sm font-medium ${isBrandMatches ? "text-foreground" : "text-muted-foreground"}`}>
+                        <h3 className="text-sm font-medium text-foreground">
                           {label}
                         </h3>
-                        <div className={`flex-1 h-px ${isBrandMatches ? "bg-border" : "bg-border/50"} ml-2`} />
+                        <div className="flex-1 h-px bg-border ml-2" />
+                        <span className="text-xs text-muted-foreground">
+                          {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
+                        </span>
                       </div>
                       <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
                         {refs.map((ref) => {
@@ -544,11 +559,7 @@ function DashboardContent() {
                           return (
                             <div
                               key={ref.id}
-                              className={`break-inside-avoid rounded-xl overflow-hidden shadow-sm transition-all ${
-                                isBrandMatches
-                                  ? "ring-2 ring-primary/30 shadow-md"
-                                  : ""
-                              }`}
+                              className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
                             >
                               <img
                                 src={variantUrls.preview}

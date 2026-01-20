@@ -4,8 +4,21 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquarePlus, Calendar, Coins, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { MessageSquarePlus, Calendar, Coins, Clock, CheckCircle2, AlertCircle, RefreshCw, User, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface MoodboardItem {
+  id: string;
+  type: "style" | "color" | "image" | "upload";
+  imageUrl: string;
+  name: string;
+  metadata?: {
+    styleAxis?: string;
+    deliverableType?: string;
+    colorSamples?: string[];
+    styleId?: string;
+  };
+}
 
 interface Task {
   id: string;
@@ -15,6 +28,14 @@ interface Task {
   createdAt: string;
   creditsUsed: number;
   estimatedHours: string | null;
+  deadline?: string | null;
+  assignedAt?: string | null;
+  moodboardItems?: MoodboardItem[];
+  freelancer?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  } | null;
 }
 
 const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
@@ -34,6 +55,13 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchTasks();
+
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchTasks = async () => {
@@ -60,20 +88,26 @@ export default function TasksPage() {
 
   const TaskCard = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
+    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
+    const hasFreelancer = task.freelancer && task.freelancer.name;
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
         <div
           className="group relative rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all cursor-pointer h-full bg-card"
         >
-          <div className="p-4 sm:p-5 h-full flex flex-col">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
-              <h3 className="text-sm sm:text-base text-foreground font-medium line-clamp-1 group-hover:text-foreground/90 transition-colors">
-                {task.title}
-              </h3>
+          {/* Thumbnail Preview */}
+          {thumbnailItem ? (
+            <div className="aspect-[16/9] relative bg-muted overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={thumbnailItem.imageUrl}
+                alt={thumbnailItem.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <span className={cn(
-                "shrink-0 inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs border",
+                "absolute top-2 right-2 inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs border backdrop-blur-sm",
                 status.bgColor,
                 status.color
               )}>
@@ -81,21 +115,63 @@ export default function TasksPage() {
                 <span className="hidden sm:inline">{status.label}</span>
               </span>
             </div>
+          ) : (
+            <div className="aspect-[16/9] relative bg-muted flex items-center justify-center">
+              <Palette className="h-8 w-8 text-muted-foreground/50" />
+              <span className={cn(
+                "absolute top-2 right-2 inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs border",
+                status.bgColor,
+                status.color
+              )}>
+                {status.icon}
+                <span className="hidden sm:inline">{status.label}</span>
+              </span>
+            </div>
+          )}
+
+          <div className="p-3 sm:p-4">
+            {/* Title */}
+            <h3 className="text-sm sm:text-base text-foreground font-medium line-clamp-1 group-hover:text-foreground/90 transition-colors">
+              {task.title}
+            </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 flex-1">
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
               {task.description}
             </p>
 
-            {/* Footer */}
-            <div className="flex items-center gap-3 sm:gap-4 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
-              <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                {new Date(task.createdAt).toLocaleDateString()}
-              </div>
-              <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-                <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                {task.creditsUsed} <span className="hidden sm:inline">credits</span>
+            {/* Footer with Artist & Meta */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+              {/* Artist Info */}
+              {hasFreelancer ? (
+                <div className="flex items-center gap-2">
+                  {task.freelancer?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={task.freelancer.image}
+                      alt={task.freelancer.name || "Artist"}
+                      className="h-5 w-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-3 w-3 text-primary" />
+                    </div>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                    {task.freelancer?.name?.split(" ")[0]}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  <span>Finding artist...</span>
+                </div>
+              )}
+
+              {/* Credits */}
+              <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                <Coins className="h-3 w-3" />
+                {task.creditsUsed}
               </div>
             </div>
           </div>

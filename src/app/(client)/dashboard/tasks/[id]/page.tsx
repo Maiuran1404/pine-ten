@@ -34,9 +34,32 @@ import {
   Loader2,
   Expand,
   X,
+  History,
+  Play,
+  Eye,
+  RotateCcw,
+  Circle,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+
+interface ActivityLogEntry {
+  id: string;
+  action: string;
+  actorType: string;
+  actorId: string | null;
+  previousStatus: string | null;
+  newStatus: string | null;
+  metadata: {
+    freelancerName?: string;
+    deliverableCount?: number;
+    revisionFeedback?: string;
+    creditsUsed?: number;
+    category?: string;
+    [key: string]: unknown;
+  } | null;
+  createdAt: string;
+}
 
 interface Task {
   id: string;
@@ -83,6 +106,7 @@ interface Task {
     senderName: string;
     senderImage: string | null;
   }[];
+  activityLog?: ActivityLogEntry[];
 }
 
 const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
@@ -985,6 +1009,121 @@ export default function TaskDetailPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 We&apos;re matching you with the best designer for this task
               </p>
+            </GlassCard>
+          )}
+
+          {/* Task Timeline */}
+          {task.activityLog && task.activityLog.length > 0 && (
+            <GlassCard>
+              <div className="p-5 border-b border-border/40">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Timeline</h2>
+                </div>
+              </div>
+              <div className="p-5">
+                <div className="space-y-4">
+                  {task.activityLog.map((entry, index) => {
+                    const isLast = index === task.activityLog!.length - 1;
+                    const getActionInfo = (action: string, metadata: ActivityLogEntry["metadata"]) => {
+                      switch (action) {
+                        case "created":
+                          return {
+                            icon: <Circle className="h-3 w-3" />,
+                            color: "text-blue-400",
+                            bgColor: "bg-blue-500/10",
+                            label: "Task created",
+                            detail: metadata?.creditsUsed ? `${metadata.creditsUsed} credits` : undefined,
+                          };
+                        case "assigned":
+                          return {
+                            icon: <User className="h-3 w-3" />,
+                            color: "text-purple-400",
+                            bgColor: "bg-purple-500/10",
+                            label: metadata?.freelancerName ? `Assigned to ${metadata.freelancerName}` : "Designer assigned",
+                          };
+                        case "started":
+                          return {
+                            icon: <Play className="h-3 w-3" />,
+                            color: "text-indigo-400",
+                            bgColor: "bg-indigo-500/10",
+                            label: "Work started",
+                          };
+                        case "submitted":
+                          return {
+                            icon: <Eye className="h-3 w-3" />,
+                            color: "text-orange-400",
+                            bgColor: "bg-orange-500/10",
+                            label: "Deliverables submitted",
+                            detail: metadata?.deliverableCount ? `${metadata.deliverableCount} files` : undefined,
+                          };
+                        case "revision_requested":
+                          return {
+                            icon: <RotateCcw className="h-3 w-3" />,
+                            color: "text-yellow-400",
+                            bgColor: "bg-yellow-500/10",
+                            label: "Revision requested",
+                          };
+                        case "completed":
+                          return {
+                            icon: <CheckCircle2 className="h-3 w-3" />,
+                            color: "text-green-400",
+                            bgColor: "bg-green-500/10",
+                            label: "Task completed",
+                          };
+                        case "cancelled":
+                          return {
+                            icon: <X className="h-3 w-3" />,
+                            color: "text-red-400",
+                            bgColor: "bg-red-500/10",
+                            label: "Task cancelled",
+                          };
+                        default:
+                          return {
+                            icon: <Circle className="h-3 w-3" />,
+                            color: "text-muted-foreground",
+                            bgColor: "bg-muted/50",
+                            label: action.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+                          };
+                      }
+                    };
+
+                    const actionInfo = getActionInfo(entry.action, entry.metadata);
+
+                    return (
+                      <div key={entry.id} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+                            actionInfo.bgColor
+                          )}>
+                            <span className={actionInfo.color}>{actionInfo.icon}</span>
+                          </div>
+                          {!isLast && (
+                            <div className="w-px h-full min-h-[24px] bg-border/50 mt-1" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-2">
+                          <p className={cn("text-sm font-medium", actionInfo.color)}>
+                            {actionInfo.label}
+                          </p>
+                          {actionInfo.detail && (
+                            <p className="text-xs text-muted-foreground">{actionInfo.detail}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(entry.createdAt).toLocaleString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </GlassCard>
           )}
         </div>

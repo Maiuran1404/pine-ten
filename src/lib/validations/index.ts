@@ -42,6 +42,25 @@ export const createTaskSchema = z.object({
     )
     .optional()
     .default([]),
+  moodboardItems: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.enum(["style", "color", "image", "upload"]),
+        imageUrl: z.string(),
+        name: z.string(),
+        metadata: z
+          .object({
+            styleAxis: z.string().optional(),
+            deliverableType: z.string().optional(),
+            colorSamples: z.array(z.string()).optional(),
+            styleId: z.string().optional(),
+          })
+          .optional(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export const updateTaskSchema = z.object({

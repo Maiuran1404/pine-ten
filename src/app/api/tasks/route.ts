@@ -9,6 +9,7 @@ import {
   taskFiles,
   freelancerProfiles,
   creditTransactions,
+  taskActivityLog,
 } from "@/db/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
@@ -141,13 +142,49 @@ export async function GET(request: NextRequest) {
         : eq(tasks.clientId, session.user.id);
     }
 
-    const taskList = await db
-      .select()
+    const taskListRaw = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        createdAt: tasks.createdAt,
+        creditsUsed: tasks.creditsUsed,
+        estimatedHours: tasks.estimatedHours,
+        deadline: tasks.deadline,
+        assignedAt: tasks.assignedAt,
+        completedAt: tasks.completedAt,
+        moodboardItems: tasks.moodboardItems,
+        freelancerId: tasks.freelancerId,
+        freelancerName: users.name,
+        freelancerImage: users.image,
+      })
       .from(tasks)
+      .leftJoin(users, eq(tasks.freelancerId, users.id))
       .where(conditions)
       .orderBy(desc(tasks.createdAt))
       .limit(limit)
       .offset(offset);
+
+    // Transform to include nested freelancer object
+    const taskList = taskListRaw.map(task => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      createdAt: task.createdAt,
+      creditsUsed: task.creditsUsed,
+      estimatedHours: task.estimatedHours,
+      deadline: task.deadline,
+      assignedAt: task.assignedAt,
+      completedAt: task.completedAt,
+      moodboardItems: task.moodboardItems,
+      freelancer: task.freelancerId ? {
+        id: task.freelancerId,
+        name: task.freelancerName,
+        image: task.freelancerImage,
+      } : null,
+    }));
 
     // Get stats
     const statsResult = await db
@@ -209,6 +246,7 @@ export async function POST(request: NextRequest) {
       chatHistory,
       styleReferences,
       attachments,
+      moodboardItems,
     } = validatedData;
 
     // Use transaction to prevent race conditions
@@ -262,12 +300,42 @@ export async function POST(request: NextRequest) {
           maxRevisions: config.tasks.defaultMaxRevisions,
           chatHistory: chatHistory || [],
           styleReferences: styleReferences || [],
+          moodboardItems: moodboardItems || [],
           deadline: deadline ? new Date(deadline) : null,
           status: assignedFreelancer ? "ASSIGNED" : "PENDING",
           freelancerId: assignedFreelancer?.userId || null,
           assignedAt: assignedFreelancer ? new Date() : null,
         })
         .returning();
+
+      // Log task creation activity
+      await tx.insert(taskActivityLog).values({
+        taskId: newTask.id,
+        actorId: session.user.id,
+        actorType: "client",
+        action: "created",
+        newStatus: assignedFreelancer ? "ASSIGNED" : "PENDING",
+        metadata: {
+          creditsUsed: creditsRequired,
+          category: category || undefined,
+        },
+      });
+
+      // Log assignment if auto-assigned
+      if (assignedFreelancer) {
+        await tx.insert(taskActivityLog).values({
+          taskId: newTask.id,
+          actorId: null,
+          actorType: "system",
+          action: "assigned",
+          previousStatus: "PENDING",
+          newStatus: "ASSIGNED",
+          metadata: {
+            freelancerName: assignedFreelancer.name,
+            freelancerId: assignedFreelancer.userId,
+          },
+        });
+      }
 
       // Deduct credits atomically
       await tx

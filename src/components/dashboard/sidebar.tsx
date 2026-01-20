@@ -24,6 +24,7 @@ import {
   Zap,
   Sparkles,
   Wand2,
+  ChevronDown,
 } from "lucide-react";
 import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
 import {
@@ -32,6 +33,7 @@ import {
   type NavigationItem,
   type RecentItem,
 } from "@/components/shared/sidebar";
+import { useSession } from "@/lib/auth-client";
 
 const navigation: NavigationItem[] = [
   {
@@ -72,6 +74,33 @@ interface AppSidebarProps {
 
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
   const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [primaryColor, setPrimaryColor] = useState<string>("#FF6B6B");
+  const { data: session } = useSession();
+
+  // Load company data
+  useEffect(() => {
+    const loadCompanyData = async () => {
+      try {
+        const response = await fetch("/api/user/company");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.company?.name) {
+            setCompanyName(data.company.name);
+          }
+          if (data.company?.primaryColor) {
+            setPrimaryColor(data.company.primaryColor);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load company data:", error);
+      }
+    };
+
+    if (session?.user) {
+      loadCompanyData();
+    }
+  }, [session]);
 
   // Load chat drafts from localStorage
   useEffect(() => {
@@ -120,9 +149,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     iconClassName: "bg-amber-400",
   }));
 
-  // Combine drafts and non-active tasks for recents
+  // Only show drafts that have moodboard items (meaningful progress)
+  const draftsWithMoodboard = chatDrafts.filter(
+    d => d.moodboardItems && d.moodboardItems.length > 0
+  );
+
+  // Combine drafts with moodboard items and non-active tasks for recents
   const recentItems: RecentItem[] = [
-    ...chatDrafts.map(d => ({
+    ...draftsWithMoodboard.map(d => ({
       id: d.id,
       title: d.title,
       href: `/dashboard/chat?draft=${d.id}`,
@@ -138,17 +172,42 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     })),
   ].slice(0, 5);
 
+  // Get first letter of company name for avatar
+  const getInitial = (name: string | null) => {
+    if (!name) return "C";
+    return name.charAt(0).toUpperCase();
+  };
+
+  const displayName = companyName || "My Company";
+
   return (
     <Sidebar
       collapsible="icon"
       className="border-r-0"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
-      <SidebarHeader className="h-16 px-3 py-2">
+      <SidebarHeader className="h-16 px-3 py-2 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="size-8 p-2">
-              <SidebarTrigger />
+            <SidebarMenuButton
+              asChild
+              className="h-10 px-2 hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0"
+            >
+              <button className="flex items-center gap-2 w-full">
+                {/* Company Avatar */}
+                <div
+                  className="flex items-center justify-center size-6 rounded-md text-white text-xs font-semibold flex-shrink-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {getInitial(companyName)}
+                </div>
+                {/* Company Name - hidden when collapsed */}
+                <span className="flex-1 text-left font-medium text-sm truncate group-data-[collapsible=icon]:hidden">
+                  {displayName}
+                </span>
+                {/* Dropdown Icon - hidden when collapsed */}
+                <ChevronDown className="size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

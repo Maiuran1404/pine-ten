@@ -208,6 +208,18 @@ export const tasks = pgTable(
     status: taskStatusEnum("status").notNull().default("PENDING"),
     requirements: jsonb("requirements"),
     styleReferences: jsonb("style_references").$type<string[]>().default([]),
+    moodboardItems: jsonb("moodboard_items").$type<{
+      id: string;
+      type: "style" | "color" | "image" | "upload";
+      imageUrl: string;
+      name: string;
+      metadata?: {
+        styleAxis?: string;
+        deliverableType?: string;
+        colorSamples?: string[];
+        styleId?: string;
+      };
+    }[]>().default([]),
     chatHistory: jsonb("chat_history").$type<object[]>().default([]),
     estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
     creditsUsed: integer("credits_used").notNull().default(1),
@@ -259,6 +271,29 @@ export const taskMessages = pgTable("task_messages", {
   attachments: jsonb("attachments").$type<string[]>().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// Task activity log (for timeline tracking)
+export const taskActivityLog = pgTable("task_activity_log", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").references(() => users.id),
+  actorType: text("actor_type").notNull(), // "client", "freelancer", "admin", "system"
+  action: text("action").notNull(), // "created", "assigned", "started", "submitted", "approved", "revision_requested", "completed", "cancelled"
+  previousStatus: text("previous_status"),
+  newStatus: text("new_status"),
+  metadata: jsonb("metadata").$type<{
+    freelancerName?: string;
+    deliverableCount?: number;
+    revisionFeedback?: string;
+    [key: string]: unknown;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("task_activity_log_task_id_idx").on(table.taskId),
+  index("task_activity_log_created_at_idx").on(table.createdAt),
+]);
 
 // Style references (for AI chat suggestions)
 export const styleReferences = pgTable("style_references", {

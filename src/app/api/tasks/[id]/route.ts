@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks, users, taskCategories, taskFiles, taskMessages, companies } from "@/db/schema";
+import { tasks, users, taskCategories, taskFiles, taskMessages, companies, taskActivityLog } from "@/db/schema";
 import { eq, desc, and, ne } from "drizzle-orm";
 
 // Type alias for better readability
@@ -33,6 +33,7 @@ export async function GET(
         status: tasks.status,
         requirements: tasks.requirements,
         styleReferences: tasks.styleReferences,
+        moodboardItems: tasks.moodboardItems,
         chatHistory: tasks.chatHistory,
         estimatedHours: tasks.estimatedHours,
         creditsUsed: tasks.creditsUsed,
@@ -88,8 +89,8 @@ export async function GET(
 
     const companyId = clientInfo[0]?.companyId;
 
-    // Fetch files, messages, and optionally brand info in parallel
-    const [files, messages, brandResult, previousWorkResult] = await Promise.all([
+    // Fetch files, messages, activity log, and optionally brand info in parallel
+    const [files, messages, activityLog, brandResult, previousWorkResult] = await Promise.all([
       db
         .select()
         .from(taskFiles)
@@ -109,6 +110,21 @@ export async function GET(
         .leftJoin(users, eq(taskMessages.senderId, users.id))
         .where(eq(taskMessages.taskId, id))
         .orderBy(taskMessages.createdAt),
+      // Fetch activity log for timeline
+      db
+        .select({
+          id: taskActivityLog.id,
+          action: taskActivityLog.action,
+          actorType: taskActivityLog.actorType,
+          actorId: taskActivityLog.actorId,
+          previousStatus: taskActivityLog.previousStatus,
+          newStatus: taskActivityLog.newStatus,
+          metadata: taskActivityLog.metadata,
+          createdAt: taskActivityLog.createdAt,
+        })
+        .from(taskActivityLog)
+        .where(eq(taskActivityLog.taskId, id))
+        .orderBy(taskActivityLog.createdAt),
       // Fetch company/brand info if companyId exists
       companyId
         ? db
@@ -230,6 +246,7 @@ export async function GET(
         status: taskRow.status,
         requirements: taskRow.requirements,
         styleReferences: taskRow.styleReferences,
+        moodboardItems: taskRow.moodboardItems,
         chatHistory: taskRow.chatHistory,
         estimatedHours: taskRow.estimatedHours,
         creditsUsed: taskRow.creditsUsed,
@@ -249,6 +266,7 @@ export async function GET(
         messages,
         brandDNA,
         previousWork,
+        activityLog,
       },
     });
   } catch (error) {

@@ -37,7 +37,8 @@ async function handler(request: NextRequest) {
       selectedStyles,
       excludeStyleAxes,
       styleOffset,
-      deliverableStyleMarker: clientStyleMarker
+      deliverableStyleMarker: clientStyleMarker,
+      moodboardHasStyles, // Client indicates if moodboard already has style items
     } = body;
 
     // If client is requesting more/different styles directly, skip AI call
@@ -97,14 +98,53 @@ async function handler(request: NextRequest) {
     // Get deliverable styles if marker was present from AI response
     // Now using brand-aware scoring for personalized recommendations
     let deliverableStyles = undefined;
-    if (response.deliverableStyleMarker) {
-      const { type, deliverableType, styleAxis } = response.deliverableStyleMarker;
+    let deliverableStyleMarker = response.deliverableStyleMarker;
+
+    // FALLBACK: If AI didn't include marker but mentions a deliverable type,
+    // automatically detect and show styles to ensure user sees visual options
+    if (!deliverableStyleMarker) {
+      const contentLower = response.content.toLowerCase();
+      const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
+      const combinedContext = `${lastUserMessage} ${contentLower}`;
+
+      // Detect deliverable type from context
+      let detectedType: string | null = null;
+      if (combinedContext.includes("instagram") && (combinedContext.includes("post") || combinedContext.includes("carousel") || combinedContext.includes("feed"))) {
+        detectedType = "instagram_post";
+      } else if (combinedContext.includes("instagram") && combinedContext.includes("story")) {
+        detectedType = "instagram_story";
+      } else if (combinedContext.includes("instagram") && combinedContext.includes("reel")) {
+        detectedType = "instagram_reel";
+      } else if (combinedContext.includes("linkedin") && combinedContext.includes("post")) {
+        detectedType = "linkedin_post";
+      } else if (combinedContext.includes("ad") || combinedContext.includes("banner") || combinedContext.includes("promotion")) {
+        detectedType = "static_ad";
+      }
+
+      if (detectedType) {
+        deliverableStyleMarker = {
+          type: "initial",
+          deliverableType: detectedType,
+        };
+        console.log(`[Chat API] Auto-detected deliverable type: ${detectedType}`);
+      }
+    }
+
+    if (deliverableStyleMarker) {
+      const { type, deliverableType, styleAxis } = deliverableStyleMarker;
       // Normalize deliverable type in case AI generated an alias
       const normalizedType = normalizeDeliverableType(deliverableType);
 
       try {
         switch (type) {
           case "initial":
+            // SKIP showing styles if moodboard already has style items
+            // This prevents the style grid from appearing 5+ times in a conversation
+            if (moodboardHasStyles) {
+              console.log("[Chat API] Skipping style grid - moodboard already has styles");
+              deliverableStyleMarker = undefined; // Clear the marker so no grid is shown
+              break;
+            }
             // Use brand-aware styles with one per axis, sorted by brand match
             deliverableStyles = await getBrandAwareStyles(
               normalizedType,
@@ -135,7 +175,7 @@ async function handler(request: NextRequest) {
             break;
           case "semantic":
             // Use semantic search based on the query
-            const { searchQuery } = response.deliverableStyleMarker;
+            const { searchQuery } = deliverableStyleMarker;
             if (searchQuery) {
               // First try keyword-based semantic search
               const semanticResults = await searchStylesByQuery(
@@ -170,7 +210,7 @@ async function handler(request: NextRequest) {
             break;
           case "refine":
             // Use style refinement based on base style and user feedback
-            const { baseStyleId, refinementQuery } = response.deliverableStyleMarker;
+            const { baseStyleId, refinementQuery } = deliverableStyleMarker;
             if (baseStyleId && refinementQuery) {
               // First, get the base style's details (can be ID or name)
               const { db } = await import("@/db");
@@ -239,7 +279,7 @@ async function handler(request: NextRequest) {
       taskProposal,
       styleReferences,
       deliverableStyles,
-      deliverableStyleMarker: response.deliverableStyleMarker,
+      deliverableStyleMarker,
       selectedStyles,
       quickOptions: response.quickOptions,
     });

@@ -146,10 +146,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Get all active style references
+    // Get all active style references (increased limit to show more per category)
     const allReferences = await db.query.deliverableStyleReferences.findMany({
       where: eq(deliverableStyleReferences.isActive, true),
-      limit: 200,
+      limit: 500,
     });
 
     if (!user?.company || allReferences.length === 0) {
@@ -257,52 +257,67 @@ export async function GET(request: NextRequest) {
       colorFamilyGroups[ref.refDominantFamily].push(ref);
     }
 
-    // Build result
-    const result: Array<(typeof scoredReferences)[0] & { colorGroup: string }> = [];
+    // Group by deliverable type instead of color
+    const deliverableTypeGroups: Record<string, typeof scoredReferences> = {};
 
-    // Add brand matches first
-    for (const ref of brandMatches) {
-      if (result.length >= limit) break;
-      result.push({ ...ref, colorGroup: "matches_brand" });
+    for (const ref of scoredReferences) {
+      const type = ref.deliverableType || "other";
+      if (!deliverableTypeGroups[type]) {
+        deliverableTypeGroups[type] = [];
+      }
+      deliverableTypeGroups[type].push(ref);
     }
 
-    // Define display order for color families (brand-related families first)
-    const familyOrder: ColorFamily[] = [];
+    // Sort within each group: brand matches first, then by popularity
+    for (const type in deliverableTypeGroups) {
+      deliverableTypeGroups[type].sort((a, b) => {
+        // Brand matches first
+        if (a.isBrandMatch && !b.isBrandMatch) return -1;
+        if (!a.isBrandMatch && b.isBrandMatch) return 1;
+        // Then by color distance (closer to brand = better)
+        if (a.isBrandMatch && b.isBrandMatch) {
+          return a.matchDistance - b.matchDistance;
+        }
+        // Then shuffle for variety
+        return 0.5 - Math.random();
+      });
+    }
 
-    // Put brand color families first
-    if (brandColorFamilies.has("red_pink")) familyOrder.push("red_pink");
-    if (brandColorFamilies.has("blue_teal")) familyOrder.push("blue_teal");
-    if (brandColorFamilies.has("green")) familyOrder.push("green");
-    if (brandColorFamilies.has("orange_yellow")) familyOrder.push("orange_yellow");
-    if (brandColorFamilies.has("purple")) familyOrder.push("purple");
+    // Define display order for deliverable types
+    const typeOrder = [
+      "instagram_post",
+      "instagram_story",
+      "linkedin_post",
+      "static_ad",
+      "facebook_ad",
+      "twitter_post",
+      "instagram_reel",
+      "youtube_thumbnail",
+      "email_header",
+      "web_banner",
+      "presentation_slide",
+      "video_ad",
+    ];
 
-    // Then add remaining families
-    const allFamilies: ColorFamily[] = ["red_pink", "blue_teal", "green", "orange_yellow", "purple", "neutral", "mixed"];
-    for (const family of allFamilies) {
-      if (!familyOrder.includes(family)) {
-        familyOrder.push(family);
+    // Build result grouped by deliverable type
+    const result: Array<(typeof scoredReferences)[0] & { contentCategory: string }> = [];
+
+    for (const type of typeOrder) {
+      const typeRefs = deliverableTypeGroups[type] || [];
+      for (const ref of typeRefs) {
+        if (result.length >= limit) break;
+        result.push({ ...ref, contentCategory: type });
       }
     }
 
-    const familyLabels: Record<ColorFamily, string> = {
-      red_pink: "pink_coral",
-      orange_yellow: "orange_yellow",
-      green: "green",
-      blue_teal: "blue_teal",
-      purple: "purple",
-      neutral: "neutral_tones",
-      mixed: "colorful",
-    };
-
-    // Add from each color family
-    for (const family of familyOrder) {
-      const familyRefs = colorFamilyGroups[family];
-      // Shuffle within each family for variety
-      familyRefs.sort(() => 0.5 - Math.random());
-
-      for (const ref of familyRefs) {
-        if (result.length >= limit) break;
-        result.push({ ...ref, colorGroup: familyLabels[family] });
+    // Add any remaining types not in the predefined order
+    for (const type in deliverableTypeGroups) {
+      if (!typeOrder.includes(type)) {
+        const typeRefs = deliverableTypeGroups[type];
+        for (const ref of typeRefs) {
+          if (result.length >= limit) break;
+          result.push({ ...ref, contentCategory: type });
+        }
       }
     }
 
@@ -314,7 +329,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: cleanResult,
-      matchMethod: "color_grouped",
+      matchMethod: "content_category",
       brandColors,
       brandColorFamilies: Array.from(brandColorFamilies),
       groups: {
@@ -331,73 +346,69 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper function to group references by color family when no brand data
+// Helper function to group references by content category when no brand data
 function groupByColorFamily(
   references: typeof deliverableStyleReferences.$inferSelect[],
   limit: number,
   brandColors: string[] | null
 ) {
-  const colorFamilyGroups: Record<ColorFamily, typeof references> = {
-    red_pink: [],
-    orange_yellow: [],
-    green: [],
-    blue_teal: [],
-    purple: [],
-    neutral: [],
-    mixed: [],
-  };
+  // Group by deliverable type
+  const deliverableTypeGroups: Record<string, typeof references> = {};
 
   for (const ref of references) {
-    const refColors = ref.colorSamples as string[] | null;
-    let family: ColorFamily = "neutral";
-
-    if (refColors && Array.isArray(refColors) && refColors.length > 0) {
-      family = getDominantColorFamily(refColors);
-    } else {
-      const temp = ref.colorTemperature as string | null;
-      if (temp === "warm") family = "orange_yellow";
-      else if (temp === "cool") family = "blue_teal";
+    const type = ref.deliverableType || "other";
+    if (!deliverableTypeGroups[type]) {
+      deliverableTypeGroups[type] = [];
     }
-
-    colorFamilyGroups[family].push(ref);
+    deliverableTypeGroups[type].push(ref);
   }
 
-  const familyLabels: Record<ColorFamily, string> = {
-    red_pink: "pink_coral",
-    orange_yellow: "orange_yellow",
-    green: "green",
-    blue_teal: "blue_teal",
-    purple: "purple",
-    neutral: "neutral_tones",
-    mixed: "colorful",
-  };
+  // Shuffle within each group for variety
+  for (const type in deliverableTypeGroups) {
+    deliverableTypeGroups[type].sort(() => 0.5 - Math.random());
+  }
 
-  const familyOrder: ColorFamily[] = [
-    "red_pink",
-    "blue_teal",
-    "green",
-    "orange_yellow",
-    "purple",
-    "neutral",
-    "mixed",
+  // Define display order for deliverable types
+  const typeOrder = [
+    "instagram_post",
+    "instagram_story",
+    "linkedin_post",
+    "static_ad",
+    "facebook_ad",
+    "twitter_post",
+    "instagram_reel",
+    "youtube_thumbnail",
+    "email_header",
+    "web_banner",
+    "presentation_slide",
+    "video_ad",
   ];
 
-  const result: Array<(typeof references)[0] & { colorGroup: string }> = [];
+  const result: Array<(typeof references)[0] & { contentCategory: string }> = [];
 
-  for (const family of familyOrder) {
-    const familyRefs = colorFamilyGroups[family];
-    familyRefs.sort(() => 0.5 - Math.random());
-
-    for (const ref of familyRefs) {
+  for (const type of typeOrder) {
+    const typeRefs = deliverableTypeGroups[type] || [];
+    for (const ref of typeRefs) {
       if (result.length >= limit) break;
-      result.push({ ...ref, colorGroup: familyLabels[family] });
+      result.push({ ...ref, contentCategory: type });
+    }
+  }
+
+  // Add any remaining types
+  for (const type in deliverableTypeGroups) {
+    if (!typeOrder.includes(type)) {
+      const typeRefs = deliverableTypeGroups[type];
+      for (const ref of typeRefs) {
+        if (result.length >= limit) break;
+        result.push({ ...ref, contentCategory: type });
+      }
     }
   }
 
   return NextResponse.json({
     success: true,
     data: result,
-    matchMethod: "color_grouped",
+    matchMethod: "content_category",
     brandColors,
   });
 }

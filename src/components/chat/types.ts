@@ -35,6 +35,7 @@ export type ChatStage = 'brief' | 'style' | 'details' | 'review' | 'submit';
 export interface QuickOptions {
   question: string;
   options: string[];
+  multiSelect?: boolean;
 }
 
 export interface StyleReference {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
+import { Check, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface TypingTextProps {
@@ -12,8 +14,12 @@ interface TypingTextProps {
   animate?: boolean;
   /** Callback when typing animation completes */
   onComplete?: () => void;
-  /** Callback when a list item option is clicked */
+  /** Callback when a list item option is clicked (single option) */
   onOptionClick?: (option: string) => void;
+  /** Callback when multiple options are confirmed */
+  onOptionsConfirm?: (options: string[]) => void;
+  /** Enable multi-select mode for list options */
+  multiSelect?: boolean;
   /** Custom className for the container */
   className?: string;
 }
@@ -28,10 +34,13 @@ export function TypingText({
   animate = true,
   onComplete,
   onOptionClick,
+  onOptionsConfirm,
+  multiSelect = false,
   className,
 }: TypingTextProps) {
   const [displayedContent, setDisplayedContent] = useState(animate ? "" : content);
   const [isComplete, setIsComplete] = useState(!animate);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
   const wordIndexRef = useRef(0);
 
@@ -47,6 +56,7 @@ export function TypingText({
     setDisplayedContent("");
     setIsComplete(false);
     wordIndexRef.current = 0;
+    setSelectedOptions([]);
 
     // Split content into words while preserving whitespace and newlines
     const words = content.split(/(\s+)/);
@@ -77,12 +87,37 @@ export function TypingText({
     };
   }, [content, animate, speed, onComplete]);
 
-  // Custom renderer for list items to make them clickable
+  // Handle option click for list items
   const handleListItemClick = useCallback((text: string) => {
-    if (onOptionClick && isComplete) {
+    if (!isComplete) return;
+
+    if (multiSelect) {
+      // Toggle selection
+      setSelectedOptions((prev) =>
+        prev.includes(text)
+          ? prev.filter((o) => o !== text)
+          : [...prev, text]
+      );
+    } else if (onOptionClick) {
       onOptionClick(text);
     }
-  }, [onOptionClick, isComplete]);
+  }, [onOptionClick, isComplete, multiSelect]);
+
+  // Handle confirm for multi-select
+  const handleConfirm = useCallback(() => {
+    if (selectedOptions.length > 0) {
+      if (onOptionsConfirm) {
+        onOptionsConfirm(selectedOptions);
+      } else if (onOptionClick) {
+        // Fallback: send as comma-separated string
+        const combinedResponse = selectedOptions.length === 1
+          ? selectedOptions[0]
+          : selectedOptions.join(", ");
+        onOptionClick(combinedResponse);
+      }
+      setSelectedOptions([]);
+    }
+  }, [selectedOptions, onOptionClick, onOptionsConfirm]);
 
   return (
     <div className={className}>
@@ -100,6 +135,7 @@ export function TypingText({
           li: ({ children }) => {
             // Extract text content from children
             const textContent = extractTextFromChildren(children);
+            const isSelected = selectedOptions.includes(textContent);
 
             if (onOptionClick && isComplete) {
               return (
@@ -108,16 +144,31 @@ export function TypingText({
                     onClick={() => handleListItemClick(textContent)}
                     className={cn(
                       "w-full text-left px-4 py-2.5 rounded-xl",
-                      "bg-muted/50 hover:bg-muted",
-                      "border border-border/50 hover:border-primary/30",
-                      "transition-all duration-200",
-                      "text-sm text-foreground",
+                      "border transition-all duration-200",
+                      "text-sm",
                       "flex items-center gap-2",
-                      "hover:shadow-sm",
-                      "cursor-pointer"
+                      "cursor-pointer",
+                      multiSelect && isSelected
+                        ? "bg-primary/10 border-primary text-foreground"
+                        : "bg-muted/50 hover:bg-muted border-border/50 hover:border-primary/30 text-foreground hover:shadow-sm"
                     )}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
+                    {multiSelect ? (
+                      <span
+                        className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                          isSelected
+                            ? "border-primary bg-primary"
+                            : "border-muted-foreground/30"
+                        )}
+                      >
+                        {isSelected && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
+                    )}
                     <span>{textContent}</span>
                   </button>
                 </li>
@@ -130,6 +181,21 @@ export function TypingText({
       >
         {displayedContent}
       </ReactMarkdown>
+
+      {/* Confirm button for multi-select */}
+      {multiSelect && selectedOptions.length > 0 && isComplete && (
+        <div className="flex justify-end mt-3">
+          <Button
+            onClick={handleConfirm}
+            size="sm"
+            className="gap-2"
+          >
+            Continue with {selectedOptions.length} selected
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Blinking cursor while typing */}
       {!isComplete && (
         <span className="inline-block w-0.5 h-4 bg-foreground/70 ml-0.5 animate-pulse" />
