@@ -342,6 +342,10 @@ export const deliverableStyleReferences = pgTable(
     visualElements: jsonb("visual_elements").$type<string[]>().default([]), // typography-heavy, photo-centric, etc.
     moodKeywords: jsonb("mood_keywords").$type<string[]>().default([]), // professional, playful, elegant, etc.
 
+    // Duplicate detection
+    imageHash: text("image_hash"), // Perceptual hash for content-based deduplication
+    sourceUrl: text("source_url"), // Original URL before upload to storage
+
     // Ordering
     featuredOrder: integer("featured_order").notNull().default(0),
     displayOrder: integer("display_order").notNull().default(0),
