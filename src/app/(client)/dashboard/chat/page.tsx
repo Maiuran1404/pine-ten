@@ -142,18 +142,18 @@ export default function ChatPage() {
           }}
         />
 
-        <div className="relative z-10 p-6 space-y-8">
+        <div className="relative z-10 p-4 sm:p-6 space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">New Design Request</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">New Design Request</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
                 Continue a previous request or start fresh
               </p>
             </div>
             <Button
               onClick={handleStartNew}
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 mr-2" />
               Start New Request
@@ -162,11 +162,11 @@ export default function ChatPage() {
 
           {/* Recent Drafts */}
           <div>
-            <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2">
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Continue where you left off
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {drafts.map((draft) => (
                 <div
                   key={draft.id}
@@ -231,7 +231,7 @@ export default function ChatPage() {
       />
 
       {/* Always use seamless full-width layout to prevent flash during navigation */}
-      <div className="relative z-10 flex flex-col px-4 sm:px-8 lg:px-16 pt-8 h-[calc(100vh-4rem)] pb-6">
+      <div className="relative z-10 flex flex-col px-3 sm:px-8 lg:px-16 pt-4 sm:pt-8 h-[calc(100vh-4rem)] pb-4 sm:pb-6">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <ChatInterface
             draftId={currentDraftId}

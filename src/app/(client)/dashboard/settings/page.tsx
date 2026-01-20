@@ -194,29 +194,29 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-full p-6 space-y-6">
+    <div className="min-h-full p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Manage your account settings and billing
         </p>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile" className="gap-2">
-            <User className="h-4 w-4" />
-            Profile
+      <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+        <TabsList className="w-full sm:w-auto flex overflow-x-auto">
+          <TabsTrigger value="profile" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="gap-2">
-            <CreditCard className="h-4 w-4" />
-            Billing
+          <TabsTrigger value="billing" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Billing</span>
           </TabsTrigger>
-          <TabsTrigger value="account" className="gap-2">
-            <Calendar className="h-4 w-4" />
-            Account
+          <TabsTrigger value="account" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Account</span>
           </TabsTrigger>
         </TabsList>
 

@@ -88,11 +88,11 @@ export default function CreditsPage() {
   };
 
   return (
-    <div className="min-h-full p-6 space-y-6">
+    <div className="min-h-full p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Credits</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Credits</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Purchase credits to create design tasks
         </p>
       </div>
@@ -120,8 +120,8 @@ export default function CreditsPage() {
 
       {/* Credit Packages */}
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-4">Purchase Credits</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-3">
+        <h2 className="text-sm font-medium text-muted-foreground mb-3 sm:mb-4">Purchase Credits</h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 pt-3">
           {creditPackages.map((pkg) => (
             <div
               key={pkg.id}
