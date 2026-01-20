@@ -228,23 +228,23 @@ export default function FreelancersPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Artists</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Artists</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Manage artist applications and profiles
         </p>
       </div>
 
       {/* Stats */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Pending Review"
             value={pendingCount}
@@ -276,20 +276,20 @@ export default function FreelancersPage() {
       )}
 
       <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList>
-          <TabsTrigger value="all">
+        <TabsList className="flex-wrap h-auto p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm">
             All ({freelancers.length})
           </TabsTrigger>
-          <TabsTrigger value="pending">
+          <TabsTrigger value="pending" className="text-xs sm:text-sm">
             Pending ({freelancers.filter((f) => f.status === "PENDING").length})
           </TabsTrigger>
-          <TabsTrigger value="approved">
+          <TabsTrigger value="approved" className="text-xs sm:text-sm">
             Approved ({freelancers.filter((f) => f.status === "APPROVED").length})
           </TabsTrigger>
-          <TabsTrigger value="not_onboarded">
+          <TabsTrigger value="not_onboarded" className="text-xs sm:text-sm hidden sm:inline-flex">
             Not Onboarded ({freelancers.filter((f) => f.status === "NOT_ONBOARDED").length})
           </TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs sm:text-sm">Rejected</TabsTrigger>
         </TabsList>
 
         <TabsContent value={filter} className="mt-6">
@@ -368,7 +368,8 @@ export default function FreelancersPage() {
                   No artists found
                 </p>
               ) : (
-                <Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">
@@ -489,6 +490,7 @@ export default function FreelancersPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

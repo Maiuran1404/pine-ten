@@ -168,10 +168,10 @@ export default function AdminDashboardPage() {
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 px-4 sm:px-0">
+          <div className="space-y-1 sm:space-y-2">
             <h1
-              className="text-3xl sm:text-4xl font-normal tracking-tight"
+              className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight"
               style={{
                 background: "linear-gradient(90deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)",
                 WebkitBackgroundClip: "text",
@@ -181,14 +181,14 @@ export default function AdminDashboardPage() {
             >
               Admin Dashboard
             </h1>
-            <p className="text-muted-foreground text-base">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Overview of platform activity and management
             </p>
           </div>
           <Button
             onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
             variant="outline"
-            className="border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+            className="border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 w-full sm:w-auto"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
@@ -200,7 +200,7 @@ export default function AdminDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 px-4 sm:px-0"
         >
           {statsConfig.map((stat, index) => {
             const Icon = stat.icon;
@@ -249,15 +249,15 @@ export default function AdminDashboardPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="space-y-4"
         >
-          <h2 className="text-lg font-medium text-foreground">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
+          <h2 className="text-base sm:text-lg font-medium text-foreground px-4 sm:px-0">Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 px-4 sm:px-0">
             {QUICK_ACTIONS.map((action, index) => {
               const Icon = action.icon;
               return (
                 <Link
                   key={action.id}
                   href={action.href}
-                  className={`group relative rounded-xl overflow-hidden border border-border hover:border-rose-500/30 transition-all cursor-pointer h-[120px] bg-card ${action.gridClass}`}
+                  className={`group relative rounded-xl overflow-hidden border border-border hover:border-rose-500/30 transition-all cursor-pointer h-[100px] sm:h-[120px] bg-card`}
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -293,8 +293,8 @@ export default function AdminDashboardPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="space-y-4"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-foreground">Recent Tasks</h2>
+          <div className="flex items-center justify-between px-4 sm:px-0">
+            <h2 className="text-base sm:text-lg font-medium text-foreground">Recent Tasks</h2>
             <Link
               href="/admin/tasks"
               className="text-sm text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1"
@@ -304,7 +304,7 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-border bg-card">
+          <div className="rounded-xl overflow-hidden border border-border bg-card mx-4 sm:mx-0">
             {isLoading ? (
               <div className="p-4 space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (

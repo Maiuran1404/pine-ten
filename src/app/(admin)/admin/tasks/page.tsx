@@ -212,23 +212,23 @@ export default function AllTasksPage() {
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">All Tasks</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">All Tasks</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           View and manage all tasks on the platform
         </p>
       </div>
 
       {/* Stats */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Total Tasks"
             value={tasks.length}
@@ -341,7 +341,8 @@ export default function AllTasksPage() {
                     </p>
                   ) : (
                     <TooltipProvider>
-                      <Table>
+                      <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <Table className="min-w-[800px]">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Task</TableHead>
@@ -454,6 +455,7 @@ export default function AllTasksPage() {
                           })}
                         </TableBody>
                       </Table>
+                      </div>
                     </TooltipProvider>
                   )}
 
