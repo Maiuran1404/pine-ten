@@ -49,23 +49,23 @@ function FloatingBlobs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div
-        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full opacity-30 blur-3xl"
+        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] rounded-full opacity-30 blur-3xl"
         style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
       />
       <div
-        className="absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
+        className="hidden sm:block absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
         style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)", transform: "rotate(-20deg)" }}
       />
       <div
-        className="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
+        className="hidden sm:block absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
         style={{ background: "radial-gradient(ellipse, #8bb58b 0%, transparent 70%)" }}
       />
       <div
-        className="absolute bottom-20 left-10 w-[200px] h-[200px] rounded-full opacity-30 blur-2xl"
+        className="absolute bottom-20 left-10 w-[150px] sm:w-[200px] h-[150px] sm:h-[200px] rounded-full opacity-30 blur-2xl"
         style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
       />
       <div
-        className="absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
+        className="hidden sm:block absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
         style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)" }}
       />
     </div>
@@ -75,14 +75,14 @@ function FloatingBlobs() {
 // Brand logo component
 function BrandLogo({ portalName }: { portalName: string }) {
   return (
-    <div className="absolute top-8 left-8 flex items-center gap-3 z-20">
-      <div className="grid grid-cols-2 gap-1">
-        <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-2 h-2 rounded-full bg-[#8bb58b]" />
+    <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 sm:gap-3 z-20">
+      <div className="grid grid-cols-2 gap-0.5 sm:gap-1">
+        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
+        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
+        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
+        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
       </div>
-      <span className="text-white/90 text-sm font-medium tracking-wide uppercase">
+      <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
         {portalName}
       </span>
     </div>
@@ -213,13 +213,13 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative">
+    <div className="min-h-dvh flex items-center justify-center relative py-16 sm:py-8">
       <FloatingBlobs />
       <BrandLogo portalName={portal.name} />
 
       <div className="relative z-10 w-full max-w-md px-4">
         <div
-          className="rounded-2xl p-8 sm:p-10"
+          className="rounded-2xl p-6 sm:p-8 md:p-10"
           style={{
             background: "rgba(20, 20, 20, 0.8)",
             backdropFilter: "blur(20px)",
@@ -393,7 +393,7 @@ function LoginContent() {
       </div>
 
       {/* Footer */}
-      <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30">
+      <footer className="absolute bottom-4 sm:bottom-6 left-0 right-0 text-center text-[10px] sm:text-xs text-white/30 px-4">
         <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </div>
