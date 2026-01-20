@@ -1866,6 +1866,24 @@ export function ChatInterface({
           </div>
         </ScrollArea>
 
+        {/* Skip to Submit option - shows when user has styles selected and some context */}
+        {!pendingTask && !showManualSubmit && moodboardItems.length > 0 && messages.filter(m => m.role === 'user').length >= 2 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center mb-3"
+          >
+            <button
+              onClick={handleRequestTaskSummary}
+              disabled={isLoading}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 disabled:opacity-50"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+              Skip to submit
+            </button>
+          </motion.div>
+        )}
+
         {/* Manual submit fallback when AI says "ready" but no [TASK_READY] */}
         {showManualSubmit && !pendingTask && (
           <motion.div
