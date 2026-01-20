@@ -944,9 +944,17 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .trim();
 
   // Post-process to remove enthusiastic language that slipped through
+  const originalLength = cleanContent.length;
   cleanContent = cleanContent
-    // Remove enthusiastic openers at the start of the message
-    .replace(/^(Perfect!?\s*|Great!?\s*|Great choice!?\s*|Excellent!?\s*|Amazing!?\s*|Awesome!?\s*|Wonderful!?\s*|Fantastic!?\s*|Love it!?\s*)/i, "")
+    // Remove enthusiastic openers at the start of the message (handles !, comma, or space after)
+    .replace(/^(Perfect[!,]?\s*|Great[!,]?\s*|Great choice[!,]?\s*|Good[!,]?\s*|Good choice[!,]?\s*|Excellent[!,]?\s*|Excellent choice[!,]?\s*|Amazing[!,]?\s*|Awesome[!,]?\s*|Wonderful[!,]?\s*|Fantastic[!,]?\s*|Love it[!,]?\s*|Nice[!,]?\s*|Nice choice[!,]?\s*|Solid[!,]?\s*|Solid choice[!,]?\s*|That works[!,]?\s*|Got it[!,.]?\s*|Noted[!,.]?\s*|Understood[!,.]?\s*|Sure[!,]?\s*|Okay[!,]?\s*|OK[!,]?\s*)/i, "");
+
+  // If we removed an opener, capitalize the first letter of remaining content
+  if (cleanContent.length < originalLength && cleanContent.length > 0) {
+    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
+  }
+
+  cleanContent = cleanContent
     // Remove emojis
     .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu, "")
     // Remove enthusiastic phrases in the middle of text
