@@ -186,11 +186,11 @@ export default function FreelancerSettingsPage() {
   }
 
   return (
-    <div className="min-h-full bg-background p-6 space-y-6">
+    <div className="min-h-full bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Manage your account settings and freelancer profile
         </p>
       </div>

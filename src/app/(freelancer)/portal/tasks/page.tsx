@@ -137,24 +137,24 @@ export default function FreelancerTasksPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Tasks</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Tasks</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Manage and track your assigned tasks
         </p>
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="submitted">Submitted</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="active" className="flex-1 sm:flex-initial text-xs sm:text-sm">Active</TabsTrigger>
+          <TabsTrigger value="submitted" className="flex-1 sm:flex-initial text-xs sm:text-sm">Submitted</TabsTrigger>
+          <TabsTrigger value="completed" className="flex-1 sm:flex-initial text-xs sm:text-sm">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={filter} className="mt-6">
+        <TabsContent value={filter} className="mt-4 sm:mt-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               {[1, 2, 3, 4].map((i) => (
                 <Card key={i}>
                   <CardHeader>
@@ -174,7 +174,7 @@ export default function FreelancerTasksPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               {filteredTasks.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
