@@ -53,15 +53,15 @@ function Header({ userEmail }: { userEmail?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 sm:p-8">
-      <div className="flex items-center gap-3">
-        <div className="grid grid-cols-2 gap-1">
-          <div className="w-2 h-2 rounded-full bg-[#EDBA8D]" />
-          <div className="w-2 h-2 rounded-full bg-[#9AA48C]" />
-          <div className="w-2 h-2 rounded-full bg-[#D2ECF2]" />
-          <div className="w-2 h-2 rounded-full bg-[#EDBA8D]" />
+    <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:p-8">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 gap-0.5 sm:gap-1">
+          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#EDBA8D]" />
+          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#9AA48C]" />
+          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#D2ECF2]" />
+          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#EDBA8D]" />
         </div>
-        <span className="text-white/90 text-sm font-medium tracking-wide uppercase">
+        <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
           Crafted
         </span>
       </div>
@@ -70,10 +70,10 @@ function Header({ userEmail }: { userEmail?: string }) {
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 text-sm hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 text-xs sm:text-sm hover:bg-white/10 transition-colors max-w-[140px] sm:max-w-none truncate"
           >
-            {userEmail}
-            <ChevronDown className="w-4 h-4" />
+            <span className="truncate">{userEmail}</span>
+            <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
           </button>
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-48 py-2 rounded-lg bg-[#1a1a1a] border border-white/10 shadow-xl">
@@ -140,13 +140,13 @@ function GlowingCard({ children, glowColor = "#9AA48C", className = "" }: { chil
   return (
     <div className={`relative ${className}`}>
       <div
-        className="absolute -inset-1 rounded-3xl opacity-50 blur-xl"
+        className="absolute -inset-1 rounded-3xl opacity-50 blur-xl hidden sm:block"
         style={{
           background: `linear-gradient(135deg, ${glowColor}40, transparent, ${glowColor}40)`,
         }}
       />
       <div
-        className="relative rounded-2xl p-8 sm:p-10 flex flex-col justify-center"
+        className="relative rounded-2xl p-5 sm:p-8 md:p-10 flex flex-col justify-center"
         style={{
           background: "rgba(15, 15, 15, 0.9)",
           backdropFilter: "blur(20px)",
@@ -163,11 +163,11 @@ function ProgressIndicator({ steps, currentStep, accentColor = "#9AA48C" }: { st
   const currentIndex = steps.findIndex(s => s.id === currentStep);
 
   return (
-    <div className="flex items-center gap-2 mb-8">
+    <div className="flex items-center gap-1 sm:gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2">
       {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center gap-2">
+        <div key={step.id} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
+            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium transition-all ${
               index === currentIndex
                 ? "bg-white/20 text-white border border-white/40"
                 : index > currentIndex
@@ -176,11 +176,11 @@ function ProgressIndicator({ steps, currentStep, accentColor = "#9AA48C" }: { st
             }`}
             style={index < currentIndex ? { backgroundColor: accentColor } : undefined}
           >
-            {index < currentIndex ? <Check className="w-4 h-4" /> : index + 1}
+            {index < currentIndex ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : index + 1}
           </div>
           {index < steps.length - 1 && (
             <div
-              className="w-8 h-0.5"
+              className="w-4 sm:w-8 h-0.5"
               style={{ backgroundColor: index < currentIndex ? accentColor : "rgba(255, 255, 255, 0.1)" }}
             />
           )}
@@ -203,40 +203,40 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
       exit={{ opacity: 0, y: -20 }}
       className="w-full"
     >
-      <motion.div variants={staggerItem} className="text-left mb-8">
+      <motion.div variants={staggerItem} className="text-left mb-6 sm:mb-8">
         <h1
-          className="text-3xl sm:text-4xl text-white mb-3"
+          className="text-2xl sm:text-3xl md:text-4xl text-white mb-2 sm:mb-3"
           style={{ fontFamily: "'Times New Roman', serif" }}
         >
           Welcome to Crafted
         </h1>
-        <p className="text-white/60 text-base">
+        <p className="text-white/60 text-sm sm:text-base">
           Let&apos;s set up your brand so everything you create stays consistent.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5">
         {/* Option A - Existing Brand */}
         <motion.button
           variants={staggerItem}
           onClick={() => onSelectRoute("existing")}
-          className="group relative p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
+          className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
             background: "rgba(15, 15, 15, 0.9)",
             border: "1px solid rgba(139, 181, 139, 0.3)",
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-4">
-            <Building2 className="w-6 h-6 text-[#9AA48C]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
           </div>
-          <h2 className="text-lg text-white font-medium mb-1.5">I already have a brand</h2>
-          <p className="text-white/50 text-sm mb-4">
+          <h2 className="text-base sm:text-lg text-white font-medium mb-1 sm:mb-1.5">I already have a brand</h2>
+          <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
             Share your website or upload assets — we&apos;ll extract your brand DNA automatically.
           </p>
-          <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
+          <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
             <span>Get started</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </motion.button>
 
@@ -244,25 +244,25 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
         <motion.button
           variants={staggerItem}
           onClick={() => onSelectRoute("create")}
-          className="group relative p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
+          className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
             background: "rgba(15, 15, 15, 0.9)",
             border: "1px solid rgba(139, 181, 139, 0.3)",
           }}
           whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-4">
-            <Sparkles className="w-6 h-6 text-[#9AA48C]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
           </div>
-          <h2 className="text-lg text-white font-medium mb-1.5">I want to create a brand</h2>
-          <p className="text-white/50 text-sm mb-4">
+          <h2 className="text-base sm:text-lg text-white font-medium mb-1 sm:mb-1.5">I want to create a brand</h2>
+          <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
             Answer a few questions and we&apos;ll generate brand directions for you to choose from.
           </p>
-          <div className="flex items-center gap-2 text-[#9AA48C] text-sm font-medium">
+          <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
             <span>Start building</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
           </div>
-          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-xs">
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-[10px] sm:text-xs">
             ~5 min
           </div>
         </motion.button>
@@ -2928,7 +2928,7 @@ function OnboardingContent() {
 
   return (
     <motion.div
-      className="h-screen relative flex items-center overflow-hidden"
+      className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden"
       style={{
         fontFamily: "'Satoshi', sans-serif",
         backgroundColor: "#0a0a0a",
@@ -2951,7 +2951,7 @@ function OnboardingContent() {
       />
       <Header userEmail={userEmail} />
 
-      <main className="relative z-10 px-4 py-16 ml-[10%] max-w-2xl">
+      <main className="relative z-10 px-4 sm:px-6 py-20 sm:py-16 mx-auto lg:mx-0 lg:ml-[10%] w-full max-w-2xl">
         {/* Progress indicator for non-welcome steps */}
         {step !== "welcome" && step !== "scanning" && step !== "brand-ready" && step !== "complete" && (
           <div className="mb-6">
@@ -3097,7 +3097,7 @@ function OnboardingContent() {
         </AnimatePresence>
       </div>
 
-      <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/30">
+      <footer className="relative lg:absolute bottom-0 lg:bottom-6 left-0 right-0 text-center text-[10px] sm:text-xs text-white/30 py-4 lg:py-0 px-4">
         <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </motion.div>
