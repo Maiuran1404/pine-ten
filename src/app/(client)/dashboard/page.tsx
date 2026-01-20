@@ -16,11 +16,6 @@ import {
   FileArchive,
   File,
   X,
-  Megaphone,
-  Share2,
-  PenTool,
-  LayoutGrid,
-  Search,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -42,27 +37,23 @@ interface StyleReference {
   styleAxis: string | null;
 }
 
-// Prompt templates organized by category
-const PROMPT_TEMPLATES = [
+// Example prompts with preview images - show users what they can create
+const EXAMPLE_PROMPTS = [
   {
-    category: "Social Media",
-    icon: Share2,
-    color: "blue",
+    prompt: "Instagram carousel for a product launch",
+    image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400&h=300&fit=crop",
   },
   {
-    category: "Advertising",
-    icon: Megaphone,
-    color: "emerald",
+    prompt: "Logo for a modern coffee shop",
+    image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop",
   },
   {
-    category: "Branding",
-    icon: PenTool,
-    color: "violet",
+    prompt: "YouTube thumbnail for a tech review",
+    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop",
   },
   {
-    category: "Marketing",
-    icon: LayoutGrid,
-    color: "amber",
+    prompt: "Ad banner for a summer sale",
+    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=300&fit=crop",
   },
 ];
 
@@ -233,15 +224,15 @@ function DashboardContent() {
     );
   };
 
-  const handleCategoryClick = (category: string) => {
-    const prompts: Record<string, string> = {
-      "Social Media": "I need social media content",
-      Advertising: "I need advertising content",
-      Branding: "I need branding materials",
-      Marketing: "I need marketing materials",
-    };
-    setChatInput(prompts[category] || "");
+  const handleTemplateClick = (prompt: string) => {
+    setChatInput(prompt);
     inputRef.current?.focus();
+    // Place cursor at the end of the prompt
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.selectionStart = inputRef.current.selectionEnd = prompt.length;
+      }
+    }, 0);
   };
 
   const getFileIcon = (fileType: string) => {
@@ -308,13 +299,13 @@ function DashboardContent() {
             <span className="relative inline-block">
               {userName}
               <svg
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[85%] h-2 text-foreground"
-                viewBox="0 0 70 8"
+                className="absolute -bottom-1 left-0 w-full h-3 text-foreground"
+                viewBox="0 0 100 10"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M2 5.5C8 4 14 6 22 4.5C30 3 38 5.5 46 4C54 2.5 62 5 68 4"
+                  d="M3 6C15 4.5 25 7 40 5C55 3 65 6.5 80 5C90 4 95 6 97 5.5"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
@@ -466,50 +457,37 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
-          {PROMPT_TEMPLATES.map((cat) => {
-            const Icon = cat.icon;
-            const colorClasses = {
-              blue: "hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 dark:hover:bg-blue-500/10 dark:hover:border-blue-500/30 dark:hover:text-blue-400",
-              emerald:
-                "hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/30 dark:hover:text-emerald-400",
-              violet:
-                "hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:border-violet-500/30 dark:hover:text-violet-400",
-              amber:
-                "hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:border-amber-500/30 dark:hover:text-amber-400",
-            };
-
-            return (
+        {/* Example Prompts - show users what they can create */}
+        <div className="w-full max-w-3xl mb-8 sm:mb-12 px-4">
+          <p className="text-center text-sm text-muted-foreground mb-4">Try an example</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {EXAMPLE_PROMPTS.map((example) => (
               <button
-                key={cat.category}
-                onClick={() => handleCategoryClick(cat.category)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full border border-border bg-white dark:bg-card text-muted-foreground text-xs sm:text-sm font-medium transition-all ${colorClasses[cat.color as keyof typeof colorClasses]}`}
+                key={example.prompt}
+                onClick={() => handleTemplateClick(example.prompt)}
+                className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-white dark:bg-card hover:shadow-lg hover:border-foreground/20 transition-all"
               >
-                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {cat.category}
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={example.image}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-3 text-left">
+                  <p className="text-xs sm:text-sm text-foreground leading-snug">{example.prompt}</p>
+                </div>
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Continue to explore section - outside main container for full width gradient */}
+      {/* Inspiration Gallery */}
       {styleReferences.length > 0 && (
-        <div className="relative w-full">
-          {/* Gradient transition area */}
-          <div className="relative h-40 bg-gradient-to-b from-white via-gray-100/80 to-gray-200/60 dark:from-background dark:via-zinc-900/80 dark:to-zinc-800/60">
-            {/* Centered pill button */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <button className="flex items-center gap-2 px-6 py-3 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-border shadow-md text-gray-500 dark:text-muted-foreground text-sm font-medium hover:text-gray-700 dark:hover:text-foreground hover:shadow-lg transition-all">
-                <Search className="h-4 w-4" />
-                <span>Continue to explore...</span>
-              </button>
-            </div>
-          </div>
-
+        <div className="relative w-full bg-background pt-4">
           {/* Masonry Grid */}
-          <div className="relative bg-gray-200/60 dark:bg-zinc-800/60 pb-8">
+          <div className="relative pb-8">
             <div className="max-w-6xl mx-auto px-6">
               <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
                 {styleReferences.map((ref) => {
@@ -532,7 +510,7 @@ function DashboardContent() {
             </div>
 
             {/* Fade overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-gray-200/60 via-gray-200/40 to-transparent dark:from-zinc-800/60 dark:via-zinc-800/40 pointer-events-none z-10" />
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none z-10" />
           </div>
         </div>
       )}
