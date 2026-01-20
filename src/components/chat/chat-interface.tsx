@@ -1360,14 +1360,15 @@ export function ChatInterface({
 
     // Extract task info from conversation to construct task directly
     const userMessages = messages.filter(m => m.role === "user");
+    const userContent = userMessages.map(m => m.content).join(" ");
     const allContent = messages.map(m => m.content).join(" ");
 
     // Extract title from first user message or moodboard context
     let title = "Design Request";
     const firstUserMsg = userMessages[0]?.content || "";
 
-    // Detect deliverable type for title
-    const contentLower = allContent.toLowerCase();
+    // Use user content for category/credit detection (avoid AI response words like "brand")
+    const contentLower = userContent.toLowerCase();
     if (contentLower.includes("carousel")) {
       title = "Instagram Carousel";
     } else if (contentLower.includes("instagram") && contentLower.includes("story")) {
@@ -1403,15 +1404,52 @@ export function ChatInterface({
     else if (contentLower.includes("banner") || contentLower.includes("ad")) category = "Advertising";
     else if (contentLower.includes("brand")) category = "Branding";
 
-    // Calculate credits based on complexity (slides, etc.)
-    let creditsRequired = 15; // Base credits
-    const slideMatch = allContent.match(/(\d+)\s*(slides?|images?|posts?|frames?)/i);
-    if (slideMatch) {
-      const count = parseInt(slideMatch[1], 10);
-      if (count > 1) {
-        creditsRequired = Math.min(count * 5, 50); // 5 credits per slide, max 50
+    // Smart credit calculation based on category, quantity, and complexity
+    let creditsRequired = 15; // Base credits for simple social media
+
+    // Base credits by category
+    const categoryBaseCredits: Record<string, number> = {
+      "Social Media": 15,
+      "Advertising": 20,
+      "Video": 30,
+      "Logo Design": 40,
+      "Branding": 60,
+    };
+    creditsRequired = categoryBaseCredits[category] || 15;
+
+    // Adjust for quantity (number of items requested)
+    const quantityPatterns = [
+      /(\d+)\s*(slides?|images?|posts?|frames?|pieces?|designs?|concepts?)/i,
+      /(\d+)\s*(carousel|story|stories|reels?)/i,
+      /(\d+)\s*(versions?|variants?|options?)/i,
+    ];
+
+    for (const pattern of quantityPatterns) {
+      const match = userContent.match(pattern);
+      if (match) {
+        const count = parseInt(match[1], 10);
+        if (count > 1 && count <= 20) {
+          // Add 3-5 credits per additional item depending on category
+          const perItemCredits = category === "Video" ? 5 : (category === "Advertising" ? 4 : 3);
+          creditsRequired += (count - 1) * perItemCredits;
+          break;
+        }
       }
     }
+
+    // Adjust for complexity indicators
+    if (contentLower.includes("animation") || contentLower.includes("animated")) {
+      creditsRequired += 10;
+    }
+    if (contentLower.includes("multiple platforms") || contentLower.includes("multi-platform")) {
+      creditsRequired += 5;
+    }
+    if (contentLower.includes("rush") || contentLower.includes("urgent") || contentLower.includes("asap")) {
+      creditsRequired = Math.round(creditsRequired * 1.25); // 25% rush fee
+    }
+
+    // Cap credits at reasonable maximum
+    creditsRequired = Math.min(creditsRequired, 100);
 
     // Construct the task proposal directly
     const constructedTask: TaskProposal = {
