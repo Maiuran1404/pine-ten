@@ -830,7 +830,11 @@ IMPORTANT: You already have their complete brand identity. NEVER ask about:
 - Logo or visual style
 - Industry or company description
 
-Instead, use this information to make smart recommendations and personalize all creative work.`
+CRITICAL: Never expose hex codes (#XXXXXX) or technical color values to users.
+Instead of: "Using your brand colors #15202B and #E8B4BC"
+Say: "Using your brand colors" or "On-brand with your palette"
+
+Use this information to make smart recommendations and personalize all creative work.`
     : "No brand profile available for this client. You may need to ask basic questions about their brand.";
 
   const basePrompt = await getSystemPrompt();
@@ -947,6 +951,12 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu, "")
     // Remove enthusiastic phrases in the middle of text
     .replace(/\s+(That's exciting!?|That sounds amazing!?|I love that!?|That's great!?)\s*/gi, " ")
+    // Strip hex codes to hide technical color values from users
+    .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, " ")
+    // Clean up "color ()" patterns that result from stripping
+    .replace(/\bcolor\s*\(\s*\)/gi, "color")
+    .replace(/\bcolors\s*\(\s*\)/gi, "colors")
+    .replace(/\(\s*\)/g, "")
     // Clean up any double spaces or leading/trailing whitespace
     .replace(/\s+/g, " ")
     .trim();
@@ -959,12 +969,35 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   };
 }
 
+// Helper to strip hex codes from user-facing text
+function stripHexCodes(text: string): string {
+  return text
+    // Remove hex codes like #15202B or #FFF (with optional surrounding parentheses)
+    .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, " ")
+    // Remove phrases like "color ()" or "Primary color ()" that result from stripping
+    .replace(/\bcolor\s*\(\s*\)/gi, "color")
+    .replace(/\bcolors\s*\(\s*\)/gi, "colors")
+    // Clean up resulting double spaces and awkward punctuation
+    .replace(/\s+,/g, ",")
+    .replace(/,\s*,/g, ",")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function parseTaskFromChat(content: string): object | null {
   const taskMatch = content.match(/\[TASK_READY\]([\s\S]*?)\[\/TASK_READY\]/);
   if (!taskMatch) return null;
 
   try {
-    return JSON.parse(taskMatch[1].trim());
+    const task = JSON.parse(taskMatch[1].trim());
+
+    // Strip hex codes from description to hide technical details from users
+    if (task.description && typeof task.description === "string") {
+      task.description = stripHexCodes(task.description);
+    }
+
+    return task;
   } catch {
     return null;
   }
