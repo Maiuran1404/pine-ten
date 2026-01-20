@@ -277,12 +277,12 @@ export default function BrandPage() {
 
       <div className="relative z-10 flex flex-col lg:flex-row min-h-full">
         {/* Left side - Form */}
-        <div className="flex-1 p-6 lg:p-8 lg:max-w-2xl">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:max-w-2xl">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">My Brand</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">My Brand</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
                 Manage your brand identity and visual guidelines
               </p>
             </div>
@@ -351,20 +351,20 @@ export default function BrandPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 border border-border">
+          <div className="flex gap-1 p-1 bg-muted rounded-xl mb-4 sm:mb-6 border border-border overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center",
+                  "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex-1 justify-center whitespace-nowrap min-w-0",
                   activeTab === tab.id
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <tab.icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
