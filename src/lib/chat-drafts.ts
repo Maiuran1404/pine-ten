@@ -70,9 +70,41 @@ function setLocalDrafts(drafts: ChatDraft[]): void {
   }
 }
 
+// Deduplicate drafts with similar titles created around the same time
+function deduplicateDrafts(drafts: ChatDraft[]): ChatDraft[] {
+  const seen = new Map<string, ChatDraft>();
+
+  for (const draft of drafts) {
+    // Create a key based on title (without the time suffix) and approximate creation time
+    // Strip the time/date suffix (e.g., " · 12:46 pm" or " · Jan 20")
+    const titleBase = draft.title.replace(/\s*·\s*[\d:apm]+\s*$/i, "").replace(/\s*·\s*\w+\s+\d+\s*$/i, "").trim();
+
+    // Get creation time rounded to nearest 5 minutes
+    const createdTime = draft.createdAt ? new Date(draft.createdAt).getTime() : 0;
+    const roundedTime = Math.floor(createdTime / (5 * 60 * 1000));
+
+    const key = `${titleBase}_${roundedTime}`;
+
+    // Keep the first one (most recent since drafts are sorted)
+    if (!seen.has(key)) {
+      seen.set(key, draft);
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 // Sync functions
 export function getDrafts(): ChatDraft[] {
-  return getLocalDrafts();
+  const drafts = getLocalDrafts();
+  const dedupedDrafts = deduplicateDrafts(drafts);
+
+  // If we removed duplicates, save the cleaned list
+  if (dedupedDrafts.length < drafts.length) {
+    setLocalDrafts(dedupedDrafts);
+  }
+
+  return dedupedDrafts;
 }
 
 export function getDraft(id: string): ChatDraft | null {
@@ -93,8 +125,10 @@ export function saveDraft(draft: ChatDraft): void {
 
   setLocalDrafts(drafts.slice(0, 10));
 
-  // Sync to server in background
-  syncDraftToServer(draft).catch(console.error);
+  // NOTE: Server sync disabled temporarily - was causing duplicate entries
+  // because server assigns new UUIDs to local draft IDs, creating multiple entries.
+  // To re-enable: uncomment the line below and fix the ID reconciliation logic.
+  // syncDraftToServer(draft).catch(console.error);
 }
 
 export function deleteDraft(id: string): void {
@@ -103,8 +137,8 @@ export function deleteDraft(id: string): void {
   const filtered = drafts.filter((d) => d.id !== id);
   setLocalDrafts(filtered);
 
-  // Delete from server in background
-  deleteDraftFromServer(id).catch(console.error);
+  // NOTE: Server sync disabled - see saveDraft comment
+  // deleteDraftFromServer(id).catch(console.error);
 }
 
 // Server sync functions
@@ -179,11 +213,101 @@ export function generateDraftId(): string {
   return `draft_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 }
 
-export function generateDraftTitle(messages: { role: string; content: string }[]): string {
-  const firstUserMessage = messages.find((m) => m.role === "user");
-  if (firstUserMessage) {
-    const content = firstUserMessage.content;
-    return content.length > 50 ? content.substring(0, 47) + "..." : content;
+export function generateDraftTitle(
+  messages: { role: string; content: string }[],
+  moodboardItems?: MoodboardItemData[],
+  createdAt?: string
+): string {
+  // Try to extract key info from conversation
+  const userMessages = messages.filter((m) => m.role === "user");
+
+  if (userMessages.length === 0) {
+    return "New Request";
   }
-  return "New Request";
+
+  // Get first meaningful user message
+  const firstMessage = userMessages[0].content;
+
+  // Extract key terms for a more meaningful title
+  const deliverableTypes = [
+    "instagram", "linkedin", "facebook", "twitter", "tiktok",
+    "post", "story", "reel", "carousel", "ad", "banner",
+    "logo", "brand", "video"
+  ];
+
+  const purposeWords = [
+    "launch", "announcement", "promotion", "sale", "event",
+    "campaign", "marketing", "showcase", "reveal", "update"
+  ];
+
+  const lowerContent = firstMessage.toLowerCase();
+
+  // Find deliverable type mentioned
+  const foundType = deliverableTypes.find((t) => lowerContent.includes(t));
+
+  // Find purpose mentioned
+  const foundPurpose = purposeWords.find((p) => lowerContent.includes(p));
+
+  // Build a smart title
+  let title = "";
+
+  if (foundType && foundPurpose) {
+    // Capitalize first letters
+    const typeCapitalized = foundType.charAt(0).toUpperCase() + foundType.slice(1);
+    const purposeCapitalized = foundPurpose.charAt(0).toUpperCase() + foundPurpose.slice(1);
+    title = `${typeCapitalized} - ${purposeCapitalized}`;
+  } else if (foundType) {
+    const typeCapitalized = foundType.charAt(0).toUpperCase() + foundType.slice(1);
+    title = `${typeCapitalized} Design`;
+  } else {
+    // Fall back to truncated first message
+    title = firstMessage.length > 40 ? firstMessage.substring(0, 37) + "..." : firstMessage;
+  }
+
+  // Try to extract product/brand name or key subject for more specificity
+  // Look for quoted text, capitalized words, or specific nouns
+  const quotedMatch = firstMessage.match(/"([^"]+)"|'([^']+)'/);
+  const keySubject = quotedMatch ? (quotedMatch[1] || quotedMatch[2]) : null;
+
+  // Add key subject if found and short enough
+  if (keySubject && keySubject.length < 20 && !title.toLowerCase().includes(keySubject.toLowerCase())) {
+    title = `${title} - ${keySubject}`;
+  }
+
+  // Add moodboard style info if available for uniqueness (only if no key subject)
+  if (!keySubject && moodboardItems && moodboardItems.length > 0) {
+    const firstStyle = moodboardItems[0];
+    if (firstStyle.metadata?.styleAxis) {
+      const axis = firstStyle.metadata.styleAxis.charAt(0).toUpperCase() +
+        firstStyle.metadata.styleAxis.slice(1).replace(/_/g, " ");
+      // Only add if it doesn't make title too long
+      if (title.length + axis.length < 50) {
+        title = `${title} (${axis})`;
+      }
+    }
+  }
+
+  // Add short date for uniqueness (e.g., "Jan 20" or "10:30am" if today)
+  const date = createdAt ? new Date(createdAt) : new Date();
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+
+  if (isToday) {
+    // Show time if created today (e.g., "2:30pm")
+    const timeStr = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).toLowerCase();
+    title = `${title} · ${timeStr}`;
+  } else {
+    // Show date (e.g., "Jan 20")
+    const dateStr = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    title = `${title} · ${dateStr}`;
+  }
+
+  return title;
 }
