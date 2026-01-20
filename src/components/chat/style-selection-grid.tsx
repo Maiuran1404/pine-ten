@@ -53,6 +53,9 @@ export function StyleSelectionGrid({
     setTimeout(() => setJustAdded(null), 1500);
   };
 
+  // Limit to showing only 3 styles
+  const displayedStyles = styles.slice(0, 3);
+
   return (
     <div className={cn("space-y-3", className)}>
       {/* Brand personalization hint */}
@@ -63,9 +66,9 @@ export function StyleSelectionGrid({
         </div>
       )}
 
-      {/* Style grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {styles.map((style, index) => {
+      {/* Style grid - 3 columns, smaller images */}
+      <div className="grid grid-cols-3 gap-2 max-w-2xl">
+        {displayedStyles.map((style, index) => {
           const isSelected = selectedStyles.includes(style.id);
           const isInMoodboard = moodboardStyleIds.includes(style.id);
           const isHovered = hoveredId === style.id;
@@ -180,10 +183,10 @@ export function StyleSelectionGrid({
                   )}
 
                   {/* Style axis badge */}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-1.5 right-1.5">
                     <Badge
                       variant="secondary"
-                      className="text-xs bg-background/80 backdrop-blur-sm"
+                      className="text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur-sm"
                     >
                       {getStyleAxisLabel(style.styleAxis)}
                     </Badge>
@@ -191,14 +194,14 @@ export function StyleSelectionGrid({
                 </div>
 
                 {/* Info */}
-                <div className="p-2.5">
-                  <h4 className="font-medium text-sm truncate">{style.name}</h4>
+                <div className="p-2">
+                  <h4 className="font-medium text-xs truncate">{style.name}</h4>
                   {style.matchReason && isGoodMatch ? (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 line-clamp-1 mt-0.5">
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 line-clamp-1 mt-0.5">
                       {style.matchReason}
                     </p>
                   ) : style.description ? (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
                       {style.description}
                     </p>
                   ) : null}

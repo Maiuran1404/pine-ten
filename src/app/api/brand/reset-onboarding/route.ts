@@ -12,7 +12,6 @@ export async function POST() {
     const [currentUser] = await db
       .select({
         companyId: users.companyId,
-        role: users.role,
       })
       .from(users)
       .where(eq(users.id, user.id))
@@ -20,14 +19,6 @@ export async function POST() {
 
     if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Only clients can reset their onboarding
-    if (currentUser.role !== "CLIENT") {
-      return NextResponse.json(
-        { error: "Only clients can reset onboarding" },
-        { status: 403 }
-      );
     }
 
     // Delete the company if it exists

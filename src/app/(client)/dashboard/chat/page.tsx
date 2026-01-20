@@ -7,10 +7,12 @@ import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/c
 import { Button } from "@/components/ui/button";
 import { Plus, MessageSquare, Trash2, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const initializedRef = useRef(false);
+  const { setOpen } = useSidebar();
 
   // Get current URL params
   const draftParam = searchParams.get("draft");
