@@ -47,19 +47,30 @@ export function calculateChatStage(state: ProgressState): ProgressResult {
   const userMessages = messages.filter(
     (m) => m.role === 'user' && m.id !== 'welcome'
   );
-  const hasUserMessage = userMessages.length > 0;
+  const userMessageCount = userMessages.length;
+  const hasUserMessage = userMessageCount > 0;
+
+  // Check if visual styles have been shown (message contains deliverableStyles)
+  const hasStylesShown = messages.some(
+    (m) => m.role === 'assistant' && m.deliverableStyles && m.deliverableStyles.length > 0
+  );
 
   // Stage 1: Brief - User has sent at least one message
+  // Only advance to style stage if styles have been shown
   if (hasUserMessage) {
     completedStages.push('brief');
-    currentStage = 'style';
+    currentStage = hasStylesShown ? 'style' : 'brief';
   }
 
-  // Stage 2: Style - User has selected styles OR has 2+ moodboard items
+  // Stage 2: Style - User has selected styles OR has moodboard items
+  // Only mark complete if user has actually selected/added styles
   const hasStyleSelection = selectedStyles.length > 0;
-  const hasMoodboardItems = moodboardItems.length >= 2;
+  const hasMoodboardItems = moodboardItems.length >= 1;
 
   if (hasStyleSelection || hasMoodboardItems) {
+    if (!completedStages.includes('brief')) {
+      completedStages.push('brief');
+    }
     completedStages.push('style');
     currentStage = 'details';
   }
@@ -68,12 +79,13 @@ export function calculateChatStage(state: ProgressState): ProgressResult {
   const hasTaskProposal = pendingTask !== null;
 
   if (hasTaskProposal) {
+    if (!completedStages.includes('brief')) completedStages.push('brief');
+    if (!completedStages.includes('style')) completedStages.push('style');
     completedStages.push('details');
     currentStage = 'review';
   }
 
   // Stage 4: Review - Pending task exists and is ready for review
-  // (Same as details for now, but differentiated by UI state)
   if (hasTaskProposal && completedStages.includes('details')) {
     completedStages.push('review');
     currentStage = 'submit';
@@ -82,11 +94,16 @@ export function calculateChatStage(state: ProgressState): ProgressResult {
   // Stage 5: Submit - Task has been submitted
   if (taskSubmitted) {
     completedStages.push('submit');
-    currentStage = 'submit'; // Stay at submit
+    currentStage = 'submit';
   }
 
-  // Calculate progress percentage
-  const progressPercentage = calculateProgressPercentage(completedStages, currentStage);
+  // Calculate progress percentage with message-based micro-progress
+  const progressPercentage = calculateProgressPercentage(
+    completedStages,
+    currentStage,
+    userMessageCount,
+    moodboardItems.length
+  );
 
   return {
     currentStage,
@@ -98,16 +115,19 @@ export function calculateChatStage(state: ProgressState): ProgressResult {
 
 /**
  * Calculate progress percentage based on completed stages
+ * Now includes message-based micro-progress for smoother progression
  */
 function calculateProgressPercentage(
   completedStages: ChatStage[],
-  currentStage: ChatStage
+  currentStage: ChatStage,
+  userMessageCount: number,
+  moodboardItemCount: number
 ): number {
   const stageWeights: Record<ChatStage, number> = {
-    brief: 20,
-    style: 25,
-    details: 25,
-    review: 15,
+    brief: 15,
+    style: 20,
+    details: 30,
+    review: 20,
     submit: 15,
   };
 
@@ -117,13 +137,52 @@ function calculateProgressPercentage(
     0
   );
 
-  // Add partial progress for current stage if it's in progress
+  // Add message-based micro-progress within the current stage
+  // This creates smoother progression as user exchanges messages
   const currentIndex = CHAT_STAGES.indexOf(currentStage);
   const completedIndex = completedStages.length - 1;
 
   if (currentIndex > completedIndex) {
-    // Add half of the current stage's weight as "in progress"
-    percentage += stageWeights[currentStage] * 0.5;
+    const currentWeight = stageWeights[currentStage];
+
+    // Calculate micro-progress based on stage
+    let microProgress = 0;
+
+    switch (currentStage) {
+      case 'brief':
+        // Brief stage: progress based on having sent a message
+        microProgress = userMessageCount > 0 ? currentWeight * 0.5 : 0;
+        break;
+
+      case 'style':
+        // Style stage: small progress while browsing styles
+        microProgress = currentWeight * 0.3;
+        break;
+
+      case 'details':
+        // Details stage: progress based on number of messages exchanged
+        // Each message adds ~5% up to 80% of the stage weight
+        const messageProgress = Math.min(userMessageCount - 1, 4) * 0.2;
+        // Moodboard items add a small bonus
+        const moodboardBonus = Math.min(moodboardItemCount, 3) * 0.05;
+        microProgress = currentWeight * Math.min(0.8, 0.2 + messageProgress + moodboardBonus);
+        break;
+
+      case 'review':
+        // Review stage: progress when task is ready for review
+        microProgress = currentWeight * 0.5;
+        break;
+
+      case 'submit':
+        // Submit stage: nearly complete
+        microProgress = currentWeight * 0.9;
+        break;
+
+      default:
+        microProgress = currentWeight * 0.5;
+    }
+
+    percentage += microProgress;
   }
 
   return Math.min(100, Math.round(percentage));
