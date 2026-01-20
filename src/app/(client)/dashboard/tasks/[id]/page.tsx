@@ -265,25 +265,25 @@ export default function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-background p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg bg-muted" />
+      <div className="min-h-full bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-muted" />
           <div className="space-y-2">
-            <Skeleton className="h-7 w-64 bg-muted" />
-            <Skeleton className="h-4 w-32 bg-muted" />
+            <Skeleton className="h-5 sm:h-7 w-48 sm:w-64 bg-muted" />
+            <Skeleton className="h-4 w-24 sm:w-32 bg-muted" />
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="md:col-span-2 space-y-6">
-            <GlassCard className="p-6">
-              <Skeleton className="h-6 w-32 bg-muted" />
-              <Skeleton className="h-32 w-full mt-4 bg-muted" />
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <GlassCard className="p-4 sm:p-6">
+              <Skeleton className="h-5 sm:h-6 w-28 sm:w-32 bg-muted" />
+              <Skeleton className="h-24 sm:h-32 w-full mt-4 bg-muted" />
             </GlassCard>
           </div>
           <div>
-            <GlassCard className="p-6">
-              <Skeleton className="h-6 w-24 bg-muted" />
-              <Skeleton className="h-24 w-full mt-4 bg-muted" />
+            <GlassCard className="p-4 sm:p-6">
+              <Skeleton className="h-5 sm:h-6 w-20 sm:w-24 bg-muted" />
+              <Skeleton className="h-20 sm:h-24 w-full mt-4 bg-muted" />
             </GlassCard>
           </div>
         </div>
@@ -329,25 +329,25 @@ export default function TaskDetailPage() {
   const hasRevisionsLeft = task.revisionsUsed < task.maxRevisions;
 
   return (
-    <div className="min-h-full bg-background p-6 space-y-6">
+    <div className="min-h-full bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-2 sm:gap-4">
           <Button
             variant="ghost"
             size="icon"
             asChild
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg h-8 w-8 sm:h-10 sm:w-10"
           >
             <Link href="/dashboard/tasks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{task.title}</h1>
-            <div className="flex items-center gap-2 mt-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl font-semibold text-foreground truncate">{task.title}</h1>
+            <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
               <span className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border",
+                "inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs border",
                 status.bgColor,
                 status.color
               )}>
@@ -355,7 +355,7 @@ export default function TaskDetailPage() {
                 {status.label}
               </span>
               {task.category && (
-                <span className="inline-flex px-2.5 py-1 rounded-full text-xs border border-border text-muted-foreground">
+                <span className="inline-flex px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs border border-border text-muted-foreground">
                   {task.category.name}
                 </span>
               )}
@@ -364,25 +364,25 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Approve Banner - Show when IN_REVIEW */}
           {isInReview && deliverables.length > 0 && (
-            <div className="flex items-center justify-between p-4 rounded-xl border border-green-500/30 bg-green-500/5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-400" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-green-500/30 bg-green-500/5">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Ready to approve?</p>
-                  <p className="text-xs text-muted-foreground">Review the deliverables and approve when satisfied</p>
+                  <p className="text-xs sm:text-sm font-medium text-foreground">Ready to approve?</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Review the deliverables and approve when satisfied</p>
                 </div>
               </div>
               <Button
                 onClick={handleApprove}
                 disabled={isApproving}
-                className="bg-green-600 hover:bg-green-700 text-foreground"
+                className="bg-green-600 hover:bg-green-700 text-foreground w-full sm:w-auto text-sm"
               >
                 {isApproving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -849,7 +849,7 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Task Details */}
           <GlassCard>
             <div className="p-5 border-b border-border/40">
