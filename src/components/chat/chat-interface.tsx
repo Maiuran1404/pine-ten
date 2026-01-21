@@ -1642,7 +1642,7 @@ export function ChatInterface({
       brief={brief}
       onBriefUpdate={updateBrief}
       onExportBrief={exportBrief}
-      briefCompletion={briefCompletion}
+      briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
       showProgress={seamlessTransition && !isTaskMode}
       showMoodboard={seamlessTransition && !isTaskMode}
       showBrief={seamlessTransition && !isTaskMode}

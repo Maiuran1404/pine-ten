@@ -283,7 +283,36 @@ function extractDuration(text: string): InferredField<string> {
 // TOPIC EXTRACTION
 // =============================================================================
 
+/**
+ * Check if a message is a modification/adjustment request rather than a new topic
+ * These messages should not override the existing topic
+ */
+function isModificationMessage(text: string): boolean {
+  const modificationPatterns = [
+    // Direct modification phrases
+    /\b(instead of|rather than|change to|switch to|let's (go with|do|focus on|use)|actually,? let's)\b/i,
+    // Quantity/scope adjustments
+    /\b(\d+)\s+(instead|rather)\b/i,
+    /\b(fewer|more|less)\s+(than|posts?|carousels?|pieces?|items?)\b/i,
+    // Style/approach adjustments
+    /\b(make (it|them|this) more|make (it|them|this) less)\b/i,
+    /\b(more|less)\s+(beginner|advanced|professional|casual|formal|friendly)\b/i,
+    // Refinement language
+    /\b(tweak|adjust|modify|update|refine|revise)\b/i,
+    // Preference changes
+    /\b(prefer|would rather|I'd rather|I think|on second thought)\b/i,
+  ];
+
+  return modificationPatterns.some(pattern => pattern.test(text));
+}
+
 function extractTopic(text: string): InferredField<string> {
+  // Skip topic extraction for modification messages
+  // These messages adjust existing requests, not define new topics
+  if (isModificationMessage(text)) {
+    return { value: null, confidence: 0, source: "pending" };
+  }
+
   // First, try to find explicit topic patterns
   // Pattern: "about X", "for X", "on X", "regarding X"
   const topicPatterns = [
