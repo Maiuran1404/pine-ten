@@ -58,11 +58,21 @@ const BRAND_TONE_VALUES = [
   "rebellious-edgy",
 ] as const;
 
+// Industry Archetype values
+const INDUSTRY_ARCHETYPE_VALUES = [
+  "hospitality",
+  "blue-collar",
+  "white-collar",
+  "e-commerce",
+  "tech",
+] as const;
+
 interface BrandExtraction {
   name: string;
   description: string;
   tagline: string | null;
   industry: string | null;
+  industryArchetype: string | null; // hospitality, blue-collar, white-collar, e-commerce, tech
   logoUrl: string | null;
   faviconUrl: string | null;
   primaryColor: string;
@@ -176,6 +186,7 @@ function createDefaultBrandData(
     description: metadata?.description || "",
     tagline: null,
     industry: null,
+    industryArchetype: null,
     logoUrl: branding?.images?.logo || metadata?.ogImage || null,
     faviconUrl: branding?.images?.favicon || metadata?.favicon || null,
     primaryColor,
@@ -339,25 +350,31 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
 1. **Company Name**: The company/brand name
 2. **Description**: A brief description of what the company does (2-3 sentences)
 3. **Tagline**: Any tagline or slogan found
-4. **Industry**: The industry the company operates in
-5. **Logo URL**: If you can identify a logo image URL from the content
-6. **Colors**: Extract the main colors used:
+4. **Industry**: The specific industry the company operates in (e.g., "Recruitment", "SaaS", "Restaurants", "Electrical Services", "Fashion & Apparel")
+5. **Industry Archetype** (choose ONE that best categorizes the business model):
+   - "hospitality": Restaurants, Cafes, Hotels, Food & Beverage, Accommodation services
+   - "blue-collar": Construction, Electrical Services, Plumbing, HVAC, Manufacturing, Trade services
+   - "white-collar": Recruitment, Banking, Venture Capital, Finance, Professional Services, Marketing & Advertising, Consulting
+   - "e-commerce": Product-based online businesses, Fashion & Apparel, Retail, Online stores
+   - "tech": Technology startups, SaaS, Software companies, Tech products
+6. **Logo URL**: If you can identify a logo image URL from the content
+7. **Colors**: Extract the main colors used:
    - primaryColor: The dominant brand color (hex code)
    - secondaryColor: Secondary brand color (hex code)
    - accentColor: Accent/highlight color (hex code)
    - backgroundColor: Main background color (hex code)
    - textColor: Main text color (hex code)
    - brandColors: Array of all significant brand colors (hex codes)
-7. **Typography**: Identify fonts if mentioned or visible. Choose from these common options if the exact font isn't clear:
+8. **Typography**: Identify fonts if mentioned or visible. Choose from these common options if the exact font isn't clear:
    - Modern Sans: Satoshi, Inter, DM Sans, Plus Jakarta Sans, Outfit, Space Grotesk, Manrope, Sora
    - Classic Sans: Helvetica, Arial, Futura, Avenir, Proxima Nova, Montserrat, Lato, Open Sans, Roboto
    - Elegant Serif: Playfair Display, Cormorant Garamond, Libre Baskerville, Source Serif Pro, Fraunces
    - Classic Serif: Times New Roman, Georgia, Merriweather, Lora
    - Geometric/Display: Poppins, Raleway, Josefin Sans, Bebas Neue, Oswald
-8. **Social Links**: Any social media profile URLs found
-9. **Contact Info**: Email and phone if found
-10. **Keywords**: 5-10 keywords that describe this brand
-11. **Visual Style** (choose ONE that best matches):
+9. **Social Links**: Any social media profile URLs found
+10. **Contact Info**: Email and phone if found
+11. **Keywords**: 5-10 keywords that describe this brand
+12. **Visual Style** (choose ONE that best matches):
    - "minimal-clean": Simple, whitespace-focused, uncluttered
    - "bold-impactful": Strong contrasts, commanding presence
    - "elegant-refined": Sophisticated, luxurious, polished
@@ -370,7 +387,7 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - "corporate-professional": Business-focused, trustworthy, established
    - "warm-inviting": Cozy, welcoming, friendly aesthetics
    - "edgy-disruptive": Rebellious, challenging norms, provocative
-12. **Brand Tone** (choose ONE that best matches the voice/personality):
+13. **Brand Tone** (choose ONE that best matches the voice/personality):
    - "friendly-approachable": Warm, conversational, relatable
    - "professional-trustworthy": Credible, reliable, expert
    - "playful-witty": Humorous, clever, light-hearted
@@ -383,7 +400,7 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - "inspiring-motivational": Uplifting, empowering, encouraging
    - "premium-exclusive": Luxury, high-end, selective
    - "rebellious-edgy": Unconventional, provocative, challenging
-13. **Brand Personality** (ALL values 0-100 scale, analyze carefully based on visual style, copy tone, and overall feel):
+14. **Brand Personality** (ALL values 0-100 scale, analyze carefully based on visual style, copy tone, and overall feel):
    - feelPlayfulSerious: 0 = Very playful/fun/casual, 100 = Very serious/formal/corporate
    - feelBoldMinimal: 0 = Bold/loud/maximalist with lots of visual elements, 100 = Minimal/clean/whitespace-heavy
    - feelExperimentalClassic: 0 = Experimental/edgy/unconventional, 100 = Classic/traditional/timeless
@@ -407,6 +424,7 @@ Return ONLY a valid JSON object with this exact structure:
   "description": "string",
   "tagline": "string or null",
   "industry": "string or null",
+  "industryArchetype": "hospitality | blue-collar | white-collar | e-commerce | tech",
   "logoUrl": "string or null",
   "faviconUrl": "string or null",
   "primaryColor": "#hex",
@@ -571,12 +589,14 @@ Return ONLY a valid JSON object with this exact structure:
     brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
     brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50;
 
-    // Validate and set defaults for visualStyle and brandTone
+    // Validate and set defaults for visualStyle, brandTone, and industryArchetype
     const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(brandData.visualStyle as typeof VISUAL_STYLE_VALUES[number]);
     const isValidBrandTone = BRAND_TONE_VALUES.includes(brandData.brandTone as typeof BRAND_TONE_VALUES[number]);
+    const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(brandData.industryArchetype as typeof INDUSTRY_ARCHETYPE_VALUES[number]);
 
     brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : "modern-sleek";
     brandDataWithFeels.brandTone = isValidBrandTone ? brandData.brandTone : "professional-trustworthy";
+    brandDataWithFeels.industryArchetype = isValidIndustryArchetype ? brandData.industryArchetype : null;
 
     return NextResponse.json({
       success: true,

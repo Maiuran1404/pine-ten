@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -33,18 +36,26 @@ import {
   type RecentItem,
 } from "@/components/shared/sidebar";
 import { useSession } from "@/lib/auth-client";
+import { WorkspaceDropdown } from "./workspace-dropdown";
+import { cn } from "@/lib/utils";
 
-const navigation: NavigationItem[] = [
+const mainNavigation: NavigationItem[] = [
   {
     name: "Home",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
+];
+
+const projectsNavigation: NavigationItem[] = [
   {
     name: "My Tasks",
     href: "/dashboard/tasks",
     icon: FolderKanban,
   },
+];
+
+const resourcesNavigation: NavigationItem[] = [
   {
     name: "My Brand",
     href: "/dashboard/brand",
@@ -74,8 +85,11 @@ interface AppSidebarProps {
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
   const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
   const [companyName, setCompanyName] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState<string>("#FF6B6B");
+  const [primaryColor, setPrimaryColor] = useState<string>("#A855F7");
+  const [credits, setCredits] = useState<number>(0);
   const { data: session } = useSession();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   // Load company data
   useEffect(() => {
@@ -98,6 +112,25 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
 
     if (session?.user) {
       loadCompanyData();
+    }
+  }, [session]);
+
+  // Load credits
+  useEffect(() => {
+    const loadCredits = async () => {
+      try {
+        const response = await fetch("/api/user/billing");
+        if (response.ok) {
+          const data = await response.json();
+          setCredits(data.credits || 0);
+        }
+      } catch (error) {
+        console.error("Failed to load credits:", error);
+      }
+    };
+
+    if (session?.user) {
+      loadCredits();
     }
   }, [session]);
 
@@ -171,51 +204,88 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     })),
   ].slice(0, 5);
 
-  // Get first letter of company name for avatar
-  const getInitial = (name: string | null) => {
-    if (!name) return "C";
-    return name.charAt(0).toUpperCase();
-  };
-
-  const displayName = companyName || "My Company";
-
   return (
     <Sidebar
       collapsible="icon"
       className="border-r-0"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
-      <SidebarHeader className="h-16 px-3 py-2 group-data-[collapsible=icon]:px-2">
+      {/* Header with Logo and Toggle */}
+      <SidebarHeader className="p-3">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            {/* Sidebar Toggle */}
-            <SidebarMenuButton asChild className="size-8 p-2 flex-shrink-0">
+          <SidebarMenuItem className={cn(
+            "flex items-center",
+            isCollapsed ? "flex-col gap-2" : "justify-between"
+          )}>
+            {/* Logo */}
+            <div className={cn(
+              "flex items-center justify-center",
+              isCollapsed ? "order-2" : ""
+            )}>
+              <Image
+                src="/craftedlogowhite.svg"
+                alt="Crafted"
+                width={28}
+                height={28}
+                className="dark:block hidden"
+              />
+              <Image
+                src="/craftedlogoblack.svg"
+                alt="Crafted"
+                width={28}
+                height={28}
+                className="dark:hidden block"
+              />
+            </div>
+
+            {/* Toggle Button */}
+            <SidebarMenuButton
+              asChild
+              className={cn(
+                "size-8 p-2 flex-shrink-0",
+                isCollapsed ? "order-1" : ""
+              )}
+              tooltip="Toggle Sidebar"
+            >
               <SidebarTrigger />
             </SidebarMenuButton>
-
-            {/* Company Info - hidden when collapsed */}
-            <div className="h-10 px-2 flex items-center gap-2 flex-1 group-data-[collapsible=icon]:hidden">
-              {/* Company Avatar */}
-              <div
-                className="flex items-center justify-center size-6 rounded-md text-white text-xs font-semibold flex-shrink-0"
-                style={{ backgroundColor: primaryColor }}
-              >
-                {getInitial(companyName)}
-              </div>
-              {/* Company Name */}
-              <span className="flex-1 text-left font-medium text-sm truncate">
-                {displayName}
-              </span>
-            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
+        {/* Workspace Dropdown */}
+        <SidebarGroup className="py-2">
+          <SidebarGroupContent>
+            <WorkspaceDropdown
+              companyName={companyName}
+              primaryColor={primaryColor}
+              credits={credits}
+              maxCredits={10}
+              isCollapsed={isCollapsed}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Main Navigation */}
+        <SidebarGroup className="py-1">
           <SidebarGroupContent>
             <SidebarNavigation
-              items={navigation}
+              items={mainNavigation}
+              basePath="/dashboard"
+              accentColor="emerald"
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Projects Section */}
+        <SidebarGroup className="py-1">
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
+            Projects
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarNavigation
+              items={projectsNavigation}
               basePath="/dashboard"
               accentColor="emerald"
             />
@@ -236,9 +306,25 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
           title="Recents"
           icon={Clock}
         />
+
+        {/* Resources Section */}
+        <SidebarGroup className="py-1">
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
+            Resources
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarNavigation
+              items={resourcesNavigation}
+              basePath="/dashboard"
+              accentColor="emerald"
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className={cn(
+        isCollapsed && "hidden"
+      )}>
         <div className="px-2 py-2">
           <p className="text-xs opacity-50">Need help?</p>
           <a

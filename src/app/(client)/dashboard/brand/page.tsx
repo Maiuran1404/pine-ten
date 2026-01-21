@@ -47,6 +47,7 @@ interface BrandData {
   description: string | null;
   tagline: string | null;
   industry: string | null;
+  industryArchetype: string | null;
   logoUrl: string | null;
   faviconUrl: string | null;
   primaryColor: string | null;
@@ -84,7 +85,25 @@ const industries = [
   "Professional Services",
   "Manufacturing",
   "Non-profit",
+  "Recruitment",
+  "Banking",
+  "Venture Capital",
+  "Construction",
+  "Electrical Services",
+  "Plumbing",
+  "HVAC",
+  "Restaurants",
+  "Cafes",
+  "Hotels",
   "Other",
+];
+
+const industryArchetypes = [
+  { value: "hospitality", label: "Hospitality", description: "Restaurants, Cafes, Hotels" },
+  { value: "blue-collar", label: "Blue-collar", description: "Trade services, Construction, Manufacturing" },
+  { value: "white-collar", label: "White-collar", description: "Professional services, Finance, Recruitment" },
+  { value: "e-commerce", label: "E-commerce", description: "Product-based online businesses" },
+  { value: "tech", label: "Tech", description: "Technology startups, Software, SaaS" },
 ];
 
 const COLOR_PRESETS = {
@@ -416,6 +435,25 @@ export default function BrandPage() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-sm">Industry Archetype</Label>
+                  <select
+                    value={brand.industryArchetype || ""}
+                    onChange={(e) => updateField("industryArchetype", e.target.value)}
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Select archetype</option>
+                    {industryArchetypes.map((arch) => (
+                      <option key={arch.value} value={arch.value}>
+                        {arch.label} - {arch.description}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    High-level business category that helps us tailor creative recommendations
+                  </p>
                 </div>
 
                 <div className="space-y-2">

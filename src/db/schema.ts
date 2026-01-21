@@ -121,6 +121,7 @@ export const companies = pgTable("companies", {
   name: text("name").notNull(),
   website: text("website"),
   industry: text("industry"),
+  industryArchetype: text("industry_archetype"), // Hospitality, Blue-collar, White-collar, E-commerce, Tech
   description: text("description"),
   // Brand identity
   logoUrl: text("logo_url"),

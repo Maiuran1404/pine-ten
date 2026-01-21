@@ -23,6 +23,7 @@ export interface BrandData {
   description: string;
   tagline: string;
   industry: string;
+  industryArchetype: string; // Hospitality, Blue-collar, White-collar, E-commerce, Tech
   logoUrl: string;
   faviconUrl: string;
   primaryColor: string;
@@ -216,6 +217,7 @@ export const defaultBrandData: BrandData = {
   description: "",
   tagline: "",
   industry: "",
+  industryArchetype: "",
   logoUrl: "",
   faviconUrl: "",
   primaryColor: "#14b8a6",
@@ -297,7 +299,26 @@ export const industries = [
   "Professional Services",
   "Manufacturing",
   "Non-profit",
+  "Recruitment",
+  "Banking",
+  "Venture Capital",
+  "Construction",
+  "Electrical Services",
+  "Plumbing",
+  "HVAC",
+  "Restaurants",
+  "Cafes",
+  "Hotels",
   "Other",
+];
+
+// Industry Archetypes - high-level categories for industry classification
+export const INDUSTRY_ARCHETYPES = [
+  { value: "hospitality", label: "Hospitality", description: "Restaurants, Cafes, Hotels", examples: ["Restaurants", "Cafes", "Hotels", "Food & Beverage"] },
+  { value: "blue-collar", label: "Blue-collar", description: "Trade services and manual labor industries", examples: ["Construction", "Electrical Services", "Plumbing", "HVAC", "Manufacturing"] },
+  { value: "white-collar", label: "White-collar", description: "Professional services and office-based work", examples: ["Recruitment", "Banking", "Venture Capital", "Finance", "Professional Services", "Marketing & Advertising"] },
+  { value: "e-commerce", label: "E-commerce", description: "Product-based online businesses", examples: ["E-commerce", "Fashion & Apparel", "Retail"] },
+  { value: "tech", label: "Tech", description: "Technology startups and software companies", examples: ["Technology", "SaaS", "Software"] },
 ];
 
 // Industry icon mapping

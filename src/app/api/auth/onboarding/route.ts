@@ -64,6 +64,7 @@ async function handler(request: NextRequest) {
           name: brand.name,
           website: brand.website || null,
           industry: brand.industry || null,
+          industryArchetype: brand.industryArchetype || null,
           description: brand.description || null,
           logoUrl: brand.logoUrl || null,
           faviconUrl: brand.faviconUrl || null,
