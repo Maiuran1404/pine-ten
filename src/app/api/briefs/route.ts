@@ -7,6 +7,14 @@ import { eq, and, desc } from "drizzle-orm";
 import type { LiveBrief, Dimension } from "@/components/chat/brief-panel/types";
 import { calculateBriefCompletion } from "@/components/chat/brief-panel/types";
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUUID(str: string | null | undefined): boolean {
+  if (!str) return false;
+  return UUID_REGEX.test(str);
+}
+
 // GET /api/briefs - List user's briefs
 // GET /api/briefs?draftId=xxx - Get brief by draft ID
 export async function GET(request: NextRequest) {
@@ -41,6 +49,12 @@ export async function GET(request: NextRequest) {
 
     // Get brief by draft ID
     if (draftId) {
+      // Only query if draftId is a valid UUID (old format IDs will fail DB query)
+      if (!isValidUUID(draftId)) {
+        // Old format draftId - no brief saved yet
+        return NextResponse.json({ brief: null });
+      }
+
       const brief = await db.query.briefs.findFirst({
         where: and(
           eq(briefs.draftId, draftId),
@@ -107,12 +121,15 @@ export async function POST(request: NextRequest) {
     const completion = calculateBriefCompletion(liveBrief);
     const status = completion >= 80 ? "READY" : "DRAFT";
 
+    // Validate draftId is a proper UUID (old format IDs like "draft_123_abc" are not valid)
+    const validDraftId = isValidUUID(draftId) ? draftId : null;
+
     // Check if brief already exists for this draft
     let existingBrief = null;
-    if (draftId) {
+    if (validDraftId) {
       existingBrief = await db.query.briefs.findFirst({
         where: and(
-          eq(briefs.draftId, draftId),
+          eq(briefs.draftId, validDraftId),
           eq(briefs.userId, session.user.id)
         ),
       });
@@ -122,7 +139,7 @@ export async function POST(request: NextRequest) {
     const briefData = {
       userId: session.user.id,
       companyId: user?.companyId || null,
-      draftId: draftId || null,
+      draftId: validDraftId,
       status: status as "DRAFT" | "READY",
       completionPercentage: completion,
       topic: JSON.parse(JSON.stringify(liveBrief.topic)),

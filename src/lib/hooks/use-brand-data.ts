@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { InferredAudience } from "@/components/onboarding/types";
 
 // =============================================================================
@@ -140,24 +140,25 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
     fetchBrandData();
   }, [fetchBrandData]);
 
-  // Derive brand colors array
-  const brandColors = brand
-    ? [
-        brand.primaryColor,
-        brand.secondaryColor,
-        brand.accentColor,
-        ...(brand.brandColors || []),
-      ].filter((c): c is string => !!c)
-    : [];
+  // Derive brand colors array - memoized to prevent infinite re-renders
+  const brandColors = useMemo(() => {
+    if (!brand) return [];
+    return [
+      brand.primaryColor,
+      brand.secondaryColor,
+      brand.accentColor,
+      ...(brand.brandColors || []),
+    ].filter((c): c is string => !!c);
+  }, [brand?.primaryColor, brand?.secondaryColor, brand?.accentColor, brand?.brandColors]);
 
-  // Derive typography
-  const brandTypography = {
+  // Derive typography - memoized to prevent infinite re-renders
+  const brandTypography = useMemo(() => ({
     primary: brand?.primaryFont || "",
     secondary: brand?.secondaryFont || "",
-  };
+  }), [brand?.primaryFont, brand?.secondaryFont]);
 
   // Derive tone of voice from industry/archetype
-  const toneOfVoice = deriveToneOfVoice(brand);
+  const toneOfVoice = useMemo(() => deriveToneOfVoice(brand), [brand]);
 
   return {
     brand,

@@ -289,6 +289,81 @@ export interface BrandAwareStyle {
 }
 
 /**
+ * Context for content-aware style filtering
+ */
+export interface StyleContext {
+  topic?: string;        // e.g., "fitness app", "payment APIs"
+  industry?: string;     // e.g., "technology", "health & wellness"
+  keywords?: string[];   // Additional keywords from the conversation
+  platform?: string;     // e.g., "youtube", "instagram"
+}
+
+/**
+ * Calculate context match score for a style
+ */
+function calculateContextScore(
+  style: {
+    semanticTags: string[] | null;
+    industries: string[] | null;
+    moodKeywords: string[] | null;
+    targetAudience: string | null;
+  },
+  context: StyleContext
+): number {
+  if (!context.topic && !context.industry && !context.keywords?.length) {
+    return 50; // Neutral score if no context
+  }
+
+  let score = 0;
+  let matchCount = 0;
+  const contextTerms: string[] = [];
+
+  // Build context terms list
+  if (context.topic) {
+    contextTerms.push(...context.topic.toLowerCase().split(/\s+/));
+  }
+  if (context.industry) {
+    contextTerms.push(context.industry.toLowerCase());
+  }
+  if (context.keywords) {
+    contextTerms.push(...context.keywords.map(k => k.toLowerCase()));
+  }
+
+  // Check semantic tags
+  const tags = (style.semanticTags || []).map(t => t.toLowerCase());
+  for (const term of contextTerms) {
+    if (tags.some(tag => tag.includes(term) || term.includes(tag))) {
+      score += 20;
+      matchCount++;
+    }
+  }
+
+  // Check industries
+  const industries = (style.industries || []).map(i => i.toLowerCase());
+  for (const term of contextTerms) {
+    if (industries.some(ind => ind.includes(term) || term.includes(ind))) {
+      score += 25;
+      matchCount++;
+    }
+  }
+
+  // Check mood keywords
+  const moods = (style.moodKeywords || []).map(m => m.toLowerCase());
+  for (const term of contextTerms) {
+    if (moods.some(mood => mood.includes(term) || term.includes(mood))) {
+      score += 15;
+      matchCount++;
+    }
+  }
+
+  // Bonus for multiple matches
+  if (matchCount >= 2) score += 15;
+  if (matchCount >= 3) score += 10;
+
+  return Math.min(100, Math.max(0, score));
+}
+
+/**
  * Get deliverable styles scored and sorted by brand match
  */
 export async function getBrandAwareStyles(
@@ -297,6 +372,7 @@ export async function getBrandAwareStyles(
   options?: {
     limit?: number;
     includeAllAxes?: boolean;  // If true, returns top style per axis
+    context?: StyleContext;     // Optional context for content-aware filtering
   }
 ): Promise<BrandAwareStyle[]> {
   // Fetch user's company data
@@ -324,6 +400,10 @@ export async function getBrandAwareStyles(
       displayOrder: deliverableStyleReferences.displayOrder,
       usageCount: deliverableStyleReferences.usageCount,
       createdAt: deliverableStyleReferences.createdAt,
+      // Additional fields for context matching
+      industries: deliverableStyleReferences.industries,
+      moodKeywords: deliverableStyleReferences.moodKeywords,
+      targetAudience: deliverableStyleReferences.targetAudience,
     })
     .from(deliverableStyleReferences)
     .where(
@@ -337,22 +417,32 @@ export async function getBrandAwareStyles(
       deliverableStyleReferences.displayOrder
     );
 
+  const styleContext = options?.context;
+
   // Calculate max usage for popularity normalization
   const maxUsage = Math.max(...styles.map(s => s.usageCount || 0), 1);
 
-  // If no company data, use popularity and freshness scoring only
+  // If no company data, use popularity, freshness, and context scoring
   if (!company) {
     const neutralScored: BrandAwareStyle[] = styles.map(style => {
       const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
       const freshnessScore = calculateFreshnessScore(style.createdAt);
+      const contextScore = styleContext
+        ? calculateContextScore(style, styleContext)
+        : 50;
 
-      // Use multi-factor with no brand/history, redistributed weights
-      const totalScore = calculateMultiFactorScore(
-        { brand: 50, history: 0, popularity: popularityScore, freshness: freshnessScore },
+      // Use multi-factor with context boost instead of brand
+      const baseScore = calculateMultiFactorScore(
+        { brand: contextScore, history: 0, popularity: popularityScore, freshness: freshnessScore },
         false
       );
 
+      // Apply context boost more aggressively when we have context
+      const contextBoost = styleContext && contextScore > 60 ? Math.round((contextScore - 60) * 0.5) : 0;
+      const totalScore = Math.min(100, baseScore + contextBoost);
+
       const matchReasons: string[] = [];
+      if (contextScore >= 70) matchReasons.push("Matches your topic");
       if (popularityScore >= 70) matchReasons.push("Popular choice");
       if (freshnessScore >= 90) matchReasons.push("Recently added");
 
@@ -360,9 +450,9 @@ export async function getBrandAwareStyles(
         ...style,
         semanticTags: style.semanticTags || [],
         brandMatchScore: totalScore,
-        matchReason: matchReasons.length > 0 ? matchReasons[0] : "No brand profile available",
+        matchReason: matchReasons.length > 0 ? matchReasons[0] : "Versatile option",
         matchReasons,
-        scoreFactors: { brand: 50, history: 0, popularity: popularityScore, freshness: freshnessScore },
+        scoreFactors: { brand: contextScore, history: 0, popularity: popularityScore, freshness: freshnessScore },
       };
     });
 
@@ -414,6 +504,11 @@ export async function getBrandAwareStyles(
       company.industry
     );
 
+    // Calculate context score for topic/keyword matching
+    const contextScore = styleContext
+      ? calculateContextScore(style, styleContext)
+      : 50;
+
     // Convert history boost (0-30) to 0-100 scale
     const historyBoost = historyBoosts.get(style.styleAxis) || 0;
     const historyScore = Math.round((historyBoost / 30) * 100);
@@ -424,23 +519,34 @@ export async function getBrandAwareStyles(
     // Get Style DNA boost for this axis
     const dnaResult = getStyleDNABoost(style.styleAxis as StyleAxis, styleDNA);
 
+    // Blend brand score with context score (60% brand, 40% context when context available)
+    const effectiveBrandScore = styleContext && contextScore > 30
+      ? Math.round(brandScore * 0.6 + contextScore * 0.4)
+      : brandScore;
+
     // Calculate multi-factor total score
     const scoreFactors: ScoreFactors = {
-      brand: brandScore,
+      brand: effectiveBrandScore,
       history: historyScore,
       popularity: popularityScore,
       freshness: freshnessScore,
       dnaBoost: dnaResult.boost,
     };
 
-    // Apply DNA boost to total score
+    // Apply DNA boost and context boost to total score
     const baseScore = calculateMultiFactorScore(scoreFactors, hasHistory);
-    const totalScore = Math.min(100, baseScore + dnaResult.boost);
+    const contextBoost = styleContext && contextScore > 70 ? Math.round((contextScore - 70) * 0.3) : 0;
+    const totalScore = Math.min(100, baseScore + dnaResult.boost + contextBoost);
 
     // Generate match reasons
     const matchReasons: string[] = [];
 
-    // History-based reason (highest priority)
+    // Context-based reason (highest priority when context matches well)
+    if (styleContext && contextScore >= 70) {
+      matchReasons.push("Matches your topic");
+    }
+
+    // History-based reason (high priority)
     if (historyScore >= 50) {
       matchReasons.push("Based on your preferences");
     }

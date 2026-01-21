@@ -210,7 +210,17 @@ export async function fetchAndSyncDrafts(): Promise<ChatDraft[]> {
 }
 
 export function generateDraftId(): string {
-  return `draft_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  // Generate proper UUID for database compatibility
+  // crypto.randomUUID() is available in modern browsers and Node.js 19+
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments - generates UUID v4 format
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 export function generateDraftTitle(
