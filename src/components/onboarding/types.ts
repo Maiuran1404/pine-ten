@@ -72,12 +72,43 @@ export interface BrandData {
   // Explicit style and tone selections (used in brand DNA reveal)
   visualStyle?: string;
   brandTone?: string;
+  // Inferred target audiences
+  audiences?: InferredAudience[];
 }
 
 export interface CreativeFocusOption {
   id: string;
   title: string;
   description: string;
+}
+
+// Inferred target audience from brand extraction
+export interface InferredAudience {
+  name: string;
+  isPrimary: boolean;
+  demographics?: {
+    ageRange?: { min: number; max: number };
+    gender?: "all" | "male" | "female" | "other";
+    income?: "low" | "middle" | "high" | "enterprise";
+  };
+  firmographics?: {
+    companySize?: string[];
+    industries?: string[];
+    jobTitles?: string[];
+    departments?: string[];
+    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
+  };
+  psychographics?: {
+    painPoints?: string[];
+    goals?: string[];
+    values?: string[];
+  };
+  behavioral?: {
+    contentPreferences?: string[];
+    platforms?: string[];
+    buyingProcess?: "impulse" | "considered" | "committee";
+  };
+  confidence: number;
 }
 
 // Route selection
@@ -249,6 +280,7 @@ export const defaultBrandData: BrandData = {
   targetAudience: "",
   brandPositioning: "",
   visualPreferences: [],
+  audiences: [],
 };
 
 // Product type options for Route B

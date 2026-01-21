@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { users, freelancerProfiles, companies } from "@/db/schema";
+import { users, freelancerProfiles, companies, audiences } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { adminNotifications, sendEmail, emailTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
@@ -84,6 +84,31 @@ async function handler(request: NextRequest) {
           onboardingStatus: "COMPLETED",
         })
         .returning();
+
+      // Save inferred audiences if any
+      if (brand.audiences && Array.isArray(brand.audiences) && brand.audiences.length > 0) {
+        const audienceValues = brand.audiences.map((audience: {
+          name: string;
+          isPrimary?: boolean;
+          demographics?: Record<string, unknown>;
+          firmographics?: Record<string, unknown>;
+          psychographics?: Record<string, unknown>;
+          behavioral?: Record<string, unknown>;
+          confidence?: number;
+        }) => ({
+          companyId: company.id,
+          name: audience.name,
+          isPrimary: audience.isPrimary || false,
+          demographics: audience.demographics || null,
+          firmographics: audience.firmographics || null,
+          psychographics: audience.psychographics || null,
+          behavioral: audience.behavioral || null,
+          confidence: audience.confidence || 50,
+          sources: ["website"],
+        }));
+
+        await db.insert(audiences).values(audienceValues);
+      }
 
       // Update user with company link and onboarding completion
       await db

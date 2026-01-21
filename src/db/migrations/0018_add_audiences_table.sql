@@ -24,16 +24,17 @@ ALTER TABLE "audiences" ENABLE ROW LEVEL SECURITY;
 -- RLS Policy: Users can only see audiences for companies they belong to
 CREATE POLICY "audiences_select_policy" ON "audiences"
   FOR SELECT
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM "users"
       WHERE "users"."company_id" = "audiences"."company_id"
-      AND "users"."id" = auth.uid()
+      AND "users"."id" = (select auth.uid())::text
     )
     OR
     EXISTS (
       SELECT 1 FROM "users"
-      WHERE "users"."id" = auth.uid()
+      WHERE "users"."id" = (select auth.uid())::text
       AND "users"."role" = 'ADMIN'
     )
   );
@@ -41,16 +42,17 @@ CREATE POLICY "audiences_select_policy" ON "audiences"
 -- RLS Policy: Users can insert audiences for their own company
 CREATE POLICY "audiences_insert_policy" ON "audiences"
   FOR INSERT
+  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM "users"
       WHERE "users"."company_id" = "audiences"."company_id"
-      AND "users"."id" = auth.uid()
+      AND "users"."id" = (select auth.uid())::text
     )
     OR
     EXISTS (
       SELECT 1 FROM "users"
-      WHERE "users"."id" = auth.uid()
+      WHERE "users"."id" = (select auth.uid())::text
       AND "users"."role" = 'ADMIN'
     )
   );
@@ -58,16 +60,17 @@ CREATE POLICY "audiences_insert_policy" ON "audiences"
 -- RLS Policy: Users can update audiences for their own company
 CREATE POLICY "audiences_update_policy" ON "audiences"
   FOR UPDATE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM "users"
       WHERE "users"."company_id" = "audiences"."company_id"
-      AND "users"."id" = auth.uid()
+      AND "users"."id" = (select auth.uid())::text
     )
     OR
     EXISTS (
       SELECT 1 FROM "users"
-      WHERE "users"."id" = auth.uid()
+      WHERE "users"."id" = (select auth.uid())::text
       AND "users"."role" = 'ADMIN'
     )
   );
@@ -75,16 +78,17 @@ CREATE POLICY "audiences_update_policy" ON "audiences"
 -- RLS Policy: Users can delete audiences for their own company
 CREATE POLICY "audiences_delete_policy" ON "audiences"
   FOR DELETE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM "users"
       WHERE "users"."company_id" = "audiences"."company_id"
-      AND "users"."id" = auth.uid()
+      AND "users"."id" = (select auth.uid())::text
     )
     OR
     EXISTS (
       SELECT 1 FROM "users"
-      WHERE "users"."id" = auth.uid()
+      WHERE "users"."id" = (select auth.uid())::text
       AND "users"."role" = 'ADMIN'
     )
   );

@@ -39,11 +39,21 @@ import {
   Presentation,
   BookOpen,
   Zap,
+  Users,
+  Building2,
+  Briefcase,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Linkedin,
+  Instagram,
+  Twitter,
 } from "lucide-react";
 
 import {
   type BrandData,
   type OnboardingStep,
+  type InferredAudience,
   STEP_CONFIG,
   defaultBrandData,
   CREATIVE_FOCUS_OPTIONS,
@@ -563,6 +573,153 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                         className="min-h-[100px] text-base resize-none"
                       />
                     </div>
+
+                    {/* Social Links Section - Only show if we found some */}
+                    {hasScannedWebsite && (brandData.socialLinks?.linkedin || brandData.socialLinks?.instagram || brandData.socialLinks?.twitter) && (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Share2 className="h-4 w-4" />
+                          Social profiles found
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {brandData.socialLinks?.linkedin && (
+                            <a
+                              href={brandData.socialLinks.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0A66C2]/10 text-[#0A66C2] hover:bg-[#0A66C2]/20 transition-colors text-sm font-medium"
+                            >
+                              <Linkedin className="h-4 w-4" />
+                              LinkedIn
+                              <CheckCircle2 className="h-3 w-3" />
+                            </a>
+                          )}
+                          {brandData.socialLinks?.instagram && (
+                            <a
+                              href={brandData.socialLinks.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#E4405F]/10 text-[#E4405F] hover:bg-[#E4405F]/20 transition-colors text-sm font-medium"
+                            >
+                              <Instagram className="h-4 w-4" />
+                              Instagram
+                              <CheckCircle2 className="h-3 w-3" />
+                            </a>
+                          )}
+                          {brandData.socialLinks?.twitter && (
+                            <a
+                              href={brandData.socialLinks.twitter}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-foreground/10 text-foreground hover:bg-foreground/20 transition-colors text-sm font-medium"
+                            >
+                              <Twitter className="h-4 w-4" />
+                              X / Twitter
+                              <CheckCircle2 className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inferred Audiences Section - Only show if we have audiences */}
+                    {hasScannedWebsite && brandData.audiences && brandData.audiences.length > 0 && (
+                      <div className="space-y-3 pt-2">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Target audiences we detected
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Based on your website, here&apos;s who we think you&apos;re targeting:
+                        </p>
+                        <div className="space-y-2">
+                          {brandData.audiences.map((audience, index) => (
+                            <div
+                              key={index}
+                              className={cn(
+                                "p-4 rounded-xl border-2 transition-all",
+                                audience.isPrimary
+                                  ? "border-foreground bg-foreground/5"
+                                  : "border-border bg-background"
+                              )}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                  <div
+                                    className={cn(
+                                      "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                      audience.isPrimary ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                                    )}
+                                  >
+                                    {audience.firmographics?.jobTitles?.length ? (
+                                      <Briefcase className="w-5 h-5" />
+                                    ) : (
+                                      <Users className="w-5 h-5" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-semibold text-foreground">{audience.name}</span>
+                                      {audience.isPrimary && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-foreground text-background font-medium">
+                                          Primary
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-muted-foreground">
+                                        {audience.confidence}% confidence
+                                      </span>
+                                    </div>
+
+                                    {/* Compact details */}
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                      {audience.firmographics?.jobTitles?.slice(0, 2).map((title, i) => (
+                                        <span key={i} className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
+                                          {title}
+                                        </span>
+                                      ))}
+                                      {audience.firmographics?.companySize?.slice(0, 1).map((size, i) => (
+                                        <span key={i} className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
+                                          {size} employees
+                                        </span>
+                                      ))}
+                                      {audience.behavioral?.buyingProcess && (
+                                        <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground capitalize">
+                                          {audience.behavioral.buyingProcess} purchase
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Pain points preview */}
+                                    {audience.psychographics?.painPoints && audience.psychographics.painPoints.length > 0 && (
+                                      <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
+                                        Pain points: {audience.psychographics.painPoints.slice(0, 2).join(", ")}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Remove button */}
+                                <button
+                                  onClick={() => {
+                                    setBrandData((prev) => ({
+                                      ...prev,
+                                      audiences: prev.audiences?.filter((_, i) => i !== index) || [],
+                                    }));
+                                  }}
+                                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                  title="Remove audience"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          You can edit these later in your brand settings.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3">
