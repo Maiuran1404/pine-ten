@@ -215,36 +215,32 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem className={cn(
             "flex items-center",
-            isCollapsed ? "flex-col gap-2" : "justify-between"
+            isCollapsed ? "justify-center" : "justify-between"
           )}>
-            {/* Logo */}
-            <div className={cn(
-              "flex items-center justify-center",
-              isCollapsed ? "order-2" : ""
-            )}>
-              <Image
-                src="/craftedlogowhite.svg"
-                alt="Crafted"
-                width={28}
-                height={28}
-                className="dark:block hidden"
-              />
-              <Image
-                src="/craftedlogoblack.svg"
-                alt="Crafted"
-                width={28}
-                height={28}
-                className="dark:hidden block"
-              />
-            </div>
+            {/* Logo - hidden when collapsed */}
+            {!isCollapsed && (
+              <div className="flex items-center justify-center">
+                <Image
+                  src="/craftedlogowhite.svg"
+                  alt="Crafted"
+                  width={28}
+                  height={28}
+                  className="dark:block hidden"
+                />
+                <Image
+                  src="/craftedlogoblack.svg"
+                  alt="Crafted"
+                  width={28}
+                  height={28}
+                  className="dark:hidden block"
+                />
+              </div>
+            )}
 
             {/* Toggle Button */}
             <SidebarMenuButton
               asChild
-              className={cn(
-                "size-8 p-2 flex-shrink-0",
-                isCollapsed ? "order-1" : ""
-              )}
+              className="size-8 p-2 flex-shrink-0"
               tooltip="Toggle Sidebar"
             >
               <SidebarTrigger />

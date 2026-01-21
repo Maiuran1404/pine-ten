@@ -180,7 +180,7 @@ export function WorkspaceDropdown({
           </div>
           <Progress
             value={creditPercentage}
-            className="h-1.5"
+            className="h-1.5 bg-primary/20 [&>*]:bg-gradient-to-r [&>*]:from-blue-500 [&>*]:to-purple-500"
           />
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-muted-foreground/50" />
