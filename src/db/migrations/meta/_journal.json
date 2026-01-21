@@ -127,6 +127,13 @@
       "when": 1768997335093,
       "tag": "0017_good_sabretooth",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1769003076854,
+      "tag": "0018_clear_black_panther",
+      "breakpoints": true
     }
   ]
 }

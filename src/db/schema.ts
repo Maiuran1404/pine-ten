@@ -1255,3 +1255,191 @@ export const audiencesRelations = relations(audiences, ({ one }) => ({
 export const companiesAudiencesRelation = relations(companies, ({ many }) => ({
   audiences: many(audiences),
 }));
+
+// ============================================
+// Brief Tables (Designer-ready briefs)
+// ============================================
+
+// Brief status enum
+export const briefStatusEnum = pgEnum("brief_status", [
+  "DRAFT",
+  "READY",
+  "SUBMITTED",
+  "IN_PROGRESS",
+  "COMPLETED",
+]);
+
+// Briefs table - stores live brief state for chat sessions
+export const briefs = pgTable(
+  "briefs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    // Ownership
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id").references(() => companies.id, { onDelete: "set null" }),
+
+    // Link to draft or task
+    draftId: uuid("draft_id").references(() => chatDrafts.id, { onDelete: "set null" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+
+    // Status
+    status: briefStatusEnum("status").notNull().default("DRAFT"),
+    completionPercentage: integer("completion_percentage").notNull().default(0),
+
+    // Core brief fields (mirroring LiveBrief structure)
+    topic: jsonb("topic").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    platform: jsonb("platform").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    contentType: jsonb("content_type").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    intent: jsonb("intent").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    taskType: jsonb("task_type").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    audience: jsonb("audience").$type<{
+      value: {
+        name: string;
+        demographics?: string;
+        psychographics?: string;
+        painPoints?: string[];
+        goals?: string[];
+        source?: "inferred" | "selected" | "custom";
+      } | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
+    // Dimensions
+    dimensions: jsonb("dimensions").$type<{
+      width: number;
+      height: number;
+      label: string;
+      aspectRatio: string;
+    }[]>(),
+
+    // Visual direction
+    visualDirection: jsonb("visual_direction").$type<{
+      selectedStyles: Array<{
+        id: string;
+        name: string;
+        imageUrl: string;
+        styleAxis: string;
+        deliverableType: string;
+      }>;
+      moodKeywords: string[];
+      colorPalette: string[];
+      typography: {
+        primary: string;
+        secondary: string;
+      };
+      avoidElements: string[];
+    }>(),
+
+    // Content outline (for multi-asset plans)
+    contentOutline: jsonb("content_outline").$type<{
+      title: string;
+      subtitle?: string;
+      totalItems: number;
+      weekGroups: Array<{
+        weekNumber: number;
+        label: string;
+        isExpanded: boolean;
+        items: Array<{
+          id: string;
+          number: number;
+          title: string;
+          description: string;
+          platform: string;
+          contentType: string;
+          dimensions: { width: number; height: number; label: string; aspectRatio: string };
+          week: number;
+          day: number;
+          status: "draft" | "in_progress" | "completed";
+        }>;
+      }>;
+    }>(),
+
+    // Additional context from brand
+    brandContext: jsonb("brand_context").$type<{
+      name: string;
+      industry: string;
+      toneOfVoice: string;
+      description: string;
+    }>(),
+
+    // Clarifying questions tracking
+    clarifyingQuestionsAsked: jsonb("clarifying_questions_asked").$type<string[]>().default([]),
+
+    // Timestamps
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("briefs_user_id_idx").on(table.userId),
+    index("briefs_company_id_idx").on(table.companyId),
+    index("briefs_draft_id_idx").on(table.draftId),
+    index("briefs_task_id_idx").on(table.taskId),
+    index("briefs_status_idx").on(table.status),
+    index("briefs_created_at_idx").on(table.createdAt),
+  ]
+);
+
+// Relations for briefs
+export const briefsRelations = relations(briefs, ({ one }) => ({
+  user: one(users, {
+    fields: [briefs.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [briefs.companyId],
+    references: [companies.id],
+  }),
+  draft: one(chatDrafts, {
+    fields: [briefs.draftId],
+    references: [chatDrafts.id],
+  }),
+  task: one(tasks, {
+    fields: [briefs.taskId],
+    references: [tasks.id],
+  }),
+}));
+
+// Update chatDrafts relations to include brief
+export const chatDraftsBriefsRelation = relations(chatDrafts, ({ one }) => ({
+  brief: one(briefs, {
+    fields: [chatDrafts.id],
+    references: [briefs.draftId],
+  }),
+}));
+
+// Update tasks relations to include brief
+export const tasksBriefsRelation = relations(tasks, ({ one }) => ({
+  brief: one(briefs, {
+    fields: [tasks.id],
+    references: [briefs.taskId],
+  }),
+}));

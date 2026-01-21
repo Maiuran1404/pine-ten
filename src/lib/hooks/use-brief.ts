@@ -465,6 +465,7 @@ export function useBrief({
     completion,
     isReady,
     pendingQuestion,
+    isGeneratingOutline,
     processMessage,
     confirmField,
     updateField,
