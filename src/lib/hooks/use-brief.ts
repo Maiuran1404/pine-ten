@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type {
   LiveBrief,
   InferenceResult,
@@ -34,6 +34,21 @@ import { getDimensionsForPlatform } from "@/lib/constants/platform-dimensions";
 import type { InferredAudience } from "@/components/onboarding/types";
 import type { DeliverableStyle, MoodboardItem } from "@/components/chat/types";
 
+// Debounce helper
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 // =============================================================================
 // BRIEF HOOK
 // =============================================================================
@@ -59,6 +74,9 @@ interface UseBriefReturn {
   isReady: boolean;
   pendingQuestion: ClarifyingQuestion | null;
   isGeneratingOutline: boolean;
+  isSaving: boolean;
+  isLoading: boolean;
+  briefId: string | null;
 
   // Actions
   processMessage: (message: string) => void;
@@ -77,6 +95,7 @@ interface UseBriefReturn {
   generateOutline: (durationDays?: number) => Promise<void>;
   resetBrief: () => void;
   exportBrief: () => string;
+  saveBrief: () => Promise<void>;
 }
 
 export function useBrief({
@@ -128,10 +147,106 @@ export function useBrief({
 
   const [pendingQuestion, setPendingQuestion] = useState<ClarifyingQuestion | null>(null);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [briefId, setBriefId] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+  const lastSavedRef = useRef<string>("");
 
   // Computed values
   const completion = useMemo(() => calculateBriefCompletion(brief), [brief]);
   const isReady = useMemo(() => isBriefReadyForDesigner(brief), [brief]);
+
+  // Debounce brief changes for auto-save (2 second delay)
+  const debouncedBrief = useDebounce(brief, 2000);
+
+  // Load brief from database on mount
+  useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
+    const loadBrief = async () => {
+      try {
+        const response = await fetch(`/api/briefs?draftId=${draftId}`);
+        if (!response.ok) {
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.brief) {
+          setBrief(data.brief);
+          setBriefId(data.brief.id);
+          lastSavedRef.current = JSON.stringify(data.brief);
+        }
+      } catch (error) {
+        console.error("Failed to load brief:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadBrief();
+  }, [draftId]);
+
+  // Auto-save brief when it changes (debounced)
+  useEffect(() => {
+    if (isLoading) return;
+
+    const briefJson = JSON.stringify(debouncedBrief);
+    if (briefJson === lastSavedRef.current) return;
+
+    const saveBrief = async () => {
+      setIsSaving(true);
+      try {
+        const response = await fetch("/api/briefs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            brief: debouncedBrief,
+            draftId,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setBriefId(data.id);
+          lastSavedRef.current = briefJson;
+        }
+      } catch (error) {
+        console.error("Failed to auto-save brief:", error);
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    saveBrief();
+  }, [debouncedBrief, draftId, isLoading]);
+
+  // Manual save function
+  const saveBrief = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/briefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brief,
+          draftId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBriefId(data.id);
+        lastSavedRef.current = JSON.stringify(brief);
+      }
+    } catch (error) {
+      console.error("Failed to save brief:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [brief, draftId]);
 
   // Process a user message and update brief via inference
   const processMessage = useCallback(
