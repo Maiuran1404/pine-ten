@@ -18,7 +18,8 @@ export const createTaskSchema = z.object({
     .max(5000, "Description must be less than 5000 characters")
     .transform((val) => val.trim()),
   category: z
-    .enum(["STATIC_ADS", "VIDEO_MOTION", "SOCIAL_MEDIA", "UI_UX"])
+    .string()
+    .max(100)
     .optional()
     .nullable(),
   requirements: z.record(z.string(), z.unknown()).optional().nullable(),
