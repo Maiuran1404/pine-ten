@@ -124,8 +124,9 @@ const TASK_TYPE_PATTERNS: PatternMatch[] = [
   { pattern: /\b(series|multiple|batch|set\s*of)\s*(post|content|asset)/i, value: "multi_asset_plan", confidence: 0.85 },
 
   // Multi-asset plan - quantity based (3+ items)
-  { pattern: /\b([3-9]|\d{2,})\s*(post|posts|image|images|graphic|graphics|carousel|carousels|asset|assets|slide|slides|banner|banners)/i, value: "multi_asset_plan", confidence: 0.9 },
-  { pattern: /\b(several|many|few)\s*(post|posts|image|images|graphic|graphics|carousel|carousels)/i, value: "multi_asset_plan", confidence: 0.8 },
+  // Allow words between number and content type (e.g., "5 Instagram posts", "10 social media graphics")
+  { pattern: /\b([3-9]|\d{2,})\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels|asset|assets|slide|slides|banner|banners)\b/i, value: "multi_asset_plan", confidence: 0.9 },
+  { pattern: /\b(several|many|few)\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels)\b/i, value: "multi_asset_plan", confidence: 0.8 },
 
   // Campaign
   { pattern: /\b(campaign|launch\s*campaign|marketing\s*campaign)\b/i, value: "campaign", confidence: 0.9 },
@@ -139,17 +140,17 @@ const TASK_TYPE_PATTERNS: PatternMatch[] = [
 
 // Content type patterns
 const CONTENT_TYPE_PATTERNS: PatternMatch[] = [
-  { pattern: /\b(post|feed\s*post)\b/i, value: "post", confidence: 0.85 },
-  { pattern: /\b(story|stories)\b/i, value: "story", confidence: 0.9 },
-  { pattern: /\b(reel|reels)\b/i, value: "reel", confidence: 0.9 },
-  { pattern: /\b(carousel|slide\s*show|swipe)\b/i, value: "carousel", confidence: 0.9 },
-  { pattern: /\b(banner|header|cover)\b/i, value: "banner", confidence: 0.85 },
-  { pattern: /\b(ad|advertisement|sponsored)\b/i, value: "ad", confidence: 0.85 },
-  { pattern: /\b(thumbnail)\b/i, value: "thumbnail", confidence: 0.9 },
-  { pattern: /\b(slide|presentation)\b/i, value: "slide", confidence: 0.85 },
-  { pattern: /\b(flyer|leaflet)\b/i, value: "flyer", confidence: 0.9 },
-  { pattern: /\b(poster)\b/i, value: "poster", confidence: 0.9 },
-  { pattern: /\b(video|motion|animation)\b/i, value: "video", confidence: 0.85 },
+  { pattern: /\b(posts?|feed\s*posts?)\b/i, value: "post", confidence: 0.85 },
+  { pattern: /\b(stor(y|ies))\b/i, value: "story", confidence: 0.9 },
+  { pattern: /\b(reels?)\b/i, value: "reel", confidence: 0.9 },
+  { pattern: /\b(carousels?|slide\s*shows?|swipes?)\b/i, value: "carousel", confidence: 0.9 },
+  { pattern: /\b(banners?|headers?|covers?)\b/i, value: "banner", confidence: 0.85 },
+  { pattern: /\b(ads?|advertisements?|sponsored)\b/i, value: "ad", confidence: 0.85 },
+  { pattern: /\b(thumbnails?)\b/i, value: "thumbnail", confidence: 0.9 },
+  { pattern: /\b(slides?|presentations?)\b/i, value: "slide", confidence: 0.85 },
+  { pattern: /\b(flyers?|leaflets?)\b/i, value: "flyer", confidence: 0.9 },
+  { pattern: /\b(posters?)\b/i, value: "poster", confidence: 0.9 },
+  { pattern: /\b(videos?|motion|animations?)\b/i, value: "video", confidence: 0.85 },
 ];
 
 // =============================================================================
@@ -220,12 +221,12 @@ function inferFromPatterns<T extends string>(
 // =============================================================================
 
 function extractQuantity(text: string): InferredField<number> {
-  // Match patterns like "30 day", "7 posts", "4 weeks", etc.
+  // Match patterns like "30 day", "7 posts", "4 weeks", "5 Instagram posts", etc.
   const patterns = [
     /(\d+)\s*(day|days)\s*(content\s*)?(plan|calendar)?/i,
     /(\d+)\s*(week|weeks)\s*(content\s*)?(plan|calendar)?/i,
     /(\d+)\s*(month|months)\s*(content\s*)?(plan|calendar)?/i,
-    /(\d+)\s*(post|posts|piece|pieces|asset|assets)/i,
+    /(\d+)\s+(?:\w+\s+)*(post|posts|piece|pieces|asset|assets|image|images|graphic|graphics|carousel|carousels|slide|slides|banner|banners)/i,
     /(plan|calendar)\s*for\s*(\d+)\s*(day|week|month)/i,
   ];
 
@@ -570,9 +571,12 @@ export function inferFromMessage(input: InferenceInput): InferenceResult {
 export function generateTaskSummary(inference: InferenceResult): string {
   const parts: string[] = [];
 
-  // Quantity/Duration
+  // Quantity/Duration - include specific quantity for multi-asset requests
   if (inference.duration.value) {
     parts.push(`${inference.duration.value}`);
+  } else if (inference.quantity.value && inference.quantity.value >= 2 && inference.taskType.value === "multi_asset_plan") {
+    // Include the quantity for multi-asset plans (e.g., "5")
+    parts.push(`${inference.quantity.value}`);
   }
 
   // Platform
@@ -594,7 +598,16 @@ export function generateTaskSummary(inference: InferenceResult): string {
 
   // Content type or task type
   if (inference.taskType.value === "multi_asset_plan") {
-    parts.push("Content Plan");
+    // For multi-asset with quantity, use "Posts" instead of "Content Plan"
+    if (inference.quantity.value && inference.quantity.value >= 2) {
+      const contentLabel = inference.contentType.value === "carousel" ? "Carousels" :
+                          inference.contentType.value === "story" ? "Stories" :
+                          inference.contentType.value === "reel" ? "Reels" :
+                          "Posts";
+      parts.push(contentLabel);
+    } else {
+      parts.push("Content Plan");
+    }
   } else if (inference.taskType.value === "campaign") {
     parts.push("Campaign");
   } else if (inference.contentType.value) {

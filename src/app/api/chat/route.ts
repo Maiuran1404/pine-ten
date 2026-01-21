@@ -41,10 +41,12 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
 
   // Industry-related keywords
   const industryKeywords = [
-    "tech", "technology", "fitness", "health", "wellness", "finance", "fintech",
+    "tech", "technology", "ai", "artificial intelligence", "machine learning", "ml",
+    "fitness", "health", "wellness", "finance", "fintech", "crypto", "blockchain",
     "food", "restaurant", "retail", "ecommerce", "fashion", "beauty", "travel",
     "education", "gaming", "entertainment", "music", "sports", "automotive",
-    "real estate", "healthcare", "saas", "startup", "b2b", "b2c", "luxury"
+    "real estate", "healthcare", "saas", "startup", "b2b", "b2c", "luxury",
+    "developer", "developers", "api", "software", "engineering", "data", "cloud"
   ];
 
   for (const keyword of industryKeywords) {

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { audiences, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -23,15 +23,14 @@ export async function GET() {
       .limit(1);
 
     if (!user?.companyId) {
-      return NextResponse.json({ data: [] });
+      return NextResponse.json({ audiences: [] });
     }
 
-    // Get audiences for the company
+    // Get audiences for the company, sorted by primary first then confidence descending
     const companyAudiences = await db
       .select()
       .from(audiences)
-      .where(eq(audiences.companyId, user.companyId))
-      .orderBy(audiences.isPrimary, audiences.confidence);
+      .where(eq(audiences.companyId, user.companyId));
 
     // Sort so primary is first, then by confidence descending
     const sortedAudiences = companyAudiences.sort((a, b) => {
@@ -40,7 +39,7 @@ export async function GET() {
       return b.confidence - a.confidence;
     });
 
-    return NextResponse.json({ data: sortedAudiences });
+    return NextResponse.json({ audiences: sortedAudiences });
   } catch (error) {
     console.error("Error fetching audiences:", error);
     return NextResponse.json(

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { briefs, users } from "@/db/schema";
+import { briefs, users, chatDrafts } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { LiveBrief, Dimension } from "@/components/chat/brief-panel/types";
 import { calculateBriefCompletion } from "@/components/chat/brief-panel/types";
@@ -100,10 +100,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log("POST /api/briefs - received body keys:", Object.keys(body));
+
     const { brief: liveBrief, draftId } = body as {
       brief: LiveBrief;
       draftId?: string;
     };
+
+    console.log("POST /api/briefs - liveBrief:", liveBrief ? Object.keys(liveBrief) : "null");
+    console.log("POST /api/briefs - draftId:", draftId);
 
     if (!liveBrief) {
       return NextResponse.json(
@@ -117,12 +122,29 @@ export async function POST(request: NextRequest) {
       where: eq(users.id, session.user.id),
     });
 
-    // Calculate completion
-    const completion = calculateBriefCompletion(liveBrief);
+    // Calculate completion safely
+    let completion = 0;
+    try {
+      completion = calculateBriefCompletion(liveBrief);
+    } catch (e) {
+      console.warn("Failed to calculate brief completion:", e);
+    }
     const status = completion >= 80 ? "READY" : "DRAFT";
 
     // Validate draftId is a proper UUID (old format IDs like "draft_123_abc" are not valid)
-    const validDraftId = isValidUUID(draftId) ? draftId : null;
+    let validDraftId = isValidUUID(draftId) ? draftId : null;
+
+    // Check if the draft exists in chatDrafts (foreign key constraint)
+    if (validDraftId) {
+      const draftExists = await db.query.chatDrafts.findFirst({
+        where: eq(chatDrafts.id, validDraftId),
+        columns: { id: true },
+      });
+      if (!draftExists) {
+        // Draft doesn't exist yet, set to null to avoid FK constraint error
+        validDraftId = null;
+      }
+    }
 
     // Check if brief already exists for this draft
     let existingBrief = null;
@@ -135,6 +157,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Helper function for safe JSON serialization
+    const safeSerialize = <T>(value: T | undefined | null): T | null => {
+      if (value === undefined || value === null) return null;
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch {
+        return null;
+      }
+    };
+
     // Convert LiveBrief to database format using JSON serialization
     const briefData = {
       userId: session.user.id,
@@ -142,18 +174,21 @@ export async function POST(request: NextRequest) {
       draftId: validDraftId,
       status: status as "DRAFT" | "READY",
       completionPercentage: completion,
-      topic: JSON.parse(JSON.stringify(liveBrief.topic)),
-      platform: JSON.parse(JSON.stringify(liveBrief.platform)),
+      topic: safeSerialize(liveBrief.topic),
+      platform: safeSerialize(liveBrief.platform),
       contentType: null,
-      intent: JSON.parse(JSON.stringify(liveBrief.intent)),
-      taskType: JSON.parse(JSON.stringify(liveBrief.taskType)),
-      audience: JSON.parse(JSON.stringify(liveBrief.audience)),
-      dimensions: JSON.parse(JSON.stringify(liveBrief.dimensions)),
-      visualDirection: liveBrief.visualDirection ? JSON.parse(JSON.stringify(liveBrief.visualDirection)) : null,
-      contentOutline: liveBrief.contentOutline ? JSON.parse(JSON.stringify(liveBrief.contentOutline)) : null,
-      clarifyingQuestionsAsked: liveBrief.clarifyingQuestionsAsked,
+      intent: safeSerialize(liveBrief.intent),
+      taskType: safeSerialize(liveBrief.taskType),
+      audience: safeSerialize(liveBrief.audience),
+      dimensions: safeSerialize(liveBrief.dimensions) || [],
+      visualDirection: safeSerialize(liveBrief.visualDirection),
+      contentOutline: safeSerialize(liveBrief.contentOutline),
+      clarifyingQuestionsAsked: liveBrief.clarifyingQuestionsAsked || [],
       updatedAt: new Date(),
     };
+
+    console.log("POST /api/briefs - briefData keys:", Object.keys(briefData));
+    console.log("POST /api/briefs - existingBrief:", existingBrief?.id || "null");
 
     let savedBrief;
 
@@ -177,8 +212,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error saving brief:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(
-      { error: "Failed to save brief" },
+      { error: "Failed to save brief", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

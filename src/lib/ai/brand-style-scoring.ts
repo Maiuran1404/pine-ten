@@ -519,15 +519,38 @@ export async function getBrandAwareStyles(
     // Get Style DNA boost for this axis
     const dnaResult = getStyleDNABoost(style.styleAxis as StyleAxis, styleDNA);
 
-    // Blend brand score with context score (60% brand, 40% context when context available)
-    const effectiveBrandScore = styleContext && contextScore > 30
-      ? Math.round(brandScore * 0.6 + contextScore * 0.4)
-      : brandScore;
+    // Blend brand score with context score
+    // When context matches very well (>70), context should dominate (20/80 brand/context)
+    // When context matches well (>50), context wins (30/70)
+    // When context is moderate (30-50), use 50/50 split
+    let effectiveBrandScore = brandScore;
+    if (styleContext && contextScore > 70) {
+      // Very strong context match - context dominates heavily
+      effectiveBrandScore = Math.round(brandScore * 0.2 + contextScore * 0.8);
+    } else if (styleContext && contextScore > 50) {
+      // Strong context match - context wins
+      effectiveBrandScore = Math.round(brandScore * 0.3 + contextScore * 0.7);
+    } else if (styleContext && contextScore > 30) {
+      // Moderate context match - equal weight
+      effectiveBrandScore = Math.round(brandScore * 0.5 + contextScore * 0.5);
+    }
+
+    // When we have context keywords, reduce history weight for low-context matches
+    // This prevents unrelated styles from ranking high just because of past usage
+    let effectiveHistoryScore = historyScore;
+    const hasContextKeywords = styleContext && (styleContext.keywords?.length || styleContext.topic);
+    if (hasContextKeywords && contextScore < 40) {
+      // Low context match with keywords present - reduce history influence significantly
+      effectiveHistoryScore = Math.round(historyScore * 0.3);
+    } else if (hasContextKeywords && contextScore < 60) {
+      // Moderate-low context match - reduce history influence somewhat
+      effectiveHistoryScore = Math.round(historyScore * 0.6);
+    }
 
     // Calculate multi-factor total score
     const scoreFactors: ScoreFactors = {
       brand: effectiveBrandScore,
-      history: historyScore,
+      history: effectiveHistoryScore,
       popularity: popularityScore,
       freshness: freshnessScore,
       dnaBoost: dnaResult.boost,
@@ -535,8 +558,29 @@ export async function getBrandAwareStyles(
 
     // Apply DNA boost and context boost to total score
     const baseScore = calculateMultiFactorScore(scoreFactors, hasHistory);
-    const contextBoost = styleContext && contextScore > 70 ? Math.round((contextScore - 70) * 0.3) : 0;
-    const totalScore = Math.min(100, baseScore + dnaResult.boost + contextBoost);
+
+    // Strong context boost when topic matches well (can add up to +40 points)
+    // This ensures topic-matching styles rank significantly higher
+    let contextBoost = 0;
+    if (styleContext && contextScore > 70) {
+      // Very strong match - large boost
+      contextBoost = Math.round((contextScore - 50) * 0.8);
+    } else if (styleContext && contextScore > 60) {
+      // Strong match - moderate boost
+      contextBoost = Math.round((contextScore - 50) * 0.5);
+    }
+
+    // Penalty for styles that clearly don't match the context
+    let contextPenalty = 0;
+    if (hasContextKeywords && contextScore < 30) {
+      // Clear mismatch - apply penalty
+      contextPenalty = 15;
+    } else if (hasContextKeywords && contextScore < 45) {
+      // Weak match - small penalty
+      contextPenalty = 8;
+    }
+
+    const totalScore = Math.min(100, Math.max(0, baseScore + dnaResult.boost + contextBoost - contextPenalty));
 
     // Generate match reasons
     const matchReasons: string[] = [];
