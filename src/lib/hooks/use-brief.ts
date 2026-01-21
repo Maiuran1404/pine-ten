@@ -263,9 +263,9 @@ export function useBrief({
 
       const inference = inferFromMessage(inferenceInput);
 
-      // Apply inference to brief
+      // Apply inference to brief, passing the original message for audience matching
       setBrief((currentBrief) =>
-        applyInferenceToBrief(currentBrief, inference, brandAudiences)
+        applyInferenceToBrief(currentBrief, inference, brandAudiences, message)
       );
 
       // Check if we need to ask a clarifying question

@@ -283,30 +283,75 @@ function extractDuration(text: string): InferredField<string> {
 // =============================================================================
 
 function extractTopic(text: string): InferredField<string> {
-  // Remove common phrases to isolate the topic
+  // First, try to find explicit topic patterns
+  // Pattern: "about X", "for X", "on X", "regarding X"
+  const topicPatterns = [
+    /(?:content\s+)?(?:about|on|regarding)\s+(.+?)(?:\s+(?:to|for|that|which|on|and|,|\.)|$)/i,
+    /(?:post|content|ad|banner|campaign)\s+for\s+(?:my|our|the|a|an)?\s*(.+?)(?:\s+(?:to|that|which|on|and|,|\.)|$)/i,
+    /(?:promoting|promote|launch|launching)\s+(?:my|our|the|a|an)?\s*(.+?)(?:\s+(?:to|for|that|which|on|and|,|\.)|$)/i,
+  ];
+
+  for (const pattern of topicPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      let topic = match[1].trim()
+        .replace(/\s+/g, " ")
+        .replace(/^(my|our|the|a|an)\s+/i, ""); // Remove leading articles
+
+      // Limit length and clean up
+      if (topic.length > 3 && topic.length <= 60) {
+        // Capitalize first letter
+        topic = topic.charAt(0).toUpperCase() + topic.slice(1);
+        return {
+          value: topic,
+          confidence: 0.85,
+          source: "inferred",
+        };
+      }
+    }
+  }
+
+  // Look for quoted text as topic
+  const quotedMatch = text.match(/"([^"]+)"|'([^']+)'/);
+  if (quotedMatch) {
+    const quoted = (quotedMatch[1] || quotedMatch[2]).trim();
+    if (quoted.length > 2 && quoted.length <= 60) {
+      return {
+        value: quoted.charAt(0).toUpperCase() + quoted.slice(1),
+        confidence: 0.9,
+        source: "inferred",
+      };
+    }
+  }
+
+  // Extract product/service/app names
+  const productMatch = text.match(/(?:my|our|the|a|an)\s+([\w\s]+?)\s+(?:app|product|service|platform|business|company|brand|tool)/i);
+  if (productMatch && productMatch[1]) {
+    const product = productMatch[1].trim();
+    if (product.length > 2 && product.length <= 40) {
+      return {
+        value: product.charAt(0).toUpperCase() + product.slice(1),
+        confidence: 0.8,
+        source: "inferred",
+      };
+    }
+  }
+
+  // Last resort: clean up the text and extract key phrases
   const cleanedText = text
-    .replace(/\b(create|make|design|build|need|want|help|me|with|a|an|the|for|my|our)\b/gi, "")
-    .replace(/\b(instagram|linkedin|facebook|twitter|tiktok|youtube)\b/gi, "")
-    .replace(/\b(post|story|reel|carousel|banner|ad|content|plan)\b/gi, "")
+    .replace(/\b(create|make|design|build|need|want|help|me|with|a|an|the|for|my|our|please|can|could|would|i|we|you)\b/gi, "")
+    .replace(/\b(instagram|linkedin|facebook|twitter|tiktok|youtube|post|story|reel|carousel|banner|ad|content|plan|campaign)\b/gi, "")
     .replace(/\b(\d+)\s*(day|week|month)/gi, "")
+    .replace(/\b(to|drive|increase|boost|get|more|downloads?|signups?|awareness|sales|engagement)\b/gi, "")
+    .replace(/[.,!?]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Look for "about" or "on" followed by topic
-  const aboutMatch = text.match(/\b(about|on|regarding|for)\s+(.+?)(?:\.|,|$)/i);
-  if (aboutMatch && aboutMatch[2]) {
+  // Only use cleaned text if it's reasonable
+  if (cleanedText.length >= 3 && cleanedText.length <= 40 && cleanedText.split(" ").length <= 6) {
     return {
-      value: aboutMatch[2].trim(),
-      confidence: 0.85,
-      source: "inferred",
-    };
-  }
-
-  // If there's remaining meaningful text, use it as topic
-  if (cleanedText.length > 3 && cleanedText.split(" ").length <= 10) {
-    return {
-      value: cleanedText,
-      confidence: 0.6,
+      value: cleanedText.charAt(0).toUpperCase() + cleanedText.slice(1),
+      confidence: 0.5,
       source: "inferred",
     };
   }
@@ -526,7 +571,7 @@ export function generateTaskSummary(inference: InferenceResult): string {
   const parts: string[] = [];
 
   // Quantity/Duration
-  if (inference.quantity.value && inference.duration.value) {
+  if (inference.duration.value) {
     parts.push(`${inference.duration.value}`);
   }
 
@@ -550,6 +595,8 @@ export function generateTaskSummary(inference: InferenceResult): string {
   // Content type or task type
   if (inference.taskType.value === "multi_asset_plan") {
     parts.push("Content Plan");
+  } else if (inference.taskType.value === "campaign") {
+    parts.push("Campaign");
   } else if (inference.contentType.value) {
     const contentNames: Record<ContentType, string> = {
       post: "Post",
@@ -566,11 +613,44 @@ export function generateTaskSummary(inference: InferenceResult): string {
       video: "Video",
     };
     parts.push(contentNames[inference.contentType.value]);
+  } else if (inference.platform.value && parts.length === 1) {
+    // If we only have platform, add generic "Content"
+    parts.push("Content");
   }
 
-  // Topic
+  // Intent (add if no content type and we have intent)
+  if (parts.length <= 1 && inference.intent.value) {
+    const intentDescriptions: Record<Intent, string> = {
+      signups: "for Signups",
+      authority: "for Authority",
+      awareness: "for Awareness",
+      sales: "for Sales",
+      engagement: "for Engagement",
+      education: "Educational",
+      announcement: "Announcement",
+    };
+    parts.push(intentDescriptions[inference.intent.value]);
+  }
+
+  // Topic (as suffix)
   if (inference.topic.value) {
-    parts.push(`- ${inference.topic.value}`);
+    // Clean up the topic - capitalize first letter, limit length
+    const cleanTopic = inference.topic.value
+      .replace(/^(a|an|the|my|our)\s+/i, "")
+      .trim();
+    if (cleanTopic.length > 0 && cleanTopic.length < 50) {
+      const formattedTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
+      if (parts.length > 0) {
+        parts.push(`- ${formattedTopic}`);
+      } else {
+        parts.push(formattedTopic);
+      }
+    }
+  }
+
+  // Fallback: if we only have topic, make it the whole summary
+  if (parts.length === 0 && inference.topic.value) {
+    return inference.topic.value.charAt(0).toUpperCase() + inference.topic.value.slice(1);
   }
 
   return parts.join(" ") || "New Brief";
@@ -646,21 +726,22 @@ export function generateClarifyingQuestions(
 export function applyInferenceToBrief(
   brief: LiveBrief,
   inference: InferenceResult,
-  brandAudiences?: InferredAudience[]
+  brandAudiences?: InferredAudience[],
+  messageText?: string
 ): LiveBrief {
   const updated = { ...brief, updatedAt: new Date() };
 
-  // Apply task type
+  // Apply task type - only if confidence is higher
   if (inference.taskType.value && inference.taskType.confidence > (updated.taskType.confidence || 0)) {
     updated.taskType = inference.taskType;
   }
 
-  // Apply intent
+  // Apply intent - only if confidence is higher
   if (inference.intent.value && inference.intent.confidence > (updated.intent.confidence || 0)) {
     updated.intent = inference.intent;
   }
 
-  // Apply platform and dimensions
+  // Apply platform and dimensions - only if confidence is higher
   if (inference.platform.value && inference.platform.confidence > (updated.platform.confidence || 0)) {
     updated.platform = inference.platform;
 
@@ -672,30 +753,50 @@ export function applyInferenceToBrief(
     updated.dimensions = dimensions;
   }
 
-  // Apply topic
+  // Apply topic - only if confidence is higher
   if (inference.topic.value && inference.topic.confidence > (updated.topic.confidence || 0)) {
     updated.topic = inference.topic;
   }
 
-  // Apply audience
+  // Apply audience - use the actual message context for matching, not empty string
   if (brandAudiences && brandAudiences.length > 0) {
-    const audienceMatch = matchAudience("", brandAudiences); // Get default
+    // Re-match using the original message if provided, otherwise use empty string for default
+    const audienceMatch = matchAudience(messageText || "", brandAudiences);
     if (audienceMatch.value && audienceMatch.confidence > (updated.audience.confidence || 0)) {
       updated.audience = audienceMatch;
     }
   }
 
-  // Generate task summary
+  // Generate task summary - always update if we have any meaningful inference
   const summary = generateTaskSummary(inference);
-  if (summary && summary !== "New Brief") {
-    updated.taskSummary = {
-      value: summary,
-      confidence: Math.min(
-        inference.platform.confidence,
-        inference.taskType.confidence
-      ),
-      source: "inferred",
-    };
+  const hasAnyContent = inference.platform.value || inference.taskType.value || inference.topic.value;
+
+  if (hasAnyContent) {
+    // Calculate confidence based on available fields
+    const confidences = [
+      inference.platform.confidence,
+      inference.taskType.confidence,
+      inference.topic.confidence,
+    ].filter(c => c > 0);
+
+    const avgConfidence = confidences.length > 0
+      ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+      : 0.5;
+
+    // Update summary if we have one and it's better than current
+    if (summary && (summary !== "New Brief" || !updated.taskSummary.value)) {
+      const newSummary = summary === "New Brief" && inference.topic.value
+        ? inference.topic.value
+        : summary;
+
+      if (avgConfidence > (updated.taskSummary.confidence || 0)) {
+        updated.taskSummary = {
+          value: newSummary,
+          confidence: avgConfidence,
+          source: "inferred",
+        };
+      }
+    }
   }
 
   return updated;

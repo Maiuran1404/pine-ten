@@ -12,6 +12,7 @@ import {
 import {
   getBrandAwareStyles,
   getBrandAwareStylesOfAxis,
+  type StyleContext,
 } from "@/lib/ai/brand-style-scoring";
 import {
   searchStylesByQuery,
@@ -20,6 +21,84 @@ import {
 } from "@/lib/ai/semantic-style-search";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 import { normalizeDeliverableType } from "@/lib/constants/reference-libraries";
+
+/**
+ * Extract context from conversation messages for style filtering
+ */
+function extractStyleContext(messages: { role: string; content: string }[]): StyleContext {
+  // Combine recent messages for context extraction
+  const recentUserMessages = messages
+    .filter(m => m.role === "user")
+    .slice(-3) // Last 3 user messages
+    .map(m => m.content)
+    .join(" ");
+
+  const contextText = recentUserMessages.toLowerCase();
+
+  // Extract topic keywords
+  const topicKeywords: string[] = [];
+  const keywords: string[] = [];
+
+  // Industry-related keywords
+  const industryKeywords = [
+    "tech", "technology", "fitness", "health", "wellness", "finance", "fintech",
+    "food", "restaurant", "retail", "ecommerce", "fashion", "beauty", "travel",
+    "education", "gaming", "entertainment", "music", "sports", "automotive",
+    "real estate", "healthcare", "saas", "startup", "b2b", "b2c", "luxury"
+  ];
+
+  for (const keyword of industryKeywords) {
+    if (contextText.includes(keyword)) {
+      keywords.push(keyword);
+    }
+  }
+
+  // Visual style keywords
+  const styleKeywords = [
+    "minimal", "minimalist", "bold", "vibrant", "colorful", "elegant", "premium",
+    "playful", "fun", "professional", "corporate", "modern", "classic", "vintage",
+    "retro", "clean", "simple", "complex", "detailed", "sleek", "fresh", "dynamic",
+    "energetic", "calm", "serene", "sophisticated", "luxurious", "organic", "natural"
+  ];
+
+  for (const keyword of styleKeywords) {
+    if (contextText.includes(keyword)) {
+      keywords.push(keyword);
+    }
+  }
+
+  // Extract topic from context (product/service mentions)
+  const productPatterns = [
+    /\b(app|application|platform|software|product|service|tool|solution)\b/gi,
+    /\b(launch|launching|promote|promoting|announcing|announcement)\s+(?:a|an|the|my|our)\s+(\w+)/gi,
+    /\bfor\s+(?:a|an|the|my|our)\s+(\w+(?:\s+\w+)?)\s+(?:app|product|service|platform|company|brand)/gi,
+  ];
+
+  for (const pattern of productPatterns) {
+    const matches = contextText.match(pattern);
+    if (matches) {
+      topicKeywords.push(...matches.slice(0, 2).map(m => m.trim()));
+    }
+  }
+
+  // Detect platform preferences
+  let platform: string | undefined;
+  if (contextText.includes("youtube")) platform = "youtube";
+  else if (contextText.includes("tiktok")) platform = "tiktok";
+  else if (contextText.includes("linkedin")) platform = "linkedin";
+  else if (contextText.includes("instagram")) platform = "instagram";
+  else if (contextText.includes("twitter") || contextText.includes("x.com")) platform = "twitter";
+  else if (contextText.includes("facebook")) platform = "facebook";
+
+  // Build topic string
+  const topic = topicKeywords.length > 0 ? topicKeywords.join(" ") : undefined;
+
+  return {
+    topic,
+    keywords: keywords.length > 0 ? keywords : undefined,
+    platform,
+  };
+}
 
 async function handler(request: NextRequest) {
   try {
@@ -40,6 +119,9 @@ async function handler(request: NextRequest) {
       deliverableStyleMarker: clientStyleMarker,
       moodboardHasStyles, // Client indicates if moodboard already has style items
     } = body;
+
+    // Extract context from messages for content-aware style filtering
+    const styleContext = extractStyleContext(messages || []);
 
     // If client is requesting more/different styles directly, skip AI call
     if (clientStyleMarker && (clientStyleMarker.type === "more" || clientStyleMarker.type === "different")) {
@@ -62,7 +144,7 @@ async function handler(request: NextRequest) {
           deliverableStyles = await getBrandAwareStyles(
             normalizedType,
             session.user.id,
-            { includeAllAxes: true, limit: 4 }
+            { includeAllAxes: true, limit: 4, context: styleContext }
           );
           // Filter out excluded axes
           if (excludeStyleAxes?.length) {
@@ -149,7 +231,7 @@ async function handler(request: NextRequest) {
             deliverableStyles = await getBrandAwareStyles(
               normalizedType,
               session.user.id,
-              { includeAllAxes: true }
+              { includeAllAxes: true, context: styleContext }
             );
             break;
           case "more":
@@ -164,7 +246,7 @@ async function handler(request: NextRequest) {
             deliverableStyles = await getBrandAwareStyles(
               normalizedType,
               session.user.id,
-              { includeAllAxes: true, limit: 4 }
+              { includeAllAxes: true, limit: 4, context: styleContext }
             );
             // Filter out excluded axes
             if (excludeStyleAxes?.length) {
