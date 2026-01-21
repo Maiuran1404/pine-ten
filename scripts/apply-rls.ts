@@ -67,6 +67,9 @@ async function applyRLS() {
     "security_snapshots",
     // Audit logging table
     "audit_logs",
+    // Task activity and import tracking
+    "task_activity_log",
+    "import_logs",
   ];
 
   try {
