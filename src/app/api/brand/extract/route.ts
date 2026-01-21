@@ -653,9 +653,20 @@ Return ONLY a valid JSON object with this exact structure:
       brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null;
     }
 
-    // Merge social links
+    // Merge social links - ensure empty object if none found
     const extractedSocial = extractSocialLinks(links);
-    brandData.socialLinks = { ...extractedSocial, ...brandData.socialLinks };
+    const claudeSocial = brandData.socialLinks || {};
+    brandData.socialLinks = { ...extractedSocial, ...claudeSocial };
+
+    // Remove any undefined/null/empty string values from social links
+    if (brandData.socialLinks) {
+      Object.keys(brandData.socialLinks).forEach((key) => {
+        const value = brandData.socialLinks[key as keyof typeof brandData.socialLinks];
+        if (!value || value.trim() === "") {
+          delete brandData.socialLinks[key as keyof typeof brandData.socialLinks];
+        }
+      });
+    }
 
     // Ensure feel values have defaults if Claude didn't return them
     // Use type assertion since brandData may be a parsed JSON that doesn't have all fields

@@ -79,7 +79,9 @@ import { StyleSelectionGrid } from "./style-selection-grid";
 import { SimpleOptionChips } from "./option-chips";
 import { TaskSubmissionModal } from "./task-submission-modal";
 import { useMoodboard } from "@/lib/hooks/use-moodboard";
+import { useBrief } from "@/lib/hooks/use-brief";
 import { calculateChatStage } from "@/lib/chat-progress";
+import { calculateBriefCompletion } from "./brief-panel/types";
 
 // Task data types for when viewing an active task
 export interface TaskFile {
@@ -201,6 +203,32 @@ export function ChatInterface({
     addFromStyle,
     addFromUpload,
   } = useMoodboard();
+
+  // Brief state management - builds designer-ready brief from conversation
+  const {
+    brief,
+    completion: briefCompletion,
+    isReady: isBriefReady,
+    pendingQuestion: briefPendingQuestion,
+    processMessage: processBriefMessage,
+    updateBrief,
+    addStyleToVisualDirection,
+    syncMoodboardToVisualDirection,
+    answerClarifyingQuestion,
+    exportBrief,
+  } = useBrief({
+    draftId,
+    brandAudiences: [], // TODO: Pass from session/profile
+    brandColors: [], // TODO: Pass from session/profile
+    brandTypography: { primary: "", secondary: "" }, // TODO: Pass from session/profile
+  });
+
+  // Sync moodboard changes to visual direction
+  useEffect(() => {
+    if (moodboardItems.length > 0) {
+      syncMoodboardToVisualDirection(moodboardItems);
+    }
+  }, [moodboardItems, syncMoodboardToVisualDirection]);
 
   // Calculate chat progress
   const progressState = useMemo(
@@ -710,6 +738,11 @@ export function ChatInterface({
     setIsLoading(true);
     requestStartTimeRef.current = Date.now();
 
+    // Process message through brief inference engine
+    if (userMessage.content) {
+      processBriefMessage(userMessage.content);
+    }
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -880,6 +913,8 @@ export function ChatInterface({
   const handleAddToMoodboard = (style: DeliverableStyle) => {
     if (!hasMoodboardItem(style.id)) {
       addFromStyle(style);
+      // Also add to brief's visual direction
+      addStyleToVisualDirection(style);
       toast.success(`Added "${style.name}" to moodboard`);
     }
   };
@@ -1201,6 +1236,24 @@ export function ChatInterface({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle clarifying question from brief inference
+  const handleBriefClarifyingQuestion = (questionId: string, answer: string) => {
+    // Answer the question in the brief
+    answerClarifyingQuestion(questionId, answer);
+
+    // Also send as a message to continue the conversation naturally
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: answer,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    processBriefMessage(answer);
+    setNeedsAutoContinue(true);
   };
 
   // Use refreshed credits if available (after payment), otherwise fall back to session credits
@@ -1564,8 +1617,13 @@ export function ChatInterface({
       moodboardItems={moodboardItems}
       onRemoveMoodboardItem={removeMoodboardItem}
       onClearMoodboard={clearMoodboard}
+      brief={brief}
+      onBriefUpdate={updateBrief}
+      onExportBrief={exportBrief}
+      briefCompletion={briefCompletion}
       showProgress={seamlessTransition && !isTaskMode}
       showMoodboard={seamlessTransition && !isTaskMode}
+      showBrief={seamlessTransition && !isTaskMode}
       className={cn(seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]")}
     >
       <div
@@ -1920,6 +1978,31 @@ export function ChatInterface({
             )}
           </div>
         </ScrollArea>
+
+        {/* Brief Clarifying Question - shows when inference needs more info */}
+        {briefPendingQuestion && !isLoading && messages.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-4 mb-3 p-3 rounded-xl border border-primary/20 bg-primary/5"
+          >
+            <p className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              {briefPendingQuestion.question}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {briefPendingQuestion.options.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleBriefClarifyingQuestion(briefPendingQuestion.id, option.value)}
+                  className="px-3 py-1.5 text-sm rounded-full border border-primary/30 bg-background hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Skip to Submit option - shows when user has styles selected and some context */}
         {!pendingTask && !showManualSubmit && moodboardItems.length > 0 && messages.filter(m => m.role === 'user').length >= 2 && (

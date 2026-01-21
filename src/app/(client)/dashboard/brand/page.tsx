@@ -37,8 +37,44 @@ import {
   Check,
   Sparkles,
   RotateCcw,
+  Users,
+  Briefcase,
+  X,
+  Plus,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface Audience {
+  id: string;
+  name: string;
+  isPrimary: boolean;
+  demographics?: {
+    ageRange?: { min: number; max: number };
+    gender?: "all" | "male" | "female" | "other";
+    income?: "low" | "middle" | "high" | "enterprise";
+  };
+  firmographics?: {
+    companySize?: string[];
+    industries?: string[];
+    jobTitles?: string[];
+    departments?: string[];
+    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
+  };
+  psychographics?: {
+    painPoints?: string[];
+    goals?: string[];
+    values?: string[];
+  };
+  behavioral?: {
+    contentPreferences?: string[];
+    platforms?: string[];
+    buyingProcess?: "impulse" | "considered" | "committee";
+  };
+  confidence: number;
+  sources?: string[];
+}
 
 interface BrandData {
   id: string;
@@ -114,15 +150,18 @@ const COLOR_PRESETS = {
 export default function BrandPage() {
   const router = useRouter();
   const [brand, setBrand] = useState<BrandData | null>(null);
+  const [audiences, setAudiences] = useState<Audience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isRescanning, setIsRescanning] = useState(false);
   const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("company");
+  const [expandedAudience, setExpandedAudience] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBrand();
+    fetchAudiences();
   }, []);
 
   const fetchBrand = async () => {
@@ -146,6 +185,56 @@ export default function BrandPage() {
       toast.error("Failed to load brand information");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAudiences = async () => {
+    try {
+      const response = await fetch("/api/audiences");
+      if (response.ok) {
+        const result = await response.json();
+        setAudiences(result.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch audiences:", error);
+      // Silently fail - audiences are optional
+    }
+  };
+
+  const handleDeleteAudience = async (audienceId: string) => {
+    try {
+      const response = await fetch(`/api/audiences/${audienceId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setAudiences(audiences.filter((a) => a.id !== audienceId));
+        toast.success("Audience removed");
+      } else {
+        throw new Error("Failed to delete");
+      }
+    } catch {
+      toast.error("Failed to remove audience");
+    }
+  };
+
+  const handleSetPrimaryAudience = async (audienceId: string) => {
+    try {
+      const response = await fetch(`/api/audiences/${audienceId}/primary`, {
+        method: "PUT",
+      });
+      if (response.ok) {
+        setAudiences(
+          audiences.map((a) => ({
+            ...a,
+            isPrimary: a.id === audienceId,
+          }))
+        );
+        toast.success("Primary audience updated");
+      } else {
+        throw new Error("Failed to update");
+      }
+    } catch {
+      toast.error("Failed to update primary audience");
     }
   };
 
@@ -287,6 +376,7 @@ export default function BrandPage() {
     { id: "colors", label: "Colors", icon: Palette },
     { id: "typography", label: "Typography", icon: Type },
     { id: "social", label: "Social", icon: Globe },
+    { id: "audiences", label: "Audiences", icon: Users },
   ];
 
   return (
@@ -797,6 +887,246 @@ export default function BrandPage() {
                     </div>
                   ))}
                 </div>
+              </motion.div>
+            )}
+
+            {activeTab === "audiences" && (
+              <motion.div
+                key="audiences"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                {audiences.length === 0 ? (
+                  <div className="text-center py-12 px-6 rounded-xl border border-dashed border-border">
+                    <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No audiences yet</h3>
+                    <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                      Target audiences are automatically inferred when you scan a website during onboarding.
+                      Click &quot;Redo onboarding&quot; to scan your website again.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-muted-foreground text-sm">
+                        {audiences.length} audience{audiences.length !== 1 ? "s" : ""} identified from your website
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {audiences.map((audience) => (
+                        <div
+                          key={audience.id}
+                          className={cn(
+                            "rounded-xl border transition-all",
+                            audience.isPrimary
+                              ? "border-primary/30 bg-primary/5"
+                              : "border-border bg-card hover:border-border/80"
+                          )}
+                        >
+                          {/* Audience Header */}
+                          <div
+                            className="p-4 cursor-pointer"
+                            onClick={() =>
+                              setExpandedAudience(
+                                expandedAudience === audience.id ? null : audience.id
+                              )
+                            }
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                    audience.isPrimary
+                                      ? "bg-primary/20 text-primary"
+                                      : "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {audience.firmographics?.jobTitles?.length ? (
+                                    <Briefcase className="w-5 h-5" />
+                                  ) : (
+                                    <Users className="w-5 h-5" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-foreground">
+                                      {audience.name}
+                                    </span>
+                                    {audience.isPrimary && (
+                                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                                        Primary
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                                    <span>{audience.confidence}% confidence</span>
+                                    {audience.firmographics?.jobTitles &&
+                                      audience.firmographics.jobTitles.length > 0 && (
+                                        <span className="text-muted-foreground/50">•</span>
+                                      )}
+                                    {audience.firmographics?.jobTitles
+                                      ?.slice(0, 2)
+                                      .map((title, i) => (
+                                        <span key={i} className="text-muted-foreground">
+                                          {title}
+                                          {i === 0 &&
+                                            audience.firmographics?.jobTitles &&
+                                            audience.firmographics.jobTitles.length > 1 &&
+                                            ","}
+                                        </span>
+                                      ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {expandedAudience === audience.id ? (
+                                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expanded Content */}
+                          {expandedAudience === audience.id && (
+                            <div className="px-4 pb-4 border-t border-border/50 pt-4 space-y-4">
+                              {/* Firmographics */}
+                              {audience.firmographics && (
+                                <div>
+                                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                    Firmographics
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {audience.firmographics.companySize?.map((size, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {size} employees
+                                      </span>
+                                    ))}
+                                    {audience.firmographics.industries?.map((ind, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {ind}
+                                      </span>
+                                    ))}
+                                    {audience.firmographics.decisionMakingRole && (
+                                      <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground capitalize">
+                                        {audience.firmographics.decisionMakingRole}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Psychographics */}
+                              {audience.psychographics?.painPoints &&
+                                audience.psychographics.painPoints.length > 0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                      Pain Points
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {audience.psychographics.painPoints.map((pain, i) => (
+                                        <li
+                                          key={i}
+                                          className="text-sm text-muted-foreground flex items-start gap-2"
+                                        >
+                                          <span className="text-muted-foreground/50 mt-1">•</span>
+                                          {pain}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                              {audience.psychographics?.goals &&
+                                audience.psychographics.goals.length > 0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                      Goals
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {audience.psychographics.goals.map((goal, i) => (
+                                        <li
+                                          key={i}
+                                          className="text-sm text-muted-foreground flex items-start gap-2"
+                                        >
+                                          <span className="text-muted-foreground/50 mt-1">•</span>
+                                          {goal}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                              {/* Behavioral */}
+                              {audience.behavioral && (
+                                <div>
+                                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                    Behavioral
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {audience.behavioral.platforms?.map((platform, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {platform}
+                                      </span>
+                                    ))}
+                                    {audience.behavioral.buyingProcess && (
+                                      <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground capitalize">
+                                        {audience.behavioral.buyingProcess} purchase
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-2">
+                                {!audience.isPrimary && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetPrimaryAudience(audience.id);
+                                    }}
+                                  >
+                                    Set as Primary
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteAudience(audience.id);
+                                  }}
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

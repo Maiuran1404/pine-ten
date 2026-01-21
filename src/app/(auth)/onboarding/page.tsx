@@ -25,6 +25,12 @@ import {
   Zap,
   Building2,
   Image as ImageIcon,
+  Users,
+  Linkedin,
+  Instagram,
+  Twitter,
+  X,
+  Briefcase,
 } from "lucide-react";
 import {
   type BrandData,
@@ -32,6 +38,7 @@ import {
   type OnboardingRoute,
   type VisualPreference,
   type BrandDirection,
+  type InferredAudience,
   defaultBrandData,
   CREATIVE_FOCUS_OPTIONS,
   VISUAL_COMPARISON_PAIRS,
@@ -785,7 +792,7 @@ function BrandDNARevealStep({
 
           {/* Tone */}
           <div
-            className="p-3 rounded-xl mb-6"
+            className="p-3 rounded-xl mb-5"
             style={{
               background: "rgba(255, 255, 255, 0.03)",
               border: "1px solid rgba(255, 255, 255, 0.05)"
@@ -810,6 +817,105 @@ function BrandDNARevealStep({
               </p>
             )}
           </div>
+
+          {/* Social Links - Only show if any exist */}
+          {!isEditing && (brandData.socialLinks?.linkedin || brandData.socialLinks?.twitter || brandData.socialLinks?.instagram) && (
+            <div className="mb-5">
+              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-2">Social Profiles</span>
+              <div className="flex flex-wrap gap-2">
+                {brandData.socialLinks?.linkedin && (
+                  <a
+                    href={brandData.socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                    style={{ background: "rgba(10, 102, 194, 0.15)", color: "#5BA3E0" }}
+                  >
+                    <Linkedin className="w-3 h-3" />
+                    LinkedIn
+                  </a>
+                )}
+                {brandData.socialLinks?.twitter && (
+                  <a
+                    href={brandData.socialLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                    style={{ background: "rgba(255, 255, 255, 0.05)", color: "rgba(255, 255, 255, 0.7)" }}
+                  >
+                    <Twitter className="w-3 h-3" />
+                    X / Twitter
+                  </a>
+                )}
+                {brandData.socialLinks?.instagram && (
+                  <a
+                    href={brandData.socialLinks.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                    style={{ background: "rgba(228, 64, 95, 0.15)", color: "#E4405F" }}
+                  >
+                    <Instagram className="w-3 h-3" />
+                    Instagram
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Target Audiences - Only show if any exist */}
+          {!isEditing && brandData.audiences && brandData.audiences.length > 0 && (
+            <div className="mb-6">
+              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-2">Target Audiences</span>
+              <div className="space-y-2">
+                {brandData.audiences.slice(0, 3).map((audience, index) => (
+                  <div
+                    key={index}
+                    className="p-3 rounded-xl flex items-center justify-between"
+                    style={{
+                      background: audience.isPrimary ? "rgba(99, 102, 241, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                      border: audience.isPrimary ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)"
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: audience.isPrimary ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)"
+                        }}
+                      >
+                        {audience.firmographics?.jobTitles?.length ? (
+                          <Briefcase className="w-3.5 h-3.5 text-white/50" />
+                        ) : (
+                          <Users className="w-3.5 h-3.5 text-white/50" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-sm font-medium truncate">{audience.name}</span>
+                          {audience.isPrimary && (
+                            <span
+                              className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+                              style={{ background: "rgba(99, 102, 241, 0.3)", color: "#a5b4fc" }}
+                            >
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        {audience.firmographics?.jobTitles && audience.firmographics.jobTitles.length > 0 && (
+                          <p className="text-white/30 text-[10px] truncate mt-0.5">
+                            {audience.firmographics.jobTitles.slice(0, 2).join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-white/20 text-[10px] flex-shrink-0 ml-2">{audience.confidence}%</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-white/20 text-[10px] mt-2">You can edit these later in brand settings.</p>
+            </div>
+          )}
 
           {/* Action Buttons */}
           {!isEditing && (
