@@ -221,14 +221,14 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
             {!isCollapsed && (
               <div className="flex items-center justify-center">
                 <Image
-                  src="/craftedlogowhite.svg"
+                  src="/craftedfigurewhite.png"
                   alt="Crafted"
                   width={28}
                   height={28}
                   className="dark:block hidden"
                 />
                 <Image
-                  src="/craftedlogoblack.svg"
+                  src="/craftedfigureblack.png"
                   alt="Crafted"
                   width={28}
                   height={28}

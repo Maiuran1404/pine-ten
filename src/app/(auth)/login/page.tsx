@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,12 +77,13 @@ function FloatingBlobs() {
 function BrandLogo({ portalName }: { portalName: string }) {
   return (
     <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 sm:gap-3 z-20">
-      <div className="grid grid-cols-2 gap-0.5 sm:gap-1">
-        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
-        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#8bb58b]" />
-      </div>
+      <Image
+        src="/craftedfigurewhite.png"
+        alt="Crafted"
+        width={24}
+        height={24}
+        className="sm:w-7 sm:h-7 object-contain"
+      />
       <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
         {portalName}
       </span>
@@ -89,18 +91,17 @@ function BrandLogo({ portalName }: { portalName: string }) {
   );
 }
 
-// Logo dots component for inside the card
-function LogoDots() {
+// Logo component for inside the card
+function CardLogo() {
   return (
     <div className="flex justify-center mb-6">
-      <div className="grid grid-cols-3 gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#8bb58b]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#8bb58b]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#8bb58b]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#8bb58b]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-transparent" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#8bb58b]" />
-      </div>
+      <Image
+        src="/craftedfigurewhite.png"
+        alt="Crafted"
+        width={48}
+        height={48}
+        className="object-contain"
+      />
     </div>
   );
 }
@@ -227,7 +228,7 @@ function LoginContent() {
           }}
         >
           {/* Logo */}
-          <LogoDots />
+          <CardLogo />
 
           {/* Header */}
           <div className="text-center mb-8">

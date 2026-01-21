@@ -1,34 +1,84 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 interface LogoProps {
   className?: string;
   href?: string;
   size?: "sm" | "md" | "lg";
   name?: string;
+  showText?: boolean;
+  variant?: "figure" | "text" | "combined";
 }
 
-export function Logo({ className = "", href = "/", size = "md", name = "Crafted" }: LogoProps) {
+export function Logo({
+  className = "",
+  href = "/",
+  size = "md",
+  name = "Crafted",
+  showText = true,
+  variant = "figure",
+}: LogoProps) {
   const sizes = {
-    sm: { icon: "h-6 w-6", text: "text-sm", iconText: "text-xs" },
-    md: { icon: "h-8 w-8", text: "text-lg", iconText: "text-sm" },
-    lg: { icon: "h-10 w-10", text: "text-xl", iconText: "text-base" },
+    sm: { icon: 24, text: "text-sm" },
+    md: { icon: 32, text: "text-lg" },
+    lg: { icon: 40, text: "text-xl" },
   };
 
-  const { icon, text, iconText } = sizes[size];
+  const { icon, text } = sizes[size];
+
+  // Get the right logo source based on variant
+  const getLogoSrc = (isDark: boolean) => {
+    const color = isDark ? "white" : "black";
+    switch (variant) {
+      case "text":
+        return `/craftedtext${color}.png`;
+      case "combined":
+        return isDark ? "/craftedcombinedwhite.png" : "/craftedcombintedblack.png";
+      case "figure":
+      default:
+        return `/craftedfigure${color}.png`;
+    }
+  };
+
+  const content = (
+    <>
+      {/* Dark mode logo */}
+      <Image
+        src={getLogoSrc(true)}
+        alt={name}
+        width={variant === "combined" ? icon * 3 : icon}
+        height={icon}
+        className="dark:block hidden object-contain"
+      />
+      {/* Light mode logo */}
+      <Image
+        src={getLogoSrc(false)}
+        alt={name}
+        width={variant === "combined" ? icon * 3 : icon}
+        height={icon}
+        className="dark:hidden block object-contain"
+      />
+      {showText && variant === "figure" && (
+        <span className={`font-semibold ${text} tracking-tight`}>
+          {name}
+        </span>
+      )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={`flex items-center gap-2 ${className}`}>
+        {content}
+      </Link>
+    );
+  }
 
   return (
-    <Link href={href} className={`flex items-center gap-2 ${className}`}>
-      <div
-        className={`flex ${icon} items-center justify-center rounded-lg text-white font-bold ${iconText}`}
-        style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
-      >
-        C
-      </div>
-      <span className={`font-semibold ${text} tracking-tight`}>
-        {name}
-      </span>
-    </Link>
+    <div className={`flex items-center gap-2 ${className}`}>
+      {content}
+    </div>
   );
 }
