@@ -205,6 +205,16 @@ export function ChatInterface({
     addFromUpload,
   } = useMoodboard();
 
+  // Fetch brand data for the logged-in user's company
+  const {
+    brand: brandData,
+    audiences: brandAudiences,
+    brandColors,
+    brandTypography,
+    toneOfVoice,
+    isLoading: isBrandLoading,
+  } = useBrandData();
+
   // Brief state management - builds designer-ready brief from conversation
   const {
     brief,
@@ -216,12 +226,17 @@ export function ChatInterface({
     addStyleToVisualDirection,
     syncMoodboardToVisualDirection,
     answerClarifyingQuestion,
+    generateOutline,
     exportBrief,
   } = useBrief({
     draftId,
-    brandAudiences: [], // TODO: Pass from session/profile
-    brandColors: [], // TODO: Pass from session/profile
-    brandTypography: { primary: "", secondary: "" }, // TODO: Pass from session/profile
+    brandAudiences,
+    brandColors,
+    brandTypography,
+    brandName: brandData?.name || "",
+    brandIndustry: brandData?.industry || "",
+    brandToneOfVoice: toneOfVoice,
+    brandDescription: brandData?.description || "",
   });
 
   // Sync moodboard changes to visual direction

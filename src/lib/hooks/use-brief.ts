@@ -58,6 +58,7 @@ interface UseBriefReturn {
   completion: number;
   isReady: boolean;
   pendingQuestion: ClarifyingQuestion | null;
+  isGeneratingOutline: boolean;
 
   // Actions
   processMessage: (message: string) => void;
@@ -73,7 +74,7 @@ interface UseBriefReturn {
   addStyleToVisualDirection: (style: DeliverableStyle) => void;
   syncMoodboardToVisualDirection: (items: MoodboardItem[]) => void;
   answerClarifyingQuestion: (questionId: string, answer: string) => void;
-  generateOutline: (durationDays?: number) => void;
+  generateOutline: (durationDays?: number) => Promise<void>;
   resetBrief: () => void;
   exportBrief: () => string;
 }
@@ -358,29 +359,70 @@ export function useBrief({
     []
   );
 
-  // Generate content outline for multi-asset plans
+  // Generate content outline for multi-asset plans (AI-powered)
+  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+
   const generateOutline = useCallback(
-    (durationDays: number = 30) => {
+    async (durationDays: number = 30) => {
       if (!brief.platform.value || !brief.intent.value) {
         return; // Need platform and intent to generate outline
       }
 
-      const outline = generateContentOutline({
-        topic: brief.topic.value || "content",
-        platform: brief.platform.value,
-        contentType: "post", // Default to post, could be inferred
-        intent: brief.intent.value,
-        durationDays,
-        audienceName: brief.audience.value?.name,
-      });
+      setIsGeneratingOutline(true);
 
-      setBrief((current) => ({
-        ...current,
-        contentOutline: outline,
-        updatedAt: new Date(),
-      }));
+      try {
+        // Call AI-powered outline generation API
+        const response = await fetch("/api/brief/generate-outline", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: brief.topic.value || "content",
+            platform: brief.platform.value,
+            contentType: "post",
+            intent: brief.intent.value,
+            durationDays,
+            audienceName: brief.audience.value?.name,
+            audienceDescription: brief.audience.value?.psychographics,
+            brandName,
+            brandIndustry,
+            brandTone: brandToneOfVoice,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate outline");
+        }
+
+        const data = await response.json();
+
+        setBrief((current) => ({
+          ...current,
+          contentOutline: data.outline,
+          updatedAt: new Date(),
+        }));
+      } catch (error) {
+        console.error("Failed to generate AI outline, falling back to template:", error);
+
+        // Fallback to local template-based generation
+        const outline = generateContentOutline({
+          topic: brief.topic.value || "content",
+          platform: brief.platform.value,
+          contentType: "post",
+          intent: brief.intent.value,
+          durationDays,
+          audienceName: brief.audience.value?.name,
+        });
+
+        setBrief((current) => ({
+          ...current,
+          contentOutline: outline,
+          updatedAt: new Date(),
+        }));
+      } finally {
+        setIsGeneratingOutline(false);
+      }
     },
-    [brief.platform.value, brief.intent.value, brief.topic.value, brief.audience.value?.name]
+    [brief.platform.value, brief.intent.value, brief.topic.value, brief.audience.value?.name, brief.audience.value?.psychographics, brandName, brandIndustry, brandToneOfVoice]
   );
 
   // Reset brief
