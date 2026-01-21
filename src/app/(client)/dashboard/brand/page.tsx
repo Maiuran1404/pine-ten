@@ -109,6 +109,14 @@ export default function BrandPage() {
   const fetchBrand = async () => {
     try {
       const response = await fetch("/api/brand");
+
+      // Handle case where user hasn't completed onboarding yet
+      if (response.status === 404) {
+        setBrand(null);
+        setIsLoading(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to fetch brand");
       }
@@ -246,6 +254,10 @@ export default function BrandPage() {
           <p className="text-muted-foreground">
             Complete onboarding to set up your brand.
           </p>
+          <Button onClick={() => router.push("/onboarding")} className="mt-2">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Set Up Brand
+          </Button>
         </div>
       </div>
     );

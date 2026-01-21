@@ -44,6 +44,7 @@ import {
   FONT_OPTIONS,
 } from "@/components/onboarding/types";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
+import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
 
 // ============================================================================
 // HEADER
@@ -2704,8 +2705,27 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const { data: session, isPending, refetch: refetchSession } = useSession();
 
-  const [route, setRoute] = useState<OnboardingRoute | null>(null);
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  // Restore state from sessionStorage on mount
+  const getInitialState = useCallback(() => {
+    if (typeof window === "undefined") return { route: null, step: "welcome" as OnboardingStep };
+    try {
+      const saved = sessionStorage.getItem("onboarding-state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          route: parsed.route || null,
+          step: parsed.step || "welcome",
+        };
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    return { route: null, step: "welcome" as OnboardingStep };
+  }, []);
+
+  const initialState = getInitialState();
+  const [route, setRoute] = useState<OnboardingRoute | null>(initialState.route);
+  const [step, setStep] = useState<OnboardingStep>(initialState.step);
   const [brandData, setBrandData] = useState<BrandData>(defaultBrandData);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -2715,6 +2735,20 @@ function OnboardingContent() {
   const [isGeneratingDirections, setIsGeneratingDirections] = useState(false);
   const [showingCompletionScreen, setShowingCompletionScreen] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+
+  // Save state to sessionStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined" && step !== "welcome") {
+      sessionStorage.setItem("onboarding-state", JSON.stringify({ route, step }));
+    }
+  }, [route, step]);
+
+  // Clear sessionStorage when onboarding is completed
+  const clearOnboardingState = useCallback(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("onboarding-state");
+    }
+  }, []);
 
   const scanningTexts = [
     "Studying colors and type",
@@ -2784,7 +2818,17 @@ function OnboardingContent() {
 
         const result = await response.json();
 
-        if (response.ok && result.data) {
+        if (!response.ok) {
+          // API returned an error - show error message and go back
+          clearInterval(progressInterval);
+          const errorMessage = result.error || "Failed to extract brand information from this website.";
+          toast.error(errorMessage);
+          setStep("brand-input");
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.data) {
           setBrandData({
             ...brandData,
             ...result.data,
@@ -2894,6 +2938,7 @@ function OnboardingContent() {
   };
 
   const handleComplete = () => {
+    clearOnboardingState();
     setIsExiting(true);
     // Wait for exit animation to complete before navigating
     setTimeout(() => {
@@ -2921,6 +2966,19 @@ function OnboardingContent() {
 
   if (!session) {
     return null;
+  }
+
+  // Check if this is freelancer onboarding
+  const isFreelancerOnboarding = searchParams.get("type") === "freelancer";
+
+  if (isFreelancerOnboarding) {
+    return (
+      <FreelancerOnboarding
+        onComplete={() => {
+          router.push("/portal");
+        }}
+      />
+    );
   }
 
   const userEmail = session.user?.email || undefined;
