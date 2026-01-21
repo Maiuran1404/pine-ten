@@ -2922,7 +2922,10 @@ function OnboardingContent() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save onboarding");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to save onboarding";
+        console.error("Onboarding API error:", errorMessage, errorData);
+        throw new Error(errorMessage);
       }
 
       // Set flag before refetching to prevent auto-redirect
@@ -2931,7 +2934,8 @@ function OnboardingContent() {
       setStep("brand-ready");
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("Failed to save. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to save. Please try again.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

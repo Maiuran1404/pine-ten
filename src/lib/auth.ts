@@ -60,8 +60,9 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
-    // Email verification required in production for security
-    requireEmailVerification: isProduction,
+    // Disable email verification - auto-login after signup
+    requireEmailVerification: false,
+    autoSignIn: true, // Automatically sign in after signup
     minPasswordLength: 8,
     maxPasswordLength: 128,
     // Password reset configuration

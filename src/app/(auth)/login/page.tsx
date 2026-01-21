@@ -74,19 +74,16 @@ function FloatingBlobs() {
 }
 
 // Brand logo component
-function BrandLogo({ portalName }: { portalName: string }) {
+function BrandLogo() {
   return (
-    <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 sm:gap-3 z-20">
+    <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-20">
       <Image
-        src="/craftedfigurewhite.png"
+        src="/craftedcombinedwhite.png"
         alt="Crafted"
-        width={24}
-        height={24}
-        className="sm:w-7 sm:h-7 object-contain"
+        width={140}
+        height={40}
+        className="object-contain"
       />
-      <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
-        {portalName}
-      </span>
     </div>
   );
 }
@@ -195,7 +192,7 @@ function LoginContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <FloatingBlobs />
-        <BrandLogo portalName={portal.name} />
+        <BrandLogo />
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -206,7 +203,7 @@ function LoginContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <FloatingBlobs />
-        <BrandLogo portalName={portal.name} />
+        <BrandLogo />
         <LoadingSpinner size="lg" />
         <p className="text-sm text-white/50">Redirecting...</p>
       </div>
@@ -216,7 +213,7 @@ function LoginContent() {
   return (
     <div className="min-h-dvh flex items-center justify-center relative py-16 sm:py-8">
       <FloatingBlobs />
-      <BrandLogo portalName={portal.name} />
+      <BrandLogo />
 
       <div className="relative z-10 w-full max-w-md px-4">
         <div

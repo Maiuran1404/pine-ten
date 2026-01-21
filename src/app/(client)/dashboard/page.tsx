@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
+import { FloatingBlobs } from "@/components/shared/floating-blobs";
 import { useSession } from "@/lib/auth-client";
 import { getImageVariantUrls } from "@/lib/image/utils";
 
@@ -295,6 +296,9 @@ function DashboardContent() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {/* Background blobs */}
+      <FloatingBlobs />
+
       {/* Hidden file input */}
       <input
         type="file"
