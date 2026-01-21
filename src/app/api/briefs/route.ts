@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { briefs, users, companies, chatDrafts } from "@/db/schema";
+import { briefs, users } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import type { LiveBrief } from "@/components/chat/brief-panel/types";
+import type { LiveBrief, Dimension } from "@/components/chat/brief-panel/types";
 import { calculateBriefCompletion } from "@/components/chat/brief-panel/types";
 
 // GET /api/briefs - List user's briefs
@@ -118,21 +118,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Convert LiveBrief to database format using JSON serialization
     const briefData = {
       userId: session.user.id,
       companyId: user?.companyId || null,
       draftId: draftId || null,
       status: status as "DRAFT" | "READY",
       completionPercentage: completion,
-      topic: liveBrief.topic,
-      platform: liveBrief.platform,
-      contentType: liveBrief.contentType,
-      intent: liveBrief.intent,
-      taskType: liveBrief.taskType,
-      audience: liveBrief.audience,
-      dimensions: liveBrief.dimensions,
-      visualDirection: liveBrief.visualDirection,
-      contentOutline: liveBrief.contentOutline,
+      topic: JSON.parse(JSON.stringify(liveBrief.topic)),
+      platform: JSON.parse(JSON.stringify(liveBrief.platform)),
+      contentType: null,
+      intent: JSON.parse(JSON.stringify(liveBrief.intent)),
+      taskType: JSON.parse(JSON.stringify(liveBrief.taskType)),
+      audience: JSON.parse(JSON.stringify(liveBrief.audience)),
+      dimensions: JSON.parse(JSON.stringify(liveBrief.dimensions)),
+      visualDirection: liveBrief.visualDirection ? JSON.parse(JSON.stringify(liveBrief.visualDirection)) : null,
+      contentOutline: liveBrief.contentOutline ? JSON.parse(JSON.stringify(liveBrief.contentOutline)) : null,
       clarifyingQuestionsAsked: liveBrief.clarifyingQuestionsAsked,
       updatedAt: new Date(),
     };
@@ -203,44 +204,60 @@ export async function DELETE(request: NextRequest) {
 
 // Helper to convert DB brief to LiveBrief format
 function convertDbBriefToLiveBrief(dbBrief: typeof briefs.$inferSelect): LiveBrief {
+  // Safe conversion of dimensions
+  const dimensionsRaw = dbBrief.dimensions as Array<{
+    width: number;
+    height: number;
+    label?: string;
+    name?: string;
+    aspectRatio?: string;
+    aspect?: string;
+  }> | null;
+
+  const dimensions: Dimension[] = dimensionsRaw
+    ? dimensionsRaw.map((d) => ({
+        name: d.name || d.label || "",
+        width: d.width,
+        height: d.height,
+        aspect: d.aspect || d.aspectRatio || `${d.width}:${d.height}`,
+      }))
+    : [];
+
   return {
-    id: dbBrief.id,
-    draftId: dbBrief.draftId || dbBrief.id,
-    topic: dbBrief.topic as LiveBrief["topic"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    platform: dbBrief.platform as LiveBrief["platform"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    contentType: dbBrief.contentType as LiveBrief["contentType"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    intent: dbBrief.intent as LiveBrief["intent"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    taskType: dbBrief.taskType as LiveBrief["taskType"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    audience: dbBrief.audience as LiveBrief["audience"] || {
-      value: null,
-      confidence: 0,
-      source: "pending",
-    },
-    dimensions: (dbBrief.dimensions as LiveBrief["dimensions"]) || [],
-    visualDirection: dbBrief.visualDirection as LiveBrief["visualDirection"] || null,
-    contentOutline: dbBrief.contentOutline as LiveBrief["contentOutline"] || null,
-    clarifyingQuestionsAsked: (dbBrief.clarifyingQuestionsAsked as string[]) || [],
+    id: dbBrief.draftId || dbBrief.id,
     createdAt: dbBrief.createdAt,
     updatedAt: dbBrief.updatedAt,
+    taskSummary: { value: null, confidence: 0, source: "pending" },
+    topic: (dbBrief.topic as LiveBrief["topic"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
+    platform: (dbBrief.platform as LiveBrief["platform"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
+    intent: (dbBrief.intent as LiveBrief["intent"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
+    taskType: (dbBrief.taskType as LiveBrief["taskType"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
+    audience: (dbBrief.audience as LiveBrief["audience"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
+    dimensions,
+    visualDirection: (dbBrief.visualDirection as LiveBrief["visualDirection"]) || null,
+    contentOutline: (dbBrief.contentOutline as LiveBrief["contentOutline"]) || null,
+    clarifyingQuestionsAsked: (dbBrief.clarifyingQuestionsAsked as string[]) || [],
+    completionPercentage: dbBrief.completionPercentage,
+    isReadyForDesigner: dbBrief.status === "READY" || dbBrief.status === "SUBMITTED",
   };
 }
