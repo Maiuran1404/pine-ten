@@ -52,6 +52,7 @@ import {
 } from "@/components/onboarding/types";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
+import { BrandReferenceGridSkeleton, ImageWithSkeleton } from "@/components/ui/skeletons";
 
 // ============================================================================
 // HEADER
@@ -63,15 +64,12 @@ function Header({ userEmail }: { userEmail?: string }) {
   return (
     <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="grid grid-cols-2 gap-0.5 sm:gap-1">
-          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#EDBA8D]" />
-          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#9AA48C]" />
-          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#D2ECF2]" />
-          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#EDBA8D]" />
-        </div>
-        <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide uppercase">
-          Crafted
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/craftedcombinedwhite.png"
+          alt="Crafted"
+          className="h-6 sm:h-8 w-auto"
+        />
       </div>
 
       {userEmail && (
@@ -445,12 +443,14 @@ function BrandDNARevealStep({
   setBrandData: (data: BrandData) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editField, setEditField] = useState<string | null>(null);
+  const [editingAudienceIndex, setEditingAudienceIndex] = useState<number | null>(null);
+  const [showAddAudience, setShowAddAudience] = useState(false);
+  const [newAudienceName, setNewAudienceName] = useState("");
+  const [newAudienceType, setNewAudienceType] = useState<"b2b" | "b2c">("b2b");
 
   // Derive initial style and tone from feel values if not explicitly set
   const getInitialVisualStyle = () => {
     if (brandData.visualStyle) return brandData.visualStyle;
-    // Map feelBoldMinimal to a style
     const val = brandData.feelBoldMinimal;
     if (val < 30) return "bold-impactful";
     if (val < 45) return "modern-sleek";
@@ -461,7 +461,6 @@ function BrandDNARevealStep({
 
   const getInitialBrandTone = () => {
     if (brandData.brandTone) return brandData.brandTone;
-    // Map feelPlayfulSerious to a tone
     const val = brandData.feelPlayfulSerious;
     if (val < 30) return "playful-witty";
     if (val < 45) return "friendly-approachable";
@@ -485,7 +484,6 @@ function BrandDNARevealStep({
   const primaryColor = colors[0] || "#3b82f6";
   const secondaryColor = colors[1] || "#8b5cf6";
 
-  // Get display labels for current values
   const getStyleLabel = (value: string) => {
     const option = VISUAL_STYLE_OPTIONS.find(o => o.value === value);
     return option?.label || "Minimal & Clean";
@@ -499,7 +497,6 @@ function BrandDNARevealStep({
   const visualStyleLabel = getStyleLabel(brandData.visualStyle || getInitialVisualStyle());
   const brandToneLabel = getToneLabel(brandData.brandTone || getInitialBrandTone());
 
-  // Get font family for display
   const getFontFamily = (fontName: string) => {
     const font = FONT_OPTIONS.find(f => f.value === fontName);
     return font?.family || "'Satoshi', sans-serif";
@@ -533,15 +530,62 @@ function BrandDNARevealStep({
       brandTone: tempValues.brandTone,
     });
     setIsEditing(false);
-    setEditField(null);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditField(null);
   };
 
-  // Group fonts by category for better UX
+  // Audience management functions
+  const handleRemoveAudience = (index: number) => {
+    const newAudiences = [...(brandData.audiences || [])];
+    newAudiences.splice(index, 1);
+    // If we removed the primary, make the first one primary
+    if (newAudiences.length > 0 && !newAudiences.some(a => a.isPrimary)) {
+      newAudiences[0].isPrimary = true;
+    }
+    setBrandData({ ...brandData, audiences: newAudiences });
+  };
+
+  const handleSetPrimaryAudience = (index: number) => {
+    const newAudiences = (brandData.audiences || []).map((a, i) => ({
+      ...a,
+      isPrimary: i === index,
+    }));
+    setBrandData({ ...brandData, audiences: newAudiences });
+  };
+
+  const handleAddAudience = () => {
+    if (!newAudienceName.trim()) return;
+    const newAudience: InferredAudience = {
+      name: newAudienceName.trim(),
+      isPrimary: !brandData.audiences?.length,
+      confidence: 80,
+      firmographics: newAudienceType === "b2b" ? {
+        jobTitles: [],
+        companySize: [],
+        industries: [],
+      } : undefined,
+      demographics: newAudienceType === "b2c" ? {
+        ageRange: { min: 18, max: 65 },
+        gender: "all",
+      } : undefined,
+    };
+    setBrandData({
+      ...brandData,
+      audiences: [...(brandData.audiences || []), newAudience],
+    });
+    setNewAudienceName("");
+    setShowAddAudience(false);
+  };
+
+  const handleUpdateAudienceName = (index: number, name: string) => {
+    const newAudiences = [...(brandData.audiences || [])];
+    newAudiences[index] = { ...newAudiences[index], name };
+    setBrandData({ ...brandData, audiences: newAudiences });
+    setEditingAudienceIndex(null);
+  };
+
   const groupedFonts = FONT_OPTIONS.reduce((acc, font) => {
     if (!acc[font.category]) acc[font.category] = [];
     acc[font.category].push(font);
@@ -553,9 +597,9 @@ function BrandDNARevealStep({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="w-full max-w-md"
+      className="w-full max-w-xl"
     >
-      {/* Glassmorphic Card */}
+      {/* Glassmorphic Card - Wider layout */}
       <motion.div
         variants={staggerItem}
         className="relative rounded-2xl overflow-hidden"
@@ -569,45 +613,38 @@ function BrandDNARevealStep({
       >
         {/* Subtle brand color glow at top */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-20 rounded-full opacity-15 blur-[60px]"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-16 rounded-full opacity-15 blur-[60px]"
           style={{ background: `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})` }}
         />
 
-        <div className="relative p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-6">
-            {/* Logo/Initial */}
+        <div className="relative p-5">
+          {/* Header - More compact */}
+          <div className="flex items-start justify-between mb-4">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{
                 background: "rgba(255, 255, 255, 0.05)",
                 border: "1px solid rgba(255, 255, 255, 0.08)"
               }}
             >
-              <span className="text-white/90 font-semibold text-base" style={{ fontFamily }}>
+              <span className="text-white/90 font-semibold text-sm" style={{ fontFamily }}>
                 {(isEditing ? tempValues.name : brandData.name)?.[0]?.toUpperCase() || "B"}
               </span>
             </div>
 
-            {/* Edit/Save/Cancel buttons */}
             {isEditing ? (
               <div className="flex gap-2">
                 <button
                   onClick={handleCancelEdit}
                   className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)"
-                  }}
+                  style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   className="px-3 py-1.5 rounded-full text-xs text-black/80 hover:bg-white transition-colors"
-                  style={{
-                    background: "rgba(154, 164, 140, 0.9)",
-                  }}
+                  style={{ background: "rgba(154, 164, 140, 0.9)" }}
                 >
                   Save
                 </button>
@@ -616,19 +653,16 @@ function BrandDNARevealStep({
               <button
                 onClick={handleStartEdit}
                 className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)"
-                }}
+                style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}
               >
                 Edit
               </button>
             )}
           </div>
 
-          {/* Brand Name & Description */}
-          <div className="mb-6">
-            <p className="text-white/30 text-xs mb-1" style={{ fontFamily: "'Times New Roman', serif", fontStyle: "italic" }}>
+          {/* Brand Name & Description - More compact */}
+          <div className="mb-4">
+            <p className="text-white/30 text-[10px] mb-0.5" style={{ fontFamily: "'Times New Roman', serif", fontStyle: "italic" }}>
               This is
             </p>
             {isEditing ? (
@@ -636,12 +670,12 @@ function BrandDNARevealStep({
                 type="text"
                 value={tempValues.name}
                 onChange={(e) => setTempValues({ ...tempValues, name: e.target.value })}
-                className="text-2xl text-white font-medium mb-2 bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
+                className="text-xl text-white font-medium mb-1 bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
                 style={{ fontFamily }}
                 placeholder="Brand name"
               />
             ) : (
-              <h1 className="text-2xl text-white font-medium mb-2" style={{ fontFamily }}>
+              <h1 className="text-xl text-white font-medium mb-1" style={{ fontFamily }}>
                 {brandData.name || "Your Brand"}
               </h1>
             )}
@@ -649,271 +683,240 @@ function BrandDNARevealStep({
               <textarea
                 value={tempValues.description}
                 onChange={(e) => setTempValues({ ...tempValues, description: e.target.value })}
-                className="text-white/40 text-sm leading-relaxed bg-transparent border border-white/10 rounded-lg p-2 focus:border-[#9AA48C] outline-none w-full resize-none"
-                rows={3}
+                className="text-white/40 text-xs leading-relaxed bg-transparent border border-white/10 rounded-lg p-2 focus:border-[#9AA48C] outline-none w-full resize-none"
+                rows={2}
                 placeholder="Brand description"
               />
             ) : (
-              <p className="text-white/40 text-sm leading-relaxed">
+              <p className="text-white/40 text-xs leading-relaxed line-clamp-2">
                 {brandData.description || brandData.industry || "Your brand story will appear here."}
               </p>
             )}
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-white/[0.06] mb-5" />
+          <div className="h-px bg-white/[0.06] mb-4" />
 
-          {/* Color Palette */}
-          <div className="flex items-center gap-3 mb-5">
-            {isEditing ? (
-              <>
-                <div className="relative">
-                  <input
-                    type="color"
-                    value={tempValues.primaryColor || "#3b82f6"}
-                    onChange={(e) => setTempValues({ ...tempValues, primaryColor: e.target.value })}
-                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                  />
-                  <div
-                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
-                    style={{ backgroundColor: tempValues.primaryColor || "#3b82f6" }}
-                  />
-                </div>
-                <div className="relative">
-                  <input
-                    type="color"
-                    value={tempValues.secondaryColor || "#8b5cf6"}
-                    onChange={(e) => setTempValues({ ...tempValues, secondaryColor: e.target.value })}
-                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                  />
-                  <div
-                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
-                    style={{ backgroundColor: tempValues.secondaryColor || "#8b5cf6" }}
-                  />
-                </div>
-                <div className="relative">
-                  <input
-                    type="color"
-                    value={tempValues.accentColor || "#f59e0b"}
-                    onChange={(e) => setTempValues({ ...tempValues, accentColor: e.target.value })}
-                    className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                  />
-                  <div
-                    className="w-8 h-8 rounded-lg ring-2 ring-white/20"
-                    style={{ backgroundColor: tempValues.accentColor || "#f59e0b" }}
-                  />
-                </div>
-              </>
-            ) : (
-              colors.length > 0 ? colors.map((color, i) => (
-                <motion.div
-                  key={i}
-                  className="w-8 h-8 rounded-lg"
-                  style={{
-                    backgroundColor: color,
-                    boxShadow: `0 2px 12px ${color}30`
-                  }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                />
-              )) : (
-                <>
-                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
-                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
-                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
-                </>
-              )
-            )}
-            <span className="text-white/20 text-xs ml-1">Colors</span>
-          </div>
-
-          {/* Typography & Style Row */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <div
-              className="p-3 rounded-xl"
-              style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.05)"
-              }}
-            >
-              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Type</span>
-              {isEditing ? (
-                <select
-                  value={tempValues.primaryFont || "Satoshi"}
-                  onChange={(e) => setTempValues({ ...tempValues, primaryFont: e.target.value })}
-                  className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
-                  style={{ fontFamily: getFontFamily(tempValues.primaryFont) }}
-                >
-                  {Object.entries(groupedFonts).map(([category, fonts]) => (
-                    <optgroup key={category} label={category} style={{ background: "#1a1a1a", color: "#666" }}>
-                      {fonts.map((font) => (
-                        <option key={font.value} value={font.value} style={{ background: "#1a1a1a", color: "#fff", fontFamily: font.family }}>
-                          {font.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-white text-sm font-medium" style={{ fontFamily }}>
-                  {brandData.primaryFont || "Satoshi"}
-                </p>
-              )}
+          {/* Two-column layout for Colors + Typography */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {/* Left: Colors */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {isEditing ? (
+                  <>
+                    <div className="relative">
+                      <input type="color" value={tempValues.primaryColor || "#3b82f6"} onChange={(e) => setTempValues({ ...tempValues, primaryColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
+                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.primaryColor || "#3b82f6" }} />
+                    </div>
+                    <div className="relative">
+                      <input type="color" value={tempValues.secondaryColor || "#8b5cf6"} onChange={(e) => setTempValues({ ...tempValues, secondaryColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
+                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.secondaryColor || "#8b5cf6" }} />
+                    </div>
+                    <div className="relative">
+                      <input type="color" value={tempValues.accentColor || "#f59e0b"} onChange={(e) => setTempValues({ ...tempValues, accentColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
+                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.accentColor || "#f59e0b" }} />
+                    </div>
+                  </>
+                ) : (
+                  colors.length > 0 ? colors.map((color, i) => (
+                    <motion.div key={i} className="w-7 h-7 rounded-lg" style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}30` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 + i * 0.1 }} />
+                  )) : (
+                    <>
+                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
+                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
+                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
+                    </>
+                  )
+                )}
+                <span className="text-white/20 text-[10px] ml-1">Colors</span>
+              </div>
             </div>
 
-            <div
-              className="p-3 rounded-xl"
-              style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.05)"
-              }}
-            >
-              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Style</span>
-              {isEditing ? (
-                <select
-                  value={tempValues.visualStyle}
-                  onChange={(e) => setTempValues({ ...tempValues, visualStyle: e.target.value })}
-                  className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
-                >
-                  {VISUAL_STYLE_OPTIONS.map((style) => (
-                    <option key={style.value} value={style.value} style={{ background: "#1a1a1a" }}>
-                      {style.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-white text-sm font-medium">
-                  {visualStyleLabel}
-                </p>
-              )}
+            {/* Right: Type & Style in mini grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 rounded-lg" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Type</span>
+                {isEditing ? (
+                  <select value={tempValues.primaryFont || "Satoshi"} onChange={(e) => setTempValues({ ...tempValues, primaryFont: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer" style={{ fontFamily: getFontFamily(tempValues.primaryFont) }}>
+                    {Object.entries(groupedFonts).map(([category, fonts]) => (
+                      <optgroup key={category} label={category} style={{ background: "#1a1a1a", color: "#666" }}>
+                        {fonts.map((font) => (<option key={font.value} value={font.value} style={{ background: "#1a1a1a", color: "#fff" }}>{font.label}</option>))}
+                      </optgroup>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-white text-[11px] font-medium truncate" style={{ fontFamily }}>{brandData.primaryFont || "Satoshi"}</p>
+                )}
+              </div>
+              <div className="p-2 rounded-lg" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Style</span>
+                {isEditing ? (
+                  <select value={tempValues.visualStyle} onChange={(e) => setTempValues({ ...tempValues, visualStyle: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer">
+                    {VISUAL_STYLE_OPTIONS.map((style) => (<option key={style.value} value={style.value} style={{ background: "#1a1a1a" }}>{style.label}</option>))}
+                  </select>
+                ) : (
+                  <p className="text-white text-[11px] font-medium truncate">{visualStyleLabel}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Tone */}
-          <div
-            className="p-3 rounded-xl mb-5"
-            style={{
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.05)"
-            }}
-          >
-            <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-1">Tone</span>
+          {/* Tone - Full width but compact */}
+          <div className="p-2 rounded-lg mb-4" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+            <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Tone</span>
             {isEditing ? (
-              <select
-                value={tempValues.brandTone}
-                onChange={(e) => setTempValues({ ...tempValues, brandTone: e.target.value })}
-                className="text-white text-sm font-medium bg-transparent border-none outline-none w-full cursor-pointer"
-              >
-                {BRAND_TONE_OPTIONS.map((tone) => (
-                  <option key={tone.value} value={tone.value} style={{ background: "#1a1a1a" }}>
-                    {tone.label}
-                  </option>
-                ))}
+              <select value={tempValues.brandTone} onChange={(e) => setTempValues({ ...tempValues, brandTone: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer">
+                {BRAND_TONE_OPTIONS.map((tone) => (<option key={tone.value} value={tone.value} style={{ background: "#1a1a1a" }}>{tone.label}</option>))}
               </select>
             ) : (
-              <p className="text-white text-sm font-medium">
-                {brandToneLabel}
-              </p>
+              <p className="text-white text-[11px] font-medium">{brandToneLabel}</p>
             )}
           </div>
 
-          {/* Social Links - Only show if any exist */}
+          {/* Social Links - Compact inline */}
           {!isEditing && (brandData.socialLinks?.linkedin || brandData.socialLinks?.twitter || brandData.socialLinks?.instagram) && (
-            <div className="mb-5">
-              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-2">Social Profiles</span>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-4">
+              <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-1.5">Social Profiles</span>
+              <div className="flex flex-wrap gap-1.5">
                 {brandData.socialLinks?.linkedin && (
-                  <a
-                    href={brandData.socialLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{ background: "rgba(10, 102, 194, 0.15)", color: "#5BA3E0" }}
-                  >
-                    <Linkedin className="w-3 h-3" />
-                    LinkedIn
+                  <a href={brandData.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors hover:opacity-80" style={{ background: "rgba(10, 102, 194, 0.15)", color: "#5BA3E0" }}>
+                    <Linkedin className="w-2.5 h-2.5" />LinkedIn
                   </a>
                 )}
                 {brandData.socialLinks?.twitter && (
-                  <a
-                    href={brandData.socialLinks.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{ background: "rgba(255, 255, 255, 0.05)", color: "rgba(255, 255, 255, 0.7)" }}
-                  >
-                    <Twitter className="w-3 h-3" />
-                    X / Twitter
+                  <a href={brandData.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors hover:opacity-80" style={{ background: "rgba(255, 255, 255, 0.05)", color: "rgba(255, 255, 255, 0.7)" }}>
+                    <Twitter className="w-2.5 h-2.5" />X / Twitter
                   </a>
                 )}
                 {brandData.socialLinks?.instagram && (
-                  <a
-                    href={brandData.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{ background: "rgba(228, 64, 95, 0.15)", color: "#E4405F" }}
-                  >
-                    <Instagram className="w-3 h-3" />
-                    Instagram
+                  <a href={brandData.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors hover:opacity-80" style={{ background: "rgba(228, 64, 95, 0.15)", color: "#E4405F" }}>
+                    <Instagram className="w-2.5 h-2.5" />Instagram
                   </a>
                 )}
               </div>
             </div>
           )}
 
-          {/* Target Audiences - Only show if any exist */}
-          {!isEditing && brandData.audiences && brandData.audiences.length > 0 && (
-            <div className="mb-6">
-              <span className="text-white/20 text-[10px] uppercase tracking-wider block mb-2">Target Audiences</span>
-              <div className="space-y-2">
-                {brandData.audiences.slice(0, 3).map((audience, index) => (
-                  <div
-                    key={index}
-                    className="p-3 rounded-xl flex items-center justify-between"
-                    style={{
-                      background: audience.isPrimary ? "rgba(99, 102, 241, 0.08)" : "rgba(255, 255, 255, 0.03)",
-                      border: audience.isPrimary ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)"
-                    }}
+          {/* Target Audiences - Editable with marketplace support */}
+          {!isEditing && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white/20 text-[9px] uppercase tracking-wider">Target Audiences</span>
+                {!showAddAudience && (
+                  <button
+                    onClick={() => setShowAddAudience(true)}
+                    className="text-[10px] text-[#9AA48C] hover:text-white transition-colors"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: audience.isPrimary ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)"
-                        }}
-                      >
-                        {audience.firmographics?.jobTitles?.length ? (
-                          <Briefcase className="w-3.5 h-3.5 text-white/50" />
-                        ) : (
-                          <Users className="w-3.5 h-3.5 text-white/50" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm font-medium truncate">{audience.name}</span>
-                          {audience.isPrimary && (
-                            <span
-                              className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
-                              style={{ background: "rgba(99, 102, 241, 0.3)", color: "#a5b4fc" }}
-                            >
-                              Primary
-                            </span>
+                    + Add
+                  </button>
+                )}
+              </div>
+
+              {/* Add new audience form */}
+              {showAddAudience && (
+                <div className="p-3 rounded-xl mb-2" style={{ background: "rgba(154, 164, 140, 0.1)", border: "1px solid rgba(154, 164, 140, 0.3)" }}>
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => setNewAudienceType("b2b")}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${newAudienceType === "b2b" ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"}`}
+                    >
+                      <Building2 className="w-3 h-3 inline mr-1" />
+                      B2B (Companies)
+                    </button>
+                    <button
+                      onClick={() => setNewAudienceType("b2c")}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${newAudienceType === "b2c" ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"}`}
+                    >
+                      <Users className="w-3 h-3 inline mr-1" />
+                      B2C (Individuals)
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newAudienceName}
+                      onChange={(e) => setNewAudienceName(e.target.value)}
+                      placeholder={newAudienceType === "b2b" ? "e.g., HR Leaders at SMBs" : "e.g., Job seekers in tech"}
+                      className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] text-white bg-white/5 border border-white/10 focus:border-[#9AA48C] outline-none"
+                      onKeyDown={(e) => e.key === "Enter" && handleAddAudience()}
+                    />
+                    <button onClick={handleAddAudience} className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-[#9AA48C] text-black/80 hover:bg-white transition-colors">Add</button>
+                    <button onClick={() => { setShowAddAudience(false); setNewAudienceName(""); }} className="px-2 py-1.5 rounded-lg text-[10px] text-white/40 hover:text-white/70">Cancel</button>
+                  </div>
+                  <p className="text-white/30 text-[9px] mt-2">
+                    {newAudienceType === "b2b"
+                      ? "Tip: For marketplaces like recruitment, add both your clients (companies hiring) and your service recipients (job seekers)."
+                      : "Tip: Describe who you're serving directly - individuals, consumers, or end users."}
+                  </p>
+                </div>
+              )}
+
+              {/* Existing audiences */}
+              {brandData.audiences && brandData.audiences.length > 0 ? (
+                <div className="space-y-1.5">
+                  {brandData.audiences.map((audience, index) => (
+                    <div
+                      key={index}
+                      className="p-2.5 rounded-xl flex items-center justify-between group"
+                      style={{
+                        background: audience.isPrimary ? "rgba(99, 102, 241, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                        border: audience.isPrimary ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)"
+                      }}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: audience.isPrimary ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)" }}
+                        >
+                          {audience.firmographics?.jobTitles !== undefined ? (
+                            <Building2 className="w-3 h-3 text-white/50" />
+                          ) : (
+                            <Users className="w-3 h-3 text-white/50" />
                           )}
                         </div>
-                        {audience.firmographics?.jobTitles && audience.firmographics.jobTitles.length > 0 && (
-                          <p className="text-white/30 text-[10px] truncate mt-0.5">
-                            {audience.firmographics.jobTitles.slice(0, 2).join(", ")}
-                          </p>
-                        )}
+                        <div className="min-w-0 flex-1">
+                          {editingAudienceIndex === index ? (
+                            <input
+                              type="text"
+                              defaultValue={audience.name}
+                              autoFocus
+                              className="text-white text-[11px] font-medium bg-transparent border-b border-white/30 focus:border-[#9AA48C] outline-none w-full"
+                              onBlur={(e) => handleUpdateAudienceName(index, e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") handleUpdateAudienceName(index, e.currentTarget.value); if (e.key === "Escape") setEditingAudienceIndex(null); }}
+                            />
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-white text-[11px] font-medium truncate">{audience.name}</span>
+                              {audience.isPrimary && (
+                                <span className="text-[8px] px-1 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: "rgba(99, 102, 241, 0.3)", color: "#a5b4fc" }}>Primary</span>
+                              )}
+                            </div>
+                          )}
+                          {audience.firmographics?.jobTitles && audience.firmographics.jobTitles.length > 0 && (
+                            <p className="text-white/30 text-[9px] truncate">{audience.firmographics.jobTitles.slice(0, 2).join(", ")}</p>
+                          )}
+                        </div>
                       </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setEditingAudienceIndex(index)} className="p-1 rounded text-white/30 hover:text-white/70 text-[9px]" title="Edit name">✎</button>
+                        {!audience.isPrimary && (
+                          <button onClick={() => handleSetPrimaryAudience(index)} className="p-1 rounded text-white/30 hover:text-[#9AA48C] text-[9px]" title="Set as primary">★</button>
+                        )}
+                        <button onClick={() => handleRemoveAudience(index)} className="p-1 rounded text-white/30 hover:text-red-400 text-[9px]" title="Remove">×</button>
+                      </div>
+                      <span className="text-white/20 text-[9px] flex-shrink-0 ml-2">{audience.confidence}%</span>
                     </div>
-                    <span className="text-white/20 text-[10px] flex-shrink-0 ml-2">{audience.confidence}%</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-white/20 text-[10px] mt-2">You can edit these later in brand settings.</p>
+                  ))}
+                </div>
+              ) : !showAddAudience && (
+                <button
+                  onClick={() => setShowAddAudience(true)}
+                  className="w-full p-3 rounded-xl text-center text-white/30 text-[11px] hover:text-white/50 hover:bg-white/5 transition-colors"
+                  style={{ border: "1px dashed rgba(255, 255, 255, 0.1)" }}
+                >
+                  + Add your target audiences
+                </button>
+              )}
             </div>
           )}
 
@@ -922,21 +925,16 @@ function BrandDNARevealStep({
             <div className="flex gap-2">
               <button
                 onClick={onBack}
-                className="flex-1 py-3 rounded-xl font-medium text-xs text-white/40 hover:text-white/70 transition-colors"
-                style={{
-                  background: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)"
-                }}
+                className="flex-1 py-2.5 rounded-xl font-medium text-[11px] text-white/40 hover:text-white/70 transition-colors"
+                style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)" }}
               >
                 <ArrowLeft className="w-3 h-3 inline mr-1" />
                 Back
               </button>
               <button
                 onClick={onContinue}
-                className="flex-1 py-3 rounded-xl font-medium text-xs transition-all hover:bg-white text-black/80"
-                style={{
-                  background: "rgba(245, 245, 240, 0.9)",
-                }}
+                className="flex-1 py-2.5 rounded-xl font-medium text-[11px] transition-all hover:bg-white text-black/80"
+                style={{ background: "rgba(245, 245, 240, 0.9)" }}
               >
                 Looks right
                 <Check className="w-3 h-3 inline ml-1" />
@@ -945,11 +943,6 @@ function BrandDNARevealStep({
           )}
         </div>
       </motion.div>
-
-      {/* Footer text */}
-      <p className="text-white/20 text-[10px] text-center mt-4">
-        Nothing here is locked. Your brand evolves as you do.
-      </p>
     </motion.div>
   );
 }
@@ -1453,13 +1446,9 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       {/* Scrolling Image Columns - 4 columns showing brand reference images from database */}
       <div className="relative">
         {isLoading ? (
-          <div className="flex items-center justify-center h-[420px]">
-            <div className="text-white/40">Loading brand references...</div>
-          </div>
+          <BrandReferenceGridSkeleton columns={4} />
         ) : displayImages.length === 0 ? (
-          <div className="flex items-center justify-center h-[420px]">
-            <div className="text-white/40">No brand references available</div>
-          </div>
+          <BrandReferenceGridSkeleton columns={4} />
         ) : (
           <div className="flex gap-4 justify-center">
             {displayImages.map((imageSrc, index) => (
@@ -1524,10 +1513,11 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                           height: "200px",
                         }}
                       >
-                        <img
+                        <ImageWithSkeleton
                           src={src}
                           alt={brandReferences[imgIndex % brandReferences.length]?.name || `Brand reference ${imgIndex + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full"
+                          skeletonClassName="bg-white/5"
                         />
                       </motion.div>
                     ))}

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageWithSkeleton, MasonryGridSkeleton } from "@/components/ui/skeletons";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
@@ -111,6 +112,7 @@ function DashboardContent() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [styleReferences, setStyleReferences] = useState<StyleReference[]>([]);
+  const [isLoadingStyles, setIsLoadingStyles] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +137,7 @@ function DashboardContent() {
       .catch(console.error);
 
     // Fetch brand-matched style references (increased limit for all categories)
+    setIsLoadingStyles(true);
     fetch("/api/style-references/match?limit=150")
       .then((res) => res.json())
       .then((data) => {
@@ -142,7 +145,8 @@ function DashboardContent() {
           setStyleReferences(data.data);
         }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsLoadingStyles(false));
   }, [searchParams]);
 
   // Auto-resize textarea
@@ -554,13 +558,17 @@ function DashboardContent() {
       </div>
 
       {/* Inspiration Gallery - Grouped by Content Type */}
-      {styleReferences.length > 0 && (
+      {(isLoadingStyles || styleReferences.length > 0) && (
         <div className="relative w-full pt-4">
           {/* Grouped Masonry Grid */}
           <div className="relative pb-8">
             <div className="max-w-6xl mx-auto px-6">
-              {/* Group references by contentCategory */}
-              {(() => {
+              {/* Show skeleton while loading */}
+              {isLoadingStyles ? (
+                <MasonryGridSkeleton count={15} columns={5} showHeader={true} />
+              ) : (
+              /* Group references by contentCategory */
+              (() => {
                 const groups = styleReferences.reduce((acc, ref) => {
                   const group = ref.contentCategory || "other";
                   if (!acc[group]) acc[group] = [];
@@ -631,10 +639,11 @@ function DashboardContent() {
                               key={ref.id}
                               className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
                             >
-                              <img
+                              <ImageWithSkeleton
                                 src={variantUrls.preview}
                                 alt={ref.name}
-                                className="w-full h-auto object-cover"
+                                className="w-full"
+                                skeletonClassName="bg-muted/50 min-h-[150px]"
                                 loading="lazy"
                               />
                             </div>
@@ -644,7 +653,7 @@ function DashboardContent() {
                     </div>
                   );
                 });
-              })()}
+              })())}
             </div>
 
             {/* Fade overlay at bottom */}

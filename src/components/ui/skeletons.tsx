@@ -1,7 +1,177 @@
 "use client";
 
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Image with skeleton loading - shows skeleton until image loads
+export function ImageWithSkeleton({
+  src,
+  alt,
+  className,
+  skeletonClassName,
+  aspectRatio,
+  loading,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  skeletonClassName?: string;
+  aspectRatio?: string;
+  loading?: "lazy" | "eager";
+}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className={cn("relative overflow-hidden", className)} style={{ aspectRatio }}>
+      <AnimatePresence>
+        {!isLoaded && !hasError && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0"
+          >
+            <Skeleton className={cn("w-full h-full", skeletonClassName)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading={loading}
+        className={cn(
+          "w-full h-full object-cover transition-opacity duration-300",
+          isLoaded ? "opacity-100" : "opacity-0"
+        )}
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+}
+
+// Scrolling column skeleton for onboarding brand references
+export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) {
+  return (
+    <div
+      className="relative flex-shrink-0 rounded-2xl overflow-hidden"
+      style={{
+        width: "140px",
+        height: "420px",
+        background: "rgba(15, 15, 15, 0.4)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+      }}
+    >
+      {/* Top fade gradient */}
+      <div
+        className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
+        style={{
+          background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+        }}
+      />
+      {/* Bottom fade gradient */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
+        style={{
+          background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+        }}
+      />
+      {/* Scrolling skeleton cards */}
+      <motion.div
+        className="flex flex-col gap-3 p-2"
+        animate={{
+          y: index % 2 === 0 ? [0, -600] : [-600, 0],
+        }}
+        transition={{
+          y: {
+            duration: 20 + index * 5,
+            repeat: Infinity,
+            ease: "linear",
+          },
+        }}
+      >
+        {[...Array(6)].map((_, i) => (
+          <Skeleton
+            key={i}
+            className="flex-shrink-0 rounded-xl bg-white/5"
+            style={{ width: "100%", height: "200px" }}
+          />
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+// Grid of scrolling columns skeleton for onboarding
+export function BrandReferenceGridSkeleton({ columns = 4 }: { columns?: number }) {
+  return (
+    <div className="flex gap-4 justify-center">
+      {[...Array(columns)].map((_, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+        >
+          <BrandReferenceColumnSkeleton index={index} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// Masonry grid skeleton for dashboard explore section
+export function MasonryGridSkeleton({
+  count = 15,
+  columns = 5,
+  showHeader = true,
+}: {
+  count?: number;
+  columns?: number;
+  showHeader?: boolean;
+}) {
+  // Generate varied heights for masonry effect
+  const heights = [150, 180, 200, 220, 170, 190, 160, 210, 185, 175, 195, 165, 205, 155, 225];
+
+  return (
+    <div className="space-y-4">
+      {showHeader && (
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-6 rounded" />
+          <Skeleton className="h-5 w-40" />
+          <div className="flex-1 h-px bg-border ml-2" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      )}
+      <div
+        className="gap-3 space-y-3"
+        style={{
+          columns: columns,
+          columnGap: "12px",
+        }}
+      >
+        {[...Array(count)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.03 }}
+            className="break-inside-avoid mb-3"
+          >
+            <Skeleton
+              className="w-full rounded-xl bg-white/5 dark:bg-white/5"
+              style={{ height: `${heights[i % heights.length]}px` }}
+            />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Card skeleton for dashboard cards
 export function CardSkeleton({ className }: { className?: string }) {

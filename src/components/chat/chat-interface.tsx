@@ -80,6 +80,7 @@ import { SimpleOptionChips } from "./option-chips";
 import { TaskSubmissionModal } from "./task-submission-modal";
 import { useMoodboard } from "@/lib/hooks/use-moodboard";
 import { useBrief } from "@/lib/hooks/use-brief";
+import { useBrandData } from "@/lib/hooks/use-brand-data";
 import { calculateChatStage } from "@/lib/chat-progress";
 import { calculateBriefCompletion } from "./brief-panel/types";
 

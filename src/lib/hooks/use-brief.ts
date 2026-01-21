@@ -25,6 +25,11 @@ import {
   generateTaskSummary,
   type InferenceInput,
 } from "@/lib/ai/inference-engine";
+import {
+  generateContentOutline,
+  generateDesignerBrief,
+  exportBriefAsMarkdown,
+} from "@/lib/ai/brief-generator";
 import { getDimensionsForPlatform } from "@/lib/constants/platform-dimensions";
 import type { InferredAudience } from "@/components/onboarding/types";
 import type { DeliverableStyle, MoodboardItem } from "@/components/chat/types";
@@ -41,6 +46,10 @@ interface UseBriefOptions {
     primary: string;
     secondary: string;
   };
+  brandName?: string;
+  brandIndustry?: string;
+  brandToneOfVoice?: string;
+  brandDescription?: string;
 }
 
 interface UseBriefReturn {
@@ -64,6 +73,7 @@ interface UseBriefReturn {
   addStyleToVisualDirection: (style: DeliverableStyle) => void;
   syncMoodboardToVisualDirection: (items: MoodboardItem[]) => void;
   answerClarifyingQuestion: (questionId: string, answer: string) => void;
+  generateOutline: (durationDays?: number) => void;
   resetBrief: () => void;
   exportBrief: () => string;
 }
@@ -73,6 +83,10 @@ export function useBrief({
   brandAudiences = [],
   brandColors = [],
   brandTypography = { primary: "", secondary: "" },
+  brandName = "",
+  brandIndustry = "",
+  brandToneOfVoice = "",
+  brandDescription = "",
 }: UseBriefOptions): UseBriefReturn {
   // Initialize brief
   const [brief, setBrief] = useState<LiveBrief>(() => {
@@ -344,6 +358,31 @@ export function useBrief({
     []
   );
 
+  // Generate content outline for multi-asset plans
+  const generateOutline = useCallback(
+    (durationDays: number = 30) => {
+      if (!brief.platform.value || !brief.intent.value) {
+        return; // Need platform and intent to generate outline
+      }
+
+      const outline = generateContentOutline({
+        topic: brief.topic.value || "content",
+        platform: brief.platform.value,
+        contentType: "post", // Default to post, could be inferred
+        intent: brief.intent.value,
+        durationDays,
+        audienceName: brief.audience.value?.name,
+      });
+
+      setBrief((current) => ({
+        ...current,
+        contentOutline: outline,
+        updatedAt: new Date(),
+      }));
+    },
+    [brief.platform.value, brief.intent.value, brief.topic.value, brief.audience.value?.name]
+  );
+
   // Reset brief
   const resetBrief = useCallback(() => {
     const newBrief = createEmptyBrief(draftId);
@@ -363,83 +402,21 @@ export function useBrief({
     setConversationHistory([]);
   }, [draftId, brandColors, brandTypography]);
 
-  // Export brief as text
+  // Export brief as formatted markdown
   const exportBrief = useCallback(() => {
-    const sections: string[] = [];
+    const designerBrief = generateDesignerBrief(
+      brief,
+      {
+        name: brandName || "Brand",
+        industry: brandIndustry || "General",
+        toneOfVoice: brandToneOfVoice || "Professional",
+        brandDescription: brandDescription || "",
+      },
+      draftId
+    );
 
-    sections.push("# Designer Brief");
-    sections.push("");
-
-    if (brief.taskSummary.value) {
-      sections.push(`## ${brief.taskSummary.value}`);
-      sections.push("");
-    }
-
-    if (brief.intent.value) {
-      sections.push(`**Intent:** ${brief.intent.value}`);
-    }
-
-    if (brief.platform.value) {
-      sections.push(`**Platform:** ${brief.platform.value}`);
-    }
-
-    if (brief.dimensions.length > 0) {
-      const dimsText = brief.dimensions
-        .map((d) => `${d.name} (${d.width}x${d.height})`)
-        .join(", ");
-      sections.push(`**Dimensions:** ${dimsText}`);
-    }
-
-    if (brief.audience.value) {
-      sections.push("");
-      sections.push("### Target Audience");
-      sections.push(`**Name:** ${brief.audience.value.name}`);
-      if (brief.audience.value.demographics) {
-        sections.push(`**Demographics:** ${brief.audience.value.demographics}`);
-      }
-      if (brief.audience.value.painPoints?.length) {
-        sections.push(`**Pain Points:** ${brief.audience.value.painPoints.join(", ")}`);
-      }
-      if (brief.audience.value.goals?.length) {
-        sections.push(`**Goals:** ${brief.audience.value.goals.join(", ")}`);
-      }
-    }
-
-    if (brief.topic.value) {
-      sections.push("");
-      sections.push(`### Topic`);
-      sections.push(brief.topic.value);
-    }
-
-    if (brief.contentOutline?.weekGroups.length) {
-      sections.push("");
-      sections.push("### Content Outline");
-      brief.contentOutline.weekGroups.forEach((group) => {
-        sections.push(`\n**${group.label}**`);
-        group.items.forEach((item) => {
-          sections.push(`${item.number}. **${item.title}** - ${item.description}`);
-        });
-      });
-    }
-
-    if (brief.visualDirection) {
-      sections.push("");
-      sections.push("### Visual Direction");
-      if (brief.visualDirection.selectedStyles.length) {
-        sections.push(
-          `**Styles:** ${brief.visualDirection.selectedStyles.map((s) => s.name).join(", ")}`
-        );
-      }
-      if (brief.visualDirection.colorPalette.length) {
-        sections.push(`**Colors:** ${brief.visualDirection.colorPalette.join(", ")}`);
-      }
-      if (brief.visualDirection.moodKeywords.length) {
-        sections.push(`**Mood:** ${brief.visualDirection.moodKeywords.join(", ")}`);
-      }
-    }
-
-    return sections.join("\n");
-  }, [brief]);
+    return exportBriefAsMarkdown(designerBrief);
+  }, [brief, brandName, brandIndustry, brandToneOfVoice, brandDescription, draftId]);
 
   return {
     brief,
@@ -459,6 +436,7 @@ export function useBrief({
     addStyleToVisualDirection,
     syncMoodboardToVisualDirection,
     answerClarifyingQuestion,
+    generateOutline,
     resetBrief,
     exportBrief,
   };
