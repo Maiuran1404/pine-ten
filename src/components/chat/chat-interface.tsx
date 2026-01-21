@@ -187,6 +187,7 @@ export function ChatInterface({
   const [isDragging, setIsDragging] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
+  const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(new Set());
   const [taskSubmitted, setTaskSubmitted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -324,6 +325,8 @@ export function ChatInterface({
       }));
       // Set loaded messages (may be empty for new chats)
       setMessages(loadedMessages);
+      // Mark all loaded messages as having completed typing (they won't animate)
+      setCompletedTypingIds(new Set(loadedMessages.map(m => m.id)));
       setIsInitialized(true);
       return;
     }
@@ -338,6 +341,8 @@ export function ChatInterface({
       setMessages(loadedMessages);
       setSelectedStyles(draft.selectedStyles);
       setPendingTask(draft.pendingTask);
+      // Mark all loaded messages as having completed typing (they won't animate)
+      setCompletedTypingIds(new Set(loadedMessages.map(m => m.id)));
 
       const lastMessage = loadedMessages[loadedMessages.length - 1];
       if (lastMessage && lastMessage.role === "user") {
@@ -347,6 +352,7 @@ export function ChatInterface({
       setMessages([]);
       setSelectedStyles([]);
       setPendingTask(null);
+      setCompletedTypingIds(new Set());
     }
     setIsInitialized(true);
   }, [draftId, isTaskMode, taskData]);
@@ -1768,6 +1774,8 @@ export function ChatInterface({
                               onComplete={() => {
                                 if (animatingMessageId === message.id) {
                                   setAnimatingMessageId(null);
+                                  // Mark this message's typing as complete to show CTAs
+                                  setCompletedTypingIds(prev => new Set(prev).add(message.id));
                                 }
                               }}
                               className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
@@ -1782,9 +1790,16 @@ export function ChatInterface({
                           </div>
                         )}
 
-                        {/* Style References */}
+                        {/* Style References - only show after typing completes */}
                         {message.styleReferences && message.styleReferences.length > 0 && (
-                          <div className="mt-5 ml-8">
+                          animatingMessageId !== message.id || completedTypingIds.has(message.id)
+                        ) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-5 ml-8"
+                          >
                             <p className="text-sm font-medium mb-4 text-foreground">
                               Which style direction resonates with you?
                             </p>
@@ -1863,12 +1878,19 @@ export function ChatInterface({
                                 </Button>
                               )}
                             </div>
-                          </div>
+                          </motion.div>
                         )}
 
-                        {/* Deliverable Style References */}
+                        {/* Deliverable Style References - only show after typing completes */}
                         {message.deliverableStyles && message.deliverableStyles.length > 0 && (
-                          <div className="mt-5 ml-8">
+                          animatingMessageId !== message.id || completedTypingIds.has(message.id)
+                        ) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-5 ml-8"
+                          >
                             {/* Only show full grid for the most recent message with styles */}
                             {index === lastStyleMessageIndex ? (
                               <>
@@ -1913,7 +1935,7 @@ export function ChatInterface({
                                 )}
                               </div>
                             )}
-                          </div>
+                          </motion.div>
                         )}
 
                         {/* Task Proposal */}
@@ -1923,15 +1945,22 @@ export function ChatInterface({
                           </div>
                         )}
 
-                        {/* Quick Options */}
-                        {message.quickOptions && (
-                          <div className="mt-4 ml-8">
+                        {/* Quick Options - only show if NO deliverable styles AND after typing completes */}
+                        {message.quickOptions &&
+                         (!message.deliverableStyles || message.deliverableStyles.length === 0) &&
+                         (animatingMessageId !== message.id || completedTypingIds.has(message.id)) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-4 ml-8"
+                          >
                             <QuickOptions
                               options={message.quickOptions}
                               onSelect={handleQuickOptionClick}
                               disabled={isLoading || index < messages.length - 1}
                             />
-                          </div>
+                          </motion.div>
                         )}
                       </div>
 
