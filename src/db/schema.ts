@@ -1179,3 +1179,79 @@ export const importLogsRelations = relations(importLogs, ({ one }) => ({
 
 // Add imageHash field to deliverableStyleReferences for duplicate detection
 // Note: This requires a migration to add the column
+
+// ============================================
+// Target Audiences Tables
+// ============================================
+
+// Target audiences for companies (inferred from brand data and social profiles)
+export const audiences = pgTable(
+  "audiences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+
+    // Audience identification
+    name: text("name").notNull(), // e.g., "HR Directors", "Small Business Owners"
+    isPrimary: boolean("is_primary").notNull().default(false),
+
+    // Demographics
+    demographics: jsonb("demographics").$type<{
+      ageRange?: { min: number; max: number };
+      gender?: "all" | "male" | "female" | "other";
+      income?: "low" | "middle" | "high" | "enterprise";
+      education?: string[];
+      locations?: string[];
+    }>(),
+
+    // Firmographics (B2B)
+    firmographics: jsonb("firmographics").$type<{
+      companySize?: string[]; // "1-10", "11-50", "51-200", "201-500", "500+"
+      industries?: string[];
+      jobTitles?: string[];
+      departments?: string[];
+      decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
+    }>(),
+
+    // Psychographics
+    psychographics: jsonb("psychographics").$type<{
+      painPoints?: string[];
+      goals?: string[];
+      values?: string[];
+      buyingMotivations?: string[];
+    }>(),
+
+    // Behavioral
+    behavioral: jsonb("behavioral").$type<{
+      contentPreferences?: string[]; // "video", "long-form", "data-driven"
+      platforms?: string[]; // "LinkedIn", "Instagram", "Email"
+      buyingProcess?: "impulse" | "considered" | "committee";
+    }>(),
+
+    // Confidence & source
+    confidence: integer("confidence").notNull().default(50), // 0-100
+    sources: jsonb("sources").$type<string[]>().default([]), // ["website", "linkedin", "user-input"]
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("audiences_company_id_idx").on(table.companyId),
+    index("audiences_is_primary_idx").on(table.companyId, table.isPrimary),
+  ]
+);
+
+// Relations for audiences
+export const audiencesRelations = relations(audiences, ({ one }) => ({
+  company: one(companies, {
+    fields: [audiences.companyId],
+    references: [companies.id],
+  }),
+}));
+
+// Update companies relations to include audiences
+export const companiesAudiencesRelation = relations(companies, ({ many }) => ({
+  audiences: many(audiences),
+}));

@@ -67,6 +67,35 @@ const INDUSTRY_ARCHETYPE_VALUES = [
   "tech",
 ] as const;
 
+// Inferred audience segment
+interface InferredAudience {
+  name: string;
+  isPrimary: boolean;
+  demographics?: {
+    ageRange?: { min: number; max: number };
+    gender?: "all" | "male" | "female" | "other";
+    income?: "low" | "middle" | "high" | "enterprise";
+  };
+  firmographics?: {
+    companySize?: string[];
+    industries?: string[];
+    jobTitles?: string[];
+    departments?: string[];
+    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
+  };
+  psychographics?: {
+    painPoints?: string[];
+    goals?: string[];
+    values?: string[];
+  };
+  behavioral?: {
+    contentPreferences?: string[];
+    platforms?: string[];
+    buyingProcess?: "impulse" | "considered" | "committee";
+  };
+  confidence: number;
+}
+
 interface BrandExtraction {
   name: string;
   description: string;
@@ -107,6 +136,8 @@ interface BrandExtraction {
   signalDensity: number; // 0 = Minimal, 100 = Rich
   signalWarmth: number; // 0 = Cold, 100 = Warm
   signalEnergy: number; // 0 = Calm, 100 = Energetic
+  // Inferred target audiences
+  audiences?: InferredAudience[];
 }
 
 // Extract social links from page links
@@ -215,6 +246,8 @@ function createDefaultBrandData(
     signalDensity: 50,
     signalWarmth: 50,
     signalEnergy: 50,
+    // Empty audiences array - will be populated by Claude analysis
+    audiences: [],
   };
 }
 
@@ -411,6 +444,26 @@ Based on the content${screenshot ? " and screenshot" : ""} above, extract the fo
    - signalWarmth: 0 = Cold/technical/distant, 100 = Warm/human/inviting
    - signalEnergy: 0 = Calm/quiet/subdued, 100 = Energetic/dynamic/vibrant
 
+15. **Target Audiences** (CRITICAL: Infer 1-3 audience segments based on website content):
+   Analyze the website to determine WHO this company sells to. Look for signals:
+   - Pricing page: enterprise pricing = enterprise audience, affordable = SMB/consumer
+   - Case studies/testimonials: what titles/companies are featured?
+   - Language: technical jargon = developers/engineers, business speak = executives
+   - Products/services described: who would need these?
+   - Imagery: professionals, consumers, specific demographics?
+
+   For each audience, provide:
+   - name: Short descriptive name (e.g., "Enterprise HR Leaders", "Small Business Owners", "Tech Founders")
+   - isPrimary: boolean (mark only ONE as primary - the main target customer)
+   - demographics: age range, income level if apparent from pricing/positioning
+   - firmographics (for B2B): company sizes, industries, job titles, departments, decision-making role
+   - psychographics: 2-3 pain points, 2-3 goals, key values
+   - behavioral: content preferences, platforms they use, buying process (impulse/considered/committee)
+   - confidence: 0-100 how confident you are in this inference
+
+   B2B signals: mentions of "teams", "enterprise", job titles, integrations, ROI language
+   B2C signals: lifestyle imagery, personal benefits, emotional language, individual pricing
+
 IMPORTANT: Do NOT default all personality values to 50 and DO NOT always pick generic options. Analyze the actual visual design:
 - A tech startup with bold colors and playful copy should have visualStyle "playful-vibrant" or "tech-futuristic", brandTone "bold-confident" or "playful-witty"
 - A law firm with serif fonts and dark colors should have visualStyle "corporate-professional" or "elegant-refined", brandTone "authoritative-expert"
@@ -455,7 +508,35 @@ Return ONLY a valid JSON object with this exact structure:
   "signalTone": number,
   "signalDensity": number,
   "signalWarmth": number,
-  "signalEnergy": number
+  "signalEnergy": number,
+  "audiences": [
+    {
+      "name": "string (e.g., 'Enterprise HR Directors')",
+      "isPrimary": true,
+      "demographics": {
+        "ageRange": { "min": 30, "max": 55 },
+        "income": "high | enterprise"
+      },
+      "firmographics": {
+        "companySize": ["201-500", "500+"],
+        "industries": ["Technology", "Finance"],
+        "jobTitles": ["HR Director", "VP of People"],
+        "departments": ["Human Resources"],
+        "decisionMakingRole": "decision-maker"
+      },
+      "psychographics": {
+        "painPoints": ["Scaling hiring", "Reducing time-to-hire"],
+        "goals": ["Build great teams", "Improve retention"],
+        "values": ["Efficiency", "Quality"]
+      },
+      "behavioral": {
+        "contentPreferences": ["case studies", "ROI reports"],
+        "platforms": ["LinkedIn", "Email"],
+        "buyingProcess": "committee"
+      },
+      "confidence": 85
+    }
+  ]
 }`;
 
     // Try to include screenshot, but be prepared to retry without it if it fails
@@ -597,6 +678,28 @@ Return ONLY a valid JSON object with this exact structure:
     brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : "modern-sleek";
     brandDataWithFeels.brandTone = isValidBrandTone ? brandData.brandTone : "professional-trustworthy";
     brandDataWithFeels.industryArchetype = isValidIndustryArchetype ? brandData.industryArchetype : null;
+
+    // Ensure audiences is an array and validate each audience
+    const rawAudiences = brandData.audiences || [];
+    brandDataWithFeels.audiences = Array.isArray(rawAudiences)
+      ? rawAudiences.map((audience: InferredAudience) => ({
+          name: audience.name || "Unknown Audience",
+          isPrimary: !!audience.isPrimary,
+          demographics: audience.demographics || {},
+          firmographics: audience.firmographics || {},
+          psychographics: audience.psychographics || {},
+          behavioral: audience.behavioral || {},
+          confidence: typeof audience.confidence === "number" ? Math.min(100, Math.max(0, audience.confidence)) : 50,
+        }))
+      : [];
+
+    // Ensure exactly one primary audience if audiences exist
+    if (brandDataWithFeels.audiences.length > 0) {
+      const hasPrimary = brandDataWithFeels.audiences.some((a) => a.isPrimary);
+      if (!hasPrimary) {
+        brandDataWithFeels.audiences[0].isPrimary = true;
+      }
+    }
 
     return NextResponse.json({
       success: true,
