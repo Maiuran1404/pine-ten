@@ -366,7 +366,7 @@ function DashboardContent() {
 
         {/* Main Input Card */}
         <div className="w-full max-w-2xl mb-4 sm:mb-6">
-          <div className="bg-white dark:bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg overflow-hidden">
+          <div className="bg-white/80 dark:bg-card/40 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-border/50 shadow-lg overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
               <div className="px-4 py-3 border-b border-border/50">
@@ -512,7 +512,7 @@ function DashboardContent() {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className="px-4 py-2.5 rounded-full border border-border bg-white dark:bg-card hover:bg-muted hover:border-foreground/30 transition-all text-sm text-foreground whitespace-nowrap flex-shrink-0 flex items-center gap-2"
+                    className="px-4 py-2.5 rounded-full border border-border/50 bg-white/60 dark:bg-card/30 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/50 hover:border-foreground/20 transition-all text-sm text-foreground whitespace-nowrap flex-shrink-0 flex items-center gap-2"
                   >
                     <span>{icon}</span>
                     <span>{category}</span>
@@ -541,7 +541,7 @@ function DashboardContent() {
                       handleTemplateClick(template);
                       setSelectedCategory(null);
                     }}
-                    className="w-full text-left px-4 py-3 rounded-lg bg-card/50 hover:bg-card border border-transparent hover:border-border transition-all text-sm text-foreground flex items-center justify-between group"
+                    className="w-full text-left px-4 py-3 rounded-lg bg-white/40 dark:bg-card/20 backdrop-blur-lg hover:bg-white/60 dark:hover:bg-card/40 border border-transparent hover:border-border/30 transition-all text-sm text-foreground flex items-center justify-between group"
                   >
                     <span className="leading-relaxed">{template}</span>
                     <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-4 flex-shrink-0">↗</span>
@@ -555,7 +555,7 @@ function DashboardContent() {
 
       {/* Inspiration Gallery - Grouped by Content Type */}
       {styleReferences.length > 0 && (
-        <div className="relative w-full bg-background pt-4">
+        <div className="relative w-full pt-4">
           {/* Grouped Masonry Grid */}
           <div className="relative pb-8">
             <div className="max-w-6xl mx-auto px-6">

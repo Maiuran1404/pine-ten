@@ -18,7 +18,7 @@ export function Header({ credits = 0, onMenuClick }: HeaderProps) {
   return (
     <>
       <header
-        className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-background/60 backdrop-blur-xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-border/20 after:to-transparent"
+        className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-background/30 backdrop-blur-2xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-border/10 after:to-transparent"
         style={{ fontFamily: "'Satoshi', sans-serif" }}
       >
         {onMenuClick ? (

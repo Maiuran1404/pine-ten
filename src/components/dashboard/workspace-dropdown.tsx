@@ -55,7 +55,7 @@ export function WorkspaceDropdown({
   const trigger = (
     <button
       className={cn(
-        "flex items-center gap-2 rounded-lg border border-border/50 hover:bg-sidebar-accent/50 transition-colors w-full",
+        "flex items-center gap-2 rounded-lg border border-border/30 bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-colors w-full",
         isCollapsed ? "p-2 justify-center" : "p-2 pr-3"
       )}
     >
