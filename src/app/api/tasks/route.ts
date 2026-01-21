@@ -10,6 +10,7 @@ import {
   freelancerProfiles,
   creditTransactions,
   taskActivityLog,
+  briefs,
 } from "@/db/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
@@ -247,6 +248,8 @@ export async function POST(request: NextRequest) {
       styleReferences,
       attachments,
       moodboardItems,
+      briefId,
+      briefData,
     } = validatedData;
 
     // Use transaction to prevent race conditions
@@ -368,6 +371,18 @@ export async function POST(request: NextRequest) {
             isDeliverable: false,
           }))
         );
+      }
+
+      // Link brief to task if briefId provided
+      if (briefId) {
+        await tx
+          .update(briefs)
+          .set({
+            taskId: newTask.id,
+            status: "SUBMITTED",
+            updatedAt: new Date(),
+          })
+          .where(eq(briefs.id, briefId));
       }
 
       return { task: newTask, freelancer: assignedFreelancer };

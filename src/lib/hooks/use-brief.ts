@@ -581,6 +581,9 @@ export function useBrief({
     isReady,
     pendingQuestion,
     isGeneratingOutline,
+    isSaving,
+    isLoading,
+    briefId,
     processMessage,
     confirmField,
     updateField,
@@ -597,6 +600,7 @@ export function useBrief({
     generateOutline,
     resetBrief,
     exportBrief,
+    saveBrief,
   };
 }
 

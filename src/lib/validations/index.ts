@@ -62,6 +62,9 @@ export const createTaskSchema = z.object({
     )
     .optional()
     .default([]),
+  // Brief integration
+  briefId: z.string().uuid().optional().nullable(),
+  briefData: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 export const updateTaskSchema = z.object({
