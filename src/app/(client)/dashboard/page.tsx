@@ -478,16 +478,8 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Right side - Improve Prompt + Submit */}
+              {/* Right side - Submit */}
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  disabled={!chatInput.trim()}
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Improve Prompt</span>
-                </button>
-
                 <button
                   onClick={() => handleSubmit()}
                   disabled={

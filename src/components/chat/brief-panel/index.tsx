@@ -221,7 +221,7 @@ function DimensionsDisplay({ dimensions, platform }: DimensionsDisplayProps) {
           variant="secondary"
           className="text-xs font-normal"
         >
-          {dim.name}: {dim.width}x{dim.height}
+          {dim.label}: {dim.width}x{dim.height}
         </Badge>
       ))}
     </div>
@@ -419,7 +419,7 @@ export function BriefPanel({
 Task Summary: ${brief.taskSummary.value || "TBD"}
 Intent: ${brief.intent.value || "TBD"}
 Platform: ${brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : "TBD"}
-Dimensions: ${brief.dimensions.map(d => `${d.name} (${d.width}x${d.height})`).join(", ") || "TBD"}
+Dimensions: ${brief.dimensions.map(d => `${d.label} (${d.width}x${d.height})`).join(", ") || "TBD"}
 Audience: ${brief.audience.value?.name || "TBD"}
 Topic: ${brief.topic.value || "TBD"}
     `.trim();

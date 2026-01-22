@@ -11,19 +11,19 @@ import type { Dimension, Platform, ContentType } from "@/components/chat/brief-p
 
 export const INSTAGRAM_DIMENSIONS: Record<string, Dimension[]> = {
   post: [
-    { name: "Square", width: 1080, height: 1080, aspect: "1:1", isDefault: true },
-    { name: "Portrait", width: 1080, height: 1350, aspect: "4:5" },
-    { name: "Landscape", width: 1080, height: 566, aspect: "1.91:1" },
+    { label: "Square", width: 1080, height: 1080, aspectRatio: "1:1", isDefault: true },
+    { label: "Portrait", width: 1080, height: 1350, aspectRatio: "4:5" },
+    { label: "Landscape", width: 1080, height: 566, aspectRatio: "1.91:1" },
   ],
   story: [
-    { name: "Story", width: 1080, height: 1920, aspect: "9:16", isDefault: true },
+    { label: "Story", width: 1080, height: 1920, aspectRatio: "9:16", isDefault: true },
   ],
   reel: [
-    { name: "Reel", width: 1080, height: 1920, aspect: "9:16", isDefault: true },
+    { label: "Reel", width: 1080, height: 1920, aspectRatio: "9:16", isDefault: true },
   ],
   carousel: [
-    { name: "Square Carousel", width: 1080, height: 1080, aspect: "1:1", isDefault: true },
-    { name: "Portrait Carousel", width: 1080, height: 1350, aspect: "4:5" },
+    { label: "Square Carousel", width: 1080, height: 1080, aspectRatio: "1:1", isDefault: true },
+    { label: "Portrait Carousel", width: 1080, height: 1350, aspectRatio: "4:5" },
   ],
 };
 
@@ -33,21 +33,21 @@ export const INSTAGRAM_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const LINKEDIN_DIMENSIONS: Record<string, Dimension[]> = {
   post: [
-    { name: "Landscape", width: 1200, height: 627, aspect: "1.91:1", isDefault: true },
-    { name: "Square", width: 1080, height: 1080, aspect: "1:1" },
-    { name: "Portrait", width: 1080, height: 1350, aspect: "4:5" },
+    { label: "Landscape", width: 1200, height: 627, aspectRatio: "1.91:1", isDefault: true },
+    { label: "Square", width: 1080, height: 1080, aspectRatio: "1:1" },
+    { label: "Portrait", width: 1080, height: 1350, aspectRatio: "4:5" },
   ],
   banner: [
-    { name: "Company Banner", width: 1128, height: 191, aspect: "5.9:1", isDefault: true },
-    { name: "Personal Banner", width: 1584, height: 396, aspect: "4:1" },
+    { label: "Company Banner", width: 1128, height: 191, aspectRatio: "5.9:1", isDefault: true },
+    { label: "Personal Banner", width: 1584, height: 396, aspectRatio: "4:1" },
   ],
   carousel: [
-    { name: "Document Carousel", width: 1080, height: 1080, aspect: "1:1", isDefault: true },
-    { name: "PDF Carousel", width: 1080, height: 1350, aspect: "4:5" },
+    { label: "Document Carousel", width: 1080, height: 1080, aspectRatio: "1:1", isDefault: true },
+    { label: "PDF Carousel", width: 1080, height: 1350, aspectRatio: "4:5" },
   ],
   ad: [
-    { name: "Sponsored Content", width: 1200, height: 627, aspect: "1.91:1", isDefault: true },
-    { name: "Square Ad", width: 1080, height: 1080, aspect: "1:1" },
+    { label: "Sponsored Content", width: 1200, height: 627, aspectRatio: "1.91:1", isDefault: true },
+    { label: "Square Ad", width: 1080, height: 1080, aspectRatio: "1:1" },
   ],
 };
 
@@ -57,20 +57,20 @@ export const LINKEDIN_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const FACEBOOK_DIMENSIONS: Record<string, Dimension[]> = {
   post: [
-    { name: "Landscape", width: 1200, height: 630, aspect: "1.91:1", isDefault: true },
-    { name: "Square", width: 1080, height: 1080, aspect: "1:1" },
+    { label: "Landscape", width: 1200, height: 630, aspectRatio: "1.91:1", isDefault: true },
+    { label: "Square", width: 1080, height: 1080, aspectRatio: "1:1" },
   ],
   story: [
-    { name: "Story", width: 1080, height: 1920, aspect: "9:16", isDefault: true },
+    { label: "Story", width: 1080, height: 1920, aspectRatio: "9:16", isDefault: true },
   ],
   ad: [
-    { name: "Feed Ad", width: 1200, height: 628, aspect: "1.91:1", isDefault: true },
-    { name: "Square Ad", width: 1080, height: 1080, aspect: "1:1" },
-    { name: "Carousel Ad", width: 1080, height: 1080, aspect: "1:1" },
+    { label: "Feed Ad", width: 1200, height: 628, aspectRatio: "1.91:1", isDefault: true },
+    { label: "Square Ad", width: 1080, height: 1080, aspectRatio: "1:1" },
+    { label: "Carousel Ad", width: 1080, height: 1080, aspectRatio: "1:1" },
   ],
   banner: [
-    { name: "Page Cover", width: 820, height: 312, aspect: "2.63:1", isDefault: true },
-    { name: "Event Cover", width: 1920, height: 1005, aspect: "1.91:1" },
+    { label: "Page Cover", width: 820, height: 312, aspectRatio: "2.63:1", isDefault: true },
+    { label: "Event Cover", width: 1920, height: 1005, aspectRatio: "1.91:1" },
   ],
 };
 
@@ -80,15 +80,15 @@ export const FACEBOOK_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const TWITTER_DIMENSIONS: Record<string, Dimension[]> = {
   post: [
-    { name: "Single Image", width: 1200, height: 675, aspect: "16:9", isDefault: true },
-    { name: "Two Images", width: 700, height: 800, aspect: "7:8" },
-    { name: "Square", width: 1080, height: 1080, aspect: "1:1" },
+    { label: "Single Image", width: 1200, height: 675, aspectRatio: "16:9", isDefault: true },
+    { label: "Two Images", width: 700, height: 800, aspectRatio: "7:8" },
+    { label: "Square", width: 1080, height: 1080, aspectRatio: "1:1" },
   ],
   banner: [
-    { name: "Header", width: 1500, height: 500, aspect: "3:1", isDefault: true },
+    { label: "Header", width: 1500, height: 500, aspectRatio: "3:1", isDefault: true },
   ],
   ad: [
-    { name: "Promoted Tweet", width: 1200, height: 675, aspect: "16:9", isDefault: true },
+    { label: "Promoted Tweet", width: 1200, height: 675, aspectRatio: "16:9", isDefault: true },
   ],
 };
 
@@ -98,16 +98,16 @@ export const TWITTER_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const YOUTUBE_DIMENSIONS: Record<string, Dimension[]> = {
   thumbnail: [
-    { name: "Thumbnail", width: 1280, height: 720, aspect: "16:9", isDefault: true },
+    { label: "Thumbnail", width: 1280, height: 720, aspectRatio: "16:9", isDefault: true },
   ],
   banner: [
-    { name: "Channel Art", width: 2560, height: 1440, aspect: "16:9", isDefault: true },
-    { name: "Safe Area", width: 1546, height: 423, aspect: "3.66:1" },
+    { label: "Channel Art", width: 2560, height: 1440, aspectRatio: "16:9", isDefault: true },
+    { label: "Safe Area", width: 1546, height: 423, aspectRatio: "3.66:1" },
   ],
   video: [
-    { name: "Standard HD", width: 1920, height: 1080, aspect: "16:9", isDefault: true },
-    { name: "4K", width: 3840, height: 2160, aspect: "16:9" },
-    { name: "Shorts", width: 1080, height: 1920, aspect: "9:16" },
+    { label: "Standard HD", width: 1920, height: 1080, aspectRatio: "16:9", isDefault: true },
+    { label: "4K", width: 3840, height: 2160, aspectRatio: "16:9" },
+    { label: "Shorts", width: 1080, height: 1920, aspectRatio: "9:16" },
   ],
 };
 
@@ -117,11 +117,11 @@ export const YOUTUBE_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const TIKTOK_DIMENSIONS: Record<string, Dimension[]> = {
   video: [
-    { name: "Standard", width: 1080, height: 1920, aspect: "9:16", isDefault: true },
+    { label: "Standard", width: 1080, height: 1920, aspectRatio: "9:16", isDefault: true },
   ],
   ad: [
-    { name: "In-Feed Ad", width: 1080, height: 1920, aspect: "9:16", isDefault: true },
-    { name: "TopView", width: 1080, height: 1920, aspect: "9:16" },
+    { label: "In-Feed Ad", width: 1080, height: 1920, aspectRatio: "9:16", isDefault: true },
+    { label: "TopView", width: 1080, height: 1920, aspectRatio: "9:16" },
   ],
 };
 
@@ -131,22 +131,22 @@ export const TIKTOK_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const PRINT_DIMENSIONS: Record<string, Dimension[]> = {
   poster: [
-    { name: "A4 Portrait", width: 2480, height: 3508, aspect: "1:1.41", isDefault: true },
-    { name: "A4 Landscape", width: 3508, height: 2480, aspect: "1.41:1" },
-    { name: "A3 Portrait", width: 3508, height: 4961, aspect: "1:1.41" },
-    { name: "Letter Portrait", width: 2550, height: 3300, aspect: "1:1.29" },
+    { label: "A4 Portrait", width: 2480, height: 3508, aspectRatio: "1:1.41", isDefault: true },
+    { label: "A4 Landscape", width: 3508, height: 2480, aspectRatio: "1.41:1" },
+    { label: "A3 Portrait", width: 3508, height: 4961, aspectRatio: "1:1.41" },
+    { label: "Letter Portrait", width: 2550, height: 3300, aspectRatio: "1:1.29" },
   ],
   flyer: [
-    { name: "A5 Portrait", width: 1748, height: 2480, aspect: "1:1.42", isDefault: true },
-    { name: "A5 Landscape", width: 2480, height: 1748, aspect: "1.42:1" },
-    { name: "DL Flyer", width: 1240, height: 2480, aspect: "1:2" },
+    { label: "A5 Portrait", width: 1748, height: 2480, aspectRatio: "1:1.42", isDefault: true },
+    { label: "A5 Landscape", width: 2480, height: 1748, aspectRatio: "1.42:1" },
+    { label: "DL Flyer", width: 1240, height: 2480, aspectRatio: "1:2" },
   ],
   banner: [
-    { name: "Roll-up (85x200cm)", width: 2551, height: 6000, aspect: "1:2.35", isDefault: true },
-    { name: "Wide Banner", width: 4800, height: 1200, aspect: "4:1" },
+    { label: "Roll-up (85x200cm)", width: 2551, height: 6000, aspectRatio: "1:2.35", isDefault: true },
+    { label: "Wide Banner", width: 4800, height: 1200, aspectRatio: "4:1" },
   ],
   card: [
-    { name: "Business Card", width: 1050, height: 600, aspect: "1.75:1", isDefault: true },
+    { label: "Business Card", width: 1050, height: 600, aspectRatio: "1.75:1", isDefault: true },
   ],
 };
 
@@ -156,21 +156,21 @@ export const PRINT_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const WEB_DIMENSIONS: Record<string, Dimension[]> = {
   banner: [
-    { name: "Leaderboard", width: 728, height: 90, aspect: "8:1", isDefault: true },
-    { name: "Medium Rectangle", width: 300, height: 250, aspect: "1.2:1" },
-    { name: "Large Rectangle", width: 336, height: 280, aspect: "1.2:1" },
-    { name: "Skyscraper", width: 160, height: 600, aspect: "1:3.75" },
-    { name: "Wide Skyscraper", width: 300, height: 600, aspect: "1:2" },
+    { label: "Leaderboard", width: 728, height: 90, aspectRatio: "8:1", isDefault: true },
+    { label: "Medium Rectangle", width: 300, height: 250, aspectRatio: "1.2:1" },
+    { label: "Large Rectangle", width: 336, height: 280, aspectRatio: "1.2:1" },
+    { label: "Skyscraper", width: 160, height: 600, aspectRatio: "1:3.75" },
+    { label: "Wide Skyscraper", width: 300, height: 600, aspectRatio: "1:2" },
   ],
   hero: [
-    { name: "Desktop Hero", width: 1920, height: 1080, aspect: "16:9", isDefault: true },
-    { name: "Wide Hero", width: 1920, height: 600, aspect: "3.2:1" },
-    { name: "Mobile Hero", width: 750, height: 1334, aspect: "1:1.78" },
+    { label: "Desktop Hero", width: 1920, height: 1080, aspectRatio: "16:9", isDefault: true },
+    { label: "Wide Hero", width: 1920, height: 600, aspectRatio: "3.2:1" },
+    { label: "Mobile Hero", width: 750, height: 1334, aspectRatio: "1:1.78" },
   ],
   ad: [
-    { name: "Google Display", width: 300, height: 250, aspect: "1.2:1", isDefault: true },
-    { name: "Billboard", width: 970, height: 250, aspect: "3.88:1" },
-    { name: "Half Page", width: 300, height: 600, aspect: "1:2" },
+    { label: "Google Display", width: 300, height: 250, aspectRatio: "1.2:1", isDefault: true },
+    { label: "Billboard", width: 970, height: 250, aspectRatio: "3.88:1" },
+    { label: "Half Page", width: 300, height: 600, aspectRatio: "1:2" },
   ],
 };
 
@@ -180,16 +180,16 @@ export const WEB_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const EMAIL_DIMENSIONS: Record<string, Dimension[]> = {
   header: [
-    { name: "Email Header", width: 600, height: 200, aspect: "3:1", isDefault: true },
-    { name: "Wide Header", width: 600, height: 150, aspect: "4:1" },
+    { label: "Email Header", width: 600, height: 200, aspectRatio: "3:1", isDefault: true },
+    { label: "Wide Header", width: 600, height: 150, aspectRatio: "4:1" },
   ],
   banner: [
-    { name: "Full Width", width: 600, height: 300, aspect: "2:1", isDefault: true },
-    { name: "Hero Banner", width: 600, height: 400, aspect: "1.5:1" },
+    { label: "Full Width", width: 600, height: 300, aspectRatio: "2:1", isDefault: true },
+    { label: "Hero Banner", width: 600, height: 400, aspectRatio: "1.5:1" },
   ],
   thumbnail: [
-    { name: "Product Image", width: 200, height: 200, aspect: "1:1", isDefault: true },
-    { name: "Feature Image", width: 280, height: 280, aspect: "1:1" },
+    { label: "Product Image", width: 200, height: 200, aspectRatio: "1:1", isDefault: true },
+    { label: "Feature Image", width: 280, height: 280, aspectRatio: "1:1" },
   ],
 };
 
@@ -199,9 +199,9 @@ export const EMAIL_DIMENSIONS: Record<string, Dimension[]> = {
 
 export const PRESENTATION_DIMENSIONS: Record<string, Dimension[]> = {
   slide: [
-    { name: "Widescreen (16:9)", width: 1920, height: 1080, aspect: "16:9", isDefault: true },
-    { name: "Standard (4:3)", width: 1024, height: 768, aspect: "4:3" },
-    { name: "A4 Slide", width: 1024, height: 768, aspect: "4:3" },
+    { label: "Widescreen (16:9)", width: 1920, height: 1080, aspectRatio: "16:9", isDefault: true },
+    { label: "Standard (4:3)", width: 1024, height: 768, aspectRatio: "4:3" },
+    { label: "A4 Slide", width: 1024, height: 768, aspectRatio: "4:3" },
   ],
 };
 
@@ -439,12 +439,12 @@ export function normalizeContentType(input: string): ContentType | null {
  * Format dimensions for display
  */
 export function formatDimension(dim: Dimension): string {
-  return `${dim.width} × ${dim.height} (${dim.aspect})`;
+  return `${dim.width} × ${dim.height} (${dim.aspectRatio})`;
 }
 
 /**
  * Format dimensions list for brief
  */
 export function formatDimensionsList(dims: Dimension[]): string {
-  return dims.map((d) => `${d.name}: ${d.width}×${d.height}`).join(", ");
+  return dims.map((d) => `${d.label}: ${d.width}×${d.height}`).join(", ");
 }

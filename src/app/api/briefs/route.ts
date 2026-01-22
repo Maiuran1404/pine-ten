@@ -269,10 +269,10 @@ function convertDbBriefToLiveBrief(dbBrief: typeof briefs.$inferSelect): LiveBri
 
   const dimensions: Dimension[] = dimensionsRaw
     ? dimensionsRaw.map((d) => ({
-        name: d.name || d.label || "",
+        label: d.label || d.name || "",
         width: d.width,
         height: d.height,
-        aspect: d.aspect || d.aspectRatio || `${d.width}:${d.height}`,
+        aspectRatio: d.aspectRatio || d.aspect || `${d.width}:${d.height}`,
       }))
     : [];
 

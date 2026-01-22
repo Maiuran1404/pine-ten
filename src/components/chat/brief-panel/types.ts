@@ -67,11 +67,11 @@ export type ContentType = (typeof CONTENT_TYPES)[number];
 // =============================================================================
 
 export interface Dimension {
-  name: string;
   width: number;
   height: number;
-  aspect: string;
-  isDefault?: boolean;
+  label: string;
+  aspectRatio: string;
+  isDefault?: boolean; // Used in client-side for default selection UI
 }
 
 // =============================================================================
@@ -149,13 +149,16 @@ export interface VisualDirection {
 // AUDIENCE BRIEF TYPES
 // =============================================================================
 
+// Source for audience values (different from FieldSource - no "pending")
+export type AudienceSource = "inferred" | "selected" | "custom";
+
 export interface AudienceBrief {
   name: string;
   demographics?: string;
   psychographics?: string;
   painPoints?: string[];
   goals?: string[];
-  source: FieldSource;
+  source?: AudienceSource;
 }
 
 // =============================================================================
