@@ -382,6 +382,9 @@ export const deliverableStyleReferences = pgTable(
     imageHash: text("image_hash"), // Perceptual hash for content-based deduplication
     sourceUrl: text("source_url"), // Original URL before upload to storage
 
+    // Example output for preview
+    exampleOutputUrl: text("example_output_url"), // URL to an example of generated output using this style
+
     // Ordering
     featuredOrder: integer("featured_order").notNull().default(0),
     displayOrder: integer("display_order").notNull().default(0),

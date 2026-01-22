@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { chat, parseTaskFromChat, getStyleReferencesByCategory } from "@/lib/ai/chat";
+import { chat, parseTaskFromChat, getStyleReferencesByCategory, type ChatContext } from "@/lib/ai/chat";
 import { withRateLimit } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
 import {
@@ -19,8 +19,62 @@ import {
   aiEnhancedStyleSearch,
   refineStyleSearch,
 } from "@/lib/ai/semantic-style-search";
+import {
+  inferFromMessage,
+  detectBrandMention,
+  analyzeRequestCompleteness,
+} from "@/lib/ai/inference-engine";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
 import { normalizeDeliverableType } from "@/lib/constants/reference-libraries";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+// Industry detection from message content
+const INDUSTRY_KEYWORDS: Record<string, string[]> = {
+  "food_beverage": ["coffee", "cafe", "restaurant", "bakery", "food", "drinks", "menu", "recipe", "catering", "bar", "kitchen", "chef", "brew", "roast", "dining"],
+  "fitness": ["gym", "fitness", "workout", "exercise", "yoga", "wellness", "training", "athletic", "sports", "running", "crossfit"],
+  "technology": ["tech", "software", "app", "saas", "ai", "api", "platform", "startup", "developer", "engineering", "data", "cloud", "machine learning"],
+  "finance": ["bank", "finance", "fintech", "investment", "insurance", "payment", "crypto", "trading", "accounting"],
+  "fashion": ["fashion", "clothing", "apparel", "boutique", "style", "designer", "wear", "outfit", "accessories"],
+  "beauty": ["beauty", "skincare", "cosmetics", "spa", "salon", "makeup", "skin", "hair", "nails"],
+  "real_estate": ["real estate", "property", "home", "apartment", "rental", "house", "realtor", "housing"],
+  "education": ["education", "course", "learning", "school", "university", "teach", "tutor", "academy", "training"],
+  "healthcare": ["health", "medical", "clinic", "doctor", "patient", "care", "hospital", "therapy", "dental"],
+  "entertainment": ["entertainment", "music", "gaming", "movie", "film", "video", "streaming", "podcast"],
+  "retail": ["retail", "shop", "store", "ecommerce", "shopping", "product", "merchandise"],
+  "luxury": ["luxury", "premium", "exclusive", "high-end", "upscale", "boutique", "designer"],
+};
+
+/**
+ * Detect industry from conversation messages
+ */
+function detectIndustryFromMessage(messages: { role: string; content: string }[]): string | null {
+  const recentText = messages
+    .filter(m => m.role === "user")
+    .slice(-3)
+    .map(m => m.content.toLowerCase())
+    .join(" ");
+
+  // Count keyword matches per industry
+  const industryScores: Record<string, number> = {};
+
+  for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
+    let score = 0;
+    for (const keyword of keywords) {
+      if (recentText.includes(keyword)) {
+        score++;
+      }
+    }
+    if (score > 0) {
+      industryScores[industry] = score;
+    }
+  }
+
+  // Return the industry with the highest score
+  const sortedIndustries = Object.entries(industryScores).sort((a, b) => b[1] - a[1]);
+  return sortedIndustries.length > 0 ? sortedIndustries[0][0] : null;
+}
 
 /**
  * Extract context from conversation messages for style filtering
@@ -95,10 +149,14 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
   // Build topic string
   const topic = topicKeywords.length > 0 ? topicKeywords.join(" ") : undefined;
 
+  // Detect industry from messages
+  const detectedIndustry = detectIndustryFromMessage(messages);
+
   return {
     topic,
     keywords: keywords.length > 0 ? keywords : undefined,
     platform,
+    industry: detectedIndustry || undefined,
   };
 }
 
@@ -120,10 +178,56 @@ async function handler(request: NextRequest) {
       styleOffset,
       deliverableStyleMarker: clientStyleMarker,
       moodboardHasStyles, // Client indicates if moodboard already has style items
+      brief, // Brief data for confirmed fields
     } = body;
 
     // Extract context from messages for content-aware style filtering
     const styleContext = extractStyleContext(messages || []);
+
+    // Build chat context for smarter responses
+    let chatContext: ChatContext = {};
+
+    // Fetch user's company for brand detection
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      with: {
+        company: true,
+      },
+    });
+    const company = user?.company;
+
+    // Analyze first message for brand detection and request completeness
+    const isFirstMessage = messages?.length === 1;
+    if (isFirstMessage && messages?.[0]?.role === "user") {
+      const firstMessage = messages[0].content;
+
+      // Detect brand mentions
+      if (company?.name) {
+        const brandDetection = detectBrandMention(
+          firstMessage,
+          company.name,
+          company.keywords || []
+        );
+        if (brandDetection.detected) {
+          chatContext.brandDetection = brandDetection;
+        }
+      }
+
+      // Analyze request completeness
+      const inference = inferFromMessage({ message: firstMessage });
+      chatContext.requestCompleteness = analyzeRequestCompleteness(inference);
+    }
+
+    // Extract confirmed fields from brief to prevent re-asking
+    if (brief) {
+      chatContext.confirmedFields = {
+        platform: brief.platform?.source === "confirmed" ? brief.platform.value : undefined,
+        intent: brief.intent?.source === "confirmed" ? brief.intent.value : undefined,
+        topic: brief.topic?.source === "confirmed" ? brief.topic.value : undefined,
+        audience: brief.audience?.value?.name,
+        contentType: brief.contentType?.source === "confirmed" ? brief.contentType.value : undefined,
+      };
+    }
 
     // If client is requesting more/different styles directly, skip AI call
     if (clientStyleMarker && (clientStyleMarker.type === "more" || clientStyleMarker.type === "different")) {
@@ -167,8 +271,8 @@ async function handler(request: NextRequest) {
       });
     }
 
-    // Get AI response
-    const response = await chat(messages, session.user.id);
+    // Get AI response with context
+    const response = await chat(messages, session.user.id, chatContext);
 
     // Check if a task proposal was generated
     const taskProposal = parseTaskFromChat(response.content);

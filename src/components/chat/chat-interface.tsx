@@ -45,6 +45,7 @@ import {
   Download,
   ArrowRight,
   Lightbulb,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
@@ -1592,12 +1593,73 @@ export function ChatInterface({
 
   const chatTitle = seamlessTransition ? getChatTitle() : null;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showStartOverDialog, setShowStartOverDialog] = useState(false);
 
   const handleDeleteChat = () => {
     deleteDraft(draftId);
     onDraftUpdate?.();
     router.push("/dashboard");
   };
+
+  // Start Over - Clear conversation and start fresh
+  const handleStartOver = () => {
+    // Reset all state
+    setMessages([]);
+    setPendingTask(null);
+    setSelectedStyles([]);
+    setSelectedDeliverableStyles([]);
+    setCurrentDeliverableType(null);
+    setStyleOffset({});
+    setExcludedStyleAxes([]);
+    setUploadedFiles([]);
+    setTaskSubmitted(false);
+    setShowManualSubmit(false);
+    setHasRequestedTaskSummary(false);
+    clearMoodboard();
+    setCompletedTypingIds(new Set());
+
+    // Delete the draft
+    if (draftId) {
+      deleteDraft(draftId);
+      onDraftUpdate?.();
+    }
+
+    // Navigate to fresh chat
+    router.push("/dashboard/chat");
+    setShowStartOverDialog(false);
+  };
+
+  // Edit Last Message - Allow user to edit and re-send
+  const handleEditLastMessage = () => {
+    const lastUserMsgIndex = [...messages].reverse().findIndex(m => m.role === "user");
+    if (lastUserMsgIndex === -1) return;
+
+    const actualIndex = messages.length - 1 - lastUserMsgIndex;
+    const msgToEdit = messages[actualIndex];
+
+    // Put the message content back in the input
+    setInput(msgToEdit.content);
+
+    // Remove all messages from this one onwards
+    setMessages(prev => prev.slice(0, actualIndex));
+
+    // Clear any pending task that was generated
+    setPendingTask(null);
+    setShowManualSubmit(false);
+
+    // Focus the input
+    inputRef.current?.focus();
+  };
+
+  // Find the index of the last user message for edit button
+  const lastUserMessageIndex = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        return i;
+      }
+    }
+    return -1;
+  }, [messages]);
 
   // Format date for side panel
   const formatDate = (date: Date | string) => {
@@ -1694,6 +1756,16 @@ export function ChatInterface({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {messages.length > 0 && !isTaskMode && (
+                <button
+                  onClick={() => setShowStartOverDialog(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  title="Start a new conversation"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Start Over</span>
+                </button>
+              )}
               <button
                 onClick={() => setShowDeleteDialog(true)}
                 className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -1726,6 +1798,32 @@ export function ChatInterface({
                 className="bg-red-500 text-white hover:bg-red-600 border-0"
               >
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Start Over confirmation dialog */}
+        <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+          <AlertDialogContent className="bg-card border-border max-w-md">
+            <AlertDialogHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
+                <RotateCcw className="h-6 w-6 text-amber-400" />
+              </div>
+              <AlertDialogTitle className="text-center text-foreground">Start fresh?</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-muted-foreground">
+                This will clear the current conversation and start a new one. Your moodboard and brief will also be reset.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+              <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleStartOver}
+                className="bg-amber-500 text-white hover:bg-amber-600 border-0"
+              >
+                Start Over
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1986,11 +2084,21 @@ export function ChatInterface({
                     </div>
                   ) : (
                     /* User message - right aligned flat bubble */
-                    <div className="max-w-[75%]">
-                      <div className="bg-muted/60 rounded-2xl px-4 py-2.5">
+                    <div className="max-w-[75%] group">
+                      <div className="bg-muted/60 rounded-2xl px-4 py-2.5 relative">
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {message.content}
                         </p>
+                        {/* Edit button - only show on last user message when not loading */}
+                        {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
+                          <button
+                            onClick={handleEditLastMessage}
+                            className="absolute -left-8 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
+                            title="Edit this message"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                       {/* User attachments */}
                       {message.attachments && message.attachments.length > 0 && (

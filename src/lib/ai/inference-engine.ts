@@ -845,6 +845,86 @@ export function applyInferenceToBrief(
 }
 
 // =============================================================================
+// REQUEST COMPLETENESS ANALYSIS
+// =============================================================================
+
+/**
+ * Analyze how complete/detailed a user's request is
+ * Used to determine if AI should ask questions or proceed directly
+ */
+export function analyzeRequestCompleteness(inference: InferenceResult): "detailed" | "moderate" | "vague" {
+  const highConfidenceFields = [
+    inference.platform.confidence >= 0.75,
+    inference.intent.confidence >= 0.6,
+    inference.topic.confidence >= 0.5,
+    inference.contentType.confidence >= 0.6,
+  ].filter(Boolean).length;
+
+  if (highConfidenceFields >= 3) return "detailed";
+  if (highConfidenceFields <= 1) return "vague";
+  return "moderate";
+}
+
+// =============================================================================
+// BRAND DETECTION
+// =============================================================================
+
+/**
+ * Detect if user mentions a brand name in their message
+ * Returns info about whether the mentioned brand matches their saved profile
+ */
+export function detectBrandMention(
+  message: string,
+  companyName: string | null,
+  companyKeywords: string[] = []
+): { detected: boolean; mentionedBrand: string | null; matchesProfile: boolean } {
+  if (!companyName) return { detected: false, mentionedBrand: null, matchesProfile: false };
+
+  const messageLower = message.toLowerCase();
+  const companyLower = companyName.toLowerCase();
+
+  // Check if mentions a brand name
+  const brandPatterns = [
+    // "for [Brand Name]" pattern
+    /\bfor\s+["']?([A-Z][A-Za-z0-9\s&]+?)["']?\s*(?:brand|company|business|shop|store)?(?:\s|,|\.|\?|$)/i,
+    // "my/our brand [Name]" pattern
+    /\b(?:my|our)\s+(?:brand|company|business)\s+["']?([A-Z][A-Za-z0-9\s&]+?)["']?(?:\s|,|\.|\?|$)/i,
+    // "[Name]'s new product/launch/campaign" pattern
+    /\b([A-Z][A-Za-z0-9\s&]{2,30})(?:'s|'s)\s+(?:new|product|launch|campaign)/i,
+    // Quoted brand name pattern
+    /["']([A-Z][A-Za-z0-9\s&]{2,30})["']/,
+    // "brand called [Name]" pattern
+    /\bbrand\s+(?:called|named)\s+["']?([A-Z][A-Za-z0-9\s&]+?)["']?(?:\s|,|\.|\?|$)/i,
+  ];
+
+  for (const pattern of brandPatterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) {
+      const mentioned = match[1].trim();
+
+      // Skip common words that might be false positives
+      const commonWords = ["instagram", "linkedin", "facebook", "twitter", "youtube", "tiktok",
+                           "carousel", "post", "story", "reel", "ad", "banner", "content"];
+      if (commonWords.includes(mentioned.toLowerCase())) continue;
+
+      const matchesProfile = mentioned.toLowerCase() === companyLower ||
+        companyKeywords.some(k => k.toLowerCase() === mentioned.toLowerCase()) ||
+        companyLower.includes(mentioned.toLowerCase()) ||
+        mentioned.toLowerCase().includes(companyLower);
+
+      return { detected: true, mentionedBrand: mentioned, matchesProfile };
+    }
+  }
+
+  // Also check if the company name itself is mentioned (positive match)
+  if (messageLower.includes(companyLower)) {
+    return { detected: true, mentionedBrand: companyName, matchesProfile: true };
+  }
+
+  return { detected: false, mentionedBrand: null, matchesProfile: false };
+}
+
+// =============================================================================
 // SHOULD ASK QUESTION
 // =============================================================================
 

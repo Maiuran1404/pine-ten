@@ -768,6 +768,16 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ChatContext {
+  brandDetection?: {
+    detected: boolean;
+    mentionedBrand: string | null;
+    matchesProfile: boolean;
+  };
+  requestCompleteness?: "detailed" | "moderate" | "vague";
+  confirmedFields?: Record<string, string | undefined>;
+}
+
 export interface DeliverableStyleMarker {
   type: "initial" | "more" | "different" | "semantic" | "refine";
   deliverableType: string;
@@ -779,7 +789,8 @@ export interface DeliverableStyleMarker {
 
 export async function chat(
   messages: ChatMessage[],
-  userId: string
+  userId: string,
+  context?: ChatContext
 ): Promise<{
   content: string;
   styleReferences?: string[];
@@ -856,9 +867,74 @@ Use this information to make smart recommendations and personalize all creative 
     : "No brand profile available for this client. You may need to ask basic questions about their brand.";
 
   const basePrompt = await getSystemPrompt();
+
+  // Build brand detection context
+  let brandDetectionContext = "";
+  if (context?.brandDetection?.detected && context.brandDetection.mentionedBrand) {
+    if (!context.brandDetection.matchesProfile && company?.name) {
+      brandDetectionContext = `
+BRAND CONTEXT AWARENESS:
+- User's saved brand: ${company.name}
+- User mentioned brand in message: "${context.brandDetection.mentionedBrand}"
+- NOTE: The mentioned brand differs from the saved brand profile.
+- You should ask: "I see you're creating for ${context.brandDetection.mentionedBrand}. Should I use your saved ${company.name} brand guidelines, or work with what you've described?"
+- Use [QUICK_OPTIONS] with: {"question": "Which brand should I use?", "options": ["Use my saved brand (${company.name})", "Use ${context.brandDetection.mentionedBrand}", "This is a new brand"]}
+`;
+    }
+  }
+
+  // Build request completeness context
+  let completenessContext = "";
+  if (context?.requestCompleteness) {
+    if (context.requestCompleteness === "detailed") {
+      completenessContext = `
+REQUEST COMPLETENESS: DETAILED
+- User provided comprehensive information
+- Acknowledge extracted info concisely (e.g., "Instagram carousel for product launch.")
+- Show [DELIVERABLE_STYLES: type] immediately
+- Ask only about truly missing critical pieces
+- Proceed directly to style selection
+`;
+    } else if (context.requestCompleteness === "vague") {
+      completenessContext = `
+REQUEST COMPLETENESS: VAGUE
+- User provided minimal information
+- Ask category first: "What are we creating today?"
+- Use [QUICK_OPTIONS] with categories
+- Then proceed with visuals after clarification
+`;
+    } else {
+      completenessContext = `
+REQUEST COMPLETENESS: MODERATE
+- User provided some information but missing key details
+- Show visuals quickly while gathering remaining info
+- Focus questions on the most important missing pieces
+`;
+    }
+  }
+
+  // Build confirmed fields context to prevent re-asking
+  let confirmedFieldsContext = "";
+  if (context?.confirmedFields && Object.values(context.confirmedFields).some(Boolean)) {
+    const confirmed = context.confirmedFields;
+    confirmedFieldsContext = `
+ALREADY CONFIRMED (DO NOT RE-ASK THESE):
+${confirmed.platform ? `- Platform: ${confirmed.platform}` : ""}
+${confirmed.intent ? `- Intent/Goal: ${confirmed.intent}` : ""}
+${confirmed.topic ? `- Topic: ${confirmed.topic}` : ""}
+${confirmed.audience ? `- Audience: ${confirmed.audience}` : ""}
+${confirmed.contentType ? `- Content Type: ${confirmed.contentType}` : ""}
+
+CRITICAL: Never ask about fields listed above. They have been confirmed by the user. Focus only on what's genuinely missing.
+`;
+  }
+
   const enhancedSystemPrompt = `${basePrompt}
 
 ${companyContext}
+${brandDetectionContext}
+${completenessContext}
+${confirmedFieldsContext}
 
 Available task categories:
 ${categories
@@ -961,22 +1037,51 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
     .trim();
 
-  // Post-process to remove enthusiastic language that slipped through
+  // Post-process to remove enthusiastic/sycophantic language that slipped through
+
+  // Banned opener patterns (expanded list)
+  const BANNED_OPENERS = [
+    // Enthusiastic affirmations
+    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
+    // Enthusiastic affirmations with "choice/pick"
+    /^(Great|Excellent|Good|Nice|Solid|Smart|Wise) (choice|pick|selection)[!,.]?\s*/i,
+    // Validation phrases
+    /^(Love it|That's great|That works|Sure thing|Absolutely|Definitely|Totally)[!,.]?\s*/i,
+    // Eager helper phrases
+    /^(I'd be happy to|I'd love to|Happy to|Glad to|Excited to)[!,.]?\s*/i,
+    /^(Of course|Certainly|Sure|Absolutely)[!,]?\s*/i,
+    // Acknowledgment phrases (keep simple, remove excessive)
+    /^(Got it|Noted|Understood|Makes sense|I see|I understand)[!,.]?\s*/i,
+  ];
+
+  // Banned mid-content patterns
+  const BANNED_MID = [
+    /\s+(That's exciting|That sounds amazing|I love that|That's great|That's wonderful)[!.]?\s*/gi,
+    /\s+(Super|Awesome|Amazing)(!|\s)/gi,
+    /\s+You're absolutely right[!.]?\s*/gi,
+    /\s+That's a (great|excellent|fantastic|wonderful) (idea|choice|direction)[!.]?\s*/gi,
+  ];
+
+  // Apply opener sanitization
   const originalLength = cleanContent.length;
-  cleanContent = cleanContent
-    // Remove enthusiastic openers at the start of the message (handles !, comma, or space after)
-    .replace(/^(Perfect[!,]?\s*|Great[!,]?\s*|Great choice[!,]?\s*|Good[!,]?\s*|Good choice[!,]?\s*|Excellent[!,]?\s*|Excellent choice[!,]?\s*|Amazing[!,]?\s*|Awesome[!,]?\s*|Wonderful[!,]?\s*|Fantastic[!,]?\s*|Love it[!,]?\s*|Nice[!,]?\s*|Nice choice[!,]?\s*|Solid[!,]?\s*|Solid choice[!,]?\s*|That works[!,]?\s*|Got it[!,.]?\s*|Noted[!,.]?\s*|Understood[!,.]?\s*|Sure[!,]?\s*|Okay[!,]?\s*|OK[!,]?\s*)/i, "");
+  for (const pattern of BANNED_OPENERS) {
+    cleanContent = cleanContent.replace(pattern, "");
+    if (cleanContent.length < originalLength) break; // Stop after first match
+  }
 
   // If we removed an opener, capitalize the first letter of remaining content
   if (cleanContent.length < originalLength && cleanContent.length > 0) {
     cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
   }
 
+  // Apply mid-content sanitization
+  for (const pattern of BANNED_MID) {
+    cleanContent = cleanContent.replace(pattern, " ");
+  }
+
   cleanContent = cleanContent
     // Remove emojis
     .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu, "")
-    // Remove enthusiastic phrases in the middle of text
-    .replace(/\s+(That's exciting!?|That sounds amazing!?|I love that!?|That's great!?)\s*/gi, " ")
     // Strip hex codes to hide technical color values from users
     .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, " ")
     // Clean up "color ()" patterns that result from stripping

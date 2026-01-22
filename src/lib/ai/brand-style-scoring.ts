@@ -298,6 +298,23 @@ export interface StyleContext {
   platform?: string;     // e.g., "youtube", "instagram"
 }
 
+// Industry affinity mapping for style axes
+// Used to boost/penalize styles based on detected industry context
+const INDUSTRY_STYLE_AFFINITY: Record<string, { preferred: StyleAxis[]; avoided: StyleAxis[] }> = {
+  "food_beverage": { preferred: ["organic", "playful", "premium"], avoided: ["tech", "corporate"] },
+  "fitness": { preferred: ["bold", "playful", "organic"], avoided: ["corporate", "editorial"] },
+  "technology": { preferred: ["tech", "minimal", "corporate"], avoided: ["organic", "playful"] },
+  "finance": { preferred: ["corporate", "minimal", "premium"], avoided: ["playful", "organic"] },
+  "fashion": { preferred: ["editorial", "premium", "bold"], avoided: ["corporate", "tech"] },
+  "beauty": { preferred: ["organic", "premium", "minimal"], avoided: ["tech", "corporate"] },
+  "real_estate": { preferred: ["premium", "minimal", "corporate"], avoided: ["playful", "tech"] },
+  "education": { preferred: ["playful", "minimal", "corporate"], avoided: ["premium", "editorial"] },
+  "healthcare": { preferred: ["organic", "minimal", "corporate"], avoided: ["bold", "playful"] },
+  "entertainment": { preferred: ["bold", "playful", "editorial"], avoided: ["corporate", "minimal"] },
+  "retail": { preferred: ["bold", "playful", "premium"], avoided: ["corporate", "tech"] },
+  "luxury": { preferred: ["premium", "editorial", "minimal"], avoided: ["playful", "tech"] },
+};
+
 /**
  * Calculate context match score for a style
  */
@@ -307,6 +324,7 @@ function calculateContextScore(
     industries: string[] | null;
     moodKeywords: string[] | null;
     targetAudience: string | null;
+    styleAxis?: string;
   },
   context: StyleContext
 ): number {
@@ -359,6 +377,24 @@ function calculateContextScore(
   // Bonus for multiple matches
   if (matchCount >= 2) score += 15;
   if (matchCount >= 3) score += 10;
+
+  // Industry-aware style axis scoring
+  if (context.industry && style.styleAxis) {
+    const industryAffinity = INDUSTRY_STYLE_AFFINITY[context.industry];
+    if (industryAffinity) {
+      const styleAxis = style.styleAxis as StyleAxis;
+
+      // Strong boost for preferred styles in this industry
+      if (industryAffinity.preferred.includes(styleAxis)) {
+        score += 35;
+      }
+
+      // Penalty for styles typically avoided in this industry
+      if (industryAffinity.avoided.includes(styleAxis)) {
+        score -= 25;
+      }
+    }
+  }
 
   return Math.min(100, Math.max(0, score));
 }

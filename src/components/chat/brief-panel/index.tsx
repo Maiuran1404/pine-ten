@@ -55,19 +55,23 @@ import { VisualDirectionPanel } from "./visual-direction";
 
 interface FieldStatusProps {
   source: FieldSource;
+  confidence?: number;
   className?: string;
 }
 
-function FieldStatus({ source, className }: FieldStatusProps) {
+function FieldStatus({ source, confidence, className }: FieldStatusProps) {
   if (source === "confirmed") {
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Check className={cn("h-3.5 w-3.5 text-green-500", className)} />
+            <span className="flex items-center gap-1">
+              <Check className={cn("h-3.5 w-3.5 text-green-500", className)} />
+              <span className="text-[10px] font-medium text-green-600">Confirmed</span>
+            </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">Confirmed</p>
+            <p className="text-xs">Confirmed by you</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -75,14 +79,35 @@ function FieldStatus({ source, className }: FieldStatusProps) {
   }
 
   if (source === "inferred") {
+    // Determine confidence level label and color
+    const confidenceLevel = confidence !== undefined
+      ? confidence >= 0.8 ? "High" : confidence >= 0.6 ? "Medium" : "Low"
+      : "Medium";
+
+    const confidenceColor = confidence !== undefined
+      ? confidence >= 0.8 ? "text-green-600 bg-green-50" : confidence >= 0.6 ? "text-amber-600 bg-amber-50" : "text-orange-600 bg-orange-50"
+      : "text-amber-600 bg-amber-50";
+
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Sparkles className={cn("h-3.5 w-3.5 text-amber-500", className)} />
+            <span
+              className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity",
+                confidenceColor,
+                className
+              )}
+            >
+              <Sparkles className="h-3 w-3" />
+              <span className="text-[10px] font-medium">{confidenceLevel}</span>
+            </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">AI inferred - click to confirm</p>
+            <div className="text-xs space-y-1">
+              <p className="font-medium">AI inferred ({confidence ? Math.round(confidence * 100) : "~70"}% confident)</p>
+              <p className="text-muted-foreground">Click to confirm this value</p>
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -93,10 +118,13 @@ function FieldStatus({ source, className }: FieldStatusProps) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Circle className={cn("h-3.5 w-3.5 text-muted-foreground/40", className)} />
+          <span className="flex items-center gap-1">
+            <Circle className={cn("h-3 w-3 text-muted-foreground/40", className)} />
+            <span className="text-[10px] text-muted-foreground">Pending</span>
+          </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-xs">Pending</p>
+          <p className="text-xs">Not yet determined - continue chatting to fill this</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -112,6 +140,7 @@ interface BriefFieldProps {
   label: string;
   value: string | null;
   source: FieldSource;
+  confidence?: number;
   onConfirm?: () => void;
   onEdit?: () => void;
   className?: string;
@@ -122,6 +151,7 @@ function BriefField({
   label,
   value,
   source,
+  confidence,
   onConfirm,
   onEdit,
   className,
@@ -151,7 +181,7 @@ function BriefField({
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             {label}
           </span>
-          <FieldStatus source={source} />
+          <FieldStatus source={source} confidence={confidence} />
         </div>
         {value ? (
           <p className="text-sm font-medium mt-0.5 truncate">{value}</p>
@@ -268,6 +298,7 @@ function BriefTabContent({ brief, onFieldConfirm, onFieldEdit }: BriefTabContent
         label="Summary"
         value={brief.taskSummary.value}
         source={brief.taskSummary.source}
+        confidence={brief.taskSummary.confidence}
         onConfirm={() => onFieldConfirm("taskSummary")}
         onEdit={() => onFieldEdit("taskSummary")}
       />
@@ -278,6 +309,7 @@ function BriefTabContent({ brief, onFieldConfirm, onFieldEdit }: BriefTabContent
         label="Intent"
         value={intentValue}
         source={brief.intent.source}
+        confidence={brief.intent.confidence}
         onConfirm={() => onFieldConfirm("intent")}
         onEdit={() => onFieldEdit("intent")}
       />
@@ -288,6 +320,7 @@ function BriefTabContent({ brief, onFieldConfirm, onFieldEdit }: BriefTabContent
         label="Platform"
         value={platformValue}
         source={brief.platform.source}
+        confidence={brief.platform.confidence}
         onConfirm={() => onFieldConfirm("platform")}
         onEdit={() => onFieldEdit("platform")}
       />
@@ -312,6 +345,7 @@ function BriefTabContent({ brief, onFieldConfirm, onFieldEdit }: BriefTabContent
         label="Audience"
         value={audienceValue}
         source={brief.audience.source}
+        confidence={brief.audience.confidence}
         onConfirm={() => onFieldConfirm("audience")}
         onEdit={() => onFieldEdit("audience")}
       />
@@ -322,6 +356,7 @@ function BriefTabContent({ brief, onFieldConfirm, onFieldEdit }: BriefTabContent
         label="Topic"
         value={brief.topic.value}
         source={brief.topic.source}
+        confidence={brief.topic.confidence}
         onConfirm={() => onFieldConfirm("topic")}
         onEdit={() => onFieldEdit("topic")}
       />
