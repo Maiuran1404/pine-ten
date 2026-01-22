@@ -442,7 +442,8 @@ function BrandDNARevealStep({
   onBack: () => void;
   setBrandData: (data: BrandData) => void;
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  // Inline section editing - each section can be edited independently
+  const [editingSection, setEditingSection] = useState<"name" | "colors" | "typography" | "style" | "tone" | null>(null);
   const [editingAudienceIndex, setEditingAudienceIndex] = useState<number | null>(null);
   const [showAddAudience, setShowAddAudience] = useState(false);
   const [newAudienceName, setNewAudienceName] = useState("");
@@ -469,17 +470,6 @@ function BrandDNARevealStep({
     return "authoritative-expert";
   };
 
-  const [tempValues, setTempValues] = useState({
-    name: brandData.name,
-    description: brandData.description,
-    primaryColor: brandData.primaryColor,
-    secondaryColor: brandData.secondaryColor,
-    accentColor: brandData.accentColor,
-    primaryFont: brandData.primaryFont || "Satoshi",
-    visualStyle: getInitialVisualStyle(),
-    brandTone: getInitialBrandTone(),
-  });
-
   const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean);
   const primaryColor = colors[0] || "#3b82f6";
   const secondaryColor = colors[1] || "#8b5cf6";
@@ -503,38 +493,19 @@ function BrandDNARevealStep({
   };
   const fontFamily = getFontFamily(brandData.primaryFont || "Satoshi");
 
-  const handleStartEdit = () => {
-    setTempValues({
-      name: brandData.name,
-      description: brandData.description,
-      primaryColor: brandData.primaryColor,
-      secondaryColor: brandData.secondaryColor,
-      accentColor: brandData.accentColor,
-      primaryFont: brandData.primaryFont || "Satoshi",
-      visualStyle: brandData.visualStyle || getInitialVisualStyle(),
-      brandTone: brandData.brandTone || getInitialBrandTone(),
-    });
-    setIsEditing(true);
-  };
+  // Group fonts by category for the visual picker
+  const groupedFonts = FONT_OPTIONS.reduce((acc, font) => {
+    if (!acc[font.category]) acc[font.category] = [];
+    acc[font.category].push(font);
+    return acc;
+  }, {} as Record<string, typeof FONT_OPTIONS>);
 
-  const handleSaveEdit = () => {
-    setBrandData({
-      ...brandData,
-      name: tempValues.name,
-      description: tempValues.description,
-      primaryColor: tempValues.primaryColor,
-      secondaryColor: tempValues.secondaryColor || "",
-      accentColor: tempValues.accentColor || "",
-      primaryFont: tempValues.primaryFont,
-      visualStyle: tempValues.visualStyle,
-      brandTone: tempValues.brandTone,
-    });
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-  };
+  // Color presets for quick selection
+  const colorPresets = [
+    "#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#eab308",
+    "#22c55e", "#06b6d4", "#6366f1", "#ef4444", "#14b8a6",
+    "#000000", "#374151", "#78716c", "#1e3a8a", "#166534"
+  ];
 
   // Audience management functions
   const handleRemoveAudience = (index: number) => {
@@ -586,11 +557,26 @@ function BrandDNARevealStep({
     setEditingAudienceIndex(null);
   };
 
-  const groupedFonts = FONT_OPTIONS.reduce((acc, font) => {
-    if (!acc[font.category]) acc[font.category] = [];
-    acc[font.category].push(font);
-    return acc;
-  }, {} as Record<string, typeof FONT_OPTIONS>);
+  // Section edit button component
+  const SectionEditButton = ({ section, isActive }: { section: "name" | "colors" | "typography" | "style" | "tone"; isActive: boolean }) => (
+    <button
+      onClick={() => setEditingSection(isActive ? null : section)}
+      className={`p-1.5 rounded-lg transition-all ${
+        isActive
+          ? "bg-[#9AA48C]/20 text-[#9AA48C]"
+          : "text-white/30 hover:text-white/60 hover:bg-white/5"
+      }`}
+      title={isActive ? "Done" : "Edit"}
+    >
+      {isActive ? (
+        <Check className="w-3.5 h-3.5" />
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      )}
+    </button>
+  );
 
   return (
     <motion.div
@@ -599,7 +585,7 @@ function BrandDNARevealStep({
       animate="show"
       className="w-full max-w-xl"
     >
-      {/* Glassmorphic Card - Wider layout */}
+      {/* Glassmorphic Card - Option A width */}
       <motion.div
         variants={staggerItem}
         className="relative rounded-2xl overflow-hidden"
@@ -613,170 +599,321 @@ function BrandDNARevealStep({
       >
         {/* Subtle brand color glow at top */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-16 rounded-full opacity-15 blur-[60px]"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-20 rounded-full opacity-20 blur-[80px]"
           style={{ background: `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})` }}
         />
 
-        <div className="relative p-5">
-          {/* Header - More compact */}
-          <div className="flex items-start justify-between mb-4">
+        <div className="relative p-6">
+          {/* Header with Logo and Name - Editable inline */}
+          <div className="flex items-start gap-4 mb-6">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.08)"
+                background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor || primaryColor})`,
+                boxShadow: `0 8px 32px ${primaryColor}30`
               }}
             >
-              <span className="text-white/90 font-semibold text-sm" style={{ fontFamily }}>
-                {(isEditing ? tempValues.name : brandData.name)?.[0]?.toUpperCase() || "B"}
+              <span className="text-white font-bold text-xl" style={{ fontFamily }}>
+                {brandData.name?.[0]?.toUpperCase() || "B"}
               </span>
             </div>
-
-            {isEditing ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCancelEdit}
-                  className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
-                  style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-3 py-1.5 rounded-full text-xs text-black/80 hover:bg-white transition-colors"
-                  style={{ background: "rgba(154, 164, 140, 0.9)" }}
-                >
-                  Save
-                </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-white/30 text-[10px] uppercase tracking-wider">Your Brand</p>
+                <SectionEditButton section="name" isActive={editingSection === "name"} />
               </div>
-            ) : (
-              <button
-                onClick={handleStartEdit}
-                className="px-3 py-1.5 rounded-full text-xs text-white/40 hover:text-white/70 transition-colors"
-                style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}
-              >
-                Edit
-              </button>
-            )}
+              {editingSection === "name" ? (
+                <input
+                  type="text"
+                  value={brandData.name}
+                  onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
+                  className="text-2xl text-white font-semibold bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
+                  style={{ fontFamily }}
+                  placeholder="Brand name"
+                  autoFocus
+                />
+              ) : (
+                <h1 className="text-2xl text-white font-semibold truncate" style={{ fontFamily }}>
+                  {brandData.name || "Your Brand"}
+                </h1>
+              )}
+            </div>
           </div>
 
-          {/* Brand Name & Description - More compact */}
-          <div className="mb-4">
-            <p className="text-white/30 text-[10px] mb-0.5" style={{ fontFamily: "'Times New Roman', serif", fontStyle: "italic" }}>
-              This is
+          {/* Description */}
+          <div className="mb-5">
+            <p className="text-white/50 text-sm leading-relaxed line-clamp-2">
+              {brandData.description || brandData.industry || "Your brand story"}
             </p>
-            {isEditing ? (
-              <input
-                type="text"
-                value={tempValues.name}
-                onChange={(e) => setTempValues({ ...tempValues, name: e.target.value })}
-                className="text-xl text-white font-medium mb-1 bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
-                style={{ fontFamily }}
-                placeholder="Brand name"
-              />
-            ) : (
-              <h1 className="text-xl text-white font-medium mb-1" style={{ fontFamily }}>
-                {brandData.name || "Your Brand"}
-              </h1>
-            )}
-            {isEditing ? (
-              <textarea
-                value={tempValues.description}
-                onChange={(e) => setTempValues({ ...tempValues, description: e.target.value })}
-                className="text-white/40 text-xs leading-relaxed bg-transparent border border-white/10 rounded-lg p-2 focus:border-[#9AA48C] outline-none w-full resize-none"
-                rows={2}
-                placeholder="Brand description"
-              />
-            ) : (
-              <p className="text-white/40 text-xs leading-relaxed line-clamp-2">
-                {brandData.description || brandData.industry || "Your brand story will appear here."}
-              </p>
-            )}
           </div>
 
           {/* Divider */}
           <div className="h-px bg-white/[0.06] mb-4" />
 
-          {/* Two-column layout for Colors + Typography */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {/* Left: Colors */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {isEditing ? (
+          {/* Colors Section - Inline editable */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {colors.length > 0 ? colors.map((color, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-6 h-6 rounded-lg"
+                    style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}30` }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1 + i * 0.05 }}
+                  />
+                )) : (
                   <>
-                    <div className="relative">
-                      <input type="color" value={tempValues.primaryColor || "#3b82f6"} onChange={(e) => setTempValues({ ...tempValues, primaryColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
-                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.primaryColor || "#3b82f6" }} />
-                    </div>
-                    <div className="relative">
-                      <input type="color" value={tempValues.secondaryColor || "#8b5cf6"} onChange={(e) => setTempValues({ ...tempValues, secondaryColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
-                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.secondaryColor || "#8b5cf6" }} />
-                    </div>
-                    <div className="relative">
-                      <input type="color" value={tempValues.accentColor || "#f59e0b"} onChange={(e) => setTempValues({ ...tempValues, accentColor: e.target.value })} className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0" />
-                      <div className="w-7 h-7 rounded-lg ring-2 ring-white/20" style={{ backgroundColor: tempValues.accentColor || "#f59e0b" }} />
-                    </div>
+                    <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
+                    <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
+                    <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
                   </>
-                ) : (
-                  colors.length > 0 ? colors.map((color, i) => (
-                    <motion.div key={i} className="w-7 h-7 rounded-lg" style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}30` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 + i * 0.1 }} />
-                  )) : (
-                    <>
-                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#3b82f6" }} />
-                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
-                      <div className="w-7 h-7 rounded-lg" style={{ backgroundColor: "#f59e0b" }} />
-                    </>
-                  )
                 )}
                 <span className="text-white/20 text-[10px] ml-1">Colors</span>
               </div>
+              <SectionEditButton section="colors" isActive={editingSection === "colors"} />
             </div>
 
-            {/* Right: Type & Style in mini grid */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-2 rounded-lg" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Type</span>
-                {isEditing ? (
-                  <select value={tempValues.primaryFont || "Satoshi"} onChange={(e) => setTempValues({ ...tempValues, primaryFont: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer" style={{ fontFamily: getFontFamily(tempValues.primaryFont) }}>
-                    {Object.entries(groupedFonts).map(([category, fonts]) => (
-                      <optgroup key={category} label={category} style={{ background: "#1a1a1a", color: "#666" }}>
-                        {fonts.map((font) => (<option key={font.value} value={font.value} style={{ background: "#1a1a1a", color: "#fff" }}>{font.label}</option>))}
-                      </optgroup>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-white text-[11px] font-medium truncate" style={{ fontFamily }}>{brandData.primaryFont || "Satoshi"}</p>
-                )}
-              </div>
-              <div className="p-2 rounded-lg" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Style</span>
-                {isEditing ? (
-                  <select value={tempValues.visualStyle} onChange={(e) => setTempValues({ ...tempValues, visualStyle: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer">
-                    {VISUAL_STYLE_OPTIONS.map((style) => (<option key={style.value} value={style.value} style={{ background: "#1a1a1a" }}>{style.label}</option>))}
-                  </select>
-                ) : (
-                  <p className="text-white text-[11px] font-medium truncate">{visualStyleLabel}</p>
-                )}
-              </div>
-            </div>
+            {/* Color picker expanded */}
+            <AnimatePresence>
+              {editingSection === "colors" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 pb-1 space-y-3">
+                    {/* Primary Color */}
+                    <div>
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">Primary</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {colorPresets.slice(0, 10).map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setBrandData({ ...brandData, primaryColor: color })}
+                            className={`w-7 h-7 rounded-lg transition-all ${brandData.primaryColor === color ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]" : "hover:scale-110"}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={brandData.primaryColor || "#3b82f6"}
+                            onChange={(e) => setBrandData({ ...brandData, primaryColor: e.target.value })}
+                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                          />
+                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-xs">+</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Secondary Color */}
+                    <div>
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">Secondary</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {colorPresets.slice(0, 10).map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setBrandData({ ...brandData, secondaryColor: color })}
+                            className={`w-7 h-7 rounded-lg transition-all ${brandData.secondaryColor === color ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]" : "hover:scale-110"}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={brandData.secondaryColor || "#8b5cf6"}
+                            onChange={(e) => setBrandData({ ...brandData, secondaryColor: e.target.value })}
+                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                          />
+                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-xs">+</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Accent Color */}
+                    <div>
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">Accent</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {colorPresets.slice(5, 15).map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setBrandData({ ...brandData, accentColor: color })}
+                            className={`w-7 h-7 rounded-lg transition-all ${brandData.accentColor === color ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]" : "hover:scale-110"}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={brandData.accentColor || "#f59e0b"}
+                            onChange={(e) => setBrandData({ ...brandData, accentColor: e.target.value })}
+                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                          />
+                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-xs">+</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Tone - Full width but compact */}
-          <div className="p-2 rounded-lg mb-4" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-            <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-0.5">Tone</span>
-            {isEditing ? (
-              <select value={tempValues.brandTone} onChange={(e) => setTempValues({ ...tempValues, brandTone: e.target.value })} className="text-white text-[11px] font-medium bg-transparent border-none outline-none w-full cursor-pointer">
-                {BRAND_TONE_OPTIONS.map((tone) => (<option key={tone.value} value={tone.value} style={{ background: "#1a1a1a" }}>{tone.label}</option>))}
-              </select>
-            ) : (
-              <p className="text-white text-[11px] font-medium">{brandToneLabel}</p>
-            )}
+          {/* Typography Section - Visual font cards */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                  <span className="text-white text-[11px] font-medium" style={{ fontFamily }}>{brandData.primaryFont || "Satoshi"}</span>
+                </div>
+                <span className="text-white/20 text-[10px]">Typography</span>
+              </div>
+              <SectionEditButton section="typography" isActive={editingSection === "typography"} />
+            </div>
+
+            {/* Font picker expanded */}
+            <AnimatePresence>
+              {editingSection === "typography" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 max-h-48 overflow-y-auto">
+                    {Object.entries(groupedFonts).map(([category, fonts]) => (
+                      <div key={category} className="mb-3">
+                        <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">{category}</p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {fonts.map((font) => (
+                            <button
+                              key={font.value}
+                              onClick={() => setBrandData({ ...brandData, primaryFont: font.value })}
+                              className={`px-3 py-2 rounded-lg text-left transition-all ${
+                                brandData.primaryFont === font.value
+                                  ? "bg-[#9AA48C]/20 ring-1 ring-[#9AA48C]"
+                                  : "bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05]"
+                              }`}
+                            >
+                              <span className="text-white text-sm" style={{ fontFamily: font.family }}>
+                                {font.label}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Style Section - Pill selectors */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded-md text-white text-[10px] font-medium" style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  {visualStyleLabel}
+                </span>
+                <span className="text-white/20 text-[10px]">Style</span>
+              </div>
+              <SectionEditButton section="style" isActive={editingSection === "style"} />
+            </div>
+
+            {/* Style pills expanded */}
+            <AnimatePresence>
+              {editingSection === "style" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 flex flex-wrap gap-1.5">
+                    {VISUAL_STYLE_OPTIONS.map((style) => {
+                      const currentStyle = brandData.visualStyle || getInitialVisualStyle();
+                      const isSelected = currentStyle === style.value;
+                      return (
+                        <button
+                          key={style.value}
+                          onClick={() => setBrandData({ ...brandData, visualStyle: style.value })}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                            isSelected
+                              ? "bg-[#9AA48C] text-black"
+                              : "bg-white/[0.05] text-white/60 hover:bg-white/[0.1] hover:text-white/80 border border-white/[0.08]"
+                          }`}
+                        >
+                          {style.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Tone Section - Pill selectors */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded-md text-white text-[10px] font-medium" style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  {brandToneLabel}
+                </span>
+                <span className="text-white/20 text-[10px]">Tone</span>
+              </div>
+              <SectionEditButton section="tone" isActive={editingSection === "tone"} />
+            </div>
+
+            {/* Tone pills expanded */}
+            <AnimatePresence>
+              {editingSection === "tone" && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 flex flex-wrap gap-1.5">
+                    {BRAND_TONE_OPTIONS.map((tone) => {
+                      const currentTone = brandData.brandTone || getInitialBrandTone();
+                      const isSelected = currentTone === tone.value;
+                      return (
+                        <button
+                          key={tone.value}
+                          onClick={() => setBrandData({ ...brandData, brandTone: tone.value })}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                            isSelected
+                              ? "bg-[#9AA48C] text-black"
+                              : "bg-white/[0.05] text-white/60 hover:bg-white/[0.1] hover:text-white/80 border border-white/[0.08]"
+                          }`}
+                        >
+                          {tone.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Social Links - Compact inline */}
-          {!isEditing && (brandData.socialLinks?.linkedin || brandData.socialLinks?.twitter || brandData.socialLinks?.instagram) && (
+          {(brandData.socialLinks?.linkedin || brandData.socialLinks?.twitter || brandData.socialLinks?.instagram) && (
             <div className="mb-4">
-              <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-1.5">Social Profiles</span>
+              <span className="text-white/20 text-[9px] uppercase tracking-wider block mb-1.5">Social</span>
               <div className="flex flex-wrap gap-1.5">
                 {brandData.socialLinks?.linkedin && (
                   <a href={brandData.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors hover:opacity-80" style={{ background: "rgba(10, 102, 194, 0.15)", color: "#5BA3E0" }}>
@@ -785,7 +922,7 @@ function BrandDNARevealStep({
                 )}
                 {brandData.socialLinks?.twitter && (
                   <a href={brandData.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors hover:opacity-80" style={{ background: "rgba(255, 255, 255, 0.05)", color: "rgba(255, 255, 255, 0.7)" }}>
-                    <Twitter className="w-2.5 h-2.5" />X / Twitter
+                    <Twitter className="w-2.5 h-2.5" />X
                   </a>
                 )}
                 {brandData.socialLinks?.instagram && (
@@ -798,21 +935,20 @@ function BrandDNARevealStep({
           )}
 
           {/* Target Audiences - Editable with marketplace support */}
-          {!isEditing && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white/20 text-[9px] uppercase tracking-wider">Target Audiences</span>
-                {!showAddAudience && (
-                  <button
-                    onClick={() => setShowAddAudience(true)}
-                    className="text-[10px] text-[#9AA48C] hover:text-white transition-colors"
-                  >
-                    + Add
-                  </button>
-                )}
-              </div>
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/20 text-[9px] uppercase tracking-wider">Target Audiences</span>
+              {!showAddAudience && (
+                <button
+                  onClick={() => setShowAddAudience(true)}
+                  className="text-[10px] text-[#9AA48C] hover:text-white transition-colors"
+                >
+                  + Add
+                </button>
+              )}
+            </div>
 
-              {/* Add new audience form */}
+            {/* Add new audience form */}
               {showAddAudience && (
                 <div className="p-3 rounded-xl mb-2" style={{ background: "rgba(154, 164, 140, 0.1)", border: "1px solid rgba(154, 164, 140, 0.3)" }}>
                   <div className="flex gap-2 mb-2">
@@ -897,12 +1033,36 @@ function BrandDNARevealStep({
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setEditingAudienceIndex(index)} className="p-1 rounded text-white/30 hover:text-white/70 text-[9px]" title="Edit name">✎</button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingAudienceIndex(index)}
+                          className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-all"
+                          title="Edit name"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
                         {!audience.isPrimary && (
-                          <button onClick={() => handleSetPrimaryAudience(index)} className="p-1 rounded text-white/30 hover:text-[#9AA48C] text-[9px]" title="Set as primary">★</button>
+                          <button
+                            onClick={() => handleSetPrimaryAudience(index)}
+                            className="p-1.5 rounded-lg text-white/30 hover:text-[#9AA48C] hover:bg-[#9AA48C]/10 transition-all"
+                            title="Set as primary"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          </button>
                         )}
-                        <button onClick={() => handleRemoveAudience(index)} className="p-1 rounded text-white/30 hover:text-red-400 text-[9px]" title="Remove">×</button>
+                        <button
+                          onClick={() => handleRemoveAudience(index)}
+                          className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                          title="Remove"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                       <span className="text-white/20 text-[9px] flex-shrink-0 ml-2">{audience.confidence}%</span>
                     </div>
@@ -917,30 +1077,27 @@ function BrandDNARevealStep({
                   + Add your target audiences
                 </button>
               )}
-            </div>
-          )}
+          </div>
 
           {/* Action Buttons */}
-          {!isEditing && (
-            <div className="flex gap-2">
-              <button
-                onClick={onBack}
-                className="flex-1 py-2.5 rounded-xl font-medium text-[11px] text-white/40 hover:text-white/70 transition-colors"
-                style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)" }}
-              >
-                <ArrowLeft className="w-3 h-3 inline mr-1" />
-                Back
-              </button>
-              <button
-                onClick={onContinue}
-                className="flex-1 py-2.5 rounded-xl font-medium text-[11px] transition-all hover:bg-white text-black/80"
-                style={{ background: "rgba(245, 245, 240, 0.9)" }}
-              >
-                Looks right
-                <Check className="w-3 h-3 inline ml-1" />
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={onBack}
+              className="flex-1 py-2.5 rounded-xl font-medium text-[11px] text-white/40 hover:text-white/70 transition-colors"
+              style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)" }}
+            >
+              <ArrowLeft className="w-3 h-3 inline mr-1" />
+              Back
+            </button>
+            <button
+              onClick={onContinue}
+              className="flex-1 py-2.5 rounded-xl font-medium text-[11px] transition-all hover:bg-white text-black/80"
+              style={{ background: "rgba(245, 245, 240, 0.9)" }}
+            >
+              Looks right
+              <Check className="w-3 h-3 inline ml-1" />
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -1360,6 +1517,170 @@ interface BrandReference {
   densityBucket: string;
   colorBucket: string;
   score?: number;
+}
+
+// Brand Card Preview Panel for DNA Reveal step (Option A)
+function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
+  const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(Boolean);
+  const primaryColor = colors[0] || "#3b82f6";
+  const secondaryColor = colors[1] || "#8b5cf6";
+
+  const getFontFamily = (fontName: string) => {
+    const font = FONT_OPTIONS.find(f => f.value === fontName);
+    return font?.family || "'Satoshi', sans-serif";
+  };
+  const fontFamily = getFontFamily(brandData.primaryFont || "Satoshi");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="w-full max-w-md"
+    >
+      {/* Brand Card Preview */}
+      <div className="relative">
+        {/* Floating label */}
+        <div className="text-center mb-6">
+          <span className="text-white/30 text-xs uppercase tracking-widest">Your Brand at a Glance</span>
+        </div>
+
+        {/* Main Card */}
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="relative rounded-3xl overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, ${primaryColor}15 0%, ${secondaryColor}10 50%, transparent 100%)`,
+            border: `1px solid ${primaryColor}30`,
+            boxShadow: `0 0 80px ${primaryColor}15, 0 0 40px ${secondaryColor}10`,
+          }}
+        >
+          {/* Card inner */}
+          <div className="p-8 backdrop-blur-sm">
+            {/* Logo/Initial */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 mx-auto"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor || primaryColor})`,
+                boxShadow: `0 8px 32px ${primaryColor}40`,
+              }}
+            >
+              <span className="text-white text-3xl font-bold" style={{ fontFamily }}>
+                {brandData.name?.[0]?.toUpperCase() || "B"}
+              </span>
+            </motion.div>
+
+            {/* Brand Name */}
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="text-3xl text-white font-semibold text-center mb-2"
+              style={{ fontFamily }}
+            >
+              {brandData.name || "Your Brand"}
+            </motion.h2>
+
+            {/* Tagline/Description */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="text-white/50 text-sm text-center mb-8 line-clamp-2 max-w-xs mx-auto"
+            >
+              {brandData.tagline || brandData.description?.slice(0, 80) || "Your brand story"}
+            </motion.p>
+
+            {/* Color Palette */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex justify-center gap-3 mb-6"
+            >
+              {colors.length > 0 ? colors.map((color, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.9 + i * 0.1, type: "spring" }}
+                  className="w-10 h-10 rounded-xl"
+                  style={{
+                    backgroundColor: color,
+                    boxShadow: `0 4px 12px ${color}50`
+                  }}
+                />
+              )) : (
+                <>
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: "#3b82f6" }} />
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: "#8b5cf6" }} />
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: "#f59e0b" }} />
+                </>
+              )}
+            </motion.div>
+
+            {/* Typography Sample */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1 }}
+              className="text-center p-4 rounded-xl"
+              style={{ background: "rgba(255, 255, 255, 0.03)" }}
+            >
+              <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2">Typography</p>
+              <p className="text-white text-lg" style={{ fontFamily }}>
+                {brandData.primaryFont || "Satoshi"}
+              </p>
+              <p className="text-white/40 text-xs mt-1" style={{ fontFamily }}>
+                Aa Bb Cc Dd Ee Ff Gg
+              </p>
+            </motion.div>
+
+            {/* Style & Tone badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              className="flex flex-wrap justify-center gap-2 mt-6"
+            >
+              {brandData.visualStyle && (
+                <span
+                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  style={{ background: `${primaryColor}20`, color: primaryColor }}
+                >
+                  {VISUAL_STYLE_OPTIONS.find(o => o.value === brandData.visualStyle)?.label || brandData.visualStyle}
+                </span>
+              )}
+              {brandData.brandTone && (
+                <span
+                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  style={{ background: `${secondaryColor}20`, color: secondaryColor }}
+                >
+                  {BRAND_TONE_OPTIONS.find(o => o.value === brandData.brandTone)?.label || brandData.brandTone}
+                </span>
+              )}
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Decorative elements */}
+        <div
+          className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[80px] opacity-30"
+          style={{ background: primaryColor }}
+        />
+        <div
+          className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-[60px] opacity-20"
+          style={{ background: secondaryColor }}
+        />
+      </div>
+    </motion.div>
+  );
 }
 
 function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
@@ -3246,9 +3567,13 @@ function OnboardingContent() {
         </AnimatePresence>
       </main>
 
-      {/* Right side - mood preview for fine-tune step */}
+      {/* Right side - preview panels */}
       <div className="relative z-10 flex-1 h-full hidden lg:flex items-center justify-center pr-[10%]">
         <AnimatePresence mode="wait">
+          {/* Option A: Split-screen with brand card preview */}
+          {step === "brand-dna-reveal" && (
+            <BrandCardPreviewPanel key="brand-card-preview" brandData={brandData} />
+          )}
           {step === "fine-tune" && (
             <MoodPreviewPanel key="mood-preview" brandData={brandData} />
           )}
