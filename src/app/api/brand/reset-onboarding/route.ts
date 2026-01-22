@@ -26,13 +26,15 @@ export async function POST() {
       await db.delete(companies).where(eq(companies.id, currentUser.companyId));
     }
 
-    // Reset user onboarding status
+    // Reset user onboarding status and role to CLIENT
+    // Role must be reset to CLIENT so user can complete onboarding again
     await db
       .update(users)
       .set({
         companyId: null,
         onboardingCompleted: false,
         onboardingData: null,
+        role: "CLIENT",
         updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
