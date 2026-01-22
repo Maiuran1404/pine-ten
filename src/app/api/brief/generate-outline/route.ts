@@ -14,7 +14,7 @@ import type {
   Intent,
 } from "@/components/chat/brief-panel/types";
 import { PLATFORM_DISPLAY_NAMES, INTENT_DESCRIPTIONS } from "@/components/chat/brief-panel/types";
-import { getDimensionsForPlatform } from "@/lib/constants/platform-dimensions";
+import { getDefaultDimension } from "@/lib/constants/platform-dimensions";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -240,7 +240,7 @@ function buildOutlineFromAIItems(
         description: item.description,
         platform,
         contentType: (item.contentType as ContentType) || contentType,
-        dimensions: getDimensionsForPlatform(platform, contentType),
+        dimensions: getDefaultDimension(platform, contentType) || { width: 1080, height: 1080, label: "Square", aspectRatio: "1:1" },
         week,
         day: Math.min(day, durationDays),
         status: "draft" as const,

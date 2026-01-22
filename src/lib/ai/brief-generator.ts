@@ -18,7 +18,7 @@ import {
   INTENT_DESCRIPTIONS,
   PLATFORM_DISPLAY_NAMES,
 } from "@/components/chat/brief-panel/types";
-import { getDimensionsForPlatform } from "@/lib/constants/platform-dimensions";
+import { getDefaultDimension } from "@/lib/constants/platform-dimensions";
 
 // =============================================================================
 // CONTENT OUTLINE GENERATION
@@ -75,7 +75,7 @@ export function generateContentOutline(input: OutlineGenerationInput): ContentOu
         description: contentIdea.description,
         platform,
         contentType,
-        dimensions: getDimensionsForPlatform(platform, contentType),
+        dimensions: getDefaultDimension(platform, contentType) || { width: 1080, height: 1080, label: "Square", aspectRatio: "1:1" },
         week,
         day: dayCounter,
         status: "draft",

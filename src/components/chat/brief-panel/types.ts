@@ -107,13 +107,13 @@ export interface OutlineItem {
   number: number;
   title: string;
   description: string;
-  platform: Platform;
-  contentType: ContentType;
-  dimensions: Dimension[];
+  platform: Platform | string;
+  contentType: ContentType | string;
+  dimensions: Dimension; // Single dimension object, not array
   scheduledDate?: Date;
-  week?: number; // For grouping: Week 1, Week 2, etc.
-  day?: number; // Day within the plan
-  status: "draft" | "approved" | "generating";
+  week: number; // For grouping: Week 1, Week 2, etc.
+  day: number; // Day within the plan
+  status: "draft" | "in_progress" | "completed";
 }
 
 export interface WeekGroup {
@@ -142,7 +142,7 @@ export interface VisualDirection {
     primary: string;
     secondary: string;
   };
-  avoidElements?: string[];
+  avoidElements: string[];
 }
 
 // =============================================================================
