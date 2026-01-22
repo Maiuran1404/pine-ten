@@ -294,7 +294,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
 
         {/* Main content */}
         <main className="flex-1 px-6 sm:px-10 lg:px-16 py-10">
-          <div className="max-w-md">
+          <div className="max-w-md lg:max-w-xl">
             <AnimatePresence mode="wait">
               {/* Brand Input Step */}
               {step === "brand-input" && (
@@ -1098,7 +1098,7 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
                   </div>
 
                   {/* Creative Focus Cards */}
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {CREATIVE_FOCUS_OPTIONS.map((option) => {
                       const isSelected = brandData.creativeFocus.includes(option.id);
                       const IconComponent = {

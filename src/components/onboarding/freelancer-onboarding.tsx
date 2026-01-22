@@ -179,7 +179,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
 
         {/* Main content */}
         <main className="flex-1 flex items-center justify-center p-6 sm:p-8">
-          <div className="w-full max-w-lg">
+          <div className="w-full max-w-xl">
             <AnimatePresence mode="wait">
               {/* Welcome Step */}
               {step === 0 && (

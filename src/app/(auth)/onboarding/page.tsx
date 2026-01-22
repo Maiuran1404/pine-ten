@@ -1899,7 +1899,7 @@ function CreativeFocusStep({
           </p>
         </motion.div>
 
-        <div className="space-y-3 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           {CREATIVE_FOCUS_OPTIONS.map((option) => {
             const isSelected = brandData.creativeFocus.includes(option.id);
             const Icon = iconMap[option.id] || Zap;
