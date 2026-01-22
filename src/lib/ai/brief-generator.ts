@@ -505,7 +505,7 @@ export function exportBriefAsMarkdown(brief: DesignerBrief): string {
   lines.push(`- **Intent:** ${brief.intent} - ${brief.intentDescription}`);
   lines.push(`- **Platform:** ${PLATFORM_DISPLAY_NAMES[brief.platform]}`);
   lines.push(
-    `- **Dimensions:** ${brief.dimensions.map((d) => `${d.name} (${d.width}×${d.height})`).join(", ")}`
+    `- **Dimensions:** ${brief.dimensions.map((d) => `${d.label} (${d.width}×${d.height})`).join(", ")}`
   );
   lines.push("");
 
