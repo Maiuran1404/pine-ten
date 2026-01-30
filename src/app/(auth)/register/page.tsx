@@ -164,18 +164,9 @@ function RegisterContent() {
         return;
       }
 
-      // If registering as freelancer, set the role immediately
-      if (accountType === "freelancer") {
-        try {
-          await fetch("/api/auth/set-role", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role: "FREELANCER" }),
-          });
-        } catch {
-          // Continue even if role update fails - onboarding will handle it
-        }
-      }
+      // Note: Don't set role to FREELANCER here - let the onboarding API handle it
+      // The onboarding API will update the role when the freelancer submits their application
+      // Setting it here would cause the API to reject with 403 (only CLIENT role can onboard)
 
       toast.success("Account created successfully!");
 

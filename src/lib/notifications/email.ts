@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { notifySlack, SlackEventType } from "@/lib/slack";
 
 // Lazy initialization to avoid errors during build when env vars aren't available
 let resendInstance: Resend | null = null;
@@ -86,7 +87,13 @@ function wrapAdminEmail(content: string): string {
 
 export const adminNotifications = {
   // New client signup
-  newClientSignup: async (data: { name: string; email: string }) => {
+  newClientSignup: async (data: { name: string; email: string; userId?: string; company?: { name: string; industry?: string } }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.NEW_CLIENT_SIGNUP, {
+      user: { id: data.userId || "", name: data.name, email: data.email },
+      company: data.company,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for new client signup"));
+
     return notifyAdmin(
       "New Client Signup",
       `

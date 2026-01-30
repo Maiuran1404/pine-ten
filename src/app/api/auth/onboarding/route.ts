@@ -42,9 +42,10 @@ async function handler(request: NextRequest) {
       );
     }
 
-    // Security: Only CLIENT role users can go through onboarding
-    // ADMIN and FREELANCER users should not be able to re-onboard
-    if (currentUser.role !== "CLIENT") {
+    // Security: Only CLIENT or FREELANCER role users can go through onboarding
+    // ADMIN users should not be able to onboard
+    // FREELANCER is allowed because users on artist subdomain may be assigned this role before onboarding
+    if (currentUser.role !== "CLIENT" && currentUser.role !== "FREELANCER") {
       return NextResponse.json(
         { error: "Only new users can complete onboarding" },
         { status: 403 }

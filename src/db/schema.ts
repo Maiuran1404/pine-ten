@@ -63,6 +63,9 @@ export const users = pgTable(
     onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
     onboardingData: jsonb("onboarding_data"),
     notificationPreferences: jsonb("notification_preferences"),
+    // Slack integration
+    slackUserId: text("slack_user_id"), // Slack user ID if matched by email
+    slackDmChannelId: text("slack_dm_channel_id"), // DM channel ID for direct messages
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -156,6 +159,9 @@ export const companies = pgTable("companies", {
   keywords: jsonb("keywords").$type<string[]>().default([]),
   // Onboarding status
   onboardingStatus: onboardingStatusEnum("onboarding_status").notNull().default("NOT_STARTED"),
+  // Slack integration
+  slackChannelId: text("slack_channel_id"), // Client-specific Slack channel
+  slackChannelName: text("slack_channel_name"), // Stored for reference
   // Timestamps
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

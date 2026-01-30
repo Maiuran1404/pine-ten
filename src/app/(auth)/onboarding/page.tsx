@@ -53,6 +53,7 @@ import {
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
 import { BrandReferenceGridSkeleton, ImageWithSkeleton } from "@/components/ui/skeletons";
+import { useSubdomain } from "@/hooks/use-subdomain";
 
 // ============================================================================
 // HEADER
@@ -3120,6 +3121,7 @@ function AIDirectionsStep({
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const portal = useSubdomain();
   const { data: session, isPending, refetch: refetchSession } = useSession();
 
   // Restore state from sessionStorage on mount
@@ -3389,8 +3391,9 @@ function OnboardingContent() {
     return null;
   }
 
-  // Check if this is freelancer onboarding
-  const isFreelancerOnboarding = searchParams.get("type") === "freelancer";
+  // Check if this is freelancer onboarding - check both query param AND subdomain
+  // This ensures artists on artist.localhost always see the freelancer flow
+  const isFreelancerOnboarding = searchParams.get("type") === "freelancer" || portal.type === "artist";
 
   if (isFreelancerOnboarding) {
     return (
