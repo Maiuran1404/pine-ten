@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,13 +11,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Coins, Clock, AlertTriangle } from "lucide-react";
+import {
+  Calendar,
+  Coins,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
+  FileCheck,
+  Sparkles,
+  Check,
+  FolderOpen,
+} from "lucide-react";
 import {
   calculateWorkingDeadline,
   getDeadlineUrgency,
   formatTimeRemaining,
+  cn,
 } from "@/lib/utils";
 
 interface Task {
@@ -39,7 +53,63 @@ const statusConfig: Record<string, { variant: "default" | "secondary" | "destruc
   COMPLETED: { variant: "secondary", label: "Completed" },
 };
 
+// Mini workflow stepper for task cards
+function MiniWorkflowStepper({ status }: { status: string }) {
+  const steps = [
+    { key: "ASSIGNED", icon: Clock, label: "Assigned" },
+    { key: "IN_PROGRESS", icon: RefreshCw, label: "Working" },
+    { key: "IN_REVIEW", icon: FileCheck, label: "Review" },
+    { key: "COMPLETED", icon: CheckCircle2, label: "Done" },
+  ];
+
+  const statusOrder = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
+  const currentIndex = statusOrder.indexOf(status);
+  const isRevision = status === "REVISION_REQUESTED";
+
+  return (
+    <div className="flex items-center gap-1 w-full">
+      {steps.map((step, index) => {
+        const isCompleted = currentIndex > index || status === "COMPLETED";
+        const isCurrent = status === step.key || (isRevision && step.key === "IN_PROGRESS");
+        const isRevisionStep = isRevision && step.key === "IN_PROGRESS";
+        const Icon = step.icon;
+
+        return (
+          <div key={step.key} className="flex items-center flex-1">
+            <div
+              className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                isCompleted && "bg-green-500 text-white",
+                isCurrent && !isRevisionStep && "bg-primary text-primary-foreground",
+                isRevisionStep && "bg-orange-500 text-white",
+                !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
+              )}
+            >
+              {isCompleted ? (
+                <Check className="h-3 w-3" />
+              ) : isRevisionStep ? (
+                <AlertTriangle className="h-3 w-3" />
+              ) : (
+                <Icon className="h-3 w-3" />
+              )}
+            </div>
+            {index < steps.length - 1 && (
+              <div
+                className={cn(
+                  "flex-1 h-0.5 mx-1",
+                  currentIndex > index ? "bg-green-500" : "bg-muted"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function FreelancerTasksPage() {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("active");
@@ -75,12 +145,21 @@ export default function FreelancerTasksPage() {
     return true;
   });
 
+  // Count tasks for badges
+  const activeTasks = tasks.filter((t) =>
+    ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(t.status)
+  );
+  const submittedTasks = tasks.filter((t) => t.status === "IN_REVIEW");
+  const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
+  const revisionTasks = tasks.filter((t) => t.status === "REVISION_REQUESTED");
+
   const TaskCard = ({ task }: { task: Task }) => {
     const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
     const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
     const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+    const isRevision = task.status === "REVISION_REQUESTED";
 
-    const urgencyStyles = {
+    const urgencyStyles: Record<string, string> = {
       overdue: "text-destructive",
       urgent: "text-orange-500",
       warning: "text-yellow-600",
@@ -89,43 +168,70 @@ export default function FreelancerTasksPage() {
 
     return (
       <Link href={`/portal/tasks/${task.id}`}>
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+        <Card
+          className={cn(
+            "hover:border-primary/50 transition-colors cursor-pointer h-full",
+            isRevision && "border-orange-500/50 bg-orange-500/5"
+          )}
+        >
           <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <CardTitle className="text-lg line-clamp-1">{task.title}</CardTitle>
-              <Badge variant={statusConfig[task.status]?.variant || "secondary"}>
+            <div className="flex items-start justify-between gap-2">
+              <CardTitle className="text-base sm:text-lg line-clamp-1">{task.title}</CardTitle>
+              <Badge
+                variant={statusConfig[task.status]?.variant || "secondary"}
+                className={cn(
+                  "shrink-0",
+                  isRevision && "bg-orange-500 hover:bg-orange-600"
+                )}
+              >
+                {isRevision && <AlertTriangle className="h-3 w-3 mr-1" />}
                 {statusConfig[task.status]?.label || task.status}
               </Badge>
             </div>
-            <CardDescription className="line-clamp-2">
+            <CardDescription className="line-clamp-2 text-xs sm:text-sm">
               {task.description}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <CardContent className="space-y-3">
+            {/* Mini Workflow Stepper */}
+            <div className="pt-1">
+              <MiniWorkflowStepper status={task.status} />
+            </div>
+
+            {/* Revision Alert */}
+            {isRevision && (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-orange-500/10 border border-orange-500/20">
+                <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                  Revision requested - click to view feedback
+                </span>
+              </div>
+            )}
+
+            {/* Task metadata */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Coins className="h-4 w-4" />
+                <Coins className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {task.creditsUsed} credits
               </div>
               {task.estimatedHours && (
                 <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   ~{task.estimatedHours}h
                 </div>
               )}
               {workingDeadline && isActiveTask && (
-                <div className={`flex items-center gap-1 ${urgency ? urgencyStyles[urgency] : ""}`}>
+                <div className={cn("flex items-center gap-1", urgency ? urgencyStyles[urgency] : "")}>
                   {(urgency === "overdue" || urgency === "urgent") && (
-                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   )}
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Due {workingDeadline.toLocaleDateString()}</span>
-                  <span className="text-xs">({formatTimeRemaining(workingDeadline)})</span>
                 </div>
               )}
               {!workingDeadline && task.deadline && isActiveTask && (
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Due {new Date(task.deadline).toLocaleDateString()}
                 </div>
               )}
@@ -133,6 +239,49 @@ export default function FreelancerTasksPage() {
           </CardContent>
         </Card>
       </Link>
+    );
+  };
+
+  // Empty state component with actionable CTAs
+  const EmptyState = ({ type }: { type: string }) => {
+    const states: Record<string, { icon: React.ReactNode; title: string; description: string; action?: { label: string; href: string } }> = {
+      active: {
+        icon: <Sparkles className="h-12 w-12 text-muted-foreground" />,
+        title: "No active tasks",
+        description: "Browse available tasks and claim one to get started",
+        action: { label: "Browse Available Tasks", href: "/portal/available" },
+      },
+      submitted: {
+        icon: <FileCheck className="h-12 w-12 text-muted-foreground" />,
+        title: "No submitted tasks",
+        description: "Your submitted tasks awaiting client review will appear here",
+      },
+      completed: {
+        icon: <FolderOpen className="h-12 w-12 text-muted-foreground" />,
+        title: "No completed tasks yet",
+        description: "Tasks you've successfully completed will be shown here",
+        action: activeTasks.length > 0 ? undefined : { label: "Find Your First Task", href: "/portal/available" },
+      },
+    };
+
+    const state = states[type] || states.active;
+
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <div className="flex justify-center mb-4">{state.icon}</div>
+          <h3 className="text-lg font-semibold mb-2">{state.title}</h3>
+          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+            {state.description}
+          </p>
+          {state.action && (
+            <Button onClick={() => router.push(state.action!.href)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              {state.action.label}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
@@ -146,11 +295,38 @@ export default function FreelancerTasksPage() {
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="active" className="flex-1 sm:flex-initial text-xs sm:text-sm">Active</TabsTrigger>
-          <TabsTrigger value="submitted" className="flex-1 sm:flex-initial text-xs sm:text-sm">Submitted</TabsTrigger>
-          <TabsTrigger value="completed" className="flex-1 sm:flex-initial text-xs sm:text-sm">Completed</TabsTrigger>
-        </TabsList>
+        {/* Sticky tabs on mobile */}
+        <div className="sticky top-0 z-10 bg-background pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent">
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
+            <TabsTrigger value="active" className="text-xs sm:text-sm relative">
+              Active
+              {activeTasks.length > 0 && (
+                <Badge
+                  variant={revisionTasks.length > 0 ? "destructive" : "secondary"}
+                  className="ml-1.5 h-5 px-1.5 text-xs"
+                >
+                  {activeTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="submitted" className="text-xs sm:text-sm">
+              Submitted
+              {submittedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                  {submittedTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="text-xs sm:text-sm">
+              Completed
+              {completedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                  {completedTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={filter} className="mt-4 sm:mt-6">
           {isLoading ? (
@@ -161,18 +337,15 @@ export default function FreelancerTasksPage() {
                     <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-full mt-2" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-3">
+                    <Skeleton className="h-6 w-full" />
                     <Skeleton className="h-4 w-1/2" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No {filter} tasks found.
-              </p>
-            </div>
+            <EmptyState type={filter} />
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               {filteredTasks.map((task) => (
