@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -282,12 +283,20 @@ export function ClientBrandOnboarding({ onComplete }: ClientBrandOnboardingProps
         {/* Logo */}
         <div className="px-6 sm:px-10 lg:px-16 pt-8">
           <div className="flex items-center gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold"
-              style={{ background: "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #4338ca 100%)" }}
-            >
-              C
-            </div>
+            <Image
+              src="/craftedfigurewhite.png"
+              alt="Crafted"
+              width={32}
+              height={32}
+              className="dark:block hidden"
+            />
+            <Image
+              src="/craftedfigureblack.png"
+              alt="Crafted"
+              width={32}
+              height={32}
+              className="dark:hidden block"
+            />
             <span className="font-semibold text-lg tracking-tight">Crafted</span>
           </div>
         </div>
