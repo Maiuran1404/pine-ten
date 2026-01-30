@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   Calendar,
@@ -36,6 +37,9 @@ import {
   Paperclip,
   XCircle,
   AlertTriangle,
+  Palette,
+  History,
+  Check,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { BrandDNA } from "@/components/freelancer/brand-dna";
@@ -44,6 +48,7 @@ import {
   calculateWorkingDeadline,
   getDeadlineUrgency,
   formatTimeRemaining,
+  cn,
 } from "@/lib/utils";
 
 interface UploadedFile {
@@ -189,6 +194,70 @@ const statusConfig: Record<
   },
 };
 
+// Workflow steps for the stepper
+const workflowSteps = [
+  { status: "ASSIGNED", label: "Assigned" },
+  { status: "IN_PROGRESS", label: "In Progress" },
+  { status: "IN_REVIEW", label: "In Review" },
+  { status: "COMPLETED", label: "Completed" },
+];
+
+function WorkflowStepper({ currentStatus }: { currentStatus: string }) {
+  const statusOrder = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
+  const currentIndex = statusOrder.indexOf(currentStatus);
+  const isRevision = currentStatus === "REVISION_REQUESTED";
+
+  return (
+    <div className="flex items-center justify-between w-full">
+      {workflowSteps.map((step, index) => {
+        const isCompleted = currentIndex > index || currentStatus === "COMPLETED";
+        const isCurrent = currentStatus === step.status || (isRevision && step.status === "IN_PROGRESS");
+        const isRevisionStep = isRevision && step.status === "IN_PROGRESS";
+
+        return (
+          <div key={step.status} className="flex items-center flex-1">
+            <div className="flex flex-col items-center">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+                  isCompleted && "bg-green-500 text-white",
+                  isCurrent && !isRevisionStep && "bg-primary text-primary-foreground",
+                  isRevisionStep && "bg-orange-500 text-white",
+                  !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
+                )}
+              >
+                {isCompleted ? (
+                  <Check className="h-4 w-4" />
+                ) : isRevisionStep ? (
+                  <RefreshCw className="h-4 w-4" />
+                ) : (
+                  index + 1
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-xs mt-1.5 text-center whitespace-nowrap",
+                  (isCompleted || isCurrent) ? "text-foreground font-medium" : "text-muted-foreground"
+                )}
+              >
+                {isRevisionStep ? "Revision" : step.label}
+              </span>
+            </div>
+            {index < workflowSteps.length - 1 && (
+              <div
+                className={cn(
+                  "flex-1 h-0.5 mx-2 mt-[-16px]",
+                  currentIndex > index ? "bg-green-500" : "bg-muted"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function FreelancerTaskDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -199,6 +268,7 @@ export default function FreelancerTaskDetailPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("brief");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -207,6 +277,13 @@ export default function FreelancerTaskDetailPage() {
     }
   }, [params.id]);
 
+  // Auto-switch to submit tab when revision is requested
+  useEffect(() => {
+    if (task?.status === "REVISION_REQUESTED") {
+      setActiveTab("submit");
+    }
+  }, [task?.status]);
+
   const fetchTask = async (id: string) => {
     try {
       const response = await fetch(`/api/tasks/${id}`);
@@ -214,13 +291,18 @@ export default function FreelancerTaskDetailPage() {
         const data = await response.json();
         setTask(data.task);
       } else if (response.status === 404) {
-        setError("Task not found");
+        setError("Task not found. It may have been deleted or the link is incorrect.");
+      } else if (response.status === 403) {
+        setError("You don't have access to this task. It may not be assigned to you.");
+      } else if (response.status === 401) {
+        setError("Please log in to view this task.");
       } else {
-        setError("Failed to load task");
+        const data = await response.json().catch(() => null);
+        setError(data?.error || "Something went wrong. Please try again later.");
       }
     } catch (err) {
       console.error("Failed to fetch task:", err);
-      setError("Failed to load task");
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -331,7 +413,7 @@ export default function FreelancerTaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 sm:p-0">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10" />
           <div className="space-y-2">
@@ -339,8 +421,9 @@ export default function FreelancerTaskDetailPage() {
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="md:col-span-2 space-y-6">
+        <Skeleton className="h-12 w-full" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
                 <Skeleton className="h-6 w-48" />
@@ -350,6 +433,14 @@ export default function FreelancerTaskDetailPage() {
               </CardContent>
             </Card>
           </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -357,7 +448,7 @@ export default function FreelancerTaskDetailPage() {
 
   if (error || !task) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 sm:p-0">
         <Button variant="ghost" asChild>
           <Link href="/portal/tasks">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -385,19 +476,38 @@ export default function FreelancerTaskDetailPage() {
   const canSubmit = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
   const canStart = task.status === "ASSIGNED";
 
+  // Calculate deadline info for sidebar
+  const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
+  const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
+  const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+
+  const urgencyStyles: Record<string, string> = {
+    overdue: "text-destructive",
+    urgent: "text-orange-500",
+    warning: "text-yellow-600",
+    safe: "text-foreground",
+  };
+
+  const urgencyBgStyles: Record<string, string> = {
+    overdue: "bg-destructive/10 border-destructive/20",
+    urgent: "bg-orange-500/10 border-orange-500/20",
+    warning: "bg-yellow-500/10 border-yellow-500/20",
+    safe: "",
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <Button variant="ghost" size="icon" asChild>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <Button variant="ghost" size="icon" asChild className="shrink-0">
             <Link href="/portal/tasks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{task.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{task.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge variant={status.variant} className="flex items-center gap-1">
                 {status.icon}
                 {status.label}
@@ -409,317 +519,442 @@ export default function FreelancerTaskDetailPage() {
           </div>
         </div>
         {canStart && (
-          <Button onClick={handleStartTask} disabled={isSubmitting}>
+          <Button onClick={handleStartTask} disabled={isSubmitting} className="sm:shrink-0">
             {isSubmitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
             Start Working
           </Button>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Main Content */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Brief</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{task.description}</p>
-            </CardContent>
-          </Card>
+      {/* Workflow Stepper */}
+      {!["PENDING", "CANCELLED"].includes(task.status) && (
+        <Card className="p-4">
+          <WorkflowStepper currentStatus={task.status} />
+        </Card>
+      )}
 
-          {/* Brand DNA - Collapsible */}
-          {task.brandDNA && <BrandDNA brandDNA={task.brandDNA} />}
-
-          {/* Previous Work for this Company - Collapsible */}
-          {task.previousWork && task.previousWork.length > 0 && task.brandDNA && (
-            <PreviousDeliverables
-              previousWork={task.previousWork}
-              companyName={task.brandDNA.name}
-            />
-          )}
-
-          {/* Client Attachments */}
-          {clientAttachments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Reference Files
-                </CardTitle>
-                <CardDescription>
-                  Files provided by the client for reference
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {clientAttachments.map((file) => (
-                    <div
-                      key={file.id}
-                      className="group relative border rounded-lg overflow-hidden"
-                    >
-                      {isImage(file.fileType) ? (
-                        <a
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block aspect-video relative bg-muted"
-                        >
-                          <Image
-                            src={file.fileUrl}
-                            alt={file.fileName}
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <ExternalLink className="h-6 w-6 text-white" />
-                          </div>
-                        </a>
-                      ) : (
-                        <a
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
-                        >
-                          <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-xs text-center truncate w-full">
-                            {file.fileName}
-                          </p>
-                        </a>
-                      )}
-                      <div className="p-2 bg-background">
-                        <p className="text-xs truncate">{file.fileName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(file.fileSize / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+      {/* Revision Alert Banner */}
+      {task.status === "REVISION_REQUESTED" && (
+        <Card className="border-orange-500 bg-orange-500/5">
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-orange-700 dark:text-orange-400">Revision Requested</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    The client has requested changes. Review feedback and submit an updated version.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              <Button
+                variant="outline"
+                className="border-orange-500 text-orange-600 hover:bg-orange-500/10 shrink-0"
+                onClick={() => setActiveTab("submit")}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Submit Revision
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Chat History */}
-          {task.chatHistory && task.chatHistory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Client Requirements
-                </CardTitle>
-                <CardDescription>
-                  Original conversation with the client
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                  {task.chatHistory.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        {msg.attachments && msg.attachments.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {msg.attachments.map((att, attIdx) => (
-                              <a
-                                key={attIdx}
-                                href={att.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs underline"
-                              >
-                                <FileIcon className="h-3 w-3" />
-                                {att.fileName}
-                              </a>
-                            ))}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Content with Tabs */}
+        <div className="lg:col-span-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="brief" className="flex items-center gap-1.5">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Brief</span>
+              </TabsTrigger>
+              {task.brandDNA && (
+                <TabsTrigger value="brand" className="flex items-center gap-1.5">
+                  <Palette className="h-4 w-4" />
+                  <span className="hidden sm:inline">Brand</span>
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="files" className="flex items-center gap-1.5">
+                <ImageIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Files</span>
+                {clientAttachments.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {clientAttachments.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              {canSubmit && (
+                <TabsTrigger value="submit" className="flex items-center gap-1.5">
+                  <Upload className="h-4 w-4" />
+                  <span className="hidden sm:inline">Submit</span>
+                  {task.status === "REVISION_REQUESTED" && (
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  )}
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="history" className="flex items-center gap-1.5">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">History</span>
+                {deliverables.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {deliverables.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Brief Tab */}
+            <TabsContent value="brief" className="mt-4 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Task Brief</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap">{task.description}</p>
+                </CardContent>
+              </Card>
+
+              {/* Chat History */}
+              {task.chatHistory && task.chatHistory.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      Client Requirements
+                    </CardTitle>
+                    <CardDescription>
+                      Original conversation with the client
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                      {task.chatHistory.map((msg, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                              msg.role === "user"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            {msg.attachments && msg.attachments.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {msg.attachments.map((att, attIdx) => (
+                                  <a
+                                    key={attIdx}
+                                    href={att.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs underline"
+                                  >
+                                    <FileIcon className="h-3 w-3" />
+                                    {att.fileName}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                            <p className="text-xs opacity-70 mt-1">
+                              {msg.role === "user" ? "Client" : "AI Assistant"}
+                            </p>
                           </div>
-                        )}
-                        <p className="text-xs opacity-70 mt-1">
-                          {msg.role === "user" ? "Client" : "AI Assistant"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Previous Deliverables */}
-          {deliverables.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Previous Submissions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {deliverables.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        {isImage(file.fileType) ? (
-                          <Image
-                            src={file.fileUrl}
-                            alt={file.fileName}
-                            width={48}
-                            height={48}
-                            className="rounded object-cover"
-                          />
-                        ) : (
-                          <FileText className="h-10 w-10 text-muted-foreground" />
-                        )}
-                        <div>
-                          <p className="font-medium">{file.fileName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(file.createdAt).toLocaleDateString()}
-                          </p>
                         </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Brand Tab */}
+            {task.brandDNA && (
+              <TabsContent value="brand" className="mt-4 space-y-6">
+                <BrandDNA brandDNA={task.brandDNA} defaultExpanded />
+
+                {/* Previous Work for this Company */}
+                {task.previousWork && task.previousWork.length > 0 && (
+                  <PreviousDeliverables
+                    previousWork={task.previousWork}
+                    companyName={task.brandDNA.name}
+                  />
+                )}
+              </TabsContent>
+            )}
+
+            {/* Files Tab */}
+            <TabsContent value="files" className="mt-4">
+              {clientAttachments.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5" />
+                      Reference Files
+                    </CardTitle>
+                    <CardDescription>
+                      Files provided by the client for reference
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {clientAttachments.map((file) => (
+                        <div
+                          key={file.id}
+                          className="group relative border rounded-lg overflow-hidden"
+                        >
+                          {isImage(file.fileType) ? (
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block aspect-video relative bg-muted"
+                            >
+                              <Image
+                                src={file.fileUrl}
+                                alt={file.fileName}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <ExternalLink className="h-6 w-6 text-white" />
+                              </div>
+                            </a>
+                          ) : (
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
+                            >
+                              <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-xs text-center truncate w-full">
+                                {file.fileName}
+                              </p>
+                            </a>
+                          )}
+                          <div className="p-2 bg-background">
+                            <p className="text-xs truncate">{file.fileName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.fileSize / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">No reference files</p>
+                    <p className="text-muted-foreground mt-1">
+                      The client hasn&apos;t provided any reference files for this task
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Submit Tab */}
+            {canSubmit && (
+              <TabsContent value="submit" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="h-5 w-5" />
+                      Submit Deliverable
+                    </CardTitle>
+                    <CardDescription>
+                      Upload your completed work for review
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Uploaded files preview */}
+                    {uploadedFiles.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {uploadedFiles.map((file) => (
+                          <div
+                            key={file.fileUrl}
+                            className="relative group border rounded-lg p-2"
+                          >
+                            {isImage(file.fileType) ? (
+                              <Image
+                                src={file.fileUrl}
+                                alt={file.fileName}
+                                width={100}
+                                height={100}
+                                className="w-full aspect-square object-cover rounded"
+                              />
+                            ) : (
+                              <div className="aspect-square flex items-center justify-center bg-muted rounded">
+                                <FileIcon className="h-10 w-10 text-muted-foreground" />
+                              </div>
+                            )}
+                            <p className="text-xs truncate mt-1">{file.fileName}</p>
+                            <button
+                              onClick={() => removeFile(file.fileUrl)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-4 w-4" />
-                        </a>
+                    )}
+
+                    {/* Upload button */}
+                    <div>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        multiple
+                        accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="w-full"
+                      >
+                        {isUploading ? (
+                          <LoadingSpinner size="sm" className="mr-2" />
+                        ) : (
+                          <Paperclip className="h-4 w-4 mr-2" />
+                        )}
+                        {isUploading ? "Uploading..." : "Add Files"}
                       </Button>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Submit Deliverable */}
-          {canSubmit && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Submit Deliverable
-                </CardTitle>
-                <CardDescription>
-                  Upload your completed work for review
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Uploaded files preview */}
-                {uploadedFiles.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {uploadedFiles.map((file) => (
-                      <div
-                        key={file.fileUrl}
-                        className="relative group border rounded-lg p-2"
-                      >
-                        {isImage(file.fileType) ? (
-                          <Image
-                            src={file.fileUrl}
-                            alt={file.fileName}
-                            width={100}
-                            height={100}
-                            className="w-full aspect-square object-cover rounded"
-                          />
-                        ) : (
-                          <div className="aspect-square flex items-center justify-center bg-muted rounded">
-                            <FileIcon className="h-10 w-10 text-muted-foreground" />
-                          </div>
-                        )}
-                        <p className="text-xs truncate mt-1">{file.fileName}</p>
-                        <button
-                          onClick={() => removeFile(file.fileUrl)}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    {/* Message */}
+                    <Textarea
+                      placeholder="Add a note about your submission (optional)..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={3}
+                    />
+
+                    {/* Submit button */}
+                    <Button
+                      className="w-full"
+                      onClick={handleSubmitDeliverable}
+                      disabled={isSubmitting || uploadedFiles.length === 0}
+                    >
+                      {isSubmitting ? (
+                        <LoadingSpinner size="sm" className="mr-2" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Submit for Review
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+
+            {/* History Tab */}
+            <TabsContent value="history" className="mt-4">
+              {deliverables.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Submission History
+                    </CardTitle>
+                    <CardDescription>
+                      Your previous submissions for this task
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {deliverables.map((file, index) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
                         >
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Upload button */}
-                <div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    multiple
-                    accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full"
-                  >
-                    {isUploading ? (
-                      <LoadingSpinner size="sm" className="mr-2" />
-                    ) : (
-                      <Paperclip className="h-4 w-4 mr-2" />
+                          <div className="flex items-center gap-3">
+                            {isImage(file.fileType) ? (
+                              <Image
+                                src={file.fileUrl}
+                                alt={file.fileName}
+                                width={48}
+                                height={48}
+                                className="rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-sm">{file.fileName}</p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>Submission #{deliverables.length - index}</span>
+                                <span>•</span>
+                                <span>{new Date(file.createdAt).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">No submissions yet</p>
+                    <p className="text-muted-foreground mt-1">
+                      Your deliverable submissions will appear here
+                    </p>
+                    {canSubmit && (
+                      <Button className="mt-4" onClick={() => setActiveTab("submit")}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Submit Your First Deliverable
+                      </Button>
                     )}
-                    {isUploading ? "Uploading..." : "Add Files"}
-                  </Button>
-                </div>
-
-                {/* Message */}
-                <Textarea
-                  placeholder="Add a note about your submission (optional)..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                />
-
-                {/* Submit button */}
-                <Button
-                  className="w-full"
-                  onClick={handleSubmitDeliverable}
-                  disabled={isSubmitting || uploadedFiles.length === 0}
-                >
-                  {isSubmitting ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Submit for Review
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Task Details */}
           <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Task Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <Coins className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Coins className="h-5 w-5 text-primary" />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Task Value</p>
-                  <p className="font-medium">{task.creditsUsed} credits</p>
+                  <p className="font-semibold text-lg">{task.creditsUsed} credits</p>
                 </div>
               </div>
 
               <Separator />
 
               <div className="flex items-center gap-3">
-                <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Revisions</p>
                   <p className="font-medium">
@@ -732,77 +967,62 @@ export default function FreelancerTaskDetailPage() {
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                    </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">
-                        Estimated Time
-                      </p>
+                      <p className="text-sm text-muted-foreground">Estimated Time</p>
                       <p className="font-medium">{task.estimatedHours} hours</p>
                     </div>
                   </div>
                 </>
               )}
 
-              {(() => {
-                const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
-                const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
-                const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
-
-                const urgencyStyles = {
-                  overdue: "text-destructive",
-                  urgent: "text-orange-500",
-                  warning: "text-yellow-600",
-                  safe: "text-foreground",
-                };
-
-                const urgencyBgStyles = {
-                  overdue: "bg-destructive/10 border-destructive/20",
-                  urgent: "bg-orange-500/10 border-orange-500/20",
-                  warning: "bg-yellow-500/10 border-yellow-500/20",
-                  safe: "",
-                };
-
-                if (!workingDeadline && !task.deadline) return null;
-
-                return (
-                  <>
-                    <Separator />
-                    {workingDeadline && isActiveTask ? (
-                      <div className={`flex items-start gap-3 p-3 -mx-3 rounded-lg border ${urgency ? urgencyBgStyles[urgency] : ""}`}>
-                        {(urgency === "overdue" || urgency === "urgent") ? (
-                          <AlertTriangle className={`h-5 w-5 mt-0.5 ${urgency ? urgencyStyles[urgency] : ""}`} />
-                        ) : (
-                          <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        )}
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">Your Deadline</p>
-                          <p className={`font-medium ${urgency ? urgencyStyles[urgency] : ""}`}>
-                            {workingDeadline.toLocaleDateString()}
-                          </p>
-                          <p className={`text-sm ${urgency ? urgencyStyles[urgency] : "text-muted-foreground"}`}>
-                            {formatTimeRemaining(workingDeadline)}
-                          </p>
-                        </div>
+              {(workingDeadline || task.deadline) && (
+                <>
+                  <Separator />
+                  {workingDeadline && isActiveTask ? (
+                    <div className={cn(
+                      "flex items-start gap-3 p-3 -mx-3 rounded-lg border",
+                      urgency ? urgencyBgStyles[urgency] : ""
+                    )}>
+                      {(urgency === "overdue" || urgency === "urgent") ? (
+                        <AlertTriangle className={cn("h-5 w-5 mt-0.5", urgency ? urgencyStyles[urgency] : "")} />
+                      ) : (
+                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground">Your Deadline</p>
+                        <p className={cn("font-medium", urgency ? urgencyStyles[urgency] : "")}>
+                          {workingDeadline.toLocaleDateString()}
+                        </p>
+                        <p className={cn("text-sm", urgency ? urgencyStyles[urgency] : "text-muted-foreground")}>
+                          {formatTimeRemaining(workingDeadline)}
+                        </p>
                       </div>
-                    ) : task.deadline ? (
-                      <div className="flex items-center gap-3">
+                    </div>
+                  ) : task.deadline ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                         <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Deadline</p>
-                          <p className="font-medium">
-                            {new Date(task.deadline).toLocaleDateString()}
-                          </p>
-                        </div>
                       </div>
-                    ) : null}
-                  </>
-                );
-              })()}
+                      <div>
+                        <p className="text-sm text-muted-foreground">Deadline</p>
+                        <p className="font-medium">
+                          {new Date(task.deadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
 
               <Separator />
 
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Assigned</p>
                   <p className="font-medium">
@@ -817,7 +1037,9 @@ export default function FreelancerTaskDetailPage() {
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Completed</p>
                       <p className="font-medium">
@@ -830,20 +1052,38 @@ export default function FreelancerTaskDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Revision info for revision requested status */}
-          {task.status === "REVISION_REQUESTED" && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <AlertCircle className="h-5 w-5" />
-                  Revision Requested
-                </CardTitle>
+          {/* Quick Actions */}
+          {canSubmit && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  The client has requested changes. Please review the feedback
-                  and submit an updated version.
-                </p>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setActiveTab("files")}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  View Reference Files
+                </Button>
+                {task.brandDNA && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("brand")}
+                  >
+                    <Palette className="h-4 w-4 mr-2" />
+                    View Brand Guidelines
+                  </Button>
+                )}
+                <Button
+                  className="w-full justify-start"
+                  onClick={() => setActiveTab("submit")}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Submit Deliverable
+                </Button>
               </CardContent>
             </Card>
           )}

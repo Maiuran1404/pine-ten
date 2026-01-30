@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 interface BrandDNAProps {
+  defaultExpanded?: boolean;
   brandDNA: {
     name: string;
     website?: string | null;
@@ -75,8 +76,8 @@ function ColorSwatch({ color, label }: { color: string; label: string }) {
   );
 }
 
-export function BrandDNA({ brandDNA }: BrandDNAProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
+  const [isOpen, setIsOpen] = useState(defaultExpanded);
 
   const hasColors =
     brandDNA.colors.primary ||
