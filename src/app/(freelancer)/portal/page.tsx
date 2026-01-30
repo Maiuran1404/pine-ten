@@ -25,6 +25,9 @@ import {
   Palette,
   Briefcase,
   Award,
+  TrendingUp,
+  Coins,
+  Target,
 } from "lucide-react";
 
 interface FreelancerStats {
@@ -32,6 +35,9 @@ interface FreelancerStats {
   completedTasks: number;
   pendingReview: number;
   rating: number;
+  totalEarnings: number;
+  monthlyEarnings: number;
+  monthlyTasks: number;
 }
 
 interface Task {
@@ -262,6 +268,10 @@ export default function FreelancerDashboardPage() {
     );
   }
 
+  // Calculate progress towards monthly goal (example: 50 credits)
+  const monthlyGoal = 50;
+  const progressPercent = stats ? Math.min((stats.monthlyEarnings / monthlyGoal) * 100, 100) : 0;
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
@@ -273,7 +283,69 @@ export default function FreelancerDashboardPage() {
         </p>
       </div>
 
-      {/* Stats */}
+      {/* Earnings Hero Section */}
+      <Card className="overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <TrendingUp className="h-4 w-4" />
+            <span>This Month</span>
+          </div>
+
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-3">
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-6 sm:grid-cols-3 mb-6">
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl sm:text-4xl font-bold">{stats?.monthlyEarnings || 0}</span>
+                    <span className="text-muted-foreground text-sm">credits</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Earned this month</p>
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl sm:text-4xl font-bold">{stats?.monthlyTasks || 0}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Tasks completed</p>
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl sm:text-4xl font-bold">{stats?.rating?.toFixed(1) || "—"}</span>
+                    {stats?.rating && <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Average rating</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Target className="h-4 w-4" />
+                    Monthly goal
+                  </span>
+                  <span className="font-medium">{Math.round(progressPercent)}% of {monthlyGoal} credits</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-primary rounded-full"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+
+      {/* Stats Row */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -319,16 +391,14 @@ export default function FreelancerDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rating</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">
-                {stats?.rating?.toFixed(1) || "N/A"}
-              </div>
+              <div className="text-2xl font-bold">{stats?.totalEarnings || 0}</div>
             )}
           </CardContent>
         </Card>
