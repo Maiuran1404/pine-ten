@@ -46,7 +46,7 @@ export default function FreelancerLayout({
     <div className="flex h-screen overflow-hidden">
       <FreelancerSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header onMenuClick={() => setSidebarOpen(true)} basePath="/portal" showUpgrade={false} />
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>

@@ -16,6 +16,7 @@ import Link from "next/link";
 
 interface NotificationBellProps {
   className?: string;
+  basePath?: string; // Base path for task links (e.g., "/portal" for freelancers, "/dashboard" for clients)
 }
 
 const notificationIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -35,7 +36,7 @@ const notificationColors: Record<string, string> = {
 /**
  * Notification bell with dropdown showing recent notifications
  */
-export function NotificationBell({ className }: NotificationBellProps) {
+export function NotificationBell({ className, basePath = "/dashboard" }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const {
     notifications,
@@ -46,6 +47,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
   } = useNotifications({
     enabled: true,
     showToasts: true,
+    basePath,
   });
 
   const handleNotificationClick = (notification: Notification) => {
@@ -112,7 +114,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                   >
                     {notification.taskId ? (
                       <Link
-                        href={`/dashboard/tasks/${notification.taskId}`}
+                        href={`${basePath}/tasks/${notification.taskId}`}
                         onClick={() => handleNotificationClick(notification)}
                         className="flex gap-3"
                       >

@@ -5,14 +5,17 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { CreditsPurchaseDialog } from "./credits-purchase-dialog";
 
 interface HeaderProps {
   credits?: number;
   onMenuClick?: () => void;
+  basePath?: string; // Base path for notifications (e.g., "/portal" for freelancers)
+  showUpgrade?: boolean; // Whether to show the upgrade button
 }
 
-export function Header({ credits = 0, onMenuClick }: HeaderProps) {
+export function Header({ credits = 0, onMenuClick, basePath = "/dashboard", showUpgrade = true }: HeaderProps) {
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
 
   return (
@@ -52,16 +55,19 @@ export function Header({ credits = 0, onMenuClick }: HeaderProps) {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <NotificationBell basePath={basePath} />
           <ThemeToggle />
-          <Button
-            size="sm"
-            onClick={() => setShowCreditsDialog(true)}
-            className="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            Upgrade
-          </Button>
+          {showUpgrade && (
+            <Button
+              size="sm"
+              onClick={() => setShowCreditsDialog(true)}
+              className="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Upgrade</span>
+            </Button>
+          )}
         </div>
       </header>
 

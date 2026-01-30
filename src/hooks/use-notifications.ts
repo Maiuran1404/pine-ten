@@ -14,6 +14,7 @@ export interface Notification {
 interface UseNotificationsOptions {
   enabled?: boolean;
   showToasts?: boolean;
+  basePath?: string; // Base path for task links (e.g., "/portal" for freelancers, "/dashboard" for clients)
   onNotification?: (notification: Notification) => void;
 }
 
@@ -29,6 +30,7 @@ interface UseNotificationsOptions {
 export function useNotifications({
   enabled = true,
   showToasts = true,
+  basePath = "/dashboard",
   onNotification,
 }: UseNotificationsOptions = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -74,7 +76,7 @@ export function useNotifications({
                 ? {
                     label: "View",
                     onClick: () => {
-                      window.location.href = `/dashboard/tasks/${notification.taskId}`;
+                      window.location.href = `${basePath}/tasks/${notification.taskId}`;
                     },
                   }
                 : undefined,
