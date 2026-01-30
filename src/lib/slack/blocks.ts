@@ -74,10 +74,12 @@ function button(
 }
 
 // Helper to create link button
-function linkButton(text: string, url: string): object {
+// Link buttons open a URL when clicked. Slack still sends interaction payloads for these.
+function linkButton(text: string, url: string, actionId?: string): object {
   return {
     type: "button",
     text: { type: "plain_text", text, emoji: true },
+    action_id: actionId || `link_${Date.now()}`,
     url,
   };
 }

@@ -106,7 +106,13 @@ async function handleBlockActions(
         break;
 
       default:
-        logger.warn({ actionId }, "Unknown action ID");
+        // Link buttons (with url property) will trigger interactions but don't need handling
+        // They just open the URL in the browser
+        if (actionId.startsWith("link_")) {
+          logger.info({ actionId }, "Link button clicked - no action needed");
+        } else {
+          logger.warn({ actionId }, "Unknown action ID");
+        }
     }
   } catch (error) {
     logger.error({ err: error, actionId }, "Error handling block action");

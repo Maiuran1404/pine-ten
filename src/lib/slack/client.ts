@@ -456,8 +456,9 @@ export function verifySlackSignature(
 
   // Check timestamp is within 5 minutes
   const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - parseInt(timestamp)) > 60 * 5) {
-    console.error("[Slack] Request timestamp too old");
+  const timeDiff = Math.abs(now - parseInt(timestamp));
+  if (timeDiff > 60 * 5) {
+    console.error("[Slack] Request timestamp too old", { timeDiff, now, timestamp });
     return false;
   }
 
@@ -473,11 +474,21 @@ export function verifySlackSignature(
 
   // Compare signatures using timing-safe comparison
   try {
-    return crypto.timingSafeEqual(
+    const isValid = crypto.timingSafeEqual(
       Buffer.from(mySignature),
       Buffer.from(signature)
     );
-  } catch {
+    if (!isValid) {
+      console.error("[Slack] Signature mismatch", {
+        received: signature.slice(0, 20) + "...",
+        expected: mySignature.slice(0, 20) + "...",
+        bodyLength: body.length,
+        signingSecretLength: signingSecret.length,
+      });
+    }
+    return isValid;
+  } catch (err) {
+    console.error("[Slack] Signature comparison error", err);
     return false;
   }
 }
