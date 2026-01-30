@@ -43,9 +43,9 @@ export default function ClientLayout({
     }
   }, [session, isPending, router]);
 
-  // Function to fetch tasks
+  // Function to fetch tasks (explicitly request client view to show tasks they created)
   const fetchTasks = () => {
-    fetch("/api/tasks?limit=10")
+    fetch("/api/tasks?limit=10&view=client")
       .then((res) => res.json())
       .then((data) => {
         if (data.tasks) {

@@ -66,7 +66,8 @@ export default function TasksPage() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch("/api/tasks?limit=50");
+      // Explicitly request client view to show tasks the user created
+      const response = await fetch("/api/tasks?limit=50&view=client");
       if (response.ok) {
         const data = await response.json();
         setTasks(data.tasks || []);

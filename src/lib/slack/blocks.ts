@@ -198,6 +198,7 @@ export function taskCreatedBlock(task: SlackTaskInfo): (Block | KnownBlock)[] {
       `Client: ${task.clientName}\n` +
       `Category: ${task.category || "General"}\n` +
       `Credits: ${task.credits}\n` +
+      (task.freelancerName ? `Assigned to: ${task.freelancerName}\n` : "") +
       (task.deadline ? `Deadline: ${formatDate(task.deadline)}` : "")
     ),
     context(`Created at ${formatDate(task.createdAt)}`),
@@ -220,7 +221,8 @@ export function taskAssignedBlock(
     ),
     context(formatDate(new Date())),
     actions([
-      linkButton("View Task", `${APP_URL}/admin/tasks/${task.id}`),
+      linkButton("View Task (Admin)", `${APP_URL}/admin/tasks/${task.id}`),
+      linkButton("View Task (Artist)", `${APP_URL}/portal/tasks/${task.id}`),
     ]),
   ];
 }

@@ -115,18 +115,23 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
     const status = searchParams.get("status");
+    const view = searchParams.get("view"); // 'client' or 'freelancer' to force a specific view
 
-    // Build conditions based on user role
+    // Build conditions based on user role or explicit view parameter
     const user = session.user as { role?: string };
     let conditions;
 
-    if (user.role === "ADMIN") {
+    // Allow forcing a specific view via query parameter
+    // This is useful when users access different dashboards regardless of their role
+    const effectiveView = view || (user.role === "ADMIN" ? "admin" : user.role === "FREELANCER" ? "freelancer" : "client");
+
+    if (effectiveView === "admin" && user.role === "ADMIN") {
       // Admin sees all tasks
       conditions = status
         ? eq(tasks.status, status as (typeof tasks.status.enumValues)[number])
         : undefined;
-    } else if (user.role === "FREELANCER") {
-      // Freelancer sees assigned tasks
+    } else if (effectiveView === "freelancer") {
+      // Freelancer view - sees assigned tasks
       conditions = status
         ? and(
             eq(tasks.freelancerId, session.user.id),
@@ -134,7 +139,7 @@ export async function GET(request: NextRequest) {
           )
         : eq(tasks.freelancerId, session.user.id);
     } else {
-      // Client sees their own tasks
+      // Client view (default) - sees their own created tasks
       conditions = status
         ? and(
             eq(tasks.clientId, session.user.id),

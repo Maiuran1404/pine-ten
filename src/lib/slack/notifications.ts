@@ -360,7 +360,7 @@ async function notifyTaskAssigned(
               {
                 type: "button",
                 text: { type: "plain_text", text: "View Task" },
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/tasks/${task.id}`,
+                url: `${process.env.NEXT_PUBLIC_APP_URL}/portal/tasks/${task.id}`,
               },
             ],
           },
@@ -534,7 +534,7 @@ async function notifyRevisionRequested(
               {
                 type: "button",
                 text: { type: "plain_text", text: "View Task" },
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/tasks/${task.id}`,
+                url: `${process.env.NEXT_PUBLIC_APP_URL}/portal/tasks/${task.id}`,
               },
             ],
           },
