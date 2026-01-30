@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { User, Mail, Phone, Calendar, RefreshCw, LogOut, Briefcase, Link as LinkIcon } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  RefreshCw,
+  LogOut,
+  Briefcase,
+  Link as LinkIcon,
+  Sparkles,
+  X,
+  Plus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UserSettings {
@@ -32,6 +45,35 @@ interface FreelancerProfile {
   availability: boolean;
 }
 
+// Common skill suggestions
+const skillSuggestions = [
+  "Illustration",
+  "Graphic Design",
+  "UI/UX Design",
+  "Brand Design",
+  "Motion Graphics",
+  "3D Design",
+  "Web Design",
+  "Social Media Design",
+  "Packaging Design",
+  "Typography",
+  "Photo Editing",
+  "Video Editing",
+];
+
+const specializationSuggestions = [
+  "Logo Design",
+  "Brand Identity",
+  "Marketing Materials",
+  "App Design",
+  "Website Design",
+  "Product Design",
+  "Editorial Design",
+  "Presentation Design",
+  "Icon Design",
+  "Infographics",
+];
+
 const GlassCard = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <div
     className={cn("rounded-xl overflow-hidden border border-border bg-card", className)}
@@ -40,11 +82,131 @@ const GlassCard = ({ children, className }: { children: React.ReactNode; classNa
   </div>
 );
 
+// Editable tag input component
+function TagInput({
+  tags,
+  onTagsChange,
+  suggestions,
+  placeholder,
+  label,
+}: {
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+  suggestions: string[];
+  placeholder: string;
+  label: string;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      onTagsChange([...tags, trimmedTag]);
+    }
+    setInputValue("");
+    setShowSuggestions(false);
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    onTagsChange(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputValue.trim()) {
+      e.preventDefault();
+      addTag(inputValue);
+    } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  };
+
+  const filteredSuggestions = suggestions.filter(
+    (s) =>
+      !tags.includes(s) &&
+      s.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <div
+          className={cn(
+            "flex flex-wrap gap-2 p-3 min-h-[44px] rounded-md border bg-background cursor-text",
+            "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          )}
+          onClick={() => inputRef.current?.focus()}
+        >
+          {tags.map((tag) => (
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="flex items-center gap-1 pr-1"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeTag(tag);
+                }}
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            placeholder={tags.length === 0 ? placeholder : "Add more..."}
+            className="flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+          />
+        </div>
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="absolute z-10 mt-1 w-full max-h-48 overflow-auto rounded-md border bg-popover shadow-md">
+            {filteredSuggestions.slice(0, 8).map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(suggestion);
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+              >
+                <Plus className="h-3 w-3" />
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Press Enter to add a custom {label.toLowerCase().replace("your ", "")}
+      </p>
+    </div>
+  );
+}
+
 export default function FreelancerSettingsPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSkills, setIsSavingSkills] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [freelancerProfile, setFreelancerProfile] = useState<FreelancerProfile | null>(null);
@@ -55,6 +217,8 @@ export default function FreelancerSettingsPage() {
     whatsappNumber: "",
     portfolioUrls: "",
   });
+  const [skills, setSkills] = useState<string[]>([]);
+  const [specializations, setSpecializations] = useState<string[]>([]);
   const [availability, setAvailability] = useState(true);
 
   useEffect(() => {
@@ -87,6 +251,8 @@ export default function FreelancerSettingsPage() {
           whatsappNumber: profileData.profile?.whatsappNumber || "",
           portfolioUrls: profileData.profile?.portfolioUrls?.join(", ") || "",
         }));
+        setSkills(profileData.profile?.skills || []);
+        setSpecializations(profileData.profile?.specializations || []);
         setAvailability(profileData.profile?.availability ?? true);
       }
     } catch (error) {
@@ -149,6 +315,31 @@ export default function FreelancerSettingsPage() {
       toast.error("Failed to update freelancer profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveSkills = async () => {
+    setIsSavingSkills(true);
+    try {
+      const response = await fetch("/api/freelancer/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skills,
+          specializations,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Skills updated successfully");
+        setFreelancerProfile(prev => prev ? { ...prev, skills, specializations } : null);
+      } else {
+        throw new Error("Failed to update skills");
+      }
+    } catch {
+      toast.error("Failed to update skills");
+    } finally {
+      setIsSavingSkills(false);
     }
   };
 
@@ -284,6 +475,50 @@ export default function FreelancerSettingsPage() {
         </div>
       </GlassCard>
 
+      {/* Skills & Specializations Section */}
+      <GlassCard>
+        <div className="p-5 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium text-foreground">Skills & Expertise</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Add your skills to help us match you with relevant tasks
+          </p>
+        </div>
+        <div className="p-5 space-y-6">
+          <TagInput
+            tags={skills}
+            onTagsChange={setSkills}
+            suggestions={skillSuggestions}
+            placeholder="Type a skill like Illustration, UI/UX Design..."
+            label="Your Skills"
+          />
+
+          <TagInput
+            tags={specializations}
+            onTagsChange={setSpecializations}
+            suggestions={specializationSuggestions}
+            placeholder="Type a specialization like Logo Design, Brand Identity..."
+            label="Your Specializations"
+          />
+
+          <Button
+            onClick={handleSaveSkills}
+            disabled={isSavingSkills}
+          >
+            {isSavingSkills ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Skills"
+            )}
+          </Button>
+        </div>
+      </GlassCard>
+
       {/* Freelancer Profile Section */}
       <GlassCard>
         <div className="p-5 border-b border-border">
@@ -406,14 +641,14 @@ export default function FreelancerSettingsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Skills</span>
                   <span className="text-muted-foreground">
-                    {freelancerProfile.skills?.length || 0} skills
+                    {skills.length} skills
                   </span>
                 </div>
                 <div className="h-px bg-muted/40" />
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Specializations</span>
                   <span className="text-muted-foreground">
-                    {freelancerProfile.specializations?.length || 0} specializations
+                    {specializations.length} specializations
                   </span>
                 </div>
               </>
