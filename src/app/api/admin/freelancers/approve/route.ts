@@ -64,11 +64,15 @@ export async function POST(request: NextRequest) {
       taskUrl: `${config.app.url}/portal`,
     });
 
-    // Send admin notification
+    // Send admin notification (includes Slack)
     try {
       await adminNotifications.freelancerApproved({
         name: freelancerUser.name,
         email: freelancerUser.email,
+        userId: profile.userId,
+        skills: profile.skills || [],
+        portfolioUrls: profile.portfolioUrls || [],
+        approvedBy: "Admin",
       });
     } catch (emailError) {
       logger.error({ err: emailError }, "Failed to send admin notification");

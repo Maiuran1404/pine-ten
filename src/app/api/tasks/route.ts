@@ -254,9 +254,9 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to prevent race conditions
     const result = await withTransaction(async (tx) => {
-      // Get user's current credits with row lock
+      // Get user's current credits and companyId with row lock
       const [userResult] = await tx
-        .select({ credits: users.credits })
+        .select({ credits: users.credits, companyId: users.companyId })
         .from(users)
         .where(eq(users.id, session.user.id))
         .for("update"); // Lock the row
@@ -266,6 +266,7 @@ export async function POST(request: NextRequest) {
       }
 
       const currentCredits = userResult.credits;
+      const userCompanyId = userResult.companyId;
 
       if (currentCredits < creditsRequired) {
         throw Errors.insufficientCredits(creditsRequired, currentCredits);
@@ -385,10 +386,10 @@ export async function POST(request: NextRequest) {
           .where(eq(briefs.id, briefId));
       }
 
-      return { task: newTask, freelancer: assignedFreelancer };
+      return { task: newTask, freelancer: assignedFreelancer, companyId: userCompanyId };
     });
 
-    // Send notifications outside the transaction
+    // Send notifications outside the transaction (includes Slack)
     try {
       await adminNotifications.newTaskCreated({
         taskId: result.task.id,
@@ -397,6 +398,8 @@ export async function POST(request: NextRequest) {
         clientEmail: session.user.email || "",
         category: category || "General",
         creditsUsed: creditsRequired,
+        deadline: deadline ? new Date(deadline) : undefined,
+        companyId: result.companyId || undefined,
       });
     } catch (error) {
       logger.error({ err: error, taskId: result.task.id }, "Failed to send admin email notification");

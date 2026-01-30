@@ -7,7 +7,7 @@ import { postMessage, getChannelConfig, isSlackConfigured, sendDM, lookupUserByE
 import { getOrCreateClientChannel, addArtistToClientChannel } from "./channels";
 import * as blocks from "./blocks";
 import type {
-  SlackEventType,
+  SlackEventType as SlackEventTypeValue,
   SlackUserInfo,
   SlackTaskInfo,
   SlackFreelancerInfo,
@@ -15,6 +15,8 @@ import type {
   SlackCompanyInfo,
   SlackNotificationResult,
 } from "./types";
+
+type SlackEventType = SlackEventTypeValue;
 
 /**
  * Main notification dispatcher

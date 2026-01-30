@@ -38,9 +38,12 @@ export { notifySlack } from "./notifications";
 // Block builders
 export * as slackBlocks from "./blocks";
 
+// Event type constants
+export { SlackEventType } from "./types";
+
 // Types
 export type {
-  SlackEventType,
+  SlackEventType as SlackEventTypeValue,
   SlackChannelType,
   SlackUserInfo,
   SlackTaskInfo,

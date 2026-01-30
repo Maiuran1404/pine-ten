@@ -123,7 +123,21 @@ export const adminNotifications = {
     email: string;
     skills: string[];
     portfolioUrls: string[];
+    userId?: string;
+    hourlyRate?: number;
   }) => {
+    // Send Slack notification with interactive buttons (fire-and-forget)
+    notifySlack(SlackEventType.FREELANCER_APPLICATION, {
+      freelancer: {
+        userId: data.userId || "",
+        name: data.name,
+        email: data.email,
+        skills: data.skills,
+        portfolioUrls: data.portfolioUrls,
+        hourlyRate: data.hourlyRate,
+      },
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for freelancer application"));
+
     return notifyAdmin(
       "New Freelancer Application",
       `
@@ -166,7 +180,23 @@ export const adminNotifications = {
     clientEmail: string;
     category: string;
     creditsUsed: number;
+    deadline?: Date;
+    companyId?: string;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.TASK_CREATED, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: data.clientName,
+        category: data.category,
+        credits: data.creditsUsed,
+        deadline: data.deadline,
+        createdAt: new Date(),
+      },
+      companyId: data.companyId,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for task created"));
+
     return notifyAdmin(
       "New Task Created",
       `
@@ -196,11 +226,30 @@ export const adminNotifications = {
 
   // Task assigned to freelancer
   taskAssigned: async (data: {
+    taskId: string;
     taskTitle: string;
     freelancerName: string;
     freelancerEmail: string;
+    freelancerUserId?: string;
     clientName: string;
+    companyId?: string;
+    credits?: number;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.TASK_ASSIGNED, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: data.clientName,
+        freelancerName: data.freelancerName,
+        credits: data.credits || 0,
+        createdAt: new Date(),
+      },
+      freelancerName: data.freelancerName,
+      freelancerUserId: data.freelancerUserId,
+      companyId: data.companyId,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for task assigned"));
+
     return notifyAdmin(
       "Task Assigned",
       `
@@ -225,10 +274,26 @@ export const adminNotifications = {
 
   // Task completed
   taskCompleted: async (data: {
+    taskId: string;
     taskTitle: string;
     freelancerName: string;
     clientName: string;
+    credits?: number;
+    companyId?: string;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.TASK_COMPLETED, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: data.clientName,
+        freelancerName: data.freelancerName,
+        credits: data.credits || 0,
+        createdAt: new Date(),
+      },
+      companyId: data.companyId,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for task completed"));
+
     return notifyAdmin(
       "Task Completed",
       `
@@ -258,7 +323,19 @@ export const adminNotifications = {
     credits: number;
     amount: number;
     paymentId?: string;
+    newBalance?: number;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.CREDIT_PURCHASE, {
+      purchase: {
+        userName: data.clientName,
+        userEmail: data.clientEmail,
+        credits: data.credits,
+        amount: data.amount,
+        newBalance: data.newBalance || data.credits,
+      },
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for credit purchase"));
+
     return notifyAdmin(
       "Credit Purchase",
       `
@@ -296,7 +373,22 @@ export const adminNotifications = {
     name: string;
     email: string;
     approvedBy?: string;
+    userId?: string;
+    skills?: string[];
+    portfolioUrls?: string[];
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.FREELANCER_APPROVED, {
+      freelancer: {
+        userId: data.userId || "",
+        name: data.name,
+        email: data.email,
+        skills: data.skills || [],
+        portfolioUrls: data.portfolioUrls || [],
+      },
+      approvedBy: data.approvedBy || "Admin",
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for freelancer approved"));
+
     return notifyAdmin(
       "Freelancer Approved",
       `
@@ -323,7 +415,23 @@ export const adminNotifications = {
   freelancerRejected: async (data: {
     name: string;
     email: string;
+    rejectedBy?: string;
+    reason?: string;
+    userId?: string;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.FREELANCER_REJECTED, {
+      freelancer: {
+        userId: data.userId || "",
+        name: data.name,
+        email: data.email,
+        skills: [],
+        portfolioUrls: [],
+      },
+      rejectedBy: data.rejectedBy || "Admin",
+      reason: data.reason,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for freelancer rejected"));
+
     return notifyAdmin(
       "Freelancer Rejected",
       `
@@ -348,12 +456,29 @@ export const adminNotifications = {
 
   // Revision requested
   revisionRequested: async (data: {
+    taskId: string;
     taskTitle: string;
     clientName: string;
     freelancerName: string;
     revisionsUsed: number;
     maxRevisions: number;
+    feedback?: string;
+    companyId?: string;
   }) => {
+    // Send Slack notification (fire-and-forget)
+    notifySlack(SlackEventType.REVISION_REQUESTED, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: data.clientName,
+        freelancerName: data.freelancerName,
+        credits: 0,
+        createdAt: new Date(),
+      },
+      feedback: data.feedback || "",
+      companyId: data.companyId,
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for revision requested"));
+
     return notifyAdmin(
       "Revision Requested",
       `
@@ -389,7 +514,20 @@ export const adminNotifications = {
     clientName: string;
     clientEmail: string;
     fileCount: number;
+    credits?: number;
   }) => {
+    // Send Slack notification with interactive buttons (fire-and-forget)
+    notifySlack(SlackEventType.TASK_PENDING_REVIEW, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: data.clientName,
+        freelancerName: data.freelancerName,
+        credits: data.credits || 0,
+        createdAt: new Date(),
+      },
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for pending review"));
+
     return notifyAdmin(
       "ACTION REQUIRED: Deliverable Needs Verification",
       `

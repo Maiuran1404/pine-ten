@@ -128,12 +128,18 @@ async function handler(request: NextRequest) {
       // Fire-and-forget: Send notifications without blocking the response
       const userName = session.user.name || "Unknown";
       const userEmail = session.user.email || "";
+      const companyInfo = { name: company.name, industry: company.industry || undefined };
       Promise.resolve().then(async () => {
         try {
-          await adminNotifications.newClientSignup({ name: userName, email: userEmail });
+          await adminNotifications.newClientSignup({
+            name: userName,
+            email: userEmail,
+            userId: session.user.id,
+            company: companyInfo,
+          });
           const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`);
           await sendEmail({ to: userEmail, subject: welcomeEmail.subject, html: welcomeEmail.html });
-          
+
           // Send WhatsApp notification to admin
           const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
             name: userName,
@@ -180,6 +186,7 @@ async function handler(request: NextRequest) {
       const freelancerEmail = session.user.email || "";
       const freelancerSkills = data.skills || [];
       const freelancerPortfolio = data.portfolioUrls || [];
+      const freelancerHourlyRate = data.hourlyRate;
       Promise.resolve().then(async () => {
         try {
           await adminNotifications.newFreelancerApplication({
@@ -187,8 +194,10 @@ async function handler(request: NextRequest) {
             email: freelancerEmail,
             skills: freelancerSkills,
             portfolioUrls: freelancerPortfolio,
+            userId: session.user.id,
+            hourlyRate: freelancerHourlyRate,
           });
-          
+
           // Send WhatsApp notification to admin
           const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
             name: freelancerName,

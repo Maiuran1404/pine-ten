@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       throw Errors.notFound("Freelancer");
     }
 
-    const { user: freelancerUser } = profileWithUser[0];
+    const { profile, user: freelancerUser } = profileWithUser[0];
 
     // Update status to rejected
     await db
@@ -54,10 +54,13 @@ export async function POST(request: NextRequest) {
         html: rejectionEmail.html,
       });
 
-      // Send admin notification
+      // Send admin notification (includes Slack)
       await adminNotifications.freelancerRejected({
         name: freelancerUser.name,
         email: freelancerUser.email,
+        userId: profile.userId,
+        reason,
+        rejectedBy: "Admin",
       });
     } catch (emailError) {
       logger.error({ err: emailError }, "Failed to send rejection notifications");

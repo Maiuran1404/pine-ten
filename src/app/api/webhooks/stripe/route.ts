@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
             "Credits added successfully"
           );
 
-          // Send notifications (non-blocking)
+          // Send notifications (non-blocking) - includes Slack
           try {
             await Promise.all([
               adminNotifications.creditPurchase({
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
                 clientEmail: user.email,
                 credits: result.credits,
                 amount: result.credits * config.credits.pricePerCredit,
+                newBalance: newCredits,
               }),
               (async () => {
                 const purchaseEmail = emailTemplates.creditsPurchased(

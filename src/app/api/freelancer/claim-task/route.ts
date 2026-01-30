@@ -95,10 +95,14 @@ export async function POST(request: NextRequest) {
       // Send admin notification
       try {
         await adminNotifications.taskAssigned({
+          taskId: task[0].id,
           taskTitle: task[0].title,
           freelancerName: session.user.name || "Unknown",
           freelancerEmail: session.user.email || "",
+          freelancerUserId: session.user.id,
           clientName: client[0].name,
+          companyId: client[0].companyId || undefined,
+          credits: task[0].creditsUsed,
         });
       } catch (emailError) {
         console.error("Failed to send task assigned notification:", emailError);

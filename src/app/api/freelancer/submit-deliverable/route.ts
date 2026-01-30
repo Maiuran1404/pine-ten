@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         .where(eq(users.id, task.clientId))
         .limit(1);
 
-      // Notify admin that deliverables need verification
+      // Notify admin that deliverables need verification (includes Slack)
       await adminNotifications.deliverablePendingReview({
         taskId: task.id,
         taskTitle: task.title,
@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
         clientName: client?.name || "Unknown",
         clientEmail: client?.email || "",
         fileCount: files.length,
+        credits: task.creditsUsed,
       });
     } catch (notifyError) {
       console.error("Failed to send admin notification:", notifyError);
