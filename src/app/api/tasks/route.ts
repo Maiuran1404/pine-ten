@@ -12,7 +12,7 @@ import {
   briefs,
   taskOffers,
 } from "@/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, count } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { createTaskSchema } from "@/lib/validations";
@@ -238,7 +238,8 @@ export async function POST(request: NextRequest) {
 
       // Auto-detect complexity and urgency
       const taskDeadline = deadline ? new Date(deadline) : null;
-      const requiredSkills = requirements?.skills || [];
+      const reqSkills = requirements?.skills;
+      const requiredSkills: string[] = Array.isArray(reqSkills) ? reqSkills : [];
       const taskComplexity = detectTaskComplexity(
         estimatedHours || null,
         requiredSkills.length,
@@ -265,7 +266,7 @@ export async function POST(request: NextRequest) {
           status: "PENDING",
           complexity: taskComplexity,
           urgency: taskUrgency,
-          requiredSkills: requiredSkills,
+          requiredSkills,
         })
         .returning();
 

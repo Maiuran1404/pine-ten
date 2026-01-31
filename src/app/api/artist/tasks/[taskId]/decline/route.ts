@@ -283,8 +283,8 @@ export async function POST(
           taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
           additionalData: {
             taskTitle: result.task.title,
-            matchScore: result.nextArtist.totalScore,
-            urgency: result.task.urgency,
+            matchScore: String(result.nextArtist.totalScore),
+            urgency: result.task.urgency ?? "STANDARD",
           },
         });
       } catch (error) {

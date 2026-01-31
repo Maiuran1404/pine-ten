@@ -374,17 +374,10 @@ async function seedSkills() {
         ON CONFLICT (slug) DO NOTHING
       `);
 
-      // Check if insert happened by trying to count
-      const result = await db.execute(sql`
-        SELECT 1 FROM skills WHERE slug = ${skill.slug} LIMIT 1
-      `);
-
-      if (result.rowCount && result.rowCount > 0) {
-        console.log(`✓ ${skill.name} (${skill.category})`);
-        inserted++;
-      }
+      console.log(`✓ ${skill.name} (${skill.category})`);
+      inserted++;
     } catch (error) {
-      console.log(`⊘ Skipped: ${skill.name} (already exists)`);
+      console.log(`⊘ Skipped: ${skill.name} (error: ${error})`);
       skipped++;
     }
   }

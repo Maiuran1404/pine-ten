@@ -322,9 +322,9 @@ export default function AlgorithmPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...editingConfig,
           name: newVersionName || `Configuration v${configurations.length + 1}`,
           description: newVersionDescription,
-          ...editingConfig,
         }),
       });
 
