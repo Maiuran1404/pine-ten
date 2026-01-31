@@ -14,12 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { IntakeSummary as IntakeSummaryType, SummaryItem } from "@/lib/creative-intake/types";
+import type { IntakeSummary as IntakeSummaryType, SummaryItem, ParsedSummary } from "@/lib/creative-intake/types";
 import type { ServiceType } from "@/lib/creative-intake/types";
 import { SERVICE_DEFINITIONS } from "@/lib/creative-intake/types";
 
+// Union type that accepts both full IntakeSummary and parsed summaries
+type SummaryInput = IntakeSummaryType | ParsedSummary;
+
 interface IntakeSummaryCardProps {
-  summary: IntakeSummaryType;
+  summary: SummaryInput;
   onEdit?: (field: string, newValue: string | string[]) => void;
   onConfirm: () => void;
   onAddMore?: () => void;
@@ -38,7 +41,10 @@ export function IntakeSummaryCard({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
 
-  const serviceDefinition = SERVICE_DEFINITIONS[summary.serviceType];
+  // Handle both full IntakeSummary and ParsedSummary
+  const serviceType = "serviceType" in summary ? summary.serviceType : undefined;
+  const serviceDefinition = serviceType ? SERVICE_DEFINITIONS[serviceType] : undefined;
+  const readyToSubmit = "readyToSubmit" in summary ? summary.readyToSubmit : true;
 
   const handleStartEdit = (item: SummaryItem) => {
     if (!item.editable || !onEdit) return;
@@ -139,9 +145,9 @@ export function IntakeSummaryCard({
               )}
             </div>
 
-            {item.editable && onEdit && editingField !== item.label && (
+            {("editable" in item) && item.editable && onEdit && editingField !== item.label && (
               <button
-                onClick={() => handleStartEdit(item)}
+                onClick={() => handleStartEdit(item as SummaryItem)}
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 disabled={disabled}
               >
@@ -192,10 +198,10 @@ export function IntakeSummaryCard({
         )}
         <Button
           onClick={onConfirm}
-          disabled={disabled || !summary.readyToSubmit}
+          disabled={disabled || !readyToSubmit}
           className="gap-2 ml-auto"
         >
-          {summary.readyToSubmit ? (
+          {readyToSubmit ? (
             <>
               Looks good
               <Check className="h-4 w-4" />

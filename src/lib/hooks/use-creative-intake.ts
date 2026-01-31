@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState, useCallback, useEffect } from "react";
 import type {
   ServiceType,
   IntakeState,
   IntakeMessage,
   IntakeData,
   IntakeSummary,
-  GroupedQuestion,
+  GenericIntakeData,
 } from "@/lib/creative-intake/types";
 import {
   createEmptyIntakeState,
@@ -18,13 +17,17 @@ import {
   getFlowConfig,
   getFlowStep,
   getNextStep,
-  validateStep,
   calculateFlowProgress,
   applySmartDefaults,
 } from "@/lib/creative-intake/flow-config";
 import { getInitialMessage, parseIntakeResponse } from "@/lib/creative-intake/prompts";
 
 const STORAGE_KEY = "creative_intake_draft";
+
+// Simple ID generator to avoid uuid dependency
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
 
 interface UseCreativeIntakeOptions {
   onComplete?: (data: IntakeData) => void;
@@ -74,7 +77,7 @@ export function useCreativeIntake(
         }
       }
     }
-    return createEmptyIntakeState(uuidv4());
+    return createEmptyIntakeState(generateId());
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +96,7 @@ export function useCreativeIntake(
     (message: Omit<IntakeMessage, "id" | "timestamp">) => {
       const newMessage: IntakeMessage = {
         ...message,
-        id: uuidv4(),
+        id: generateId(),
         timestamp: new Date(),
       };
 
@@ -110,7 +113,7 @@ export function useCreativeIntake(
 
   // Update data helper
   const updateData = useCallback(
-    (updates: Partial<IntakeData>) => {
+    (updates: GenericIntakeData) => {
       setState((prev) => {
         const newData = { ...prev.data, ...updates };
         // Apply smart defaults
@@ -468,7 +471,7 @@ export function useCreativeIntake(
 
   // Reset to start
   const reset = useCallback(() => {
-    const newState = createEmptyIntakeState(uuidv4());
+    const newState = createEmptyIntakeState(generateId());
     setState(newState);
     setCurrentStepId(null);
     setError(null);
@@ -506,7 +509,7 @@ export function useCreativeIntake(
 // Helper: Generate summary items from data
 function generateSummaryItems(
   serviceType: ServiceType,
-  data: Partial<IntakeData>
+  data: GenericIntakeData
 ): IntakeSummary["items"] {
   const items: IntakeSummary["items"] = [];
 
@@ -617,7 +620,7 @@ function generateSummaryItems(
 // Helper: Generate recommendations
 function generateRecommendations(
   serviceType: ServiceType,
-  data: Partial<IntakeData>
+  data: GenericIntakeData
 ): string[] {
   const recommendations: string[] = [];
 

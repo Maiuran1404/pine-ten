@@ -112,8 +112,18 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     if (href === "/dashboard/chat") {
       return pathname?.startsWith("/dashboard/chat");
     }
+    // For hrefs with query params (like Archived), check exact match
     if (href.includes("?")) {
-      return pathname === href.split("?")[0] && href.includes(window?.location?.search || "");
+      const [hrefPath, hrefQuery] = href.split("?");
+      const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+      // Only active if path matches AND query string matches
+      return pathname === hrefPath && currentSearch === `?${hrefQuery}`;
+    }
+    // For hrefs without query params, check path matches AND no relevant query params
+    if (href === "/dashboard/tasks") {
+      const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+      // Tasks is active only when on /dashboard/tasks without status=completed
+      return pathname === href && !currentSearch.includes("status=completed");
     }
     return pathname === href;
   };

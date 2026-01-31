@@ -10,13 +10,7 @@ import type {
   IntakeStage,
   GroupedQuestion,
   QuickOption,
-  IntakeData,
-  LaunchVideoIntake,
-  VideoEditIntake,
-  PitchDeckIntake,
-  BrandPackageIntake,
-  SocialAdsIntake,
-  SocialContentIntake,
+  GenericIntakeData,
 } from "./types";
 import {
   VIDEO_PLATFORMS,
@@ -48,7 +42,7 @@ export interface FlowStep {
   // Validation
   requiredFields?: string[];
   // Navigation
-  nextStep?: string | ((data: Partial<IntakeData>) => string);
+  nextStep?: string | ((data: GenericIntakeData) => string);
   isTerminal?: boolean;
 }
 
@@ -283,8 +277,7 @@ export const BRAND_PACKAGE_FLOW: FlowConfig = {
       ],
       requiredFields: ["hasLogo"],
       nextStep: (data) => {
-        const brandData = data as Partial<BrandPackageIntake>;
-        return brandData.hasLogo ? "logo_upload" : "package_options";
+        return data.hasLogo ? "logo_upload" : "package_options";
       },
     },
     {
@@ -390,8 +383,7 @@ export const SOCIAL_ADS_FLOW: FlowConfig = {
       ],
       requiredFields: ["platforms", "hasContent"],
       nextStep: (data) => {
-        const adData = data as Partial<SocialAdsIntake>;
-        return adData.hasContent ? "content_link" : "review";
+        return data.hasContent ? "content_link" : "review";
       },
     },
     {
@@ -520,7 +512,7 @@ export function getFlowStep(serviceType: ServiceType, stepId: string): FlowStep 
 export function getNextStep(
   serviceType: ServiceType,
   currentStepId: string,
-  data: Partial<IntakeData>
+  data: GenericIntakeData
 ): string | null {
   const step = getFlowStep(serviceType, currentStepId);
   if (!step || step.isTerminal) return null;
@@ -534,7 +526,7 @@ export function getNextStep(
 export function validateStep(
   serviceType: ServiceType,
   stepId: string,
-  data: Partial<IntakeData>
+  data: GenericIntakeData
 ): { valid: boolean; missingFields: string[] } {
   const step = getFlowStep(serviceType, stepId);
   if (!step?.requiredFields) {
@@ -542,7 +534,7 @@ export function validateStep(
   }
 
   const missingFields = step.requiredFields.filter((field) => {
-    const value = data[field as keyof IntakeData];
+    const value = data[field];
     if (value === undefined || value === null) return true;
     if (typeof value === "string" && value.trim() === "") return true;
     if (Array.isArray(value) && value.length === 0) return true;
@@ -571,52 +563,49 @@ export function calculateFlowProgress(
 
 export function applySmartDefaults(
   serviceType: ServiceType,
-  data: Partial<IntakeData>
-): Partial<IntakeData> {
+  data: GenericIntakeData
+): GenericIntakeData {
   const enhanced = { ...data };
 
   switch (serviceType) {
     case "launch_video": {
-      const launchData = enhanced as Partial<LaunchVideoIntake>;
-      if (launchData.platforms?.length) {
+      if (enhanced.platforms?.length) {
         // Apply recommended length based on platforms
-        const hasShortForm = launchData.platforms.some((p) =>
+        const hasShortForm = enhanced.platforms.some((p: string) =>
           ["tiktok", "reels", "snapchat"].includes(p)
         );
-        launchData.recommendedLength = hasShortForm ? "30-45s" : "60-90s";
+        enhanced.recommendedLength = hasShortForm ? "30-45s" : "60-90s";
       }
       // Default storyline preference
-      if (!launchData.storylinePreference) {
-        launchData.storylinePreference = "create_for_me";
+      if (!enhanced.storylinePreference) {
+        enhanced.storylinePreference = "create_for_me";
       }
       break;
     }
 
     case "video_edit": {
-      const videoData = enhanced as Partial<VideoEditIntake>;
       // Apply length based on platform
-      if (videoData.platforms?.length) {
-        const hasShortForm = videoData.platforms.some((p) =>
+      if (enhanced.platforms?.length) {
+        const hasShortForm = enhanced.platforms.some((p: string) =>
           ["tiktok", "reels", "snapchat"].includes(p)
         );
-        videoData.recommendedLength = hasShortForm ? "15-30s" : "60-90s";
+        enhanced.recommendedLength = hasShortForm ? "15-30s" : "60-90s";
       }
       // Default subtitles and overlays for social
-      videoData.subtitles = true;
-      videoData.textOverlays = true;
+      enhanced.subtitles = true;
+      enhanced.textOverlays = true;
       // Apply style based on video type
-      if (videoData.videoType) {
-        videoData.stylePreference =
-          videoData.stylePreference || SMART_DEFAULTS.videoStyle[videoData.videoType];
+      if (enhanced.videoType) {
+        enhanced.stylePreference =
+          enhanced.stylePreference || SMART_DEFAULTS.videoStyle[enhanced.videoType as keyof typeof SMART_DEFAULTS.videoStyle];
       }
       break;
     }
 
     case "social_ads": {
-      const adData = enhanced as Partial<SocialAdsIntake>;
       // Apply format recommendation based on goal
-      if (adData.goal) {
-        adData.recommendedFormat = SMART_DEFAULTS.adFormat[adData.goal];
+      if (enhanced.goal) {
+        enhanced.recommendedFormat = SMART_DEFAULTS.adFormat[enhanced.goal as keyof typeof SMART_DEFAULTS.adFormat];
       }
       // Apply CTA based on goal
       const ctaMap: Record<string, string> = {
@@ -625,18 +614,17 @@ export function applySmartDefaults(
         awareness: "Learn more",
         leads: "Get quote",
       };
-      if (adData.goal && !adData.recommendedCta) {
-        adData.recommendedCta = ctaMap[adData.goal] || "Learn more";
+      if (enhanced.goal && !enhanced.recommendedCta) {
+        enhanced.recommendedCta = ctaMap[enhanced.goal] || "Learn more";
       }
       break;
     }
 
     case "social_content": {
-      const contentData = enhanced as Partial<SocialContentIntake>;
       // Apply frequency and content types based on goal
-      if (contentData.goal) {
-        contentData.recommendedFrequency = SMART_DEFAULTS.postingFrequency[contentData.goal];
-        contentData.recommendedContentTypes = SMART_DEFAULTS.contentTypes[contentData.goal];
+      if (enhanced.goal) {
+        enhanced.recommendedFrequency = SMART_DEFAULTS.postingFrequency[enhanced.goal as keyof typeof SMART_DEFAULTS.postingFrequency];
+        enhanced.recommendedContentTypes = SMART_DEFAULTS.contentTypes[enhanced.goal as keyof typeof SMART_DEFAULTS.contentTypes];
       }
       break;
     }

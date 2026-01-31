@@ -306,11 +306,24 @@ export type IntakeData =
   | SocialAdsIntake
   | SocialContentIntake;
 
+// Generic intake data for working with partial data before service type is known
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type GenericIntakeData = Record<string, any>;
+
 // =============================================================================
 // INTAKE FLOW STATE
 // =============================================================================
 
 export type IntakeStage = "service_select" | "context" | "details" | "review" | "complete";
+
+// Partial summary format from AI parsing (before full conversion)
+export interface ParsedSummary {
+  type?: "summary";
+  title: string;
+  items: Array<{ label: string; value: string | string[]; source?: string }>;
+  recommendations: string[];
+  nextStep?: string;
+}
 
 export interface IntakeMessage {
   id: string;
@@ -318,10 +331,10 @@ export interface IntakeMessage {
   content: string;
   timestamp: Date;
   // Special message types
-  questionType?: "open" | "grouped" | "confirmation";
+  questionType?: "open" | "grouped" | "confirmation" | "quick";
   groupedQuestions?: GroupedQuestion[];
   quickOptions?: QuickOption[];
-  summary?: IntakeSummary;
+  summary?: IntakeSummary | ParsedSummary;
 }
 
 export interface GroupedQuestion {
@@ -330,7 +343,7 @@ export interface GroupedQuestion {
   type: "single_select" | "multi_select" | "text" | "link";
   options?: SelectOption[];
   placeholder?: string;
-  required: boolean;
+  required?: boolean;
   recommendation?: string;
   value?: string | string[];
 }
@@ -368,7 +381,7 @@ export interface IntakeState {
   serviceType: ServiceType | null;
   stage: IntakeStage;
   messages: IntakeMessage[];
-  data: Partial<IntakeData>;
+  data: GenericIntakeData;
   completionPercentage: number;
   startedAt: Date;
   updatedAt: Date;
@@ -514,8 +527,11 @@ export function calculateIntakeCompletion(state: IntakeState): number {
 
   const requiredFields = getRequiredFields(state.serviceType);
   const filledFields = requiredFields.filter((field) => {
-    const value = state.data[field as keyof IntakeData];
-    return value !== undefined && value !== null && value !== "";
+    const value = state.data[field];
+    if (value === undefined || value === null) return false;
+    if (typeof value === "string" && value.trim() === "") return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
   });
 
   return Math.round((filledFields.length / requiredFields.length) * 100);
