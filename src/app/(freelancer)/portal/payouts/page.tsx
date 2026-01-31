@@ -31,6 +31,11 @@ import {
   Loader2,
   XCircle,
   RefreshCw,
+  Sparkles,
+  Video,
+  Image,
+  Layout,
+  Share2,
 } from "lucide-react";
 import {
   Tooltip,
@@ -103,6 +108,41 @@ interface PayoutConfig {
   creditValueUsd: number;
 }
 
+interface EarningsExample {
+  description: string;
+  earning: number;
+  complexity: string;
+}
+
+interface CategoryEarnings {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  baseCredits: number;
+  earnings: {
+    simple: number;
+    moderate: number;
+    complex: number;
+    premium: number;
+    range: { min: number; max: number };
+  };
+  examples: EarningsExample[];
+}
+
+interface EarningsGuide {
+  earningsGuide: CategoryEarnings[];
+  notes: string[];
+}
+
+// Icons for different task categories
+const categoryIcons: Record<string, React.ReactNode> = {
+  "video-motion-graphics": <Video className="h-5 w-5" />,
+  "static-ads": <Image className="h-5 w-5" />,
+  "ui-ux-design": <Layout className="h-5 w-5" />,
+  "social-media-content": <Share2 className="h-5 w-5" />,
+};
+
 export default function PayoutsPage() {
   const [stats, setStats] = useState<PayoutStats | null>(null);
   const [earnings, setEarnings] = useState<EarningsEntry[]>([]);
@@ -110,12 +150,14 @@ export default function PayoutsPage() {
   const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarning[]>([]);
   const [stripeConnectStatus, setStripeConnectStatus] = useState<StripeConnectStatus | null>(null);
   const [payoutConfig, setPayoutConfig] = useState<PayoutConfig | null>(null);
+  const [earningsGuide, setEarningsGuide] = useState<EarningsGuide | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("earnings");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -139,9 +181,26 @@ export default function PayoutsPage() {
     }
   }, []);
 
+  const fetchEarningsGuide = useCallback(async () => {
+    try {
+      const res = await fetch("/api/freelancer/earnings-guide");
+      if (res.ok) {
+        const data = await res.json();
+        setEarningsGuide(data);
+        // Set the first category as selected by default
+        if (data.earningsGuide?.length > 0) {
+          setSelectedCategory(data.earningsGuide[0].slug);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch earnings guide:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPayoutData();
-  }, [fetchPayoutData]);
+    fetchEarningsGuide();
+  }, [fetchPayoutData, fetchEarningsGuide]);
 
   // Handle Stripe Connect return params
   useEffect(() => {
@@ -289,6 +348,9 @@ export default function PayoutsPage() {
     }
   };
 
+  // Get selected category data
+  const selectedCategoryData = earningsGuide?.earningsGuide.find(c => c.slug === selectedCategory);
+
   if (isLoading) {
     return (
       <div className="space-y-6 p-4 sm:p-0">
@@ -371,7 +433,7 @@ export default function PayoutsPage() {
                   </h3>
                   <p className="text-sm text-amber-700 dark:text-amber-300 mt-0.5">
                     {!stripeConnectStatus?.connected
-                      ? `Set up Stripe Express to receive ${payoutConfig?.artistPercentage || 70}% of your earnings directly to your bank account.`
+                      ? "Set up Stripe Express to receive your earnings directly to your bank account."
                       : "Finish setting up your Stripe account to start receiving payouts."}
                   </p>
                 </div>
@@ -486,6 +548,123 @@ export default function PayoutsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* What You Can Earn - Task-based Earnings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-amber-500" />
+            What You Can Earn
+          </CardTitle>
+          <CardDescription>
+            Earnings vary by task type and complexity. Here&apos;s what you can expect.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Category Tabs */}
+          {earningsGuide && earningsGuide.earningsGuide.length > 0 && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {earningsGuide.earningsGuide.map((category) => (
+                  <Button
+                    key={category.slug}
+                    variant={selectedCategory === category.slug ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.slug)}
+                    className="gap-2"
+                  >
+                    {categoryIcons[category.slug] || <DollarSign className="h-4 w-4" />}
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Selected Category Details */}
+              {selectedCategoryData && (
+                <motion.div
+                  key={selectedCategoryData.slug}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  {/* Earnings Range Header */}
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-green-700 dark:text-green-300">Earning Range</p>
+                        <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+                          ${selectedCategoryData.earnings.range.min} – ${selectedCategoryData.earnings.range.max}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">per task</p>
+                        <p className="text-xs text-muted-foreground">Based on complexity</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Example Tasks */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Example Tasks</h4>
+                    <div className="grid gap-2">
+                      {selectedCategoryData.examples.map((example, index) => (
+                        <motion.div
+                          key={example.description}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              variant={
+                                example.complexity === "Premium"
+                                  ? "default"
+                                  : example.complexity === "Complex"
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                              className="text-xs min-w-[70px] justify-center"
+                            >
+                              {example.complexity}
+                            </Badge>
+                            <span className="text-sm">{example.description}</span>
+                          </div>
+                          <span className="font-semibold text-green-600 dark:text-green-400">
+                            ${example.earning}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </>
+          )}
+
+          {/* Notes */}
+          <div className="pt-4 border-t">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span>More complex projects pay significantly more</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span>Video and motion graphics have the highest potential</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span>Earnings deposited after client approval</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span>{payoutConfig?.holdingPeriodDays || 7}-day processing period before payout</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Monthly Comparison */}
       <Card>
@@ -783,7 +962,7 @@ export default function PayoutsPage() {
                 <div>
                   <p className="font-medium">Connect Stripe Express</p>
                   <p className="text-sm text-muted-foreground">
-                    Receive {payoutConfig?.artistPercentage || 70}% of your earnings directly to your bank
+                    Receive your earnings directly to your bank account
                   </p>
                 </div>
               </div>
@@ -794,41 +973,6 @@ export default function PayoutsPage() {
             <Info className="h-3 w-3" />
             Payouts typically arrive within 2-3 business days after processing
           </p>
-        </CardContent>
-      </Card>
-
-      {/* Revenue Split Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            How Payouts Work
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground mb-1">Your Share</p>
-              <p className="text-2xl font-bold text-green-600">{payoutConfig?.artistPercentage || 70}%</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                ${payoutConfig?.creditValueUsd?.toFixed(2) || "3.43"} per credit
-              </p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground mb-1">Holding Period</p>
-              <p className="text-2xl font-bold">{payoutConfig?.holdingPeriodDays || 7} days</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                After task completion
-              </p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground mb-1">Minimum Payout</p>
-              <p className="text-2xl font-bold">{payoutConfig?.minimumPayoutCredits || 10} credits</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                ≈ ${creditsToCurrency(payoutConfig?.minimumPayoutCredits || 10)}
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -860,7 +1004,6 @@ export default function PayoutsPage() {
             <DialogTitle>Request Payout</DialogTitle>
             <DialogDescription>
               Enter the amount of credits you want to withdraw.
-              You&apos;ll receive {payoutConfig?.artistPercentage || 70}% of the credit value.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -886,7 +1029,7 @@ export default function PayoutsPage() {
                   <span>{payoutAmount}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-2">
-                  <span>Your share ({payoutConfig?.artistPercentage || 70}%)</span>
+                  <span>You&apos;ll receive</span>
                   <span className="font-semibold text-green-600">
                     ${creditsToCurrency(parseInt(payoutAmount) || 0)}
                   </span>
