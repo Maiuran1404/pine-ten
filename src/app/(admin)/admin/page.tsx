@@ -123,43 +123,16 @@ export default function AdminDashboardPage() {
   };
 
   const statsConfig = [
-    { key: "totalClients", label: "Clients", icon: Users, color: "text-blue-400", bgColor: "bg-blue-500/20" },
-    { key: "totalFreelancers", label: "Freelancers", icon: UserCheck, color: "text-emerald-400", bgColor: "bg-emerald-500/20" },
-    { key: "pendingApprovals", label: "Pending", icon: AlertTriangle, color: "text-yellow-400", bgColor: "bg-yellow-500/20", highlight: true },
-    { key: "activeTasks", label: "Active", icon: Clock, color: "text-purple-400", bgColor: "bg-purple-500/20" },
-    { key: "completedTasks", label: "Completed", icon: CheckCircle, color: "text-green-400", bgColor: "bg-green-500/20" },
-    { key: "totalRevenue", label: "Revenue", icon: DollarSign, color: "text-rose-400", bgColor: "bg-rose-500/20", isCurrency: true },
+    { key: "totalClients", label: "Clients", icon: Users, href: "/admin/clients" },
+    { key: "totalFreelancers", label: "Artists", icon: UserCheck, href: "/admin/freelancers" },
+    { key: "pendingApprovals", label: "Pending", icon: AlertTriangle, href: "/admin/verify", highlight: true },
+    { key: "activeTasks", label: "Active", icon: Clock, href: "/admin/tasks" },
+    { key: "completedTasks", label: "Completed", icon: CheckCircle, href: "/admin/tasks?status=completed" },
+    { key: "totalRevenue", label: "Revenue", icon: DollarSign, href: "/admin/revenue", isCurrency: true },
   ];
 
   return (
     <div className="relative flex flex-col min-h-full overflow-auto">
-      {/* Curtain light from top - subtle ambient glow */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(244, 63, 94, 0.08) 0%,
-            rgba(244, 63, 94, 0.04) 20%,
-            rgba(244, 63, 94, 0.02) 40%,
-            rgba(244, 63, 94, 0.01) 60%,
-            transparent 100%
-          )`,
-          animation: "curtainPulse 14s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          filter: "blur(40px)",
-        }}
-      />
-      <style jsx>{`
-        @keyframes curtainPulse {
-          0%,
-          100% {
-            opacity: 0.7;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-      `}</style>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -170,15 +143,7 @@ export default function AdminDashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4 px-4 sm:px-0">
           <div className="space-y-1 sm:space-y-2">
-            <h1
-              className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight"
-              style={{
-                background: "linear-gradient(90deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Admin Dashboard
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
@@ -188,7 +153,7 @@ export default function AdminDashboardPage() {
           <Button
             onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
             variant="outline"
-            className="border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 w-full sm:w-auto"
+            className="w-full sm:w-auto"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
@@ -209,35 +174,36 @@ export default function AdminDashboardPage() {
             const shouldHighlight = stat.highlight && value > 0;
 
             return (
-              <motion.div
-                key={stat.key}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-                className={`relative rounded-xl overflow-hidden border transition-all bg-card ${
-                  shouldHighlight
-                    ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
-                    : "border-border hover:border-border/80"
-                }`}
-              >
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </span>
-                    <div className={`p-1.5 rounded-lg ${stat.bgColor}`}>
-                      <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
+              <Link key={stat.key} href={stat.href}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+                  className={`relative rounded-xl overflow-hidden border transition-all bg-card cursor-pointer group ${
+                    shouldHighlight
+                      ? "border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:border-yellow-500/70"
+                      : "border-border hover:border-primary/30 hover:bg-muted/50"
+                  }`}
+                >
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        {stat.label}
+                      </span>
+                      <div className="p-1.5 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      </div>
                     </div>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-16 bg-muted" />
+                    ) : (
+                      <div className="text-2xl font-bold text-foreground">
+                        {displayValue}
+                      </div>
+                    )}
                   </div>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-16 bg-muted" />
-                  ) : (
-                    <div className={`text-2xl font-bold ${stat.color}`}>
-                      {displayValue}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             );
           })}
         </motion.div>
@@ -257,7 +223,7 @@ export default function AdminDashboardPage() {
                 <Link
                   key={action.id}
                   href={action.href}
-                  className={`group relative rounded-xl overflow-hidden border border-border hover:border-rose-500/30 transition-all cursor-pointer h-[100px] sm:h-[120px] bg-card`}
+                  className="group relative rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all cursor-pointer h-[100px] sm:h-[120px] bg-card hover:bg-muted/50"
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -266,10 +232,10 @@ export default function AdminDashboardPage() {
                     className="p-4 h-full flex flex-col justify-between"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
-                        <Icon className="h-5 w-5 text-rose-400" />
+                      <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
+                        <Icon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors">
@@ -297,7 +263,7 @@ export default function AdminDashboardPage() {
             <h2 className="text-base sm:text-lg font-medium text-foreground">Recent Tasks</h2>
             <Link
               href="/admin/tasks"
-              className="text-sm text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               View All
               <ArrowRight className="h-3.5 w-3.5" />
