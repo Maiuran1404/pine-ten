@@ -17,13 +17,15 @@ import {
   X,
   Share2,
   Megaphone,
-  Tag,
-  BarChart3,
   Search,
   Presentation,
   Palette,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getImageVariantUrls } from "@/lib/image/utils";
@@ -45,67 +47,109 @@ interface StyleReference {
   colorTemperature?: string;
 }
 
-// Template categories and prompts based on service offerings
+// Template categories and sub-options based on service offerings
 const TEMPLATE_CATEGORIES = {
   "Launch Videos": {
     icon: Megaphone,
-    templates: [
-      "Create a 30-60 second launch video for my product",
-      "Design a cinematic product launch video with my UI screenshots",
-      "Create an energetic startup launch video highlighting key features",
-      "Produce a launch video with custom storyline and CTA",
-      "Design a launch video showcasing my app's main workflow",
-    ],
-  },
-  "Video Edits": {
-    icon: FileVideo,
-    templates: [
-      "Edit my UGC footage into a 30s TikTok/Reels video",
-      "Transform my screen recording into an engaging product demo",
-      "Edit my podcast clip for LinkedIn with subtitles",
-      "Create an energetic video edit from my raw footage for Instagram",
-      "Edit my talking head video with text overlays and captions",
-      "Turn my event footage into a promotional highlight reel",
+    description: "Product videos that convert",
+    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    options: [
+      {
+        title: "Product Launch Video",
+        description: "30-60 second cinematic video showcasing your product",
+        prompt: "Create a product launch video",
+      },
+      {
+        title: "Feature Highlight",
+        description: "Focus on a key feature with engaging visuals",
+        prompt: "Create a feature highlight video",
+      },
+      {
+        title: "App Walkthrough",
+        description: "Screen recording style demo of your app flow",
+        prompt: "Create an app walkthrough video",
+      },
     ],
   },
   "Pitch Deck": {
     icon: Presentation,
-    templates: [
-      "Redesign my pitch deck to look more professional",
-      "Create a clean, investor-ready pitch deck from my content",
-      "Transform my existing slides into a compelling story",
-      "Design a modern pitch deck with consistent branding",
-      "Polish my deck with better visuals and layout",
+    description: "Investor-ready presentations",
+    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    options: [
+      {
+        title: "Investor Pitch Deck",
+        description: "Professional deck designed to impress investors",
+        prompt: "Redesign my investor pitch deck",
+      },
+      {
+        title: "Sales Deck",
+        description: "Compelling presentation for sales meetings",
+        prompt: "Create a sales presentation deck",
+      },
+      {
+        title: "Company Overview",
+        description: "Clean company introduction deck",
+        prompt: "Design a company overview presentation",
+      },
     ],
   },
   "Branding": {
     icon: Palette,
-    templates: [
-      "Create a full brand package with logo and visual identity",
-      "Design a logo and brand guidelines for my startup",
-      "Develop a complete visual identity system",
-      "Create brand assets including logo, colors, and typography",
-      "Design a comprehensive brand kit for my business",
+    description: "Complete visual identity",
+    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    options: [
+      {
+        title: "Full Brand Package",
+        description: "Logo, colors, typography, and brand guidelines",
+        prompt: "Create a full brand package with logo and visual identity",
+      },
+      {
+        title: "Logo Design",
+        description: "Custom logo with variations and usage guidelines",
+        prompt: "Design a logo for my brand",
+      },
+      {
+        title: "Brand Refresh",
+        description: "Modernize your existing brand identity",
+        prompt: "Refresh and modernize my existing brand",
+      },
     ],
   },
-  "Social Ads": {
-    icon: BarChart3,
-    templates: [
-      "Create Instagram ad creatives for my product launch",
-      "Design LinkedIn ad campaign for B2B lead generation",
-      "Create Facebook carousel ads for e-commerce promotion",
-      "Design TikTok video ads for brand awareness",
-      "Create static and video ads for a signup campaign",
-    ],
-  },
-  "Content": {
+  "Social Media": {
     icon: Share2,
-    templates: [
-      "Create a weekly LinkedIn content plan for thought leadership",
-      "Design Instagram content series for brand storytelling",
-      "Create educational content posts for my SaaS product",
-      "Design behind-the-scenes content for Instagram Stories",
-      "Create a content calendar mixing educational and promotional posts",
+    description: "Ads, content & video edits",
+    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    options: [
+      {
+        title: "Instagram Post",
+        description: "Most used category in 3:4 format",
+        prompt: "Create Instagram post designs",
+      },
+      {
+        title: "Instagram Story",
+        description: "Adjusted for your brand in 9:16 format",
+        prompt: "Create Instagram story designs",
+      },
+      {
+        title: "Instagram Reels",
+        description: "Customized video for your brand at 60 fps in 9:16 format",
+        prompt: "Create an Instagram Reels video",
+      },
+      {
+        title: "LinkedIn Content",
+        description: "Professional posts and carousels for B2B",
+        prompt: "Create LinkedIn content",
+      },
+      {
+        title: "Video Edit",
+        description: "Transform your raw footage into engaging content",
+        prompt: "Edit my video footage for social media",
+      },
+      {
+        title: "Ad Creatives",
+        description: "High-converting ads for any platform",
+        prompt: "Create social media ad creatives",
+      },
     ],
   },
 };
@@ -124,6 +168,8 @@ function DashboardContent() {
   const [styleReferences, setStyleReferences] = useState<StyleReference[]>([]);
   const [isLoadingStyles, setIsLoadingStyles] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [modalNotes, setModalNotes] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -502,54 +548,129 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Template System - Categories or Templates */}
-        <div className="w-full max-w-5xl mb-6 px-4">
-          {!selectedCategory ? (
-            /* Show Categories */
-            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
-              {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className="px-4 py-2.5 rounded-full border border-border/50 bg-white/70 dark:bg-card/40 backdrop-blur-lg hover:bg-white dark:hover:bg-card/60 hover:border-border hover:shadow-sm transition-all text-sm text-foreground whitespace-nowrap flex items-center gap-2"
-                >
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span>{category}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            /* Show Templates for Selected Category */
-            <div className="max-w-3xl mx-auto">
-              <div className="flex items-center gap-4 mb-4">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-                >
-                  <span>←</span>
-                  <span>Back</span>
-                </button>
-                <p className="text-sm font-medium text-foreground">Sample prompts</p>
-              </div>
-              <div className="space-y-1">
-                {TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]?.templates.map((template, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      handleTemplateClick(template);
-                      setSelectedCategory(null);
-                    }}
-                    className="w-full text-left px-4 py-3 rounded-xl bg-white/50 dark:bg-card/30 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/50 border border-transparent hover:border-border/30 transition-all text-sm text-foreground flex items-center justify-between group"
-                  >
-                    <span className="leading-relaxed">{template}</span>
-                    <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-4 flex-shrink-0">↗</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Template System - Category Cards */}
+        <div className="w-full max-w-4xl mb-8 px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, description }]) => (
+              <button
+                key={category}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setSelectedOption(null);
+                  setModalNotes("");
+                }}
+                className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border border-border/40 bg-white/80 dark:bg-card/50 backdrop-blur-xl hover:bg-white dark:hover:bg-card/70 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
+                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span className="font-medium text-sm text-foreground mb-1">{category}</span>
+                <span className="text-xs text-muted-foreground leading-tight hidden sm:block">{description}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Category Options Modal */}
+      <Dialog
+        open={!!selectedCategory}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedCategory(null);
+            setSelectedOption(null);
+            setModalNotes("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden bg-background rounded-2xl">
+          {selectedCategory && (() => {
+            const category = TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES];
+            const Icon = category?.icon;
+            return (
+              <>
+                {/* Header */}
+                <div className="p-6 pb-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                      {Icon && <Icon className="h-7 w-7 text-emerald-500 dark:text-emerald-400" />}
+                    </div>
+                    <div className="pt-0.5">
+                      <h2 className="text-xl font-semibold text-foreground mb-1">{selectedCategory}</h2>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {category?.modalDescription}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-border/50" />
+
+                {/* Options List */}
+                <div className="px-4 py-3 space-y-1 max-h-[320px] overflow-y-auto">
+                  {category?.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedOption(option.title === selectedOption ? null : option.title)}
+                      className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left ${
+                        selectedOption === option.title
+                          ? "bg-emerald-50 dark:bg-emerald-500/10"
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/5 flex items-center justify-center flex-shrink-0 border border-border/30">
+                        {Icon && <Icon className="h-8 w-8 text-emerald-200 dark:text-emerald-700" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground mb-0.5">{option.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-snug">{option.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-border/50" />
+
+                {/* Notes Input */}
+                <div className="p-6">
+                  <p className="font-medium text-foreground mb-3">Would like to add something?</p>
+                  <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-border/50 bg-muted/30">
+                    <input
+                      type="text"
+                      value={modalNotes}
+                      onChange={(e) => setModalNotes(e.target.value)}
+                      placeholder="Add some notes"
+                      className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        if (selectedOption) {
+                          const option = category?.options.find(o => o.title === selectedOption);
+                          if (option) {
+                            const prompt = modalNotes
+                              ? `${option.prompt}. Notes: ${modalNotes}`
+                              : option.prompt;
+                            handleSubmit(prompt);
+                            setSelectedCategory(null);
+                            setSelectedOption(null);
+                            setModalNotes("");
+                          }
+                        }
+                      }}
+                      disabled={!selectedOption}
+                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground text-white rounded-full font-medium transition-colors whitespace-nowrap text-sm"
+                    >
+                      Create Prompt
+                    </button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Inspiration Gallery - Grouped by Content Type */}
       {(isLoadingStyles || styleReferences.length > 0) && (

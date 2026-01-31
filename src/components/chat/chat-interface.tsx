@@ -46,6 +46,10 @@ import {
   ArrowRight,
   Lightbulb,
   Pencil,
+  Share2,
+  Megaphone,
+  Bookmark,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
@@ -137,6 +141,9 @@ interface ChatInterfaceProps {
   onTaskUpdate?: () => void;
   // Callback when a task is created (to update sidebar)
   onTaskCreated?: (taskId: string) => void;
+  // UI control props
+  showRightPanel?: boolean;
+  onChatStart?: () => void;
 }
 
 // Welcome message removed - chat now starts directly with user's message
@@ -164,6 +171,8 @@ export function ChatInterface({
   taskData: initialTaskData,
   onTaskUpdate,
   onTaskCreated,
+  showRightPanel = true,
+  onChatStart,
 }: ChatInterfaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -195,6 +204,7 @@ export function ChatInterface({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounterRef = useRef(0);
   const requestStartTimeRef = useRef<number | null>(null);
+  const chatStartedRef = useRef(false);
 
   // Moodboard state management
   const {
@@ -260,6 +270,14 @@ export function ChatInterface({
       }),
     [messages, selectedStyles, selectedDeliverableStyles, moodboardItems, pendingTask, taskSubmitted]
   );
+
+  // Collapse left sidebar when chat starts (messages appear)
+  useEffect(() => {
+    if (messages.length > 0 && !chatStartedRef.current && onChatStart) {
+      chatStartedRef.current = true;
+      onChatStart();
+    }
+  }, [messages.length, onChatStart]);
 
   // Get moodboard style IDs for tracking what's already added
   const moodboardStyleIds = useMemo(
@@ -1705,9 +1723,9 @@ export function ChatInterface({
       onBriefUpdate={updateBrief}
       onExportBrief={exportBrief}
       briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
-      showProgress={seamlessTransition && !isTaskMode}
-      showMoodboard={seamlessTransition && !isTaskMode}
-      showBrief={seamlessTransition && !isTaskMode}
+      showProgress={seamlessTransition && !isTaskMode && showRightPanel}
+      showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
+      showBrief={seamlessTransition && !isTaskMode && showRightPanel}
       className={cn(seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]")}
     >
       <div
@@ -1738,42 +1756,31 @@ export function ChatInterface({
           )}
         </AnimatePresence>
 
-        {/* Chat header */}
-        {seamlessTransition && (
+        {/* Chat header - minimal, clean design */}
+        {seamlessTransition && messages.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="shrink-0 mb-4 pb-4 border-b border-border flex items-center justify-between px-2"
+            className="shrink-0 mb-4 flex items-center justify-end gap-2 px-4"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-base font-medium text-foreground">{chatTitle || "New Design Request"}</h1>
-                <p className="text-xs text-muted-foreground">Design Assistant</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {messages.length > 0 && !isTaskMode && (
-                <button
-                  onClick={() => setShowStartOverDialog(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  title="Start a new conversation"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Start Over</span>
-                </button>
-              )}
+            {!isTaskMode && (
               <button
-                onClick={() => setShowDeleteDialog(true)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                aria-label="Delete chat"
+                onClick={() => setShowStartOverDialog(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-muted transition-colors border border-transparent hover:border-border"
+                title="Start a new conversation"
               >
-                <Trash2 className="h-4 w-4" />
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Start Over</span>
               </button>
-            </div>
+            )}
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              className="p-2 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              aria-label="Delete chat"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </motion.div>
         )}
 
@@ -1831,7 +1838,7 @@ export function ChatInterface({
 
         {/* Messages - scrollable area */}
         <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-4 px-2">
+          <div className="space-y-6 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">
             <AnimatePresence>
               {messages.map((message, index) => (
                 <motion.div
@@ -1845,41 +1852,40 @@ export function ChatInterface({
                   )}
                 >
                   {message.role === "assistant" ? (
-                    /* Assistant message - left aligned card */
-                    <div className="group max-w-[85%]">
-                      {/* Thinking time indicator */}
-                      {message.thinkingTime && (
-                        <div className="flex items-center gap-1.5 mb-2 ml-1 text-muted-foreground">
-                          <Lightbulb className="h-3.5 w-3.5" />
-                          <span className="text-xs">
-                            Thought for {message.thinkingTime}s
-                          </span>
-                        </div>
-                      )}
-                      <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-                        {/* Quote icon */}
-                        <div className="flex items-start gap-3 mb-3">
-                          <Quote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            {/* Message content with typing animation */}
-                            {/* NOTE: Removed onOptionClick and multiSelect - markdown lists should render
-                                as plain text, not clickable options. Quick options are handled separately
-                                via the quickOptions system from the API response. */}
-                            <TypingText
-                              content={message.content}
-                              animate={animatingMessageId === message.id}
-                              speed={25}
-                              onComplete={() => {
-                                if (animatingMessageId === message.id) {
-                                  setAnimatingMessageId(null);
-                                  // Mark this message's typing as complete to show CTAs
-                                  setCompletedTypingIds(prev => new Set(prev).add(message.id));
-                                }
-                              }}
-                              className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
-                            />
+                    /* Assistant message - left aligned with sparkle avatar */
+                    <div className="group max-w-[85%] flex items-start gap-3">
+                      {/* Sparkle avatar */}
+                      <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {/* Thinking time indicator */}
+                        {message.thinkingTime && (
+                          <div className="flex items-center gap-1.5 mb-2 text-muted-foreground">
+                            <Lightbulb className="h-3.5 w-3.5" />
+                            <span className="text-xs">
+                              Thought for {message.thinkingTime}s
+                            </span>
                           </div>
-                        </div>
+                        )}
+                        {/* Message content - clean text without heavy borders */}
+                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                          {/* NOTE: Removed onOptionClick and multiSelect - markdown lists should render
+                              as plain text, not clickable options. Quick options are handled separately
+                              via the quickOptions system from the API response. */}
+                          <TypingText
+                            content={message.content}
+                            animate={animatingMessageId === message.id}
+                            speed={25}
+                            onComplete={() => {
+                              if (animatingMessageId === message.id) {
+                                setAnimatingMessageId(null);
+                                // Mark this message's typing as complete to show CTAs
+                                setCompletedTypingIds(prev => new Set(prev).add(message.id));
+                              }
+                            }}
+                            className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
+                          />
 
                         {/* Attachments */}
                         {message.attachments && message.attachments.length > 0 && (
@@ -2060,72 +2066,114 @@ export function ChatInterface({
                             />
                           </motion.div>
                         )}
-                      </div>
+                        </div>
 
-                      {/* Copy button - below the card */}
-                      <div className="flex items-center gap-1 mt-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleCopyMessage(message.content, message.id)}
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs flex items-center gap-1"
-                        >
-                          {copiedMessageId === message.id ? (
-                            <>
-                              <Check className="h-3 w-3 text-green-500" />
-                              <span className="text-green-500">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </button>
+                        {/* Copy button - below the message */}
+                        <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleCopyMessage(message.content, message.id)}
+                            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs flex items-center gap-1"
+                          >
+                            {copiedMessageId === message.id ? (
+                              <>
+                                <Check className="h-3 w-3 text-green-500" />
+                                <span className="text-green-500">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    /* User message - right aligned flat bubble */
-                    <div className="max-w-[75%] group">
-                      <div className="bg-muted/60 rounded-2xl px-4 py-2.5 relative">
-                        <p className="text-sm text-foreground whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        {/* Edit button - only show on last user message when not loading */}
-                        {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
-                          <button
-                            onClick={handleEditLastMessage}
-                            className="absolute -left-8 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
-                            title="Edit this message"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
+                    /* User message - green/mint bubble with edit icon and avatar */
+                    <div className="max-w-[75%] group flex items-start gap-3">
+                      <div className="flex-1">
+                        <div className="bg-green-100 dark:bg-green-900/30 rounded-2xl px-4 py-3 relative border border-green-200/50 dark:border-green-800/30">
+                          <p className="text-sm text-foreground whitespace-pre-wrap pr-8">
+                            {message.content}
+                          </p>
+                          {/* Edit button - inside the bubble on the right */}
+                          {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
+                            <button
+                              onClick={handleEditLastMessage}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-green-200/50 dark:hover:bg-green-800/30 hover:text-foreground transition-all"
+                              title="Edit this message"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        {/* User attachments */}
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="mt-2">
+                            <FileAttachmentList files={message.attachments} />
+                          </div>
                         )}
                       </div>
-                      {/* User attachments */}
-                      {message.attachments && message.attachments.length > 0 && (
-                        <div className="mt-2">
-                          <FileAttachmentList files={message.attachments} />
-                        </div>
-                      )}
-                      <p className="text-[10px] text-muted-foreground mt-1.5 text-right pr-2">
-                        {formatTimeAgo(message.timestamp)}
-                      </p>
+                      {/* User avatar */}
+                      <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                        {session?.user?.image ? (
+                          <img src={session.user.image} alt={userName} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
                   )}
                 </motion.div>
               ))}
             </AnimatePresence>
 
-            {/* Loading indicator */}
+            {/* Regenerate response button - shows after last AI message */}
+            {messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && !isLoading && !pendingTask && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mt-4"
+              >
+                <button
+                  onClick={() => {
+                    // Remove the last assistant message and regenerate
+                    const lastAssistantIdx = messages.length - 1;
+                    if (messages[lastAssistantIdx]?.role === "assistant") {
+                      setMessages(prev => prev.slice(0, lastAssistantIdx));
+                      setNeedsAutoContinue(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm text-sm text-muted-foreground hover:text-foreground hover:border-green-500/50 transition-all"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Regenerate response
+                </button>
+              </motion.div>
+            )}
+
+            {/* Loading indicator - matches AI message style */}
             {isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex justify-start ml-2"
+                className="flex items-start gap-3"
               >
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Timer className="h-4 w-4" />
-                  <span className="text-sm">Thinking...</span>
+                {/* Sparkle avatar */}
+                <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                  <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                </div>
+                <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-sm">Thinking...</span>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -2263,7 +2311,7 @@ export function ChatInterface({
         )}
 
         {/* Input area */}
-        <div className="shrink-0 mt-auto pt-4">
+        <div className="shrink-0 mt-auto pt-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
           {/* Pending uploads preview */}
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
@@ -2298,8 +2346,8 @@ export function ChatInterface({
             </div>
           )}
 
-          {/* Modern input box */}
-          <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-sm">
+          {/* Modern input box - matching design reference */}
+          <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
             {/* Input field */}
             <div className="relative">
               <textarea
@@ -2312,69 +2360,120 @@ export function ChatInterface({
                     handleSend();
                   }
                 }}
-                placeholder="Ask me anything..."
+                placeholder="Describe what you want to create..."
                 disabled={isLoading}
                 rows={1}
-                className="w-full bg-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[44px] max-h-[200px]"
+                className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px]"
                 style={{ height: 'auto' }}
               />
             </div>
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/30">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20">
               {/* Left toolbar */}
-              <div className="flex items-center gap-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  multiple
-                  accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
-                />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    multiple
+                    accept="image/*,video/*,.pdf,.zip,.rar,.pptx,.ppt,.doc,.docx,.ai,.eps,.psd"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || isUploading}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    title="Attach files"
+                  >
+                    {isUploading ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <Paperclip className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || isUploading}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    title="Add image"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Divider */}
+                <div className="h-4 w-px bg-border" />
+                {/* Credits indicator */}
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-muted-foreground">{userCredits} credits available</span>
+                </div>
+                {/* Divider */}
+                <div className="h-4 w-px bg-border" />
+                {/* Improve Prompt button */}
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading || isUploading}
-                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                  title="Attach files"
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  disabled={!input.trim() || isLoading}
+                  title="Enhance your prompt with AI"
                 >
-                  {isUploading ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <Paperclip className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  title="Add emoji"
-                >
-                  <Smile className="h-4 w-4" />
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Improve Prompt</span>
                 </button>
               </div>
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
-                {(input.trim() || uploadedFiles.length > 0) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDiscard}
-                    className="h-8 px-3 text-muted-foreground hover:text-foreground"
-                  >
-                    Discard
-                  </Button>
-                )}
                 <Button
                   onClick={handleSend}
                   disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
+                  className="h-9 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full"
                 >
-                  <Send className="h-4 w-4" />
+                  {isLoading ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    "Submit"
+                  )}
                 </Button>
               </div>
             </div>
           </div>
+
+          {/* Category pills - quick category selection */}
+          {messages.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center justify-center gap-3 mt-4 flex-wrap"
+            >
+              {[
+                { label: "Social Media", icon: Share2, color: "text-green-600 dark:text-green-400" },
+                { label: "Advertising", icon: Megaphone, color: "text-muted-foreground" },
+                { label: "Branding", icon: Bookmark, color: "text-muted-foreground" },
+                { label: "Marketing", icon: LayoutGrid, color: "text-muted-foreground" },
+              ].map((category) => (
+                <button
+                  key={category.label}
+                  onClick={() => {
+                    setInput(`I need ${category.label.toLowerCase()} content for `);
+                    inputRef.current?.focus();
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
+                    "bg-white/80 dark:bg-card/80 backdrop-blur-sm",
+                    "hover:border-green-500/50 hover:shadow-sm",
+                    category.color === "text-green-600 dark:text-green-400"
+                      ? "border-green-500/30 text-green-600 dark:text-green-400"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <category.icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{category.label}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
         </div>
       </div>
 

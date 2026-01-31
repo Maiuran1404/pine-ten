@@ -230,30 +230,43 @@ export default function ChatPage() {
 
   // Show chat interface
   return (
-    <div className="min-h-full bg-background relative overflow-hidden">
-      {/* Curtain light effect - only in dark mode */}
+    <div className="min-h-full relative overflow-hidden">
+      {/* Soft gradient green/mint background - matches design reference */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(13, 148, 136, 0.08) 0%,
-            rgba(13, 148, 136, 0.04) 20%,
-            rgba(13, 148, 136, 0.02) 40%,
-            rgba(13, 148, 136, 0.01) 60%,
-            transparent 80%
+          background: `linear-gradient(135deg,
+            rgba(220, 252, 231, 0.7) 0%,
+            rgba(240, 253, 244, 0.9) 25%,
+            rgba(255, 255, 255, 1) 50%,
+            rgba(240, 253, 244, 0.9) 75%,
+            rgba(220, 252, 231, 0.5) 100%
           )`,
-          filter: "blur(40px)",
+        }}
+      />
+      {/* Dark mode overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
+        style={{
+          background: `linear-gradient(135deg,
+            rgba(20, 83, 45, 0.15) 0%,
+            rgba(10, 10, 10, 1) 30%,
+            rgba(10, 10, 10, 1) 70%,
+            rgba(20, 83, 45, 0.1) 100%
+          )`,
         }}
       />
 
-      {/* Always use seamless full-width layout to prevent flash during navigation */}
-      <div className="relative z-10 flex flex-col px-3 sm:px-8 lg:px-16 pt-4 sm:pt-8 h-[calc(100vh-4rem)] pb-4 sm:pb-6">
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col h-[calc(100vh-4rem)]">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <ChatInterface
             draftId={currentDraftId}
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
             seamlessTransition={true}
+            showRightPanel={false}
+            onChatStart={() => setOpen(false)}
           />
         </div>
       </div>
