@@ -23,6 +23,12 @@ const updateFreelancerSchema = z.object({
   rating: z.string().nullable().optional(),
 });
 
+// Helper to check if a string is a valid UUID
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -32,8 +38,39 @@ export async function GET(
 
     const { id } = await params;
 
-    // First, try to find by profile ID
-    let freelancerResult = await db
+    // First, try to find by profile ID (only if id is a valid UUID)
+    let freelancerResult: typeof profileQuery = [];
+
+    // Define the type for the query result
+    type ProfileQueryResult = {
+      id: string;
+      userId: string;
+      status: string;
+      skills: string[] | null;
+      specializations: string[] | null;
+      portfolioUrls: string[] | null;
+      bio: string | null;
+      timezone: string | null;
+      hourlyRate: string | null;
+      rating: string | null;
+      completedTasks: number;
+      whatsappNumber: string | null;
+      availability: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      user: {
+        id: string;
+        name: string | null;
+        email: string;
+        image: string | null;
+        createdAt: Date;
+      };
+    }[];
+
+    const profileQuery: ProfileQueryResult = [];
+
+    if (isValidUUID(id)) {
+      freelancerResult = await db
       .select({
         id: freelancerProfiles.id,
         userId: freelancerProfiles.userId,
@@ -60,10 +97,11 @@ export async function GET(
       })
       .from(freelancerProfiles)
       .innerJoin(users, eq(users.id, freelancerProfiles.userId))
-      .where(eq(freelancerProfiles.id, id))
-      .limit(1);
+        .where(eq(freelancerProfiles.id, id))
+        .limit(1);
+    }
 
-    // If not found by profile ID, try by user ID (for NOT_ONBOARDED users)
+    // If not found by profile ID (or ID wasn't a valid UUID), try by user ID
     if (freelancerResult.length === 0) {
       freelancerResult = await db
         .select({
