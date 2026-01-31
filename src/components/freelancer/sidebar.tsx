@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   LayoutDashboard,
-  FolderOpen,
   CheckCircle,
   Settings,
   X,
@@ -27,12 +26,6 @@ const navigation = [
     href: "/portal",
     icon: LayoutDashboard,
     requiresApproval: false,
-  },
-  {
-    name: "Available Tasks",
-    href: "/portal/available",
-    icon: FolderOpen,
-    requiresApproval: true,
   },
   {
     name: "My Tasks",

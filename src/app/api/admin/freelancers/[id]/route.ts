@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { freelancerProfiles, users, tasks } from "@/db/schema";
-import { eq, count, and } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { requireAdmin } from "@/lib/require-auth";
-import { withErrorHandling, successResponse, notFoundResponse } from "@/lib/errors";
+import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 
 export async function GET(
   request: NextRequest,
@@ -46,7 +46,7 @@ export async function GET(
       .limit(1);
 
     if (freelancerResult.length === 0) {
-      return notFoundResponse("Freelancer not found");
+      throw Errors.notFound("Freelancer");
     }
 
     const freelancer = freelancerResult[0];

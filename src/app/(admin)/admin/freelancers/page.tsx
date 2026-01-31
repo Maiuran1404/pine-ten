@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Card,
@@ -33,7 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { Check, X, ExternalLink, Users, Clock, UserCheck, Star, CheckCircle2 } from "lucide-react";
+import { Check, X, ExternalLink, Users, Clock, UserCheck, Star, CheckCircle2, ChevronRight } from "lucide-react";
 import { useBulkSelection } from "@/hooks/use-bulk-selection";
 import { StatCard } from "@/components/admin/stat-card";
 
@@ -55,6 +56,7 @@ interface Freelancer {
 }
 
 export default function FreelancersPage() {
+  const router = useRouter();
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -396,9 +398,10 @@ export default function FreelancersPage() {
                     {filteredFreelancers.map((freelancer) => (
                       <TableRow
                         key={freelancer.id}
-                        className={isSelected(freelancer.id) ? "bg-muted/50" : undefined}
+                        className={`cursor-pointer hover:bg-muted/50 transition-colors ${isSelected(freelancer.id) ? "bg-muted/50" : ""}`}
+                        onClick={() => router.push(`/admin/freelancers/${freelancer.id}`)}
                       >
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected(freelancer.id)}
                             onCheckedChange={() => toggle(freelancer.id)}
@@ -427,7 +430,7 @@ export default function FreelancersPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           {freelancer.portfolioUrls?.length > 0 ? (
                             <div className="flex gap-1">
                               {freelancer.portfolioUrls.slice(0, 2).map((url, i) => (
@@ -457,8 +460,8 @@ export default function FreelancersPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
-                          {freelancer.status === "PENDING" && (
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          {freelancer.status === "PENDING" ? (
                             <div className="flex justify-end gap-2">
                               <Button
                                 size="sm"
@@ -484,6 +487,8 @@ export default function FreelancersPage() {
                                 Reject
                               </Button>
                             </div>
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
                           )}
                         </TableCell>
                       </TableRow>
