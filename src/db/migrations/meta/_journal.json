@@ -148,6 +148,13 @@
       "when": 1769837825849,
       "tag": "0020_lowly_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1769839956412,
+      "tag": "0021_secret_thunderball",
+      "breakpoints": true
     }
   ]
 }

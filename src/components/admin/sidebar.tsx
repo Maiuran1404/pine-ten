@@ -31,6 +31,7 @@ import {
   Image,
   Sparkles,
   Cog,
+  Brain,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -67,6 +68,11 @@ const navigationGroups: NavigationGroup[] = [
         name: "Verify",
         href: "/admin/verify",
         icon: ClipboardCheck,
+      },
+      {
+        name: "Assignment Algorithm",
+        href: "/admin/algorithm",
+        icon: Brain,
       },
     ],
   },

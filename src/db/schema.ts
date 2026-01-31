@@ -21,6 +21,7 @@ export const onboardingStatusEnum = pgEnum("onboarding_status", [
 ]);
 export const taskStatusEnum = pgEnum("task_status", [
   "PENDING",
+  "OFFERED",
   "ASSIGNED",
   "IN_PROGRESS",
   "PENDING_ADMIN_REVIEW",
@@ -28,6 +29,57 @@ export const taskStatusEnum = pgEnum("task_status", [
   "REVISION_REQUESTED",
   "COMPLETED",
   "CANCELLED",
+  "UNASSIGNABLE",
+]);
+
+// Task complexity enum
+export const taskComplexityEnum = pgEnum("task_complexity", [
+  "SIMPLE",
+  "INTERMEDIATE",
+  "ADVANCED",
+  "EXPERT",
+]);
+
+// Task urgency enum
+export const taskUrgencyEnum = pgEnum("task_urgency", [
+  "CRITICAL",
+  "URGENT",
+  "STANDARD",
+  "FLEXIBLE",
+]);
+
+// Artist experience level enum
+export const artistExperienceLevelEnum = pgEnum("artist_experience_level", [
+  "JUNIOR",
+  "MID",
+  "SENIOR",
+  "EXPERT",
+]);
+
+// Skill proficiency level enum
+export const skillProficiencyEnum = pgEnum("skill_proficiency", [
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
+  "EXPERT",
+]);
+
+// Task offer response enum
+export const taskOfferResponseEnum = pgEnum("task_offer_response", [
+  "PENDING",
+  "ACCEPTED",
+  "DECLINED",
+  "EXPIRED",
+]);
+
+// Decline reason enum
+export const declineReasonEnum = pgEnum("decline_reason", [
+  "TOO_BUSY",
+  "SKILL_MISMATCH",
+  "DEADLINE_TOO_TIGHT",
+  "LOW_CREDITS",
+  "PERSONAL_CONFLICT",
+  "OTHER",
 ]);
 export const taskCategoryEnum = pgEnum("task_category", [
   "STATIC_ADS",
@@ -185,6 +237,21 @@ export const freelancerProfiles = pgTable("freelancer_profiles", {
   completedTasks: integer("completed_tasks").notNull().default(0),
   whatsappNumber: text("whatsapp_number"),
   availability: boolean("availability").notNull().default(true),
+  // New assignment algorithm fields
+  experienceLevel: artistExperienceLevelEnum("experience_level").default("JUNIOR"),
+  maxConcurrentTasks: integer("max_concurrent_tasks").notNull().default(3),
+  acceptsUrgentTasks: boolean("accepts_urgent_tasks").notNull().default(true),
+  workingHoursStart: text("working_hours_start").default("09:00"), // HH:MM format
+  workingHoursEnd: text("working_hours_end").default("18:00"), // HH:MM format
+  // Calculated metrics (updated by background job)
+  avgResponseTimeMinutes: integer("avg_response_time_minutes"),
+  acceptanceRate: decimal("acceptance_rate", { precision: 5, scale: 2 }),
+  onTimeRate: decimal("on_time_rate", { precision: 5, scale: 2 }),
+  // Preferences
+  preferredCategories: jsonb("preferred_categories").$type<string[]>().default([]),
+  minCreditsToAccept: integer("min_credits_to_accept").default(1),
+  vacationMode: boolean("vacation_mode").notNull().default(false),
+  vacationUntil: timestamp("vacation_until"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -200,6 +267,256 @@ export const taskCategories = pgTable("task_categories", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+// ============================================
+// Assignment Algorithm Tables
+// ============================================
+
+// Skills taxonomy - formalized skill definitions
+export const skills = pgTable("skills", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  category: text("category").notNull(), // design, video, development, etc.
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Artist skills - proficiency levels per artist
+export const artistSkills = pgTable(
+  "artist_skills",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    artistId: text("artist_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    proficiencyLevel: skillProficiencyEnum("proficiency_level").notNull().default("INTERMEDIATE"),
+    yearsExperience: decimal("years_experience", { precision: 3, scale: 1 }),
+    verified: boolean("verified").notNull().default(false), // Admin verified
+    verifiedAt: timestamp("verified_at"),
+    verifiedBy: text("verified_by").references(() => users.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("artist_skills_artist_id_idx").on(table.artistId),
+    index("artist_skills_skill_id_idx").on(table.skillId),
+  ]
+);
+
+// Task skill requirements - skills needed for a task
+export const taskSkillRequirements = pgTable(
+  "task_skill_requirements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    isRequired: boolean("is_required").notNull().default(true), // required vs nice-to-have
+    minProficiency: skillProficiencyEnum("min_proficiency").default("INTERMEDIATE"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_skill_requirements_task_id_idx").on(table.taskId),
+    index("task_skill_requirements_skill_id_idx").on(table.skillId),
+  ]
+);
+
+// Task offers - tracking offer history and responses
+export const taskOffers = pgTable(
+  "task_offers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    artistId: text("artist_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    matchScore: decimal("match_score", { precision: 5, scale: 2 }),
+    escalationLevel: integer("escalation_level").notNull().default(1),
+    offeredAt: timestamp("offered_at").notNull().defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(),
+    respondedAt: timestamp("responded_at"),
+    response: taskOfferResponseEnum("response").notNull().default("PENDING"),
+    declineReason: declineReasonEnum("decline_reason"),
+    declineNote: text("decline_note"),
+    // Score breakdown for analytics
+    scoreBreakdown: jsonb("score_breakdown").$type<{
+      skillScore: number;
+      timezoneScore: number;
+      experienceScore: number;
+      workloadScore: number;
+      performanceScore: number;
+    }>(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_offers_task_id_idx").on(table.taskId),
+    index("task_offers_artist_id_idx").on(table.artistId),
+    index("task_offers_response_idx").on(table.response),
+    index("task_offers_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
+// Assignment algorithm configuration - editable by admin
+export const assignmentAlgorithmConfig = pgTable("assignment_algorithm_config", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  version: integer("version").notNull().default(1),
+  isActive: boolean("is_active").notNull().default(false),
+  name: text("name").notNull(),
+  description: text("description"),
+
+  // Scoring weights (must sum to 100)
+  weights: jsonb("weights").notNull().$type<{
+    skillMatch: number;
+    timezoneFit: number;
+    experienceMatch: number;
+    workloadBalance: number;
+    performanceHistory: number;
+  }>().default({
+    skillMatch: 35,
+    timezoneFit: 20,
+    experienceMatch: 20,
+    workloadBalance: 15,
+    performanceHistory: 10,
+  }),
+
+  // Acceptance windows by urgency (in minutes)
+  acceptanceWindows: jsonb("acceptance_windows").notNull().$type<{
+    critical: number;
+    urgent: number;
+    standard: number;
+    flexible: number;
+  }>().default({
+    critical: 10,
+    urgent: 30,
+    standard: 120,
+    flexible: 240,
+  }),
+
+  // Escalation settings
+  escalationSettings: jsonb("escalation_settings").notNull().$type<{
+    level1SkillThreshold: number;
+    level2SkillThreshold: number;
+    level1MaxOffers: number;
+    level2MaxOffers: number;
+    level3BroadcastMinutes: number;
+    maxWorkloadOverride: number; // Allow +1 task for level 2
+  }>().default({
+    level1SkillThreshold: 70,
+    level2SkillThreshold: 50,
+    level1MaxOffers: 3,
+    level2MaxOffers: 3,
+    level3BroadcastMinutes: 30,
+    maxWorkloadOverride: 1,
+  }),
+
+  // Timezone scoring settings
+  timezoneSettings: jsonb("timezone_settings").notNull().$type<{
+    peakHoursStart: string; // "09:00"
+    peakHoursEnd: string; // "18:00"
+    peakScore: number;
+    eveningScore: number;
+    earlyMorningScore: number;
+    lateEveningScore: number;
+    nightScore: number;
+  }>().default({
+    peakHoursStart: "09:00",
+    peakHoursEnd: "18:00",
+    peakScore: 100,
+    eveningScore: 80,
+    earlyMorningScore: 70,
+    lateEveningScore: 50,
+    nightScore: 20,
+  }),
+
+  // Experience matching matrix
+  experienceMatrix: jsonb("experience_matrix").notNull().$type<{
+    // [taskComplexity][artistExperience] = score
+    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+  }>().default({
+    SIMPLE: { JUNIOR: 100, MID: 90, SENIOR: 70, EXPERT: 50 },
+    INTERMEDIATE: { JUNIOR: 60, MID: 100, SENIOR: 90, EXPERT: 80 },
+    ADVANCED: { JUNIOR: 20, MID: 70, SENIOR: 100, EXPERT: 95 },
+    EXPERT: { JUNIOR: 0, MID: 40, SENIOR: 80, EXPERT: 100 },
+  }),
+
+  // Workload scoring settings
+  workloadSettings: jsonb("workload_settings").notNull().$type<{
+    maxActiveTasks: number;
+    scorePerTask: number; // Points deducted per active task
+  }>().default({
+    maxActiveTasks: 5,
+    scorePerTask: 20,
+  }),
+
+  // Hard exclusion rules
+  exclusionRules: jsonb("exclusion_rules").notNull().$type<{
+    minSkillScoreToInclude: number;
+    excludeOverloaded: boolean;
+    excludeNightHoursForUrgent: boolean;
+    excludeVacationMode: boolean;
+  }>().default({
+    minSkillScoreToInclude: 50,
+    excludeOverloaded: true,
+    excludeNightHoursForUrgent: true,
+    excludeVacationMode: true,
+  }),
+
+  // Bonus modifiers
+  bonusModifiers: jsonb("bonus_modifiers").notNull().$type<{
+    categorySpecializationBonus: number;
+    niceToHaveSkillBonus: number;
+    favoriteArtistBonus: number;
+  }>().default({
+    categorySpecializationBonus: 10,
+    niceToHaveSkillBonus: 5,
+    favoriteArtistBonus: 10,
+  }),
+
+  // Audit fields
+  createdBy: text("created_by").references(() => users.id),
+  updatedBy: text("updated_by").references(() => users.id),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Client-artist affinity (favorites and history)
+export const clientArtistAffinity = pgTable(
+  "client_artist_affinity",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    artistId: text("artist_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    isFavorite: boolean("is_favorite").notNull().default(false),
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    avgRating: decimal("avg_rating", { precision: 3, scale: 2 }),
+    lastWorkedAt: timestamp("last_worked_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("client_artist_affinity_client_id_idx").on(table.clientId),
+    index("client_artist_affinity_artist_id_idx").on(table.artistId),
+  ]
+);
 
 // Tasks
 export const tasks = pgTable(
@@ -237,6 +554,13 @@ export const tasks = pgTable(
     deadline: timestamp("deadline"),
     assignedAt: timestamp("assigned_at"),
     completedAt: timestamp("completed_at"),
+    // New assignment algorithm fields
+    complexity: taskComplexityEnum("complexity").default("INTERMEDIATE"),
+    urgency: taskUrgencyEnum("urgency").default("STANDARD"),
+    offeredTo: text("offered_to").references(() => users.id),
+    offerExpiresAt: timestamp("offer_expires_at"),
+    escalationLevel: integer("escalation_level").notNull().default(0),
+    requiredSkills: jsonb("required_skills").$type<string[]>().default([]),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -246,6 +570,8 @@ export const tasks = pgTable(
     index("tasks_status_idx").on(table.status),
     index("tasks_created_at_idx").on(table.createdAt),
     index("tasks_client_status_idx").on(table.clientId, table.status),
+    index("tasks_offered_to_idx").on(table.offeredTo),
+    index("tasks_offer_expires_at_idx").on(table.offerExpiresAt),
   ]
 );
 
@@ -489,9 +815,68 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   messages: many(taskMessages),
 }));
 
-export const freelancerProfilesRelations = relations(freelancerProfiles, ({ one }) => ({
+export const freelancerProfilesRelations = relations(freelancerProfiles, ({ one, many }) => ({
   user: one(users, {
     fields: [freelancerProfiles.userId],
+    references: [users.id],
+  }),
+  artistSkills: many(artistSkills),
+}));
+
+// Skills relations
+export const skillsRelations = relations(skills, ({ many }) => ({
+  artistSkills: many(artistSkills),
+  taskSkillRequirements: many(taskSkillRequirements),
+}));
+
+// Artist skills relations
+export const artistSkillsRelations = relations(artistSkills, ({ one }) => ({
+  artist: one(users, {
+    fields: [artistSkills.artistId],
+    references: [users.id],
+  }),
+  skill: one(skills, {
+    fields: [artistSkills.skillId],
+    references: [skills.id],
+  }),
+  verifier: one(users, {
+    fields: [artistSkills.verifiedBy],
+    references: [users.id],
+  }),
+}));
+
+// Task skill requirements relations
+export const taskSkillRequirementsRelations = relations(taskSkillRequirements, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskSkillRequirements.taskId],
+    references: [tasks.id],
+  }),
+  skill: one(skills, {
+    fields: [taskSkillRequirements.skillId],
+    references: [skills.id],
+  }),
+}));
+
+// Task offers relations
+export const taskOffersRelations = relations(taskOffers, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskOffers.taskId],
+    references: [tasks.id],
+  }),
+  artist: one(users, {
+    fields: [taskOffers.artistId],
+    references: [users.id],
+  }),
+}));
+
+// Client-artist affinity relations
+export const clientArtistAffinityRelations = relations(clientArtistAffinity, ({ one }) => ({
+  client: one(users, {
+    fields: [clientArtistAffinity.clientId],
+    references: [users.id],
+  }),
+  artist: one(users, {
+    fields: [clientArtistAffinity.artistId],
     references: [users.id],
   }),
 }));
