@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { freelancerProfiles, users, tasks } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+import { eq, count, or } from "drizzle-orm";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 
@@ -32,8 +32,8 @@ export async function GET(
 
     const { id } = await params;
 
-    // Get freelancer profile with user info
-    const freelancerResult = await db
+    // First, try to find by profile ID
+    let freelancerResult = await db
       .select({
         id: freelancerProfiles.id,
         userId: freelancerProfiles.userId,
@@ -63,8 +63,94 @@ export async function GET(
       .where(eq(freelancerProfiles.id, id))
       .limit(1);
 
+    // If not found by profile ID, try by user ID (for NOT_ONBOARDED users)
     if (freelancerResult.length === 0) {
-      throw Errors.notFound("Freelancer");
+      freelancerResult = await db
+        .select({
+          id: freelancerProfiles.id,
+          userId: freelancerProfiles.userId,
+          status: freelancerProfiles.status,
+          skills: freelancerProfiles.skills,
+          specializations: freelancerProfiles.specializations,
+          portfolioUrls: freelancerProfiles.portfolioUrls,
+          bio: freelancerProfiles.bio,
+          timezone: freelancerProfiles.timezone,
+          hourlyRate: freelancerProfiles.hourlyRate,
+          rating: freelancerProfiles.rating,
+          completedTasks: freelancerProfiles.completedTasks,
+          whatsappNumber: freelancerProfiles.whatsappNumber,
+          availability: freelancerProfiles.availability,
+          createdAt: freelancerProfiles.createdAt,
+          updatedAt: freelancerProfiles.updatedAt,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            image: users.image,
+            createdAt: users.createdAt,
+          },
+        })
+        .from(freelancerProfiles)
+        .innerJoin(users, eq(users.id, freelancerProfiles.userId))
+        .where(eq(freelancerProfiles.userId, id))
+        .limit(1);
+    }
+
+    // If still not found, check if user exists but has no profile (NOT_ONBOARDED)
+    if (freelancerResult.length === 0) {
+      const userResult = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+          role: users.role,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+
+      if (userResult.length === 0 || userResult[0].role !== "FREELANCER") {
+        throw Errors.notFound("Freelancer");
+      }
+
+      // Return user without profile (NOT_ONBOARDED state)
+      const user = userResult[0];
+      return successResponse({
+        freelancer: {
+          id: user.id, // Use user ID as the identifier
+          userId: user.id,
+          status: "NOT_ONBOARDED",
+          skills: [],
+          specializations: [],
+          portfolioUrls: [],
+          bio: null,
+          timezone: null,
+          hourlyRate: null,
+          rating: null,
+          completedTasks: 0,
+          whatsappNumber: null,
+          availability: true,
+          createdAt: user.createdAt,
+          updatedAt: user.createdAt,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            createdAt: user.createdAt,
+          },
+          taskCounts: {
+            total: 0,
+            completed: 0,
+            inProgress: 0,
+            pending: 0,
+            inReview: 0,
+          },
+          recentTasks: [],
+        },
+      });
     }
 
     const freelancer = freelancerResult[0];
@@ -123,8 +209,8 @@ export async function PUT(
     const body = await request.json();
     const validatedData = updateFreelancerSchema.parse(body);
 
-    // Check if freelancer exists
-    const existingFreelancer = await db
+    // Try to find freelancer by profile ID first
+    let existingFreelancer = await db
       .select({
         id: freelancerProfiles.id,
         userId: freelancerProfiles.userId,
@@ -133,11 +219,40 @@ export async function PUT(
       .where(eq(freelancerProfiles.id, id))
       .limit(1);
 
+    // If not found by profile ID, try by user ID
     if (existingFreelancer.length === 0) {
-      throw Errors.notFound("Freelancer");
+      existingFreelancer = await db
+        .select({
+          id: freelancerProfiles.id,
+          userId: freelancerProfiles.userId,
+        })
+        .from(freelancerProfiles)
+        .where(eq(freelancerProfiles.userId, id))
+        .limit(1);
     }
 
-    const freelancer = existingFreelancer[0];
+    // Handle NOT_ONBOARDED users (no profile exists)
+    let freelancer: { id: string; userId: string };
+    let isNotOnboarded = false;
+
+    if (existingFreelancer.length === 0) {
+      // Check if user exists
+      const userResult = await db
+        .select({ id: users.id, role: users.role })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+
+      if (userResult.length === 0 || userResult[0].role !== "FREELANCER") {
+        throw Errors.notFound("Freelancer");
+      }
+
+      // User exists but no profile - we may need to create one
+      isNotOnboarded = true;
+      freelancer = { id: id, userId: id };
+    } else {
+      freelancer = existingFreelancer[0];
+    }
 
     // Separate user fields from profile fields
     const { name, email, ...profileFields } = validatedData;
@@ -154,18 +269,33 @@ export async function PUT(
         .where(eq(users.id, freelancer.userId));
     }
 
-    // Update profile fields
-    if (Object.keys(profileFields).length > 0) {
+    // For NOT_ONBOARDED users, create a profile if there are profile fields to update
+    if (isNotOnboarded && Object.keys(profileFields).length > 0) {
+      await db.insert(freelancerProfiles).values({
+        userId: freelancer.userId,
+        status: profileFields.status || "PENDING",
+        skills: profileFields.skills || [],
+        specializations: profileFields.specializations || [],
+        portfolioUrls: profileFields.portfolioUrls || [],
+        bio: profileFields.bio || null,
+        timezone: profileFields.timezone || null,
+        hourlyRate: profileFields.hourlyRate || null,
+        whatsappNumber: profileFields.whatsappNumber || null,
+        availability: profileFields.availability ?? true,
+        rating: profileFields.rating || null,
+      });
+    } else if (Object.keys(profileFields).length > 0) {
+      // Update existing profile - use freelancer.id which is the actual profile ID
       await db
         .update(freelancerProfiles)
         .set({
           ...profileFields,
           updatedAt: new Date(),
         })
-        .where(eq(freelancerProfiles.id, id));
+        .where(eq(freelancerProfiles.id, freelancer.id));
     }
 
-    // Fetch updated freelancer
+    // Fetch updated freelancer - search by userId to handle both cases
     const updatedFreelancer = await db
       .select({
         id: freelancerProfiles.id,
@@ -193,7 +323,7 @@ export async function PUT(
       })
       .from(freelancerProfiles)
       .innerJoin(users, eq(users.id, freelancerProfiles.userId))
-      .where(eq(freelancerProfiles.id, id))
+      .where(eq(freelancerProfiles.userId, freelancer.userId))
       .limit(1);
 
     return successResponse({ freelancer: updatedFreelancer[0] });
