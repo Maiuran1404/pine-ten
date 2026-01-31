@@ -16,6 +16,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft,
   Mail,
@@ -32,6 +43,10 @@ import {
   Check,
   X,
   MessageCircle,
+  Pencil,
+  Save,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
 
@@ -74,6 +89,21 @@ interface FreelancerDetails {
   }>;
 }
 
+interface EditFormData {
+  name: string;
+  email: string;
+  status: string;
+  skills: string[];
+  specializations: string[];
+  portfolioUrls: string[];
+  bio: string;
+  timezone: string;
+  hourlyRate: string;
+  whatsappNumber: string;
+  availability: boolean;
+  rating: string;
+}
+
 export default function FreelancerDetailPage({
   params,
 }: {
@@ -84,6 +114,25 @@ export default function FreelancerDetailPage({
   const [freelancer, setFreelancer] = useState<FreelancerDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState<EditFormData>({
+    name: "",
+    email: "",
+    status: "",
+    skills: [],
+    specializations: [],
+    portfolioUrls: [],
+    bio: "",
+    timezone: "",
+    hourlyRate: "",
+    whatsappNumber: "",
+    availability: true,
+    rating: "",
+  });
+  const [newSkill, setNewSkill] = useState("");
+  const [newSpecialization, setNewSpecialization] = useState("");
+  const [newPortfolioUrl, setNewPortfolioUrl] = useState("");
 
   useEffect(() => {
     fetchFreelancer();
@@ -101,13 +150,91 @@ export default function FreelancerDetailPage({
         throw new Error("Failed to fetch artist");
       }
       const data = await response.json();
-      setFreelancer(data.data?.freelancer);
+      const f = data.data?.freelancer;
+      setFreelancer(f);
+      if (f) {
+        setEditForm({
+          name: f.user.name || "",
+          email: f.user.email || "",
+          status: f.status || "",
+          skills: f.skills || [],
+          specializations: f.specializations || [],
+          portfolioUrls: f.portfolioUrls || [],
+          bio: f.bio || "",
+          timezone: f.timezone || "",
+          hourlyRate: f.hourlyRate || "",
+          whatsappNumber: f.whatsappNumber || "",
+          availability: f.availability ?? true,
+          rating: f.rating || "",
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch artist:", error);
       toast.error("Failed to load artist details");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (!freelancer) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/admin/freelancers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name,
+          email: editForm.email,
+          status: editForm.status,
+          skills: editForm.skills,
+          specializations: editForm.specializations,
+          portfolioUrls: editForm.portfolioUrls,
+          bio: editForm.bio || null,
+          timezone: editForm.timezone || null,
+          hourlyRate: editForm.hourlyRate || null,
+          whatsappNumber: editForm.whatsappNumber || null,
+          availability: editForm.availability,
+          rating: editForm.rating || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Failed to save");
+      }
+
+      const data = await response.json();
+      // Refetch to get full data with task counts
+      await fetchFreelancer();
+      setIsEditing(false);
+      toast.success("Artist profile updated successfully!");
+    } catch (error) {
+      console.error("Failed to save artist:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save changes");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (freelancer) {
+      setEditForm({
+        name: freelancer.user.name || "",
+        email: freelancer.user.email || "",
+        status: freelancer.status || "",
+        skills: freelancer.skills || [],
+        specializations: freelancer.specializations || [],
+        portfolioUrls: freelancer.portfolioUrls || [],
+        bio: freelancer.bio || "",
+        timezone: freelancer.timezone || "",
+        hourlyRate: freelancer.hourlyRate || "",
+        whatsappNumber: freelancer.whatsappNumber || "",
+        availability: freelancer.availability ?? true,
+        rating: freelancer.rating || "",
+      });
+    }
+    setIsEditing(false);
   };
 
   const handleApprove = async () => {
@@ -126,6 +253,7 @@ export default function FreelancerDetailPage({
       setFreelancer((prev) =>
         prev ? { ...prev, status: "APPROVED" } : prev
       );
+      setEditForm((prev) => ({ ...prev, status: "APPROVED" }));
     } catch {
       toast.error("Failed to approve artist");
     } finally {
@@ -149,11 +277,70 @@ export default function FreelancerDetailPage({
       setFreelancer((prev) =>
         prev ? { ...prev, status: "REJECTED" } : prev
       );
+      setEditForm((prev) => ({ ...prev, status: "REJECTED" }));
     } catch {
       toast.error("Failed to reject artist");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const addSkill = () => {
+    if (newSkill.trim() && !editForm.skills.includes(newSkill.trim())) {
+      setEditForm((prev) => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()],
+      }));
+      setNewSkill("");
+    }
+  };
+
+  const removeSkill = (skill: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s !== skill),
+    }));
+  };
+
+  const addSpecialization = () => {
+    if (newSpecialization.trim() && !editForm.specializations.includes(newSpecialization.trim())) {
+      setEditForm((prev) => ({
+        ...prev,
+        specializations: [...prev.specializations, newSpecialization.trim()],
+      }));
+      setNewSpecialization("");
+    }
+  };
+
+  const removeSpecialization = (spec: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      specializations: prev.specializations.filter((s) => s !== spec),
+    }));
+  };
+
+  const addPortfolioUrl = () => {
+    if (newPortfolioUrl.trim()) {
+      try {
+        new URL(newPortfolioUrl.trim());
+        if (!editForm.portfolioUrls.includes(newPortfolioUrl.trim())) {
+          setEditForm((prev) => ({
+            ...prev,
+            portfolioUrls: [...prev.portfolioUrls, newPortfolioUrl.trim()],
+          }));
+          setNewPortfolioUrl("");
+        }
+      } catch {
+        toast.error("Please enter a valid URL");
+      }
+    }
+  };
+
+  const removePortfolioUrl = (url: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      portfolioUrls: prev.portfolioUrls.filter((u) => u !== url),
+    }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -247,33 +434,73 @@ export default function FreelancerDetailPage({
           </div>
         </div>
 
-        {freelancer.status === "PENDING" && (
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button
-              onClick={handleApprove}
-              disabled={isProcessing}
-              className="flex-1 sm:flex-none"
-            >
-              {isProcessing ? (
-                <LoadingSpinner size="sm" />
-              ) : (
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {isEditing ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="flex-1 sm:flex-none"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-1 sm:flex-none"
+              >
+                {isSaving ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+                className="flex-1 sm:flex-none"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+              {freelancer.status === "PENDING" && (
                 <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Approve
+                  <Button
+                    onClick={handleApprove}
+                    disabled={isProcessing}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {isProcessing ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Approve
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleReject}
+                    disabled={isProcessing}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
                 </>
               )}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={isProcessing}
-              className="flex-1 sm:flex-none"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Reject
-            </Button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -292,10 +519,44 @@ export default function FreelancerDetailPage({
                       .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <h2 className="text-xl font-semibold">{freelancer.user.name}</h2>
-                <div className="mt-2">
-                  {getStatusBadge(freelancer.status)}
-                </div>
+
+                {isEditing ? (
+                  <div className="w-full space-y-3">
+                    <div>
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        id="name"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={editForm.status}
+                        onValueChange={(value) => setEditForm((prev) => ({ ...prev, status: value }))}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PENDING">Pending</SelectItem>
+                          <SelectItem value="APPROVED">Approved</SelectItem>
+                          <SelectItem value="REJECTED">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-semibold">{freelancer.user.name}</h2>
+                    <div className="mt-2">
+                      {getStatusBadge(freelancer.status)}
+                    </div>
+                  </>
+                )}
+
                 <div className="flex items-center gap-1 mt-3 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span className="text-sm">Joined {formatDate(freelancer.user.createdAt)}</span>
@@ -303,36 +564,107 @@ export default function FreelancerDetailPage({
               </div>
 
               <div className="mt-6 space-y-4">
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{freelancer.user.email}</span>
-                </div>
+                {isEditing ? (
+                  <>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="whatsapp">WhatsApp</Label>
+                      <Input
+                        id="whatsapp"
+                        value={editForm.whatsappNumber}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, whatsappNumber: e.target.value }))}
+                        placeholder="+1234567890"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="timezone">Timezone</Label>
+                      <Input
+                        id="timezone"
+                        value={editForm.timezone}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, timezone: e.target.value }))}
+                        placeholder="e.g., America/New_York"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
+                      <Input
+                        id="hourlyRate"
+                        type="number"
+                        step="0.01"
+                        value={editForm.hourlyRate}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, hourlyRate: e.target.value }))}
+                        placeholder="0.00"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rating">Rating (0-5)</Label>
+                      <Input
+                        id="rating"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="5"
+                        value={editForm.rating}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, rating: e.target.value }))}
+                        placeholder="0.0"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="availability">Available for Work</Label>
+                      <Switch
+                        id="availability"
+                        checked={editForm.availability}
+                        onCheckedChange={(checked) => setEditForm((prev) => ({ ...prev, availability: checked }))}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{freelancer.user.email}</span>
+                    </div>
 
-                {freelancer.whatsappNumber && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                    <span>{freelancer.whatsappNumber}</span>
-                  </div>
+                    {freelancer.whatsappNumber && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                        <span>{freelancer.whatsappNumber}</span>
+                      </div>
+                    )}
+
+                    {freelancer.timezone && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{freelancer.timezone}</span>
+                      </div>
+                    )}
+
+                    {freelancer.hourlyRate && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span>${parseFloat(freelancer.hourlyRate).toFixed(2)}/hour</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 text-sm">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <span>{freelancer.availability ? "Available" : "Not Available"}</span>
+                    </div>
+                  </>
                 )}
-
-                {freelancer.timezone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{freelancer.timezone}</span>
-                  </div>
-                )}
-
-                {freelancer.hourlyRate && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>${parseFloat(freelancer.hourlyRate).toFixed(2)}/hour</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 text-sm">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  <span>{freelancer.availability ? "Available" : "Not Available"}</span>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -354,7 +686,7 @@ export default function FreelancerDetailPage({
                 <div className="text-center p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-center gap-1 text-2xl font-bold">
                     <Star className="h-5 w-5 text-yellow-500" />
-                    {freelancer.rating ? parseFloat(freelancer.rating).toFixed(1) : "—"}
+                    {isEditing ? editForm.rating || "—" : freelancer.rating ? parseFloat(freelancer.rating).toFixed(1) : "—"}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Rating</p>
                 </div>
@@ -378,18 +710,27 @@ export default function FreelancerDetailPage({
         {/* Right Column - Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Bio */}
-          {freelancer.bio && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">About</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">About</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <Textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Write a bio for this artist..."
+                  rows={4}
+                />
+              ) : freelancer.bio ? (
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {freelancer.bio}
                 </p>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-sm text-muted-foreground">No bio provided</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Skills & Specializations */}
           <Card>
@@ -397,36 +738,95 @@ export default function FreelancerDetailPage({
               <CardTitle className="text-base">Skills & Expertise</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {freelancer.skills && freelancer.skills.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Skills</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {freelancer.skills.map((skill) => (
-                      <Badge key={skill} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Skills</h4>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {editForm.skills.map((skill) => (
+                        <Badge key={skill} variant="secondary" className="gap-1">
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() => removeSkill(skill)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        placeholder="Add a skill..."
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
+                      />
+                      <Button type="button" size="icon" variant="outline" onClick={addSkill}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {freelancer.specializations && freelancer.specializations.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Specializations</h4>
+                ) : (
                   <div className="flex flex-wrap gap-2">
-                    {freelancer.specializations.map((spec) => (
-                      <Badge key={spec} variant="outline">
-                        {spec}
-                      </Badge>
-                    ))}
+                    {freelancer.skills && freelancer.skills.length > 0 ? (
+                      freelancer.skills.map((skill) => (
+                        <Badge key={skill} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No skills listed</p>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {(!freelancer.skills || freelancer.skills.length === 0) &&
-               (!freelancer.specializations || freelancer.specializations.length === 0) && (
-                <p className="text-sm text-muted-foreground">No skills or specializations listed</p>
-              )}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Specializations</h4>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {editForm.specializations.map((spec) => (
+                        <Badge key={spec} variant="outline" className="gap-1">
+                          {spec}
+                          <button
+                            type="button"
+                            onClick={() => removeSpecialization(spec)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newSpecialization}
+                        onChange={(e) => setNewSpecialization(e.target.value)}
+                        placeholder="Add a specialization..."
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSpecialization())}
+                      />
+                      <Button type="button" size="icon" variant="outline" onClick={addSpecialization}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {freelancer.specializations && freelancer.specializations.length > 0 ? (
+                      freelancer.specializations.map((spec) => (
+                        <Badge key={spec} variant="outline">
+                          {spec}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No specializations listed</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -435,11 +835,41 @@ export default function FreelancerDetailPage({
             <CardHeader>
               <CardTitle className="text-base">Portfolio</CardTitle>
               <CardDescription>
-                {freelancer.portfolioUrls?.length || 0} portfolio link{freelancer.portfolioUrls?.length !== 1 ? "s" : ""}
+                {isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length || 0} portfolio link
+                {(isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length) !== 1 ? "s" : ""}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {freelancer.portfolioUrls && freelancer.portfolioUrls.length > 0 ? (
+              {isEditing ? (
+                <div className="space-y-2">
+                  {editForm.portfolioUrls.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 rounded-lg border">
+                      <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm truncate flex-1">{url}</span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removePortfolioUrl(url)}
+                        className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newPortfolioUrl}
+                      onChange={(e) => setNewPortfolioUrl(e.target.value)}
+                      placeholder="https://..."
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPortfolioUrl())}
+                    />
+                    <Button type="button" size="icon" variant="outline" onClick={addPortfolioUrl}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : freelancer.portfolioUrls && freelancer.portfolioUrls.length > 0 ? (
                 <div className="space-y-2">
                   {freelancer.portfolioUrls.map((url, index) => (
                     <a

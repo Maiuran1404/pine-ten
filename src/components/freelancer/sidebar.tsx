@@ -17,6 +17,7 @@ import {
   Settings,
   X,
   Lock,
+  Wallet,
 } from "lucide-react";
 import type { FreelancerStatus } from "@/app/(freelancer)/layout";
 
@@ -31,6 +32,12 @@ const navigation = [
     name: "My Tasks",
     href: "/portal/tasks",
     icon: CheckCircle,
+    requiresApproval: true,
+  },
+  {
+    name: "Payouts",
+    href: "/portal/payouts",
+    icon: Wallet,
     requiresApproval: true,
   },
   {
