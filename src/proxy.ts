@@ -97,9 +97,9 @@ function isPublicPath(pathname: string): boolean {
 }
 
 /**
- * Main middleware function
+ * Main proxy function (renamed from middleware for Next.js 16+)
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for static files and public paths

@@ -62,10 +62,10 @@ export function Header({ credits = 0, onMenuClick, basePath = "/dashboard", show
             <Button
               size="sm"
               onClick={() => setShowCreditsDialog(true)}
-              className="h-9 px-4 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground gap-2"
+              className="h-9 px-4 rounded-lg border border-border bg-white/80 dark:bg-card/60 hover:bg-white dark:hover:bg-card/80 text-foreground gap-2 shadow-sm"
             >
               <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Upgrade</span>
+              <span className="hidden sm:inline">Add credits</span>
             </Button>
           )}
         </div>

@@ -111,13 +111,16 @@ export default function ClientLayout({
       <SidebarInset className="bg-transparent">
         {/* Infinite Grid Background - covers entire viewport */}
         <InfiniteGrid
-          gridSize={50}
-          speedX={0.3}
-          speedY={0.3}
-          spotlightRadius={250}
-          backgroundOpacity={0.03}
-          highlightOpacity={0.15}
+          gridSize={45}
+          speedX={0.2}
+          speedY={0.2}
+          spotlightRadius={280}
+          backgroundOpacity={0.04}
+          highlightOpacity={0.12}
           showBlurSpheres={true}
+          sphereColors={["#A8D5BA", "#9AA48C", "#C5E8D5"]}
+          sphereOpacity={0.25}
+          sphereBlur={180}
           className="!fixed inset-0"
         />
         <Header credits={user.credits || 0} />

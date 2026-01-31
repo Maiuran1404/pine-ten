@@ -8,8 +8,6 @@ import { ImageWithSkeleton, MasonryGridSkeleton } from "@/components/ui/skeleton
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
-  ArrowRight,
-  Sparkles,
   Image as ImageIcon,
   Upload,
   FileText,
@@ -17,10 +15,16 @@ import {
   FileArchive,
   File,
   X,
+  Share2,
+  Megaphone,
+  Tag,
+  BarChart3,
+  Search,
+  Presentation,
+  Palette,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
-import { FloatingBlobs } from "@/components/shared/floating-blobs";
 import { useSession } from "@/lib/auth-client";
 import { getImageVariantUrls } from "@/lib/image/utils";
 
@@ -41,61 +45,67 @@ interface StyleReference {
   colorTemperature?: string;
 }
 
-// Template categories and prompts
+// Template categories and prompts based on service offerings
 const TEMPLATE_CATEGORIES = {
-  "Social Media": {
-    icon: "📱",
+  "Launch Videos": {
+    icon: Megaphone,
     templates: [
-      "Create 30-day Instagram content calendar with daily posts",
-      "Design LinkedIn carousel posts for thought leadership",
-      "Generate Instagram Stories for product launch campaign",
-      "Create Facebook ad creatives for e-commerce promotion",
-      "Develop TikTok video concepts for brand awareness",
-      "Design Pinterest pins for seasonal marketing",
+      "Create a 30-60 second launch video for my product",
+      "Design a cinematic product launch video with my UI screenshots",
+      "Create an energetic startup launch video highlighting key features",
+      "Produce a launch video with custom storyline and CTA",
+      "Design a launch video showcasing my app's main workflow",
     ],
   },
-  "Video & Animation": {
-    icon: "🎬",
+  "Video Edits": {
+    icon: FileVideo,
     templates: [
-      "Edit product demo video with professional transitions",
-      "Create animated explainer video for SaaS product",
-      "Design video ad for social media campaign",
-      "Develop Instagram Reels content series",
-      "Create YouTube thumbnail designs",
-      "Edit testimonial video compilation",
+      "Edit my UGC footage into a 30s TikTok/Reels video",
+      "Transform my screen recording into an engaging product demo",
+      "Edit my podcast clip for LinkedIn with subtitles",
+      "Create an energetic video edit from my raw footage for Instagram",
+      "Edit my talking head video with text overlays and captions",
+      "Turn my event footage into a promotional highlight reel",
+    ],
+  },
+  "Pitch Deck": {
+    icon: Presentation,
+    templates: [
+      "Redesign my pitch deck to look more professional",
+      "Create a clean, investor-ready pitch deck from my content",
+      "Transform my existing slides into a compelling story",
+      "Design a modern pitch deck with consistent branding",
+      "Polish my deck with better visuals and layout",
     ],
   },
   "Branding": {
-    icon: "🎨",
+    icon: Palette,
     templates: [
-      "Design brand elements and comprehensive style guide",
-      "Create logo variations and brand identity system",
-      "Develop brand color palette with usage guidelines",
-      "Design business card and stationery set",
-      "Create brand presentation template",
-      "Design email signature with brand elements",
+      "Create a full brand package with logo and visual identity",
+      "Design a logo and brand guidelines for my startup",
+      "Develop a complete visual identity system",
+      "Create brand assets including logo, colors, and typography",
+      "Design a comprehensive brand kit for my business",
     ],
   },
-  "Marketing": {
-    icon: "📊",
+  "Social Ads": {
+    icon: BarChart3,
     templates: [
-      "Create static ad designs for Google Display Network",
-      "Design email newsletter template with CTAs",
-      "Develop landing page design for campaign",
-      "Create presentation deck for investor pitch",
-      "Design infographic for blog post",
-      "Create promotional banner set for website",
+      "Create Instagram ad creatives for my product launch",
+      "Design LinkedIn ad campaign for B2B lead generation",
+      "Create Facebook carousel ads for e-commerce promotion",
+      "Design TikTok video ads for brand awareness",
+      "Create static and video ads for a signup campaign",
     ],
   },
-  "More": {
-    icon: "✨",
+  "Content": {
+    icon: Share2,
     templates: [
-      "Design packaging mockups for product launch",
-      "Create event invitation and promotional materials",
-      "Develop mobile app UI/UX design concepts",
-      "Design website homepage with modern layout",
-      "Create podcast cover art and episode graphics",
-      "Design menu and promotional materials for restaurant",
+      "Create a weekly LinkedIn content plan for thought leadership",
+      "Design Instagram content series for brand storytelling",
+      "Create educational content posts for my SaaS product",
+      "Design behind-the-scenes content for Instagram Stories",
+      "Create a content calendar mixing educational and promotional posts",
     ],
   },
 };
@@ -294,15 +304,12 @@ function DashboardContent() {
 
   return (
     <div
-      className="relative min-h-screen bg-background"
+      className="relative min-h-screen"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Background blobs */}
-      <FloatingBlobs />
-
       {/* Hidden file input */}
       <input
         type="file"
@@ -341,44 +348,45 @@ function DashboardContent() {
       {/* Main Content */}
       <div className="flex flex-col items-center px-4 sm:px-6 pt-20 sm:pt-32 md:pt-40 pb-8">
         {/* Welcome Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-2">
+        <div className="text-center mb-8 sm:mb-10">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
             Welcome back,{" "}
             <span className="relative inline-block">
-              {userName}
+              {userName}!
               <svg
-                className="absolute -bottom-1 left-0 w-full h-3 text-foreground"
-                viewBox="0 0 100 10"
+                className="absolute -bottom-1 left-0 w-full h-2.5 text-emerald-500"
+                viewBox="0 0 100 8"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="none"
               >
                 <path
-                  d="M3 6C15 4.5 25 7 40 5C55 3 65 6.5 80 5C90 4 95 6 97 5.5"
+                  d="M0 4C10 2 20 6 30 4C40 2 50 6 60 4C70 2 80 6 90 4C95 3 100 5 100 4"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                   strokeLinecap="round"
+                  fill="none"
                 />
               </svg>
             </span>
-            !
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground">
+          <p className="text-lg sm:text-xl text-muted-foreground">
             What would you like to create{" "}
-            <span className="font-semibold text-foreground">today</span>?
+            <span className="italic font-medium text-foreground">today</span>?
           </p>
         </div>
 
         {/* Main Input Card */}
-        <div className="w-full max-w-2xl mb-4 sm:mb-6">
-          <div className="bg-white/80 dark:bg-card/40 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-border/50 shadow-lg overflow-hidden">
+        <div className="w-full max-w-3xl mb-6 sm:mb-8">
+          <div className="bg-white dark:bg-card/60 backdrop-blur-xl rounded-2xl border border-border/40 shadow-xl shadow-black/5 overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
-              <div className="px-4 py-3 border-b border-border/50">
+              <div className="px-5 py-3 border-b border-border/30">
                 <div className="flex flex-wrap gap-2">
                   {uploadedFiles.filter(Boolean).map((file) => (
                     <div
                       key={file.fileUrl}
-                      className="relative group flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50"
+                      className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/50"
                     >
                       {file.fileType?.startsWith("image/") ? (
                         <img
@@ -391,7 +399,7 @@ function DashboardContent() {
                           {getFileIcon(file.fileType)}
                         </span>
                       )}
-                      <span className="text-xs max-w-[120px] truncate text-foreground">
+                      <span className="text-sm max-w-[150px] truncate text-foreground">
                         {file.fileName}
                       </span>
                       <button
@@ -408,7 +416,7 @@ function DashboardContent() {
             )}
 
             {/* Text Input Area */}
-            <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2">
+            <div className="px-5 sm:px-6 pt-5 pb-3">
               <textarea
                 ref={inputRef}
                 value={chatInput}
@@ -429,93 +437,87 @@ function DashboardContent() {
                     ? "Add a message or just send..."
                     : "Describe what you want to create..."
                 }
-                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground focus:outline-none text-base resize-none min-h-[28px] max-h-[150px]"
+                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base resize-none min-h-[32px] max-h-[150px]"
                 rows={1}
               />
             </div>
 
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 pb-3 sm:pb-4 pt-2">
-              {/* Left side - attachment icons */}
-              <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-4 pt-2">
+              {/* Left side - attachment icons and credits */}
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Attach file"
                 >
                   {isUploading ? (
                     <LoadingSpinner size="sm" />
                   ) : (
-                    <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Paperclip className="h-5 w-5" />
                   )}
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="hidden sm:block p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Add image"
                 >
-                  <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <ImageIcon className="h-5 w-5" />
                 </button>
 
-                <div className="w-px h-4 sm:h-5 bg-border mx-1.5 sm:mx-2" />
+                <div className="w-px h-5 bg-border/60 mx-2" />
 
                 {/* Credits indicator */}
-                <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <span
-                    className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
+                    className={`w-2 h-2 rounded-full ${
                       credits === null
                         ? "bg-gray-400"
                         : credits === 0
                           ? "bg-red-500"
                           : credits <= 2
                             ? "bg-yellow-500"
-                            : "bg-green-500"
+                            : "bg-emerald-500"
                     }`}
                   />
-                  <span>{credits === null ? "..." : credits} <span className="hidden sm:inline">credits</span></span>
+                  <span>{credits === null ? "..." : credits} credits available</span>
                 </div>
               </div>
 
               {/* Right side - Submit */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  onClick={() => handleSubmit()}
-                  disabled={
-                    isSending ||
-                    isUploading ||
-                    (!chatInput.trim() && uploadedFiles.length === 0)
-                  }
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm sm:text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span>Submit</span>
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => handleSubmit()}
+                disabled={
+                  isSending ||
+                  isUploading ||
+                  (!chatInput.trim() && uploadedFiles.length === 0)
+                }
+                className="flex items-center justify-center px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+              >
+                <span>Submit</span>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Template System - Categories or Templates */}
-        <div className="w-full max-w-5xl mb-8 sm:mb-12 px-4">
+        <div className="w-full max-w-5xl mb-6 px-4">
           {!selectedCategory ? (
             /* Show Categories */
-            <>
-              <p className="text-center text-sm text-muted-foreground mb-4">What can I help you create?</p>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide justify-center">
-                {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon }]) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className="px-4 py-2.5 rounded-full border border-border/50 bg-white/60 dark:bg-card/30 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/50 hover:border-foreground/20 transition-all text-sm text-foreground whitespace-nowrap flex-shrink-0 flex items-center gap-2"
-                  >
-                    <span>{icon}</span>
-                    <span>{category}</span>
-                  </button>
-                ))}
-              </div>
-            </>
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
+              {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className="px-4 py-2.5 rounded-full border border-border/50 bg-white/70 dark:bg-card/40 backdrop-blur-lg hover:bg-white dark:hover:bg-card/60 hover:border-border hover:shadow-sm transition-all text-sm text-foreground whitespace-nowrap flex items-center gap-2"
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span>{category}</span>
+                </button>
+              ))}
+            </div>
           ) : (
             /* Show Templates for Selected Category */
             <div className="max-w-3xl mx-auto">
@@ -537,7 +539,7 @@ function DashboardContent() {
                       handleTemplateClick(template);
                       setSelectedCategory(null);
                     }}
-                    className="w-full text-left px-4 py-3 rounded-lg bg-white/40 dark:bg-card/20 backdrop-blur-lg hover:bg-white/60 dark:hover:bg-card/40 border border-transparent hover:border-border/30 transition-all text-sm text-foreground flex items-center justify-between group"
+                    className="w-full text-left px-4 py-3 rounded-xl bg-white/50 dark:bg-card/30 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/50 border border-transparent hover:border-border/30 transition-all text-sm text-foreground flex items-center justify-between group"
                   >
                     <span className="leading-relaxed">{template}</span>
                     <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-4 flex-shrink-0">↗</span>
@@ -551,10 +553,18 @@ function DashboardContent() {
 
       {/* Inspiration Gallery - Grouped by Content Type */}
       {(isLoadingStyles || styleReferences.length > 0) && (
-        <div className="relative w-full pt-4">
+        <div className="relative w-full pt-8">
+          {/* Continue to explore section */}
+          <div className="flex items-center justify-center mb-10">
+            <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/60 transition-all text-sm text-muted-foreground hover:text-foreground">
+              <Search className="h-4 w-4" />
+              <span>Continue to explore...</span>
+            </button>
+          </div>
+
           {/* Grouped Masonry Grid */}
           <div className="relative pb-8">
-            <div className="max-w-6xl mx-auto px-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
               {/* Show skeleton while loading */}
               {isLoadingStyles ? (
                 <MasonryGridSkeleton count={15} columns={5} showHeader={true} />
@@ -611,31 +621,31 @@ function DashboardContent() {
                   const { label, icon } = groupLabels[groupKey] || { label: groupKey, icon: "📌" };
 
                   return (
-                    <div key={groupKey} className="mb-10">
+                    <div key={groupKey} className="mb-12">
                       {/* Group Header */}
-                      <div className={`flex items-center gap-2 mb-4 ${groupIndex > 0 ? "mt-8" : ""}`}>
-                        <span className="text-lg">{icon}</span>
+                      <div className={`flex items-center gap-3 mb-5 ${groupIndex > 0 ? "mt-10" : ""}`}>
+                        <span className="text-base">{icon}</span>
                         <h3 className="text-sm font-medium text-foreground">
                           {label}
                         </h3>
-                        <div className="flex-1 h-px bg-border ml-2" />
+                        <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
                         <span className="text-xs text-muted-foreground">
                           {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
                         </span>
                       </div>
-                      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3">
+                      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
                         {refs.map((ref) => {
                           const variantUrls = getImageVariantUrls(ref.imageUrl);
                           return (
                             <div
                               key={ref.id}
-                              className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+                              className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
                             >
                               <ImageWithSkeleton
                                 src={variantUrls.preview}
                                 alt={ref.name}
                                 className="w-full"
-                                skeletonClassName="bg-muted/50 min-h-[150px]"
+                                skeletonClassName="bg-muted/30 min-h-[150px]"
                                 loading="lazy"
                               />
                             </div>
@@ -649,7 +659,7 @@ function DashboardContent() {
             </div>
 
             {/* Fade overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none z-10" />
+            <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none z-10" />
           </div>
         </div>
       )}
@@ -667,7 +677,7 @@ function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col items-center min-h-screen px-6 pt-32 md:pt-40 pb-8 bg-background">
+    <div className="flex flex-col items-center min-h-screen px-6 pt-32 md:pt-40 pb-8">
       <div className="text-center mb-8">
         <Skeleton className="h-10 w-72 mx-auto mb-2" />
         <Skeleton className="h-6 w-56 mx-auto" />
