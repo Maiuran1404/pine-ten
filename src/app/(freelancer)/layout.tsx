@@ -7,6 +7,8 @@ import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 
+export type FreelancerStatus = "NOT_FOUND" | "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED" | null;
+
 export default function FreelancerLayout({
   children,
 }: {
@@ -15,11 +17,34 @@ export default function FreelancerLayout({
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<FreelancerStatus>(null);
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
 
   // Set page title for artist portal
   useEffect(() => {
     document.title = "Artist";
   }, []);
+
+  // Fetch profile status to determine if artist is under review
+  useEffect(() => {
+    const fetchProfileStatus = async () => {
+      try {
+        const res = await fetch("/api/freelancer/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setProfileStatus(data.status);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile status:", error);
+      } finally {
+        setIsStatusLoading(false);
+      }
+    };
+
+    if (session) {
+      fetchProfileStatus();
+    }
+  }, [session]);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -34,7 +59,7 @@ export default function FreelancerLayout({
     }
   }, [session, isPending, router]);
 
-  if (isPending) {
+  if (isPending || isStatusLoading) {
     return <FullPageLoader />;
   }
 
@@ -44,7 +69,11 @@ export default function FreelancerLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <FreelancerSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <FreelancerSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        profileStatus={profileStatus}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} basePath="/portal" showUpgrade={false} />
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>

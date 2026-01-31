@@ -163,6 +163,7 @@ async function handler(request: NextRequest) {
         .set({
           role: "FREELANCER",
           phone: data.whatsappNumber || null,
+          image: data.profileImage || null,
           onboardingCompleted: true,
           onboardingData: { bio: data.bio },
           updatedAt: new Date(),
@@ -177,6 +178,7 @@ async function handler(request: NextRequest) {
         specializations: data.specializations,
         portfolioUrls: data.portfolioUrls,
         bio: data.bio,
+        timezone: data.timezone || null,
         hourlyRate: data.hourlyRate || null,
         whatsappNumber: data.whatsappNumber || null,
       });

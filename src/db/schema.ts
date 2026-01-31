@@ -179,6 +179,7 @@ export const freelancerProfiles = pgTable("freelancer_profiles", {
   specializations: jsonb("specializations").$type<string[]>().default([]),
   portfolioUrls: jsonb("portfolio_urls").$type<string[]>().default([]),
   bio: text("bio"),
+  timezone: text("timezone"),
   hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   completedTasks: integer("completed_tasks").notNull().default(0),

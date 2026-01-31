@@ -28,6 +28,7 @@ import {
   Video,
   Share2,
   CheckCircle2,
+  Globe,
 } from "lucide-react";
 
 interface FreelancerOnboardingProps {
@@ -35,12 +36,17 @@ interface FreelancerOnboardingProps {
 }
 
 const skills = [
-  { id: "photoshop", label: "Adobe Photoshop", icon: Layers },
-  { id: "illustrator", label: "Adobe Illustrator", icon: PenTool },
   { id: "figma", label: "Figma", icon: Layers },
-  { id: "canva", label: "Canva", icon: Palette },
-  { id: "after_effects", label: "After Effects", icon: Video },
-  { id: "premiere", label: "Premiere Pro", icon: Video },
+  { id: "adobe_premiere_pro", label: "Adobe Premiere Pro", icon: Video },
+  { id: "davinci", label: "DaVinci Resolve", icon: Video },
+  { id: "illustrator", label: "Adobe Illustrator", icon: PenTool },
+  { id: "photoshop", label: "Adobe Photoshop", icon: Layers },
+  { id: "nanobana", label: "Nanobana", icon: Palette },
+  { id: "higgsfield", label: "Higgsfield", icon: Video },
+  { id: "framer", label: "Framer", icon: Layers },
+  { id: "webflow", label: "Webflow", icon: Code },
+  { id: "flora_ai", label: "Flora AI", icon: Sparkles },
+  { id: "adobe_indesign", label: "Adobe InDesign", icon: PenTool },
   { id: "other", label: "Other", icon: Code },
 ];
 
@@ -70,7 +76,30 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
     specializations: [] as string[],
     portfolioUrls: "",
     whatsappNumber: "",
+    profileImage: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
   });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Common timezones for easy selection
+  const timezones = [
+    { value: "America/New_York", label: "Eastern Time (ET)", offset: "UTC-5" },
+    { value: "America/Chicago", label: "Central Time (CT)", offset: "UTC-6" },
+    { value: "America/Denver", label: "Mountain Time (MT)", offset: "UTC-7" },
+    { value: "America/Los_Angeles", label: "Pacific Time (PT)", offset: "UTC-8" },
+    { value: "America/Anchorage", label: "Alaska Time", offset: "UTC-9" },
+    { value: "Pacific/Honolulu", label: "Hawaii Time", offset: "UTC-10" },
+    { value: "Europe/London", label: "London (GMT)", offset: "UTC+0" },
+    { value: "Europe/Paris", label: "Central European Time", offset: "UTC+1" },
+    { value: "Europe/Helsinki", label: "Eastern European Time", offset: "UTC+2" },
+    { value: "Asia/Dubai", label: "Dubai", offset: "UTC+4" },
+    { value: "Asia/Kolkata", label: "India (IST)", offset: "UTC+5:30" },
+    { value: "Asia/Bangkok", label: "Bangkok", offset: "UTC+7" },
+    { value: "Asia/Singapore", label: "Singapore", offset: "UTC+8" },
+    { value: "Asia/Tokyo", label: "Tokyo (JST)", offset: "UTC+9" },
+    { value: "Australia/Sydney", label: "Sydney (AEST)", offset: "UTC+10" },
+    { value: "Pacific/Auckland", label: "Auckland (NZST)", offset: "UTC+12" },
+  ];
 
   const handleSkillToggle = (id: string) => {
     setFormData((prev) => ({
@@ -248,10 +277,44 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       placeholder="Share your design experience, what you're passionate about, and what makes you unique..."
                       value={formData.bio}
                       onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
-                      className="min-h-[180px] text-base resize-none"
+                      className="min-h-[140px] text-base resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
                       This will be visible to clients when reviewing your profile.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">
+                      Portfolio Links <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      placeholder="Behance, Dribbble, or personal website URLs (comma-separated)"
+                      value={formData.portfolioUrls}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, portfolioUrls: e.target.value }))}
+                      className="min-h-[80px] text-base resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Share links to your best work so we can review your portfolio.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Your Timezone</Label>
+                    <select
+                      value={formData.timezone}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, timezone: e.target.value }))}
+                      className="w-full h-12 px-3 text-base rounded-md border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select your timezone</option>
+                      {timezones.map((tz) => (
+                        <option key={tz.value} value={tz.value}>
+                          {tz.label} ({tz.offset})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Helps us match you with tasks that fit your working hours.
                     </p>
                   </div>
 
@@ -266,6 +329,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     </Button>
                     <Button
                       onClick={() => setStep(2)}
+                      disabled={!formData.portfolioUrls.trim()}
                       className="flex-1 h-12 font-semibold"
                     >
                       Continue
@@ -291,6 +355,9 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     </h1>
                     <p className="text-muted-foreground">
                       Select the tools you use and your areas of expertise.
+                    </p>
+                    <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                      This is important for what projects you will receive.
                     </p>
                   </div>
 
@@ -389,13 +456,15 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       How can we reach you?
                     </h1>
                     <p className="text-muted-foreground">
-                      Share your contact info and portfolio links.
+                      Share your contact info and profile picture.
                     </p>
                   </div>
 
                   <div className="space-y-6">
                     <div className="space-y-3">
-                      <Label className="text-sm font-semibold">WhatsApp Number</Label>
+                      <Label className="text-sm font-semibold">
+                        WhatsApp Number <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         type="tel"
                         placeholder="+1 234 567 8900"
@@ -408,14 +477,76 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       </p>
                     </div>
 
+                    {/* Profile Picture Upload */}
                     <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Portfolio Links</Label>
-                      <Textarea
-                        placeholder="Behance, Dribbble, or personal website URLs (comma-separated)"
-                        value={formData.portfolioUrls}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, portfolioUrls: e.target.value }))}
-                        className="min-h-[100px] text-base resize-none"
-                      />
+                      <Label className="text-sm font-semibold">Profile Picture</Label>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {formData.profileImage ? (
+                            <img
+                              src={formData.profileImage}
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-8 h-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id="profile-image-upload"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              setIsUploadingImage(true);
+                              try {
+                                const formDataUpload = new FormData();
+                                formDataUpload.append("file", file);
+
+                                const response = await fetch("/api/upload", {
+                                  method: "POST",
+                                  body: formDataUpload,
+                                });
+
+                                if (!response.ok) throw new Error("Upload failed");
+
+                                const { data } = await response.json();
+                                setFormData((prev) => ({ ...prev, profileImage: data.file.fileUrl }));
+                                toast.success("Profile picture uploaded!");
+                              } catch {
+                                toast.error("Failed to upload image. Please try again.");
+                              } finally {
+                                setIsUploadingImage(false);
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isUploadingImage}
+                            onClick={() => document.getElementById("profile-image-upload")?.click()}
+                          >
+                            {isUploadingImage ? (
+                              <>
+                                <LoadingSpinner size="sm" className="mr-2" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                {formData.profileImage ? "Change Photo" : "Upload Photo"}
+                              </>
+                            )}
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            A profile photo helps clients recognize you.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* What happens next */}
@@ -437,7 +568,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <Button
                       variant="outline"
                       onClick={() => setStep(2)}
-                      disabled={isLoading}
+                      disabled={isLoading || isUploadingImage}
                       className="h-12"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
@@ -445,7 +576,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     </Button>
                     <Button
                       onClick={handleSubmit}
-                      disabled={isLoading}
+                      disabled={isLoading || isUploadingImage || !formData.whatsappNumber.trim()}
                       className="flex-1 h-12 font-semibold"
                     >
                       {isLoading ? (
@@ -715,10 +846,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.bio ? "bg-foreground" : "bg-muted"
+                        formData.bio ? "bg-green-500" : "bg-muted"
                       )}>
                         {formData.bio ? (
-                          <CheckCircle2 className="w-4 h-4 text-background" />
+                          <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
                           <User className="w-4 h-4 text-muted-foreground" />
                         )}
@@ -735,10 +866,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.skills.length > 0 ? "bg-foreground" : "bg-muted"
+                        formData.skills.length > 0 ? "bg-green-500" : "bg-muted"
                       )}>
                         {formData.skills.length > 0 ? (
-                          <CheckCircle2 className="w-4 h-4 text-background" />
+                          <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
                           <Palette className="w-4 h-4 text-muted-foreground" />
                         )}
@@ -755,10 +886,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.whatsappNumber ? "bg-foreground" : "bg-muted"
+                        formData.whatsappNumber ? "bg-green-500" : "bg-muted"
                       )}>
                         {formData.whatsappNumber ? (
-                          <CheckCircle2 className="w-4 h-4 text-background" />
+                          <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
                           <Phone className="w-4 h-4 text-muted-foreground" />
                         )}
@@ -775,10 +906,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.portfolioUrls ? "bg-foreground" : "bg-muted"
+                        formData.portfolioUrls ? "bg-green-500" : "bg-muted"
                       )}>
                         {formData.portfolioUrls ? (
-                          <CheckCircle2 className="w-4 h-4 text-background" />
+                          <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
                           <Share2 className="w-4 h-4 text-muted-foreground" />
                         )}
@@ -787,6 +918,26 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                         <p className="text-sm font-medium text-foreground">Portfolio</p>
                         <p className="text-xs text-muted-foreground">
                           {formData.portfolioUrls ? "Added" : "Not added"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Timezone status */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        formData.timezone ? "bg-green-500" : "bg-muted"
+                      )}>
+                        {formData.timezone ? (
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                        ) : (
+                          <Globe className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-foreground">Timezone</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formData.timezone ? timezones.find(tz => tz.value === formData.timezone)?.label || formData.timezone : "Not set"}
                         </p>
                       </div>
                     </div>
