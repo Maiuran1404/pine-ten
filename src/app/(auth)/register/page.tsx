@@ -116,7 +116,7 @@ function RegisterContent() {
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
-  const showSocialLogin = !isArtistPortal;
+  const showSocialLogin = true; // Enable Google sign-in for all portals
 
   // Get redirect destination
   const getRedirectUrl = () => {
@@ -185,7 +185,10 @@ function RegisterContent() {
     setIsGoogleLoading(true);
     try {
       // For Google sign-up, we'll redirect to onboarding after auth
-      const callbackURL = `${window.location.origin}/onboarding`;
+      // Artists go to freelancer onboarding
+      const callbackURL = isArtistPortal
+        ? `${window.location.origin}/onboarding?type=freelancer`
+        : `${window.location.origin}/onboarding`;
 
       await signIn.social({
         provider: "google",
@@ -240,8 +243,8 @@ function RegisterContent() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
-              Welcome to {portal.name}
+            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+              {isArtistPortal ? "Welcome to Crafted for Artists" : `Welcome to ${portal.name}`}
             </h1>
             <p className="text-white/50 text-sm">
               Begin by creating an account
@@ -412,7 +415,7 @@ function RegisterContent() {
             <p className="text-white/40 text-sm">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={isArtistPortal ? "/login?intent=signin" : "/login"}
                 className="text-[#8bb58b] hover:text-[#a8d4a8] transition-colors"
               >
                 Sign in

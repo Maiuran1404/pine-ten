@@ -114,7 +114,7 @@ function LoginContent() {
 
   const isSuperadmin = portal.type === "superadmin";
   const isArtist = portal.type === "artist";
-  const showSocialLogin = !isSuperadmin && !isArtist;
+  const showSocialLogin = !isSuperadmin; // Enable Google sign-in for artists too
 
   // Get redirect destination based on SUBDOMAIN (not user role)
   // Users should be redirected to the appropriate page for the subdomain they're on
@@ -128,6 +128,14 @@ function LoginContent() {
     // This ensures users on app.getcrafted.ai go to /dashboard, not /admin
     return portal.defaultRedirect;
   };
+
+  // Redirect artists to signup by default (unless they explicitly chose to sign in)
+  useEffect(() => {
+    const intentToSignIn = searchParams.get("intent") === "signin";
+    if (isArtist && !intentToSignIn && !session?.user) {
+      router.replace("/register");
+    }
+  }, [isArtist, searchParams, router, session]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -229,8 +237,8 @@ function LoginContent() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
-              {isSuperadmin ? "Admin Access" : `Welcome to ${portal.name}`}
+            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+              {isSuperadmin ? "Admin Access" : isArtist ? "Welcome to Crafted for Artists" : `Welcome to ${portal.name}`}
             </h1>
             <p className="text-white/50 text-sm">
               {isSuperadmin
