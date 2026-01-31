@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
@@ -21,8 +21,12 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+
+  // Check if we're on the chat page - which has its own layout
+  const isChatPage = pathname?.startsWith("/dashboard/chat");
 
   // Redirect based on auth state only (NOT role)
   // Users stay on the subdomain they logged into - no role-based redirects
@@ -93,6 +97,21 @@ export default function ClientLayout({
   // Don't render if onboarding not completed for clients (redirect will happen)
   if (user.role === "CLIENT" && !user.onboardingCompleted) {
     return <FullPageLoader />;
+  }
+
+  // Chat page has its own full-screen layout
+  if (isChatPage) {
+    return (
+      <SidebarProvider
+        defaultOpen={false}
+        className=""
+        style={{ fontFamily: "'Satoshi', sans-serif" } as React.CSSProperties}
+      >
+        <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
+          {children}
+        </div>
+      </SidebarProvider>
+    );
   }
 
   return (

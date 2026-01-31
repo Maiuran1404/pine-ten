@@ -1,18 +1,39 @@
 "use client";
 
 import { useState, useEffect, useRef, startTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare, Trash2, Clock, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Sparkles,
+  MessageCircle,
+  CheckSquare,
+  FolderOpen,
+  Coins,
+  Archive,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronDown,
+  Moon,
+  Sun,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSidebar } from "@/components/ui/sidebar";
+import { useSession } from "@/lib/auth-client";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initializedRef = useRef(false);
-  const { setOpen } = useSidebar();
+  const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Get current URL params
   const draftParam = searchParams.get("draft");
@@ -45,73 +66,42 @@ export default function ChatPage() {
   });
 
   // Always use seamless transition (full-width) layout when there are params
-  // This prevents the flash of the smaller layout during hydration
-  // Include payment param to handle return from Stripe checkout
   const hasUrlParams = !!draftParam || !!messageParam || !!paymentParam;
-  const [showDrafts, setShowDrafts] = useState(() => !hasUrlParams);
   const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
 
   // Handle initial mount and URL changes
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-
-      // On first mount, handle the messageParam if it exists
-      // This is needed because useSearchParams may not be available during SSR
       if (messageParam && !initialMessage) {
         setInitialMessage(messageParam);
       }
-
-      // If no URL params and there are drafts, show draft selection
-      // But DON'T check hasUrlParams here because it might be wrong during SSR
-      // We'll set this after a small delay to ensure hydration is complete
       return;
     }
 
-    // URL changed, update state accordingly using startTransition to avoid the sync setState warning
     if (draftParam) {
       startTransition(() => {
         setCurrentDraftId(draftParam);
-        setShowDrafts(false);
       });
     } else if (messageParam && messageParam !== initialMessage) {
-      // Only regenerate draftId if it's a NEW message (URL actually changed)
       startTransition(() => {
         setInitialMessage(messageParam);
         const newId = generateDraftId();
         setCurrentDraftId(newId);
-        setShowDrafts(false);
       });
     }
   }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage]);
 
-  // Separate effect to handle showing drafts - runs after a delay to ensure URL params are loaded
-  useEffect(() => {
-    // If we have URL params (including payment params), never show drafts selection
-    if (hasUrlParams) {
-      setShowDrafts(false);
-      return;
-    }
-
-    // Wait for hydration to complete before deciding to show drafts
-    const timer = setTimeout(() => {
-      if (!draftParam && !messageParam && !paymentParam && drafts.length > 0) {
-        setShowDrafts(true);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [hasUrlParams, draftParam, messageParam, paymentParam, drafts.length]);
-
   const handleStartNew = () => {
     const newId = generateDraftId();
     setCurrentDraftId(newId);
-    setShowDrafts(false);
+    setInitialMessage(null);
+    router.push("/dashboard/chat");
   };
 
   const handleContinueDraft = (draftIdToLoad: string) => {
     setCurrentDraftId(draftIdToLoad);
-    setShowDrafts(false);
+    router.push(`/dashboard/chat?draft=${draftIdToLoad}`);
   };
 
   const handleDeleteDraft = (e: React.MouseEvent, draftId: string) => {
@@ -124,149 +114,248 @@ export default function ChatPage() {
     setDrafts(getDrafts());
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+  // Get user credits
+  const userCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
+  // Features menu items
+  const features = [
+    { icon: MessageCircle, label: "Chat", href: "/dashboard/chat", active: true },
+    { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
+    { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
+    { icon: Coins, label: "Credits", href: "/dashboard/credits" },
+    { icon: Archive, label: "Archived", href: "/dashboard/tasks?status=completed" },
+  ];
 
-  // If user wants to see drafts and there are drafts, show selection UI
-  if (showDrafts && drafts.length > 0) {
-    return (
-      <div className="min-h-full bg-background relative overflow-hidden">
-        {/* Curtain light effect - only in dark mode */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
-          style={{
-            background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-              rgba(13, 148, 136, 0.08) 0%,
-              rgba(13, 148, 136, 0.04) 20%,
-              rgba(13, 148, 136, 0.02) 40%,
-              rgba(13, 148, 136, 0.01) 60%,
-              transparent 80%
-            )`,
-            filter: "blur(40px)",
-          }}
-        />
+  return (
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-zinc-950">
+      {/* Left sidebar */}
+      <div
+        className={cn(
+          "shrink-0 border-r border-border bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300",
+          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+        )}
+      >
+        {/* Logo and collapse toggle */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Image
+              src="/craftedfigureblack.png"
+              alt="Crafted"
+              width={28}
+              height={28}
+              className="dark:hidden"
+            />
+            <Image
+              src="/craftedfigurewhite.png"
+              alt="Crafted"
+              width={28}
+              height={28}
+              className="hidden dark:block"
+            />
+            <span className="font-semibold text-lg text-foreground">Crafted</span>
+          </Link>
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Collapse sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        </div>
 
-        <div className="relative z-10 p-4 sm:p-6 space-y-6 sm:space-y-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">New Design Request</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-                Continue a previous request or start fresh
-              </p>
-            </div>
-            <Button
-              onClick={handleStartNew}
-              className="cursor-pointer w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Start New Request
-            </Button>
-          </div>
+        {/* New Chat button */}
+        <div className="p-4">
+          <Button
+            onClick={handleStartNew}
+            variant="outline"
+            className="w-full justify-start gap-2 h-11 border-border hover:bg-muted text-foreground"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+        </div>
 
-          {/* Recent Drafts */}
-          <div>
-            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2">
-              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Continue where you left off
-            </h2>
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {drafts.map((draft) => (
-                <div
-                  key={draft.id}
-                  onClick={() => handleContinueDraft(draft.id)}
-                  className={cn(
-                    "group relative rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all cursor-pointer p-4 bg-card",
-                  )}
+        {/* Features section */}
+        <div className="px-4 pb-2">
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
+          <nav className="space-y-1">
+            {features.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  item.active
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Recent section */}
+        <div className="flex-1 overflow-auto px-4 py-2">
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Recent</p>
+          <div className="space-y-1">
+            {drafts.slice(0, 10).map((draft) => (
+              <button
+                key={draft.id}
+                onClick={() => handleContinueDraft(draft.id)}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group",
+                  currentDraftId === draft.id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <span className="truncate flex-1">{draft.title}</span>
+                <button
+                  onClick={(e) => handleDeleteDraft(e, draft.id)}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="font-medium text-foreground truncate">{draft.title}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {formatTimeAgo(draft.updatedAt)}
-                      </p>
-                      {draft.pendingTask && (
-                        <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs bg-green-500/10 text-green-400 border border-green-500/20">
-                          <Sparkles className="h-3 w-3" />
-                          Ready to submit
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                      onClick={(e) => handleDeleteDraft(e, draft.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="mt-3 text-sm text-muted-foreground line-clamp-2">
-                    {draft.messages.filter(m => m.role === "user").slice(-1)[0]?.content || "No messages yet"}
-                  </div>
-                </div>
-              ))}
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </button>
+            ))}
+            {drafts.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No recent chats
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Credits card at bottom */}
+        <div className="p-4">
+          <div className="rounded-2xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-950/40 p-4 border border-green-200/50 dark:border-green-800/50 relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-2 right-2 w-16 h-16 bg-green-200/30 dark:bg-green-700/20 rounded-lg transform rotate-12" />
+            <div className="absolute top-6 right-6 w-12 h-12 bg-green-300/30 dark:bg-green-600/20 rounded-lg transform -rotate-6" />
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-green-800 dark:text-green-300">Starter Plan</span>
+                <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">{userCredits} Credits</span>
+              </div>
+              <Link href="/dashboard/credits">
+                <Button size="sm" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium">
+                  Get more Credits!
+                </Button>
+              </Link>
+              <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
+                Boost productivity with seamless tasks request and responsive AI, built to assist you.
+              </p>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Show chat interface
-  return (
-    <div className="min-h-full relative overflow-hidden">
-      {/* Soft gradient green/mint background - matches design reference */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `linear-gradient(135deg,
-            rgba(220, 252, 231, 0.7) 0%,
-            rgba(240, 253, 244, 0.9) 25%,
-            rgba(255, 255, 255, 1) 50%,
-            rgba(240, 253, 244, 0.9) 75%,
-            rgba(220, 252, 231, 0.5) 100%
-          )`,
-        }}
-      />
-      {/* Dark mode overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
-        style={{
-          background: `linear-gradient(135deg,
-            rgba(20, 83, 45, 0.15) 0%,
-            rgba(10, 10, 10, 1) 30%,
-            rgba(10, 10, 10, 1) 70%,
-            rgba(20, 83, 45, 0.1) 100%
-          )`,
-        }}
-      />
+      {/* Main chat area */}
+      <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+        {/* Soft gradient green/mint background at top */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `linear-gradient(180deg,
+              rgba(220, 252, 231, 0.5) 0%,
+              rgba(240, 253, 244, 0.3) 15%,
+              rgba(255, 255, 255, 0) 30%
+            )`,
+          }}
+        />
+        {/* Dark mode overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
+          style={{
+            background: `linear-gradient(180deg,
+              rgba(20, 83, 45, 0.2) 0%,
+              rgba(10, 10, 10, 0.5) 15%,
+              rgba(10, 10, 10, 1) 30%
+            )`,
+          }}
+        />
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col h-[calc(100vh-4rem)]">
-        <div className="w-full flex-1 flex flex-col min-h-0">
+        {/* Top bar */}
+        <div className="relative z-20 shrink-0 flex items-center justify-between px-6 py-4">
+          {/* Left side - sidebar toggle and model selector */}
+          <div className="flex items-center gap-4">
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-muted transition-colors"
+                title="Expand sidebar"
+              >
+                <PanelLeft className="h-5 w-5" />
+              </button>
+            )}
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card transition-colors">
+              <span className="text-sm font-medium text-foreground">witchcraft 5.0</span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <span className="text-sm text-muted-foreground">No plugins enabled</span>
+          </div>
+
+          {/* Right side - actions */}
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/credits">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-4 rounded-xl border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Add More Credits
+              </Button>
+            </Link>
+            <Link href="/dashboard/credits">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-4 rounded-xl border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Upgrade
+              </Button>
+            </Link>
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-xl border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card transition-colors"
+              title="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-foreground" />
+              ) : (
+                <Moon className="h-5 w-5 text-foreground" />
+              )}
+            </button>
+            {/* User avatar */}
+            <div className="w-10 h-10 rounded-full border border-border bg-white dark:bg-card overflow-hidden flex items-center justify-center">
+              {session?.user?.image ? (
+                <img
+                  src={session.user.image}
+                  alt={session.user.name || "User"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Chat content */}
+        <div className="relative z-10 flex-1 flex flex-col min-h-0">
           <ChatInterface
             draftId={currentDraftId}
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
             seamlessTransition={true}
             showRightPanel={false}
-            onChatStart={() => setOpen(false)}
+            onChatStart={() => {}}
           />
         </div>
       </div>

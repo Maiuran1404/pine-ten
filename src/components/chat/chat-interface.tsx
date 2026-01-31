@@ -2090,37 +2090,34 @@ export function ChatInterface({
                       </div>
                     </div>
                   ) : (
-                    /* User message - green/mint bubble with edit icon and avatar */
+                    /* User message - beige/cream bubble with edit icon and avatar */
                     <div className="max-w-[75%] group flex items-start gap-3">
                       <div className="flex-1">
-                        <div className="bg-green-100 dark:bg-green-900/30 rounded-2xl px-4 py-3 relative border border-green-200/50 dark:border-green-800/30">
-                          <p className="text-sm text-foreground whitespace-pre-wrap pr-8">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl px-4 py-3 relative border border-amber-200/50 dark:border-amber-800/30">
+                          <p className="text-sm text-foreground whitespace-pre-wrap pr-16">
                             {message.content}
                           </p>
-                          {/* Edit button - inside the bubble on the right */}
-                          {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
-                            <button
-                              onClick={handleEditLastMessage}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-green-200/50 dark:hover:bg-green-800/30 hover:text-foreground transition-all"
-                              title="Edit this message"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                          {/* Edit and user icons - inside the bubble on the right */}
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
+                              <button
+                                onClick={handleEditLastMessage}
+                                className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-amber-200/50 dark:hover:bg-amber-800/30 hover:text-foreground transition-all"
+                                title="Edit this message"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <div className="p-1.5 text-muted-foreground">
+                              <User className="h-3.5 w-3.5" />
+                            </div>
+                          </div>
                         </div>
                         {/* User attachments */}
                         {message.attachments && message.attachments.length > 0 && (
                           <div className="mt-2">
                             <FileAttachmentList files={message.attachments} />
                           </div>
-                        )}
-                      </div>
-                      {/* User avatar */}
-                      <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
-                        {session?.user?.image ? (
-                          <img src={session.user.image} alt={userName} className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
                     </div>

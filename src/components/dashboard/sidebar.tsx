@@ -2,118 +2,43 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import {
-  LayoutDashboard,
-  FolderKanban,
-  Palette,
-  CreditCard,
-  Settings,
-  Clock,
+  Plus,
   MessageCircle,
-  Zap,
-  Sparkles,
-  Wand2,
+  CheckSquare,
+  FolderOpen,
+  Coins,
+  Archive,
+  PanelLeftClose,
+  PanelLeft,
+  Trash2,
 } from "lucide-react";
-import { getDrafts, type ChatDraft } from "@/lib/chat-drafts";
-import {
-  SidebarNavigation,
-  SidebarRecents,
-  type NavigationItem,
-  type RecentItem,
-} from "@/components/shared/sidebar";
+import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { useSession } from "@/lib/auth-client";
-import { WorkspaceDropdown } from "./workspace-dropdown";
 import { cn } from "@/lib/utils";
-
-const mainNavigation: NavigationItem[] = [
-  {
-    name: "Home",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-];
-
-const projectsNavigation: NavigationItem[] = [
-  {
-    name: "My Tasks",
-    href: "/dashboard/tasks",
-    icon: FolderKanban,
-  },
-];
-
-const resourcesNavigation: NavigationItem[] = [
-  {
-    name: "My Brand",
-    href: "/dashboard/brand",
-    icon: Palette,
-  },
-  {
-    name: "Designs",
-    href: "/dashboard/designs",
-    icon: Wand2,
-  },
-  {
-    name: "Credits",
-    href: "/dashboard/credits",
-    icon: CreditCard,
-  },
-  {
-    name: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
-];
 
 interface AppSidebarProps {
   recentTasks?: Array<{ id: string; title: string; status?: string }>;
 }
 
 export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
-  const [companyName, setCompanyName] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState<string>("#A855F7");
   const [credits, setCredits] = useState<number>(0);
   const { data: session } = useSession();
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const isCollapsed = state === "collapsed";
-
-  // Load company data
-  useEffect(() => {
-    const loadCompanyData = async () => {
-      try {
-        const response = await fetch("/api/user/company");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.company?.name) {
-            setCompanyName(data.company.name);
-          }
-          if (data.company?.primaryColor) {
-            setPrimaryColor(data.company.primaryColor);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load company data:", error);
-      }
-    };
-
-    if (session?.user) {
-      loadCompanyData();
-    }
-  }, [session]);
 
   // Load credits
   useEffect(() => {
@@ -143,19 +68,16 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
 
     loadDrafts();
 
-    // Listen for storage changes (when drafts are updated)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "chat-drafts") {
         loadDrafts();
       }
     };
 
-    // Also listen for custom events from same tab
     const handleDraftUpdate = () => loadDrafts();
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("drafts-updated", handleDraftUpdate);
 
-    // Poll for changes every 2 seconds (for same-tab updates)
     const interval = setInterval(loadDrafts, 2000);
 
     return () => {
@@ -165,170 +87,216 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     };
   }, []);
 
-  // Active statuses - where artists are working
-  const activeStatuses = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "REVISION_REQUESTED"];
+  const handleStartNewChat = () => {
+    const newId = generateDraftId();
+    router.push("/dashboard/chat");
+  };
 
-  // Separate active tasks from other tasks
-  const activeTasks = recentTasks.filter(t => t.status && activeStatuses.includes(t.status));
-  const otherTasks = recentTasks.filter(t => !t.status || !activeStatuses.includes(t.status));
+  const handleDeleteDraft = (e: React.MouseEvent, draftId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    deleteDraft(draftId);
+    setChatDrafts(getDrafts());
+  };
 
-  // Transform active tasks to RecentItem format
-  const activeItems: RecentItem[] = activeTasks.slice(0, 3).map((task) => ({
-    id: task.id,
-    title: task.title,
-    href: `/dashboard/tasks/${task.id}`,
-    icon: Sparkles,
-    iconClassName: "bg-amber-400",
-  }));
+  // Features menu items - matching chat page design
+  const features = [
+    { icon: MessageCircle, label: "Chat", href: "/dashboard/chat" },
+    { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
+    { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
+    { icon: Coins, label: "Credits", href: "/dashboard/credits" },
+    { icon: Archive, label: "Archived", href: "/dashboard/tasks?status=completed" },
+  ];
 
-  // Only show drafts that have moodboard items (meaningful progress)
-  const draftsWithMoodboard = chatDrafts.filter(
-    d => d.moodboardItems && d.moodboardItems.length > 0
-  );
+  const isActive = (href: string) => {
+    if (href === "/dashboard/chat") {
+      return pathname?.startsWith("/dashboard/chat");
+    }
+    if (href.includes("?")) {
+      return pathname === href.split("?")[0] && href.includes(window?.location?.search || "");
+    }
+    return pathname === href;
+  };
 
-  // Combine drafts with moodboard items and non-active tasks for recents
-  const recentItems: RecentItem[] = [
-    ...draftsWithMoodboard.map(d => ({
-      id: d.id,
-      title: d.title,
-      href: `/dashboard/chat?draft=${d.id}`,
-      icon: MessageCircle,
-      iconClassName: "bg-emerald-400",
-    })),
-    ...otherTasks.map(t => ({
-      id: t.id,
-      title: t.title,
-      href: `/dashboard/tasks/${t.id}`,
-      icon: FolderKanban,
-      iconClassName: "bg-muted-foreground/40",
-    })),
-  ].slice(0, 5);
+  // Get the 10 most recent drafts
+  const recentDrafts = chatDrafts.slice(0, 10);
+
+  // When collapsed, show minimal sidebar
+  if (isCollapsed) {
+    return (
+      <Sidebar
+        collapsible="icon"
+        className="border-r-0 bg-white dark:bg-zinc-950"
+        style={{ fontFamily: "'Satoshi', sans-serif" }}
+      >
+        <SidebarHeader className="p-2 flex items-center justify-center">
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Expand sidebar"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
+        </SidebarHeader>
+        <SidebarContent className="px-2">
+          {/* New Chat button - icon only */}
+          <div className="py-2">
+            <Button
+              onClick={handleStartNewChat}
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 border-border hover:bg-muted"
+              title="New Chat"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {/* Feature icons */}
+          <nav className="space-y-1 py-2">
+            {features.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex items-center justify-center p-2.5 rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "text-foreground hover:bg-muted"
+                )}
+                title={item.label}
+              >
+                <item.icon className="h-5 w-5" />
+              </Link>
+            ))}
+          </nav>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
 
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r-0"
+      className="border-r-0 bg-white dark:bg-zinc-950 w-64"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
-      {/* Header with Logo and Toggle */}
-      <SidebarHeader className="p-3">
-        <SidebarMenu>
-          <SidebarMenuItem className={cn(
-            "flex items-center",
-            isCollapsed ? "justify-center" : "justify-between"
-          )}>
-            {/* Logo - hidden when collapsed */}
-            {!isCollapsed && (
-              <div className="flex items-center justify-center">
-                <Image
-                  src="/craftedfigurewhite.png"
-                  alt="Crafted"
-                  width={28}
-                  height={28}
-                  className="dark:block hidden"
-                />
-                <Image
-                  src="/craftedfigureblack.png"
-                  alt="Crafted"
-                  width={28}
-                  height={28}
-                  className="dark:hidden block"
-                />
-              </div>
-            )}
-
-            {/* Toggle Button */}
-            <SidebarMenuButton
-              asChild
-              className="size-8 p-2 flex-shrink-0"
-              tooltip="Toggle Sidebar"
-            >
-              <SidebarTrigger />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      {/* Logo and collapse toggle */}
+      <SidebarHeader className="flex flex-row items-center justify-between p-4 border-b border-border">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/craftedfigureblack.png"
+            alt="Crafted"
+            width={28}
+            height={28}
+            className="dark:hidden"
+          />
+          <Image
+            src="/craftedfigurewhite.png"
+            alt="Crafted"
+            width={28}
+            height={28}
+            className="hidden dark:block"
+          />
+          <span className="font-semibold text-lg text-foreground">Crafted</span>
+        </Link>
+        <button
+          onClick={() => setOpen(false)}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Collapse sidebar"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
       </SidebarHeader>
 
-      <SidebarContent>
-        {/* Workspace Dropdown */}
-        <SidebarGroup className="py-2">
-          <SidebarGroupContent>
-            <WorkspaceDropdown
-              companyName={companyName}
-              primaryColor={primaryColor}
-              credits={credits}
-              maxCredits={10}
-              isCollapsed={isCollapsed}
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="flex flex-col flex-1 overflow-hidden">
+        {/* New Chat button */}
+        <div className="p-4">
+          <Button
+            onClick={handleStartNewChat}
+            variant="outline"
+            className="w-full justify-start gap-2 h-11 border-border hover:bg-muted text-foreground"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+        </div>
 
-        {/* Main Navigation */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupContent>
-            <SidebarNavigation
-              items={mainNavigation}
-              basePath="/dashboard"
-              accentColor="emerald"
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Features section */}
+        <div className="px-4 pb-2">
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
+          <nav className="space-y-1">
+            {features.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-        {/* Projects Section */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
-            Projects
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarNavigation
-              items={projectsNavigation}
-              basePath="/dashboard"
-              accentColor="emerald"
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Active Tasks - where artists are working */}
-        <SidebarRecents
-          items={activeItems}
-          title="Active"
-          icon={Zap}
-          maxItems={3}
-        />
-
-        {/* Recents - drafts and completed/pending tasks */}
-        <SidebarRecents
-          items={recentItems}
-          title="Recents"
-          icon={Clock}
-        />
-
-        {/* Resources Section */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
-            Resources
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarNavigation
-              items={resourcesNavigation}
-              basePath="/dashboard"
-              accentColor="emerald"
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Recent section */}
+        <div className="flex-1 overflow-auto px-4 py-2">
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Recent</p>
+          <div className="space-y-1">
+            {recentDrafts.map((draft) => (
+              <Link
+                key={draft.id}
+                href={`/dashboard/chat?draft=${draft.id}`}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group",
+                  pathname === `/dashboard/chat` && new URLSearchParams(window?.location?.search || "").get("draft") === draft.id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <span className="truncate flex-1">{draft.title}</span>
+                <button
+                  onClick={(e) => handleDeleteDraft(e, draft.id)}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </Link>
+            ))}
+            {recentDrafts.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No recent chats
+              </p>
+            )}
+          </div>
+        </div>
       </SidebarContent>
 
-      <SidebarFooter className={cn(
-        isCollapsed && "hidden"
-      )}>
-        <div className="px-2 py-2">
-          <p className="text-xs opacity-50">Need help?</p>
-          <a
-            href="mailto:maiuran@getcrafted.ai?subject=Support Request"
-            className="text-xs opacity-70 hover:opacity-100 underline underline-offset-4"
-          >
-            Contact support
-          </a>
+      {/* Credits card at bottom */}
+      <SidebarFooter className="p-4">
+        <div className="rounded-2xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-950/40 p-4 border border-green-200/50 dark:border-green-800/50 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-2 right-2 w-16 h-16 bg-green-200/30 dark:bg-green-700/20 rounded-lg transform rotate-12" />
+          <div className="absolute top-6 right-6 w-12 h-12 bg-green-300/30 dark:bg-green-600/20 rounded-lg transform -rotate-6" />
+
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-green-800 dark:text-green-300">Starter Plan</span>
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">{credits} Credits</span>
+            </div>
+            <Link href="/dashboard/credits">
+              <Button size="sm" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium">
+                Get more Credits!
+              </Button>
+            </Link>
+            <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
+              Boost productivity with seamless tasks request and responsive AI, built to assist you.
+            </p>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

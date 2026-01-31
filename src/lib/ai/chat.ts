@@ -1092,6 +1092,12 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\s+/g, " ")
     .trim();
 
+  // Final check: Ensure first character is capitalized (for professional tone)
+  // This catches any edge cases where sanitization left lowercase first letter
+  if (cleanContent.length > 0 && /^[a-z]/.test(cleanContent)) {
+    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
+  }
+
   return {
     content: cleanContent,
     styleReferences: mentionedStyles,
