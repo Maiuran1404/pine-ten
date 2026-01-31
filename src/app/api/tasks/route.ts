@@ -7,88 +7,31 @@ import {
   users,
   taskCategories,
   taskFiles,
-  freelancerProfiles,
   creditTransactions,
   taskActivityLog,
   briefs,
+  taskOffers,
 } from "@/db/schema";
-import { eq, desc, and, count, sql } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { createTaskSchema } from "@/lib/validations";
 import {
   withErrorHandling,
-  errorResponse,
   successResponse,
-  ErrorCodes,
   Errors,
 } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-// Get the next available freelancer using least-loaded assignment
-async function getNextFreelancer(): Promise<{
-  userId: string;
-  name: string;
-  email: string;
-} | null> {
-  // Get all active freelancers (approved and available)
-  const activeFreelancers = await db
-    .select({
-      userId: freelancerProfiles.userId,
-      name: users.name,
-      email: users.email,
-    })
-    .from(freelancerProfiles)
-    .innerJoin(users, eq(freelancerProfiles.userId, users.id))
-    .where(
-      and(
-        eq(freelancerProfiles.status, "APPROVED"),
-        eq(freelancerProfiles.availability, true)
-      )
-    );
-
-  if (activeFreelancers.length === 0) {
-    return null;
-  }
-
-  // Count active tasks per freelancer (tasks that are not completed or cancelled)
-  const taskCounts = await db
-    .select({
-      freelancerId: tasks.freelancerId,
-      count: count(),
-    })
-    .from(tasks)
-    .where(
-      and(
-        sql`${tasks.freelancerId} IS NOT NULL`,
-        sql`${tasks.status} NOT IN ('COMPLETED', 'CANCELLED')`
-      )
-    )
-    .groupBy(tasks.freelancerId);
-
-  // Create a map of freelancer task counts
-  const countMap = new Map<string, number>();
-  taskCounts.forEach((tc) => {
-    if (tc.freelancerId) {
-      countMap.set(tc.freelancerId, Number(tc.count));
-    }
-  });
-
-  // Find the freelancer with the least tasks
-  let minTasks = Infinity;
-  let selectedFreelancer = activeFreelancers[0];
-
-  for (const freelancer of activeFreelancers) {
-    const taskCount = countMap.get(freelancer.userId) || 0;
-    if (taskCount < minTasks) {
-      minTasks = taskCount;
-      selectedFreelancer = freelancer;
-    }
-  }
-
-  return selectedFreelancer;
-}
+import {
+  rankArtistsForTask,
+  getActiveConfig,
+  detectTaskComplexity,
+  detectTaskUrgency,
+  calculateOfferExpiration,
+  type TaskData,
+  type ArtistScore,
+} from "@/lib/assignment-algorithm";
 
 export async function GET(request: NextRequest) {
   // Check rate limit (100 req/min)
@@ -277,10 +220,11 @@ export async function POST(request: NextRequest) {
         throw Errors.insufficientCredits(creditsRequired, currentCredits);
       }
 
-      // Find category ID
+      // Find category ID and slug
       let categoryId = null;
+      let categorySlug = null;
       if (category) {
-        const categorySlug = category.toLowerCase().replace(/_/g, "-");
+        categorySlug = category.toLowerCase().replace(/_/g, "-");
         const [categoryResult] = await tx
           .select({ id: taskCategories.id })
           .from(taskCategories)
@@ -292,10 +236,17 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Auto-assign to the next available freelancer
-      const assignedFreelancer = await getNextFreelancer();
+      // Auto-detect complexity and urgency
+      const taskDeadline = deadline ? new Date(deadline) : null;
+      const requiredSkills = requirements?.skills || [];
+      const taskComplexity = detectTaskComplexity(
+        estimatedHours || null,
+        requiredSkills.length,
+        description
+      );
+      const taskUrgency = detectTaskUrgency(taskDeadline);
 
-      // Create the task
+      // Create the task first (without assignment)
       const [newTask] = await tx
         .insert(tasks)
         .values({
@@ -310,12 +261,60 @@ export async function POST(request: NextRequest) {
           chatHistory: chatHistory || [],
           styleReferences: styleReferences || [],
           moodboardItems: moodboardItems || [],
-          deadline: deadline ? new Date(deadline) : null,
-          status: assignedFreelancer ? "ASSIGNED" : "PENDING",
-          freelancerId: assignedFreelancer?.userId || null,
-          assignedAt: assignedFreelancer ? new Date() : null,
+          deadline: taskDeadline,
+          status: "PENDING",
+          complexity: taskComplexity,
+          urgency: taskUrgency,
+          requiredSkills: requiredSkills,
         })
         .returning();
+
+      // Prepare task data for ranking
+      const taskData: TaskData = {
+        id: newTask.id,
+        title,
+        complexity: taskComplexity,
+        urgency: taskUrgency,
+        categorySlug,
+        requiredSkills,
+        clientId: session.user.id,
+        deadline: taskDeadline,
+      };
+
+      // Get algorithm config and rank artists
+      const algorithmConfig = await getActiveConfig();
+      const rankedArtists = await rankArtistsForTask(taskData, 1);
+
+      let bestArtist: ArtistScore | null = null;
+      let offerExpiresAt: Date | null = null;
+
+      if (rankedArtists.length > 0) {
+        bestArtist = rankedArtists[0];
+        offerExpiresAt = calculateOfferExpiration(taskUrgency, algorithmConfig);
+
+        // Update task with offer info
+        await tx
+          .update(tasks)
+          .set({
+            status: "OFFERED",
+            offeredTo: bestArtist.artist.userId,
+            offerExpiresAt,
+            escalationLevel: 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(tasks.id, newTask.id));
+
+        // Create offer record
+        await tx.insert(taskOffers).values({
+          taskId: newTask.id,
+          artistId: bestArtist.artist.userId,
+          matchScore: bestArtist.totalScore.toString(),
+          escalationLevel: 1,
+          expiresAt: offerExpiresAt,
+          response: "PENDING",
+          scoreBreakdown: bestArtist.breakdown,
+        });
+      }
 
       // Log task creation activity
       await tx.insert(taskActivityLog).values({
@@ -323,25 +322,29 @@ export async function POST(request: NextRequest) {
         actorId: session.user.id,
         actorType: "client",
         action: "created",
-        newStatus: assignedFreelancer ? "ASSIGNED" : "PENDING",
+        newStatus: bestArtist ? "OFFERED" : "PENDING",
         metadata: {
           creditsUsed: creditsRequired,
           category: category || undefined,
+          complexity: taskComplexity,
+          urgency: taskUrgency,
         },
       });
 
-      // Log assignment if auto-assigned
-      if (assignedFreelancer) {
+      // Log offer if made
+      if (bestArtist) {
         await tx.insert(taskActivityLog).values({
           taskId: newTask.id,
           actorId: null,
           actorType: "system",
-          action: "assigned",
+          action: "offered",
           previousStatus: "PENDING",
-          newStatus: "ASSIGNED",
+          newStatus: "OFFERED",
           metadata: {
-            freelancerName: assignedFreelancer.name,
-            freelancerId: assignedFreelancer.userId,
+            artistId: bestArtist.artist.userId,
+            artistName: bestArtist.artist.name,
+            matchScore: bestArtist.totalScore,
+            expiresAt: offerExpiresAt?.toISOString(),
           },
         });
       }
@@ -391,7 +394,12 @@ export async function POST(request: NextRequest) {
           .where(eq(briefs.id, briefId));
       }
 
-      return { task: newTask, freelancer: assignedFreelancer, companyId: userCompanyId };
+      return {
+        task: newTask,
+        offeredTo: bestArtist,
+        offerExpiresAt,
+        companyId: userCompanyId
+      };
     });
 
     // Send notifications outside the transaction (includes Slack)
@@ -425,22 +433,25 @@ export async function POST(request: NextRequest) {
       logger.error({ err: error, taskId: result.task.id }, "Failed to send admin WhatsApp notification");
     }
 
-    // Notify assigned freelancer
-    if (result.freelancer) {
+    // Notify artist of the offer (not assignment - they need to accept)
+    if (result.offeredTo) {
       try {
         await notify({
-          userId: result.freelancer.userId,
-          type: "TASK_ASSIGNED",
-          title: "New Task Assigned",
-          content: `You have been assigned a new task: ${title}`,
+          userId: result.offeredTo.artist.userId,
+          type: "TASK_OFFERED",
+          title: "New Task Offer",
+          content: `You have been offered a new task: ${title}. Accept within the time limit to claim it.`,
           taskId: result.task.id,
           taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
-          additionalData: { taskTitle: title },
+          additionalData: {
+            taskTitle: title,
+            matchScore: result.offeredTo.totalScore.toString(),
+          },
         });
       } catch (error) {
         logger.error(
-          { err: error, freelancerId: result.freelancer.userId },
-          "Failed to send freelancer notification"
+          { err: error, artistId: result.offeredTo.artist.userId },
+          "Failed to send artist offer notification"
         );
       }
     }
@@ -450,7 +461,8 @@ export async function POST(request: NextRequest) {
         taskId: result.task.id,
         userId: session.user.id,
         creditsUsed: creditsRequired,
-        freelancerAssigned: result.freelancer?.userId,
+        offeredTo: result.offeredTo?.artist.userId,
+        matchScore: result.offeredTo?.totalScore,
       },
       "Task created successfully"
     );
@@ -458,7 +470,10 @@ export async function POST(request: NextRequest) {
     return successResponse(
       {
         taskId: result.task.id,
-        assignedTo: result.freelancer?.name || null,
+        status: result.offeredTo ? "OFFERED" : "PENDING",
+        offeredTo: result.offeredTo?.artist.name || null,
+        matchScore: result.offeredTo?.totalScore || null,
+        expiresAt: result.offerExpiresAt?.toISOString() || null,
       },
       201
     );

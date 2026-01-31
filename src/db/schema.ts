@@ -765,6 +765,110 @@ export const creditTransactions = pgTable("credit_transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Payout status enum
+export const payoutStatusEnum = pgEnum("payout_status", [
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+]);
+
+// Payout method enum
+export const payoutMethodEnum = pgEnum("payout_method", [
+  "STRIPE_CONNECT",
+  "BANK_TRANSFER",
+  "PAYPAL",
+]);
+
+// Artist payouts table - tracks payout requests and their status
+export const payouts = pgTable(
+  "payouts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    // Artist who requested the payout
+    freelancerId: text("freelancer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Amount details
+    creditsAmount: integer("credits_amount").notNull(), // Credits being paid out
+    grossAmountUsd: decimal("gross_amount_usd", { precision: 10, scale: 2 }).notNull(), // Total value before fees
+    platformFeeUsd: decimal("platform_fee_usd", { precision: 10, scale: 2 }).notNull(), // Platform's cut
+    netAmountUsd: decimal("net_amount_usd", { precision: 10, scale: 2 }).notNull(), // Amount artist receives
+    // Revenue split snapshot (in case config changes)
+    artistPercentage: integer("artist_percentage").notNull(), // e.g., 70 for 70%
+    // Status tracking
+    status: payoutStatusEnum("status").notNull().default("PENDING"),
+    // Payment method and details
+    payoutMethod: payoutMethodEnum("payout_method"),
+    // Stripe Connect integration
+    stripeConnectAccountId: text("stripe_connect_account_id"),
+    stripeTransferId: text("stripe_transfer_id"), // Stripe transfer ID once processed
+    stripePayoutId: text("stripe_payout_id"), // Stripe payout ID if using instant payouts
+    // Processing details
+    processedAt: timestamp("processed_at"),
+    failureReason: text("failure_reason"),
+    // Audit trail
+    requestedAt: timestamp("requested_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("payouts_freelancer_id_idx").on(table.freelancerId),
+    index("payouts_status_idx").on(table.status),
+    index("payouts_requested_at_idx").on(table.requestedAt),
+  ]
+);
+
+// Stripe Connect accounts for artists
+export const stripeConnectAccounts = pgTable(
+  "stripe_connect_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    freelancerId: text("freelancer_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Stripe Connect account details
+    stripeAccountId: text("stripe_account_id").notNull().unique(), // acct_xxxxx
+    // Onboarding status
+    chargesEnabled: boolean("charges_enabled").notNull().default(false),
+    payoutsEnabled: boolean("payouts_enabled").notNull().default(false),
+    detailsSubmitted: boolean("details_submitted").notNull().default(false),
+    // Account type
+    accountType: text("account_type").notNull().default("express"), // express, standard, custom
+    // Country and currency
+    country: text("country"),
+    defaultCurrency: text("default_currency"),
+    // External account info (masked for display)
+    externalAccountLast4: text("external_account_last4"),
+    externalAccountType: text("external_account_type"), // bank_account, card
+    // Metadata
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("stripe_connect_accounts_freelancer_id_idx").on(table.freelancerId),
+    index("stripe_connect_accounts_stripe_account_id_idx").on(table.stripeAccountId),
+  ]
+);
+
+// Payout relations
+export const payoutsRelations = relations(payouts, ({ one }) => ({
+  freelancer: one(users, {
+    fields: [payouts.freelancerId],
+    references: [users.id],
+  }),
+}));
+
+// Stripe Connect accounts relations
+export const stripeConnectAccountsRelations = relations(stripeConnectAccounts, ({ one }) => ({
+  freelancer: one(users, {
+    fields: [stripeConnectAccounts.freelancerId],
+    references: [users.id],
+  }),
+}));
+
 // Platform settings (admin-configurable)
 export const platformSettings = pgTable("platform_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -790,6 +894,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   freelancerTasks: many(tasks, { relationName: "freelancerTasks" }),
   notifications: many(notifications),
   creditTransactions: many(creditTransactions),
+  payouts: many(payouts),
+  stripeConnectAccount: one(stripeConnectAccounts, {
+    fields: [users.id],
+    references: [stripeConnectAccounts.freelancerId],
+  }),
 }));
 
 export const companiesRelations = relations(companies, ({ many }) => ({

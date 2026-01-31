@@ -155,6 +155,13 @@
       "when": 1769839956412,
       "tag": "0021_secret_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1769840741911,
+      "tag": "0022_add_payouts_tables",
+      "breakpoints": true
     }
   ]
 }

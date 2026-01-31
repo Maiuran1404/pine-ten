@@ -586,6 +586,86 @@ export const adminNotifications = {
       `,
     });
   },
+
+  // Task could not be assigned (escalated to admin)
+  taskUnassignable: async (data: {
+    taskId: string;
+    taskTitle: string;
+    reason: string;
+    escalationLevel: number;
+  }) => {
+    // Send Slack notification for urgent attention
+    notifySlack(SlackEventType.TASK_PENDING_REVIEW, {
+      task: {
+        id: data.taskId,
+        title: data.taskTitle,
+        clientName: "Unknown",
+        freelancerName: "UNASSIGNED",
+        credits: 0,
+        createdAt: new Date(),
+      },
+    }).catch((err) => logger.error({ err }, "Failed to send Slack notification for unassignable task"));
+
+    return notifyAdmin(
+      "URGENT: Task Could Not Be Assigned",
+      `
+        <h2 style="color: #dc2626; margin-top: 0;">Task Assignment Failed</h2>
+        <p style="background: #fee2e2; padding: 12px; border-radius: 6px; color: #991b1b; font-weight: 600;">
+          This task could not be automatically assigned to any artist and requires your manual intervention.
+        </p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Task</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: 600;">${data.taskTitle}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Reason</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${data.reason}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Escalation Level</td>
+            <td style="padding: 8px 0;">Level ${data.escalationLevel}</td>
+          </tr>
+        </table>
+        <a href="${config.app.url}/admin/tasks/${data.taskId}" style="display: inline-block; background: #dc2626; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Manually Assign Task</a>
+      `
+    );
+  },
+
+  // Task offer sent to artist
+  taskOfferSent: async (data: {
+    taskId: string;
+    taskTitle: string;
+    artistName: string;
+    artistEmail: string;
+    matchScore: number;
+    expiresInMinutes: number;
+  }) => {
+    return notifyAdmin(
+      "Task Offer Sent",
+      `
+        <h2 style="color: #2563eb; margin-top: 0;">Task Offer Sent to Artist</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Task</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: 600;">${data.taskTitle}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Offered to</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${data.artistName} (${data.artistEmail})</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Match Score</td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${data.matchScore.toFixed(1)}%</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Expires in</td>
+            <td style="padding: 8px 0;">${data.expiresInMinutes} minutes</td>
+          </tr>
+        </table>
+      `
+    );
+  },
 };
 
 // ============================================

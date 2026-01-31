@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { tasks } from "@/db/schema";
+import { tasks, payouts, stripeConnectAccounts } from "@/db/schema";
 import { eq, and, gte, lt, desc, sum, count, sql } from "drizzle-orm";
+import { config } from "@/lib/config";
+import {
+  calculatePayoutAmounts,
+  createPayoutRequest,
+  processPayoutTransfer,
+  getConnectAccount,
+} from "@/lib/stripe-connect";
 
 export async function GET(request: NextRequest) {
   try {
@@ -187,20 +194,219 @@ export async function GET(request: NextRequest) {
       pendingTasksCount: pendingTasksCount,
     };
 
-    // Payout history would come from a payouts table (to be implemented)
-    // For now, return empty array
-    const payoutHistory: never[] = [];
+    // Get payout history from database
+    const payoutHistoryResult = await db
+      .select({
+        id: payouts.id,
+        amount: payouts.creditsAmount,
+        netAmountUsd: payouts.netAmountUsd,
+        status: payouts.status,
+        payoutMethod: payouts.payoutMethod,
+        requestedAt: payouts.requestedAt,
+        processedAt: payouts.processedAt,
+        failureReason: payouts.failureReason,
+      })
+      .from(payouts)
+      .where(eq(payouts.freelancerId, userId))
+      .orderBy(desc(payouts.requestedAt))
+      .limit(20);
+
+    const payoutHistory = payoutHistoryResult.map((p) => ({
+      id: p.id,
+      amount: p.amount,
+      netAmountUsd: Number(p.netAmountUsd),
+      status: p.status.toLowerCase(),
+      method: p.payoutMethod || "stripe_connect",
+      requestedAt: p.requestedAt.toISOString(),
+      completedAt: p.processedAt?.toISOString() || null,
+      failureReason: p.failureReason,
+    }));
+
+    // Calculate total paid out
+    const totalPaidOutResult = await db
+      .select({
+        total: sum(payouts.creditsAmount),
+      })
+      .from(payouts)
+      .where(
+        and(
+          eq(payouts.freelancerId, userId),
+          eq(payouts.status, "COMPLETED")
+        )
+      );
+
+    const totalPaidOut = Number(totalPaidOutResult[0]?.total) || 0;
+
+    // Adjust available balance by subtracting already paid out and pending payouts
+    const pendingPayoutsResult = await db
+      .select({
+        total: sum(payouts.creditsAmount),
+      })
+      .from(payouts)
+      .where(
+        and(
+          eq(payouts.freelancerId, userId),
+          sql`${payouts.status} IN ('PENDING', 'PROCESSING')`
+        )
+      );
+
+    const pendingPayouts = Number(pendingPayoutsResult[0]?.total) || 0;
+    const adjustedAvailableBalance = Math.max(0, stats.availableBalance - totalPaidOut - pendingPayouts);
+
+    // Get Stripe Connect status
+    const connectAccount = await getConnectAccount(userId);
+
+    // Get payout configuration
+    const payoutConfig = {
+      minimumPayoutCredits: config.payouts.minimumPayoutCredits,
+      artistPercentage: config.payouts.artistPercentage,
+      holdingPeriodDays: config.payouts.holdingPeriodDays,
+      creditValueUsd: config.payouts.creditValueUSD,
+    };
 
     return NextResponse.json({
-      stats,
+      stats: {
+        ...stats,
+        availableBalance: adjustedAvailableBalance,
+        totalPaidOut,
+        pendingPayouts,
+      },
       earnings,
       monthlyEarnings,
       payoutHistory,
+      payoutConfig,
+      stripeConnectStatus: connectAccount
+        ? {
+            connected: true,
+            payoutsEnabled: connectAccount.payoutsEnabled,
+            detailsSubmitted: connectAccount.detailsSubmitted,
+            externalAccountLast4: connectAccount.externalAccountLast4,
+          }
+        : { connected: false },
     });
   } catch (error) {
     console.error("Payout data fetch error:", error);
     return NextResponse.json(
       { error: "Failed to fetch payout data" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/freelancer/payouts
+ * Request a payout
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const body = await request.json();
+    const { creditsAmount } = body;
+
+    if (!creditsAmount || creditsAmount < config.payouts.minimumPayoutCredits) {
+      return NextResponse.json(
+        { error: `Minimum payout is ${config.payouts.minimumPayoutCredits} credits` },
+        { status: 400 }
+      );
+    }
+
+    // Check Stripe Connect account
+    const connectAccount = await getConnectAccount(userId);
+    if (!connectAccount) {
+      return NextResponse.json(
+        { error: "Please connect your Stripe account first" },
+        { status: 400 }
+      );
+    }
+
+    if (!connectAccount.payoutsEnabled) {
+      return NextResponse.json(
+        { error: "Please complete Stripe onboarding to enable payouts" },
+        { status: 400 }
+      );
+    }
+
+    // Calculate available balance
+    const holdingPeriodDays = config.payouts.holdingPeriodDays;
+    const availableCutoff = new Date();
+    availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays);
+
+    const availableResult = await db
+      .select({
+        total: sum(tasks.creditsUsed),
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.freelancerId, userId),
+          eq(tasks.status, "COMPLETED"),
+          lt(tasks.completedAt, availableCutoff)
+        )
+      );
+
+    // Get already paid out
+    const paidOutResult = await db
+      .select({
+        total: sum(payouts.creditsAmount),
+      })
+      .from(payouts)
+      .where(
+        and(
+          eq(payouts.freelancerId, userId),
+          sql`${payouts.status} IN ('COMPLETED', 'PENDING', 'PROCESSING')`
+        )
+      );
+
+    const totalEarned = Number(availableResult[0]?.total) || 0;
+    const totalPaidOrPending = Number(paidOutResult[0]?.total) || 0;
+    const actualAvailable = totalEarned - totalPaidOrPending;
+
+    if (creditsAmount > actualAvailable) {
+      return NextResponse.json(
+        { error: `Insufficient balance. Available: ${actualAvailable} credits` },
+        { status: 400 }
+      );
+    }
+
+    // Calculate payout amounts
+    const amounts = calculatePayoutAmounts(creditsAmount);
+
+    // Create payout request
+    const result = await createPayoutRequest(
+      userId,
+      creditsAmount,
+      connectAccount.stripeAccountId
+    );
+
+    // Process the transfer immediately (or you could queue this for manual review)
+    const transferResult = await processPayoutTransfer(result.payoutId);
+
+    if (!transferResult.success) {
+      return NextResponse.json(
+        { error: transferResult.error || "Payout processing failed" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      payoutId: result.payoutId,
+      creditsAmount,
+      netAmountUsd: amounts.netAmountUsd,
+      transferId: transferResult.transferId,
+    });
+  } catch (error) {
+    console.error("Payout request error:", error);
+    return NextResponse.json(
+      { error: "Failed to process payout request" },
       { status: 500 }
     );
   }

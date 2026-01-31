@@ -17,9 +17,20 @@ export const config = {
     baseDomain: process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai",
   },
   credits: {
-    pricePerCredit: 4.9, // USD (1 credit = $5)
+    pricePerCredit: 4.9, // USD (1 credit = $4.90)
     currency: "USD",
     lowBalanceThreshold: 20, // Warn when below this (was 2 before 10x inflation)
+  },
+  payouts: {
+    // Revenue split: percentage that goes to the artist (0-100)
+    // Platform keeps the remaining percentage
+    artistPercentage: 70, // Artist gets 70%, Platform keeps 30%
+    // Minimum credits required to request a payout
+    minimumPayoutCredits: 10,
+    // Holding period in days before earnings become available for payout
+    holdingPeriodDays: 7,
+    // Currency conversion: how much each credit is worth for payout
+    creditValueUSD: 3.43, // $4.90 * 70% = $3.43 per credit to artist
   },
   tasks: {
     defaultMaxRevisions: 2,

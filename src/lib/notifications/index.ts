@@ -7,6 +7,7 @@ import type { NotificationPreferences } from "@/types";
 
 type NotificationType =
   | "TASK_ASSIGNED"
+  | "TASK_OFFERED"
   | "TASK_COMPLETED"
   | "REVISION_REQUESTED"
   | "LOW_CREDITS"
