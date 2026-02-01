@@ -50,6 +50,8 @@ import {
   Megaphone,
   Bookmark,
   LayoutGrid,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
@@ -163,6 +165,82 @@ function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString();
 }
 
+// Progressive loading indicator component
+function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
+  const [loadingStage, setLoadingStage] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  const loadingMessages = [
+    { text: "Understanding your request...", icon: Lightbulb },
+    { text: "Finding the best approach...", icon: Sparkles },
+    { text: "Crafting your response...", icon: Palette },
+    { text: "Almost there...", icon: CheckCircle2 },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (requestStartTime) {
+        const elapsed = Math.floor((Date.now() - requestStartTime) / 1000);
+        setElapsedTime(elapsed);
+
+        // Progress through stages based on time
+        if (elapsed >= 8) setLoadingStage(3);
+        else if (elapsed >= 5) setLoadingStage(2);
+        else if (elapsed >= 2) setLoadingStage(1);
+        else setLoadingStage(0);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [requestStartTime]);
+
+  const currentMessage = loadingMessages[loadingStage];
+  const CurrentIcon = currentMessage.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="flex items-start gap-3"
+    >
+      {/* Animated avatar */}
+      <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0 relative">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/30"
+        />
+        <Sparkles className="h-4 w-4 text-white" />
+      </div>
+      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+        <div className="flex items-center gap-3">
+          {/* Animated dots */}
+          <div className="flex gap-1">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+          {/* Progressive message */}
+          <motion.div
+            key={loadingStage}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <CurrentIcon className="h-3.5 w-3.5 text-green-500" />
+            <span>{currentMessage.text}</span>
+          </motion.div>
+          {/* Timer */}
+          {elapsedTime > 0 && (
+            <span className="text-xs text-muted-foreground/60 tabular-nums">{elapsedTime}s</span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function ChatInterface({
   draftId,
   onDraftUpdate,
@@ -198,6 +276,7 @@ export function ChatInterface({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
   const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(new Set());
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, 'up' | 'down' | null>>({});
   const [taskSubmitted, setTaskSubmitted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -908,6 +987,34 @@ export function ChatInterface({
       setTimeout(() => setCopiedMessageId(null), 2000);
     } catch {
       toast.error("Failed to copy message");
+    }
+  };
+
+  // Handle message feedback (thumbs up/down)
+  const handleMessageFeedback = (messageId: string, feedback: 'up' | 'down') => {
+    const currentFeedback = messageFeedback[messageId];
+    const newFeedback = currentFeedback === feedback ? null : feedback;
+
+    setMessageFeedback(prev => ({
+      ...prev,
+      [messageId]: newFeedback
+    }));
+
+    // Log feedback for analytics (fire-and-forget)
+    if (newFeedback) {
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageId,
+          feedback: newFeedback,
+          context: "chat",
+        }),
+      }).catch(err => console.debug("Feedback logging:", err));
+
+      toast.success(newFeedback === 'up' ? "Thanks for the feedback!" : "We'll work on improving this", {
+        duration: 2000,
+      });
     }
   };
 
@@ -2068,8 +2175,36 @@ export function ChatInterface({
                         )}
                         </div>
 
-                        {/* Copy button - below the message */}
-                        <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Message actions - copy and feedback */}
+                        <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Feedback buttons */}
+                          <button
+                            onClick={() => handleMessageFeedback(message.id, 'up')}
+                            className={cn(
+                              "p-1.5 rounded-md transition-colors",
+                              messageFeedback[message.id] === 'up'
+                                ? "text-green-500 bg-green-500/10"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Good response"
+                          >
+                            <ThumbsUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => handleMessageFeedback(message.id, 'down')}
+                            className={cn(
+                              "p-1.5 rounded-md transition-colors",
+                              messageFeedback[message.id] === 'down'
+                                ? "text-red-500 bg-red-500/10"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Could be better"
+                          >
+                            <ThumbsDown className="h-3 w-3" />
+                          </button>
+                          {/* Divider */}
+                          <div className="h-3 w-px bg-border mx-0.5" />
+                          {/* Copy button */}
                           <button
                             onClick={() => handleCopyMessage(message.content, message.id)}
                             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs flex items-center gap-1"
@@ -2150,29 +2285,9 @@ export function ChatInterface({
               </motion.div>
             )}
 
-            {/* Loading indicator - matches AI message style */}
+            {/* Enhanced loading indicator with progressive messages */}
             {isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-start gap-3"
-              >
-                {/* Sparkle avatar */}
-                <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-                  <Sparkles className="h-4 w-4 text-white animate-pulse" />
-                </div>
-                <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                    <span className="text-sm">Thinking...</span>
-                  </div>
-                </div>
-              </motion.div>
+              <LoadingIndicator requestStartTime={requestStartTimeRef.current} />
             )}
           </div>
         </ScrollArea>
@@ -2345,23 +2460,35 @@ export function ChatInterface({
 
           {/* Modern input box - matching design reference */}
           <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
-            {/* Input field */}
+            {/* Input field with auto-resize */}
             <div className="relative">
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Auto-resize textarea
+                  const target = e.target;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 200) + 'px';
+                }}
                 onKeyDown={(e) => {
+                  // Submit on Enter (without shift) or Cmd/Ctrl+Enter
                   if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
                     handleSend();
                   }
                 }}
-                placeholder="Describe what you want to create..."
+                placeholder={messages.length === 0
+                  ? "What would you like to create today?"
+                  : "Type your message..."}
                 disabled={isLoading}
                 rows={1}
-                className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px]"
-                style={{ height: 'auto' }}
+                className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all"
+                style={{ height: 'auto', overflow: 'hidden' }}
               />
             </div>
 
@@ -2436,39 +2563,75 @@ export function ChatInterface({
             </div>
           </div>
 
-          {/* Category pills - quick category selection */}
+          {/* Enhanced empty state with quick start suggestions */}
           {messages.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex items-center justify-center gap-3 mt-4 flex-wrap"
+              transition={{ delay: 0.1 }}
+              className="mt-4 space-y-4"
             >
-              {[
-                { label: "Social Media", icon: Share2, color: "text-green-600 dark:text-green-400" },
-                { label: "Advertising", icon: Megaphone, color: "text-muted-foreground" },
-                { label: "Branding", icon: Bookmark, color: "text-muted-foreground" },
-                { label: "Marketing", icon: LayoutGrid, color: "text-muted-foreground" },
-              ].map((category) => (
-                <button
-                  key={category.label}
-                  onClick={() => {
-                    setInput(`I need ${category.label.toLowerCase()} content for `);
-                    inputRef.current?.focus();
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
-                    "bg-white/80 dark:bg-card/80 backdrop-blur-sm",
-                    "hover:border-green-500/50 hover:shadow-sm",
-                    category.color === "text-green-600 dark:text-green-400"
-                      ? "border-green-500/30 text-green-600 dark:text-green-400"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <category.icon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{category.label}</span>
-                </button>
-              ))}
+              {/* Popular requests - clickable cards */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  {
+                    label: "Instagram Carousel",
+                    prompt: "Create a 5-slide Instagram carousel about ",
+                    icon: LayoutGrid,
+                    hint: "5 slides"
+                  },
+                  {
+                    label: "Story Series",
+                    prompt: "Design Instagram stories to promote ",
+                    icon: Share2,
+                    hint: "3-5 stories"
+                  },
+                  {
+                    label: "LinkedIn Post",
+                    prompt: "Create a professional LinkedIn post announcing ",
+                    icon: Bookmark,
+                    hint: "1 image"
+                  },
+                  {
+                    label: "Ad Campaign",
+                    prompt: "Design ads for a campaign promoting ",
+                    icon: Megaphone,
+                    hint: "multi-size"
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setInput(item.prompt);
+                      inputRef.current?.focus();
+                    }}
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-xl border transition-all text-left group",
+                      "bg-white/60 dark:bg-card/60 backdrop-blur-sm",
+                      "hover:border-green-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md",
+                      "border-border/50"
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0 group-hover:bg-green-500/20 transition-colors">
+                      <item.icon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.hint}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Keyboard hint */}
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">
+                  {typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent) ? '⌘' : 'Ctrl'}
+                </kbd>
+                <span>+</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">Enter</kbd>
+                <span className="ml-1">to send</span>
+              </div>
             </motion.div>
           )}
         </div>
