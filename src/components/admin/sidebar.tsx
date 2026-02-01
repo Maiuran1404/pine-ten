@@ -130,6 +130,11 @@ const navigationGroups: NavigationGroup[] = [
         icon: Cog,
       },
       {
+        name: "Intake Prompts",
+        href: "/admin/creative-intake-prompts",
+        icon: Sparkles,
+      },
+      {
         name: "Coupons",
         href: "/admin/coupons",
         icon: Ticket,

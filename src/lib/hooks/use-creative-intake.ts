@@ -41,7 +41,7 @@ interface UseCreativeIntakeReturn {
   error: string | null;
 
   // Actions
-  selectService: (serviceType: ServiceType) => void;
+  selectService: (serviceType: ServiceType, subOption?: string, notes?: string) => void;
   sendMessage: (content: string) => Promise<void>;
   submitGroupedAnswers: (answers: Record<string, string | string[]>) => void;
   submitQuickOption: (value: string) => void;
@@ -133,14 +133,24 @@ export function useCreativeIntake(
 
   // Select service
   const selectService = useCallback(
-    (serviceType: ServiceType) => {
+    (serviceType: ServiceType, subOption?: string, notes?: string) => {
       const flowConfig = getFlowConfig(serviceType);
       const initialStep = flowConfig.initialStep;
+
+      // Store the sub-option and notes in the data
+      const initialData: GenericIntakeData = {};
+      if (subOption) {
+        initialData.subOption = subOption;
+      }
+      if (notes) {
+        initialData.initialNotes = notes;
+      }
 
       setState((prev) => ({
         ...prev,
         serviceType,
         stage: "context",
+        data: { ...prev.data, ...initialData },
         updatedAt: new Date(),
       }));
 

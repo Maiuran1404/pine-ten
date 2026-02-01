@@ -119,6 +119,11 @@ export function TypingText({
     }
   }, [selectedOptions, onOptionClick, onOptionsConfirm]);
 
+  // Ensure content starts with capital letter
+  const capitalizedContent = displayedContent.length > 0 && /^[a-z]/.test(displayedContent)
+    ? displayedContent.charAt(0).toUpperCase() + displayedContent.slice(1)
+    : displayedContent;
+
   return (
     <div className={className}>
       <ReactMarkdown
@@ -179,7 +184,7 @@ export function TypingText({
           },
         }}
       >
-        {displayedContent}
+        {capitalizedContent}
       </ReactMarkdown>
 
       {/* Confirm button for multi-select */}
