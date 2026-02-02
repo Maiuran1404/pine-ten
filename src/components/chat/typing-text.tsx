@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,26 +39,68 @@ export function TypingText({
   className,
 }: TypingTextProps) {
   // Capitalize the content before any processing
-  const capitalizeContent = (text: string): string => {
-    return text
-      // Capitalize first alphabetic character (handles leading whitespace)
-      .replace(/^(\s*)([a-z])/, (_, space, letter) => (space || '') + letter.toUpperCase())
-      // Capitalize after sentence-ending punctuation followed by space
-      .replace(/([.!?]\s+)([a-z])/g, (_, punct, letter) => punct + letter.toUpperCase())
-      // Capitalize after colons followed by space (common in chat responses)
-      .replace(/(:\s+)([a-z])/g, (_, colon, letter) => colon + letter.toUpperCase())
-      // Capitalize after newlines
-      .replace(/(\n\s*)([a-z])/g, (_, newline, letter) => newline + letter.toUpperCase())
-      // Capitalize after dashes/bullets that start a line (for lists)
-      .replace(/(\n\s*[-*]\s*)([a-z])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
-      // Capitalize after markdown bold/italic markers at start
-      .replace(/^(\s*\*{1,2})([a-z])/, (_, stars, letter) => stars + letter.toUpperCase());
-  };
+  const capitalizeContent = useCallback((text: string): string => {
+    if (!text || text.length === 0) return text;
 
-  // Pre-capitalize the full content
-  const processedContent = capitalizeContent(content);
+    let result = text;
 
-  const [displayedContent, setDisplayedContent] = useState(animate ? "" : processedContent);
+    // Find the first alphabetic character (ignoring markdown, whitespace, etc.)
+    // and capitalize it. This handles all cases including markdown formatting.
+    const firstLetterIndex = result.search(/[a-z]/i);
+    if (
+      firstLetterIndex !== -1 &&
+      result[firstLetterIndex] === result[firstLetterIndex].toLowerCase()
+    ) {
+      result =
+        result.slice(0, firstLetterIndex) +
+        result[firstLetterIndex].toUpperCase() +
+        result.slice(firstLetterIndex + 1);
+    }
+
+    // Capitalize after sentence-ending punctuation followed by space
+    result = result.replace(
+      /([.!?]\s+)(\*{0,2})([a-z])/g,
+      (_, punct, markdown, letter) => {
+        return punct + (markdown || "") + letter.toUpperCase();
+      }
+    );
+
+    // Capitalize after colons followed by space (common in chat responses)
+    result = result.replace(
+      /(:\s+)(\*{0,2})([a-z])/g,
+      (_, colon, markdown, letter) => {
+        return colon + (markdown || "") + letter.toUpperCase();
+      }
+    );
+
+    // Capitalize after newlines
+    result = result.replace(
+      /(\n\s*)(\*{0,2})([a-z])/g,
+      (_, newline, markdown, letter) => {
+        return newline + (markdown || "") + letter.toUpperCase();
+      }
+    );
+
+    // Capitalize after dashes/bullets that start a line (for lists)
+    result = result.replace(
+      /(\n\s*[-*]\s+)(\*{0,2})([a-z])/g,
+      (_, prefix, markdown, letter) => {
+        return prefix + (markdown || "") + letter.toUpperCase();
+      }
+    );
+
+    return result;
+  }, []);
+
+  // Pre-capitalize the full content using useMemo to ensure it updates when content changes
+  const processedContent = useMemo(
+    () => capitalizeContent(content),
+    [content, capitalizeContent]
+  );
+
+  const [displayedContent, setDisplayedContent] = useState(
+    animate ? "" : processedContent
+  );
   const [isComplete, setIsComplete] = useState(!animate);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
@@ -105,23 +147,24 @@ export function TypingText({
         clearTimeout(animationRef.current);
       }
     };
-  }, [content, animate, speed, onComplete]);
+  }, [content, animate, speed, onComplete, processedContent]);
 
   // Handle option click for list items
-  const handleListItemClick = useCallback((text: string) => {
-    if (!isComplete) return;
+  const handleListItemClick = useCallback(
+    (text: string) => {
+      if (!isComplete) return;
 
-    if (multiSelect) {
-      // Toggle selection
-      setSelectedOptions((prev) =>
-        prev.includes(text)
-          ? prev.filter((o) => o !== text)
-          : [...prev, text]
-      );
-    } else if (onOptionClick) {
-      onOptionClick(text);
-    }
-  }, [onOptionClick, isComplete, multiSelect]);
+      if (multiSelect) {
+        // Toggle selection
+        setSelectedOptions((prev) =>
+          prev.includes(text) ? prev.filter((o) => o !== text) : [...prev, text]
+        );
+      } else if (onOptionClick) {
+        onOptionClick(text);
+      }
+    },
+    [onOptionClick, isComplete, multiSelect]
+  );
 
   // Handle confirm for multi-select
   const handleConfirm = useCallback(() => {
@@ -130,9 +173,10 @@ export function TypingText({
         onOptionsConfirm(selectedOptions);
       } else if (onOptionClick) {
         // Fallback: send as comma-separated string
-        const combinedResponse = selectedOptions.length === 1
-          ? selectedOptions[0]
-          : selectedOptions.join(", ");
+        const combinedResponse =
+          selectedOptions.length === 1
+            ? selectedOptions[0]
+            : selectedOptions.join(", ");
         onOptionClick(combinedResponse);
       }
       setSelectedOptions([]);
@@ -146,10 +190,12 @@ export function TypingText({
         components={{
           // Custom list rendering - make items clickable when onOptionClick is provided
           ul: ({ children }) => (
-            <ul className={cn(
-              "space-y-2 my-3",
-              onOptionClick && isComplete && "list-none pl-0"
-            )}>
+            <ul
+              className={cn(
+                "space-y-2 my-3",
+                onOptionClick && isComplete && "list-none pl-0"
+              )}
+            >
               {children}
             </ul>
           ),
@@ -206,11 +252,7 @@ export function TypingText({
       {/* Confirm button for multi-select */}
       {multiSelect && selectedOptions.length > 0 && isComplete && (
         <div className="flex justify-end mt-3">
-          <Button
-            onClick={handleConfirm}
-            size="sm"
-            className="gap-2"
-          >
+          <Button onClick={handleConfirm} size="sm" className="gap-2">
             Continue with {selectedOptions.length} selected
             <ChevronRight className="h-4 w-4" />
           </Button>

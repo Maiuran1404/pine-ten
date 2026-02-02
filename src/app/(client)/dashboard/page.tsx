@@ -517,18 +517,22 @@ function DashboardContent() {
 
                 {/* Credits indicator */}
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      credits === null
-                        ? "bg-gray-400"
-                        : credits === 0
-                          ? "bg-red-500"
-                          : credits <= 2
-                            ? "bg-yellow-500"
-                            : "bg-emerald-500"
-                    }`}
-                  />
-                  <span>{credits === null ? "..." : credits} credits available</span>
+                  {credits === null ? (
+                    <Skeleton className="h-4 w-28" />
+                  ) : (
+                    <>
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          credits === 0
+                            ? "bg-red-500"
+                            : credits <= 2
+                              ? "bg-yellow-500"
+                              : "bg-emerald-500"
+                        }`}
+                      />
+                      <span>{credits} credits available</span>
+                    </>
+                  )}
                 </div>
               </div>
 

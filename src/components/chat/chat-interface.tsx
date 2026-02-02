@@ -316,12 +316,10 @@ export function ChatInterface({
     brief,
     completion: briefCompletion,
     isReady: isBriefReady,
-    pendingQuestion: briefPendingQuestion,
     processMessage: processBriefMessage,
     updateBrief,
     addStyleToVisualDirection,
     syncMoodboardToVisualDirection,
-    answerClarifyingQuestion,
     generateOutline,
     exportBrief,
   } = useBrief({
@@ -1430,23 +1428,6 @@ export function ChatInterface({
     }
   };
 
-  // Handle clarifying question from brief inference
-  const handleBriefClarifyingQuestion = (questionId: string, answer: string) => {
-    // Answer the question in the brief
-    answerClarifyingQuestion(questionId, answer);
-
-    // Also send as a message to continue the conversation naturally
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: answer,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    processBriefMessage(answer);
-    setNeedsAutoContinue(true);
-  };
 
   // Use refreshed credits if available (after payment), otherwise fall back to session credits
   const sessionCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
@@ -2283,32 +2264,6 @@ export function ChatInterface({
           </div>
         </ScrollArea>
 
-        {/* Brief Clarifying Question - shows when inference needs more info */}
-        {/* IMPORTANT: Only show ONE CTA at a time - hide when style selection is active */}
-        {briefPendingQuestion && !isLoading && messages.length > 0 &&
-         lastStyleMessageIndex !== messages.length - 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-4 mb-3 p-3 rounded-xl border border-primary/20 bg-primary/5"
-          >
-            <p className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              {briefPendingQuestion.question}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {briefPendingQuestion.options.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleBriefClarifyingQuestion(briefPendingQuestion.id, option.value)}
-                  className="px-3 py-1.5 text-sm rounded-full border border-primary/30 bg-background hover:bg-primary/10 hover:border-primary/50 transition-colors"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
 
         {/* Skip to Submit option - shows when user has styles selected and some context */}
         {!pendingTask && !showManualSubmit && moodboardItems.length > 0 && messages.filter(m => m.role === 'user').length >= 2 && (
