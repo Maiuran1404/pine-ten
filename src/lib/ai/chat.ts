@@ -165,28 +165,30 @@ export async function chat(
   quickOptions?: { question: string; options: string[] };
   deliverableStyleMarker?: DeliverableStyleMarker;
 }> {
-  // Fetch user's company/brand data
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    with: {
-      company: true,
-    },
-  });
+  // Fetch data in parallel for faster response times
+  const [user, styles, categories] = await Promise.all([
+    // Fetch user's company/brand data
+    db.query.users.findFirst({
+      where: eq(users.id, userId),
+      with: {
+        company: true,
+      },
+    }),
+    // Fetch available style categories for context
+    db
+      .select()
+      .from(styleReferences)
+      .where(eq(styleReferences.isActive, true)),
+    // Fetch task categories
+    db
+      .select()
+      .from(taskCategories)
+      .where(eq(taskCategories.isActive, true)),
+  ]);
 
   const company = user?.company;
 
-  // Fetch available style categories for context
-  const styles = await db
-    .select()
-    .from(styleReferences)
-    .where(eq(styleReferences.isActive, true));
-
-  const categories = await db
-    .select()
-    .from(taskCategories)
-    .where(eq(taskCategories.isActive, true));
-
-  // Fetch audiences for the company
+  // Fetch audiences for the company (depends on user query above)
   const audiences = company?.id
     ? await db
         .select()
