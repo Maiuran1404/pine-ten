@@ -15,8 +15,13 @@ interface QuickOptionsProps {
 /**
  * Displays quick option buttons for user selection
  * Supports both single-select (immediate) and multi-select (with confirm)
+ * Clean, modern design with grid layout
  */
-export function QuickOptions({ options, onSelect, disabled = false }: QuickOptionsProps) {
+export function QuickOptions({
+  options,
+  onSelect,
+  disabled = false,
+}: QuickOptionsProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const isMultiSelect = options.multiSelect === true;
 
@@ -41,19 +46,36 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
   const handleConfirm = () => {
     if (selectedOptions.length > 0) {
       // Send all selected options as a combined response
-      const combinedResponse = selectedOptions.length === 1
-        ? selectedOptions[0]
-        : selectedOptions.join(", ");
+      const combinedResponse =
+        selectedOptions.length === 1
+          ? selectedOptions[0]
+          : selectedOptions.join(", ");
       onSelect(combinedResponse);
       setSelectedOptions([]);
     }
   };
 
+  // Determine grid columns based on number of options
+  const getGridCols = (count: number) => {
+    if (count <= 2) return "grid-cols-1 sm:grid-cols-2";
+    if (count <= 3) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+    if (count <= 4) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+    if (count <= 6) return "grid-cols-2 sm:grid-cols-3";
+    return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-4">
+      <div className={cn("grid gap-3", getGridCols(options.options.length))}>
         {options.options.map((option, idx) => {
           const isSelected = selectedOptions.includes(option);
+          // Check if this is a "recommended" or primary action (usually the last one or contains certain keywords)
+          const isPrimary =
+            idx === options.options.length - 1 &&
+            (option.toLowerCase().includes("no") ||
+              option.toLowerCase().includes("let's") ||
+              option.toLowerCase().includes("continue") ||
+              option.toLowerCase().includes("decide"));
 
           return (
             <button
@@ -62,17 +84,21 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
               onClick={() => handleOptionClick(option)}
               disabled={disabled}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-full border transition-all duration-200",
+                "px-4 py-3 text-sm font-medium rounded-lg border transition-all duration-200",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                isMultiSelect && isSelected
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary cursor-pointer"
+                "flex items-center justify-center gap-2",
+                "text-left",
+                isPrimary
+                  ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-sm"
+                  : isMultiSelect && isSelected
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-white dark:bg-card hover:border-primary/50 hover:bg-muted/50 cursor-pointer"
               )}
             >
               {isMultiSelect && isSelected && (
-                <Check className="h-3 w-3 inline mr-1.5 -ml-0.5" />
+                <Check className="h-4 w-4 shrink-0" />
               )}
-              {option}
+              <span className="flex-1">{option}</span>
             </button>
           );
         })}
@@ -80,7 +106,7 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
 
       {/* Confirm button for multi-select */}
       {isMultiSelect && selectedOptions.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <Button
             onClick={handleConfirm}
             disabled={disabled}

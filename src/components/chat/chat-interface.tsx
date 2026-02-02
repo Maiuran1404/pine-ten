@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -54,7 +61,14 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getDraft, saveDraft, deleteDraft, generateDraftTitle, type ChatDraft, type MoodboardItemData } from "@/lib/chat-drafts";
+import {
+  getDraft,
+  saveDraft,
+  deleteDraft,
+  generateDraftTitle,
+  type ChatDraft,
+  type MoodboardItemData,
+} from "@/lib/chat-drafts";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -170,11 +184,15 @@ function formatTimeAgo(date: Date): string {
 // Auto-capitalize "i" to "I" when it's a standalone word
 function autoCapitalizeI(text: string): string {
   // Replace standalone "i" with "I" (word boundaries, not part of other words)
-  return text.replace(/\bi\b/g, 'I');
+  return text.replace(/\bi\b/g, "I");
 }
 
 // Progressive loading indicator component - minimal design
-function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
+function LoadingIndicator({
+  requestStartTime,
+}: {
+  requestStartTime: number | null;
+}) {
   const [loadingStage, setLoadingStage] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -222,9 +240,18 @@ function LoadingIndicator({ requestStartTime }: { requestStartTime: number | nul
         <div className="flex items-center gap-3">
           {/* Animated dots */}
           <div className="flex gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
+              style={{ animationDelay: "0ms" }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
+              style={{ animationDelay: "150ms" }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
+              style={{ animationDelay: "300ms" }}
+            />
           </div>
           {/* Progressive message - no icon, just text */}
           <motion.div
@@ -237,7 +264,9 @@ function LoadingIndicator({ requestStartTime }: { requestStartTime: number | nul
           </motion.div>
           {/* Timer */}
           {elapsedTime > 0 && (
-            <span className="text-xs text-muted-foreground/60 tabular-nums">{elapsedTime}s</span>
+            <span className="text-xs text-muted-foreground/60 tabular-nums">
+              {elapsedTime}s
+            </span>
           )}
         </div>
       </div>
@@ -261,7 +290,9 @@ export function ChatInterface({
   const { data: session } = useSession();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null);
+  const [taskData, setTaskData] = useState<TaskData | null>(
+    initialTaskData || null
+  );
   const [paymentProcessed, setPaymentProcessed] = useState(false);
   const [refreshedCredits, setRefreshedCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -270,18 +301,29 @@ export function ChatInterface({
   const [isUploading, setIsUploading] = useState(false);
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
-  const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<string[]>([]);
-  const [selectedStyleForModal, setSelectedStyleForModal] = useState<DeliverableStyle | null>(null);
-  const [currentDeliverableType, setCurrentDeliverableType] = useState<string | null>(null);
+  const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<
+    string[]
+  >([]);
+  const [selectedStyleForModal, setSelectedStyleForModal] =
+    useState<DeliverableStyle | null>(null);
+  const [currentDeliverableType, setCurrentDeliverableType] = useState<
+    string | null
+  >(null);
   const [styleOffset, setStyleOffset] = useState<Record<string, number>>({});
   const [excludedStyleAxes, setExcludedStyleAxes] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-  const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
-  const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(new Set());
-  const [messageFeedback, setMessageFeedback] = useState<Record<string, 'up' | 'down' | null>>({});
+  const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(
+    null
+  );
+  const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [messageFeedback, setMessageFeedback] = useState<
+    Record<string, "up" | "down" | null>
+  >({});
   const [taskSubmitted, setTaskSubmitted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -350,7 +392,14 @@ export function ChatInterface({
         pendingTask,
         taskSubmitted,
       }),
-    [messages, selectedStyles, selectedDeliverableStyles, moodboardItems, pendingTask, taskSubmitted]
+    [
+      messages,
+      selectedStyles,
+      selectedDeliverableStyles,
+      moodboardItems,
+      pendingTask,
+      taskSubmitted,
+    ]
   );
 
   // Collapse left sidebar when chat starts (messages appear)
@@ -363,7 +412,10 @@ export function ChatInterface({
 
   // Get moodboard style IDs for tracking what's already added
   const moodboardStyleIds = useMemo(
-    () => moodboardItems.filter((i) => i.type === "style").map((i) => i.metadata?.styleId || ""),
+    () =>
+      moodboardItems
+        .filter((i) => i.type === "style")
+        .map((i) => i.metadata?.styleId || ""),
     [moodboardItems]
   );
 
@@ -376,7 +428,10 @@ export function ChatInterface({
   // Find the index of the last message with deliverable styles (for collapsing older grids)
   const lastStyleMessageIndex = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].deliverableStyles && messages[i].deliverableStyles!.length > 0) {
+      if (
+        messages[i].deliverableStyles &&
+        messages[i].deliverableStyles!.length > 0
+      ) {
         return i;
       }
     }
@@ -400,8 +455,8 @@ export function ChatInterface({
   // Check if we're in task mode (viewing an active task)
   const isTaskMode = !!taskData;
   const assignedArtist = taskData?.freelancer;
-  const deliverables = taskData?.files?.filter(f => f.isDeliverable) || [];
-  const taskFiles = taskData?.files?.filter(f => !f.isDeliverable) || [];
+  const deliverables = taskData?.files?.filter((f) => f.isDeliverable) || [];
+  const taskFiles = taskData?.files?.filter((f) => !f.isDeliverable) || [];
 
   // Get user info
   const userName = session?.user?.name || "You";
@@ -411,7 +466,10 @@ export function ChatInterface({
   const allAttachments = messages
     .filter((m) => m.attachments && m.attachments.length > 0)
     .flatMap((m) => m.attachments || [])
-    .filter((file): file is NonNullable<typeof file> => file != null && file.fileUrl != null);
+    .filter(
+      (file): file is NonNullable<typeof file> =>
+        file != null && file.fileUrl != null
+    );
 
   // Load draft when draftId changes OR load task chat history when in task mode
   useEffect(() => {
@@ -427,7 +485,7 @@ export function ChatInterface({
       // Set loaded messages (may be empty for new chats)
       setMessages(loadedMessages);
       // Mark all loaded messages as having completed typing (they won't animate)
-      setCompletedTypingIds(new Set(loadedMessages.map(m => m.id)));
+      setCompletedTypingIds(new Set(loadedMessages.map((m) => m.id)));
       setIsInitialized(true);
       return;
     }
@@ -443,7 +501,7 @@ export function ChatInterface({
       setSelectedStyles(draft.selectedStyles);
       setPendingTask(draft.pendingTask);
       // Mark all loaded messages as having completed typing (they won't animate)
-      setCompletedTypingIds(new Set(loadedMessages.map(m => m.id)));
+      setCompletedTypingIds(new Set(loadedMessages.map((m) => m.id)));
 
       const lastMessage = loadedMessages[loadedMessages.length - 1];
       if (lastMessage && lastMessage.role === "user") {
@@ -468,7 +526,7 @@ export function ChatInterface({
     // This prevents regeneration on page refresh
     if (messages.length > 0) {
       // Check if the first user message matches the initial message
-      const firstUserMessage = messages.find(m => m.role === "user");
+      const firstUserMessage = messages.find((m) => m.role === "user");
       if (firstUserMessage && firstUserMessage.content === initialMessage) {
         // Already have this conversation, don't regenerate
         // Update URL to use draft param instead of message param
@@ -479,7 +537,7 @@ export function ChatInterface({
         return;
       }
       // Also skip if we have an assistant response (conversation already happened)
-      const hasAssistantResponse = messages.some(m => m.role === "assistant");
+      const hasAssistantResponse = messages.some((m) => m.role === "assistant");
       if (hasAssistantResponse) {
         // Update URL to use draft param instead of message param
         const url = new URL(window.location.href);
@@ -524,7 +582,14 @@ export function ChatInterface({
     window.history.replaceState({}, "", url.toString());
 
     setNeedsAutoContinue(true);
-  }, [initialMessage, initialMessageProcessed, isInitialized, seamlessTransition, messages, draftId]);
+  }, [
+    initialMessage,
+    initialMessageProcessed,
+    isInitialized,
+    seamlessTransition,
+    messages,
+    draftId,
+  ]);
 
   // Auto-continue conversation if last message was from user
   useEffect(() => {
@@ -586,7 +651,9 @@ export function ChatInterface({
 
         // Track deliverable type for pagination
         if (data.deliverableStyleMarker) {
-          setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
+          setCurrentDeliverableType(
+            data.deliverableStyleMarker.deliverableType
+          );
         }
       } catch {
         toast.error("Failed to continue conversation. Please try again.");
@@ -626,7 +693,11 @@ export function ChatInterface({
 
     const draft: ChatDraft = {
       id: draftId,
-      title: generateDraftTitle(messages, moodboardItemsForTitle, draftCreatedAt),
+      title: generateDraftTitle(
+        messages,
+        moodboardItemsForTitle,
+        draftCreatedAt
+      ),
       messages: messages.map((m) => ({
         id: m.id,
         role: m.role,
@@ -651,7 +722,14 @@ export function ChatInterface({
 
     saveDraft(draft);
     onDraftUpdateRef.current?.();
-  }, [messages, selectedStyles, moodboardItems, pendingTask, draftId, isInitialized]);
+  }, [
+    messages,
+    selectedStyles,
+    moodboardItems,
+    pendingTask,
+    draftId,
+    isInitialized,
+  ]);
 
   // Handle payment success - auto-confirm task after successful payment
   useEffect(() => {
@@ -694,7 +772,9 @@ export function ChatInterface({
 
             // Fetch fresh credits and notify user
             fetchFreshCredits().then(() => {
-              toast.info("Your task is ready to submit. Click 'Confirm & Submit' to proceed.");
+              toast.info(
+                "Your task is ready to submit. Click 'Confirm & Submit' to proceed."
+              );
             });
           }
         } else {
@@ -755,10 +835,12 @@ export function ChatInterface({
   // Helper function to scroll to bottom
   const scrollToBottom = useRef((smooth = false) => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       const target = viewport || scrollAreaRef.current;
       if (smooth) {
-        target.scrollTo({ top: target.scrollHeight, behavior: 'smooth' });
+        target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
       } else {
         target.scrollTop = target.scrollHeight;
       }
@@ -799,7 +881,9 @@ export function ChatInterface({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || errorData.message || "Upload failed");
+          throw new Error(
+            errorData.error?.message || errorData.message || "Upload failed"
+          );
         }
 
         const data = await response.json();
@@ -809,7 +893,9 @@ export function ChatInterface({
 
       const newFiles = await Promise.all(uploadPromises);
       // Filter out any undefined/null files
-      const validFiles = newFiles.filter((f): f is UploadedFile => !!f && !!f.fileUrl);
+      const validFiles = newFiles.filter(
+        (f): f is UploadedFile => !!f && !!f.fileUrl
+      );
       setUploadedFiles((prev) => [...prev, ...validFiles]);
 
       // Auto-add image uploads to moodboard
@@ -821,7 +907,9 @@ export function ChatInterface({
 
       toast.success(`${validFiles.length} file(s) uploaded`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to upload files");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload files"
+      );
     } finally {
       setIsUploading(false);
     }
@@ -881,7 +969,11 @@ export function ChatInterface({
 
     const currentFiles = [...uploadedFiles];
     // Auto-capitalize "i" to "I" in user messages
-    const processedContent = input ? autoCapitalizeI(input) : (currentFiles.length > 0 ? `Attached ${currentFiles.length} file(s)` : "");
+    const processedContent = input
+      ? autoCapitalizeI(input)
+      : currentFiles.length > 0
+      ? `Attached ${currentFiles.length} file(s)`
+      : "";
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -1029,13 +1121,16 @@ export function ChatInterface({
   };
 
   // Handle message feedback (thumbs up/down)
-  const handleMessageFeedback = (messageId: string, feedback: 'up' | 'down') => {
+  const handleMessageFeedback = (
+    messageId: string,
+    feedback: "up" | "down"
+  ) => {
     const currentFeedback = messageFeedback[messageId];
     const newFeedback = currentFeedback === feedback ? null : feedback;
 
-    setMessageFeedback(prev => ({
+    setMessageFeedback((prev) => ({
       ...prev,
-      [messageId]: newFeedback
+      [messageId]: newFeedback,
     }));
 
     // Log feedback for analytics (fire-and-forget)
@@ -1048,11 +1143,16 @@ export function ChatInterface({
           feedback: newFeedback,
           context: "chat",
         }),
-      }).catch(err => console.debug("Feedback logging:", err));
+      }).catch((err) => console.debug("Feedback logging:", err));
 
-      toast.success(newFeedback === 'up' ? "Thanks for the feedback!" : "We'll work on improving this", {
-        duration: 2000,
-      });
+      toast.success(
+        newFeedback === "up"
+          ? "Thanks for the feedback!"
+          : "We'll work on improving this",
+        {
+          duration: 2000,
+        }
+      );
     }
   };
 
@@ -1088,7 +1188,9 @@ export function ChatInterface({
           selectionContext: "chat",
           wasConfirmed: false,
         }),
-      }).catch(err => console.error("Failed to record style selection:", err));
+      }).catch((err) =>
+        console.error("Failed to record style selection:", err)
+      );
     }
   };
 
@@ -1173,9 +1275,14 @@ export function ChatInterface({
     if (!currentDeliverableType || isLoading) return;
 
     // Track which style axes we've already shown
-    const lastMessage = messages.filter(m => m.deliverableStyles && m.deliverableStyles.length > 0).pop();
-    const currentAxes = lastMessage?.deliverableStyles?.map(s => s.styleAxis) || [];
-    const newExcludedAxes = [...new Set([...excludedStyleAxes, ...currentAxes])];
+    const lastMessage = messages
+      .filter((m) => m.deliverableStyles && m.deliverableStyles.length > 0)
+      .pop();
+    const currentAxes =
+      lastMessage?.deliverableStyles?.map((s) => s.styleAxis) || [];
+    const newExcludedAxes = [
+      ...new Set([...excludedStyleAxes, ...currentAxes]),
+    ];
 
     setIsLoading(true);
 
@@ -1232,9 +1339,10 @@ export function ChatInterface({
   const handleSubmitStyles = async () => {
     if (selectedStyles.length === 0 || isLoading) return;
 
-    const styleMessage = selectedStyles.length === 1
-      ? `I like the ${selectedStyles[0]} style`
-      : `I like these styles: ${selectedStyles.join(", ")}`;
+    const styleMessage =
+      selectedStyles.length === 1
+        ? `I like the ${selectedStyles[0]} style`
+        : `I like these styles: ${selectedStyles.join(", ")}`;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -1295,17 +1403,20 @@ export function ChatInterface({
     }
   };
 
-  const handleSubmitDeliverableStyles = async (deliverableStyles: Array<{ id: string; name: string }>) => {
+  const handleSubmitDeliverableStyles = async (
+    deliverableStyles: Array<{ id: string; name: string }>
+  ) => {
     // Use moodboardStyleIds as the collection (unified model: collection = selection)
     if (moodboardStyleIds.length === 0 || isLoading) return;
 
     const selectedStyleNames = deliverableStyles
-      .filter(s => moodboardStyleIds.includes(s.id))
-      .map(s => s.name);
+      .filter((s) => moodboardStyleIds.includes(s.id))
+      .map((s) => s.name);
 
-    const styleMessage = selectedStyleNames.length === 1
-      ? `I like the ${selectedStyleNames[0]} style`
-      : `I like these styles: ${selectedStyleNames.join(", ")}`;
+    const styleMessage =
+      selectedStyleNames.length === 1
+        ? `I like the ${selectedStyleNames[0]} style`
+        : `I like these styles: ${selectedStyleNames.join(", ")}`;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -1428,10 +1539,11 @@ export function ChatInterface({
     }
   };
 
-
   // Use refreshed credits if available (after payment), otherwise fall back to session credits
-  const sessionCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
-  const userCredits = refreshedCredits !== null ? refreshedCredits : sessionCredits;
+  const sessionCredits =
+    (session?.user as { credits?: number } | undefined)?.credits || 0;
+  const userCredits =
+    refreshedCredits !== null ? refreshedCredits : sessionCredits;
 
   const handleConfirmTask = async () => {
     if (!pendingTask) return;
@@ -1482,7 +1594,9 @@ export function ChatInterface({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error?.message || error.message || "Failed to create task");
+        throw new Error(
+          error.error?.message || error.message || "Failed to create task"
+        );
       }
 
       const result = await response.json();
@@ -1499,7 +1613,11 @@ export function ChatInterface({
       const successMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: `**Your task has been submitted!**\n\n${result.data.assignedTo ? `**${result.data.assignedTo}** has been assigned to work on your project.` : "We're finding the perfect artist for your project."} You'll receive updates as your design progresses.`,
+        content: `**Your task has been submitted!**\n\n${
+          result.data.assignedTo
+            ? `**${result.data.assignedTo}** has been assigned to work on your project.`
+            : "We're finding the perfect artist for your project."
+        } You'll receive updates as your design progresses.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, successMessage]);
@@ -1527,12 +1645,14 @@ export function ChatInterface({
             assignedAt: taskResult.task.assignedAt,
             completedAt: taskResult.task.completedAt,
             createdAt: taskResult.task.createdAt,
-            freelancer: taskResult.task.freelancer ? {
-              id: taskResult.task.freelancer.id,
-              name: taskResult.task.freelancer.name,
-              email: "",
-              image: taskResult.task.freelancer.image,
-            } : null,
+            freelancer: taskResult.task.freelancer
+              ? {
+                  id: taskResult.task.freelancer.id,
+                  name: taskResult.task.freelancer.name,
+                  email: "",
+                  image: taskResult.task.freelancer.image,
+                }
+              : null,
             files: taskResult.task.files,
             chatHistory: taskResult.task.chatHistory,
           };
@@ -1553,7 +1673,9 @@ export function ChatInterface({
 
       toast.success("Task created successfully!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create task");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create task"
+      );
       throw error; // Re-throw for modal handling
     } finally {
       setIsLoading(false);
@@ -1593,9 +1715,9 @@ export function ChatInterface({
     setHasRequestedTaskSummary(true);
 
     // Extract task info from conversation to construct task directly
-    const userMessages = messages.filter(m => m.role === "user");
-    const userContent = userMessages.map(m => m.content).join(" ");
-    const allContent = messages.map(m => m.content).join(" ");
+    const userMessages = messages.filter((m) => m.role === "user");
+    const userContent = userMessages.map((m) => m.content).join(" ");
+    const allContent = messages.map((m) => m.content).join(" ");
 
     // Extract title from first user message or moodboard context
     let title = "Design Request";
@@ -1605,13 +1727,22 @@ export function ChatInterface({
     const contentLower = userContent.toLowerCase();
     if (contentLower.includes("carousel")) {
       title = "Instagram Carousel";
-    } else if (contentLower.includes("instagram") && contentLower.includes("story")) {
+    } else if (
+      contentLower.includes("instagram") &&
+      contentLower.includes("story")
+    ) {
       title = "Instagram Stories";
-    } else if (contentLower.includes("instagram") || contentLower.includes("post")) {
+    } else if (
+      contentLower.includes("instagram") ||
+      contentLower.includes("post")
+    ) {
       title = "Instagram Posts";
     } else if (contentLower.includes("linkedin")) {
       title = "LinkedIn Content";
-    } else if (contentLower.includes("video") || contentLower.includes("reel")) {
+    } else if (
+      contentLower.includes("video") ||
+      contentLower.includes("reel")
+    ) {
       title = "Video Content";
     } else if (contentLower.includes("logo")) {
       title = "Logo Design";
@@ -1634,8 +1765,10 @@ export function ChatInterface({
     // Determine category
     let category = "Social Media";
     if (contentLower.includes("logo")) category = "Logo Design";
-    else if (contentLower.includes("video") || contentLower.includes("reel")) category = "Video";
-    else if (contentLower.includes("banner") || contentLower.includes("ad")) category = "Advertising";
+    else if (contentLower.includes("video") || contentLower.includes("reel"))
+      category = "Video";
+    else if (contentLower.includes("banner") || contentLower.includes("ad"))
+      category = "Advertising";
     else if (contentLower.includes("brand")) category = "Branding";
 
     // Smart credit calculation based on category, quantity, and complexity
@@ -1644,10 +1777,10 @@ export function ChatInterface({
     // Base credits by category
     const categoryBaseCredits: Record<string, number> = {
       "Social Media": 15,
-      "Advertising": 20,
-      "Video": 30,
+      Advertising: 20,
+      Video: 30,
       "Logo Design": 40,
-      "Branding": 60,
+      Branding: 60,
     };
     creditsRequired = categoryBaseCredits[category] || 15;
 
@@ -1664,7 +1797,8 @@ export function ChatInterface({
         const count = parseInt(match[1], 10);
         if (count > 1 && count <= 20) {
           // Add 3-5 credits per additional item depending on category
-          const perItemCredits = category === "Video" ? 5 : (category === "Advertising" ? 4 : 3);
+          const perItemCredits =
+            category === "Video" ? 5 : category === "Advertising" ? 4 : 3;
           creditsRequired += (count - 1) * perItemCredits;
           break;
         }
@@ -1672,13 +1806,23 @@ export function ChatInterface({
     }
 
     // Adjust for complexity indicators
-    if (contentLower.includes("animation") || contentLower.includes("animated")) {
+    if (
+      contentLower.includes("animation") ||
+      contentLower.includes("animated")
+    ) {
       creditsRequired += 10;
     }
-    if (contentLower.includes("multiple platforms") || contentLower.includes("multi-platform")) {
+    if (
+      contentLower.includes("multiple platforms") ||
+      contentLower.includes("multi-platform")
+    ) {
       creditsRequired += 5;
     }
-    if (contentLower.includes("rush") || contentLower.includes("urgent") || contentLower.includes("asap")) {
+    if (
+      contentLower.includes("rush") ||
+      contentLower.includes("urgent") ||
+      contentLower.includes("asap")
+    ) {
       creditsRequired = Math.round(creditsRequired * 1.25); // 25% rush fee
     }
 
@@ -1703,15 +1847,23 @@ export function ChatInterface({
   const getChatTitle = () => {
     if (messages.length <= 1) return null;
 
-    const userMessages = messages.filter(m => m.role === "user");
+    const userMessages = messages.filter((m) => m.role === "user");
     if (userMessages.length === 0) return null;
 
-    const allUserContent = userMessages.map(m => m.content.toLowerCase()).join(" ");
+    const allUserContent = userMessages
+      .map((m) => m.content.toLowerCase())
+      .join(" ");
 
     let contentType = "";
-    if (allUserContent.includes("instagram stories") || allUserContent.includes("story")) {
+    if (
+      allUserContent.includes("instagram stories") ||
+      allUserContent.includes("story")
+    ) {
       contentType = "Instagram Stories";
-    } else if (allUserContent.includes("instagram") || allUserContent.includes("feed post")) {
+    } else if (
+      allUserContent.includes("instagram") ||
+      allUserContent.includes("feed post")
+    ) {
       contentType = "Instagram Posts";
     } else if (allUserContent.includes("linkedin")) {
       contentType = "LinkedIn Content";
@@ -1721,12 +1873,19 @@ export function ChatInterface({
       contentType = "Logo Design";
     } else if (allUserContent.includes("video")) {
       contentType = "Video Content";
-    } else if (allUserContent.includes("website") || allUserContent.includes("web")) {
+    } else if (
+      allUserContent.includes("website") ||
+      allUserContent.includes("web")
+    ) {
       contentType = "Web Design";
     }
 
     let quantity = "";
-    if (allUserContent.includes("series") || allUserContent.includes("multiple") || allUserContent.includes("pack")) {
+    if (
+      allUserContent.includes("series") ||
+      allUserContent.includes("multiple") ||
+      allUserContent.includes("pack")
+    ) {
       quantity = "Series";
     }
 
@@ -1737,8 +1896,11 @@ export function ChatInterface({
     }
 
     const content = userMessages[0].content;
-    const contentStr = typeof content === 'string' ? content : String(content || 'New Request');
-    return contentStr.length > 40 ? contentStr.substring(0, 40) + "..." : contentStr;
+    const contentStr =
+      typeof content === "string" ? content : String(content || "New Request");
+    return contentStr.length > 40
+      ? contentStr.substring(0, 40) + "..."
+      : contentStr;
   };
 
   const chatTitle = seamlessTransition ? getChatTitle() : null;
@@ -1781,7 +1943,9 @@ export function ChatInterface({
 
   // Edit Last Message - Allow user to edit and re-send
   const handleEditLastMessage = () => {
-    const lastUserMsgIndex = [...messages].reverse().findIndex(m => m.role === "user");
+    const lastUserMsgIndex = [...messages]
+      .reverse()
+      .findIndex((m) => m.role === "user");
     if (lastUserMsgIndex === -1) return;
 
     const actualIndex = messages.length - 1 - lastUserMsgIndex;
@@ -1791,7 +1955,7 @@ export function ChatInterface({
     setInput(msgToEdit.content);
 
     // Remove all messages from this one onwards
-    setMessages(prev => prev.slice(0, actualIndex));
+    setMessages((prev) => prev.slice(0, actualIndex));
 
     // Clear any pending task that was generated
     setPendingTask(null);
@@ -1823,23 +1987,65 @@ export function ChatInterface({
 
   // Format task status for display
   const getStatusDisplay = (status: string) => {
-    const statusMap: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-      PENDING: { label: "Pending", color: "bg-yellow-500/10 text-yellow-500", icon: <Clock className="h-3 w-3" /> },
-      ASSIGNED: { label: "Assigned", color: "bg-blue-500/10 text-blue-500", icon: <User className="h-3 w-3" /> },
-      IN_PROGRESS: { label: "In Progress", color: "bg-primary/10 text-primary", icon: <Activity className="h-3 w-3" /> },
-      PENDING_ADMIN_REVIEW: { label: "Under Review", color: "bg-orange-500/10 text-orange-500", icon: <AlertCircle className="h-3 w-3" /> },
-      PENDING_REVIEW: { label: "Pending Review", color: "bg-purple-500/10 text-purple-500", icon: <Timer className="h-3 w-3" /> },
-      REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-500/10 text-red-500", icon: <RotateCcw className="h-3 w-3" /> },
-      COMPLETED: { label: "Completed", color: "bg-emerald-600/10 text-emerald-500", icon: <CheckCircle2 className="h-3 w-3" /> },
-      CANCELLED: { label: "Cancelled", color: "bg-muted text-muted-foreground", icon: <X className="h-3 w-3" /> },
+    const statusMap: Record<
+      string,
+      { label: string; color: string; icon: React.ReactNode }
+    > = {
+      PENDING: {
+        label: "Pending",
+        color: "bg-yellow-500/10 text-yellow-500",
+        icon: <Clock className="h-3 w-3" />,
+      },
+      ASSIGNED: {
+        label: "Assigned",
+        color: "bg-blue-500/10 text-blue-500",
+        icon: <User className="h-3 w-3" />,
+      },
+      IN_PROGRESS: {
+        label: "In Progress",
+        color: "bg-primary/10 text-primary",
+        icon: <Activity className="h-3 w-3" />,
+      },
+      PENDING_ADMIN_REVIEW: {
+        label: "Under Review",
+        color: "bg-orange-500/10 text-orange-500",
+        icon: <AlertCircle className="h-3 w-3" />,
+      },
+      PENDING_REVIEW: {
+        label: "Pending Review",
+        color: "bg-purple-500/10 text-purple-500",
+        icon: <Timer className="h-3 w-3" />,
+      },
+      REVISION_REQUESTED: {
+        label: "Revision Requested",
+        color: "bg-red-500/10 text-red-500",
+        icon: <RotateCcw className="h-3 w-3" />,
+      },
+      COMPLETED: {
+        label: "Completed",
+        color: "bg-emerald-600/10 text-emerald-500",
+        icon: <CheckCircle2 className="h-3 w-3" />,
+      },
+      CANCELLED: {
+        label: "Cancelled",
+        color: "bg-muted text-muted-foreground",
+        icon: <X className="h-3 w-3" />,
+      },
     };
-    return statusMap[status] || { label: status, color: "bg-muted text-muted-foreground", icon: <Info className="h-3 w-3" /> };
+    return (
+      statusMap[status] || {
+        label: status,
+        color: "bg-muted text-muted-foreground",
+        icon: <Info className="h-3 w-3" />,
+      }
+    );
   };
 
   // Get chat creation date (from first message or task creation date)
-  const chatCreatedAt = isTaskMode && taskData?.createdAt
-    ? new Date(taskData.createdAt)
-    : messages.length > 0
+  const chatCreatedAt =
+    isTaskMode && taskData?.createdAt
+      ? new Date(taskData.createdAt)
+      : messages.length > 0
       ? messages[0].timestamp
       : new Date();
 
@@ -1854,7 +2060,10 @@ export function ChatInterface({
       brief={brief}
       onBriefUpdate={updateBrief}
       onExportBrief={exportBrief}
-      briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
+      briefCompletion={Math.max(
+        briefCompletion,
+        progressState.progressPercentage
+      )}
       showProgress={seamlessTransition && !isTaskMode && showRightPanel}
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
@@ -1881,8 +2090,12 @@ export function ChatInterface({
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                   <ImageIcon className="h-8 w-8 text-primary" />
                 </div>
-                <p className="text-lg font-medium text-foreground">Drop files here</p>
-                <p className="text-sm text-muted-foreground mt-1">Images, videos, PDFs, and more</p>
+                <p className="text-lg font-medium text-foreground">
+                  Drop files here
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Images, videos, PDFs, and more
+                </p>
               </div>
             </motion.div>
           )}
@@ -1897,9 +2110,12 @@ export function ChatInterface({
               <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
                 <Trash2 className="h-6 w-6 text-red-400" />
               </div>
-              <AlertDialogTitle className="text-center text-foreground">Delete this chat?</AlertDialogTitle>
+              <AlertDialogTitle className="text-center text-foreground">
+                Delete this chat?
+              </AlertDialogTitle>
               <AlertDialogDescription className="text-center text-muted-foreground">
-                This will permanently delete this conversation and all its messages. This action cannot be undone.
+                This will permanently delete this conversation and all its
+                messages. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
@@ -1917,15 +2133,21 @@ export function ChatInterface({
         </AlertDialog>
 
         {/* Start Over confirmation dialog */}
-        <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+        <AlertDialog
+          open={showStartOverDialog}
+          onOpenChange={setShowStartOverDialog}
+        >
           <AlertDialogContent className="bg-card border-border max-w-md">
             <AlertDialogHeader>
               <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
                 <RotateCcw className="h-6 w-6 text-amber-400" />
               </div>
-              <AlertDialogTitle className="text-center text-foreground">Start fresh?</AlertDialogTitle>
+              <AlertDialogTitle className="text-center text-foreground">
+                Start fresh?
+              </AlertDialogTitle>
               <AlertDialogDescription className="text-center text-muted-foreground">
-                This will clear the current conversation and start a new one. Your moodboard and brief will also be reset.
+                This will clear the current conversation and start a new one.
+                Your moodboard and brief will also be reset.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
@@ -1949,7 +2171,11 @@ export function ChatInterface({
               {messages.map((message, index) => (
                 <motion.div
                   key={message.id}
-                  initial={seamlessTransition && index > 0 ? { opacity: 0, y: 10 } : false}
+                  initial={
+                    seamlessTransition && index > 0
+                      ? { opacity: 0, y: 10 }
+                      : false
+                  }
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className={cn(
@@ -1987,198 +2213,252 @@ export function ChatInterface({
                               if (animatingMessageId === message.id) {
                                 setAnimatingMessageId(null);
                                 // Mark this message's typing as complete to show CTAs
-                                setCompletedTypingIds(prev => new Set(prev).add(message.id));
+                                setCompletedTypingIds((prev) =>
+                                  new Set(prev).add(message.id)
+                                );
                               }
                             }}
                             className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
                           />
 
-                        {/* Attachments */}
-                        {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-3 ml-8">
-                            <FileAttachmentList files={message.attachments} />
-                          </div>
-                        )}
-
-                        {/* Style References - only show after typing completes */}
-                        {message.styleReferences && message.styleReferences.length > 0 && (
-                          animatingMessageId !== message.id || completedTypingIds.has(message.id)
-                        ) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="mt-5 ml-8"
-                          >
-                            <p className="text-sm font-medium mb-4 text-foreground">
-                              Which style direction resonates with you?
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
-                              {message.styleReferences.slice(0, 3).map((style, idx) => (
-                                <div
-                                  key={`${style.name}-${idx}`}
-                                  role="button"
-                                  tabIndex={0}
-                                  aria-pressed={selectedStyles.includes(style.name)}
-                                  aria-label={`Select ${style.name} style`}
-                                  className={cn(
-                                    "group relative rounded-xl border overflow-hidden cursor-pointer transition-all duration-200",
-                                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                                    selectedStyles.includes(style.name)
-                                      ? "border-primary/50 bg-primary/5 shadow-md"
-                                      : "border-border hover:border-primary/30 hover:shadow-md bg-card"
-                                  )}
-                                  onClick={() => handleStyleSelect(style.name)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                      e.preventDefault();
-                                      handleStyleSelect(style.name);
-                                    }
-                                  }}
-                                >
-                                  {/* Selection indicator */}
-                                  {selectedStyles.includes(style.name) && (
-                                    <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                                      <Check className="h-4 w-4 text-primary-foreground" />
-                                    </div>
-                                  )}
-
-                                  {/* Image */}
-                                  <div className="aspect-[4/3] bg-muted overflow-hidden">
-                                    {style.imageUrl ? (
-                                      <img
-                                        src={style.imageUrl}
-                                        alt={style.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Content */}
-                                  <div className="p-3">
-                                    <p className="text-sm font-semibold text-foreground mb-1">
-                                      {style.name}
-                                    </p>
-                                    {style.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-2">
-                                        {style.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex items-center justify-between mt-3">
-                              <p className="text-xs text-muted-foreground ml-1">
-                                Click to select · You can pick multiple or describe something else
-                              </p>
-                              {selectedStyles.length > 0 && (
-                                <Button
-                                  onClick={handleSubmitStyles}
-                                  disabled={isLoading}
-                                  size="sm"
-                                  className="gap-2"
-                                >
-                                  Continue with {selectedStyles.length === 1 ? "style" : `${selectedStyles.length} styles`}
-                                  <ArrowRight className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-
-                        {/* Deliverable Style References - only show after typing completes */}
-                        {message.deliverableStyles && message.deliverableStyles.length > 0 && (
-                          animatingMessageId !== message.id || completedTypingIds.has(message.id)
-                        ) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="mt-5 ml-8"
-                          >
-                            {/* Only show full grid for the most recent message with styles */}
-                            {index === lastStyleMessageIndex ? (
-                              <div className="space-y-4">
-                                <p className="text-sm font-medium text-foreground">
-                                  What style direction speaks to you?
-                                </p>
-                                <StyleSelectionGrid
-                                  styles={message.deliverableStyles}
-                                  collectionStyleIds={moodboardStyleIds}
-                                  onCardClick={handleStyleCardClick}
-                                  onAddToCollection={handleAddToCollection}
-                                  onRemoveFromCollection={handleRemoveFromCollection}
-                                  onShowMore={handleShowMoreStyles}
-                                  onShowDifferent={handleShowDifferentStyles}
-                                  isLoading={isLoading || index < messages.length - 1}
+                          {/* Attachments */}
+                          {message.attachments &&
+                            message.attachments.length > 0 && (
+                              <div className="mt-3 ml-8">
+                                <FileAttachmentList
+                                  files={message.attachments}
                                 />
-                                {/* Inline collection - shows collected styles */}
-                                {moodboardStyleIds.length > 0 && (
-                                  <InlineCollection
-                                    items={moodboardItems.filter(i => i.type === 'style')}
-                                    onRemoveItem={removeMoodboardItem}
-                                    onClearAll={handleClearStyleCollection}
-                                    onContinue={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
-                                    isLoading={isLoading || index < messages.length - 1}
-                                  />
-                                )}
-                              </div>
-                            ) : (
-                              /* Collapsed summary for older style messages */
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Palette className="h-4 w-4" />
-                                <span>{message.deliverableStyles.length} style options shown</span>
-                                {moodboardStyleIds.length > 0 && (
-                                  <span className="text-primary">
-                                    • {moodboardStyleIds.filter(id =>
-                                      message.deliverableStyles?.some(s => s.id === id)
-                                    ).length} in collection
-                                  </span>
-                                )}
                               </div>
                             )}
-                          </motion.div>
-                        )}
 
-                        {/* Task Proposal */}
-                        {message.taskProposal && (
-                          <div className="mt-4 ml-8">
-                            <TaskProposalCard proposal={message.taskProposal} />
-                          </div>
-                        )}
+                          {/* Style References - only show after typing completes */}
+                          {message.styleReferences &&
+                            message.styleReferences.length > 0 &&
+                            (animatingMessageId !== message.id ||
+                              completedTypingIds.has(message.id)) && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="mt-5 ml-8"
+                              >
+                                <p className="text-sm font-medium mb-4 text-foreground">
+                                  Which style direction resonates with you?
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+                                  {message.styleReferences
+                                    .slice(0, 3)
+                                    .map((style, idx) => (
+                                      <div
+                                        key={`${style.name}-${idx}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-pressed={selectedStyles.includes(
+                                          style.name
+                                        )}
+                                        aria-label={`Select ${style.name} style`}
+                                        className={cn(
+                                          "group relative rounded-xl border overflow-hidden cursor-pointer transition-all duration-200",
+                                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                          selectedStyles.includes(style.name)
+                                            ? "border-primary/50 bg-primary/5 shadow-md"
+                                            : "border-border hover:border-primary/30 hover:shadow-md bg-card"
+                                        )}
+                                        onClick={() =>
+                                          handleStyleSelect(style.name)
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (
+                                            e.key === "Enter" ||
+                                            e.key === " "
+                                          ) {
+                                            e.preventDefault();
+                                            handleStyleSelect(style.name);
+                                          }
+                                        }}
+                                      >
+                                        {/* Selection indicator */}
+                                        {selectedStyles.includes(
+                                          style.name
+                                        ) && (
+                                          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                                            <Check className="h-4 w-4 text-primary-foreground" />
+                                          </div>
+                                        )}
 
-                        {/* Quick Options - only show if NO deliverable styles AND after typing completes */}
-                        {message.quickOptions &&
-                         (!message.deliverableStyles || message.deliverableStyles.length === 0) &&
-                         (animatingMessageId !== message.id || completedTypingIds.has(message.id)) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="mt-4 ml-8"
-                          >
-                            <QuickOptions
-                              options={message.quickOptions}
-                              onSelect={handleQuickOptionClick}
-                              disabled={isLoading || index < messages.length - 1}
-                            />
-                          </motion.div>
-                        )}
+                                        {/* Image */}
+                                        <div className="aspect-[4/3] bg-muted overflow-hidden">
+                                          {style.imageUrl ? (
+                                            <img
+                                              src={style.imageUrl}
+                                              alt={style.name}
+                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="p-3">
+                                          <p className="text-sm font-semibold text-foreground mb-1">
+                                            {style.name}
+                                          </p>
+                                          {style.description && (
+                                            <p className="text-xs text-muted-foreground line-clamp-2">
+                                              {style.description}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                                <div className="flex items-center justify-between mt-3">
+                                  <p className="text-xs text-muted-foreground ml-1">
+                                    Click to select · You can pick multiple or
+                                    describe something else
+                                  </p>
+                                  {selectedStyles.length > 0 && (
+                                    <Button
+                                      onClick={handleSubmitStyles}
+                                      disabled={isLoading}
+                                      size="sm"
+                                      className="gap-2"
+                                    >
+                                      Continue with{" "}
+                                      {selectedStyles.length === 1
+                                        ? "style"
+                                        : `${selectedStyles.length} styles`}
+                                      <ArrowRight className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+
+                          {/* Deliverable Style References - only show after typing completes */}
+                          {message.deliverableStyles &&
+                            message.deliverableStyles.length > 0 &&
+                            (animatingMessageId !== message.id ||
+                              completedTypingIds.has(message.id)) && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="mt-5 ml-8"
+                              >
+                                {/* Only show full grid for the most recent message with styles */}
+                                {index === lastStyleMessageIndex ? (
+                                  <div className="space-y-4">
+                                    <p className="text-sm font-medium text-foreground">
+                                      What style direction speaks to you?
+                                    </p>
+                                    <StyleSelectionGrid
+                                      styles={message.deliverableStyles}
+                                      collectionStyleIds={moodboardStyleIds}
+                                      onCardClick={handleStyleCardClick}
+                                      onAddToCollection={handleAddToCollection}
+                                      onRemoveFromCollection={
+                                        handleRemoveFromCollection
+                                      }
+                                      onShowMore={handleShowMoreStyles}
+                                      onShowDifferent={
+                                        handleShowDifferentStyles
+                                      }
+                                      isLoading={
+                                        isLoading || index < messages.length - 1
+                                      }
+                                    />
+                                    {/* Inline collection - shows collected styles */}
+                                    {moodboardStyleIds.length > 0 && (
+                                      <InlineCollection
+                                        items={moodboardItems.filter(
+                                          (i) => i.type === "style"
+                                        )}
+                                        onRemoveItem={removeMoodboardItem}
+                                        onClearAll={handleClearStyleCollection}
+                                        onContinue={() =>
+                                          handleSubmitDeliverableStyles(
+                                            message.deliverableStyles || []
+                                          )
+                                        }
+                                        isLoading={
+                                          isLoading ||
+                                          index < messages.length - 1
+                                        }
+                                      />
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Collapsed summary for older style messages */
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Palette className="h-4 w-4" />
+                                    <span>
+                                      {message.deliverableStyles.length} style
+                                      options shown
+                                    </span>
+                                    {moodboardStyleIds.length > 0 && (
+                                      <span className="text-primary">
+                                        •{" "}
+                                        {
+                                          moodboardStyleIds.filter((id) =>
+                                            message.deliverableStyles?.some(
+                                              (s) => s.id === id
+                                            )
+                                          ).length
+                                        }{" "}
+                                        in collection
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+
+                          {/* Task Proposal */}
+                          {message.taskProposal && (
+                            <div className="mt-4 ml-8">
+                              <TaskProposalCard
+                                proposal={message.taskProposal}
+                              />
+                            </div>
+                          )}
+
+                          {/* Quick Options - only show if NO deliverable styles AND after typing completes */}
+                          {message.quickOptions &&
+                            (!message.deliverableStyles ||
+                              message.deliverableStyles.length === 0) &&
+                            (animatingMessageId !== message.id ||
+                              completedTypingIds.has(message.id)) && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="mt-4"
+                              >
+                                <QuickOptions
+                                  options={message.quickOptions}
+                                  onSelect={handleQuickOptionClick}
+                                  disabled={
+                                    isLoading || index < messages.length - 1
+                                  }
+                                />
+                              </motion.div>
+                            )}
                         </div>
 
                         {/* Message actions - copy and feedback */}
                         <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Feedback buttons */}
                           <button
-                            onClick={() => handleMessageFeedback(message.id, 'up')}
+                            onClick={() =>
+                              handleMessageFeedback(message.id, "up")
+                            }
                             className={cn(
                               "p-1.5 rounded-md transition-colors",
-                              messageFeedback[message.id] === 'up'
+                              messageFeedback[message.id] === "up"
                                 ? "text-emerald-500 bg-emerald-600/10"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
@@ -2187,10 +2467,12 @@ export function ChatInterface({
                             <ThumbsUp className="h-3 w-3" />
                           </button>
                           <button
-                            onClick={() => handleMessageFeedback(message.id, 'down')}
+                            onClick={() =>
+                              handleMessageFeedback(message.id, "down")
+                            }
                             className={cn(
                               "p-1.5 rounded-md transition-colors",
-                              messageFeedback[message.id] === 'down'
+                              messageFeedback[message.id] === "down"
                                 ? "text-red-500 bg-red-500/10"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
@@ -2202,7 +2484,9 @@ export function ChatInterface({
                           <div className="h-3 w-px bg-border mx-0.5" />
                           {/* Copy button */}
                           <button
-                            onClick={() => handleCopyMessage(message.content, message.id)}
+                            onClick={() =>
+                              handleCopyMessage(message.content, message.id)
+                            }
                             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs flex items-center gap-1"
                           >
                             {copiedMessageId === message.id ? (
@@ -2230,26 +2514,30 @@ export function ChatInterface({
                           </p>
                           {/* Edit and user icons - inside the bubble on the right */}
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                            {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
-                              <button
-                                onClick={handleEditLastMessage}
-                                className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
-                                title="Edit this message"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                            )}
+                            {index === lastUserMessageIndex &&
+                              !isLoading &&
+                              !isTaskMode &&
+                              !pendingTask && (
+                                <button
+                                  onClick={handleEditLastMessage}
+                                  className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
+                                  title="Edit this message"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             <div className="p-1.5 text-muted-foreground">
                               <User className="h-3.5 w-3.5" />
                             </div>
                           </div>
                         </div>
                         {/* User attachments */}
-                        {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-2">
-                            <FileAttachmentList files={message.attachments} />
-                          </div>
-                        )}
+                        {message.attachments &&
+                          message.attachments.length > 0 && (
+                            <div className="mt-2">
+                              <FileAttachmentList files={message.attachments} />
+                            </div>
+                          )}
                       </div>
                     </div>
                   )}
@@ -2259,29 +2547,33 @@ export function ChatInterface({
 
             {/* Enhanced loading indicator with progressive messages */}
             {isLoading && (
-              <LoadingIndicator requestStartTime={requestStartTimeRef.current} />
+              <LoadingIndicator
+                requestStartTime={requestStartTimeRef.current}
+              />
             )}
           </div>
         </ScrollArea>
 
-
         {/* Skip to Submit option - shows when user has styles selected and some context */}
-        {!pendingTask && !showManualSubmit && moodboardItems.length > 0 && messages.filter(m => m.role === 'user').length >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-3"
-          >
-            <button
-              onClick={handleRequestTaskSummary}
-              disabled={isLoading}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 disabled:opacity-50"
+        {!pendingTask &&
+          !showManualSubmit &&
+          moodboardItems.length > 0 &&
+          messages.filter((m) => m.role === "user").length >= 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center mb-3"
             >
-              <ChevronRight className="h-3.5 w-3.5" />
-              Skip to submit
-            </button>
-          </motion.div>
-        )}
+              <button
+                onClick={handleRequestTaskSummary}
+                disabled={isLoading}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 disabled:opacity-50"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+                Skip to submit
+              </button>
+            </motion.div>
+          )}
 
         {/* Manual submit fallback when AI says "ready" but no [TASK_READY] */}
         {showManualSubmit && !pendingTask && (
@@ -2296,7 +2588,9 @@ export function ChatInterface({
                   <Sparkles className="h-5 w-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Ready to submit?</p>
+                  <p className="font-medium text-foreground">
+                    Ready to submit?
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Click to generate your task summary
                   </p>
@@ -2331,7 +2625,9 @@ export function ChatInterface({
                   <Check className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Ready to submit this task?</p>
+                  <p className="font-medium text-foreground">
+                    Ready to submit this task?
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {pendingTask.creditsRequired ?? 15} credits required
                     {userCredits < (pendingTask.creditsRequired ?? 15) ? (
@@ -2339,7 +2635,9 @@ export function ChatInterface({
                         (You have {userCredits} credits)
                       </span>
                     ) : (
-                      <span className="text-emerald-500 ml-1">(You have {userCredits} credits)</span>
+                      <span className="text-emerald-500 ml-1">
+                        (You have {userCredits} credits)
+                      </span>
                     )}
                   </p>
                 </div>
@@ -2363,7 +2661,9 @@ export function ChatInterface({
                   ) : (
                     <Sparkles className="h-4 w-4 mr-2" />
                   )}
-                  {userCredits < (pendingTask.creditsRequired ?? 15) ? "Buy Credits" : "Review & Submit"}
+                  {userCredits < (pendingTask.creditsRequired ?? 15)
+                    ? "Buy Credits"
+                    : "Review & Submit"}
                 </Button>
               </div>
             </div>
@@ -2417,8 +2717,9 @@ export function ChatInterface({
                   setInput(e.target.value);
                   // Auto-resize textarea
                   const target = e.target;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 200) + 'px';
+                  target.style.height = "auto";
+                  target.style.height =
+                    Math.min(target.scrollHeight, 200) + "px";
                 }}
                 onKeyDown={(e) => {
                   // Submit on Enter (without shift) or Cmd/Ctrl+Enter
@@ -2430,13 +2731,15 @@ export function ChatInterface({
                     handleSend();
                   }
                 }}
-                placeholder={messages.length === 0
-                  ? "What would you like to create today?"
-                  : "Type your message..."}
+                placeholder={
+                  messages.length === 0
+                    ? "What would you like to create today?"
+                    : "Type your message..."
+                }
                 disabled={isLoading}
                 rows={1}
                 className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all"
-                style={{ height: 'auto', overflow: 'hidden' }}
+                style={{ height: "auto", overflow: "hidden" }}
               />
             </div>
 
@@ -2479,7 +2782,9 @@ export function ChatInterface({
                 {/* Credits indicator */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  <span className="text-muted-foreground">{userCredits} credits available</span>
+                  <span className="text-muted-foreground">
+                    {userCredits} credits available
+                  </span>
                 </div>
               </div>
 
@@ -2487,14 +2792,12 @@ export function ChatInterface({
               <div className="flex items-center gap-2">
                 <Button
                   onClick={handleSend}
-                  disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
+                  disabled={
+                    (!input.trim() && uploadedFiles.length === 0) || isLoading
+                  }
                   className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
                 >
-                  {isLoading ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    "Submit"
-                  )}
+                  {isLoading ? <LoadingSpinner size="sm" /> : "Submit"}
                 </Button>
               </div>
             </div>
@@ -2515,25 +2818,25 @@ export function ChatInterface({
                     label: "Instagram Carousel",
                     prompt: "Create a 5-slide Instagram carousel about ",
                     icon: LayoutGrid,
-                    hint: "5 slides"
+                    hint: "5 slides",
                   },
                   {
                     label: "Story Series",
                     prompt: "Design Instagram stories to promote ",
                     icon: Share2,
-                    hint: "3-5 stories"
+                    hint: "3-5 stories",
                   },
                   {
                     label: "LinkedIn Post",
                     prompt: "Create a professional LinkedIn post announcing ",
                     icon: Bookmark,
-                    hint: "1 image"
+                    hint: "1 image",
                   },
                   {
                     label: "Ad Campaign",
                     prompt: "Design ads for a campaign promoting ",
                     icon: Megaphone,
-                    hint: "multi-size"
+                    hint: "multi-size",
                   },
                 ].map((item) => (
                   <button
@@ -2553,8 +2856,12 @@ export function ChatInterface({
                       <item.icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.hint}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.hint}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -2563,10 +2870,15 @@ export function ChatInterface({
               {/* Keyboard hint */}
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">
-                  {typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent) ? '⌘' : 'Ctrl'}
+                  {typeof navigator !== "undefined" &&
+                  /Mac/.test(navigator.userAgent)
+                    ? "⌘"
+                    : "Ctrl"}
                 </kbd>
                 <span>+</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">Enter</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">
+                  Enter
+                </kbd>
                 <span className="ml-1">to send</span>
               </div>
             </motion.div>
@@ -2579,7 +2891,11 @@ export function ChatInterface({
         style={selectedStyleForModal}
         isOpen={!!selectedStyleForModal}
         onClose={() => setSelectedStyleForModal(null)}
-        isInCollection={selectedStyleForModal ? hasMoodboardItem(selectedStyleForModal.id) : false}
+        isInCollection={
+          selectedStyleForModal
+            ? hasMoodboardItem(selectedStyleForModal.id)
+            : false
+        }
         onAddToCollection={handleAddToCollection}
         onRemoveFromCollection={handleRemoveFromCollection}
       />
@@ -2602,7 +2918,9 @@ export function ChatInterface({
         onOpenChange={setShowCreditDialog}
         requiredCredits={pendingTask?.creditsRequired || 0}
         currentCredits={userCredits}
-        pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
+        pendingTaskState={
+          pendingTask ? { taskProposal: pendingTask, draftId } : undefined
+        }
       />
     </ChatLayout>
   );
