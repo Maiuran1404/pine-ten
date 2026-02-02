@@ -2261,18 +2261,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
   const archetype = BRAND_ARCHETYPES[archetypeKey];
 
   // Use fetched brand reference images, or show loading state
-  // Transform URLs to use smaller variants for faster loading
-  const getOptimizedImageUrl = (url: string) => {
-    // If URL contains /full.webp, replace with /small.webp for faster loading
-    if (url.includes("/full.webp")) {
-      return url.replace("/full.webp", "/small.webp");
-    }
-    return url;
-  };
-
-  const images = brandReferences.map((ref) =>
-    getOptimizedImageUrl(ref.imageUrl)
-  );
+  const images = brandReferences.map((ref) => ref.imageUrl);
 
   // If we have fewer than 4 images, duplicate them to fill 4 columns
   const displayImages =
@@ -2748,7 +2737,7 @@ function CreativeFocusStep({
   };
 
   return (
-    <GlowingCard glowColor="#9AA48C">
+    <GlowingCard glowColor="#9AA48C" className="w-full max-w-2xl">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         <motion.div variants={staggerItem} className="text-left mb-8">
           <h1
@@ -2762,7 +2751,7 @@ function CreativeFocusStep({
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {CREATIVE_FOCUS_OPTIONS.map((option) => {
             const isSelected = brandData.creativeFocus.includes(option.id);
             const Icon = iconMap[option.id] || Zap;
@@ -2772,7 +2761,7 @@ function CreativeFocusStep({
                 key={option.id}
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
-                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
+                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 min-h-[72px] ${
                   isSelected
                     ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
                     : "hover:bg-white/5"
@@ -2784,7 +2773,7 @@ function CreativeFocusStep({
                 }}
               >
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                     isSelected
                       ? "bg-[#9AA48C] text-black"
                       : "bg-white/10 text-white/50"
@@ -2792,13 +2781,17 @@ function CreativeFocusStep({
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium text-sm">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-medium text-sm leading-tight">
                     {option.title}
                   </h3>
-                  <p className="text-white/40 text-xs">{option.description}</p>
+                  <p className="text-white/40 text-xs mt-0.5 leading-tight">
+                    {option.description}
+                  </p>
                 </div>
-                {isSelected && <Check className="w-5 h-5 text-[#9AA48C]" />}
+                {isSelected && (
+                  <Check className="w-5 h-5 text-[#9AA48C] shrink-0" />
+                )}
               </motion.button>
             );
           })}
@@ -2832,7 +2825,7 @@ function CreativeFocusStep({
               </span>
             ) : (
               <>
-                Continue
+                Submit
                 <ArrowRight className="w-4 h-4 inline ml-2" />
               </>
             )}
@@ -4057,7 +4050,13 @@ function OnboardingContent() {
       // Set flag before refetching to prevent auto-redirect
       setShowingCompletionScreen(true);
       await refetchSession();
-      setStep("brand-ready");
+
+      // Clear state and redirect to dashboard
+      clearOnboardingState();
+      setIsExiting(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
     } catch (error) {
       console.error("Save error:", error);
       const message =
@@ -4149,14 +4148,11 @@ function OnboardingContent() {
 
       <main className="relative z-10 px-4 sm:px-6 py-20 sm:py-16 mx-auto lg:mx-0 lg:ml-[10%] w-full max-w-2xl">
         {/* Progress indicator for non-welcome steps */}
-        {step !== "welcome" &&
-          step !== "scanning" &&
-          step !== "brand-ready" &&
-          step !== "complete" && (
-            <div className="mb-6">
-              <ProgressIndicator steps={currentSteps} currentStep={step} />
-            </div>
-          )}
+        {step !== "welcome" && step !== "scanning" && step !== "complete" && (
+          <div className="mb-6">
+            <ProgressIndicator steps={currentSteps} currentStep={step} />
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {/* Welcome Screen */}

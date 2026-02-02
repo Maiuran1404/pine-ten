@@ -2494,8 +2494,11 @@ export function ChatInterface({
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Palette className="h-4 w-4" />
                                     <span>
-                                      {message.deliverableStyles.length} style
-                                      options shown
+                                      {Math.min(
+                                        3,
+                                        message.deliverableStyles.length
+                                      )}{" "}
+                                      style options shown
                                     </span>
                                     {moodboardStyleIds.length > 0 && (
                                       <span className="text-primary">
@@ -2545,60 +2548,6 @@ export function ChatInterface({
                                 />
                               </motion.div>
                             )}
-                        </div>
-
-                        {/* Message actions - copy and feedback */}
-                        <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {/* Feedback buttons */}
-                          <button
-                            onClick={() =>
-                              handleMessageFeedback(message.id, "up")
-                            }
-                            className={cn(
-                              "p-1.5 rounded-md transition-colors",
-                              messageFeedback[message.id] === "up"
-                                ? "text-emerald-500 bg-emerald-600/10"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                            title="Good response"
-                          >
-                            <ThumbsUp className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleMessageFeedback(message.id, "down")
-                            }
-                            className={cn(
-                              "p-1.5 rounded-md transition-colors",
-                              messageFeedback[message.id] === "down"
-                                ? "text-red-500 bg-red-500/10"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                            title="Could be better"
-                          >
-                            <ThumbsDown className="h-3 w-3" />
-                          </button>
-                          {/* Divider */}
-                          <div className="h-3 w-px bg-border mx-0.5" />
-                          {/* Copy button */}
-                          <button
-                            onClick={() =>
-                              handleCopyMessage(message.content, message.id)
-                            }
-                            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs flex items-center gap-1"
-                          >
-                            {copiedMessageId === message.id ? (
-                              <>
-                                <Check className="h-3 w-3 text-emerald-500" />
-                                <span className="text-emerald-500">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3 w-3" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
                         </div>
                       </div>
                     </div>
