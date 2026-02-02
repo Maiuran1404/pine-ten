@@ -32,7 +32,7 @@ export default function ChatPage() {
   const initializedRef = useRef(false);
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Collapsed by default in chat
 
   // Get current URL params
   const draftParam = searchParams.get("draft");
@@ -66,7 +66,9 @@ export default function ChatPage() {
 
   // Always use seamless transition (full-width) layout when there are params
   const hasUrlParams = !!draftParam || !!messageParam || !!paymentParam;
-  const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam);
+  const [initialMessage, setInitialMessage] = useState<string | null>(
+    () => messageParam
+  );
 
   // Handle initial mount and URL changes
   useEffect(() => {
@@ -107,11 +109,20 @@ export default function ChatPage() {
 
   // Features menu items
   const features = [
-    { icon: MessageCircle, label: "Chat", href: "/dashboard/chat", active: true },
+    {
+      icon: MessageCircle,
+      label: "Chat",
+      href: "/dashboard/chat",
+      active: true,
+    },
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
-    { icon: Archive, label: "Archived", href: "/dashboard/tasks?status=completed" },
+    {
+      icon: Archive,
+      label: "Archived",
+      href: "/dashboard/tasks?status=completed",
+    },
   ];
 
   return (
@@ -140,7 +151,9 @@ export default function ChatPage() {
               height={28}
               className="hidden dark:block"
             />
-            <span className="font-semibold text-lg text-foreground">Crafted</span>
+            <span className="font-semibold text-lg text-foreground">
+              Crafted
+            </span>
           </Link>
           <button
             onClick={() => setSidebarCollapsed(true)}
@@ -165,7 +178,9 @@ export default function ChatPage() {
 
         {/* Features section */}
         <div className="px-4 pb-2 flex-1">
-          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+            Features
+          </p>
           <nav className="space-y-1">
             {features.map((item) => (
               <Link
@@ -194,16 +209,24 @@ export default function ChatPage() {
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Starter Plan</span>
-                <span className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full font-medium">{userCredits} Credits</span>
+                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                  Starter Plan
+                </span>
+                <span className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full font-medium">
+                  {userCredits} Credits
+                </span>
               </div>
               <Link href="/dashboard/credits">
-                <Button size="sm" className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium">
+                <Button
+                  size="sm"
+                  className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium"
+                >
                   Get more Credits!
                 </Button>
               </Link>
               <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-3 text-center leading-relaxed">
-                Boost productivity with seamless tasks request and responsive AI, built to assist you.
+                Boost productivity with seamless tasks request and responsive
+                AI, built to assist you.
               </p>
             </div>
           </div>
@@ -295,7 +318,7 @@ export default function ChatPage() {
             onDraftUpdate={handleDraftUpdate}
             initialMessage={initialMessage}
             seamlessTransition={true}
-            showRightPanel={false}
+            showRightPanel={true}
             onChatStart={() => {}}
           />
         </div>

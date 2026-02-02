@@ -339,6 +339,7 @@ export function ChatInterface({
   const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(
     new Set()
   );
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [messageFeedback, setMessageFeedback] = useState<
     Record<string, "up" | "down" | null>
   >({});
@@ -442,6 +443,46 @@ export function ChatInterface({
     () => moodboardItems.some((i) => i.type === "style"),
     [moodboardItems]
   );
+
+  // Get suggestion text from the last assistant message's quick options
+  const currentSuggestion = useMemo(() => {
+    // Don't show suggestions while loading or if user is typing something different
+    if (isLoading) return null;
+
+    // Find the last assistant message with quick options
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (
+        msg.role === "assistant" &&
+        msg.quickOptions &&
+        msg.quickOptions.options.length > 0
+      ) {
+        const options = msg.quickOptions.options;
+        // Cycle through options based on suggestionIndex
+        const safeIndex = suggestionIndex % options.length;
+        return options[safeIndex];
+      }
+    }
+    return null;
+  }, [messages, isLoading, suggestionIndex]);
+
+  // Check if current input matches the start of the suggestion
+  const showSuggestion = useMemo(() => {
+    if (!currentSuggestion || isLoading) return false;
+    const trimmedInput = input.trim().toLowerCase();
+    if (trimmedInput.length === 0) return true; // Show full suggestion when empty
+    // Show if input matches the beginning of the suggestion
+    return currentSuggestion.toLowerCase().startsWith(trimmedInput);
+  }, [currentSuggestion, input, isLoading]);
+
+  // Get the ghost text to display (the part after what's typed)
+  const ghostText = useMemo(() => {
+    if (!showSuggestion || !currentSuggestion) return "";
+    const trimmedInput = input.trim();
+    if (trimmedInput.length === 0) return currentSuggestion;
+    // Return the remaining part of the suggestion
+    return currentSuggestion.slice(trimmedInput.length);
+  }, [showSuggestion, currentSuggestion, input]);
 
   // Find the index of the last message with deliverable styles (for collapsing older grids)
   // Also check if the user has already made a selection (any user message after this style message)
@@ -2251,7 +2292,7 @@ export function ChatInterface({
         briefCompletion,
         progressState.progressPercentage
       )}
-      showProgress={seamlessTransition && !isTaskMode && showRightPanel}
+      showProgress={false}
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
       className={cn(seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]")}
@@ -2859,8 +2900,17 @@ export function ChatInterface({
 
           {/* Modern input box - matching design reference */}
           <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
-            {/* Input field with auto-resize */}
+            {/* Input field with auto-resize and ghost text */}
             <div className="relative">
+              {/* Ghost text suggestion overlay */}
+              {showSuggestion && ghostText && (
+                <div className="absolute inset-0 px-4 py-4 pointer-events-none flex items-start">
+                  <span className="text-sm text-transparent">{input}</span>
+                  <span className="text-sm text-muted-foreground/40">
+                    {ghostText}
+                  </span>
+                </div>
+              )}
               <textarea
                 ref={inputRef}
                 value={input}
@@ -2873,8 +2923,33 @@ export function ChatInterface({
                     Math.min(target.scrollHeight, 200) + "px";
                 }}
                 onKeyDown={(e) => {
+                  // Tab to accept suggestion
+                  if (e.key === "Tab" && showSuggestion && currentSuggestion) {
+                    e.preventDefault();
+                    setInput(currentSuggestion);
+                    // Optionally auto-submit after accepting
+                    // handleSend();
+                  }
+                  // Arrow down to cycle through suggestions
+                  else if (
+                    e.key === "ArrowDown" &&
+                    showSuggestion &&
+                    !input.trim()
+                  ) {
+                    e.preventDefault();
+                    setSuggestionIndex((prev) => prev + 1);
+                  }
+                  // Arrow up to cycle back
+                  else if (
+                    e.key === "ArrowUp" &&
+                    showSuggestion &&
+                    !input.trim()
+                  ) {
+                    e.preventDefault();
+                    setSuggestionIndex((prev) => Math.max(0, prev - 1));
+                  }
                   // Submit on Enter (without shift) or Cmd/Ctrl+Enter
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  else if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSend();
                   } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -2883,15 +2958,26 @@ export function ChatInterface({
                   }
                 }}
                 placeholder={
-                  messages.length === 0
+                  showSuggestion && currentSuggestion
+                    ? "" // Hide placeholder when showing suggestion
+                    : messages.length === 0
                     ? "What would you like to create today?"
                     : "Type your message..."
                 }
                 disabled={isLoading}
                 rows={1}
-                className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all"
+                className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
                 style={{ height: "auto", overflow: "hidden" }}
               />
+              {/* Tab hint */}
+              {showSuggestion && ghostText && !input.trim() && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-muted-foreground/50 z-0 pointer-events-none">
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                    Tab
+                  </kbd>
+                  <span>to accept</span>
+                </div>
+              )}
             </div>
 
             {/* Toolbar */}

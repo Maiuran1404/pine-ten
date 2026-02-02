@@ -78,7 +78,10 @@ export function ChatLayout({
           {/* Mobile Header with Panel Toggle */}
           <div className="lg:hidden shrink-0 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-end gap-2">
             {showRightPanel && (
-              <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
+              <Sheet
+                open={isMobileSheetOpen}
+                onOpenChange={setIsMobileSheetOpen}
+              >
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
                     {activeTab === "brief" ? (
@@ -90,7 +93,9 @@ export function ChatLayout({
                       <>
                         <Palette className="h-4 w-4" />
                         <span className="text-xs">
-                          {moodboardItems.length > 0 ? moodboardItems.length : ""}
+                          {moodboardItems.length > 0
+                            ? moodboardItems.length
+                            : ""}
                         </span>
                       </>
                     )}
@@ -107,7 +112,10 @@ export function ChatLayout({
                         <FileText className="h-3.5 w-3.5" />
                         Brief
                       </TabsTrigger>
-                      <TabsTrigger value="moodboard" className="text-xs gap-1.5">
+                      <TabsTrigger
+                        value="moodboard"
+                        className="text-xs gap-1.5"
+                      >
                         <Palette className="h-3.5 w-3.5" />
                         Moodboard
                         {moodboardItems.length > 0 && (
@@ -178,7 +186,9 @@ export function ChatLayout({
                       }}
                       className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                        activeTab === "brief" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                        activeTab === "brief"
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted"
                       )}
                     >
                       <FileText className="h-4 w-4" />
@@ -192,7 +202,9 @@ export function ChatLayout({
                       }}
                       className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative",
-                        activeTab === "moodboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                        activeTab === "moodboard"
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted"
                       )}
                     >
                       <Palette className="h-4 w-4" />
@@ -209,50 +221,56 @@ export function ChatLayout({
               <motion.div
                 key="expanded"
                 initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 320, opacity: 1 }}
+                animate={{ width: 280, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="hidden lg:flex flex-col shrink-0 border-l border-border bg-card h-full"
+                className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
               >
-                {/* Tab Header */}
-                <div className="shrink-0 flex items-center justify-between px-2 py-2 border-b border-border">
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={(v) => setActiveTab(v as RightPanelTab)}
-                    className="flex-1"
-                  >
-                    <TabsList className="grid grid-cols-2 h-8">
-                      {showBrief && (
-                        <TabsTrigger value="brief" className="text-xs gap-1.5 h-7">
-                          <FileText className="h-3.5 w-3.5" />
-                          Brief
-                          {briefCompletion > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                              {briefCompletion}%
-                            </span>
-                          )}
-                        </TabsTrigger>
-                      )}
-                      {showMoodboard && (
-                        <TabsTrigger value="moodboard" className="text-xs gap-1.5 h-7">
-                          <Palette className="h-3.5 w-3.5" />
-                          Moodboard
-                          {moodboardItems.length > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                              {moodboardItems.length}
-                            </span>
-                          )}
-                        </TabsTrigger>
-                      )}
-                    </TabsList>
-                  </Tabs>
+                {/* Minimal Tab Header */}
+                <div className="shrink-0 flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    {showBrief && (
+                      <button
+                        onClick={() => setActiveTab("brief")}
+                        className={cn(
+                          "text-xs font-medium transition-colors",
+                          activeTab === "brief"
+                            ? "text-foreground"
+                            : "text-muted-foreground/50 hover:text-muted-foreground"
+                        )}
+                      >
+                        Brief
+                      </button>
+                    )}
+                    {showBrief && showMoodboard && (
+                      <span className="text-muted-foreground/30">·</span>
+                    )}
+                    {showMoodboard && (
+                      <button
+                        onClick={() => setActiveTab("moodboard")}
+                        className={cn(
+                          "text-xs font-medium transition-colors flex items-center gap-1",
+                          activeTab === "moodboard"
+                            ? "text-foreground"
+                            : "text-muted-foreground/50 hover:text-muted-foreground"
+                        )}
+                      >
+                        Moodboard
+                        {moodboardItems.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            ({moodboardItems.length})
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 ml-1"
+                    className="h-6 w-6 shrink-0 text-muted-foreground/50 hover:text-muted-foreground"
                     onClick={() => setIsRightPanelCollapsed(true)}
                   >
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
 
@@ -276,12 +294,8 @@ export function ChatLayout({
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                            <FileText className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                            <p className="text-sm text-muted-foreground">
-                              Your brief will build here as you chat
-                            </p>
-                            <p className="text-xs text-muted-foreground/70 mt-1">
-                              We&apos;ll infer intent, platform, and audience automatically
+                            <p className="text-xs text-muted-foreground/50">
+                              Brief builds as you chat
                             </p>
                           </div>
                         )}
@@ -441,10 +455,7 @@ export function SimpleChatLayout({
         <div className="lg:hidden fixed bottom-20 right-4 z-50">
           <Sheet open={isMoodboardOpen} onOpenChange={setIsMoodboardOpen}>
             <SheetTrigger asChild>
-              <Button
-                size="icon"
-                className="rounded-full shadow-lg h-12 w-12"
-              >
+              <Button size="icon" className="rounded-full shadow-lg h-12 w-12">
                 <Palette className="h-5 w-5" />
                 {moodboardItems.length > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary-foreground text-primary text-xs flex items-center justify-center font-medium">
