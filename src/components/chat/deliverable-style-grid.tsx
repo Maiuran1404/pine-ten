@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Check, ChevronRight, RefreshCw, Sparkles, Search, X, Eye } from "lucide-react";
+import { Check, Search, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -49,7 +48,6 @@ export function DeliverableStyleGrid({
   onShowMore,
   onShowDifferent,
   isLoading,
-  totalAvailable,
   shownAxes,
 }: DeliverableStyleGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,13 +70,6 @@ export function DeliverableStyleGrid({
     return null;
   }
 
-  const getStyleAxisLabel = (value: string) => {
-    return STYLE_AXES.find((a) => a.value === value)?.label || value;
-  };
-
-  // Check if any styles have brand match scores
-  const hasBrandScoring = styles.some(s => s.brandMatchScore !== undefined);
-
   // Calculate available axes for "show different" button
   const currentAxes = new Set(styles.map(s => s.styleAxis));
   const allKnownAxes = STYLE_AXES.map(a => a.value);
@@ -87,27 +78,19 @@ export function DeliverableStyleGrid({
   const hasMoreDifferentStyles = remainingAxes.length > 0;
 
   return (
-    <div className="space-y-3">
-      {/* Header with personalization hint and search toggle */}
-      <div className="flex items-center justify-between">
-        {hasBrandScoring && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Sorted by match to your brand</span>
-          </div>
-        )}
-        {styles.length > 4 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs ml-auto"
+    <div className="space-y-4">
+      {/* Search toggle - only show if many styles */}
+      {styles.length > 6 && (
+        <div className="flex justify-end">
+          <button
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             onClick={() => setShowSearch(!showSearch)}
           >
-            {showSearch ? <X className="w-3.5 h-3.5" /> : <Search className="w-3.5 h-3.5" />}
-            <span className="ml-1">{showSearch ? "Close" : "Search"}</span>
-          </Button>
-        )}
-      </div>
+            {showSearch ? <X className="w-3 h-3" /> : <Search className="w-3 h-3" />}
+            {showSearch ? "Close" : "Search"}
+          </button>
+        </div>
+      )}
 
       {/* Search input */}
       {showSearch && (
@@ -115,7 +98,7 @@ export function DeliverableStyleGrid({
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search styles by name, tags, or mood..."
+            placeholder="Search styles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 h-9 text-sm"
@@ -140,123 +123,95 @@ export function DeliverableStyleGrid({
         </div>
       )}
 
+      {/* Clean grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {filteredStyles.map((style, index) => {
+        {filteredStyles.map((style) => {
           const isSelected = selectedStyles.includes(style.id);
-          const isTopMatch = hasBrandScoring && index === 0 && (style.brandMatchScore || 0) >= 70;
-          const isGoodMatch = (style.brandMatchScore || 0) >= 60;
 
           return (
             <button
               key={style.id}
               onClick={() => onSelectStyle(style)}
               className={cn(
-                "group relative rounded-xl overflow-hidden border-2 transition-all duration-200 text-left",
+                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
                 isSelected
-                  ? "border-primary ring-2 ring-primary/20"
-                  : isTopMatch
-                  ? "border-amber-400/50 ring-1 ring-amber-400/20"
-                  : "border-border hover:border-primary/50"
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  : "hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
               )}
             >
               {/* Image */}
-              <div className="aspect-square relative bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={style.imageUrl}
-                  alt={style.name}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://via.placeholder.com/400x400?text=Style";
-                  }}
-                />
-                {/* Selection overlay */}
-                {isSelected && (
-                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                  </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={style.imageUrl}
+                alt={style.name}
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "https://via.placeholder.com/400x500?text=Style";
+                }}
+              />
+
+              {/* Hover overlay with name */}
+              <div
+                className={cn(
+                  "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent",
+                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  isSelected && "opacity-100"
                 )}
-                {/* Top match indicator */}
-                {isTopMatch && !isSelected && (
-                  <div className="absolute top-2 left-2">
-                    <Badge className="text-xs bg-amber-500 hover:bg-amber-500 text-white border-0">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Best match
-                    </Badge>
-                  </div>
-                )}
-                {/* Style axis badge */}
-                <div className="absolute top-2 right-2">
-                  <Badge variant="secondary" className="text-xs bg-background/80 backdrop-blur-sm">
-                    {getStyleAxisLabel(style.styleAxis)}
-                  </Badge>
+              >
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white text-sm font-medium truncate">
+                    {style.name}
+                  </p>
                 </div>
-                {/* Example output button */}
+
+                {/* Example output button - only on hover */}
                 {style.exampleOutputUrl && (
                   <button
-                    className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-background/90 backdrop-blur-sm border border-border/50 text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                    className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       setExampleModal({ style, url: style.exampleOutputUrl! });
                     }}
-                    title="See example output"
                   >
                     <Eye className="w-3 h-3" />
-                    Example
                   </button>
                 )}
               </div>
 
-              {/* Info */}
-              <div className="p-2.5">
-                <h4 className="font-medium text-sm truncate">{style.name}</h4>
-                {style.matchReason && isGoodMatch ? (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 line-clamp-1 mt-0.5">
-                    {style.matchReason}
-                  </p>
-                ) : style.description ? (
-                  <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                    {style.description}
-                  </p>
-                ) : null}
-              </div>
+              {/* Selected indicator */}
+              {isSelected && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                    <Check className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                </div>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Action buttons */}
+      {/* Minimal action links */}
       {(onShowMore || onShowDifferent) && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex items-center gap-4 text-xs">
           {onShowMore && filteredStyles.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => onShowMore(filteredStyles[0].styleAxis)}
               disabled={isLoading}
-              className="text-xs"
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              <ChevronRight className="w-3.5 h-3.5 mr-1" />
-              More {getStyleAxisLabel(filteredStyles[0].styleAxis)} styles
-            </Button>
+              More like these →
+            </button>
           )}
-          {onShowDifferent && (
-            <Button
-              variant="outline"
-              size="sm"
+          {onShowDifferent && hasMoreDifferentStyles && (
+            <button
               onClick={onShowDifferent}
-              disabled={isLoading || !hasMoreDifferentStyles}
-              className="text-xs"
-              title={!hasMoreDifferentStyles ? "All style directions shown" : undefined}
+              disabled={isLoading}
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={cn("w-3.5 h-3.5 mr-1", isLoading && "animate-spin")} />
-              {hasMoreDifferentStyles
-                ? `Show different styles (${remainingAxes.length} more)`
-                : "All styles shown"}
-            </Button>
+              Show different
+            </button>
           )}
         </div>
       )}
@@ -265,14 +220,11 @@ export function DeliverableStyleGrid({
       <Dialog open={!!exampleModal} onOpenChange={(open) => !open && setExampleModal(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-4 h-4" />
-              Example: {exampleModal?.style.name}
-            </DialogTitle>
+            <DialogTitle>{exampleModal?.style.name}</DialogTitle>
           </DialogHeader>
           {exampleModal && (
             <div className="space-y-4">
-              <div className="rounded-lg overflow-hidden border bg-muted">
+              <div className="rounded-lg overflow-hidden bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={exampleModal.url}
@@ -284,15 +236,12 @@ export function DeliverableStyleGrid({
                   }}
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{exampleModal.style.name}</p>
-                  {exampleModal.style.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {exampleModal.style.description}
-                    </p>
-                  )}
-                </div>
+              <div className="flex items-center justify-between">
+                {exampleModal.style.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {exampleModal.style.description}
+                  </p>
+                )}
                 <Button
                   size="sm"
                   onClick={() => {
@@ -300,7 +249,7 @@ export function DeliverableStyleGrid({
                     setExampleModal(null);
                   }}
                 >
-                  Select this style
+                  Select
                 </Button>
               </div>
             </div>

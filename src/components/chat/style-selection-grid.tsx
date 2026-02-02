@@ -1,12 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Plus, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type DeliverableStyle } from "./types";
-import { STYLE_AXES } from "@/lib/constants/reference-libraries";
 
 interface StyleSelectionGridProps {
   styles: DeliverableStyle[];
@@ -35,15 +32,8 @@ export function StyleSelectionGrid({
     return null;
   }
 
-  const getStyleAxisLabel = (value: string) => {
-    return STYLE_AXES.find((a) => a.value === value)?.label || value;
-  };
-
-  // Check if any styles have brand match scores
-  const hasBrandScoring = styles.some((s) => s.brandMatchScore !== undefined);
-
-  const handleCollectionToggle = (style: DeliverableStyle, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCardClick = (style: DeliverableStyle) => {
+    // Toggle collection on click
     const isInCollection = collectionStyleIds.includes(style.id);
     if (isInCollection) {
       onRemoveFromCollection(style.id);
@@ -56,147 +46,89 @@ export function StyleSelectionGrid({
   const displayedStyles = styles.slice(0, 3);
 
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Brand personalization hint */}
-      {hasBrandScoring && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Sorted by match to your brand</span>
-        </div>
-      )}
-
-      {/* Style grid - 3 columns, smaller images */}
-      <div className="grid grid-cols-3 gap-2 max-w-2xl">
+    <div className={cn("space-y-4", className)}>
+      {/* Clean style grid */}
+      <div className="grid grid-cols-3 gap-3 max-w-2xl">
         {displayedStyles.map((style, index) => {
-          const isInCollection = collectionStyleIds.includes(style.id);
-          const isTopMatch =
-            hasBrandScoring && index === 0 && (style.brandMatchScore || 0) >= 70;
-          const isGoodMatch = (style.brandMatchScore || 0) >= 60;
+          const isSelected = collectionStyleIds.includes(style.id);
 
           return (
-            <motion.div
+            <motion.button
               key={style.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="relative"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+              onClick={() => handleCardClick(style)}
+              className={cn(
+                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
+                isSelected
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  : "hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
+              )}
             >
-              <button
-                onClick={() => onCardClick(style)}
+              {/* Image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={style.imageUrl}
+                alt={style.name}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "https://via.placeholder.com/400x500?text=Style";
+                }}
+              />
+
+              {/* Hover overlay with name */}
+              <div
                 className={cn(
-                  "group relative w-full rounded-xl overflow-hidden border-2 transition-all duration-200 text-left",
-                  isInCollection
-                    ? "border-green-500/50 ring-1 ring-green-500/20"
-                    : isTopMatch
-                    ? "border-amber-400/50 ring-1 ring-amber-400/20"
-                    : "border-border hover:border-primary/50"
+                  "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent",
+                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  isSelected && "opacity-100"
                 )}
               >
-                {/* Image */}
-                <div className="aspect-square relative bg-muted overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={style.imageUrl}
-                    alt={style.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://via.placeholder.com/400x400?text=Style";
-                    }}
-                  />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white text-sm font-medium truncate">
+                    {style.name}
+                  </p>
+                </div>
+              </div>
 
-                  {/* Corner add/remove button - always visible */}
-                  <button
-                    onClick={(e) => handleCollectionToggle(style, e)}
-                    className={cn(
-                      "absolute top-1.5 left-1.5 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 z-10",
-                      isInCollection
-                        ? "bg-green-500 text-white shadow-md hover:bg-green-600"
-                        : "bg-background/90 backdrop-blur-sm border border-border shadow-sm hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                    )}
-                    title={isInCollection ? "Remove from collection" : "Add to collection"}
-                  >
-                    {isInCollection ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Plus className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {/* Top match indicator */}
-                  {isTopMatch && !isInCollection && (
-                    <div className="absolute top-1.5 left-10">
-                      <Badge className="text-[10px] px-1.5 py-0.5 bg-amber-500 hover:bg-amber-500 text-white border-0">
-                        <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                        Best
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Style axis badge */}
-                  <div className="absolute top-1.5 right-1.5">
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur-sm"
-                    >
-                      {getStyleAxisLabel(style.styleAxis)}
-                    </Badge>
+              {/* Selected indicator */}
+              {isSelected && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                    <Check className="w-4 h-4 text-primary-foreground" />
                   </div>
                 </div>
-
-                {/* Info */}
-                <div className="p-2">
-                  <h4 className="font-medium text-xs truncate">{style.name}</h4>
-                  {style.matchReason && isGoodMatch ? (
-                    <p className="text-[10px] text-amber-600 dark:text-amber-400 line-clamp-1 mt-0.5">
-                      {style.matchReason}
-                    </p>
-                  ) : style.description ? (
-                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
-                      {style.description}
-                    </p>
-                  ) : null}
-                </div>
-              </button>
-            </motion.div>
+              )}
+            </motion.button>
           );
         })}
       </div>
 
-      {/* Action buttons */}
+      {/* Minimal action links */}
       {(onShowMore || onShowDifferent) && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex items-center gap-4 text-xs">
           {onShowMore && styles.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => onShowMore(styles[0].styleAxis)}
               disabled={isLoading}
-              className="text-xs"
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              <ChevronRight className="w-3.5 h-3.5 mr-1" />
-              More {getStyleAxisLabel(styles[0].styleAxis)} styles
-            </Button>
+              More like these →
+            </button>
           )}
           {onShowDifferent && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={onShowDifferent}
               disabled={isLoading}
-              className="text-xs"
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Show different styles
-            </Button>
+              Show different
+            </button>
           )}
         </div>
       )}
-
-      {/* Selection hint - updated text */}
-      <p className="text-xs text-muted-foreground">
-        Tap to preview · Click + to collect
-      </p>
     </div>
   );
 }
