@@ -346,19 +346,14 @@ export async function POST(request: NextRequest) {
     const hasBrandingColors = hasColorsWithConfidence;
     console.log(`Brand extraction for ${normalizedUrl}: Using ${hasBrandingColors ? "Firecrawl" : "Claude"} (color confidence: ${colorConfidence})`);
 
-    if (hasBrandingColors) {
-      // Firecrawl's branding is sufficient, use it directly
-      const brandData = createDefaultBrandData(metadata, branding, links);
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          ...brandData,
-          website: normalizedUrl,
-          screenshotUrl: screenshot || null,
-        },
-      });
-    }
+    // Even if Firecrawl has good branding colors, we still need Claude for:
+    // 1. Target audience inference
+    // 2. Visual style and brand tone detection
+    // 3. Industry classification
+    // So we always run Claude analysis, but may use Firecrawl colors as fallback
+    const firecrawlBrandData = hasBrandingColors 
+      ? createDefaultBrandData(metadata, branding, links)
+      : null;
 
     // Otherwise, use Claude for deeper analysis
     const contentParts: Anthropic.Messages.ContentBlockParam[] = [];
@@ -612,30 +607,44 @@ Return ONLY a valid JSON object with this exact structure:
       brandData = createDefaultBrandData(metadata, branding, links);
     }
 
-    // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
-    // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
-    const firecrawlColorConfidence = branding?.confidence?.colors ?? 0;
-    if (branding?.colors && firecrawlColorConfidence >= 0.1) {
-      // Only use Firecrawl colors as fallback when Claude returned defaults
-      if (branding.colors.primary && brandData.primaryColor === "#6366f1") {
-        brandData.primaryColor = branding.colors.primary;
+    // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
+    // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
+    if (firecrawlBrandData && hasBrandingColors) {
+      brandData.primaryColor = firecrawlBrandData.primaryColor;
+      brandData.secondaryColor = firecrawlBrandData.secondaryColor;
+      brandData.accentColor = firecrawlBrandData.accentColor;
+      brandData.backgroundColor = firecrawlBrandData.backgroundColor;
+      brandData.textColor = firecrawlBrandData.textColor;
+      if (firecrawlBrandData.brandColors.length > 0) {
+        brandData.brandColors = firecrawlBrandData.brandColors;
       }
-      // Use Firecrawl accent as secondary since they don't have a 'secondary' key
-      if (branding.colors.accent && !brandData.secondaryColor) {
-        brandData.secondaryColor = branding.colors.accent;
-      }
-      if (branding.colors.link && !brandData.accentColor && branding.colors.link !== brandData.secondaryColor) {
-        brandData.accentColor = branding.colors.link;
-      }
-      if (branding.colors.background && brandData.backgroundColor === "#ffffff") {
-        brandData.backgroundColor = branding.colors.background;
-      }
-      if (branding.colors.textPrimary && brandData.textColor === "#1f2937") {
-        brandData.textColor = branding.colors.textPrimary;
-      }
-      if (brandData.brandColors.length === 0) {
-        brandData.brandColors = Object.values(branding.colors)
-          .filter((c): c is string => typeof c === "string" && c.startsWith("#"));
+      console.log("Using high-confidence Firecrawl colors with Claude's audience analysis");
+    } else {
+      // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
+      // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
+      const firecrawlColorConfidence = branding?.confidence?.colors ?? 0;
+      if (branding?.colors && firecrawlColorConfidence >= 0.1) {
+        // Only use Firecrawl colors as fallback when Claude returned defaults
+        if (branding.colors.primary && brandData.primaryColor === "#6366f1") {
+          brandData.primaryColor = branding.colors.primary;
+        }
+        // Use Firecrawl accent as secondary since they don't have a 'secondary' key
+        if (branding.colors.accent && !brandData.secondaryColor) {
+          brandData.secondaryColor = branding.colors.accent;
+        }
+        if (branding.colors.link && !brandData.accentColor && branding.colors.link !== brandData.secondaryColor) {
+          brandData.accentColor = branding.colors.link;
+        }
+        if (branding.colors.background && brandData.backgroundColor === "#ffffff") {
+          brandData.backgroundColor = branding.colors.background;
+        }
+        if (branding.colors.textPrimary && brandData.textColor === "#1f2937") {
+          brandData.textColor = branding.colors.textPrimary;
+        }
+        if (brandData.brandColors.length === 0) {
+          brandData.brandColors = Object.values(branding.colors)
+            .filter((c): c is string => typeof c === "string" && c.startsWith("#"));
+        }
       }
     }
 
