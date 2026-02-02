@@ -1,16 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type DeliverableStyle } from "./types";
 
 interface StyleSelectionGridProps {
   styles: DeliverableStyle[];
   collectionStyleIds: string[];
-  onCardClick?: (style: DeliverableStyle) => void; // Optional - for preview modal
+  onCardClick?: (style: DeliverableStyle) => void;
   onAddToCollection: (style: DeliverableStyle) => void;
   onRemoveFromCollection: (styleId: string) => void;
+  onConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void;
   onShowMore?: (styleAxis: string) => void;
   onShowDifferent?: () => void;
   isLoading?: boolean;
@@ -22,22 +25,33 @@ export function StyleSelectionGrid({
   collectionStyleIds,
   onAddToCollection,
   onRemoveFromCollection,
+  onConfirmSelection,
   onShowMore,
   onShowDifferent,
   isLoading,
   className,
 }: StyleSelectionGridProps) {
+  const [selectedStyle, setSelectedStyle] = useState<DeliverableStyle | null>(
+    null
+  );
+
   if (!styles || styles.length === 0) {
     return null;
   }
 
   const handleCardClick = (style: DeliverableStyle) => {
-    // Toggle collection on click
-    const isInCollection = collectionStyleIds.includes(style.id);
-    if (isInCollection) {
-      onRemoveFromCollection(style.id);
+    // Single selection - clicking selects/deselects
+    if (selectedStyle?.id === style.id) {
+      setSelectedStyle(null);
     } else {
-      onAddToCollection(style);
+      setSelectedStyle(style);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (selectedStyle && onConfirmSelection) {
+      onConfirmSelection([selectedStyle]);
+      setSelectedStyle(null);
     }
   };
 
@@ -49,7 +63,7 @@ export function StyleSelectionGrid({
       {/* Clean style grid */}
       <div className="grid grid-cols-3 gap-3 max-w-2xl">
         {displayedStyles.map((style, index) => {
-          const isSelected = collectionStyleIds.includes(style.id);
+          const isSelected = selectedStyle?.id === style.id;
 
           return (
             <motion.button
@@ -105,8 +119,29 @@ export function StyleSelectionGrid({
         })}
       </div>
 
-      {/* Minimal action links */}
-      {(onShowMore || onShowDifferent) && (
+      {/* Confirm button - shows when a style is selected */}
+      <AnimatePresence>
+        {selectedStyle && onConfirmSelection && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button
+              onClick={handleConfirm}
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              Continue with {selectedStyle.name}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Minimal action links - only show when no selection */}
+      {!selectedStyle && (onShowMore || onShowDifferent) && (
         <div className="flex items-center gap-4 text-xs">
           {onShowMore && styles.length > 0 && (
             <button

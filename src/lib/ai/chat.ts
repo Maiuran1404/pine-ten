@@ -59,41 +59,30 @@ function getDeliveryDate(businessDays: number): string {
 
 const SYSTEM_PROMPT = `You are a creative operator at Crafted.
 
-MOST IMPORTANT RULE: ONE QUESTION PER RESPONSE
-- When you show [DELIVERABLE_STYLES: type], the style selection IS the question
-- NEVER ask a text question AND show styles in the same response
+CRITICAL: You MUST output [DELIVERABLE_STYLES: type] to show style options.
+Without this exact marker, no styles will appear.
 
-DECISION:
-- Need more info? → Ask ONE short question. NO styles.
-- Have enough info? → Show styles with a statement. NO question mark.
+TWO RESPONSE TYPES:
 
-EXAMPLES:
+TYPE A - Need more info:
+Just ask a short question. No styles.
+Example: "What product are you launching?"
 
-User: "Product launch video"
-You: "What product are you launching?"
-(Need info first - no styles yet)
-
-User: "Our new ID verification tool"
-You: "Trust and security will anchor this. Pick a direction."
+TYPE B - Have enough info (know the product/topic):
+Write a short statement, then ALWAYS include the marker.
+Example: "Trust and security will anchor this."
 [DELIVERABLE_STYLES: instagram_reel]
-(Have info - show styles, no question)
 
-User: "Instagram posts"
-You: "What do you want to feature?"
-(Need specifics - no styles yet)
+WHEN TO USE TYPE B:
+- User told you what the product/topic is
+- You know enough to show style options
 
-User: "Our new dashboard redesign"
-You: "Clean and modern will work well for this."
-[DELIVERABLE_STYLES: instagram_post]
-(Have info - show styles, no question)
+AVAILABLE TYPES: instagram_post, instagram_story, instagram_reel, linkedin_post, static_ad, logo, brand_identity, web_banner
 
 RULES:
-- Max 20 words
-- No bullet points
-- No "Tell me about..."
-- Start with capital letter
-
-Available types: instagram_post, instagram_story, instagram_reel, linkedin_post, static_ad, logo, brand_identity, web_banner`;
+- Max 15 words in your text
+- No question marks when showing styles
+- No bullet points`;
 
 function getSystemPrompt(): string {
   const today = new Date();
@@ -115,11 +104,10 @@ IF THE REQUEST IS COMPLETELY UNCLEAR:
 [/QUICK_OPTIONS]
 
 ABSOLUTE REQUIREMENTS:
-1. NEVER combine a question with [DELIVERABLE_STYLES] - pick one or the other
-2. If showing styles, end with a period, NOT a question mark
-3. Max 20 words total
-4. No bullet points
-5. Start with capital letter`;
+1. If user told you the product/topic → YOU MUST include [DELIVERABLE_STYLES: type]
+2. If asking a question → NO [DELIVERABLE_STYLES]
+3. Never both a question AND styles in same response
+4. Max 15 words, no bullet points`;
 }
 
 export interface ChatMessage {
@@ -487,15 +475,19 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .trim();
 
   // Final check: Ensure first letter is capitalized (for professional tone)
-  // Find the first actual letter and capitalize it, handling quotes, whitespace, etc.
+  // Only capitalize if the very first letter (after any whitespace/punctuation) is lowercase
   if (cleanContent.length > 0) {
-    // Find the index of the first lowercase letter
-    const firstLowerIndex = cleanContent.search(/[a-z]/);
-    if (firstLowerIndex !== -1) {
-      cleanContent =
-        cleanContent.slice(0, firstLowerIndex) +
-        cleanContent.charAt(firstLowerIndex).toUpperCase() +
-        cleanContent.slice(firstLowerIndex + 1);
+    // Find the index of the first letter (uppercase or lowercase)
+    const firstLetterIndex = cleanContent.search(/[a-zA-Z]/);
+    if (firstLetterIndex !== -1) {
+      const firstLetter = cleanContent.charAt(firstLetterIndex);
+      // Only capitalize if it's lowercase
+      if (firstLetter >= "a" && firstLetter <= "z") {
+        cleanContent =
+          cleanContent.slice(0, firstLetterIndex) +
+          firstLetter.toUpperCase() +
+          cleanContent.slice(firstLetterIndex + 1);
+      }
     }
   }
 

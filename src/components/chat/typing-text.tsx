@@ -25,20 +25,24 @@ interface TypingTextProps {
 }
 
 /**
- * Capitalizes the first letter of a string.
- * Handles leading whitespace, quotes, markdown formatting, etc.
+ * Capitalizes the first letter of a string if it's lowercase.
+ * Only affects the very first letter, not any letter in the string.
  */
 function capitalizeFirstLetter(text: string): string {
   if (!text) return text;
 
-  // Find the index of the first lowercase letter
-  const firstLowerIndex = text.search(/[a-z]/);
-  if (firstLowerIndex !== -1) {
-    return (
-      text.slice(0, firstLowerIndex) +
-      text.charAt(firstLowerIndex).toUpperCase() +
-      text.slice(firstLowerIndex + 1)
-    );
+  // Find the index of the first letter (uppercase or lowercase)
+  const firstLetterIndex = text.search(/[a-zA-Z]/);
+  if (firstLetterIndex !== -1) {
+    const firstLetter = text.charAt(firstLetterIndex);
+    // Only capitalize if it's lowercase
+    if (firstLetter >= "a" && firstLetter <= "z") {
+      return (
+        text.slice(0, firstLetterIndex) +
+        firstLetter.toUpperCase() +
+        text.slice(firstLetterIndex + 1)
+      );
+    }
   }
 
   return text;

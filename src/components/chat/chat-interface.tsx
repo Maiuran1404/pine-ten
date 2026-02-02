@@ -1487,6 +1487,82 @@ export function ChatInterface({
     }
   };
 
+  // Handle confirming style selection from the grid
+  const handleConfirmStyleSelection = async (
+    selectedStyles: Array<{ id: string; name: string }>
+  ) => {
+    if (selectedStyles.length === 0 || isLoading) return;
+
+    const styleName = selectedStyles[0].name;
+    const styleMessage = `I'll go with the ${styleName} style`;
+
+    // Add to moodboard
+    selectedStyles.forEach((style) => {
+      if (!hasMoodboardItem(style.id)) {
+        addFromStyle(style as DeliverableStyle);
+        addStyleToVisualDirection(style as DeliverableStyle);
+      }
+    });
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: styleMessage,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedDeliverableStyles: selectedStyles.map((s) => s.id),
+          moodboardHasStyles: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+
+      if (data.deliverableStyleMarker) {
+        setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
+      }
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleQuickOptionClick = async (option: string) => {
     if (isLoading) return;
 
@@ -2365,10 +2441,12 @@ export function ChatInterface({
                                     <StyleSelectionGrid
                                       styles={message.deliverableStyles}
                                       collectionStyleIds={moodboardStyleIds}
-                                      onCardClick={handleStyleCardClick}
                                       onAddToCollection={handleAddToCollection}
                                       onRemoveFromCollection={
                                         handleRemoveFromCollection
+                                      }
+                                      onConfirmSelection={
+                                        handleConfirmStyleSelection
                                       }
                                       onShowMore={handleShowMoreStyles}
                                       onShowDifferent={
@@ -2378,8 +2456,8 @@ export function ChatInterface({
                                         isLoading || index < messages.length - 1
                                       }
                                     />
-                                    {/* Inline collection - shows collected styles */}
-                                    {moodboardStyleIds.length > 0 && (
+                                    {/* Inline collection - shows collected styles (hidden when using new flow) */}
+                                    {false && moodboardStyleIds.length > 0 && (
                                       <InlineCollection
                                         items={moodboardItems.filter(
                                           (i) => i.type === "style"
