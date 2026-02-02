@@ -430,12 +430,21 @@ export function ChatInterface({
   );
 
   // Find the index of the last message with deliverable styles (for collapsing older grids)
+  // Also check if the user has already made a selection (any user message after this style message)
   const lastStyleMessageIndex = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (
         messages[i].deliverableStyles &&
         messages[i].deliverableStyles!.length > 0
       ) {
+        // Check if there's any user message after this style message
+        // If so, the user has already made a selection, so this grid should be disabled
+        const hasSubsequentUserMessage = messages
+          .slice(i + 1)
+          .some((m) => m.role === "user");
+        if (hasSubsequentUserMessage) {
+          return -1; // No active style grid - user already made selection
+        }
         return i;
       }
     }
@@ -729,6 +738,9 @@ export function ChatInterface({
         timestamp: m.timestamp.toISOString(),
         attachments: m.attachments,
         quickOptions: m.quickOptions,
+        deliverableStyles: m.deliverableStyles,
+        deliverableStyleMarker: m.deliverableStyleMarker,
+        selectedStyle: m.selectedStyle,
       })),
       selectedStyles,
       moodboardItems: moodboardItems.map((item) => ({
@@ -2595,15 +2607,21 @@ export function ChatInterface({
                     <div className="max-w-[75%] group flex items-start gap-3">
                       <div className="flex-1">
                         {/* Selected style image - shows above the text when style was selected */}
-                        {message.selectedStyle && (
-                          <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] ml-auto border border-emerald-200/50 dark:border-emerald-800/30">
-                            <img
-                              src={message.selectedStyle.imageUrl}
-                              alt={message.selectedStyle.name}
-                              className="w-full h-auto object-cover"
-                            />
-                          </div>
-                        )}
+                        {message.selectedStyle &&
+                          message.selectedStyle.imageUrl && (
+                            <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] ml-auto border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
+                              <img
+                                src={message.selectedStyle.imageUrl}
+                                alt={message.selectedStyle.name}
+                                className="w-full h-auto object-cover"
+                                onError={(e) => {
+                                  // Hide image if it fails to load
+                                  (e.target as HTMLImageElement).style.display =
+                                    "none";
+                                }}
+                              />
+                            </div>
+                          )}
                         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30">
                           <p className="text-sm text-foreground whitespace-pre-wrap pr-16">
                             {message.content}

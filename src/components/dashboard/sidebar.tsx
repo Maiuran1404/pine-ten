@@ -19,6 +19,7 @@ import {
   Coins,
   PanelLeftClose,
   PanelLeft,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCredits } from "@/providers/credit-provider";
@@ -39,6 +40,7 @@ export function AppSidebar() {
     { icon: MessageCircle, label: "Chat", href: "/dashboard/chat" },
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
+    { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
   ];
 

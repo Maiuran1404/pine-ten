@@ -25,30 +25,6 @@ interface TypingTextProps {
 }
 
 /**
- * Capitalizes the first letter of a string if it's lowercase.
- * Only affects the very first letter, not any letter in the string.
- */
-function capitalizeFirstLetter(text: string): string {
-  if (!text) return text;
-
-  // Find the index of the first letter (uppercase or lowercase)
-  const firstLetterIndex = text.search(/[a-zA-Z]/);
-  if (firstLetterIndex !== -1) {
-    const firstLetter = text.charAt(firstLetterIndex);
-    // Only capitalize if it's lowercase
-    if (firstLetter >= "a" && firstLetter <= "z") {
-      return (
-        text.slice(0, firstLetterIndex) +
-        firstLetter.toUpperCase() +
-        text.slice(firstLetterIndex + 1)
-      );
-    }
-  }
-
-  return text;
-}
-
-/**
  * A component that renders text with a typing animation effect.
  * Reveals text word-by-word to create a ChatGPT-like experience.
  */
@@ -62,59 +38,65 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
-  // Simply capitalize the first letter of the content
-  const processedContent = capitalizeFirstLetter(content.trim());
+  // Use content directly - capitalization should be done server-side
+  const textContent = content.trim();
 
   const [displayedContent, setDisplayedContent] = useState(
-    animate ? "" : processedContent
+    animate ? "" : textContent
   );
   const [isComplete, setIsComplete] = useState(!animate);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
   const wordIndexRef = useRef(0);
+  const contentRef = useRef(textContent);
 
   useEffect(() => {
-    // If not animating, show full content immediately
-    if (!animate) {
-      setDisplayedContent(processedContent);
+    // Clear any existing animation
+    if (animationRef.current) {
+      clearTimeout(animationRef.current);
+    }
+
+    // If content changed, reset
+    if (contentRef.current !== textContent) {
+      contentRef.current = textContent;
+      wordIndexRef.current = 0;
+    }
+
+    // If not animating or no content, show full content immediately
+    if (!animate || !textContent) {
+      setDisplayedContent(textContent);
       setIsComplete(true);
       return;
     }
 
-    // Reset state when content changes
+    // Reset state
     setDisplayedContent("");
     setIsComplete(false);
     wordIndexRef.current = 0;
-    setSelectedOptions([]);
 
-    // Split content into words while preserving whitespace and newlines
-    const words = processedContent.split(/(\s+)/);
+    // Split content into words while preserving whitespace
+    const words = textContent.split(/(\s+)/);
 
     const animateWords = () => {
       if (wordIndexRef.current < words.length) {
-        // Add next word
         setDisplayedContent((prev) => prev + words[wordIndexRef.current]);
         wordIndexRef.current++;
-
-        // Schedule next word
         animationRef.current = window.setTimeout(animateWords, speed);
       } else {
-        // Animation complete
         setIsComplete(true);
         onComplete?.();
       }
     };
 
-    // Start animation after a brief delay
-    animationRef.current = window.setTimeout(animateWords, 100);
+    // Start animation
+    animationRef.current = window.setTimeout(animateWords, 50);
 
-    // Cleanup
     return () => {
       if (animationRef.current) {
         clearTimeout(animationRef.current);
       }
     };
-  }, [content, animate, speed, onComplete, processedContent]);
+  }, [textContent, animate, speed, onComplete]);
 
   // Handle option click for list items
   const handleListItemClick = useCallback(

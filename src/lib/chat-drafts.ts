@@ -34,6 +34,33 @@ export interface ChatDraft {
       options: string[];
       multiSelect?: boolean;
     };
+    deliverableStyles?: {
+      id: string;
+      name: string;
+      description: string | null;
+      imageUrl: string;
+      deliverableType: string;
+      styleAxis: string;
+      subStyle: string | null;
+      semanticTags: string[];
+      brandMatchScore?: number;
+      matchReason?: string;
+    }[];
+    deliverableStyleMarker?: {
+      type: "initial" | "more" | "different";
+      deliverableType: string;
+      styleAxis?: string;
+    };
+    selectedStyle?: {
+      id: string;
+      name: string;
+      description: string | null;
+      imageUrl: string;
+      deliverableType: string;
+      styleAxis: string;
+      subStyle: string | null;
+      semanticTags: string[];
+    };
   }[];
   selectedStyles: string[];
   moodboardItems?: MoodboardItemData[];
