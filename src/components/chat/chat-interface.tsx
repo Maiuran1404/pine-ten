@@ -8,6 +8,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
+import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -1456,12 +1457,20 @@ export function ChatInterface({
       styleName: userMessage.selectedStyle?.name,
     });
 
-    // Add message first and let it render
-    setMessages((prev) => [...prev, userMessage]);
+    // Force React to synchronously commit this state update before continuing
+    // This ensures the message is in the DOM before we set loading state
+    flushSync(() => {
+      setMessages((prev) => [...prev, userMessage]);
+    });
 
-    // Wait for the message to render before showing loading state
-    // This ensures the user sees their message with the style image before the loading indicator
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Now wait for browser to actually paint the message
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 100);
+        });
+      });
+    });
 
     console.log(
       "Message should now be visible in handleSubmitDeliverableStyles, showing loading indicator"
@@ -1550,12 +1559,20 @@ export function ChatInterface({
       styleName: userMessage.selectedStyle?.name,
     });
 
-    // Add message first and let it render
-    setMessages((prev) => [...prev, userMessage]);
+    // Force React to synchronously commit this state update before continuing
+    // This ensures the message is in the DOM before we set loading state
+    flushSync(() => {
+      setMessages((prev) => [...prev, userMessage]);
+    });
 
-    // Wait for the message to render before showing loading state
-    // This ensures the user sees their message with the style image before the loading indicator
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Now wait for browser to actually paint the message
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 100);
+        });
+      });
+    });
 
     console.log(
       "Message should now be visible in handleConfirmStyleSelection, showing loading indicator"
@@ -2301,6 +2318,21 @@ export function ChatInterface({
         {/* Messages - scrollable area */}
         <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
           <div className="space-y-4 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">
+            {/* DEBUG: Log all messages being rendered */}
+            {(() => {
+              console.log(
+                "RENDER: messages count =",
+                messages.length,
+                "messages =",
+                messages.map((m) => ({
+                  id: m.id,
+                  role: m.role,
+                  content: m.content.substring(0, 50),
+                  hasSelectedStyle: !!m.selectedStyle,
+                }))
+              );
+              return null;
+            })()}
             <AnimatePresence>
               {messages.map((message, index) => (
                 <motion.div
@@ -2589,6 +2621,15 @@ export function ChatInterface({
                   ) : (
                     /* User message - beige/cream bubble with edit icon and avatar */
                     <div className="max-w-[75%] group flex items-start gap-3">
+                      {(() => {
+                        console.log("RENDER USER MESSAGE:", {
+                          id: message.id,
+                          content: message.content,
+                          hasSelectedStyle: !!message.selectedStyle,
+                          imageUrl: message.selectedStyle?.imageUrl,
+                        });
+                        return null;
+                      })()}
                       <div className="flex-1">
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle &&
