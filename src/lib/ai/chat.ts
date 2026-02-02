@@ -89,14 +89,15 @@ TYPE MAPPING:
 - Branding → brand_identity
 
 RESPONSE FORMAT (when showing styles):
-Write 1-2 sentences of creative direction, then the marker on a new line.
+Write 1-2 sentences of creative direction, then ask which style resonates, then the marker.
 Example:
-"For a product launch video, we'll want to capture attention in the first second and tell your story fast. Here are some directions that could work."
+"For a product launch video, we'll want to capture attention fast and tell your story visually. Which of these directions feels right?"
 [DELIVERABLE_STYLES: instagram_reel]
 
 RULES:
 - 15-30 words max before the marker
 - No exclamation marks
+- Always ask which style direction they prefer
 - Always end with the [DELIVERABLE_STYLES: type] marker when you have enough context`;
 
 function getSystemPrompt(): string {
