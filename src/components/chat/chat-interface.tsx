@@ -1448,7 +1448,24 @@ export function ChatInterface({
       selectedStyle: selectedStyleForMessage,
     };
 
+    console.log("Adding user message with selected style (from moodboard):", {
+      messageId: userMessage.id,
+      content: userMessage.content,
+      hasSelectedStyle: !!userMessage.selectedStyle,
+      styleImageUrl: userMessage.selectedStyle?.imageUrl,
+      styleName: userMessage.selectedStyle?.name,
+    });
+
+    // Add message first and let it render
     setMessages((prev) => [...prev, userMessage]);
+
+    // Wait for the message to render before showing loading state
+    // This ensures the user sees their message with the style image before the loading indicator
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    console.log(
+      "Message should now be visible in handleSubmitDeliverableStyles, showing loading indicator"
+    );
     setIsLoading(true);
 
     try {
@@ -1525,7 +1542,24 @@ export function ChatInterface({
       selectedStyle: style, // Include the full style for rendering
     };
 
+    console.log("Adding user message with selected style:", {
+      messageId: userMessage.id,
+      content: userMessage.content,
+      hasSelectedStyle: !!userMessage.selectedStyle,
+      styleImageUrl: userMessage.selectedStyle?.imageUrl,
+      styleName: userMessage.selectedStyle?.name,
+    });
+
+    // Add message first and let it render
     setMessages((prev) => [...prev, userMessage]);
+
+    // Wait for the message to render before showing loading state
+    // This ensures the user sees their message with the style image before the loading indicator
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    console.log(
+      "Message should now be visible in handleConfirmStyleSelection, showing loading indicator"
+    );
     setIsLoading(true);
 
     try {
