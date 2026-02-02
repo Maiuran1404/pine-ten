@@ -75,7 +75,7 @@ export function TypingText({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
   const wordIndexRef = useRef(0);
-  const hasAnimatedRef = useRef(false);
+  const lastContentRef = useRef<string>("");
   const onCompleteRef = useRef(onComplete);
 
   // Keep onComplete ref updated
@@ -86,16 +86,17 @@ export function TypingText({
     if (!animate) {
       setDisplayedContent(processedContent);
       setIsComplete(true);
+      lastContentRef.current = processedContent;
       return;
     }
 
-    // Prevent re-animation if already animated this content
-    if (hasAnimatedRef.current) {
+    // Only re-animate if content actually changed
+    if (lastContentRef.current === processedContent) {
       return;
     }
-    hasAnimatedRef.current = true;
+    lastContentRef.current = processedContent;
 
-    // Reset state when content changes
+    // Reset state for new content
     setDisplayedContent("");
     setIsComplete(false);
     wordIndexRef.current = 0;
@@ -129,11 +130,6 @@ export function TypingText({
       }
     };
   }, [processedContent, animate, speed]);
-
-  // Reset hasAnimatedRef when content actually changes
-  useEffect(() => {
-    hasAnimatedRef.current = false;
-  }, [content]);
 
   // Handle option click for list items
   const handleListItemClick = useCallback(

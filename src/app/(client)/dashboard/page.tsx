@@ -715,13 +715,9 @@ function DashboardContent() {
                               (o) => o.title === selectedOption
                             );
                             if (option) {
-                              const fullPrompt = `${option.title}: ${
-                                option.description
-                              }${
-                                modalNotes
-                                  ? ` Additional notes: ${modalNotes}`
-                                  : ""
-                              }`;
+                              const fullPrompt = modalNotes
+                                ? `${option.description} Additional notes: ${modalNotes}`
+                                : option.description;
                               handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);
@@ -739,13 +735,9 @@ function DashboardContent() {
                               (o) => o.title === selectedOption
                             );
                             if (option) {
-                              const fullPrompt = `${option.title}: ${
-                                option.description
-                              }${
-                                modalNotes
-                                  ? ` Additional notes: ${modalNotes}`
-                                  : ""
-                              }`;
+                              const fullPrompt = modalNotes
+                                ? `${option.description} Additional notes: ${modalNotes}`
+                                : option.description;
                               handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);
