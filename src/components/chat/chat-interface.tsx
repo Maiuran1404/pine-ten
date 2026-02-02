@@ -1362,19 +1362,56 @@ export function ChatInterface({
   const handleSubmitStyles = async () => {
     if (selectedStyles.length === 0 || isLoading) return;
 
-    const styleMessage =
-      selectedStyles.length === 1
-        ? `I like the ${selectedStyles[0]} style`
-        : `I like these styles: ${selectedStyles.join(", ")}`;
+    // Find the full style objects from styleReferences in messages
+    const allStyleReferences = messages
+      .filter(m => m.styleReferences && m.styleReferences.length > 0)
+      .flatMap(m => m.styleReferences || []);
+
+    const matchedStyles = allStyleReferences.filter(s =>
+      selectedStyles.includes(s.name)
+    );
+
+    // Convert StyleReference to DeliverableStyle-like object for display
+    // Only the imageUrl and name are used in rendering
+    const selectedStyleForMessage: DeliverableStyle | undefined = matchedStyles.length === 1
+      ? {
+          id: `style-ref-${matchedStyles[0].name}`,
+          name: matchedStyles[0].name,
+          description: matchedStyles[0].description || null,
+          imageUrl: matchedStyles[0].imageUrl,
+          deliverableType: matchedStyles[0].category || 'unknown',
+          styleAxis: 'reference',
+          subStyle: null,
+          semanticTags: [],
+        }
+      : undefined;
+
+    const styleMessage = selectedStyles.length === 1
+      ? `Style selected: ${selectedStyles[0]}`
+      : `Styles selected: ${selectedStyles.join(", ")}`;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: styleMessage,
       timestamp: new Date(),
+      selectedStyle: selectedStyleForMessage,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Force React to synchronously commit this state update before continuing
+    flushSync(() => {
+      setMessages((prev) => [...prev, userMessage]);
+    });
+
+    // Wait for browser to paint the message
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 100);
+        });
+      });
+    });
+
     setIsLoading(true);
 
     try {
@@ -1449,14 +1486,6 @@ export function ChatInterface({
       selectedStyle: selectedStyleForMessage,
     };
 
-    console.log("Adding user message with selected style (from moodboard):", {
-      messageId: userMessage.id,
-      content: userMessage.content,
-      hasSelectedStyle: !!userMessage.selectedStyle,
-      styleImageUrl: userMessage.selectedStyle?.imageUrl,
-      styleName: userMessage.selectedStyle?.name,
-    });
-
     // Force React to synchronously commit this state update before continuing
     // This ensures the message is in the DOM before we set loading state
     flushSync(() => {
@@ -1472,9 +1501,6 @@ export function ChatInterface({
       });
     });
 
-    console.log(
-      "Message should now be visible in handleSubmitDeliverableStyles, showing loading indicator"
-    );
     setIsLoading(true);
 
     try {
@@ -1530,18 +1556,15 @@ export function ChatInterface({
   const handleConfirmStyleSelection = async (
     selectedStyles: DeliverableStyle[]
   ) => {
-    if (selectedStyles.length === 0 || isLoading) return;
+    if (selectedStyles.length === 0 || isLoading) {
+      return;
+    }
 
     const style = selectedStyles[0];
-    const styleMessage = "Please implement this.";
+    const styleMessage = `Style selected: ${style.name}`;
 
-    // Add to moodboard
-    selectedStyles.forEach((s) => {
-      if (!hasMoodboardItem(s.id)) {
-        addFromStyle(s);
-        addStyleToVisualDirection(s);
-      }
-    });
+    // NOTE: Moodboard updates moved to AFTER API call to prevent useEffect re-run
+    // that would reload stale draft and lose the user message
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -1550,14 +1573,6 @@ export function ChatInterface({
       timestamp: new Date(),
       selectedStyle: style, // Include the full style for rendering
     };
-
-    console.log("Adding user message with selected style:", {
-      messageId: userMessage.id,
-      content: userMessage.content,
-      hasSelectedStyle: !!userMessage.selectedStyle,
-      styleImageUrl: userMessage.selectedStyle?.imageUrl,
-      styleName: userMessage.selectedStyle?.name,
-    });
 
     // Force React to synchronously commit this state update before continuing
     // This ensures the message is in the DOM before we set loading state
@@ -1574,9 +1589,6 @@ export function ChatInterface({
       });
     });
 
-    console.log(
-      "Message should now be visible in handleConfirmStyleSelection, showing loading indicator"
-    );
     setIsLoading(true);
 
     try {
@@ -1621,6 +1633,15 @@ export function ChatInterface({
       if (data.deliverableStyleMarker) {
         setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType);
       }
+
+      // Add to moodboard AFTER API call completes to prevent useEffect from
+      // reloading stale draft and losing the user message
+      selectedStyles.forEach((s) => {
+        if (!hasMoodboardItem(s.id)) {
+          addFromStyle(s);
+          addStyleToVisualDirection(s);
+        }
+      });
     } catch {
       toast.error("Failed to send message. Please try again.");
     } finally {
@@ -2318,21 +2339,6 @@ export function ChatInterface({
         {/* Messages - scrollable area */}
         <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
           <div className="space-y-4 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">
-            {/* DEBUG: Log all messages being rendered */}
-            {(() => {
-              console.log(
-                "RENDER: messages count =",
-                messages.length,
-                "messages =",
-                messages.map((m) => ({
-                  id: m.id,
-                  role: m.role,
-                  content: m.content.substring(0, 50),
-                  hasSelectedStyle: !!m.selectedStyle,
-                }))
-              );
-              return null;
-            })()}
             <AnimatePresence>
               {messages.map((message, index) => (
                 <motion.div
@@ -2621,15 +2627,6 @@ export function ChatInterface({
                   ) : (
                     /* User message - beige/cream bubble with edit icon and avatar */
                     <div className="max-w-[75%] group flex items-start gap-3">
-                      {(() => {
-                        console.log("RENDER USER MESSAGE:", {
-                          id: message.id,
-                          content: message.content,
-                          hasSelectedStyle: !!message.selectedStyle,
-                          imageUrl: message.selectedStyle?.imageUrl,
-                        });
-                        return null;
-                      })()}
                       <div className="flex-1">
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle &&

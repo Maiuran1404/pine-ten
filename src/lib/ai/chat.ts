@@ -61,12 +61,14 @@ const SYSTEM_PROMPT = `You are a senior creative director at Crafted.
 
 TONE: Professional, confident, thoughtful. Write complete sentences that sound natural.
 
+CRITICAL RULE: Ask ONE question at a time. Never combine multiple questions in one response.
+
 CRITICAL RULE: You MUST output [DELIVERABLE_STYLES: type] to show style options.
 Without this exact marker on its own line, no styles will appear to the user.
 
 WHEN USER SELECTS A STYLE:
-When user says "I'll go with the [style name]" or similar, acknowledge their choice and ask about specifics.
-Example: "The Premium Product Showcase style will give your product a cinematic feel. Do you have specific scenes or moments you want to highlight?"
+When user says "I'll go with the [style name]" or "Please implement this", acknowledge their choice briefly and ask ONE specific question about the project.
+Example: "The Premium Product Showcase style will give your product a cinematic feel. What product are we featuring?"
 
 WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - User mentions ANY content type (video, post, carousel, ad, logo, etc.)
@@ -89,15 +91,16 @@ TYPE MAPPING:
 - Branding → brand_identity
 
 RESPONSE FORMAT (when showing styles):
-Write 1-2 sentences of creative direction, then ask which style resonates, then the marker.
+Write 1-2 sentences of creative direction, then end with the marker. Do NOT ask a question - the styles ARE the question.
 Example:
-"For a product launch video, we'll want to capture attention fast and tell your story visually. Which of these directions feels right?"
+"For a cinematic product introduction, we'll craft something that feels like a movie trailer for your brand."
 [DELIVERABLE_STYLES: instagram_reel]
 
 RULES:
 - 15-30 words max before the marker
 - No exclamation marks
-- Always ask which style direction they prefer
+- ONE question per response maximum
+- When showing styles, do NOT also ask a question - the style selection IS the question
 - Always end with the [DELIVERABLE_STYLES: type] marker when you have enough context`;
 
 function getSystemPrompt(): string {
@@ -238,21 +241,11 @@ You already know their brand. DO NOT ask about: company, industry, audience, col
   const basePrompt = await getSystemPrompt();
 
   // Build brand detection context
+  // NOTE: We don't add brand questions here anymore - we assume the user's saved brand is correct
+  // This prevents double-questions (brand question + style question in same response)
   let brandDetectionContext = "";
-  if (
-    context?.brandDetection?.detected &&
-    context.brandDetection.mentionedBrand
-  ) {
-    if (!context.brandDetection.matchesProfile && company?.name) {
-      brandDetectionContext = `
-BRAND CONTEXT AWARENESS:
-- User's saved brand: ${company.name}
-- User mentioned brand in message: "${context.brandDetection.mentionedBrand}"
-- NOTE: The mentioned brand differs from the saved brand profile.
-- You should ask: "I see you're creating for ${context.brandDetection.mentionedBrand}. Should I use your saved ${company.name} brand guidelines, or work with what you've described?"
-- Use [QUICK_OPTIONS] with: {"question": "Which brand should I use?", "options": ["Use my saved brand (${company.name})", "Use ${context.brandDetection.mentionedBrand}", "This is a new brand"]}
-`;
-    }
+  if (company?.name) {
+    brandDetectionContext = `Using brand: ${company.name}. Don't ask about brand - just use it.`;
   }
 
   // Build request completeness context - keep minimal
