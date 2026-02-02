@@ -583,66 +583,85 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden bg-background rounded-2xl">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
           {selectedCategory && (() => {
             const category = TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES];
             const Icon = category?.icon;
             return (
               <>
                 {/* Header */}
-                <div className="p-6 pb-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                      {Icon && <Icon className="h-7 w-7 text-emerald-500 dark:text-emerald-400" />}
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
+                      {Icon && <Icon className="h-5 w-5 text-white" />}
                     </div>
-                    <div className="pt-0.5">
-                      <h2 className="text-xl font-semibold text-foreground mb-1">{selectedCategory}</h2>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {category?.modalDescription}
-                      </p>
-                    </div>
+                    <h2 className="text-lg font-semibold text-foreground">{selectedCategory}</h2>
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    {category?.modalDescription}
+                  </p>
                 </div>
-
-                {/* Divider */}
-                <div className="mx-6 h-px bg-border/50" />
 
                 {/* Options List */}
-                <div className="px-4 py-3 space-y-1 max-h-[320px] overflow-y-auto">
-                  {category?.options.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedOption(option.title === selectedOption ? null : option.title)}
-                      className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left ${
-                        selectedOption === option.title
-                          ? "bg-emerald-50 dark:bg-emerald-500/10"
-                          : "hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="w-16 h-16 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/5 flex items-center justify-center flex-shrink-0 border border-border/30">
-                        {Icon && <Icon className="h-8 w-8 text-emerald-200 dark:text-emerald-700" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground mb-0.5">{option.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-snug">{option.description}</p>
-                      </div>
-                    </button>
-                  ))}
+                <div className="px-3 pb-3 space-y-1.5 max-h-[280px] overflow-y-auto">
+                  {category?.options.map((option, index) => {
+                    const isSelected = selectedOption === option.title;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedOption(isSelected ? null : option.title)}
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 text-left border-2 ${
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
+                            : "border-transparent hover:bg-muted/60"
+                        }`}
+                      >
+                        {/* Selection indicator */}
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-500"
+                            : "border-muted-foreground/30"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-medium text-[15px] mb-0.5 transition-colors ${
+                            isSelected ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"
+                          }`}>{option.title}</h3>
+                          <p className="text-sm text-muted-foreground leading-snug">{option.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Divider */}
-                <div className="mx-6 h-px bg-border/50" />
-
-                {/* Notes Input */}
-                <div className="p-6">
-                  <p className="font-medium text-foreground mb-3">Would like to add something?</p>
-                  <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-border/50 bg-muted/30">
+                {/* Notes Input Section */}
+                <div className="px-4 pb-5 pt-2">
+                  <div className="relative">
                     <input
                       type="text"
                       value={modalNotes}
                       onChange={(e) => setModalNotes(e.target.value)}
-                      placeholder="Add some notes"
-                      className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && selectedOption) {
+                          const option = category?.options.find(o => o.title === selectedOption);
+                          if (option) {
+                            const prompt = modalNotes
+                              ? `${option.prompt}. Notes: ${modalNotes}`
+                              : option.prompt;
+                            handleSubmit(prompt);
+                            setSelectedCategory(null);
+                            setSelectedOption(null);
+                            setModalNotes("");
+                          }
+                        }
+                      }}
+                      placeholder="Add any specific details or requirements..."
+                      className="w-full h-12 px-4 pr-32 rounded-xl border border-border/60 bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 text-sm transition-all"
                     />
                     <button
                       onClick={() => {
@@ -660,9 +679,9 @@ function DashboardContent() {
                         }
                       }}
                       disabled={!selectedOption}
-                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground text-white rounded-full font-medium transition-colors whitespace-nowrap text-sm"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
                     >
-                      Create Prompt
+                      Continue
                     </button>
                   </div>
                 </div>

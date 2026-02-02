@@ -38,7 +38,27 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
-  const [displayedContent, setDisplayedContent] = useState(animate ? "" : content);
+  // Capitalize the content before any processing
+  const capitalizeContent = (text: string): string => {
+    return text
+      // Capitalize first alphabetic character (handles leading whitespace)
+      .replace(/^(\s*)([a-z])/, (_, space, letter) => (space || '') + letter.toUpperCase())
+      // Capitalize after sentence-ending punctuation followed by space
+      .replace(/([.!?]\s+)([a-z])/g, (_, punct, letter) => punct + letter.toUpperCase())
+      // Capitalize after colons followed by space (common in chat responses)
+      .replace(/(:\s+)([a-z])/g, (_, colon, letter) => colon + letter.toUpperCase())
+      // Capitalize after newlines
+      .replace(/(\n\s*)([a-z])/g, (_, newline, letter) => newline + letter.toUpperCase())
+      // Capitalize after dashes/bullets that start a line (for lists)
+      .replace(/(\n\s*[-*]\s*)([a-z])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
+      // Capitalize after markdown bold/italic markers at start
+      .replace(/^(\s*\*{1,2})([a-z])/, (_, stars, letter) => stars + letter.toUpperCase());
+  };
+
+  // Pre-capitalize the full content
+  const processedContent = capitalizeContent(content);
+
+  const [displayedContent, setDisplayedContent] = useState(animate ? "" : processedContent);
   const [isComplete, setIsComplete] = useState(!animate);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
@@ -47,7 +67,7 @@ export function TypingText({
   useEffect(() => {
     // If not animating, show full content immediately
     if (!animate) {
-      setDisplayedContent(content);
+      setDisplayedContent(processedContent);
       setIsComplete(true);
       return;
     }
@@ -58,8 +78,8 @@ export function TypingText({
     wordIndexRef.current = 0;
     setSelectedOptions([]);
 
-    // Split content into words while preserving whitespace and newlines
-    const words = content.split(/(\s+)/);
+    // Split processed content into words while preserving whitespace and newlines
+    const words = processedContent.split(/(\s+)/);
 
     const animateWords = () => {
       if (wordIndexRef.current < words.length) {
@@ -119,11 +139,7 @@ export function TypingText({
     }
   }, [selectedOptions, onOptionClick, onOptionsConfirm]);
 
-  // Ensure content starts with capital letter
-  const capitalizedContent = displayedContent.length > 0 && /^[a-z]/.test(displayedContent)
-    ? displayedContent.charAt(0).toUpperCase() + displayedContent.slice(1)
-    : displayedContent;
-
+  // displayedContent is already capitalized from processedContent
   return (
     <div className={className}>
       <ReactMarkdown
@@ -184,7 +200,7 @@ export function TypingText({
           },
         }}
       >
-        {capitalizedContent}
+        {displayedContent}
       </ReactMarkdown>
 
       {/* Confirm button for multi-select */}

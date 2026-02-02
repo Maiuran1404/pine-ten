@@ -83,6 +83,8 @@ import { QuickOptions } from "./quick-options";
 import { DeliverableStyleGrid } from "./deliverable-style-grid";
 import { ChatLayout } from "./chat-layout";
 import { StyleSelectionGrid } from "./style-selection-grid";
+import { StyleDetailModal } from "./style-detail-modal";
+import { InlineCollection } from "./inline-collection";
 import { SimpleOptionChips } from "./option-chips";
 import { TaskSubmissionModal } from "./task-submission-modal";
 import { useMoodboard } from "@/lib/hooks/use-moodboard";
@@ -165,16 +167,16 @@ function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString();
 }
 
-// Progressive loading indicator component
+// Progressive loading indicator component - minimal design
 function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
   const [loadingStage, setLoadingStage] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const loadingMessages = [
-    { text: "Understanding your request...", icon: Lightbulb },
-    { text: "Finding the best approach...", icon: Sparkles },
-    { text: "Crafting your response...", icon: Palette },
-    { text: "Almost there...", icon: CheckCircle2 },
+    "Understanding your request...",
+    "Finding the best approach...",
+    "Crafting your response...",
+    "Almost there...",
   ];
 
   useEffect(() => {
@@ -194,9 +196,6 @@ function LoadingIndicator({ requestStartTime }: { requestStartTime: number | nul
     return () => clearInterval(interval);
   }, [requestStartTime]);
 
-  const currentMessage = loadingMessages[loadingStage];
-  const CurrentIcon = currentMessage.icon;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -204,32 +203,31 @@ function LoadingIndicator({ requestStartTime }: { requestStartTime: number | nul
       transition={{ duration: 0.2 }}
       className="flex items-start gap-3"
     >
-      {/* Animated avatar */}
-      <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0 relative">
+      {/* Minimal avatar - just a green circle */}
+      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 relative">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/30"
         />
-        <Sparkles className="h-4 w-4 text-white" />
+        <div className="w-2.5 h-2.5 rounded-full bg-white" />
       </div>
       <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
         <div className="flex items-center gap-3">
           {/* Animated dots */}
           <div className="flex gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
-          {/* Progressive message */}
+          {/* Progressive message - no icon, just text */}
           <motion.div
             key={loadingStage}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-sm text-muted-foreground"
+            className="text-sm text-muted-foreground"
           >
-            <CurrentIcon className="h-3.5 w-3.5 text-green-500" />
-            <span>{currentMessage.text}</span>
+            {loadingMessages[loadingStage]}
           </motion.div>
           {/* Timer */}
           {elapsedTime > 0 && (
@@ -267,6 +265,7 @@ export function ChatInterface({
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<string[]>([]);
+  const [selectedStyleForModal, setSelectedStyleForModal] = useState<DeliverableStyle | null>(null);
   const [currentDeliverableType, setCurrentDeliverableType] = useState<string | null>(null);
   const [styleOffset, setStyleOffset] = useState<Record<string, number>>({});
   const [excludedStyleAxes, setExcludedStyleAxes] = useState<string[]>([]);
@@ -461,6 +460,32 @@ export function ChatInterface({
 
     setInitialMessageProcessed(true);
 
+    // If we already have messages loaded from draft, check if we should skip
+    // This prevents regeneration on page refresh
+    if (messages.length > 0) {
+      // Check if the first user message matches the initial message
+      const firstUserMessage = messages.find(m => m.role === "user");
+      if (firstUserMessage && firstUserMessage.content === initialMessage) {
+        // Already have this conversation, don't regenerate
+        // Update URL to use draft param instead of message param
+        const url = new URL(window.location.href);
+        url.searchParams.delete("message");
+        url.searchParams.set("draft", draftId);
+        window.history.replaceState({}, "", url.toString());
+        return;
+      }
+      // Also skip if we have an assistant response (conversation already happened)
+      const hasAssistantResponse = messages.some(m => m.role === "assistant");
+      if (hasAssistantResponse) {
+        // Update URL to use draft param instead of message param
+        const url = new URL(window.location.href);
+        url.searchParams.delete("message");
+        url.searchParams.set("draft", draftId);
+        window.history.replaceState({}, "", url.toString());
+        return;
+      }
+    }
+
     let pendingFiles: UploadedFile[] = [];
     try {
       const storedFiles = sessionStorage.getItem("pending_chat_files");
@@ -487,8 +512,15 @@ export function ChatInterface({
       setMessages((prev) => [...prev, userMessage]);
     }
 
+    // Update URL to use draft param instead of message param
+    // This ensures refresh loads the draft instead of regenerating
+    const url = new URL(window.location.href);
+    url.searchParams.delete("message");
+    url.searchParams.set("draft", draftId);
+    window.history.replaceState({}, "", url.toString());
+
     setNeedsAutoContinue(true);
-  }, [initialMessage, initialMessageProcessed, isInitialized, seamlessTransition]);
+  }, [initialMessage, initialMessageProcessed, isInitialized, seamlessTransition, messages, draftId]);
 
   // Auto-continue conversation if last message was from user
   useEffect(() => {
@@ -1026,22 +1058,20 @@ export function ChatInterface({
     );
   };
 
-  const handleDeliverableStyleSelect = (style: DeliverableStyle) => {
-    const isSelecting = !selectedDeliverableStyles.includes(style.id);
+  // Handle clicking a style card - opens the detail modal
+  const handleStyleCardClick = (style: DeliverableStyle) => {
+    setSelectedStyleForModal(style);
+  };
 
-    setSelectedDeliverableStyles((prev) =>
-      prev.includes(style.id)
-        ? prev.filter((s) => s !== style.id)
-        : [...prev, style.id]
-    );
-
-    // Auto-add to moodboard when selecting
-    if (isSelecting && !hasMoodboardItem(style.id)) {
+  // Handle adding a style to the collection
+  const handleAddToCollection = (style: DeliverableStyle) => {
+    if (!hasMoodboardItem(style.id)) {
       addFromStyle(style);
-    }
+      // Also add to brief's visual direction
+      addStyleToVisualDirection(style);
+      toast.success(`Added "${style.name}" to collection`);
 
-    // Record selection to history (fire-and-forget, don't block UI)
-    if (isSelecting) {
+      // Record selection to history (fire-and-forget, don't block UI)
       fetch("/api/style-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1051,20 +1081,25 @@ export function ChatInterface({
           styleAxis: style.styleAxis,
           selectionContext: "chat",
           wasConfirmed: false,
-          // Note: draftId not sent since local drafts aren't in database
         }),
       }).catch(err => console.error("Failed to record style selection:", err));
     }
   };
 
-  // Handle adding style to moodboard without selecting
-  const handleAddToMoodboard = (style: DeliverableStyle) => {
-    if (!hasMoodboardItem(style.id)) {
-      addFromStyle(style);
-      // Also add to brief's visual direction
-      addStyleToVisualDirection(style);
-      toast.success(`Added "${style.name}" to moodboard`);
+  // Handle removing a style from the collection
+  const handleRemoveFromCollection = (styleId: string) => {
+    const item = moodboardItems.find((i) => i.metadata?.styleId === styleId);
+    if (item) {
+      removeMoodboardItem(item.id);
+      toast.success("Removed from collection");
     }
+  };
+
+  // Handle clearing all style items from collection
+  const handleClearStyleCollection = () => {
+    const styleItems = moodboardItems.filter((i) => i.type === "style");
+    styleItems.forEach((item) => removeMoodboardItem(item.id));
+    toast.success("Collection cleared");
   };
 
   const handleShowMoreStyles = async (styleAxis: string) => {
@@ -1255,10 +1290,11 @@ export function ChatInterface({
   };
 
   const handleSubmitDeliverableStyles = async (deliverableStyles: Array<{ id: string; name: string }>) => {
-    if (selectedDeliverableStyles.length === 0 || isLoading) return;
+    // Use moodboardStyleIds as the collection (unified model: collection = selection)
+    if (moodboardStyleIds.length === 0 || isLoading) return;
 
     const selectedStyleNames = deliverableStyles
-      .filter(s => selectedDeliverableStyles.includes(s.id))
+      .filter(s => moodboardStyleIds.includes(s.id))
       .map(s => s.name);
 
     const styleMessage = selectedStyleNames.length === 1
@@ -1284,7 +1320,7 @@ export function ChatInterface({
             role: m.role,
             content: m.content,
           })),
-          selectedDeliverableStyles,
+          selectedDeliverableStyles: moodboardStyleIds,
           moodboardHasStyles,
         }),
       });
@@ -1805,7 +1841,7 @@ export function ChatInterface({
       PENDING_ADMIN_REVIEW: { label: "Under Review", color: "bg-orange-500/10 text-orange-500", icon: <AlertCircle className="h-3 w-3" /> },
       PENDING_REVIEW: { label: "Pending Review", color: "bg-purple-500/10 text-purple-500", icon: <Timer className="h-3 w-3" /> },
       REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-500/10 text-red-500", icon: <RotateCcw className="h-3 w-3" /> },
-      COMPLETED: { label: "Completed", color: "bg-green-500/10 text-green-500", icon: <CheckCircle2 className="h-3 w-3" /> },
+      COMPLETED: { label: "Completed", color: "bg-emerald-600/10 text-emerald-500", icon: <CheckCircle2 className="h-3 w-3" /> },
       CANCELLED: { label: "Cancelled", color: "bg-muted text-muted-foreground", icon: <X className="h-3 w-3" /> },
     };
     return statusMap[status] || { label: status, color: "bg-muted text-muted-foreground", icon: <Info className="h-3 w-3" /> };
@@ -1863,33 +1899,7 @@ export function ChatInterface({
           )}
         </AnimatePresence>
 
-        {/* Chat header - minimal, clean design */}
-        {seamlessTransition && messages.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="shrink-0 mb-4 flex items-center justify-end gap-2 px-4"
-          >
-            {!isTaskMode && (
-              <button
-                onClick={() => setShowStartOverDialog(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-muted transition-colors border border-transparent hover:border-border"
-                title="Start a new conversation"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Start Over</span>
-              </button>
-            )}
-            <button
-              onClick={() => setShowDeleteDialog(true)}
-              className="p-2 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              aria-label="Delete chat"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </motion.div>
-        )}
+        {/* Chat header - removed Start Over and delete buttons per user request */}
 
         {/* Delete confirmation dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -1962,7 +1972,7 @@ export function ChatInterface({
                     /* Assistant message - left aligned with sparkle avatar */
                     <div className="group max-w-[85%] flex items-start gap-3">
                       {/* Sparkle avatar */}
-                      <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
                         <Sparkles className="h-4 w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -2104,34 +2114,31 @@ export function ChatInterface({
                           >
                             {/* Only show full grid for the most recent message with styles */}
                             {index === lastStyleMessageIndex ? (
-                              <>
-                                <p className="text-sm font-medium mb-4 text-foreground">
+                              <div className="space-y-4">
+                                <p className="text-sm font-medium text-foreground">
                                   What style direction speaks to you?
                                 </p>
                                 <StyleSelectionGrid
                                   styles={message.deliverableStyles}
-                                  selectedStyles={selectedDeliverableStyles}
-                                  moodboardStyleIds={moodboardStyleIds}
-                                  onSelectStyle={handleDeliverableStyleSelect}
-                                  onAddToMoodboard={handleAddToMoodboard}
+                                  collectionStyleIds={moodboardStyleIds}
+                                  onCardClick={handleStyleCardClick}
+                                  onAddToCollection={handleAddToCollection}
+                                  onRemoveFromCollection={handleRemoveFromCollection}
                                   onShowMore={handleShowMoreStyles}
                                   onShowDifferent={handleShowDifferentStyles}
                                   isLoading={isLoading || index < messages.length - 1}
                                 />
-                                {selectedDeliverableStyles.length > 0 && (
-                                  <div className="flex justify-end mt-3">
-                                    <Button
-                                      onClick={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
-                                      disabled={isLoading || index < messages.length - 1}
-                                      size="sm"
-                                      className="gap-2"
-                                    >
-                                      Continue with {selectedDeliverableStyles.length === 1 ? "style" : `${selectedDeliverableStyles.length} styles`}
-                                      <ArrowRight className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
+                                {/* Inline collection - shows collected styles */}
+                                {moodboardStyleIds.length > 0 && (
+                                  <InlineCollection
+                                    items={moodboardItems.filter(i => i.type === 'style')}
+                                    onRemoveItem={removeMoodboardItem}
+                                    onClearAll={handleClearStyleCollection}
+                                    onContinue={() => handleSubmitDeliverableStyles(message.deliverableStyles || [])}
+                                    isLoading={isLoading || index < messages.length - 1}
+                                  />
                                 )}
-                              </>
+                              </div>
                             ) : (
                               /* Collapsed summary for older style messages */
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -2141,7 +2148,7 @@ export function ChatInterface({
                                   <span className="text-primary">
                                     • {moodboardStyleIds.filter(id =>
                                       message.deliverableStyles?.some(s => s.id === id)
-                                    ).length} added to moodboard
+                                    ).length} in collection
                                   </span>
                                 )}
                               </div>
@@ -2183,7 +2190,7 @@ export function ChatInterface({
                             className={cn(
                               "p-1.5 rounded-md transition-colors",
                               messageFeedback[message.id] === 'up'
-                                ? "text-green-500 bg-green-500/10"
+                                ? "text-emerald-500 bg-emerald-600/10"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
                             title="Good response"
@@ -2211,8 +2218,8 @@ export function ChatInterface({
                           >
                             {copiedMessageId === message.id ? (
                               <>
-                                <Check className="h-3 w-3 text-green-500" />
-                                <span className="text-green-500">Copied</span>
+                                <Check className="h-3 w-3 text-emerald-500" />
+                                <span className="text-emerald-500">Copied</span>
                               </>
                             ) : (
                               <>
@@ -2228,7 +2235,7 @@ export function ChatInterface({
                     /* User message - beige/cream bubble with edit icon and avatar */
                     <div className="max-w-[75%] group flex items-start gap-3">
                       <div className="flex-1">
-                        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl px-4 py-3 relative border border-amber-200/50 dark:border-amber-800/30">
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30">
                           <p className="text-sm text-foreground whitespace-pre-wrap pr-16">
                             {message.content}
                           </p>
@@ -2237,7 +2244,7 @@ export function ChatInterface({
                             {index === lastUserMessageIndex && !isLoading && !isTaskMode && !pendingTask && (
                               <button
                                 onClick={handleEditLastMessage}
-                                className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-amber-200/50 dark:hover:bg-amber-800/30 hover:text-foreground transition-all"
+                                className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
                                 title="Edit this message"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -2260,30 +2267,6 @@ export function ChatInterface({
                 </motion.div>
               ))}
             </AnimatePresence>
-
-            {/* Regenerate response button - shows after last AI message */}
-            {messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && !isLoading && !pendingTask && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center mt-4"
-              >
-                <button
-                  onClick={() => {
-                    // Remove the last assistant message and regenerate
-                    const lastAssistantIdx = messages.length - 1;
-                    if (messages[lastAssistantIdx]?.role === "assistant") {
-                      setMessages(prev => prev.slice(0, lastAssistantIdx));
-                      setNeedsAutoContinue(true);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm text-sm text-muted-foreground hover:text-foreground hover:border-green-500/50 transition-all"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Regenerate response
-                </button>
-              </motion.div>
-            )}
 
             {/* Enhanced loading indicator with progressive messages */}
             {isLoading && (
@@ -2379,8 +2362,8 @@ export function ChatInterface({
           >
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-green-500" />
+                <div className="w-10 h-10 rounded-full bg-emerald-600/10 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Ready to submit this task?</p>
@@ -2391,7 +2374,7 @@ export function ChatInterface({
                         (You have {userCredits} credits)
                       </span>
                     ) : (
-                      <span className="text-green-500 ml-1">(You have {userCredits} credits)</span>
+                      <span className="text-emerald-500 ml-1">(You have {userCredits} credits)</span>
                     )}
                   </p>
                 </div>
@@ -2423,7 +2406,7 @@ export function ChatInterface({
         )}
 
         {/* Input area */}
-        <div className="shrink-0 mt-auto pt-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
+        <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
           {/* Pending uploads preview */}
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
@@ -2530,20 +2513,9 @@ export function ChatInterface({
                 <div className="h-4 w-px bg-border" />
                 {/* Credits indicator */}
                 <div className="flex items-center gap-1.5 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
                   <span className="text-muted-foreground">{userCredits} credits available</span>
                 </div>
-                {/* Divider */}
-                <div className="h-4 w-px bg-border" />
-                {/* Improve Prompt button */}
-                <button
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                  disabled={!input.trim() || isLoading}
-                  title="Enhance your prompt with AI"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Improve Prompt</span>
-                </button>
               </div>
 
               {/* Right actions */}
@@ -2551,7 +2523,7 @@ export function ChatInterface({
                 <Button
                   onClick={handleSend}
                   disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
-                  className="h-9 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full"
+                  className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
                 >
                   {isLoading ? (
                     <LoadingSpinner size="sm" />
@@ -2608,12 +2580,12 @@ export function ChatInterface({
                     className={cn(
                       "flex items-start gap-3 p-3 rounded-xl border transition-all text-left group",
                       "bg-white/60 dark:bg-card/60 backdrop-blur-sm",
-                      "hover:border-green-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md",
+                      "hover:border-emerald-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md",
                       "border-border/50"
                     )}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0 group-hover:bg-green-500/20 transition-colors">
-                      <item.icon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-600/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-600/20 transition-colors">
+                      <item.icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">{item.label}</p>
@@ -2636,6 +2608,16 @@ export function ChatInterface({
           )}
         </div>
       </div>
+
+      {/* Style Detail Modal */}
+      <StyleDetailModal
+        style={selectedStyleForModal}
+        isOpen={!!selectedStyleForModal}
+        onClose={() => setSelectedStyleForModal(null)}
+        isInCollection={selectedStyleForModal ? hasMoodboardItem(selectedStyleForModal.id) : false}
+        onAddToCollection={handleAddToCollection}
+        onRemoveFromCollection={handleRemoveFromCollection}
+      />
 
       {/* Task Submission Modal */}
       <TaskSubmissionModal

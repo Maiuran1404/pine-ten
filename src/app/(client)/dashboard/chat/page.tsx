@@ -186,7 +186,7 @@ export default function ChatPage() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   item.active
-                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
                     : "text-foreground hover:bg-muted"
                 )}
               >
@@ -202,11 +202,11 @@ export default function ChatPage() {
           <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Recent</p>
           <div className="space-y-1">
             {drafts.slice(0, 10).map((draft) => (
-              <button
+              <div
                 key={draft.id}
                 onClick={() => handleContinueDraft(draft.id)}
                 className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group",
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group cursor-pointer",
                   currentDraftId === draft.id
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -219,7 +219,7 @@ export default function ChatPage() {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              </button>
+              </div>
             ))}
             {drafts.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center">
@@ -231,22 +231,22 @@ export default function ChatPage() {
 
         {/* Credits card at bottom */}
         <div className="p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-950/40 p-4 border border-green-200/50 dark:border-green-800/50 relative overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-950/40 p-4 border border-emerald-200/50 dark:border-emerald-800/50 relative overflow-hidden">
             {/* Decorative elements */}
-            <div className="absolute top-2 right-2 w-16 h-16 bg-green-200/30 dark:bg-green-700/20 rounded-lg transform rotate-12" />
-            <div className="absolute top-6 right-6 w-12 h-12 bg-green-300/30 dark:bg-green-600/20 rounded-lg transform -rotate-6" />
+            <div className="absolute top-2 right-2 w-16 h-16 bg-emerald-200/30 dark:bg-emerald-700/20 rounded-lg transform rotate-12" />
+            <div className="absolute top-6 right-6 w-12 h-12 bg-emerald-300/30 dark:bg-emerald-600/20 rounded-lg transform -rotate-6" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-green-800 dark:text-green-300">Starter Plan</span>
-                <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">{userCredits} Credits</span>
+                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Starter Plan</span>
+                <span className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full font-medium">{userCredits} Credits</span>
               </div>
               <Link href="/dashboard/credits">
-                <Button size="sm" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium">
+                <Button size="sm" className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium">
                   Get more Credits!
                 </Button>
               </Link>
-              <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-3 text-center leading-relaxed">
                 Boost productivity with seamless tasks request and responsive AI, built to assist you.
               </p>
             </div>
@@ -256,13 +256,13 @@ export default function ChatPage() {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-        {/* Soft gradient green/mint background at top */}
+        {/* Soft gradient emerald/mint background at top */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `linear-gradient(180deg,
-              rgba(220, 252, 231, 0.5) 0%,
-              rgba(240, 253, 244, 0.3) 15%,
+              rgba(209, 250, 229, 0.4) 0%,
+              rgba(236, 253, 245, 0.2) 15%,
               rgba(255, 255, 255, 0) 30%
             )`,
           }}
@@ -272,7 +272,7 @@ export default function ChatPage() {
           className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
           style={{
             background: `linear-gradient(180deg,
-              rgba(20, 83, 45, 0.2) 0%,
+              rgba(6, 78, 59, 0.15) 0%,
               rgba(10, 10, 10, 0.5) 15%,
               rgba(10, 10, 10, 1) 30%
             )`,
@@ -301,16 +301,6 @@ export default function ChatPage() {
 
           {/* Right side - actions */}
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/credits">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 px-4 rounded-xl border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                Add More Credits
-              </Button>
-            </Link>
             <Link href="/dashboard/credits">
               <Button
                 variant="outline"
