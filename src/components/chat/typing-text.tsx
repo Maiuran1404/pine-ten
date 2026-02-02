@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,11 +62,8 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
-  // Memoize processed content to prevent unnecessary recalculations
-  const processedContent = useMemo(
-    () => capitalizeFirstLetter(content.trim()),
-    [content]
-  );
+  // Simply capitalize the first letter of the content
+  const processedContent = capitalizeFirstLetter(content.trim());
 
   const [displayedContent, setDisplayedContent] = useState(
     animate ? "" : processedContent
@@ -75,28 +72,16 @@ export function TypingText({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
   const wordIndexRef = useRef(0);
-  const lastContentRef = useRef<string>("");
-  const onCompleteRef = useRef(onComplete);
-
-  // Keep onComplete ref updated
-  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     // If not animating, show full content immediately
     if (!animate) {
       setDisplayedContent(processedContent);
       setIsComplete(true);
-      lastContentRef.current = processedContent;
       return;
     }
 
-    // Only re-animate if content actually changed
-    if (lastContentRef.current === processedContent) {
-      return;
-    }
-    lastContentRef.current = processedContent;
-
-    // Reset state for new content
+    // Reset state when content changes
     setDisplayedContent("");
     setIsComplete(false);
     wordIndexRef.current = 0;
@@ -116,7 +101,7 @@ export function TypingText({
       } else {
         // Animation complete
         setIsComplete(true);
-        onCompleteRef.current?.();
+        onComplete?.();
       }
     };
 
@@ -129,7 +114,7 @@ export function TypingText({
         clearTimeout(animationRef.current);
       }
     };
-  }, [processedContent, animate, speed]);
+  }, [content, animate, speed, onComplete, processedContent]);
 
   // Handle option click for list items
   const handleListItemClick = useCallback(
