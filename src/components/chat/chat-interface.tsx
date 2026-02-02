@@ -18,7 +18,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { useSession } from "@/lib/auth-client";
-import { useCredits, dispatchCreditsUpdated } from "@/providers/credit-provider";
+import {
+  useCredits,
+  dispatchCreditsUpdated,
+} from "@/providers/credit-provider";
 import {
   Send,
   Check,
@@ -760,7 +763,9 @@ export function ChatInterface({
 
     if (payment === "success" && creditsParam && !paymentProcessed) {
       setPaymentProcessed(true);
-      toast.success(`Successfully purchased ${creditsParam} credits!`, { duration: 5000 });
+      toast.success(`Successfully purchased ${creditsParam} credits!`, {
+        duration: 5000,
+      });
 
       // Clean up URL params without navigation
       const url = new URL(window.location.href);
@@ -2357,9 +2362,6 @@ export function ChatInterface({
                                 {/* Only show full grid for the most recent message with styles */}
                                 {index === lastStyleMessageIndex ? (
                                   <div className="space-y-4">
-                                    <p className="text-sm font-medium text-foreground">
-                                      What style direction speaks to you?
-                                    </p>
                                     <StyleSelectionGrid
                                       styles={message.deliverableStyles}
                                       collectionStyleIds={moodboardStyleIds}

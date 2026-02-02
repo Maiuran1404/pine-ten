@@ -62,7 +62,7 @@ const SYSTEM_PROMPT = `You are a creative operator at Crafted.
 CRITICAL RULES — FOLLOW EXACTLY:
 1. Write ONLY 1-2 short sentences (max 30 words total)
 2. Ask ONLY 1 question
-3. Show [DELIVERABLE_STYLES: type] after your sentence
+
 4. NEVER use bullet points or lists
 5. NEVER ask multiple questions
 6. NEVER explain your process
@@ -175,15 +175,9 @@ export async function chat(
       },
     }),
     // Fetch available style categories for context
-    db
-      .select()
-      .from(styleReferences)
-      .where(eq(styleReferences.isActive, true)),
+    db.select().from(styleReferences).where(eq(styleReferences.isActive, true)),
     // Fetch task categories
-    db
-      .select()
-      .from(taskCategories)
-      .where(eq(taskCategories.isActive, true)),
+    db.select().from(taskCategories).where(eq(taskCategories.isActive, true)),
   ]);
 
   const company = user?.company;
@@ -501,10 +495,17 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\s+/g, " ")
     .trim();
 
-  // Final check: Ensure first character is capitalized (for professional tone)
-  // This catches any edge cases where sanitization left lowercase first letter
-  if (cleanContent.length > 0 && /^[a-z]/.test(cleanContent)) {
-    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
+  // Final check: Ensure first letter is capitalized (for professional tone)
+  // Find the first actual letter and capitalize it, handling quotes, whitespace, etc.
+  if (cleanContent.length > 0) {
+    // Find the index of the first lowercase letter
+    const firstLowerIndex = cleanContent.search(/[a-z]/);
+    if (firstLowerIndex !== -1) {
+      cleanContent =
+        cleanContent.slice(0, firstLowerIndex) +
+        cleanContent.charAt(firstLowerIndex).toUpperCase() +
+        cleanContent.slice(firstLowerIndex + 1);
+    }
   }
 
   return {
