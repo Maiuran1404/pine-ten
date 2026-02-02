@@ -8,7 +8,7 @@ import { type DeliverableStyle } from "./types";
 interface StyleSelectionGridProps {
   styles: DeliverableStyle[];
   collectionStyleIds: string[];
-  onCardClick: (style: DeliverableStyle) => void;
+  onCardClick?: (style: DeliverableStyle) => void; // Optional - for preview modal
   onAddToCollection: (style: DeliverableStyle) => void;
   onRemoveFromCollection: (styleId: string) => void;
   onShowMore?: (styleAxis: string) => void;
@@ -20,7 +20,6 @@ interface StyleSelectionGridProps {
 export function StyleSelectionGrid({
   styles,
   collectionStyleIds,
-  onCardClick,
   onAddToCollection,
   onRemoveFromCollection,
   onShowMore,
