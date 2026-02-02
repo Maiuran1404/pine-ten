@@ -58,20 +58,26 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Product Launch Video",
         description:
-          "A polished 30-60 second cinematic video that introduces your product to the world. Perfect for social media announcements, landing pages, and investor presentations. Includes motion graphics, music, and professional editing.",
+          "A polished 30-60 second cinematic video that introduces your product to the world. Perfect for social media announcements, landing pages, and investor presentations.",
         prompt: "Create a product launch video",
+        image:
+          "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Feature Highlight",
         description:
-          "A focused video that showcases a specific feature or capability of your product. Great for explaining complex functionality in a digestible, visually engaging way. Works well for product updates and feature releases.",
+          "A focused video that showcases a specific feature or capability of your product. Great for explaining complex functionality in a digestible way.",
         prompt: "Create a feature highlight video",
+        image:
+          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "App Walkthrough",
         description:
-          "A clear, guided tour of your app or software showing the user journey from start to finish. Uses screen recordings with animated callouts, smooth transitions, and voiceover-ready pacing. Ideal for onboarding and tutorials.",
+          "A clear, guided tour of your app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.",
         prompt: "Create an app walkthrough video",
+        image:
+          "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&q=80",
       },
     ],
   },
@@ -84,20 +90,26 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Investor Pitch Deck",
         description:
-          "A visually striking presentation designed to capture investor attention and communicate your vision clearly. Includes custom graphics, data visualizations, and a narrative flow that builds toward your ask. Typically 10-15 slides.",
+          "A visually striking presentation designed to capture investor attention and communicate your vision clearly. Typically 10-15 slides.",
         prompt: "Redesign my investor pitch deck",
+        image:
+          "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Sales Deck",
         description:
-          "A persuasive presentation built for closing deals. Features benefit-focused messaging, customer proof points, and clear calls to action. Designed to be flexible for different prospect conversations and meeting lengths.",
+          "A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.",
         prompt: "Create a sales presentation deck",
+        image:
+          "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Company Overview",
         description:
-          "A versatile introduction to your company that works for partners, clients, and new team members. Covers your story, mission, team, and key offerings in a clean, professional format that represents your brand.",
+          "A versatile introduction to your company that works for partners, clients, and new team members.",
         prompt: "Design a company overview presentation",
+        image:
+          "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=400&h=300&fit=crop&q=80",
       },
     ],
   },
@@ -110,20 +122,26 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Full Brand Package",
         description:
-          "A complete visual identity system including logo design, color palette, typography selection, and comprehensive brand guidelines. Everything you need to maintain consistency across all touchpoints and scale your brand with confidence.",
+          "A complete visual identity system including logo design, color palette, typography, and brand guidelines.",
         prompt: "Create a full brand package with logo and visual identity",
+        image:
+          "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Logo Design",
         description:
-          "A custom logo crafted specifically for your brand, including primary logo, wordmark, icon variations, and usage guidelines. Delivered in all formats you need for digital, print, and merchandise applications.",
+          "A custom logo crafted for your brand, including primary logo, wordmark, and icon variations.",
         prompt: "Design a logo for my brand",
+        image:
+          "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Brand Refresh",
         description:
-          "Modernize and elevate your existing brand while maintaining recognition. We'll update your visual elements to feel current and cohesive, with a clear transition strategy from old to new.",
+          "Modernize and elevate your existing brand while maintaining recognition with updated visual elements.",
         prompt: "Refresh and modernize my existing brand",
+        image:
+          "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop&q=80",
       },
     ],
   },
@@ -136,38 +154,50 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Instagram Post",
         description:
-          "Eye-catching static posts designed for maximum engagement in the 4:5 feed format. Perfect for announcements, product showcases, educational content, or brand storytelling. Includes multiple design variations.",
+          "Eye-catching static posts designed for maximum engagement in the 4:5 feed format.",
         prompt: "Create Instagram post designs",
+        image:
+          "https://images.unsplash.com/photo-1611262588024-d12430b98920?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Instagram Story",
         description:
-          "Vertical 9:16 content optimized for Stories with interactive elements, dynamic layouts, and swipe-worthy designs. Great for behind-the-scenes, promotions, polls, and driving traffic to your profile or website.",
+          "Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.",
         prompt: "Create Instagram story designs",
+        image:
+          "https://images.unsplash.com/photo-1585247226801-bc613c441316?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Instagram Reels",
         description:
-          "Short-form vertical video content designed to capture attention in the first second. Includes trending transitions, music sync, text overlays, and platform-native editing style that performs well with the algorithm.",
+          "Short-form vertical video content designed to capture attention in the first second.",
         prompt: "Create an Instagram Reels video",
+        image:
+          "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "LinkedIn Content",
         description:
-          "Professional content designed for B2B engagement including carousels, thought leadership posts, and company updates. Optimized for LinkedIn's format and audience expectations to build credibility and generate leads.",
+          "Professional content designed for B2B engagement including carousels and thought leadership.",
         prompt: "Create LinkedIn content",
+        image:
+          "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Video Edit",
         description:
-          "Transform your raw footage into polished, platform-ready content. Includes color correction, cuts, transitions, music, captions, and any graphics or effects needed to make your content stand out.",
+          "Transform raw footage into polished, platform-ready content with professional editing.",
         prompt: "Edit my video footage for social media",
+        image:
+          "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=300&fit=crop&q=80",
       },
       {
         title: "Ad Creatives",
         description:
-          "Performance-focused ad designs for Meta, TikTok, Google, or any platform. Includes multiple variations for A/B testing, proper sizing for each placement, and copy that converts. Built with direct response principles.",
+          "Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.",
         prompt: "Create social media ad creatives",
+        image:
+          "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=400&h=300&fit=crop&q=80",
       },
     ],
   },
@@ -618,7 +648,7 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
           {selectedCategory &&
             (() => {
               const category =
@@ -626,11 +656,18 @@ function DashboardContent() {
                   selectedCategory as keyof typeof TEMPLATE_CATEGORIES
                 ];
               const Icon = category?.icon;
+              const optionCount = category?.options.length || 0;
+              // Responsive grid: 1 col on mobile, 2-3 cols on larger screens
+              // 6 options = 3 cols (2 rows), 3 options = 3 cols (1 row), 2 options = 2 cols
+              const gridCols =
+                optionCount >= 3
+                  ? "grid-cols-1 sm:grid-cols-3"
+                  : "grid-cols-1 sm:grid-cols-2";
               return (
                 <>
                   {/* Header */}
-                  <div className="px-6 pt-6 pb-4">
-                    <div className="flex items-center gap-3 mb-2">
+                  <div className="px-6 pt-6 pb-2">
+                    <div className="flex items-center gap-3 mb-1">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
                         {Icon && <Icon className="h-5 w-5 text-white" />}
                       </div>
@@ -638,13 +675,13 @@ function DashboardContent() {
                         {selectedCategory}
                       </DialogTitle>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground pl-[52px]">
                       {category?.modalDescription}
                     </p>
                   </div>
 
-                  {/* Options List */}
-                  <div className="px-4 pb-4 space-y-3 max-h-[420px] overflow-y-auto">
+                  {/* Options Grid */}
+                  <div className={`px-5 py-4 grid ${gridCols} gap-3`}>
                     {category?.options.map((option, index) => {
                       const isSelected = selectedOption === option.title;
                       return (
@@ -653,39 +690,54 @@ function DashboardContent() {
                           onClick={() =>
                             setSelectedOption(isSelected ? null : option.title)
                           }
-                          className={`w-full flex items-start gap-4 px-4 py-4 rounded-xl transition-all duration-200 text-left border-2 ${
+                          className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left border-2 h-full overflow-hidden ${
                             isSelected
-                              ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
-                              : "border-border/50 hover:border-border hover:bg-muted/40"
+                              ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 shadow-md shadow-emerald-500/10"
+                              : "border-border/50 hover:border-emerald-500/40 hover:bg-muted/20"
                           }`}
                         >
-                          {/* Selection indicator */}
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200 ${
-                              isSelected
-                                ? "border-emerald-500 bg-emerald-500"
-                                : "border-muted-foreground/30"
-                            }`}
-                          >
-                            {isSelected && (
-                              <svg
-                                className="w-3 h-3 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={3}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            )}
+                          {/* Image */}
+                          <div className="relative w-full h-24 overflow-hidden bg-muted/30">
+                            <img
+                              src={option.image}
+                              alt={option.title}
+                              className={`w-full h-full object-cover transition-transform duration-300 ${
+                                isSelected
+                                  ? "scale-105"
+                                  : "group-hover:scale-105"
+                              }`}
+                            />
+                            {/* Gradient overlay for better text contrast */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                            {/* Selection indicator */}
+                            <div
+                              className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 backdrop-blur-sm ${
+                                isSelected
+                                  ? "border-emerald-500 bg-emerald-500"
+                                  : "border-white/60 bg-white/20"
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={3}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
+                          {/* Content */}
+                          <div className="p-3 flex-1 flex flex-col">
                             <h3
-                              className={`font-semibold text-base mb-1 transition-colors ${
+                              className={`font-semibold text-sm mb-1.5 transition-colors ${
                                 isSelected
                                   ? "text-emerald-700 dark:text-emerald-400"
                                   : "text-foreground"
@@ -693,7 +745,7 @@ function DashboardContent() {
                             >
                               {option.title}
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
                               {option.description}
                             </p>
                           </div>
@@ -703,7 +755,7 @@ function DashboardContent() {
                   </div>
 
                   {/* Notes Input Section */}
-                  <div className="px-4 pb-5 pt-2">
+                  <div className="px-5 pb-5 pt-1">
                     <div className="relative">
                       <input
                         type="text"
@@ -746,7 +798,7 @@ function DashboardContent() {
                           }
                         }}
                         disabled={!selectedOption}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
                       >
                         Continue
                       </button>

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface TypingTextProps {
   content: string;
-  /** Speed in milliseconds per word */
+  /** Speed in milliseconds per chunk */
   speed?: number;
   /** Whether to animate or show instantly */
   animate?: boolean;
@@ -25,8 +25,90 @@ interface TypingTextProps {
 }
 
 /**
+ * Splits text into chunks that are safe to render with ReactMarkdown.
+ * Avoids breaking mid-word or mid-markdown-syntax.
+ * Groups multiple words together for smoother animation.
+ */
+function splitIntoSafeChunks(text: string): string[] {
+  const chunks: string[] = [];
+  let currentChunk = "";
+  let i = 0;
+  const wordsPerChunk = 3; // Group words together for smoother animation
+  let wordCount = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    // Handle markdown bold/italic markers - keep them together with the word
+    if (char === "*" || char === "_") {
+      // Find the complete markdown segment
+      let markerEnd = i + 1;
+      while (
+        markerEnd < text.length &&
+        (text[markerEnd] === "*" || text[markerEnd] === "_")
+      ) {
+        markerEnd++;
+      }
+      const marker = text.slice(i, markerEnd);
+
+      // Look for closing marker
+      const closeIndex = text.indexOf(marker, markerEnd);
+      if (closeIndex !== -1) {
+        // Include the entire marked section in current chunk
+        const fullSection = text.slice(i, closeIndex + marker.length);
+        currentChunk += fullSection;
+        i = closeIndex + marker.length;
+        wordCount++;
+        continue;
+      }
+    }
+
+    // Handle backticks for code - keep code blocks together
+    if (char === "`") {
+      let backtickEnd = i + 1;
+      while (backtickEnd < text.length && text[backtickEnd] === "`") {
+        backtickEnd++;
+      }
+      const backticks = text.slice(i, backtickEnd);
+      const closeIndex = text.indexOf(backticks, backtickEnd);
+      if (closeIndex !== -1) {
+        const fullCode = text.slice(i, closeIndex + backticks.length);
+        currentChunk += fullCode;
+        i = closeIndex + backticks.length;
+        wordCount++;
+        continue;
+      }
+    }
+
+    // Regular character handling
+    currentChunk += char;
+
+    // Check if we hit a word boundary (space or newline)
+    if (char === " " || char === "\n") {
+      wordCount++;
+      // Flush chunk after collecting enough words
+      if (wordCount >= wordsPerChunk) {
+        chunks.push(currentChunk);
+        currentChunk = "";
+        wordCount = 0;
+      }
+    }
+
+    i++;
+  }
+
+  // Push remaining content
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+/**
  * A component that renders text with a typing animation effect.
- * Reveals text word-by-word to create a ChatGPT-like experience.
+ * Reveals text in chunks to create a smooth ChatGPT-like experience.
+ * Handles markdown syntax safely to avoid rendering glitches.
  */
 export function TypingText({
   content,
@@ -47,8 +129,9 @@ export function TypingText({
   const [isComplete, setIsComplete] = useState(!animate);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
-  const wordIndexRef = useRef(0);
+  const chunkIndexRef = useRef(0);
   const contentRef = useRef(textContent);
+  const chunksRef = useRef<string[]>([]);
 
   useEffect(() => {
     // Clear any existing animation
@@ -59,7 +142,7 @@ export function TypingText({
     // If content changed, reset
     if (contentRef.current !== textContent) {
       contentRef.current = textContent;
-      wordIndexRef.current = 0;
+      chunkIndexRef.current = 0;
     }
 
     // If not animating or no content, show full content immediately
@@ -72,16 +155,18 @@ export function TypingText({
     // Reset state
     setDisplayedContent("");
     setIsComplete(false);
-    wordIndexRef.current = 0;
+    chunkIndexRef.current = 0;
 
-    // Split content into words while preserving whitespace
-    const words = textContent.split(/(\s+)/);
+    // Split content into safe chunks that won't break markdown
+    chunksRef.current = splitIntoSafeChunks(textContent);
 
-    const animateWords = () => {
-      if (wordIndexRef.current < words.length) {
-        setDisplayedContent((prev) => prev + words[wordIndexRef.current]);
-        wordIndexRef.current++;
-        animationRef.current = window.setTimeout(animateWords, speed);
+    const animateChunks = () => {
+      if (chunkIndexRef.current < chunksRef.current.length) {
+        setDisplayedContent(
+          (prev) => prev + chunksRef.current[chunkIndexRef.current]
+        );
+        chunkIndexRef.current++;
+        animationRef.current = window.setTimeout(animateChunks, speed);
       } else {
         setIsComplete(true);
         onComplete?.();
@@ -89,7 +174,7 @@ export function TypingText({
     };
 
     // Start animation
-    animationRef.current = window.setTimeout(animateWords, 50);
+    animationRef.current = window.setTimeout(animateChunks, 50);
 
     return () => {
       if (animationRef.current) {
