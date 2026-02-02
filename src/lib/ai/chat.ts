@@ -501,6 +501,11 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     }
   }
 
+  // If content is empty but we have a style marker, provide a default message
+  if (!cleanContent && deliverableStyleMarker) {
+    cleanContent = "Here are some style directions for your project.";
+  }
+
   return {
     content: cleanContent,
     styleReferences: mentionedStyles,
