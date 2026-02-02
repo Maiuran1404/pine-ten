@@ -202,10 +202,10 @@ function LoadingIndicator({
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const loadingMessages = [
-    "Understanding your request...",
-    "Finding the best approach...",
-    "Crafting your response...",
-    "Almost there...",
+    "Reading between the lines...",
+    "Mapping out your moodboard...",
+    "Curating the perfect visuals...",
+    "Polishing the final touches...",
   ];
 
   useEffect(() => {
@@ -258,14 +258,27 @@ function LoadingIndicator({
               style={{ animationDelay: "300ms" }}
             />
           </div>
-          {/* Progressive message - no icon, just text */}
+          {/* Progressive message with shimmer effect */}
           <motion.div
             key={loadingStage}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-sm text-muted-foreground"
+            className="text-sm relative overflow-hidden"
           >
-            {loadingMessages[loadingStage]}
+            <span className="text-muted-foreground">
+              {loadingMessages[loadingStage]}
+            </span>
+            {/* Shimmer overlay */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/20 to-transparent -skew-x-12"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                repeatDelay: 0.5,
+              }}
+            />
           </motion.div>
           {/* Timer */}
           {elapsedTime > 0 && (
@@ -1364,31 +1377,33 @@ export function ChatInterface({
 
     // Find the full style objects from styleReferences in messages
     const allStyleReferences = messages
-      .filter(m => m.styleReferences && m.styleReferences.length > 0)
-      .flatMap(m => m.styleReferences || []);
+      .filter((m) => m.styleReferences && m.styleReferences.length > 0)
+      .flatMap((m) => m.styleReferences || []);
 
-    const matchedStyles = allStyleReferences.filter(s =>
+    const matchedStyles = allStyleReferences.filter((s) =>
       selectedStyles.includes(s.name)
     );
 
     // Convert StyleReference to DeliverableStyle-like object for display
     // Only the imageUrl and name are used in rendering
-    const selectedStyleForMessage: DeliverableStyle | undefined = matchedStyles.length === 1
-      ? {
-          id: `style-ref-${matchedStyles[0].name}`,
-          name: matchedStyles[0].name,
-          description: matchedStyles[0].description || null,
-          imageUrl: matchedStyles[0].imageUrl,
-          deliverableType: matchedStyles[0].category || 'unknown',
-          styleAxis: 'reference',
-          subStyle: null,
-          semanticTags: [],
-        }
-      : undefined;
+    const selectedStyleForMessage: DeliverableStyle | undefined =
+      matchedStyles.length === 1
+        ? {
+            id: `style-ref-${matchedStyles[0].name}`,
+            name: matchedStyles[0].name,
+            description: matchedStyles[0].description || null,
+            imageUrl: matchedStyles[0].imageUrl,
+            deliverableType: matchedStyles[0].category || "unknown",
+            styleAxis: "reference",
+            subStyle: null,
+            semanticTags: [],
+          }
+        : undefined;
 
-    const styleMessage = selectedStyles.length === 1
-      ? `Style selected: ${selectedStyles[0]}`
-      : `Styles selected: ${selectedStyles.join(", ")}`;
+    const styleMessage =
+      selectedStyles.length === 1
+        ? `Style selected: ${selectedStyles[0]}`
+        : `Styles selected: ${selectedStyles.join(", ")}`;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -2922,6 +2937,65 @@ export function ChatInterface({
                     {userCredits} credits available
                   </span>
                 </div>
+                {/* Word count hint - only show when user starts typing */}
+                {input.trim().length > 0 &&
+                  (() => {
+                    const wordCount = input
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean).length;
+                    const solidPromptWords = 10;
+                    const greatPromptWords = 20;
+
+                    // Calculate progress percentage for the gradient bar
+                    const progress = Math.min(
+                      (wordCount / greatPromptWords) * 100,
+                      100
+                    );
+
+                    if (wordCount >= greatPromptWords) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-xs font-medium text-emerald-600">
+                              Great detail!
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    } else if (wordCount >= solidPromptWords) {
+                      const wordsNeeded = greatPromptWords - wordCount;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-amber-600 dark:text-amber-400">
+                            +{wordsNeeded} for best results
+                          </span>
+                        </div>
+                      );
+                    } else {
+                      const wordsNeeded = solidPromptWords - wordCount;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-rose-400 to-amber-400 transition-all duration-300"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-rose-500 dark:text-rose-400">
+                            +{wordsNeeded} for a solid prompt
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
               </div>
 
               {/* Right actions */}
