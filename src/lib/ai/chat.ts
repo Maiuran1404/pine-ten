@@ -64,6 +64,13 @@ TONE: Professional, confident, thoughtful. Write complete sentences that sound n
 CRITICAL RULE: You MUST output [DELIVERABLE_STYLES: type] to show style options.
 Without this exact marker on its own line, no styles will appear to the user.
 
+WHEN USER SELECTS A STYLE:
+When user says "I'll go with the [style name]" or similar, acknowledge their choice naturally and ask about specifics.
+- Start with: "The [style name] will work well for..." or "[Style name] is a solid direction for..."
+- Then ask ONE specific question about content, timing, messaging, or scenes
+- Do NOT start with just "Choice" - always include the style name in context
+- Example: "The Premium Product Showcase style will give your product a cinematic feel. Do you have specific scenes or moments you want to highlight?"
+
 WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - User mentions ANY content type (video, post, carousel, ad, logo, etc.)
 - User describes what they want to create
@@ -73,6 +80,7 @@ WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 WHEN NOT TO SHOW STYLES:
 - User message is completely unclear (e.g., just "hi" or "help")
 - You genuinely need critical info before proceeding
+- User just selected a style (respond with follow-up questions instead)
 
 TYPE MAPPING:
 - Video/reel/motion → instagram_reel
@@ -395,8 +403,10 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
 
   // Banned opener patterns (expanded list)
   const BANNED_OPENERS = [
+    // Standalone "Choice" at the start (common AI mistake)
+    /^Choice[!,.\s]+/i,
     // Enthusiastic affirmations
-    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely|Choice)[!,.]?\s*/i,
+    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
     // Enthusiastic affirmations with "choice/pick"
     /^(Great|Excellent|Good|Nice|Solid|Smart|Wise) (choice|pick|selection)[!,.]?\s*/i,
     // Validation phrases
