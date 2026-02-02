@@ -1426,25 +1426,26 @@ export function ChatInterface({
   };
 
   const handleSubmitDeliverableStyles = async (
-    deliverableStyles: Array<{ id: string; name: string }>
+    deliverableStyles: DeliverableStyle[]
   ) => {
     // Use moodboardStyleIds as the collection (unified model: collection = selection)
     if (moodboardStyleIds.length === 0 || isLoading) return;
 
-    const selectedStyleNames = deliverableStyles
-      .filter((s) => moodboardStyleIds.includes(s.id))
-      .map((s) => s.name);
+    const selectedStyleMatches = deliverableStyles.filter((s) =>
+      moodboardStyleIds.includes(s.id)
+    );
+    const selectedStyleNames = selectedStyleMatches.map((s) => s.name);
 
-    const styleMessage =
-      selectedStyleNames.length === 1
-        ? `I like the ${selectedStyleNames[0]} style`
-        : `I like these styles: ${selectedStyleNames.join(", ")}`;
+    const styleMessage = "Please implement this.";
+    const selectedStyleForMessage =
+      selectedStyleMatches.length === 1 ? selectedStyleMatches[0] : undefined;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: styleMessage,
       timestamp: new Date(),
+      selectedStyle: selectedStyleForMessage,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -1506,7 +1507,7 @@ export function ChatInterface({
     if (selectedStyles.length === 0 || isLoading) return;
 
     const style = selectedStyles[0];
-    const styleMessage = `I'll go with the ${style.name} style`;
+    const styleMessage = "Please implement this.";
 
     // Add to moodboard
     selectedStyles.forEach((s) => {
