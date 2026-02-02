@@ -92,11 +92,18 @@ export function TypingText({
     return result;
   }, []);
 
+  // Strip leading list markers (bullets) from content
+  const stripLeadingListMarkers = useCallback((text: string): string => {
+    // Remove leading list markers like "- ", "* ", "• ", etc.
+    // This handles cases where content starts with a bullet point
+    return text.replace(/^[\s]*[-*•]\s+/, "");
+  }, []);
+
   // Pre-capitalize the full content using useMemo to ensure it updates when content changes
-  const processedContent = useMemo(
-    () => capitalizeContent(content),
-    [content, capitalizeContent]
-  );
+  const processedContent = useMemo(() => {
+    const stripped = stripLeadingListMarkers(content);
+    return capitalizeContent(stripped);
+  }, [content, capitalizeContent, stripLeadingListMarkers]);
 
   const [displayedContent, setDisplayedContent] = useState(
     animate ? "" : processedContent
@@ -192,7 +199,7 @@ export function TypingText({
           ul: ({ children }) => (
             <ul
               className={cn(
-                "space-y-2 my-3",
+                "space-y-2 my-3 list-none pl-0",
                 onOptionClick && isComplete && "list-none pl-0"
               )}
             >
@@ -242,7 +249,9 @@ export function TypingText({
               );
             }
 
-            return <li className="text-sm text-foreground">{children}</li>;
+            return (
+              <li className="text-sm text-foreground list-none">{children}</li>
+            );
           },
         }}
       >
