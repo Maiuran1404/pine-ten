@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,8 +62,11 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
-  // Simply capitalize the first letter of the content
-  const processedContent = capitalizeFirstLetter(content.trim());
+  // Memoize processed content to prevent unnecessary recalculations
+  const processedContent = useMemo(
+    () => capitalizeFirstLetter(content.trim()),
+    [content]
+  );
 
   const [displayedContent, setDisplayedContent] = useState(
     animate ? "" : processedContent
@@ -72,6 +75,11 @@ export function TypingText({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const animationRef = useRef<number | null>(null);
   const wordIndexRef = useRef(0);
+  const hasAnimatedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep onComplete ref updated
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     // If not animating, show full content immediately
@@ -80,6 +88,12 @@ export function TypingText({
       setIsComplete(true);
       return;
     }
+
+    // Prevent re-animation if already animated this content
+    if (hasAnimatedRef.current) {
+      return;
+    }
+    hasAnimatedRef.current = true;
 
     // Reset state when content changes
     setDisplayedContent("");
@@ -101,7 +115,7 @@ export function TypingText({
       } else {
         // Animation complete
         setIsComplete(true);
-        onComplete?.();
+        onCompleteRef.current?.();
       }
     };
 
@@ -114,7 +128,12 @@ export function TypingText({
         clearTimeout(animationRef.current);
       }
     };
-  }, [content, animate, speed, onComplete, processedContent]);
+  }, [processedContent, animate, speed]);
+
+  // Reset hasAnimatedRef when content actually changes
+  useEffect(() => {
+    hasAnimatedRef.current = false;
+  }, [content]);
 
   // Handle option click for list items
   const handleListItemClick = useCallback(

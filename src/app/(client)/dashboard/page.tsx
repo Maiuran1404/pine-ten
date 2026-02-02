@@ -618,7 +618,7 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
+        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
           {selectedCategory &&
             (() => {
               const category =
@@ -644,7 +644,7 @@ function DashboardContent() {
                   </div>
 
                   {/* Options List */}
-                  <div className="px-3 pb-3 space-y-1.5 max-h-[280px] overflow-y-auto">
+                  <div className="px-4 pb-4 space-y-3 max-h-[420px] overflow-y-auto">
                     {category?.options.map((option, index) => {
                       const isSelected = selectedOption === option.title;
                       return (
@@ -653,15 +653,15 @@ function DashboardContent() {
                           onClick={() =>
                             setSelectedOption(isSelected ? null : option.title)
                           }
-                          className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 text-left border-2 ${
+                          className={`w-full flex items-start gap-4 px-4 py-4 rounded-xl transition-all duration-200 text-left border-2 ${
                             isSelected
                               ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
-                              : "border-transparent hover:bg-muted/60"
+                              : "border-border/50 hover:border-border hover:bg-muted/40"
                           }`}
                         >
                           {/* Selection indicator */}
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200 ${
                               isSelected
                                 ? "border-emerald-500 bg-emerald-500"
                                 : "border-muted-foreground/30"
@@ -685,7 +685,7 @@ function DashboardContent() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3
-                              className={`font-medium text-[15px] mb-0.5 transition-colors ${
+                              className={`font-semibold text-base mb-1 transition-colors ${
                                 isSelected
                                   ? "text-emerald-700 dark:text-emerald-400"
                                   : "text-foreground"
@@ -693,7 +693,7 @@ function DashboardContent() {
                             >
                               {option.title}
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-snug">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                               {option.description}
                             </p>
                           </div>
@@ -715,10 +715,14 @@ function DashboardContent() {
                               (o) => o.title === selectedOption
                             );
                             if (option) {
-                              const prompt = modalNotes
-                                ? `${option.prompt}. Notes: ${modalNotes}`
-                                : option.prompt;
-                              handleSubmit(prompt);
+                              const fullPrompt = `${option.title}: ${
+                                option.description
+                              }${
+                                modalNotes
+                                  ? ` Additional notes: ${modalNotes}`
+                                  : ""
+                              }`;
+                              handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);
                               setModalNotes("");
@@ -735,10 +739,14 @@ function DashboardContent() {
                               (o) => o.title === selectedOption
                             );
                             if (option) {
-                              const prompt = modalNotes
-                                ? `${option.prompt}. Notes: ${modalNotes}`
-                                : option.prompt;
-                              handleSubmit(prompt);
+                              const fullPrompt = `${option.title}: ${
+                                option.description
+                              }${
+                                modalNotes
+                                  ? ` Additional notes: ${modalNotes}`
+                                  : ""
+                              }`;
+                              handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);
                               setModalNotes("");
