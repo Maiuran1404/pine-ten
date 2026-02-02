@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   },
   description:
     "Professional design services on demand. Get static ads, video content, and social media graphics created by talented freelancers.",
+  icons: {
+    icon: "/craftedfigurewhite.png",
+    apple: "/craftedfigurewhite.png",
+  },
 };
 
 export default function RootLayout({

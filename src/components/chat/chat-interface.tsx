@@ -167,6 +167,12 @@ function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString();
 }
 
+// Auto-capitalize "i" to "I" when it's a standalone word
+function autoCapitalizeI(text: string): string {
+  // Replace standalone "i" with "I" (word boundaries, not part of other words)
+  return text.replace(/\bi\b/g, 'I');
+}
+
 // Progressive loading indicator component - minimal design
 function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
   const [loadingStage, setLoadingStage] = useState(0);
@@ -876,10 +882,12 @@ export function ChatInterface({
     if ((!input.trim() && uploadedFiles.length === 0) || isLoading) return;
 
     const currentFiles = [...uploadedFiles];
+    // Auto-capitalize "i" to "I" in user messages
+    const processedContent = input ? autoCapitalizeI(input) : (currentFiles.length > 0 ? `Attached ${currentFiles.length} file(s)` : "");
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input || (currentFiles.length > 0 ? `Attached ${currentFiles.length} file(s)` : ""),
+      content: processedContent,
       timestamp: new Date(),
       attachments: currentFiles.length > 0 ? currentFiles : undefined,
     };
@@ -1955,7 +1963,7 @@ export function ChatInterface({
 
         {/* Messages - scrollable area */}
         <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-          <div className="space-y-6 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">
+          <div className="space-y-4 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">
             <AnimatePresence>
               {messages.map((message, index) => (
                 <motion.div
@@ -2276,7 +2284,9 @@ export function ChatInterface({
         </ScrollArea>
 
         {/* Brief Clarifying Question - shows when inference needs more info */}
-        {briefPendingQuestion && !isLoading && messages.length > 0 && (
+        {/* IMPORTANT: Only show ONE CTA at a time - hide when style selection is active */}
+        {briefPendingQuestion && !isLoading && messages.length > 0 &&
+         lastStyleMessageIndex !== messages.length - 1 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
