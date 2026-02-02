@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef, startTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
-import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
+import { getDrafts, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
-  Trash2,
   Sparkles,
   MessageCircle,
   CheckSquare,
@@ -16,7 +15,6 @@ import {
   Archive,
   PanelLeftClose,
   PanelLeft,
-  ChevronDown,
   Moon,
   Sun,
   User,
@@ -26,6 +24,7 @@ import { useSession } from "@/lib/auth-client";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import Image from "next/image";
+import { useCredits } from "@/providers/credit-provider";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -99,23 +98,12 @@ export default function ChatPage() {
     router.push("/dashboard/chat");
   };
 
-  const handleContinueDraft = (draftIdToLoad: string) => {
-    setCurrentDraftId(draftIdToLoad);
-    router.push(`/dashboard/chat?draft=${draftIdToLoad}`);
-  };
-
-  const handleDeleteDraft = (e: React.MouseEvent, draftId: string) => {
-    e.stopPropagation();
-    deleteDraft(draftId);
-    setDrafts(getDrafts());
-  };
-
   const handleDraftUpdate = () => {
     setDrafts(getDrafts());
   };
 
-  // Get user credits
-  const userCredits = (session?.user as { credits?: number } | undefined)?.credits || 0;
+  // Get user credits from context
+  const { credits: userCredits } = useCredits();
 
   // Features menu items
   const features = [
@@ -176,7 +164,7 @@ export default function ChatPage() {
         </div>
 
         {/* Features section */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 flex-1">
           <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
           <nav className="space-y-1">
             {features.map((item) => (
@@ -195,38 +183,6 @@ export default function ChatPage() {
               </Link>
             ))}
           </nav>
-        </div>
-
-        {/* Recent section */}
-        <div className="flex-1 overflow-auto px-4 py-2">
-          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Recent</p>
-          <div className="space-y-1">
-            {drafts.slice(0, 10).map((draft) => (
-              <div
-                key={draft.id}
-                onClick={() => handleContinueDraft(draft.id)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group cursor-pointer",
-                  currentDraftId === draft.id
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <span className="truncate flex-1">{draft.title}</span>
-                <button
-                  onClick={(e) => handleDeleteDraft(e, draft.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            {drafts.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No recent chats
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Credits card at bottom */}
@@ -292,11 +248,6 @@ export default function ChatPage() {
                 <PanelLeft className="h-5 w-5" />
               </button>
             )}
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card transition-colors">
-              <span className="text-sm font-medium text-foreground">witchcraft 5.0</span>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </button>
-            <span className="text-sm text-muted-foreground">No plugins enabled</span>
           </div>
 
           {/* Right side - actions */}

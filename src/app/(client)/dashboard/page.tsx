@@ -25,6 +25,7 @@ import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
@@ -599,7 +600,7 @@ function DashboardContent() {
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
                       {Icon && <Icon className="h-5 w-5 text-white" />}
                     </div>
-                    <h2 className="text-lg font-semibold text-foreground">{selectedCategory}</h2>
+                    <DialogTitle className="text-lg font-semibold text-foreground">{selectedCategory}</DialogTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {category?.modalDescription}

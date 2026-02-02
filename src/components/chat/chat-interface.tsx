@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { useSession } from "@/lib/auth-client";
+import { useCredits, dispatchCreditsUpdated } from "@/providers/credit-provider";
 import {
   Send,
   Check,
@@ -288,13 +289,13 @@ export function ChatInterface({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { credits: userCredits, refreshCredits, deductCredits } = useCredits();
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [taskData, setTaskData] = useState<TaskData | null>(
     initialTaskData || null
   );
   const [paymentProcessed, setPaymentProcessed] = useState(false);
-  const [refreshedCredits, setRefreshedCredits] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -739,7 +740,7 @@ export function ChatInterface({
 
     if (payment === "success" && creditsParam && !paymentProcessed) {
       setPaymentProcessed(true);
-      toast.success(`Successfully purchased ${creditsParam} credits!`);
+      toast.success(`Successfully purchased ${creditsParam} credits!`, { duration: 5000 });
 
       // Clean up URL params without navigation
       const url = new URL(window.location.href);
@@ -747,18 +748,8 @@ export function ChatInterface({
       url.searchParams.delete("credits");
       window.history.replaceState({}, "", url.toString());
 
-      // Fetch fresh credits from database
-      const fetchFreshCredits = async () => {
-        try {
-          const response = await fetch("/api/user/credits");
-          if (response.ok) {
-            const data = await response.json();
-            setRefreshedCredits(data.credits);
-          }
-        } catch {
-          // Ignore fetch errors
-        }
-      };
+      // Refresh credits from context
+      refreshCredits();
 
       // Check for pending task state that was saved before payment
       try {
@@ -770,21 +761,14 @@ export function ChatInterface({
           // Restore pending task
           if (taskProposal) {
             setPendingTask(taskProposal);
-
-            // Fetch fresh credits and notify user
-            fetchFreshCredits().then(() => {
-              toast.info(
-                "Your task is ready to submit. Click 'Confirm & Submit' to proceed."
-              );
-            });
+            toast.info(
+              "Your task is ready to submit. Click 'Confirm & Submit' to proceed.",
+              { duration: 5000 }
+            );
           }
-        } else {
-          // Just fetch fresh credits even if no pending task
-          fetchFreshCredits();
         }
       } catch {
-        // Ignore parsing errors, still try to fetch credits
-        fetchFreshCredits();
+        // Ignore parsing errors
       }
     } else if (payment === "cancelled") {
       toast.info("Payment was cancelled");
@@ -1540,11 +1524,7 @@ export function ChatInterface({
     }
   };
 
-  // Use refreshed credits if available (after payment), otherwise fall back to session credits
-  const sessionCredits =
-    (session?.user as { credits?: number } | undefined)?.credits || 0;
-  const userCredits =
-    refreshedCredits !== null ? refreshedCredits : sessionCredits;
+  // userCredits now comes from the credit context (set at component initialization)
 
   const handleConfirmTask = async () => {
     if (!pendingTask) return;
@@ -1666,13 +1646,17 @@ export function ChatInterface({
       // Dispatch event to notify sidebar to refresh tasks
       window.dispatchEvent(new CustomEvent("tasks-updated"));
 
+      // Deduct credits optimistically and dispatch update event
+      deductCredits(normalizedTask.creditsRequired);
+      dispatchCreditsUpdated();
+
       // Call the callback if provided
       onTaskCreated?.(taskId);
 
-      // Update URL without navigation to reflect task ID
-      window.history.replaceState({}, "", `/dashboard/tasks/${taskId}`);
+      toast.success("Task created successfully!", { duration: 5000 });
 
-      toast.success("Task created successfully!");
+      // Navigate to task detail page
+      router.push(`/dashboard/tasks/${taskId}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create task"

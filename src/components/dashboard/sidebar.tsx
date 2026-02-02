@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,85 +17,21 @@ import {
   CheckSquare,
   FolderOpen,
   Coins,
-  Archive,
   PanelLeftClose,
   PanelLeft,
-  Trash2,
 } from "lucide-react";
-import { getDrafts, deleteDraft, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
-import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { useCredits } from "@/providers/credit-provider";
 
-interface AppSidebarProps {
-  recentTasks?: Array<{ id: string; title: string; status?: string }>;
-}
-
-export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [chatDrafts, setChatDrafts] = useState<ChatDraft[]>([]);
-  const [credits, setCredits] = useState<number>(0);
-  const { data: session } = useSession();
+  const { credits } = useCredits();
   const { state, setOpen } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  // Load credits
-  useEffect(() => {
-    const loadCredits = async () => {
-      try {
-        const response = await fetch("/api/user/billing");
-        if (response.ok) {
-          const data = await response.json();
-          setCredits(data.credits || 0);
-        }
-      } catch (error) {
-        console.error("Failed to load credits:", error);
-      }
-    };
-
-    if (session?.user) {
-      loadCredits();
-    }
-  }, [session]);
-
-  // Load chat drafts from localStorage
-  useEffect(() => {
-    const loadDrafts = () => {
-      const drafts = getDrafts();
-      setChatDrafts(drafts);
-    };
-
-    loadDrafts();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "chat-drafts") {
-        loadDrafts();
-      }
-    };
-
-    const handleDraftUpdate = () => loadDrafts();
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("drafts-updated", handleDraftUpdate);
-
-    const interval = setInterval(loadDrafts, 2000);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("drafts-updated", handleDraftUpdate);
-      clearInterval(interval);
-    };
-  }, []);
-
   const handleStartNewChat = () => {
-    const newId = generateDraftId();
     router.push("/dashboard/chat");
-  };
-
-  const handleDeleteDraft = (e: React.MouseEvent, draftId: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    deleteDraft(draftId);
-    setChatDrafts(getDrafts());
   };
 
   // Features menu items - matching chat page design
@@ -105,31 +40,17 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
-    { icon: Archive, label: "Archived", href: "/dashboard/tasks?status=completed" },
   ];
 
   const isActive = (href: string) => {
     if (href === "/dashboard/chat") {
       return pathname?.startsWith("/dashboard/chat");
     }
-    // For hrefs with query params (like Archived), check exact match
-    if (href.includes("?")) {
-      const [hrefPath, hrefQuery] = href.split("?");
-      const currentSearch = typeof window !== "undefined" ? window.location.search : "";
-      // Only active if path matches AND query string matches
-      return pathname === hrefPath && currentSearch === `?${hrefQuery}`;
-    }
-    // For hrefs without query params, check path matches AND no relevant query params
     if (href === "/dashboard/tasks") {
-      const currentSearch = typeof window !== "undefined" ? window.location.search : "";
-      // Tasks is active only when on /dashboard/tasks without status=completed
-      return pathname === href && !currentSearch.includes("status=completed");
+      return pathname === href || pathname?.startsWith("/dashboard/tasks/");
     }
     return pathname === href;
   };
-
-  // Get the 10 most recent drafts
-  const recentDrafts = chatDrafts.slice(0, 10);
 
   // When collapsed, show minimal sidebar
   if (isCollapsed) {
@@ -232,7 +153,7 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
         </div>
 
         {/* Features section */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 flex-1">
           <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
           <nav className="space-y-1">
             {features.map((item) => (
@@ -251,38 +172,6 @@ export function AppSidebar({ recentTasks = [] }: AppSidebarProps) {
               </Link>
             ))}
           </nav>
-        </div>
-
-        {/* Recent section */}
-        <div className="flex-1 overflow-auto px-4 py-2">
-          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Recent</p>
-          <div className="space-y-1">
-            {recentDrafts.map((draft) => (
-              <Link
-                key={draft.id}
-                href={`/dashboard/chat?draft=${draft.id}`}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors group",
-                  pathname === `/dashboard/chat` && new URLSearchParams(window?.location?.search || "").get("draft") === draft.id
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <span className="truncate flex-1">{draft.title}</span>
-                <button
-                  onClick={(e) => handleDeleteDraft(e, draft.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </Link>
-            ))}
-            {recentDrafts.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No recent chats
-              </p>
-            )}
-          </div>
         </div>
       </SidebarContent>
 

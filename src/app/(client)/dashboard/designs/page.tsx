@@ -1,25 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
-  Wand2,
+  FileText,
+  Folder,
+  FileImage,
+  FileCode,
+  File,
+  MoreHorizontal,
+  Plus,
+  Filter,
+  ChevronDown,
+  MessageCircle,
+  FolderOpen,
   Download,
-  Calendar,
-  Share2,
-  Megaphone,
-  PenTool,
-  Sparkles,
-  ExternalLink,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { QuickDesignModal } from "@/components/client/quick-design-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
+// File type for the library
+interface LibraryFile {
+  id: string;
+  name: string;
+  size: string;
+  type: "file" | "folder";
+  fileType?: string;
+  createdAt: string;
+  permission: "Editor" | "View Only" | "Administrator";
+  url?: string;
+}
+
+// Design from API
 interface Design {
   id: string;
   templateId: string | null;
@@ -31,233 +52,466 @@ interface Design {
   templateCategory: string | null;
 }
 
-const CATEGORY_CONFIG = {
-  social_media: {
-    label: "Social Media",
-    icon: Share2,
-    color: "blue",
-  },
-  marketing: {
-    label: "Marketing",
-    icon: Megaphone,
-    color: "emerald",
-  },
-  brand_assets: {
-    label: "Brand Assets",
-    icon: PenTool,
-    color: "violet",
-  },
-};
+// Get file extension from filename or URL
+function getFileExtension(filename: string): string {
+  const parts = filename.split(".");
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+}
 
-export default function DesignsGalleryPage() {
-  const [designs, setDesigns] = useState<Design[]>([]);
+// Format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+// Format date
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "2-digit",
+  });
+}
+
+// Convert design to library file format
+function designToLibraryFile(design: Design): LibraryFile {
+  return {
+    id: design.id,
+    name: `${design.templateName}.${design.imageFormat}`,
+    size: "—",
+    type: "file",
+    fileType: design.imageFormat,
+    createdAt: formatDate(design.createdAt),
+    permission: "Editor",
+    url: design.imageUrl,
+  };
+}
+
+// Get file icon based on type
+function getFileIcon(file: LibraryFile) {
+  if (file.type === "folder") {
+    return <Folder className="h-8 w-8 text-green-600" />;
+  }
+
+  const ext = file.fileType || getFileExtension(file.name);
+  switch (ext) {
+    case "pdf":
+    case "doc":
+    case "docx":
+    case "txt":
+      return <FileText className="h-8 w-8 text-green-600" />;
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+    case "webp":
+      return <FileImage className="h-8 w-8 text-green-600" />;
+    case "tsx":
+    case "jsx":
+    case "html":
+    case "css":
+    case "js":
+    case "ts":
+      return <FileCode className="h-8 w-8 text-green-600" />;
+    default:
+      return <File className="h-8 w-8 text-green-600" />;
+  }
+}
+
+// Get small file icon for table rows
+function getSmallFileIcon(file: LibraryFile) {
+  if (file.type === "folder") {
+    return <Folder className="h-5 w-5 text-muted-foreground" />;
+  }
+
+  const ext = file.fileType || getFileExtension(file.name);
+  switch (ext) {
+    case "pdf":
+    case "doc":
+    case "docx":
+    case "txt":
+      return <FileText className="h-5 w-5 text-muted-foreground" />;
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+    case "webp":
+      return <FileImage className="h-5 w-5 text-muted-foreground" />;
+    case "tsx":
+    case "jsx":
+    case "html":
+    case "css":
+    case "js":
+    case "ts":
+      return <FileCode className="h-5 w-5 text-muted-foreground" />;
+    default:
+      return <File className="h-5 w-5 text-muted-foreground" />;
+  }
+}
+
+// Permission badge colors
+function getPermissionStyle(permission: string) {
+  switch (permission) {
+    case "Editor":
+      return "bg-green-100 text-green-700 border-green-200";
+    case "View Only":
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    case "Administrator":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200";
+  }
+}
+
+// Empty state component
+function EmptyState() {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-6">
+        <FolderOpen className="h-10 w-10 text-green-600" />
+      </div>
+      <h3 className="text-xl font-semibold text-foreground mb-2">Your library is empty</h3>
+      <p className="text-muted-foreground text-center max-w-md mb-6">
+        Start a conversation to create designs and files. All your generated content will appear here.
+      </p>
+      <Button
+        onClick={() => router.push("/dashboard/chat")}
+        className="gap-2 bg-green-600 hover:bg-green-700"
+      >
+        <MessageCircle className="h-4 w-4" />
+        Start a Chat
+      </Button>
+    </div>
+  );
+}
+
+// Loading skeleton
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Recent Files Skeleton */}
+      <div>
+        <Skeleton className="h-6 w-48 mb-4" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl border border-border p-4">
+              <Skeleton className="h-12 w-12 rounded-lg mb-3" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Table Skeleton */}
+      <div>
+        <Skeleton className="h-6 w-32 mb-4" />
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
+            <Skeleton className="h-4 w-full" />
+          </div>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="px-4 py-3 border-b border-border last:border-b-0">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-48 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LibraryPage() {
+  const router = useRouter();
+  const [files, setFiles] = useState<LibraryFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showQuickDesign, setShowQuickDesign] = useState(false);
+  const [, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   useEffect(() => {
-    fetchDesigns();
+    fetchLibraryData();
   }, []);
 
-  const fetchDesigns = async () => {
+  const fetchLibraryData = async () => {
     try {
-      const response = await fetch("/api/orshot/designs");
-      if (response.ok) {
-        const data = await response.json();
-        setDesigns(data.designs || []);
+      setIsLoading(true);
+      const allFiles: LibraryFile[] = [];
+
+      // Fetch generated designs
+      const designsResponse = await fetch("/api/orshot/designs");
+      if (designsResponse.ok) {
+        const designsData = await designsResponse.json();
+        const designs: Design[] = designsData.designs || [];
+        allFiles.push(...designs.map(designToLibraryFile));
       }
+
+      // Fetch tasks with deliverables
+      const tasksResponse = await fetch("/api/tasks?view=client&status=COMPLETED");
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        const tasks = tasksData.tasks || [];
+
+        // For each completed task, fetch its files
+        for (const task of tasks.slice(0, 10)) {
+          try {
+            const taskResponse = await fetch(`/api/tasks/${task.id}`);
+            if (taskResponse.ok) {
+              const taskData = await taskResponse.json();
+              const taskFiles = taskData.task?.files || [];
+
+              // Add deliverables to the library
+              for (const file of taskFiles) {
+                if (file.isDeliverable) {
+                  allFiles.push({
+                    id: file.id,
+                    name: file.fileName,
+                    size: formatFileSize(file.fileSize || 0),
+                    type: "file",
+                    fileType: getFileExtension(file.fileName),
+                    createdAt: formatDate(file.createdAt),
+                    permission: "Editor",
+                    url: file.fileUrl,
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch task ${task.id}:`, err);
+          }
+        }
+      }
+
+      // Sort by date (newest first)
+      allFiles.sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      setFiles(allFiles);
     } catch (error) {
-      console.error("Failed to fetch designs:", error);
-      toast.error("Failed to load designs");
+      console.error("Failed to fetch library data:", error);
+      toast.error("Failed to load library");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDownload = async (design: Design) => {
+  const handleDownload = async (file: LibraryFile) => {
+    if (!file.url) {
+      toast.error("Download URL not available");
+      return;
+    }
+
     try {
-      const response = await fetch(design.imageUrl);
+      const response = await fetch(file.url);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${design.templateName.toLowerCase().replace(/\s+/g, "-")}.${design.imageFormat}`;
+      a.download = file.name;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      toast.success("Design downloaded!");
+      toast.success("File downloaded!");
     } catch {
-      // Fallback: open in new tab
-      window.open(design.imageUrl, "_blank");
+      window.open(file.url, "_blank");
     }
   };
 
-  const getCategoryConfig = (category: string | null) => {
-    if (!category) return { label: "Design", icon: Wand2, color: "gray" };
-    return (
-      CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || {
-        label: category,
-        icon: Wand2,
-        color: "gray",
-      }
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  const recentFiles = files.slice(0, 4);
+  const totalFiles = files.length;
 
   return (
-    <div className="min-h-full bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">My Designs</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-            Your generated branded designs
-          </p>
-        </div>
-        <Button onClick={() => setShowQuickDesign(true)} className="w-full sm:w-auto">
-          <Sparkles className="h-4 w-4 mr-2" />
-          Create New Design
-        </Button>
-      </div>
+    <div className="min-h-full bg-[#f8faf8] dark:bg-zinc-950 p-4 sm:p-6 space-y-6">
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : files.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Recent Files Generated */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground">Recent Files Generated</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                      <span>Newest First</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setSortOrder("newest")}>
+                      Newest First
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOrder("oldest")}>
+                      Oldest First
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-      {/* Designs Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-border bg-card overflow-hidden"
-            >
-              <Skeleton className="aspect-square" />
-              <div className="p-4">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
+              {/* Recent files cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {recentFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="bg-white dark:bg-zinc-900 rounded-xl border border-green-200 dark:border-green-900/50 p-4 hover:border-green-300 dark:hover:border-green-800 transition-colors group"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        {getFileIcon(file)}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {file.url && (
+                            <DropdownMenuItem onClick={() => window.open(file.url, "_blank")}>
+                              Open
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleDownload(file)}>
+                            Download
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                        {file.name}
+                      </p>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      ) : designs.length === 0 ? (
-        <div className="rounded-xl border border-border p-12 text-center bg-card">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Wand2 className="h-8 w-8 text-primary" />
-          </div>
-          <p className="text-muted-foreground mb-4">
-            No designs yet. Create your first design request!
-          </p>
-          <Button onClick={() => setShowQuickDesign(true)}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Create Your First Design
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {designs.map((design, index) => {
-            const categoryConfig = getCategoryConfig(design.templateCategory);
-            const CategoryIcon = categoryConfig.icon;
 
-            return (
-              <motion.div
-                key={design.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <Link
-                  href={`/dashboard/designs/${design.id}`}
-                  className="group block rounded-xl border border-border bg-card overflow-hidden hover:border-border/80 transition-all"
-                >
-                  {/* Image */}
-                  <div className="aspect-square relative bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={design.imageUrl}
-                      alt={design.templateName}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/400x400?text=Image+Not+Found";
-                      }}
-                    />
+            {/* All Files Section */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-foreground">All Files</h2>
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                  >
+                    {totalFiles} Total
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => router.push("/dashboard/chat")}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter
+                  </Button>
+                </div>
+              </div>
 
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleDownload(design);
-                          }}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
-                        <Button variant="secondary" size="sm">
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
+              {/* Files table */}
+              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-border overflow-hidden">
+                {/* Table header */}
+                <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border bg-muted/30">
+                  <div className="col-span-6 sm:col-span-5 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    File Name
+                    <ChevronDown className="h-4 w-4" />
+                  </div>
+                  <div className="col-span-3 sm:col-span-3 hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    Created at
+                    <ChevronDown className="h-4 w-4" />
+                  </div>
+                  <div className="col-span-4 sm:col-span-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    File Permission
+                    <ChevronDown className="h-4 w-4" />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1"></div>
+                </div>
+
+                {/* Table rows */}
+                {files.map((file) => (
+                  <div
+                    key={file.id}
+                    className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors group"
+                  >
+                    <div className="col-span-6 sm:col-span-5 flex items-center gap-3">
+                      {getSmallFileIcon(file)}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{file.size}</p>
                       </div>
                     </div>
-
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    <div className="col-span-3 sm:col-span-3 hidden sm:flex items-center text-sm text-muted-foreground">
+                      {file.createdAt}
+                    </div>
+                    <div className="col-span-4 sm:col-span-3 flex items-center">
                       <Badge
-                        variant="secondary"
-                        className="bg-background/80 backdrop-blur-sm"
+                        variant="outline"
+                        className={cn("text-xs", getPermissionStyle(file.permission))}
                       >
-                        <CategoryIcon className="h-3 w-3 mr-1" />
-                        {categoryConfig.label}
-                      </Badge>
-                      {design.savedToAssets && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-500/80 text-white backdrop-blur-sm"
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Saved
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-foreground truncate group-hover:text-foreground/90 transition-colors">
-                          {design.templateName}
-                        </h3>
-                        <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>{formatDate(design.createdAt)}</span>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="shrink-0 ml-2">
-                        {design.imageFormat.toUpperCase()}
+                        {file.permission}
                       </Badge>
                     </div>
+                    <div className="col-span-2 sm:col-span-1 flex items-center justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {file.url && (
+                            <DropdownMenuItem onClick={() => window.open(file.url, "_blank")}>
+                              Open
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleDownload(file)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Quick Design Modal */}
-      <QuickDesignModal
-        open={showQuickDesign}
-        onOpenChange={setShowQuickDesign}
-      />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
     </div>
   );
 }

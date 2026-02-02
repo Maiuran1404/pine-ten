@@ -7,16 +7,17 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { CreditsPurchaseDialog } from "./credits-purchase-dialog";
+import { useCredits } from "@/providers/credit-provider";
 
 interface HeaderProps {
-  credits?: number;
   onMenuClick?: () => void;
   basePath?: string; // Base path for notifications (e.g., "/portal" for freelancers)
   showUpgrade?: boolean; // Whether to show the upgrade button
 }
 
-export function Header({ credits = 0, onMenuClick, basePath = "/dashboard", showUpgrade = true }: HeaderProps) {
+export function Header({ onMenuClick, basePath = "/dashboard", showUpgrade = true }: HeaderProps) {
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+  const { credits } = useCredits();
 
   return (
     <>

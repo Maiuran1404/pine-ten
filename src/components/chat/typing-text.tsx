@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,23 @@ interface TypingTextProps {
 }
 
 /**
+ * Capitalizes the first letter of a string.
+ * Handles leading whitespace and markdown formatting.
+ */
+function capitalizeFirstLetter(text: string): string {
+  if (!text) return text;
+
+  // Find the first actual letter (skip whitespace, markdown symbols like *, _, etc.)
+  const match = text.match(/^([\s*_~`]*)(.)(.*)$/s);
+  if (match) {
+    const [, prefix, firstChar, rest] = match;
+    return prefix + firstChar.toUpperCase() + rest;
+  }
+
+  return text;
+}
+
+/**
  * A component that renders text with a typing animation effect.
  * Reveals text word-by-word to create a ChatGPT-like experience.
  */
@@ -38,72 +55,8 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
-  // Capitalize the content before any processing
-  const capitalizeContent = useCallback((text: string): string => {
-    if (!text || text.length === 0) return text;
-
-    let result = text;
-
-    // Find the first alphabetic character (ignoring markdown, whitespace, etc.)
-    // and capitalize it. This handles all cases including markdown formatting.
-    const firstLetterIndex = result.search(/[a-z]/i);
-    if (
-      firstLetterIndex !== -1 &&
-      result[firstLetterIndex] === result[firstLetterIndex].toLowerCase()
-    ) {
-      result =
-        result.slice(0, firstLetterIndex) +
-        result[firstLetterIndex].toUpperCase() +
-        result.slice(firstLetterIndex + 1);
-    }
-
-    // Capitalize after sentence-ending punctuation followed by space
-    result = result.replace(
-      /([.!?]\s+)(\*{0,2})([a-z])/g,
-      (_, punct, markdown, letter) => {
-        return punct + (markdown || "") + letter.toUpperCase();
-      }
-    );
-
-    // Capitalize after colons followed by space (common in chat responses)
-    result = result.replace(
-      /(:\s+)(\*{0,2})([a-z])/g,
-      (_, colon, markdown, letter) => {
-        return colon + (markdown || "") + letter.toUpperCase();
-      }
-    );
-
-    // Capitalize after newlines
-    result = result.replace(
-      /(\n\s*)(\*{0,2})([a-z])/g,
-      (_, newline, markdown, letter) => {
-        return newline + (markdown || "") + letter.toUpperCase();
-      }
-    );
-
-    // Capitalize after dashes/bullets that start a line (for lists)
-    result = result.replace(
-      /(\n\s*[-*]\s+)(\*{0,2})([a-z])/g,
-      (_, prefix, markdown, letter) => {
-        return prefix + (markdown || "") + letter.toUpperCase();
-      }
-    );
-
-    return result;
-  }, []);
-
-  // Strip leading list markers (bullets) from content
-  const stripLeadingListMarkers = useCallback((text: string): string => {
-    // Remove leading list markers like "- ", "* ", "• ", etc.
-    // This handles cases where content starts with a bullet point
-    return text.replace(/^[\s]*[-*•]\s+/, "");
-  }, []);
-
-  // Pre-capitalize the full content using useMemo to ensure it updates when content changes
-  const processedContent = useMemo(() => {
-    const stripped = stripLeadingListMarkers(content);
-    return capitalizeContent(stripped);
-  }, [content, capitalizeContent, stripLeadingListMarkers]);
+  // Simply capitalize the first letter of the content
+  const processedContent = capitalizeFirstLetter(content.trim());
 
   const [displayedContent, setDisplayedContent] = useState(
     animate ? "" : processedContent
@@ -127,7 +80,7 @@ export function TypingText({
     wordIndexRef.current = 0;
     setSelectedOptions([]);
 
-    // Split processed content into words while preserving whitespace and newlines
+    // Split content into words while preserving whitespace and newlines
     const words = processedContent.split(/(\s+)/);
 
     const animateWords = () => {
@@ -190,7 +143,6 @@ export function TypingText({
     }
   }, [selectedOptions, onOptionClick, onOptionsConfirm]);
 
-  // displayedContent is already capitalized from processedContent
   return (
     <div className={className}>
       <ReactMarkdown

@@ -8,6 +8,7 @@ import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
+import { CreditProvider } from "@/providers/credit-provider";
 
 interface Task {
   id: string;
@@ -102,49 +103,53 @@ export default function ClientLayout({
   // Chat page has its own full-screen layout
   if (isChatPage) {
     return (
-      <SidebarProvider
-        defaultOpen={false}
-        className=""
-        style={{ fontFamily: "'Satoshi', sans-serif" } as React.CSSProperties}
-      >
-        <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
-          {children}
-        </div>
-      </SidebarProvider>
+      <CreditProvider>
+        <SidebarProvider
+          defaultOpen={false}
+          className=""
+          style={{ fontFamily: "'Satoshi', sans-serif" } as React.CSSProperties}
+        >
+          <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
+            {children}
+          </div>
+        </SidebarProvider>
+      </CreditProvider>
     );
   }
 
   return (
-    <SidebarProvider
-      defaultOpen={true}
-      className=""
-      style={
-        {
-          fontFamily: "'Satoshi', sans-serif",
-          "--sidebar-width": "16rem",
-          "--sidebar-width-icon": "4.5rem",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-transparent">
-        {/* Infinite Grid Background - covers entire viewport */}
-        <InfiniteGrid
-          gridSize={45}
-          speedX={0.2}
-          speedY={0.2}
-          spotlightRadius={280}
-          backgroundOpacity={0.04}
-          highlightOpacity={0.12}
-          showBlurSpheres={true}
-          sphereColors={["#A8D5BA", "#9AA48C", "#C5E8D5"]}
-          sphereOpacity={0.25}
-          sphereBlur={180}
-          className="!fixed inset-0"
-        />
-        <Header credits={user.credits || 0} />
-        <main className="relative z-10 flex-1 overflow-auto">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <CreditProvider>
+      <SidebarProvider
+        defaultOpen={true}
+        className=""
+        style={
+          {
+            fontFamily: "'Satoshi', sans-serif",
+            "--sidebar-width": "16rem",
+            "--sidebar-width-icon": "4.5rem",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar />
+        <SidebarInset className="bg-transparent">
+          {/* Infinite Grid Background - covers entire viewport */}
+          <InfiniteGrid
+            gridSize={45}
+            speedX={0.2}
+            speedY={0.2}
+            spotlightRadius={280}
+            backgroundOpacity={0.04}
+            highlightOpacity={0.12}
+            showBlurSpheres={true}
+            sphereColors={["#A8D5BA", "#9AA48C", "#C5E8D5"]}
+            sphereOpacity={0.25}
+            sphereBlur={180}
+            className="!fixed inset-0"
+          />
+          <Header />
+          <main className="relative z-10 flex-1 overflow-auto">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </CreditProvider>
   );
 }
