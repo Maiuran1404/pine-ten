@@ -704,6 +704,7 @@ export function ChatInterface({
         content: m.content,
         timestamp: m.timestamp.toISOString(),
         attachments: m.attachments,
+        quickOptions: m.quickOptions,
       })),
       selectedStyles,
       moodboardItems: moodboardItems.map((item) => ({

@@ -14,8 +14,8 @@ interface QuickOptionsProps {
 
 /**
  * Displays quick option buttons for user selection
- * Supports both single-select (immediate) and multi-select (with confirm)
- * Clean, modern design with grid layout
+ * Compact horizontal layout with max 4 options
+ * Sage green hover/active states matching brand
  */
 export function QuickOptions({
   options,
@@ -25,27 +25,27 @@ export function QuickOptions({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const isMultiSelect = options.multiSelect === true;
 
-  if (options.options.length === 0) return null;
+  // Only show first 4 options
+  const displayOptions = options.options.slice(0, 4);
+
+  if (displayOptions.length === 0) return null;
 
   const handleOptionClick = (option: string) => {
     if (disabled) return;
 
     if (isMultiSelect) {
-      // Toggle selection
       setSelectedOptions((prev) =>
         prev.includes(option)
           ? prev.filter((o) => o !== option)
           : [...prev, option]
       );
     } else {
-      // Immediate selection
       onSelect(option);
     }
   };
 
   const handleConfirm = () => {
     if (selectedOptions.length > 0) {
-      // Send all selected options as a combined response
       const combinedResponse =
         selectedOptions.length === 1
           ? selectedOptions[0]
@@ -55,27 +55,11 @@ export function QuickOptions({
     }
   };
 
-  // Determine grid columns based on number of options
-  const getGridCols = (count: number) => {
-    if (count <= 2) return "grid-cols-1 sm:grid-cols-2";
-    if (count <= 3) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
-    if (count <= 4) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
-    if (count <= 6) return "grid-cols-2 sm:grid-cols-3";
-    return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
-  };
-
   return (
-    <div className="space-y-4">
-      <div className={cn("grid gap-3", getGridCols(options.options.length))}>
-        {options.options.map((option, idx) => {
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {displayOptions.map((option, idx) => {
           const isSelected = selectedOptions.includes(option);
-          // Check if this is a "recommended" or primary action (usually the last one or contains certain keywords)
-          const isPrimary =
-            idx === options.options.length - 1 &&
-            (option.toLowerCase().includes("no") ||
-              option.toLowerCase().includes("let's") ||
-              option.toLowerCase().includes("continue") ||
-              option.toLowerCase().includes("decide"));
 
           return (
             <button
@@ -84,29 +68,31 @@ export function QuickOptions({
               onClick={() => handleOptionClick(option)}
               disabled={disabled}
               className={cn(
-                "px-4 py-3 text-sm font-medium rounded-lg border transition-all duration-200",
+                "px-4 py-2.5 text-sm font-medium rounded-xl border transition-all duration-150",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                "flex items-center justify-center gap-2",
-                "text-left",
-                isPrimary
-                  ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-sm"
-                  : isMultiSelect && isSelected
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-white dark:bg-card hover:border-primary/50 hover:bg-muted/50 cursor-pointer"
+                "whitespace-nowrap",
+                isMultiSelect && isSelected
+                  ? // Selected state for multi-select
+                    "border-[#7C9A7C] bg-[#E5EFE5] text-[#3D5A3D]"
+                  : // Default state
+                    "border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-card dark:text-gray-200",
+                // Hover: light sage green
+                "hover:border-[#B8D4B8] hover:bg-[#F0F7F0] dark:hover:bg-[#2A3F2A] dark:hover:border-[#4A6B4A]",
+                // Active: stronger sage green
+                "active:border-[#7C9A7C] active:bg-[#E5EFE5] dark:active:bg-[#3A4F3A]"
               )}
             >
               {isMultiSelect && isSelected && (
-                <Check className="h-4 w-4 shrink-0" />
+                <Check className="h-3.5 w-3.5 inline mr-1.5" />
               )}
-              <span className="flex-1">{option}</span>
+              {option}
             </button>
           );
         })}
       </div>
 
-      {/* Confirm button for multi-select */}
       {isMultiSelect && selectedOptions.length > 0 && (
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-start">
           <Button
             onClick={handleConfirm}
             disabled={disabled}

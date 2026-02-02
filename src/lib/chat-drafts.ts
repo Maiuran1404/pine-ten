@@ -29,6 +29,11 @@ export interface ChatDraft {
       fileType: string;
       fileSize: number;
     }[];
+    quickOptions?: {
+      question: string;
+      options: string[];
+      multiSelect?: boolean;
+    };
   }[];
   selectedStyles: string[];
   moodboardItems?: MoodboardItemData[];
