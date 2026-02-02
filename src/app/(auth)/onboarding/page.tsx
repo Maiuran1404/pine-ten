@@ -801,51 +801,98 @@ function BrandDNARevealStep({
           {/* Divider */}
           <div className="h-px bg-white/[0.08] mb-5" />
 
-          {/* Colors Section - Inline editable */}
+          {/* Unified Brand Attributes Row - Click any to edit */}
           <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Colors - clickable */}
+              <button
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "colors" ? null : "colors"
+                  )
+                }
+                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all ${
+                  editingSection === "colors"
+                    ? "bg-white/10 ring-1 ring-white/20"
+                    : "hover:bg-white/5"
+                }`}
+              >
                 {colors.length > 0 ? (
                   colors.map((color, i) => (
-                    <motion.div
+                    <div
                       key={i}
-                      className="w-8 h-8 rounded-lg"
+                      className="w-6 h-6 rounded-md"
                       style={{
                         backgroundColor: color,
-                        boxShadow: `0 2px 8px ${color}30`,
+                        boxShadow: `0 2px 6px ${color}30`,
                       }}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
                     />
                   ))
                 ) : (
                   <>
                     <div
-                      className="w-8 h-8 rounded-lg"
+                      className="w-6 h-6 rounded-md"
                       style={{ backgroundColor: "#3b82f6" }}
                     />
                     <div
-                      className="w-8 h-8 rounded-lg"
+                      className="w-6 h-6 rounded-md"
                       style={{ backgroundColor: "#8b5cf6" }}
                     />
                     <div
-                      className="w-8 h-8 rounded-lg"
+                      className="w-6 h-6 rounded-md"
                       style={{ backgroundColor: "#f59e0b" }}
                     />
                   </>
                 )}
-                <span className="text-white/40 text-xs font-medium ml-1">
-                  Colors
-                </span>
-              </div>
-              <SectionEditButton
-                section="colors"
-                isActive={editingSection === "colors"}
-              />
+              </button>
+
+              {/* Typography - clickable */}
+              <button
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "typography" ? null : "typography"
+                  )
+                }
+                className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
+                  editingSection === "typography"
+                    ? "bg-white/10 ring-1 ring-white/20"
+                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                }`}
+                style={{ fontFamily }}
+              >
+                {brandData.primaryFont || "Satoshi"}
+              </button>
+
+              {/* Style - clickable */}
+              <button
+                onClick={() =>
+                  setEditingSection(editingSection === "style" ? null : "style")
+                }
+                className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
+                  editingSection === "style"
+                    ? "bg-white/10 ring-1 ring-white/20"
+                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                }`}
+              >
+                {visualStyleLabel}
+              </button>
+
+              {/* Tone - clickable */}
+              <button
+                onClick={() =>
+                  setEditingSection(editingSection === "tone" ? null : "tone")
+                }
+                className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
+                  editingSection === "tone"
+                    ? "bg-white/10 ring-1 ring-white/20"
+                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                }`}
+              >
+                {brandToneLabel}
+              </button>
             </div>
 
-            {/* Color picker expanded */}
+            {/* Expandable editor panels */}
             <AnimatePresence>
               {editingSection === "colors" && (
                 <motion.div
@@ -855,10 +902,10 @@ function BrandDNARevealStep({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 pb-1 space-y-3">
+                  <div className="pt-4 pb-2 space-y-3">
                     {/* Primary Color */}
                     <div>
-                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">
+                      <p className="text-white/40 text-xs font-medium mb-2">
                         Primary
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -871,9 +918,9 @@ function BrandDNARevealStep({
                                 primaryColor: color,
                               })
                             }
-                            className={`w-7 h-7 rounded-lg transition-all ${
+                            className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.primaryColor === color
-                                ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]"
+                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
                                 : "hover:scale-110"
                             }`}
                             style={{ backgroundColor: color }}
@@ -889,17 +936,17 @@ function BrandDNARevealStep({
                                 primaryColor: e.target.value,
                               })
                             }
-                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
                           />
-                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-xs">+</span>
+                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-sm">+</span>
                           </div>
                         </div>
                       </div>
                     </div>
                     {/* Secondary Color */}
                     <div>
-                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">
+                      <p className="text-white/40 text-xs font-medium mb-2">
                         Secondary
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -912,9 +959,9 @@ function BrandDNARevealStep({
                                 secondaryColor: color,
                               })
                             }
-                            className={`w-7 h-7 rounded-lg transition-all ${
+                            className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.secondaryColor === color
-                                ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]"
+                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
                                 : "hover:scale-110"
                             }`}
                             style={{ backgroundColor: color }}
@@ -930,17 +977,17 @@ function BrandDNARevealStep({
                                 secondaryColor: e.target.value,
                               })
                             }
-                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
                           />
-                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-xs">+</span>
+                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-sm">+</span>
                           </div>
                         </div>
                       </div>
                     </div>
                     {/* Accent Color */}
                     <div>
-                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">
+                      <p className="text-white/40 text-xs font-medium mb-2">
                         Accent
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -950,9 +997,9 @@ function BrandDNARevealStep({
                             onClick={() =>
                               setBrandData({ ...brandData, accentColor: color })
                             }
-                            className={`w-7 h-7 rounded-lg transition-all ${
+                            className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.accentColor === color
-                                ? "ring-2 ring-white ring-offset-1 ring-offset-[#141414]"
+                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
                                 : "hover:scale-110"
                             }`}
                             style={{ backgroundColor: color }}
@@ -968,10 +1015,10 @@ function BrandDNARevealStep({
                                 accentColor: e.target.value,
                               })
                             }
-                            className="w-7 h-7 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
                           />
-                          <div className="w-7 h-7 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-xs">+</span>
+                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/40 text-sm">+</span>
                           </div>
                         </div>
                       </div>
@@ -979,39 +1026,7 @@ function BrandDNARevealStep({
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
 
-          {/* Typography Section - Visual font cards */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="px-3 py-2 rounded-lg"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                  }}
-                >
-                  <span
-                    className="text-white text-sm font-medium"
-                    style={{ fontFamily }}
-                  >
-                    {brandData.primaryFont || "Satoshi"}
-                  </span>
-                </div>
-                <span className="text-white/40 text-xs font-medium">
-                  Typography
-                </span>
-              </div>
-              <SectionEditButton
-                section="typography"
-                isActive={editingSection === "typography"}
-              />
-            </div>
-
-            {/* Font picker expanded */}
-            <AnimatePresence>
               {editingSection === "typography" && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
@@ -1020,13 +1035,13 @@ function BrandDNARevealStep({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 max-h-48 overflow-y-auto">
+                  <div className="pt-4 max-h-48 overflow-y-auto">
                     {Object.entries(groupedFonts).map(([category, fonts]) => (
                       <div key={category} className="mb-3">
-                        <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1.5">
+                        <p className="text-white/40 text-xs font-medium mb-2">
                           {category}
                         </p>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-2 gap-2">
                           {fonts.map((font) => (
                             <button
                               key={font.value}
@@ -1039,7 +1054,7 @@ function BrandDNARevealStep({
                               className={`px-3 py-2 rounded-lg text-left transition-all ${
                                 brandData.primaryFont === font.value
                                   ? "bg-[#9AA48C]/20 ring-1 ring-[#9AA48C]"
-                                  : "bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05]"
+                                  : "bg-white/5 hover:bg-white/8 border border-white/8"
                               }`}
                             >
                               <span
@@ -1056,32 +1071,7 @@ function BrandDNARevealStep({
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
 
-          {/* Style Section - Pill selectors */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span
-                  className="px-3 py-2 rounded-lg text-white text-sm font-medium"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                  }}
-                >
-                  {visualStyleLabel}
-                </span>
-                <span className="text-white/40 text-xs font-medium">Style</span>
-              </div>
-              <SectionEditButton
-                section="style"
-                isActive={editingSection === "style"}
-              />
-            </div>
-
-            {/* Style pills expanded */}
-            <AnimatePresence>
               {editingSection === "style" && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
@@ -1090,7 +1080,7 @@ function BrandDNARevealStep({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 flex flex-wrap gap-1.5">
+                  <div className="pt-4 flex flex-wrap gap-2">
                     {VISUAL_STYLE_OPTIONS.map((style) => {
                       const currentStyle =
                         brandData.visualStyle || getInitialVisualStyle();
@@ -1104,10 +1094,10 @@ function BrandDNARevealStep({
                               visualStyle: style.value,
                             })
                           }
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
                               ? "bg-[#9AA48C] text-black"
-                              : "bg-white/[0.05] text-white/60 hover:bg-white/[0.1] hover:text-white/80 border border-white/[0.08]"
+                              : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8"
                           }`}
                         >
                           {style.label}
@@ -1117,32 +1107,7 @@ function BrandDNARevealStep({
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
 
-          {/* Tone Section - Pill selectors */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span
-                  className="px-3 py-2 rounded-lg text-white text-sm font-medium"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                  }}
-                >
-                  {brandToneLabel}
-                </span>
-                <span className="text-white/40 text-xs font-medium">Tone</span>
-              </div>
-              <SectionEditButton
-                section="tone"
-                isActive={editingSection === "tone"}
-              />
-            </div>
-
-            {/* Tone pills expanded */}
-            <AnimatePresence>
               {editingSection === "tone" && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
@@ -1151,7 +1116,7 @@ function BrandDNARevealStep({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 flex flex-wrap gap-1.5">
+                  <div className="pt-4 flex flex-wrap gap-2">
                     {BRAND_TONE_OPTIONS.map((tone) => {
                       const currentTone =
                         brandData.brandTone || getInitialBrandTone();
@@ -1165,10 +1130,10 @@ function BrandDNARevealStep({
                               brandTone: tone.value,
                             })
                           }
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
                               ? "bg-[#9AA48C] text-black"
-                              : "bg-white/[0.05] text-white/60 hover:bg-white/[0.1] hover:text-white/80 border border-white/[0.08]"
+                              : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8"
                           }`}
                         >
                           {tone.label}
@@ -2256,6 +2221,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
   };
 
   // Fetch brand references from the database based on current slider values
+  // Debounced to prevent excessive API calls when adjusting sliders
   useEffect(() => {
     const fetchBrandReferences = async () => {
       try {
@@ -2285,7 +2251,9 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       }
     };
 
-    fetchBrandReferences();
+    // Debounce the fetch to avoid too many API calls while adjusting sliders
+    const timeoutId = setTimeout(fetchBrandReferences, 300);
+    return () => clearTimeout(timeoutId);
   }, [signals.tone, signals.density, signals.warmth, signals.energy]);
 
   // Get the current brand archetype for displaying name/description
@@ -2293,7 +2261,18 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
   const archetype = BRAND_ARCHETYPES[archetypeKey];
 
   // Use fetched brand reference images, or show loading state
-  const images = brandReferences.map((ref) => ref.imageUrl);
+  // Transform URLs to use smaller variants for faster loading
+  const getOptimizedImageUrl = (url: string) => {
+    // If URL contains /full.webp, replace with /small.webp for faster loading
+    if (url.includes("/full.webp")) {
+      return url.replace("/full.webp", "/small.webp");
+    }
+    return url;
+  };
+
+  const images = brandReferences.map((ref) =>
+    getOptimizedImageUrl(ref.imageUrl)
+  );
 
   // If we have fewer than 4 images, duplicate them to fill 4 columns
   const displayImages =
@@ -2392,6 +2371,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                           }
                           className="w-full h-full"
                           skeletonClassName="bg-white/5"
+                          loading="lazy"
                         />
                       </motion.div>
                     ))}

@@ -25,7 +25,10 @@ export function ImageWithSkeleton({
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className={cn("relative overflow-hidden", className)} style={{ aspectRatio }}>
+    <div
+      className={cn("relative overflow-hidden", className)}
+      style={{ aspectRatio }}
+    >
       <AnimatePresence>
         {!isLoaded && !hasError && (
           <motion.div
@@ -42,7 +45,8 @@ export function ImageWithSkeleton({
       <img
         src={src}
         alt={alt}
-        loading={loading}
+        loading={loading || "lazy"}
+        decoding="async"
         className={cn(
           "w-full h-full object-cover transition-opacity duration-300",
           isLoaded ? "opacity-100" : "opacity-0"
@@ -55,7 +59,11 @@ export function ImageWithSkeleton({
 }
 
 // Scrolling column skeleton for onboarding brand references
-export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) {
+export function BrandReferenceColumnSkeleton({
+  index = 0,
+}: {
+  index?: number;
+}) {
   return (
     <div
       className="relative flex-shrink-0 rounded-2xl overflow-hidden"
@@ -70,14 +78,16 @@ export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) 
       <div
         className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
-          background: "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+          background:
+            "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
         }}
       />
       {/* Bottom fade gradient */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
-          background: "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+          background:
+            "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
         }}
       />
       {/* Scrolling skeleton cards */}
@@ -107,7 +117,11 @@ export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) 
 }
 
 // Grid of scrolling columns skeleton for onboarding
-export function BrandReferenceGridSkeleton({ columns = 4 }: { columns?: number }) {
+export function BrandReferenceGridSkeleton({
+  columns = 4,
+}: {
+  columns?: number;
+}) {
   return (
     <div className="flex gap-4 justify-center">
       {[...Array(columns)].map((_, index) => (
@@ -135,7 +149,9 @@ export function MasonryGridSkeleton({
   showHeader?: boolean;
 }) {
   // Generate varied heights for masonry effect
-  const heights = [150, 180, 200, 220, 170, 190, 160, 210, 185, 175, 195, 165, 205, 155, 225];
+  const heights = [
+    150, 180, 200, 220, 170, 190, 160, 210, 185, 175, 195, 165, 205, 155, 225,
+  ];
 
   return (
     <div className="space-y-4">

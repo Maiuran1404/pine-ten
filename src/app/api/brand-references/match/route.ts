@@ -41,8 +41,12 @@ export async function POST(request: NextRequest) {
 
     // Determine buckets from slider values (0-100 scale)
     // Use new names if provided, fall back to old names for backwards compatibility
-    const toneBucket: ToneBucket = getToneBucket(signalTone ?? feelPlayfulSerious ?? 50);
-    const densityBucket: DensityBucket = getDensityBucket(signalDensity ?? feelBoldMinimal ?? 50);
+    const toneBucket: ToneBucket = getToneBucket(
+      signalTone ?? feelPlayfulSerious ?? 50
+    );
+    const densityBucket: DensityBucket = getDensityBucket(
+      signalDensity ?? feelBoldMinimal ?? 50
+    );
     const colorBucket: ColorBucket = getColorBucket(signalWarmth ?? 50);
     const energyBucket: EnergyBucket = getEnergyBucket(signalEnergy ?? 50);
 
@@ -69,11 +73,23 @@ export async function POST(request: NextRequest) {
         displayOrder: brandReferences.displayOrder,
         usageCount: brandReferences.usageCount,
         score: sql<number>`
-          (CASE WHEN ${brandReferences.toneBucket} = ${toneBucket} THEN 3 ELSE 0 END) +
-          (CASE WHEN ${brandReferences.densityBucket} = ${densityBucket} THEN 2 ELSE 0 END) +
-          (CASE WHEN ${brandReferences.colorBucket} = ${colorBucket} THEN 2 ELSE 0 END) +
-          (CASE WHEN ${brandReferences.energyBucket} = ${energyBucket} THEN 2 ELSE 0 END) +
-          (CASE WHEN ${visualStyle ? sql`${visualStyle} = ANY(${brandReferences.visualStyles})` : sql`false`} THEN 1 ELSE 0 END)
+          (CASE WHEN ${
+            brandReferences.toneBucket
+          } = ${toneBucket} THEN 3 ELSE 0 END) +
+          (CASE WHEN ${
+            brandReferences.densityBucket
+          } = ${densityBucket} THEN 2 ELSE 0 END) +
+          (CASE WHEN ${
+            brandReferences.colorBucket
+          } = ${colorBucket} THEN 2 ELSE 0 END) +
+          (CASE WHEN ${
+            brandReferences.energyBucket
+          } = ${energyBucket} THEN 2 ELSE 0 END) +
+          (CASE WHEN ${
+            visualStyle
+              ? sql`${visualStyle} = ANY(${brandReferences.visualStyles})`
+              : sql`false`
+          } THEN 1 ELSE 0 END)
         `.as("score"),
       })
       .from(brandReferences)
@@ -92,16 +108,24 @@ export async function POST(request: NextRequest) {
       .from(brandReferences)
       .where(eq(brandReferences.isActive, true));
 
-    return NextResponse.json({
-      references,
-      total: countResult?.count || 0,
-      buckets: {
-        tone: toneBucket,
-        density: densityBucket,
-        color: colorBucket,
-        energy: energyBucket,
+    return NextResponse.json(
+      {
+        references,
+        total: countResult?.count || 0,
+        buckets: {
+          tone: toneBucket,
+          density: densityBucket,
+          color: colorBucket,
+          energy: energyBucket,
+        },
       },
-    });
+      {
+        headers: {
+          // Cache for 5 minutes - brand references don't change often
+          "Cache-Control": "private, max-age=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("Brand references match error:", error);
     return NextResponse.json(
@@ -124,9 +148,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const toneBucket = searchParams.get("toneBucket") as ToneBucket | null;
-    const densityBucket = searchParams.get("densityBucket") as DensityBucket | null;
+    const densityBucket = searchParams.get(
+      "densityBucket"
+    ) as DensityBucket | null;
     const colorBucket = searchParams.get("colorBucket") as ColorBucket | null;
-    const energyBucket = searchParams.get("energyBucket") as EnergyBucket | null;
+    const energyBucket = searchParams.get(
+      "energyBucket"
+    ) as EnergyBucket | null;
     const limit = parseInt(searchParams.get("limit") || "12");
     const offset = parseInt(searchParams.get("offset") || "0");
 
