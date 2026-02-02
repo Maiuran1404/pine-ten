@@ -40,9 +40,11 @@ interface Task {
 
 const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
   PENDING: { color: "text-yellow-400", bgColor: "bg-yellow-500/10 border-yellow-500/20", label: "Pending", icon: <Clock className="h-3 w-3" /> },
+  OFFERED: { color: "text-cyan-400", bgColor: "bg-cyan-500/10 border-cyan-500/20", label: "Finding Artist", icon: <Clock className="h-3 w-3" /> },
   ASSIGNED: { color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20", label: "Assigned", icon: <Clock className="h-3 w-3" /> },
   IN_PROGRESS: { color: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20", label: "In Progress", icon: <RefreshCw className="h-3 w-3" /> },
   IN_REVIEW: { color: "text-orange-400", bgColor: "bg-orange-500/10 border-orange-500/20", label: "In Review", icon: <Clock className="h-3 w-3" /> },
+  PENDING_ADMIN_REVIEW: { color: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20", label: "Admin Review", icon: <Clock className="h-3 w-3" /> },
   REVISION_REQUESTED: { color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20", label: "Revision", icon: <AlertCircle className="h-3 w-3" /> },
   COMPLETED: { color: "text-green-400", bgColor: "bg-green-500/10 border-green-500/20", label: "Completed", icon: <CheckCircle2 className="h-3 w-3" /> },
   CANCELLED: { color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20", label: "Cancelled", icon: <AlertCircle className="h-3 w-3" /> },
@@ -69,8 +71,9 @@ export default function TasksPage() {
       // Explicitly request client view to show tasks the user created
       const response = await fetch("/api/tasks?limit=50&view=client");
       if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks || []);
+        const result = await response.json();
+        // API uses successResponse which wraps data in { success: true, data: ... }
+        setTasks(result.data?.tasks || result.tasks || []);
       }
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
