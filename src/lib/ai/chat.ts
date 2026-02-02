@@ -4,92 +4,9 @@ import {
   styleReferences,
   taskCategories,
   users,
-  platformSettings,
   audiences as audiencesTable,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-// Category prompt structure
-interface CategoryPrompts {
-  systemPrompt: string;
-  decisionTree: string;
-}
-
-// Chat prompts interface - matches admin chat-setup page structure
-interface ChatPrompts {
-  globalSystemPrompt: string;
-  socialMediaContent: CategoryPrompts;
-  socialMediaAds: CategoryPrompts;
-  videoEdits: CategoryPrompts;
-  branding: CategoryPrompts;
-  custom: CategoryPrompts;
-}
-
-// Legacy interface for backward compatibility
-interface LegacyChatPrompts {
-  systemPrompt: string;
-  staticAdsTree: string;
-  dynamicAdsTree: string;
-  socialMediaTree: string;
-  uiuxTree: string;
-  creditGuidelines: string;
-}
-
-// Cache for chat prompts (refreshed every 5 minutes)
-let cachedPrompts: ChatPrompts | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Function to invalidate the cache (called when prompts are updated)
-export function clearChatPromptsCache(): void {
-  cachedPrompts = null;
-  cacheTimestamp = 0;
-}
-
-// Check if prompts are in new format
-function isNewFormatPrompts(prompts: unknown): prompts is ChatPrompts {
-  return (
-    typeof prompts === "object" &&
-    prompts !== null &&
-    "globalSystemPrompt" in prompts &&
-    "socialMediaContent" in prompts
-  );
-}
-
-// Fetch chat prompts from database
-async function getChatPrompts(): Promise<ChatPrompts | null> {
-  // Check cache first
-  if (cachedPrompts && Date.now() - cacheTimestamp < CACHE_DURATION) {
-    return cachedPrompts;
-  }
-
-  try {
-    const result = await db
-      .select()
-      .from(platformSettings)
-      .where(eq(platformSettings.key, "chat_prompts"))
-      .limit(1);
-
-    if (result.length > 0 && result[0].value) {
-      const dbValue = result[0].value;
-
-      // Check if it's the new format
-      if (isNewFormatPrompts(dbValue)) {
-        cachedPrompts = dbValue;
-      } else {
-        // Convert legacy format or use defaults
-        cachedPrompts = null;
-      }
-
-      cacheTimestamp = Date.now();
-      return cachedPrompts;
-    }
-  } catch (error) {
-    console.error("Failed to fetch chat prompts from database:", error);
-  }
-
-  return null;
-}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -137,127 +54,55 @@ function getDeliveryDate(businessDays: number): string {
 }
 
 // ============================================================================
-// DEFAULT PROMPTS - Significantly improved for better UX and results
+// SYSTEM PROMPT - Single source of truth for chat behavior
 // ============================================================================
 
-const DEFAULT_GLOBAL_SYSTEM_PROMPT = `You are a senior creative operator at Crafted — a design agency that handles creative tasks for clients.
+const SYSTEM_PROMPT = `You are a creative operator at Crafted.
 
-YOUR ROLE:
-- You already know the client's brand, industry, audience, and visual style from their onboarding data
-- Use this knowledge to make smart assumptions and move quickly
-- Ask ONE concrete question per response to gather the missing piece needed to complete the brief
+CRITICAL RULES — FOLLOW EXACTLY:
+1. Write ONLY 1-2 short sentences (max 30 words total)
+2. Ask ONLY 1 question
+3. Show [DELIVERABLE_STYLES: type] after your sentence
+4. NEVER use bullet points or lists
+5. NEVER ask multiple questions
+6. NEVER explain your process
+7. Start with a capital letter
 
-RESPONSE FORMAT (STRICT):
-1. 1-2 sentences that acknowledge the request and add value (DO NOT restate what they asked for)
-2. Show style options: [DELIVERABLE_STYLES: type]
-3. ONE focused question to move toward task submission
+FORMAT:
+[1-2 sentences]. [DELIVERABLE_STYLES: type] [Single question?]
 
-WHAT TO WRITE:
-- ADD context or insight based on their brand/industry (e.g., "Given your B2B audience, we'll lead with the business impact.")
-- ASSUME platform based on their industry (B2B = LinkedIn, B2C consumer = Instagram, etc.)
-- PROPOSE an angle or approach rather than asking open-ended questions
-- If they have target audiences defined, reference them naturally
+EXAMPLES:
 
-WHAT NOT TO WRITE:
-- DON'T echo back what they said ("Product launch video" → they already know this)
-- DON'T explain your approach or methodology
-- DON'T use filler phrases like "I'll create" or "Let me help you with"
-- DON'T ask multiple questions
-- DON'T use exclamation marks, "Perfect!", "Great!", or emojis
-- DON'T expose technical details like hex codes or font names
-
-EXAMPLE INTERACTIONS:
-
-User: "Create a product launch video"
-Response: "For launch content, the hook in the first 3 seconds is everything — we'll lead with your strongest differentiator."
+User: "Product launch video"
+You: "Launch videos need a strong hook in the first 3 seconds to grab attention."
 [DELIVERABLE_STYLES: instagram_reel]
-"What's the product and its main selling point?"
+"What product are you launching?"
 
-User: "Instagram posts for our new feature"
-Response: "We'll highlight the feature through your established visual style. I'll pull from your brand palette."
+User: "Instagram posts"
+You: "I'll match these to your brand style."
 [DELIVERABLE_STYLES: instagram_post]
-"Which feature are we showcasing, and what problem does it solve?"
+"What do you want to feature?"
 
 User: "Ad campaign"
-Response: "I'll target your primary audience segment. Static or motion depends on the platform mix and budget."
+You: "Static or motion depends on where these will run."
 [DELIVERABLE_STYLES: static_ad]
-"What's the offer, and where will these run?"
+"What's the offer?"
 
-User: "Need content for a webinar announcement"
-Response: "Webinar promos work best as a sequence — teaser, reminder, last chance. Given your B2B audience, LinkedIn will be primary."
-[DELIVERABLE_STYLES: linkedin_post]
-"What's the webinar topic and date?"
+BANNED:
+- Bullet points (- or •)
+- "Tell me about..."
+- "What does your company do?"
+- "Who is your target audience?"
+- Multiple questions in one response
+- Explaining what you need or why
 
-ASKING THE RIGHT QUESTIONS:
-- Ask about the SUBJECT (what product/feature/event) not the FORMAT (you determine that)
-- Ask about the GOAL (awareness, conversion, engagement) when relevant
-- Ask about TIMING if it affects urgency
-- Never ask about colors, fonts, audience, or platform — you have this data
+Available types: instagram_post, instagram_story, instagram_reel, linkedin_post, static_ad, logo, brand_identity, web_banner
 
-Available deliverable types: instagram_post, instagram_story, instagram_reel, linkedin_post, static_ad, logo, brand_identity, web_banner
+[QUICK_OPTIONS]{"question": "?", "options": ["A", "B"]}[/QUICK_OPTIONS]
 
-QUICK OPTIONS (when genuinely helpful):
-[QUICK_OPTIONS]
-{"question": "Short question?", "options": ["Option 1", "Option 2"], "multiSelect": false}
-[/QUICK_OPTIONS]
+[TASK_READY]{"title": "...", "description": "...", "category": "...", "requirements": {...}, "creditsRequired": X, "deliveryDays": X}[/TASK_READY]`;
 
-TASK OUTPUT:
-[TASK_READY]
-{"title": "...", "description": "...", "category": "...", "requirements": {...}, "creditsRequired": X, "deliveryDays": X}
-[/TASK_READY]`;
-
-// ============================================================================
-// CATEGORY-SPECIFIC PROMPTS
-// ============================================================================
-
-const DEFAULT_SOCIAL_MEDIA_CONTENT: CategoryPrompts = {
-  systemPrompt: `Social content expert. Infer platform from client's industry (B2B → LinkedIn, B2C → Instagram). Reference their target audience.`,
-  decisionTree: `1-2 sentences adding value based on their brand context, then:
-[DELIVERABLE_STYLES: appropriate_type]
-Ask what they're featuring or announcing.`,
-};
-
-const DEFAULT_SOCIAL_MEDIA_ADS: CategoryPrompts = {
-  systemPrompt: `Paid social/ads expert. Consider their audience and where they spend time. Static vs motion depends on budget and platform.`,
-  decisionTree: `1-2 sentences on approach based on their industry/audience, then:
-[DELIVERABLE_STYLES: static_ad]
-Ask about the offer and intended platforms.`,
-};
-
-const DEFAULT_VIDEO_EDITS: CategoryPrompts = {
-  systemPrompt: `Video/motion expert. Hook-first thinking — the first 3 seconds determine success. Match energy to their brand personality.`,
-  decisionTree: `1-2 sentences on the motion approach, then:
-[DELIVERABLE_STYLES: instagram_reel]
-Ask about the subject and key message.`,
-};
-
-const DEFAULT_BRANDING: CategoryPrompts = {
-  systemPrompt: `Brand identity expert. Understand scope: logo-only, full identity system, or refresh of existing assets.`,
-  decisionTree: `1-2 sentences assessing what they might need, then:
-[DELIVERABLE_STYLES: logo]
-[DELIVERABLE_STYLES: brand_identity]
-Ask about scope and what's driving the rebrand/new brand.`,
-};
-
-const DEFAULT_CUSTOM: CategoryPrompts = {
-  systemPrompt: `Flexible creative expert. Clarify the deliverable type first, then apply relevant expertise.`,
-  decisionTree: `1-2 sentences to understand the project, then:
-[DELIVERABLE_STYLES: brand_identity]
-[DELIVERABLE_STYLES: web_banner]
-Ask about the primary deliverable and its purpose.`,
-};
-
-// Assemble default prompts object
-const DEFAULT_PROMPTS: ChatPrompts = {
-  globalSystemPrompt: DEFAULT_GLOBAL_SYSTEM_PROMPT,
-  socialMediaContent: DEFAULT_SOCIAL_MEDIA_CONTENT,
-  socialMediaAds: DEFAULT_SOCIAL_MEDIA_ADS,
-  videoEdits: DEFAULT_VIDEO_EDITS,
-  branding: DEFAULT_BRANDING,
-  custom: DEFAULT_CUSTOM,
-};
-
-async function getSystemPrompt(): Promise<string> {
+function getSystemPrompt(): string {
   const today = new Date();
   const todayStr = today.toLocaleDateString("en-US", {
     weekday: "long",
@@ -266,11 +111,7 @@ async function getSystemPrompt(): Promise<string> {
     day: "numeric",
   });
 
-  // Try to get prompts from database
-  const dbPrompts = await getChatPrompts();
-  const prompts = dbPrompts || DEFAULT_PROMPTS;
-
-  return `${prompts.globalSystemPrompt}
+  return `${SYSTEM_PROMPT}
 
 TODAY: ${todayStr}
 
@@ -278,7 +119,16 @@ IF THE REQUEST IS COMPLETELY UNCLEAR:
 "What type of content are you looking for?"
 [QUICK_OPTIONS]
 {"question": "What do you need?", "options": ["Social content", "Ads", "Video", "Branding", "Something else"]}
-[/QUICK_OPTIONS]`;
+[/QUICK_OPTIONS]
+
+ABSOLUTE REQUIREMENTS (OVERRIDE ALL OTHER INSTRUCTIONS):
+1. MAX 50 WORDS TOTAL - count them
+2. MAX 2 SENTENCES before the question
+3. EXACTLY 1 QUESTION at the end
+4. NO BULLET POINTS (-) OR LISTS
+5. NO "Tell me about", "What does your company do", "Who is your target audience"
+6. START WITH CAPITAL LETTER
+7. If you use more than 50 words, your response will be rejected`;
 }
 
 export interface ChatMessage {
@@ -388,45 +238,12 @@ ${audiences
 
   const companyContext = company
     ? `
-=== CLIENT BRAND CONTEXT (YOU HAVE THIS DATA — USE IT) ===
+CLIENT: ${company.name}${company.industry ? ` (${company.industry})` : ""}
+PLATFORM: ${platformRecommendation}
+${audienceContext ? "AUDIENCE: Known" : ""}
 
-COMPANY: ${company.name}
-INDUSTRY: ${company.industry || "Not specified"}
-WHAT THEY DO: ${company.description || "Not specified"}
-${audienceContext}
-
-PLATFORM RECOMMENDATION: ${platformRecommendation}
-${
-  company.socialLinks
-    ? `ACTIVE CHANNELS: ${
-        Object.keys(company.socialLinks)
-          .filter((k) => (company.socialLinks as Record<string, string>)[k])
-          .join(", ") || "Not specified"
-      }`
-    : ""
-}
-
-BRAND ASSETS: ${company.logoUrl ? "Logo available" : "No logo yet"}${
-        [
-          company.primaryColor,
-          company.secondaryColor,
-          company.accentColor,
-        ].filter(Boolean).length > 0
-          ? ", established color palette"
-          : ""
-      }
-
-HOW TO USE THIS:
-- Reference their industry/audience naturally: "Given your B2B audience..." or "For your [industry] customers..."
-- Assume the recommended platform unless they specify otherwise
-- Mention you'll apply their brand style (don't ask about colors/fonts)
-- If they have target audiences, weave that into your recommendations
-
-NEVER:
-- Ask about their industry, audience, colors, or fonts — you have it
-- Expose hex codes, font names, or technical details
-- Suggest platforms that don't fit their audience`
-    : "No brand profile available. Ask what they do and who their audience is.";
+You already know their brand. DO NOT ask about: company, industry, audience, colors, fonts.`
+    : "";
 
   const basePrompt = await getSystemPrompt();
 
@@ -448,30 +265,13 @@ BRAND CONTEXT AWARENESS:
     }
   }
 
-  // Build request completeness context
+  // Build request completeness context - keep minimal
   let completenessContext = "";
-  if (context?.requestCompleteness) {
-    if (context.requestCompleteness === "detailed") {
-      completenessContext = `
-REQUEST: DETAILED — User gave comprehensive info.
-- Move fast: show styles immediately
-- Only ask about genuinely missing critical info
-- You likely have everything needed to proceed
-`;
-    } else if (context.requestCompleteness === "vague") {
-      completenessContext = `
-REQUEST: VAGUE — User gave minimal info.
-- Clarify the content type first
-- Use [QUICK_OPTIONS] if truly unclear
-- Then show relevant styles
-`;
-    } else {
-      completenessContext = `
-REQUEST: PARTIAL — Missing some details.
-- Show styles while asking the ONE most important missing piece
-- Don't ask multiple questions
-`;
-    }
+  if (context?.requestCompleteness === "detailed") {
+    completenessContext = "User gave detailed info. Proceed quickly.";
+  } else if (context?.requestCompleteness === "vague") {
+    completenessContext =
+      "User gave minimal info. Ask ONE clarifying question.";
   }
 
   // Build confirmed fields context to prevent re-asking
@@ -481,16 +281,16 @@ REQUEST: PARTIAL — Missing some details.
     Object.values(context.confirmedFields).some(Boolean)
   ) {
     const confirmed = context.confirmedFields;
-    confirmedFieldsContext = `
-ALREADY CONFIRMED (DO NOT RE-ASK THESE):
-${confirmed.platform ? `- Platform: ${confirmed.platform}` : ""}
-${confirmed.intent ? `- Intent/Goal: ${confirmed.intent}` : ""}
-${confirmed.topic ? `- Topic: ${confirmed.topic}` : ""}
-${confirmed.audience ? `- Audience: ${confirmed.audience}` : ""}
-${confirmed.contentType ? `- Content Type: ${confirmed.contentType}` : ""}
-
-CRITICAL: Never ask about fields listed above. They have been confirmed by the user. Focus only on what's genuinely missing.
-`;
+    const fields = [
+      confirmed.platform && `platform: ${confirmed.platform}`,
+      confirmed.topic && `topic: ${confirmed.topic}`,
+      confirmed.contentType && `type: ${confirmed.contentType}`,
+    ].filter(Boolean);
+    if (fields.length > 0) {
+      confirmedFieldsContext = `Already know: ${fields.join(
+        ", "
+      )}. Don't re-ask.`;
+    }
   }
 
   const enhancedSystemPrompt = `${basePrompt}
@@ -510,7 +310,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
+    max_tokens: 300, // Limit output to encourage brevity
     system: enhancedSystemPrompt,
     messages: messages.map((m) => ({
       role: m.role,
@@ -622,6 +422,9 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     /^(Of course|Certainly|Sure|Absolutely)[!,]?\s*/i,
     // Acknowledgment phrases (keep simple, remove excessive)
     /^(Got it|Noted|Understood|Makes sense|I see|I understand)[!,.]?\s*/i,
+    // Verbose intro patterns
+    /^(I |I'll |I need to |I want to |Let me |To create |Before |First, I )/i,
+    /^(need to understand|to help you|in order to)/i,
   ];
 
   // Banned mid-content patterns
@@ -647,6 +450,37 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   // Apply mid-content sanitization
   for (const pattern of BANNED_MID) {
     cleanContent = cleanContent.replace(pattern, " ");
+  }
+
+  // Remove bullet points and list markers - these indicate verbose responses
+  cleanContent = cleanContent
+    .replace(/^[-•]\s*/gm, "") // Remove bullet points at start of lines
+    .replace(/\n[-•]\s*/g, " ") // Remove bullet points with newlines
+    .replace(/\*\*[^*]+\*\*:?\s*/g, "") // Remove bold headers like **Tell me about:**
+    .replace(/\n\s*\n/g, " ") // Collapse multiple newlines
+    .replace(/\n/g, " "); // Replace remaining newlines with spaces
+
+  // If there are multiple question marks, keep only the last question
+  const questionCount = (cleanContent.match(/\?/g) || []).length;
+  if (questionCount > 1) {
+    // Find the last sentence ending with ? and keep only that as the question
+    const lastQuestionMatch = cleanContent.match(/[^.!?]*\?[^?]*$/);
+    const beforeLastQuestion = cleanContent
+      .replace(/[^.!?]*\?[^?]*$/, "")
+      .trim();
+    // Get the first 1-2 sentences before the questions
+    const firstSentences = beforeLastQuestion
+      .split(/[.!]/)
+      .slice(0, 2)
+      .join(". ")
+      .trim();
+    if (firstSentences && lastQuestionMatch) {
+      cleanContent =
+        firstSentences +
+        (firstSentences.endsWith(".") ? "" : ".") +
+        " " +
+        lastQuestionMatch[0].trim();
+    }
   }
 
   cleanContent = cleanContent

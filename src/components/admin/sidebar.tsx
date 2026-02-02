@@ -30,7 +30,6 @@ import {
   ClipboardCheck,
   Image,
   Sparkles,
-  Cog,
   Brain,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
@@ -125,11 +124,6 @@ const navigationGroups: NavigationGroup[] = [
         icon: Wand2,
       },
       {
-        name: "Chat Setup",
-        href: "/admin/chat-setup",
-        icon: Cog,
-      },
-      {
         name: "Intake Prompts",
         href: "/admin/creative-intake-prompts",
         icon: Sparkles,
@@ -189,7 +183,11 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       <SidebarHeader className="h-16 justify-center">
         <div className="flex items-center gap-2">
           <SidebarTrigger />
-          <Logo href="/admin" name="Superadmin" className="group-data-[collapsible=icon]:hidden" />
+          <Logo
+            href="/admin"
+            name="Superadmin"
+            className="group-data-[collapsible=icon]:hidden"
+          />
         </div>
       </SidebarHeader>
 
@@ -204,10 +202,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarRecents
-          items={recentItems}
-          title="Recent Tasks"
-        />
+        <SidebarRecents items={recentItems} title="Recent Tasks" />
       </SidebarContent>
 
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">

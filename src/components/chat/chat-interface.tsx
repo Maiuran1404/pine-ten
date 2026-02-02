@@ -504,18 +504,38 @@ export function ChatInterface({
       // Mark all loaded messages as having completed typing (they won't animate)
       setCompletedTypingIds(new Set(loadedMessages.map((m) => m.id)));
 
+      // Restore moodboard items from draft if available
+      if (draft.moodboardItems && draft.moodboardItems.length > 0) {
+        // Clear current moodboard first, then add items
+        clearMoodboard();
+        draft.moodboardItems.forEach((item) => {
+          addMoodboardItem({
+            type: item.type,
+            imageUrl: item.imageUrl,
+            name: item.name,
+            metadata: item.metadata,
+          });
+        });
+      }
+
       const lastMessage = loadedMessages[loadedMessages.length - 1];
       if (lastMessage && lastMessage.role === "user") {
         setNeedsAutoContinue(true);
       }
     } else {
+      // New chat - clear all state including moodboard
       setMessages([]);
       setSelectedStyles([]);
+      setSelectedDeliverableStyles([]);
       setPendingTask(null);
       setCompletedTypingIds(new Set());
+      setCurrentDeliverableType(null);
+      setStyleOffset({});
+      setExcludedStyleAxes([]);
+      clearMoodboard();
     }
     setIsInitialized(true);
-  }, [draftId, isTaskMode, taskData]);
+  }, [draftId, isTaskMode, taskData, clearMoodboard, addMoodboardItem]);
 
   // Handle initial message from URL param
   useEffect(() => {

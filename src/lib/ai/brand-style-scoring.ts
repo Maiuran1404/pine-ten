@@ -19,6 +19,19 @@ const SCORING_WEIGHTS = {
 };
 
 /**
+ * Fallback deliverable types for types that may not have styles in the database.
+ * When a deliverable type has no styles, we fall back to a related type with available styles.
+ */
+const DELIVERABLE_TYPE_FALLBACKS: Partial<Record<DeliverableType, DeliverableType[]>> = {
+  logo: ["static_ad", "instagram_post"],
+  brand_identity: ["static_ad", "instagram_post"],
+  instagram_reel: ["instagram_story", "instagram_post"],
+  youtube_thumbnail: ["static_ad", "instagram_post"],
+  video_ad: ["static_ad", "instagram_post"],
+  linkedin_banner: ["web_banner", "static_ad"],
+};
+
+/**
  * Style axis characteristics for brand matching
  * Maps each style to its typical color temperature, energy level, and density
  */
@@ -453,14 +466,62 @@ export async function getBrandAwareStyles(
       deliverableStyleReferences.displayOrder
     );
 
+  // If no styles found, try fallback deliverable types
+  let actualDeliverableType = deliverableType;
+  let finalStyles = styles;
+
+  if (styles.length === 0) {
+    const fallbacks = DELIVERABLE_TYPE_FALLBACKS[deliverableType];
+    if (fallbacks) {
+      for (const fallbackType of fallbacks) {
+        const fallbackStyles = await db
+          .select({
+            id: deliverableStyleReferences.id,
+            name: deliverableStyleReferences.name,
+            description: deliverableStyleReferences.description,
+            imageUrl: deliverableStyleReferences.imageUrl,
+            deliverableType: deliverableStyleReferences.deliverableType,
+            styleAxis: deliverableStyleReferences.styleAxis,
+            subStyle: deliverableStyleReferences.subStyle,
+            semanticTags: deliverableStyleReferences.semanticTags,
+            featuredOrder: deliverableStyleReferences.featuredOrder,
+            displayOrder: deliverableStyleReferences.displayOrder,
+            usageCount: deliverableStyleReferences.usageCount,
+            createdAt: deliverableStyleReferences.createdAt,
+            industries: deliverableStyleReferences.industries,
+            moodKeywords: deliverableStyleReferences.moodKeywords,
+            targetAudience: deliverableStyleReferences.targetAudience,
+          })
+          .from(deliverableStyleReferences)
+          .where(
+            and(
+              eq(deliverableStyleReferences.deliverableType, fallbackType),
+              eq(deliverableStyleReferences.isActive, true)
+            )
+          )
+          .orderBy(
+            deliverableStyleReferences.featuredOrder,
+            deliverableStyleReferences.displayOrder
+          );
+
+        if (fallbackStyles.length > 0) {
+          finalStyles = fallbackStyles;
+          actualDeliverableType = fallbackType;
+          console.log(`[Brand Scoring] No styles for "${deliverableType}", using fallback "${fallbackType}" (${fallbackStyles.length} styles)`);
+          break;
+        }
+      }
+    }
+  }
+
   const styleContext = options?.context;
 
   // Calculate max usage for popularity normalization
-  const maxUsage = Math.max(...styles.map(s => s.usageCount || 0), 1);
+  const maxUsage = Math.max(...finalStyles.map(s => s.usageCount || 0), 1);
 
   // If no company data, use popularity, freshness, and context scoring
   if (!company) {
-    const neutralScored: BrandAwareStyle[] = styles.map(style => {
+    const neutralScored: BrandAwareStyle[] = finalStyles.map(style => {
       const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
       const freshnessScore = calculateFreshnessScore(style.createdAt);
       const contextScore = styleContext
@@ -530,7 +591,7 @@ export async function getBrandAwareStyles(
   const hasHistory = historyBoosts.size > 0;
 
   // Score each style using multi-factor scoring
-  const scoredStyles: BrandAwareStyle[] = styles.map(style => {
+  const scoredStyles: BrandAwareStyle[] = finalStyles.map(style => {
     const characteristics = STYLE_CHARACTERISTICS[style.styleAxis as StyleAxis];
 
     // Calculate individual factor scores
@@ -731,7 +792,7 @@ export async function getBrandAwareStylesOfAxis(
 
   const company = user?.company;
 
-  const styles = await db
+  let styles = await db
     .select({
       id: deliverableStyleReferences.id,
       name: deliverableStyleReferences.name,
@@ -753,6 +814,43 @@ export async function getBrandAwareStylesOfAxis(
     .orderBy(deliverableStyleReferences.displayOrder)
     .limit(limit)
     .offset(offset);
+
+  // If no styles found, try fallback deliverable types
+  if (styles.length === 0) {
+    const fallbacks = DELIVERABLE_TYPE_FALLBACKS[deliverableType];
+    if (fallbacks) {
+      for (const fallbackType of fallbacks) {
+        const fallbackStyles = await db
+          .select({
+            id: deliverableStyleReferences.id,
+            name: deliverableStyleReferences.name,
+            description: deliverableStyleReferences.description,
+            imageUrl: deliverableStyleReferences.imageUrl,
+            deliverableType: deliverableStyleReferences.deliverableType,
+            styleAxis: deliverableStyleReferences.styleAxis,
+            subStyle: deliverableStyleReferences.subStyle,
+            semanticTags: deliverableStyleReferences.semanticTags,
+          })
+          .from(deliverableStyleReferences)
+          .where(
+            and(
+              eq(deliverableStyleReferences.deliverableType, fallbackType),
+              eq(deliverableStyleReferences.styleAxis, styleAxis),
+              eq(deliverableStyleReferences.isActive, true)
+            )
+          )
+          .orderBy(deliverableStyleReferences.displayOrder)
+          .limit(limit)
+          .offset(offset);
+
+        if (fallbackStyles.length > 0) {
+          styles = fallbackStyles;
+          console.log(`[Brand Scoring] No "${styleAxis}" styles for "${deliverableType}", using fallback "${fallbackType}"`);
+          break;
+        }
+      }
+    }
+  }
 
   // Score styles if we have company data
   if (company) {
