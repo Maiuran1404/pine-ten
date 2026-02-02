@@ -57,7 +57,9 @@ function getDeliveryDate(businessDays: number): string {
 // SYSTEM PROMPT - Single source of truth for chat behavior
 // ============================================================================
 
-const SYSTEM_PROMPT = `You are a creative operator at Crafted.
+const SYSTEM_PROMPT = `You are a senior creative director at Crafted.
+
+TONE: Professional, confident, thoughtful. Write complete sentences that sound natural. Speak like an experienced creative executive giving direction.
 
 CRITICAL: You MUST output [DELIVERABLE_STYLES: type] to show style options.
 Without this exact marker, no styles will appear.
@@ -65,13 +67,13 @@ Without this exact marker, no styles will appear.
 TWO RESPONSE TYPES:
 
 TYPE A - Need more info:
-Just ask a short question. No styles.
-Example: "What product are you launching?"
+Ask a clear, specific question to understand the project.
+Example: "What product or feature are you launching with this carousel?"
 
 TYPE B - Have enough info (know the product/topic):
-Write a short statement, then ALWAYS include the marker.
-Example: "Trust and security will anchor this."
-[DELIVERABLE_STYLES: instagram_reel]
+Give a brief creative rationale, then ask about style direction.
+Example: "ID verification is all about trust and security - we can lean into that with bold, tech-forward visuals or go warmer and more approachable. Which direction resonates with your brand?"
+[DELIVERABLE_STYLES: instagram_post]
 
 WHEN TO USE TYPE B:
 - User told you what the product/topic is
@@ -80,9 +82,10 @@ WHEN TO USE TYPE B:
 AVAILABLE TYPES: instagram_post, instagram_story, instagram_reel, linkedin_post, static_ad, logo, brand_identity, web_banner
 
 RULES:
-- Max 15 words in your text
-- No question marks when showing styles
-- No bullet points`;
+- Write 1-2 complete sentences (15-30 words)
+- No exclamation marks
+- No "great", "perfect", "awesome", "love it"
+- Sound like a real creative director, not a chatbot`;
 
 function getSystemPrompt(): string {
   const today = new Date();
@@ -98,16 +101,15 @@ function getSystemPrompt(): string {
 TODAY: ${todayStr}
 
 IF THE REQUEST IS COMPLETELY UNCLEAR:
-"What type of content are you looking for?"
+"What are we making?"
 [QUICK_OPTIONS]
-{"question": "What do you need?", "options": ["Social content", "Ads", "Video", "Branding", "Something else"]}
+{"question": "Content type?", "options": ["Social content", "Ads", "Video", "Branding", "Something else"]}
 [/QUICK_OPTIONS]
 
 ABSOLUTE REQUIREMENTS:
 1. If user told you the product/topic → YOU MUST include [DELIVERABLE_STYLES: type]
-2. If asking a question → NO [DELIVERABLE_STYLES]
-3. Never both a question AND styles in same response
-4. Max 15 words, no bullet points`;
+2. Write complete, natural sentences (15-30 words)
+3. No exclamation marks, no chatbot phrases`;
 }
 
 export interface ChatMessage {
@@ -387,7 +389,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   // Banned opener patterns (expanded list)
   const BANNED_OPENERS = [
     // Enthusiastic affirmations
-    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
+    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely|Choice)[!,.]?\s*/i,
     // Enthusiastic affirmations with "choice/pick"
     /^(Great|Excellent|Good|Nice|Solid|Smart|Wise) (choice|pick|selection)[!,.]?\s*/i,
     // Validation phrases
@@ -433,7 +435,8 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\n[-•]\s*/g, " ") // Remove bullet points with newlines
     .replace(/\*\*[^*]+\*\*:?\s*/g, "") // Remove bold headers like **Tell me about:**
     .replace(/\n\s*\n/g, " ") // Collapse multiple newlines
-    .replace(/\n/g, " "); // Replace remaining newlines with spaces
+    .replace(/\n/g, " ") // Replace remaining newlines with spaces
+    .replace(/!/g, "."); // Replace exclamation marks with periods for professional tone
 
   // If there are multiple question marks, keep only the last question
   const questionCount = (cleanContent.match(/\?/g) || []).length;

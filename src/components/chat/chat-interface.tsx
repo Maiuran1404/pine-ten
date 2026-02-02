@@ -1489,18 +1489,18 @@ export function ChatInterface({
 
   // Handle confirming style selection from the grid
   const handleConfirmStyleSelection = async (
-    selectedStyles: Array<{ id: string; name: string }>
+    selectedStyles: DeliverableStyle[]
   ) => {
     if (selectedStyles.length === 0 || isLoading) return;
 
-    const styleName = selectedStyles[0].name;
-    const styleMessage = `I'll go with the ${styleName} style`;
+    const style = selectedStyles[0];
+    const styleMessage = `I'll go with the ${style.name} style`;
 
     // Add to moodboard
-    selectedStyles.forEach((style) => {
-      if (!hasMoodboardItem(style.id)) {
-        addFromStyle(style as DeliverableStyle);
-        addStyleToVisualDirection(style as DeliverableStyle);
+    selectedStyles.forEach((s) => {
+      if (!hasMoodboardItem(s.id)) {
+        addFromStyle(s);
+        addStyleToVisualDirection(s);
       }
     });
 
@@ -1509,6 +1509,7 @@ export function ChatInterface({
       role: "user",
       content: styleMessage,
       timestamp: new Date(),
+      selectedStyle: style, // Include the full style for rendering
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -2593,6 +2594,16 @@ export function ChatInterface({
                     /* User message - beige/cream bubble with edit icon and avatar */
                     <div className="max-w-[75%] group flex items-start gap-3">
                       <div className="flex-1">
+                        {/* Selected style image - shows above the text when style was selected */}
+                        {message.selectedStyle && (
+                          <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] ml-auto border border-emerald-200/50 dark:border-emerald-800/30">
+                            <img
+                              src={message.selectedStyle.imageUrl}
+                              alt={message.selectedStyle.name}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        )}
                         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30">
                           <p className="text-sm text-foreground whitespace-pre-wrap pr-16">
                             {message.content}

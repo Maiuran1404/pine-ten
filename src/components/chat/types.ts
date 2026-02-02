@@ -14,7 +14,7 @@ export interface UploadedFile {
  */
 export interface MoodboardItem {
   id: string;
-  type: 'style' | 'color' | 'image' | 'upload';
+  type: "style" | "color" | "image" | "upload";
   imageUrl: string;
   name: string;
   metadata?: {
@@ -30,7 +30,7 @@ export interface MoodboardItem {
 /**
  * Chat stages for progress tracking
  */
-export type ChatStage = 'brief' | 'style' | 'details' | 'review' | 'submit';
+export type ChatStage = "brief" | "style" | "details" | "review" | "submit";
 
 export interface QuickOptions {
   question: string;
@@ -87,6 +87,7 @@ export interface ChatMessage {
   taskProposal?: TaskProposal;
   attachments?: UploadedFile[];
   quickOptions?: QuickOptions;
+  selectedStyle?: DeliverableStyle; // Style selected by user from style grid
 }
 
 /**
@@ -102,11 +103,31 @@ export function getDeliveryDateString(businessDays: number): string {
       daysAdded++;
     }
   }
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const dayName = days[date.getDay()];
   const dayNum = date.getDate();
-  const suffix = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' : dayNum === 2 || dayNum === 22 ? 'nd' : dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
+  const suffix =
+    dayNum === 1 || dayNum === 21 || dayNum === 31
+      ? "st"
+      : dayNum === 2 || dayNum === 22
+      ? "nd"
+      : dayNum === 3 || dayNum === 23
+      ? "rd"
+      : "th";
   const monthName = months[date.getMonth()];
   return `${dayName} ${dayNum}${suffix} ${monthName}`;
 }

@@ -4,7 +4,10 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageWithSkeleton, MasonryGridSkeleton } from "@/components/ui/skeletons";
+import {
+  ImageWithSkeleton,
+  MasonryGridSkeleton,
+} from "@/components/ui/skeletons";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Paperclip,
@@ -22,11 +25,7 @@ import {
   Palette,
 } from "lucide-react";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { getImageVariantUrls } from "@/lib/image/utils";
@@ -53,21 +52,25 @@ const TEMPLATE_CATEGORIES = {
   "Launch Videos": {
     icon: Megaphone,
     description: "Product videos that convert",
-    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    modalDescription:
+      "Select the video type that fits your launch goals. Add details about your product and we'll craft the perfect brief.",
     options: [
       {
         title: "Product Launch Video",
-        description: "30-60 second cinematic video showcasing your product",
+        description:
+          "A polished 30-60 second cinematic video that introduces your product to the world. Perfect for social media announcements, landing pages, and investor presentations. Includes motion graphics, music, and professional editing.",
         prompt: "Create a product launch video",
       },
       {
         title: "Feature Highlight",
-        description: "Focus on a key feature with engaging visuals",
+        description:
+          "A focused video that showcases a specific feature or capability of your product. Great for explaining complex functionality in a digestible, visually engaging way. Works well for product updates and feature releases.",
         prompt: "Create a feature highlight video",
       },
       {
         title: "App Walkthrough",
-        description: "Screen recording style demo of your app flow",
+        description:
+          "A clear, guided tour of your app or software showing the user journey from start to finish. Uses screen recordings with animated callouts, smooth transitions, and voiceover-ready pacing. Ideal for onboarding and tutorials.",
         prompt: "Create an app walkthrough video",
       },
     ],
@@ -75,43 +78,51 @@ const TEMPLATE_CATEGORIES = {
   "Pitch Deck": {
     icon: Presentation,
     description: "Investor-ready presentations",
-    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    modalDescription:
+      "Choose the presentation style that matches your audience. Share your existing deck or key points and we'll design something compelling.",
     options: [
       {
         title: "Investor Pitch Deck",
-        description: "Professional deck designed to impress investors",
+        description:
+          "A visually striking presentation designed to capture investor attention and communicate your vision clearly. Includes custom graphics, data visualizations, and a narrative flow that builds toward your ask. Typically 10-15 slides.",
         prompt: "Redesign my investor pitch deck",
       },
       {
         title: "Sales Deck",
-        description: "Compelling presentation for sales meetings",
+        description:
+          "A persuasive presentation built for closing deals. Features benefit-focused messaging, customer proof points, and clear calls to action. Designed to be flexible for different prospect conversations and meeting lengths.",
         prompt: "Create a sales presentation deck",
       },
       {
         title: "Company Overview",
-        description: "Clean company introduction deck",
+        description:
+          "A versatile introduction to your company that works for partners, clients, and new team members. Covers your story, mission, team, and key offerings in a clean, professional format that represents your brand.",
         prompt: "Design a company overview presentation",
       },
     ],
   },
-  "Branding": {
+  Branding: {
     icon: Palette,
     description: "Complete visual identity",
-    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    modalDescription:
+      "Tell us about your brand personality and goals. We'll create a visual identity that sets you apart.",
     options: [
       {
         title: "Full Brand Package",
-        description: "Logo, colors, typography, and brand guidelines",
+        description:
+          "A complete visual identity system including logo design, color palette, typography selection, and comprehensive brand guidelines. Everything you need to maintain consistency across all touchpoints and scale your brand with confidence.",
         prompt: "Create a full brand package with logo and visual identity",
       },
       {
         title: "Logo Design",
-        description: "Custom logo with variations and usage guidelines",
+        description:
+          "A custom logo crafted specifically for your brand, including primary logo, wordmark, icon variations, and usage guidelines. Delivered in all formats you need for digital, print, and merchandise applications.",
         prompt: "Design a logo for my brand",
       },
       {
         title: "Brand Refresh",
-        description: "Modernize your existing brand identity",
+        description:
+          "Modernize and elevate your existing brand while maintaining recognition. We'll update your visual elements to feel current and cohesive, with a clear transition strategy from old to new.",
         prompt: "Refresh and modernize my existing brand",
       },
     ],
@@ -119,36 +130,43 @@ const TEMPLATE_CATEGORIES = {
   "Social Media": {
     icon: Share2,
     description: "Ads, content & video edits",
-    modalDescription: "Pick one and add some notes, we'll help you with writing the prompts!",
+    modalDescription:
+      "Select the content type and platform. Share your goals and any assets, and we'll create scroll-stopping content.",
     options: [
       {
         title: "Instagram Post",
-        description: "Most used category in 3:4 format",
+        description:
+          "Eye-catching static posts designed for maximum engagement in the 4:5 feed format. Perfect for announcements, product showcases, educational content, or brand storytelling. Includes multiple design variations.",
         prompt: "Create Instagram post designs",
       },
       {
         title: "Instagram Story",
-        description: "Adjusted for your brand in 9:16 format",
+        description:
+          "Vertical 9:16 content optimized for Stories with interactive elements, dynamic layouts, and swipe-worthy designs. Great for behind-the-scenes, promotions, polls, and driving traffic to your profile or website.",
         prompt: "Create Instagram story designs",
       },
       {
         title: "Instagram Reels",
-        description: "Customized video for your brand at 60 fps in 9:16 format",
+        description:
+          "Short-form vertical video content designed to capture attention in the first second. Includes trending transitions, music sync, text overlays, and platform-native editing style that performs well with the algorithm.",
         prompt: "Create an Instagram Reels video",
       },
       {
         title: "LinkedIn Content",
-        description: "Professional posts and carousels for B2B",
+        description:
+          "Professional content designed for B2B engagement including carousels, thought leadership posts, and company updates. Optimized for LinkedIn's format and audience expectations to build credibility and generate leads.",
         prompt: "Create LinkedIn content",
       },
       {
         title: "Video Edit",
-        description: "Transform your raw footage into engaging content",
+        description:
+          "Transform your raw footage into polished, platform-ready content. Includes color correction, cuts, transitions, music, captions, and any graphics or effects needed to make your content stand out.",
         prompt: "Edit my video footage for social media",
       },
       {
         title: "Ad Creatives",
-        description: "High-converting ads for any platform",
+        description:
+          "Performance-focused ad designs for Meta, TikTok, Google, or any platform. Includes multiple variations for A/B testing, proper sizing for each placement, and copy that converts. Built with direct response principles.",
         prompt: "Create social media ad creatives",
       },
     ],
@@ -316,13 +334,18 @@ function DashboardContent() {
 
     // Store files in sessionStorage for the chat page to pick up
     if (uploadedFiles.length > 0) {
-      sessionStorage.setItem("pending_chat_files", JSON.stringify(uploadedFiles));
+      sessionStorage.setItem(
+        "pending_chat_files",
+        JSON.stringify(uploadedFiles)
+      );
     }
     setUploadedFiles([]);
     setChatInput("");
 
     router.push(
-      `/dashboard/chat?message=${encodeURIComponent(finalMessage || `Attached ${uploadedFiles.length} file(s)`)}`
+      `/dashboard/chat?message=${encodeURIComponent(
+        finalMessage || `Attached ${uploadedFiles.length} file(s)`
+      )}`
     );
   };
 
@@ -332,7 +355,8 @@ function DashboardContent() {
     // Place cursor at the end of the prompt
     setTimeout(() => {
       if (inputRef.current) {
-        inputRef.current.selectionStart = inputRef.current.selectionEnd = prompt.length;
+        inputRef.current.selectionStart = inputRef.current.selectionEnd =
+          prompt.length;
       }
     }, 0);
   };
@@ -527,8 +551,8 @@ function DashboardContent() {
                           credits === 0
                             ? "bg-red-500"
                             : credits <= 2
-                              ? "bg-yellow-500"
-                              : "bg-emerald-500"
+                            ? "bg-yellow-500"
+                            : "bg-emerald-500"
                         }`}
                       />
                       <span>{credits} credits available</span>
@@ -556,23 +580,29 @@ function DashboardContent() {
         {/* Template System - Category Cards */}
         <div className="w-full max-w-4xl mb-8 px-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, description }]) => (
-              <button
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setSelectedOption(null);
-                  setModalNotes("");
-                }}
-                className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border border-border/40 bg-white/80 dark:bg-card/50 backdrop-blur-xl hover:bg-white dark:hover:bg-card/70 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200"
-              >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
-                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="font-medium text-sm text-foreground mb-1">{category}</span>
-                <span className="text-xs text-muted-foreground leading-tight hidden sm:block">{description}</span>
-              </button>
-            ))}
+            {Object.entries(TEMPLATE_CATEGORIES).map(
+              ([category, { icon: Icon, description }]) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setSelectedOption(null);
+                    setModalNotes("");
+                  }}
+                  className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border border-border/40 bg-white/80 dark:bg-card/50 backdrop-blur-xl hover:bg-white dark:hover:bg-card/70 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200"
+                >
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <span className="font-medium text-sm text-foreground mb-1">
+                    {category}
+                  </span>
+                  <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
+                    {description}
+                  </span>
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -589,110 +619,142 @@ function DashboardContent() {
         }}
       >
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
-          {selectedCategory && (() => {
-            const category = TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES];
-            const Icon = category?.icon;
-            return (
-              <>
-                {/* Header */}
-                <div className="px-6 pt-6 pb-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
-                      {Icon && <Icon className="h-5 w-5 text-white" />}
+          {selectedCategory &&
+            (() => {
+              const category =
+                TEMPLATE_CATEGORIES[
+                  selectedCategory as keyof typeof TEMPLATE_CATEGORIES
+                ];
+              const Icon = category?.icon;
+              return (
+                <>
+                  {/* Header */}
+                  <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
+                        {Icon && <Icon className="h-5 w-5 text-white" />}
+                      </div>
+                      <DialogTitle className="text-lg font-semibold text-foreground">
+                        {selectedCategory}
+                      </DialogTitle>
                     </div>
-                    <DialogTitle className="text-lg font-semibold text-foreground">{selectedCategory}</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {category?.modalDescription}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {category?.modalDescription}
-                  </p>
-                </div>
 
-                {/* Options List */}
-                <div className="px-3 pb-3 space-y-1.5 max-h-[280px] overflow-y-auto">
-                  {category?.options.map((option, index) => {
-                    const isSelected = selectedOption === option.title;
-                    return (
+                  {/* Options List */}
+                  <div className="px-3 pb-3 space-y-1.5 max-h-[280px] overflow-y-auto">
+                    {category?.options.map((option, index) => {
+                      const isSelected = selectedOption === option.title;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() =>
+                            setSelectedOption(isSelected ? null : option.title)
+                          }
+                          className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 text-left border-2 ${
+                            isSelected
+                              ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
+                              : "border-transparent hover:bg-muted/60"
+                          }`}
+                        >
+                          {/* Selection indicator */}
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                              isSelected
+                                ? "border-emerald-500 bg-emerald-500"
+                                : "border-muted-foreground/30"
+                            }`}
+                          >
+                            {isSelected && (
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3
+                              className={`font-medium text-[15px] mb-0.5 transition-colors ${
+                                isSelected
+                                  ? "text-emerald-700 dark:text-emerald-400"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {option.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-snug">
+                              {option.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Notes Input Section */}
+                  <div className="px-4 pb-5 pt-2">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={modalNotes}
+                        onChange={(e) => setModalNotes(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && selectedOption) {
+                            const option = category?.options.find(
+                              (o) => o.title === selectedOption
+                            );
+                            if (option) {
+                              const prompt = modalNotes
+                                ? `${option.prompt}. Notes: ${modalNotes}`
+                                : option.prompt;
+                              handleSubmit(prompt);
+                              setSelectedCategory(null);
+                              setSelectedOption(null);
+                              setModalNotes("");
+                            }
+                          }
+                        }}
+                        placeholder="Add any specific details or requirements..."
+                        className="w-full h-12 px-4 pr-32 rounded-xl border border-border/60 bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 text-sm transition-all"
+                      />
                       <button
-                        key={index}
-                        onClick={() => setSelectedOption(isSelected ? null : option.title)}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 text-left border-2 ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
-                            : "border-transparent hover:bg-muted/60"
-                        }`}
+                        onClick={() => {
+                          if (selectedOption) {
+                            const option = category?.options.find(
+                              (o) => o.title === selectedOption
+                            );
+                            if (option) {
+                              const prompt = modalNotes
+                                ? `${option.prompt}. Notes: ${modalNotes}`
+                                : option.prompt;
+                              handleSubmit(prompt);
+                              setSelectedCategory(null);
+                              setSelectedOption(null);
+                              setModalNotes("");
+                            }
+                          }
+                        }}
+                        disabled={!selectedOption}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
                       >
-                        {/* Selection indicator */}
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-500"
-                            : "border-muted-foreground/30"
-                        }`}>
-                          {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`font-medium text-[15px] mb-0.5 transition-colors ${
-                            isSelected ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"
-                          }`}>{option.title}</h3>
-                          <p className="text-sm text-muted-foreground leading-snug">{option.description}</p>
-                        </div>
+                        Continue
                       </button>
-                    );
-                  })}
-                </div>
-
-                {/* Notes Input Section */}
-                <div className="px-4 pb-5 pt-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={modalNotes}
-                      onChange={(e) => setModalNotes(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && selectedOption) {
-                          const option = category?.options.find(o => o.title === selectedOption);
-                          if (option) {
-                            const prompt = modalNotes
-                              ? `${option.prompt}. Notes: ${modalNotes}`
-                              : option.prompt;
-                            handleSubmit(prompt);
-                            setSelectedCategory(null);
-                            setSelectedOption(null);
-                            setModalNotes("");
-                          }
-                        }
-                      }}
-                      placeholder="Add any specific details or requirements..."
-                      className="w-full h-12 px-4 pr-32 rounded-xl border border-border/60 bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 text-sm transition-all"
-                    />
-                    <button
-                      onClick={() => {
-                        if (selectedOption) {
-                          const option = category?.options.find(o => o.title === selectedOption);
-                          if (option) {
-                            const prompt = modalNotes
-                              ? `${option.prompt}. Notes: ${modalNotes}`
-                              : option.prompt;
-                            handleSubmit(prompt);
-                            setSelectedCategory(null);
-                            setSelectedOption(null);
-                            setModalNotes("");
-                          }
-                        }
-                      }}
-                      disabled={!selectedOption}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
-                    >
-                      Continue
-                    </button>
+                    </div>
                   </div>
-                </div>
-              </>
-            );
-          })()}
+                </>
+              );
+            })()}
         </DialogContent>
       </Dialog>
 
@@ -714,93 +776,134 @@ function DashboardContent() {
               {isLoadingStyles ? (
                 <MasonryGridSkeleton count={15} columns={5} showHeader={true} />
               ) : (
-              /* Group references by contentCategory */
-              (() => {
-                const groups = styleReferences.reduce((acc, ref) => {
-                  const group = ref.contentCategory || "other";
-                  if (!acc[group]) acc[group] = [];
-                  acc[group].push(ref);
-                  return acc;
-                }, {} as Record<string, StyleReference[]>);
+                /* Group references by contentCategory */
+                (() => {
+                  const groups = styleReferences.reduce((acc, ref) => {
+                    const group = ref.contentCategory || "other";
+                    if (!acc[group]) acc[group] = [];
+                    acc[group].push(ref);
+                    return acc;
+                  }, {} as Record<string, StyleReference[]>);
 
-                const groupLabels: Record<string, { label: string; icon: string }> = {
-                  instagram_post: { label: "Popular Instagram posts", icon: "📱" },
-                  instagram_story: { label: "Popular Instagram stories", icon: "📲" },
-                  instagram_reel: { label: "Popular Instagram reels", icon: "🎬" },
-                  linkedin_post: { label: "Popular LinkedIn posts", icon: "💼" },
-                  linkedin_banner: { label: "Popular LinkedIn banners", icon: "🖼️" },
-                  static_ad: { label: "Popular static ads", icon: "🎯" },
-                  facebook_ad: { label: "Popular Facebook ads", icon: "👥" },
-                  twitter_post: { label: "Popular Twitter posts", icon: "🐦" },
-                  youtube_thumbnail: { label: "Popular YouTube thumbnails", icon: "▶️" },
-                  email_header: { label: "Popular email headers", icon: "📧" },
-                  web_banner: { label: "Popular web banners", icon: "🌐" },
-                  presentation_slide: { label: "Popular presentation slides", icon: "📊" },
-                  video_ad: { label: "Popular video ads", icon: "🎥" },
-                  other: { label: "More inspiration", icon: "💡" },
-                };
+                  const groupLabels: Record<
+                    string,
+                    { label: string; icon: string }
+                  > = {
+                    instagram_post: {
+                      label: "Popular Instagram posts",
+                      icon: "📱",
+                    },
+                    instagram_story: {
+                      label: "Popular Instagram stories",
+                      icon: "📲",
+                    },
+                    instagram_reel: {
+                      label: "Popular Instagram reels",
+                      icon: "🎬",
+                    },
+                    linkedin_post: {
+                      label: "Popular LinkedIn posts",
+                      icon: "💼",
+                    },
+                    linkedin_banner: {
+                      label: "Popular LinkedIn banners",
+                      icon: "🖼️",
+                    },
+                    static_ad: { label: "Popular static ads", icon: "🎯" },
+                    facebook_ad: { label: "Popular Facebook ads", icon: "👥" },
+                    twitter_post: {
+                      label: "Popular Twitter posts",
+                      icon: "🐦",
+                    },
+                    youtube_thumbnail: {
+                      label: "Popular YouTube thumbnails",
+                      icon: "▶️",
+                    },
+                    email_header: {
+                      label: "Popular email headers",
+                      icon: "📧",
+                    },
+                    web_banner: { label: "Popular web banners", icon: "🌐" },
+                    presentation_slide: {
+                      label: "Popular presentation slides",
+                      icon: "📊",
+                    },
+                    video_ad: { label: "Popular video ads", icon: "🎥" },
+                    other: { label: "More inspiration", icon: "💡" },
+                  };
 
-                const orderedGroups = [
-                  "instagram_post",
-                  "instagram_story",
-                  "linkedin_post",
-                  "static_ad",
-                  "facebook_ad",
-                  "instagram_reel",
-                  "twitter_post",
-                  "youtube_thumbnail",
-                  "linkedin_banner",
-                  "email_header",
-                  "web_banner",
-                  "presentation_slide",
-                  "video_ad",
-                  "other",
-                ];
+                  const orderedGroups = [
+                    "instagram_post",
+                    "instagram_story",
+                    "linkedin_post",
+                    "static_ad",
+                    "facebook_ad",
+                    "instagram_reel",
+                    "twitter_post",
+                    "youtube_thumbnail",
+                    "linkedin_banner",
+                    "email_header",
+                    "web_banner",
+                    "presentation_slide",
+                    "video_ad",
+                    "other",
+                  ];
 
-                return orderedGroups.map((groupKey, groupIndex) => {
-                  const allRefs = groups[groupKey];
-                  if (!allRefs || allRefs.length === 0) return null;
+                  return orderedGroups.map((groupKey, groupIndex) => {
+                    const allRefs = groups[groupKey];
+                    if (!allRefs || allRefs.length === 0) return null;
 
-                  // Limit to 15 items per category for cleaner display
-                  const refs = allRefs.slice(0, 15);
-                  const { label, icon } = groupLabels[groupKey] || { label: groupKey, icon: "📌" };
+                    // Limit to 15 items per category for cleaner display
+                    const refs = allRefs.slice(0, 15);
+                    const { label, icon } = groupLabels[groupKey] || {
+                      label: groupKey,
+                      icon: "📌",
+                    };
 
-                  return (
-                    <div key={groupKey} className="mb-12">
-                      {/* Group Header */}
-                      <div className={`flex items-center gap-3 mb-5 ${groupIndex > 0 ? "mt-10" : ""}`}>
-                        <span className="text-base">{icon}</span>
-                        <h3 className="text-sm font-medium text-foreground">
-                          {label}
-                        </h3>
-                        <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
-                        <span className="text-xs text-muted-foreground">
-                          {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
-                        </span>
+                    return (
+                      <div key={groupKey} className="mb-12">
+                        {/* Group Header */}
+                        <div
+                          className={`flex items-center gap-3 mb-5 ${
+                            groupIndex > 0 ? "mt-10" : ""
+                          }`}
+                        >
+                          <span className="text-base">{icon}</span>
+                          <h3 className="text-sm font-medium text-foreground">
+                            {label}
+                          </h3>
+                          <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
+                          <span className="text-xs text-muted-foreground">
+                            {allRefs.length}{" "}
+                            {allRefs.length === 1 ? "style" : "styles"}
+                          </span>
+                        </div>
+                        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
+                          {refs.map((ref) => {
+                            const variantUrls = getImageVariantUrls(
+                              ref.imageUrl
+                            );
+                            return (
+                              <div
+                                key={ref.id}
+                                className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+                              >
+                                <ImageWithSkeleton
+                                  src={variantUrls.preview}
+                                  alt={ref.name}
+                                  className="w-full"
+                                  skeletonClassName="bg-muted/30 min-h-[150px]"
+                                  loading="lazy"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
-                        {refs.map((ref) => {
-                          const variantUrls = getImageVariantUrls(ref.imageUrl);
-                          return (
-                            <div
-                              key={ref.id}
-                              className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-                            >
-                              <ImageWithSkeleton
-                                src={variantUrls.preview}
-                                alt={ref.name}
-                                className="w-full"
-                                skeletonClassName="bg-muted/30 min-h-[150px]"
-                                loading="lazy"
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })())}
+                    );
+                  });
+                })()
+              )}
             </div>
 
             {/* Fade overlay at bottom */}
