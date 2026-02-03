@@ -318,6 +318,7 @@ export function ChatInterface({
   const [isUploading, setIsUploading] = useState(false);
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [hoveredStyleName, setHoveredStyleName] = useState<string | null>(null);
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<
     string[]
   >([]);
@@ -2474,75 +2475,90 @@ export function ChatInterface({
                                 <p className="text-sm font-medium mb-4 text-foreground">
                                   Which style direction resonates with you?
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl">
                                   {message.styleReferences
                                     .slice(0, 3)
-                                    .map((style, idx) => (
-                                      <div
-                                        key={`${style.name}-${idx}`}
-                                        role="button"
-                                        tabIndex={0}
-                                        aria-pressed={selectedStyles.includes(
-                                          style.name
-                                        )}
-                                        aria-label={`Select ${style.name} style`}
-                                        className={cn(
-                                          "group relative rounded-xl border overflow-hidden cursor-pointer transition-all duration-200",
-                                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                                          selectedStyles.includes(style.name)
-                                            ? "border-primary/50 bg-primary/5 shadow-md"
-                                            : "border-border hover:border-primary/30 hover:shadow-md bg-card"
-                                        )}
-                                        onClick={() =>
-                                          handleStyleSelect(style.name)
-                                        }
-                                        onKeyDown={(e) => {
-                                          if (
-                                            e.key === "Enter" ||
-                                            e.key === " "
-                                          ) {
-                                            e.preventDefault();
-                                            handleStyleSelect(style.name);
+                                    .map((style, idx) => {
+                                      const isHovered =
+                                        hoveredStyleName === style.name;
+                                      const isSelected =
+                                        selectedStyles.includes(style.name);
+                                      return (
+                                        <div
+                                          key={`${style.name}-${idx}`}
+                                          role="button"
+                                          tabIndex={0}
+                                          aria-pressed={isSelected}
+                                          aria-label={`Select ${style.name} style`}
+                                          className={cn(
+                                            "relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200",
+                                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                            isHovered &&
+                                              "scale-150 z-50 shadow-2xl",
+                                            isSelected
+                                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
+                                              : isHovered &&
+                                                  "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+                                          )}
+                                          onClick={() =>
+                                            handleStyleSelect(style.name)
                                           }
-                                        }}
-                                      >
-                                        {/* Selection indicator */}
-                                        {selectedStyles.includes(
-                                          style.name
-                                        ) && (
-                                          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                                            <Check className="h-4 w-4 text-primary-foreground" />
-                                          </div>
-                                        )}
+                                          onMouseEnter={() =>
+                                            setHoveredStyleName(style.name)
+                                          }
+                                          onMouseLeave={() =>
+                                            setHoveredStyleName(null)
+                                          }
+                                          onKeyDown={(e) => {
+                                            if (
+                                              e.key === "Enter" ||
+                                              e.key === " "
+                                            ) {
+                                              e.preventDefault();
+                                              handleStyleSelect(style.name);
+                                            }
+                                          }}
+                                        >
+                                          {/* Selection indicator */}
+                                          {isSelected && (
+                                            <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                                              <Check className="h-4 w-4 text-primary-foreground" />
+                                            </div>
+                                          )}
 
-                                        {/* Image */}
-                                        <div className="aspect-[4/3] bg-muted overflow-hidden">
-                                          {style.imageUrl ? (
-                                            <img
-                                              src={style.imageUrl}
-                                              alt={style.name}
-                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                          ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                          {/* Image */}
+                                          <div className="aspect-[4/3] bg-muted overflow-hidden">
+                                            {style.imageUrl ? (
+                                              <img
+                                                src={style.imageUrl}
+                                                alt={style.name}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="w-full h-full flex items-center justify-center">
+                                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Hover overlay with name - only visible on THIS card */}
+                                          {(isHovered || isSelected) && (
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
+                                              <div className="absolute bottom-0 left-0 right-0 p-3">
+                                                <p className="text-white text-sm font-semibold">
+                                                  {style.name}
+                                                </p>
+                                                {style.description && (
+                                                  <p className="text-white/80 text-xs line-clamp-2 mt-1">
+                                                    {style.description}
+                                                  </p>
+                                                )}
+                                              </div>
                                             </div>
                                           )}
                                         </div>
-
-                                        {/* Content */}
-                                        <div className="p-3">
-                                          <p className="text-sm font-semibold text-foreground mb-1">
-                                            {style.name}
-                                          </p>
-                                          {style.description && (
-                                            <p className="text-xs text-muted-foreground line-clamp-2">
-                                              {style.description}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                 </div>
                                 <div className="flex items-center justify-between mt-3">
                                   <p className="text-xs text-muted-foreground ml-1">
@@ -2727,9 +2743,6 @@ export function ChatInterface({
                                   <Pencil className="h-3.5 w-3.5" />
                                 </button>
                               )}
-                            <div className="p-1.5 text-muted-foreground">
-                              <User className="h-3.5 w-3.5" />
-                            </div>
                           </div>
                         </div>
                         {/* User attachments */}

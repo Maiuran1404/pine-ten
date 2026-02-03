@@ -444,7 +444,13 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\*\*[^*]+\*\*:?\s*/g, "") // Remove bold headers like **Tell me about:**
     .replace(/\n\s*\n/g, " ") // Collapse multiple newlines
     .replace(/\n/g, " ") // Replace remaining newlines with spaces
-    .replace(/!/g, "."); // Replace exclamation marks with periods for professional tone
+    .replace(/([?.])\s*!/g, "$1") // Remove ! after ? or . (e.g., "?!" → "?")
+    .replace(/!+/g, ".") // Replace remaining exclamation marks with single period
+    .replace(/\.{2,}/g, ".") // Collapse multiple periods into one
+    .replace(/\?\s*\./g, "?") // Fix "?." → "?"
+    .replace(/\.\s*\?/g, "?") // Fix ".?" → "?"
+    .replace(/,\s*\./g, ".") // Fix ",." → "."
+    .replace(/\.\s*,/g, ","); // Fix ".," → ","
 
   // If there are multiple question marks, keep only the last question
   const questionCount = (cleanContent.match(/\?/g) || []).length;
@@ -481,6 +487,13 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     .replace(/\bcolor\s*\(\s*\)/gi, "color")
     .replace(/\bcolors\s*\(\s*\)/gi, "colors")
     .replace(/\(\s*\)/g, "")
+    // Final punctuation cleanup to catch any remaining grammar issues
+    .replace(/\?\s*\./g, "?") // "?." → "?"
+    .replace(/\.\s*\?/g, "?") // ".?" → "?"
+    .replace(/\.{2,}/g, ".") // ".." or "..." → "."
+    .replace(/,\s*\./g, ".") // ",." → "."
+    .replace(/\.\s*,/g, ",") // ".," → ","
+    .replace(/\s+([.,?])/g, "$1") // Remove space before punctuation
     // Clean up any double spaces or leading/trailing whitespace
     .replace(/\s+/g, " ")
     .trim();

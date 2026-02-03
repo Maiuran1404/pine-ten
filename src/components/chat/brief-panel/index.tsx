@@ -14,13 +14,14 @@ import {
 } from "./types";
 
 // =============================================================================
-// SLEEK FIELD ROW - With suggestions
+// SLEEK FIELD ROW - With suggestions and status indicators
 // =============================================================================
 
 interface SleekFieldProps {
   label: string;
   value: string | null;
   source: FieldSource;
+  confidence?: number;
   suggestion?: string | null;
   onUseSuggestion?: () => void;
 }
@@ -29,10 +30,47 @@ function SleekField({
   label,
   value,
   source,
+  confidence = 0,
   suggestion,
   onUseSuggestion,
 }: SleekFieldProps) {
   const hasValue = value && value.trim().length > 0;
+
+  // Determine the status label based on source and confidence
+  const getStatusBadge = () => {
+    if (source === "confirmed") {
+      return (
+        <div className="flex items-center gap-1">
+          <Check className="h-3 w-3 text-emerald-500" />
+        </div>
+      );
+    }
+    if (source === "inferred") {
+      if (confidence >= 0.75) {
+        return (
+          <div className="flex items-center gap-1">
+            <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
+            <span className="text-[9px] text-emerald-500">Ready</span>
+          </div>
+        );
+      }
+      return (
+        <div className="flex items-center gap-1">
+          <Sparkles className="h-2.5 w-2.5 text-amber-500" />
+          <span className="text-[9px] text-amber-500">AI</span>
+        </div>
+      );
+    }
+    if (source === "pending" && hasValue) {
+      return (
+        <div className="flex items-center gap-1">
+          <Circle className="h-2.5 w-2.5 text-blue-400 animate-pulse" />
+          <span className="text-[9px] text-blue-400">Analyzing</span>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="py-2.5 border-b border-border/20 last:border-0">
@@ -40,18 +78,22 @@ function SleekField({
         <span className="text-[11px] text-muted-foreground/70 uppercase tracking-wider">
           {label}
         </span>
-        {hasValue &&
-          (source === "confirmed" ? (
-            <Check className="h-3 w-3 text-emerald-500" />
-          ) : source === "inferred" ? (
-            <div className="flex items-center gap-1">
-              <Sparkles className="h-2.5 w-2.5 text-amber-500" />
-              <span className="text-[9px] text-amber-500">AI</span>
-            </div>
-          ) : null)}
+        {hasValue && getStatusBadge()}
       </div>
       {hasValue ? (
-        <p className="text-sm text-foreground leading-snug">{value}</p>
+        <p
+          className={cn(
+            "text-sm leading-snug",
+            source === "pending" ? "text-muted-foreground" : "text-foreground"
+          )}
+        >
+          {value}
+          {source === "pending" && confidence > 0 && confidence < 0.5 && (
+            <span className="text-[10px] text-muted-foreground/50 ml-1.5 italic">
+              (refining...)
+            </span>
+          )}
+        </p>
       ) : suggestion ? (
         <button
           onClick={onUseSuggestion}
@@ -190,6 +232,7 @@ Topic: ${brief.topic.value || "TBD"}
             label="Summary"
             value={brief.taskSummary.value}
             source={brief.taskSummary.source}
+            confidence={brief.taskSummary.confidence}
             suggestion={
               !brief.taskSummary.value ? "Describe your project..." : null
             }
@@ -198,6 +241,7 @@ Topic: ${brief.topic.value || "TBD"}
             label="Intent"
             value={intentValue}
             source={brief.intent.source}
+            confidence={brief.intent.confidence}
             suggestion={
               !brief.intent.value ? "Launch / Promote / Engage" : null
             }
@@ -213,6 +257,7 @@ Topic: ${brief.topic.value || "TBD"}
             label="Platform"
             value={platformValue}
             source={brief.platform.source}
+            confidence={brief.platform.confidence}
             suggestion={
               !brief.platform.value ? "Instagram / LinkedIn / Web" : null
             }
@@ -228,6 +273,7 @@ Topic: ${brief.topic.value || "TBD"}
             label="Audience"
             value={audienceValue}
             source={brief.audience.source}
+            confidence={brief.audience.confidence}
             suggestion={
               brief.audience.value?.name ? null : "From your brand profile"
             }
@@ -236,6 +282,7 @@ Topic: ${brief.topic.value || "TBD"}
             label="Topic"
             value={brief.topic.value}
             source={brief.topic.source}
+            confidence={brief.topic.confidence}
             suggestion={!brief.topic.value ? "What's this about?" : null}
           />
 

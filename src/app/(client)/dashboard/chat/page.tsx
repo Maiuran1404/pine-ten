@@ -11,7 +11,7 @@ import {
   CheckSquare,
   FolderOpen,
   Coins,
-  Archive,
+  Building2,
   PanelLeftClose,
   PanelLeft,
   Moon,
@@ -107,16 +107,12 @@ export default function ChatPage() {
   // Get user credits from context
   const { credits: userCredits } = useCredits();
 
-  // Features menu items (Chat removed - use New Chat button instead)
+  // Features menu items - matching main sidebar
   const features = [
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
+    { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
-    {
-      icon: Archive,
-      label: "Archived",
-      href: "/dashboard/tasks?status=completed",
-    },
   ];
 
   return (

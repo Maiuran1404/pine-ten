@@ -52,17 +52,22 @@ export function DeliverableStyleGrid({
 }: DeliverableStyleGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [exampleModal, setExampleModal] = useState<{ style: DeliverableStyle; url: string } | null>(null);
+  const [exampleModal, setExampleModal] = useState<{
+    style: DeliverableStyle;
+    url: string;
+  } | null>(null);
+  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
 
   // Filter styles by search query
   const filteredStyles = useMemo(() => {
     if (!searchQuery.trim()) return styles;
     const query = searchQuery.toLowerCase();
-    return styles.filter(s =>
-      s.name.toLowerCase().includes(query) ||
-      s.styleAxis.toLowerCase().includes(query) ||
-      s.description?.toLowerCase().includes(query) ||
-      s.semanticTags?.some(t => t.toLowerCase().includes(query))
+    return styles.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.styleAxis.toLowerCase().includes(query) ||
+        s.description?.toLowerCase().includes(query) ||
+        s.semanticTags?.some((t) => t.toLowerCase().includes(query))
     );
   }, [styles, searchQuery]);
 
@@ -71,10 +76,10 @@ export function DeliverableStyleGrid({
   }
 
   // Calculate available axes for "show different" button
-  const currentAxes = new Set(styles.map(s => s.styleAxis));
-  const allKnownAxes = STYLE_AXES.map(a => a.value);
+  const currentAxes = new Set(styles.map((s) => s.styleAxis));
+  const allKnownAxes = STYLE_AXES.map((a) => a.value);
   const seenAxes = new Set([...(shownAxes || []), ...currentAxes]);
-  const remainingAxes = allKnownAxes.filter(a => !seenAxes.has(a));
+  const remainingAxes = allKnownAxes.filter((a) => !seenAxes.has(a));
   const hasMoreDifferentStyles = remainingAxes.length > 0;
 
   return (
@@ -86,7 +91,11 @@ export function DeliverableStyleGrid({
             className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             onClick={() => setShowSearch(!showSearch)}
           >
-            {showSearch ? <X className="w-3 h-3" /> : <Search className="w-3 h-3" />}
+            {showSearch ? (
+              <X className="w-3 h-3" />
+            ) : (
+              <Search className="w-3 h-3" />
+            )}
             {showSearch ? "Close" : "Search"}
           </button>
         </div>
@@ -124,19 +133,24 @@ export function DeliverableStyleGrid({
       )}
 
       {/* Clean grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
         {filteredStyles.map((style) => {
           const isSelected = selectedStyles.includes(style.id);
+          const isHovered = hoveredStyleId === style.id;
 
           return (
             <button
               key={style.id}
               onClick={() => onSelectStyle(style)}
+              onMouseEnter={() => setHoveredStyleId(style.id)}
+              onMouseLeave={() => setHoveredStyleId(null)}
               className={cn(
-                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
+                "relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
+                isHovered && "scale-150 z-50 shadow-2xl",
                 isSelected
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                  : "hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
+                  : isHovered &&
+                      "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
               )}
             >
               {/* Image */}
@@ -144,40 +158,39 @@ export function DeliverableStyleGrid({
               <img
                 src={style.imageUrl}
                 alt={style.name}
-                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "https://via.placeholder.com/400x500?text=Style";
                 }}
               />
 
-              {/* Hover overlay with name */}
-              <div
-                className={cn(
-                  "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent",
-                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                  isSelected && "opacity-100"
-                )}
-              >
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-sm font-medium truncate">
-                    {style.name}
-                  </p>
-                </div>
+              {/* Hover overlay with name - only visible on THIS card's hover */}
+              {(isHovered || isSelected) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-white text-sm font-medium truncate">
+                      {style.name}
+                    </p>
+                  </div>
 
-                {/* Example output button - only on hover */}
-                {style.exampleOutputUrl && (
-                  <button
-                    className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExampleModal({ style, url: style.exampleOutputUrl! });
-                    }}
-                  >
-                    <Eye className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
+                  {/* Example output button - only on hover */}
+                  {style.exampleOutputUrl && isHovered && (
+                    <button
+                      className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExampleModal({
+                          style,
+                          url: style.exampleOutputUrl!,
+                        });
+                      }}
+                    >
+                      <Eye className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Selected indicator */}
               {isSelected && (
@@ -217,7 +230,10 @@ export function DeliverableStyleGrid({
       )}
 
       {/* Example Output Modal */}
-      <Dialog open={!!exampleModal} onOpenChange={(open) => !open && setExampleModal(null)}>
+      <Dialog
+        open={!!exampleModal}
+        onOpenChange={(open) => !open && setExampleModal(null)}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{exampleModal?.style.name}</DialogTitle>

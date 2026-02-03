@@ -42,20 +42,32 @@ interface PatternMatch {
 // Platform patterns
 const PLATFORM_PATTERNS: PatternMatch[] = [
   // Instagram
-  { pattern: /\b(instagram|insta|ig)\b/i, value: "instagram", confidence: 0.95 },
+  {
+    pattern: /\b(instagram|insta|ig)\b/i,
+    value: "instagram",
+    confidence: 0.95,
+  },
   { pattern: /\b(story|stories)\b/i, value: "instagram", confidence: 0.7 },
   { pattern: /\b(reel|reels)\b/i, value: "instagram", confidence: 0.85 },
   { pattern: /\b(carousel)\b/i, value: "instagram", confidence: 0.6 },
 
   // LinkedIn
   { pattern: /\b(linkedin|li)\b/i, value: "linkedin", confidence: 0.95 },
-  { pattern: /\b(professional|b2b|business)\s*(post|content)/i, value: "linkedin", confidence: 0.65 },
+  {
+    pattern: /\b(professional|b2b|business)\s*(post|content)/i,
+    value: "linkedin",
+    confidence: 0.65,
+  },
 
   // Facebook
   { pattern: /\b(facebook|fb)\b/i, value: "facebook", confidence: 0.95 },
 
   // Twitter/X
-  { pattern: /\b(twitter|tweet|x\s+post)\b/i, value: "twitter", confidence: 0.95 },
+  {
+    pattern: /\b(twitter|tweet|x\s+post)\b/i,
+    value: "twitter",
+    confidence: 0.95,
+  },
 
   // YouTube
   { pattern: /\b(youtube|yt)\b/i, value: "youtube", confidence: 0.95 },
@@ -65,77 +77,239 @@ const PLATFORM_PATTERNS: PatternMatch[] = [
   { pattern: /\b(tiktok|tik\s*tok)\b/i, value: "tiktok", confidence: 0.95 },
 
   // Print
-  { pattern: /\b(print|poster|flyer|brochure|leaflet)\b/i, value: "print", confidence: 0.9 },
+  {
+    pattern: /\b(print|poster|flyer|brochure|leaflet)\b/i,
+    value: "print",
+    confidence: 0.9,
+  },
 
   // Web
-  { pattern: /\b(web|website|banner|display\s*ad|landing)\b/i, value: "web", confidence: 0.85 },
+  {
+    pattern: /\b(web|website|banner|display\s*ad|landing)\b/i,
+    value: "web",
+    confidence: 0.85,
+  },
 
   // Email
   { pattern: /\b(email|newsletter|mail)\b/i, value: "email", confidence: 0.9 },
 
   // Presentation
-  { pattern: /\b(presentation|slide|deck|pitch|powerpoint|keynote)\b/i, value: "presentation", confidence: 0.9 },
+  {
+    pattern: /\b(presentation|slide|deck|pitch|powerpoint|keynote)\b/i,
+    value: "presentation",
+    confidence: 0.9,
+  },
 ];
 
 // Intent patterns
 const INTENT_PATTERNS: PatternMatch[] = [
   // Signups / Downloads / Conversions (high priority - specific action requested)
-  { pattern: /\b(sign\s*up|signup|register|registration|join|subscribe)\b/i, value: "signups", confidence: 0.9 },
-  { pattern: /\b(get\s*(more\s*)?(users|members|subscribers))\b/i, value: "signups", confidence: 0.85 },
-  { pattern: /\b(grow\s*(my|our|the)?\s*(audience|list|base))\b/i, value: "signups", confidence: 0.75 },
-  { pattern: /\b(download|downloads|install|installs|app\s*download)\b/i, value: "signups", confidence: 0.9 },
-  { pattern: /\b(drive|increase|boost|get)\s*(more\s*)?(downloads?|installs?|signups?|registrations?)\b/i, value: "signups", confidence: 0.95 },
+  {
+    pattern: /\b(sign\s*up|signup|register|registration|join|subscribe)\b/i,
+    value: "signups",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(get\s*(more\s*)?(users|members|subscribers))\b/i,
+    value: "signups",
+    confidence: 0.85,
+  },
+  {
+    pattern: /\b(grow\s*(my|our|the)?\s*(audience|list|base))\b/i,
+    value: "signups",
+    confidence: 0.75,
+  },
+  {
+    pattern: /\b(download|downloads|install|installs|app\s*download)\b/i,
+    value: "signups",
+    confidence: 0.9,
+  },
+  {
+    pattern:
+      /\b(drive|increase|boost|get)\s*(more\s*)?(downloads?|installs?|signups?|registrations?)\b/i,
+    value: "signups",
+    confidence: 0.95,
+  },
 
   // Authority / Thought Leadership
-  { pattern: /\b(authority|thought\s*leader|expertise|expert)\b/i, value: "authority", confidence: 0.9 },
-  { pattern: /\b(establish|build|position)\s*(as|myself|ourselves|us)\b/i, value: "authority", confidence: 0.7 },
-  { pattern: /\b(industry\s*(leader|expert|insight))\b/i, value: "authority", confidence: 0.85 },
-  { pattern: /\b(thought\s*leadership)\b/i, value: "authority", confidence: 0.95 },
+  {
+    pattern: /\b(authority|thought\s*leader|expertise|expert)\b/i,
+    value: "authority",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(establish|build|position)\s*(as|myself|ourselves|us)\b/i,
+    value: "authority",
+    confidence: 0.7,
+  },
+  {
+    pattern: /\b(industry\s*(leader|expert|insight))\b/i,
+    value: "authority",
+    confidence: 0.85,
+  },
+  {
+    pattern: /\b(thought\s*leadership)\b/i,
+    value: "authority",
+    confidence: 0.95,
+  },
 
   // Awareness
-  { pattern: /\b(awareness|brand\s*awareness|visibility)\b/i, value: "awareness", confidence: 0.9 },
-  { pattern: /\b(get\s*(the\s*)?word\s*out|spread\s*the\s*word)\b/i, value: "awareness", confidence: 0.85 },
-  { pattern: /\b(introduce|introducing)\b/i, value: "awareness", confidence: 0.7 },
+  {
+    pattern: /\b(awareness|brand\s*awareness|visibility)\b/i,
+    value: "awareness",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(get\s*(the\s*)?word\s*out|spread\s*the\s*word)\b/i,
+    value: "awareness",
+    confidence: 0.85,
+  },
+  {
+    pattern: /\b(introduce|introducing)\b/i,
+    value: "awareness",
+    confidence: 0.7,
+  },
 
   // Sales
-  { pattern: /\b(sale|sales|sell|selling|purchase|buy|revenue)\b/i, value: "sales", confidence: 0.9 },
-  { pattern: /\b(convert|conversion|checkout|cart)\b/i, value: "sales", confidence: 0.85 },
-  { pattern: /\b(promo|promotion|discount|offer|deal)\b/i, value: "sales", confidence: 0.8 },
+  {
+    pattern: /\b(sale|sales|sell|selling|purchase|buy|revenue)\b/i,
+    value: "sales",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(convert|conversion|checkout|cart)\b/i,
+    value: "sales",
+    confidence: 0.85,
+  },
+  {
+    pattern: /\b(promo|promotion|discount|offer|deal)\b/i,
+    value: "sales",
+    confidence: 0.8,
+  },
 
   // Engagement
-  { pattern: /\b(engage|engagement|interact|interaction)\b/i, value: "engagement", confidence: 0.9 },
-  { pattern: /\b(community|followers|fans)\b/i, value: "engagement", confidence: 0.7 },
-  { pattern: /\b(comments?|likes?|shares?)\b/i, value: "engagement", confidence: 0.65 },
+  {
+    pattern: /\b(engage|engagement|interact|interaction)\b/i,
+    value: "engagement",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(community|followers|fans)\b/i,
+    value: "engagement",
+    confidence: 0.7,
+  },
+  {
+    pattern: /\b(comments?|likes?|shares?)\b/i,
+    value: "engagement",
+    confidence: 0.65,
+  },
 
   // Education
-  { pattern: /\b(educate|education|teach|learn|tutorial|how\s*to)\b/i, value: "education", confidence: 0.9 },
-  { pattern: /\b(tips?|advice|guide|explain)\b/i, value: "education", confidence: 0.75 },
+  {
+    pattern: /\b(educate|education|teach|learn|tutorial|how\s*to)\b/i,
+    value: "education",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(tips?|advice|guide|explain)\b/i,
+    value: "education",
+    confidence: 0.75,
+  },
 
   // Announcement (lower priority than conversion intents)
-  { pattern: /\b(announce|announcement|news|update|release)\b/i, value: "announcement", confidence: 0.85 },
-  { pattern: /\b(launch|launching)\s*(my|our|the|a|an)?\s*(new\s*)?(product|feature|service|app|business)?\b/i, value: "announcement", confidence: 0.7 },
+  {
+    pattern: /\b(announce|announcement|news|update|release)\b/i,
+    value: "announcement",
+    confidence: 0.85,
+  },
+  {
+    pattern:
+      /\b(launch|launching)\s*(my|our|the|a|an)?\s*(new\s*)?(product|feature|service|app|business)?\b/i,
+    value: "announcement",
+    confidence: 0.7,
+  },
+  {
+    pattern:
+      /\b(introduc(?:e|es|ing)|unveil(?:s|ing)?)\s*(my|our|the|a|an)?\s*(product|service|brand|company|business)?\b/i,
+    value: "announcement",
+    confidence: 0.85,
+  },
+  {
+    pattern:
+      /\b(introduc(?:e|es|ing))\s*.{0,30}\s*(to\s+the\s+world|to\s+(?:my|our)\s+audience)\b/i,
+    value: "announcement",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(cinematic|promotional)\s*(video|intro|introduction)\b/i,
+    value: "announcement",
+    confidence: 0.8,
+  },
 ];
 
 // Task type patterns
 const TASK_TYPE_PATTERNS: PatternMatch[] = [
   // Multi-asset plan - duration based
-  { pattern: /\b(\d+)\s*(day|week|month)\s*(content\s*)?(plan|calendar|schedule)\b/i, value: "multi_asset_plan", confidence: 0.95 },
-  { pattern: /\b(content\s*)?(plan|calendar|schedule)\s*for\s*(\d+)\s*(day|week|month)/i, value: "multi_asset_plan", confidence: 0.95 },
-  { pattern: /\b(series|multiple|batch|set\s*of)\s*(post|content|asset)/i, value: "multi_asset_plan", confidence: 0.85 },
+  {
+    pattern:
+      /\b(\d+)\s*(day|week|month)\s*(content\s*)?(plan|calendar|schedule)\b/i,
+    value: "multi_asset_plan",
+    confidence: 0.95,
+  },
+  {
+    pattern:
+      /\b(content\s*)?(plan|calendar|schedule)\s*for\s*(\d+)\s*(day|week|month)/i,
+    value: "multi_asset_plan",
+    confidence: 0.95,
+  },
+  {
+    pattern: /\b(series|multiple|batch|set\s*of)\s*(post|content|asset)/i,
+    value: "multi_asset_plan",
+    confidence: 0.85,
+  },
 
   // Multi-asset plan - quantity based (3+ items)
   // Allow words between number and content type (e.g., "5 Instagram posts", "10 social media graphics")
-  { pattern: /\b([3-9]|\d{2,})\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels|asset|assets|slide|slides|banner|banners)\b/i, value: "multi_asset_plan", confidence: 0.9 },
-  { pattern: /\b(several|many|few)\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels)\b/i, value: "multi_asset_plan", confidence: 0.8 },
+  {
+    pattern:
+      /\b([3-9]|\d{2,})\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels|asset|assets|slide|slides|banner|banners)\b/i,
+    value: "multi_asset_plan",
+    confidence: 0.9,
+  },
+  {
+    pattern:
+      /\b(several|many|few)\s+(?:\w+\s+)*(post|posts|image|images|graphic|graphics|carousel|carousels)\b/i,
+    value: "multi_asset_plan",
+    confidence: 0.8,
+  },
 
   // Campaign
-  { pattern: /\b(campaign|launch\s*campaign|marketing\s*campaign)\b/i, value: "campaign", confidence: 0.9 },
+  {
+    pattern: /\b(campaign|launch\s*campaign|marketing\s*campaign)\b/i,
+    value: "campaign",
+    confidence: 0.9,
+  },
 
   // Single asset (default, lower confidence)
-  { pattern: /\b(a|an|one|1|single)\s*(post|image|graphic|banner|ad|flyer|poster|carousel|thumbnail)\b/i, value: "single_asset", confidence: 0.85 },
-  { pattern: /\b(create|make|design)\s*(a|an|the)?\s*(post|image|graphic|thumbnail)\b/i, value: "single_asset", confidence: 0.7 },
+  {
+    pattern:
+      /\b(a|an|one|1|single)\s*(post|image|graphic|banner|ad|flyer|poster|carousel|thumbnail)\b/i,
+    value: "single_asset",
+    confidence: 0.85,
+  },
+  {
+    pattern:
+      /\b(create|make|design)\s*(a|an|the)?\s*(post|image|graphic|thumbnail)\b/i,
+    value: "single_asset",
+    confidence: 0.7,
+  },
   // 2 items is borderline - could be single design with variations
-  { pattern: /\b(2|two)\s*(post|posts|image|images|graphic|graphics|carousel|carousels)\b/i, value: "single_asset", confidence: 0.6 },
+  {
+    pattern:
+      /\b(2|two)\s*(post|posts|image|images|graphic|graphics|carousel|carousels)\b/i,
+    value: "single_asset",
+    confidence: 0.6,
+  },
 ];
 
 // Content type patterns
@@ -143,14 +317,41 @@ const CONTENT_TYPE_PATTERNS: PatternMatch[] = [
   { pattern: /\b(posts?|feed\s*posts?)\b/i, value: "post", confidence: 0.85 },
   { pattern: /\b(stor(y|ies))\b/i, value: "story", confidence: 0.9 },
   { pattern: /\b(reels?)\b/i, value: "reel", confidence: 0.9 },
-  { pattern: /\b(carousels?|slide\s*shows?|swipes?)\b/i, value: "carousel", confidence: 0.9 },
-  { pattern: /\b(banners?|headers?|covers?)\b/i, value: "banner", confidence: 0.85 },
-  { pattern: /\b(ads?|advertisements?|sponsored)\b/i, value: "ad", confidence: 0.85 },
+  {
+    pattern: /\b(carousels?|slide\s*shows?|swipes?)\b/i,
+    value: "carousel",
+    confidence: 0.9,
+  },
+  {
+    pattern: /\b(banners?|headers?|covers?)\b/i,
+    value: "banner",
+    confidence: 0.85,
+  },
+  {
+    pattern: /\b(ads?|advertisements?|sponsored)\b/i,
+    value: "ad",
+    confidence: 0.85,
+  },
   { pattern: /\b(thumbnails?)\b/i, value: "thumbnail", confidence: 0.9 },
-  { pattern: /\b(slides?|presentations?)\b/i, value: "slide", confidence: 0.85 },
+  {
+    pattern: /\b(slides?|presentations?)\b/i,
+    value: "slide",
+    confidence: 0.85,
+  },
   { pattern: /\b(flyers?|leaflets?)\b/i, value: "flyer", confidence: 0.9 },
   { pattern: /\b(posters?)\b/i, value: "poster", confidence: 0.9 },
-  { pattern: /\b(videos?|motion|animations?)\b/i, value: "video", confidence: 0.85 },
+  {
+    pattern: /\b(videos?|motion|animations?)\b/i,
+    value: "video",
+    confidence: 0.85,
+  },
+  {
+    pattern:
+      /\b(cinematic|promotional\s*video|product\s*video|intro\s*video)\b/i,
+    value: "video",
+    confidence: 0.95,
+  },
+  { pattern: /\b(\d+[-–]\d+\s*seconds?)\b/i, value: "video", confidence: 0.7 },
 ];
 
 // =============================================================================
@@ -187,7 +388,10 @@ function inferFromPatterns<T extends string>(
   for (const match of matches) {
     const existing = valueScores.get(match.value);
     if (existing) {
-      existing.confidence = Math.min(0.98, existing.confidence + match.confidence * 0.2);
+      existing.confidence = Math.min(
+        0.98,
+        existing.confidence + match.confidence * 0.2
+      );
       existing.patterns.push(match.pattern);
     } else {
       valueScores.set(match.value, {
@@ -261,7 +465,10 @@ function extractDuration(text: string): InferredField<string> {
   const patterns = [
     { pattern: /(\d+)\s*(day|days)/i, format: (n: number) => `${n} days` },
     { pattern: /(\d+)\s*(week|weeks)/i, format: (n: number) => `${n} weeks` },
-    { pattern: /(\d+)\s*(month|months)/i, format: (n: number) => `${n} months` },
+    {
+      pattern: /(\d+)\s*(month|months)/i,
+      format: (n: number) => `${n} months`,
+    },
   ];
 
   for (const { pattern, format } of patterns) {
@@ -303,7 +510,7 @@ function isModificationMessage(text: string): boolean {
     /\b(prefer|would rather|I'd rather|I think|on second thought)\b/i,
   ];
 
-  return modificationPatterns.some(pattern => pattern.test(text));
+  return modificationPatterns.some((pattern) => pattern.test(text));
 }
 
 function extractTopic(text: string): InferredField<string> {
@@ -319,12 +526,15 @@ function extractTopic(text: string): InferredField<string> {
     /(?:content\s+)?(?:about|on|regarding)\s+(.+?)(?:\s+(?:to|for|that|which|on|and|,|\.)|$)/i,
     /(?:post|content|ad|banner|campaign)\s+for\s+(?:my|our|the|a|an)?\s*(.+?)(?:\s+(?:to|that|which|on|and|,|\.)|$)/i,
     /(?:promoting|promote|launch|launching)\s+(?:my|our|the|a|an)?\s*(.+?)(?:\s+(?:to|for|that|which|on|and|,|\.)|$)/i,
+    // "introduces X" or "introducing X"
+    /(?:introduc(?:es?|ing))\s+(?:my|our|the|a|an)?\s*(.+?)(?:\s+(?:to|for|that|which|on|and|,|\.)|$)/i,
   ];
 
   for (const pattern of topicPatterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      let topic = match[1].trim()
+      let topic = match[1]
+        .trim()
         .replace(/\s+/g, " ")
         .replace(/^(my|our|the|a|an)\s+/i, ""); // Remove leading articles
 
@@ -354,31 +564,80 @@ function extractTopic(text: string): InferredField<string> {
     }
   }
 
-  // Extract product/service/app names
-  const productMatch = text.match(/(?:my|our|the|a|an)\s+([\w\s]+?)\s+(?:app|product|service|platform|business|company|brand|tool)/i);
-  if (productMatch && productMatch[1]) {
-    const product = productMatch[1].trim();
-    if (product.length > 2 && product.length <= 40) {
-      return {
-        value: product.charAt(0).toUpperCase() + product.slice(1),
-        confidence: 0.8,
-        source: "inferred",
-      };
+  // Extract product/service/app names - more patterns
+  const productPatterns = [
+    /(?:my|our|the|a|an)\s+([\w\s]+?)\s+(?:app|product|service|platform|business|company|brand|tool)/i,
+    /(?:video|content|post)\s+(?:that\s+)?(?:introduces?|showcases?|presents?|highlights?)\s+(?:my|our|the|a|an)?\s*([\w\s]+?)(?:\s+to|\s*$|\.)/i,
+  ];
+
+  for (const pattern of productPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const product = match[1].trim().replace(/^(my|our|the|a|an)\s+/i, "");
+      if (product.length > 2 && product.length <= 40) {
+        return {
+          value: product.charAt(0).toUpperCase() + product.slice(1),
+          confidence: 0.8,
+          source: "inferred",
+        };
+      }
+    }
+  }
+
+  // Try to extract the main purpose/subject from descriptive messages
+  // E.g., "A polished 30-60 second cinematic video" -> "Cinematic video introduction"
+  const descriptivePatterns = [
+    /(?:polished|professional|creative|stunning|engaging)\s+(?:\d+[-–]\d+\s*(?:second|minute)?\s*)?(.+?)(?:\s+(?:that|which|to|for)\s+|$)/i,
+    /(?:cinematic|promotional|marketing|brand)\s+(.+?)(?:\s+(?:that|which|to|for)\s+|$)/i,
+  ];
+
+  for (const pattern of descriptivePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      let desc = match[1].trim();
+      // Clean up any trailing articles or connectors
+      desc = desc.replace(/\s+(the|a|an|my|our)$/i, "").trim();
+      if (desc.length > 2 && desc.length <= 50) {
+        // Add "introduction" if it's about introducing something
+        if (/introduc/i.test(text)) {
+          desc = `${desc.charAt(0).toUpperCase() + desc.slice(1)} introduction`;
+        } else {
+          desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+        }
+        return {
+          value: desc,
+          confidence: 0.7,
+          source: "inferred",
+        };
+      }
     }
   }
 
   // Last resort: clean up the text and extract key phrases
   const cleanedText = text
-    .replace(/\b(create|make|design|build|need|want|help|me|with|a|an|the|for|my|our|please|can|could|would|i|we|you)\b/gi, "")
-    .replace(/\b(instagram|linkedin|facebook|twitter|tiktok|youtube|post|story|reel|carousel|banner|ad|content|plan|campaign)\b/gi, "")
+    .replace(
+      /\b(create|make|design|build|need|want|help|me|with|a|an|the|for|my|our|please|can|could|would|i|we|you)\b/gi,
+      ""
+    )
+    .replace(
+      /\b(instagram|linkedin|facebook|twitter|tiktok|youtube|post|story|reel|carousel|banner|ad|content|plan|campaign)\b/gi,
+      ""
+    )
     .replace(/\b(\d+)\s*(day|week|month)/gi, "")
-    .replace(/\b(to|drive|increase|boost|get|more|downloads?|signups?|awareness|sales|engagement)\b/gi, "")
+    .replace(
+      /\b(to|drive|increase|boost|get|more|downloads?|signups?|awareness|sales|engagement)\b/gi,
+      ""
+    )
     .replace(/[.,!?]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
   // Only use cleaned text if it's reasonable
-  if (cleanedText.length >= 3 && cleanedText.length <= 40 && cleanedText.split(" ").length <= 6) {
+  if (
+    cleanedText.length >= 3 &&
+    cleanedText.length <= 40 &&
+    cleanedText.split(" ").length <= 6
+  ) {
     return {
       value: cleanedText.charAt(0).toUpperCase() + cleanedText.slice(1),
       confidence: 0.5,
@@ -409,7 +668,9 @@ function extractAudienceFromText(text: string): AudienceBrief | null {
       const audienceText = match[1].trim();
       if (audienceText.length > 3 && audienceText.length < 100) {
         // Extract age range if mentioned
-        const ageMatch = audienceText.match(/(?:ages?|aged)\s*(\d+)\s*[-–to]+\s*(\d+)/i);
+        const ageMatch = audienceText.match(
+          /(?:ages?|aged)\s*(\d+)\s*[-–to]+\s*(\d+)/i
+        );
         const demographics = ageMatch
           ? `Ages ${ageMatch[1]}-${ageMatch[2]}`
           : undefined;
@@ -435,17 +696,42 @@ function extractAudienceFromText(text: string): AudienceBrief | null {
     { pattern: /\b(gen\s*z|generation\s*z)\b/i, name: "Gen Z" },
     { pattern: /\b(boomers?|baby\s*boomers?)\b/i, name: "Baby Boomers" },
     { pattern: /\b(gen\s*x|generation\s*x)\b/i, name: "Gen X" },
-    { pattern: /\b(small\s*business\s*owners?|smb\s*owners?)\b/i, name: "Small Business Owners" },
-    { pattern: /\b(enterprise|enterprises|large\s*companies)\b/i, name: "Enterprise Companies" },
+    {
+      pattern: /\b(small\s*business\s*owners?|smb\s*owners?)\b/i,
+      name: "Small Business Owners",
+    },
+    {
+      pattern: /\b(enterprise|enterprises|large\s*companies)\b/i,
+      name: "Enterprise Companies",
+    },
     { pattern: /\b(startups?|founders?)\b/i, name: "Startups & Founders" },
-    { pattern: /\b(developers?|engineers?|programmers?)\b/i, name: "Developers" },
-    { pattern: /\b(ctos?|ceos?|executives?|c-suite|decision\s*makers?)\b/i, name: "C-Suite Executives" },
-    { pattern: /\b(marketers?|marketing\s*(team|professionals?)?)\b/i, name: "Marketing Professionals" },
+    {
+      pattern: /\b(developers?|engineers?|programmers?)\b/i,
+      name: "Developers",
+    },
+    {
+      pattern: /\b(ctos?|ceos?|executives?|c-suite|decision\s*makers?)\b/i,
+      name: "C-Suite Executives",
+    },
+    {
+      pattern: /\b(marketers?|marketing\s*(team|professionals?)?)\b/i,
+      name: "Marketing Professionals",
+    },
     { pattern: /\b(designers?|creatives?)\b/i, name: "Designers & Creatives" },
-    { pattern: /\b(health\s*conscious|fitness\s*enthusiasts?|health\s*focused)\b/i, name: "Health-Conscious Consumers" },
-    { pattern: /\b(parents?|moms?|dads?|families)\b/i, name: "Parents & Families" },
+    {
+      pattern:
+        /\b(health\s*conscious|fitness\s*enthusiasts?|health\s*focused)\b/i,
+      name: "Health-Conscious Consumers",
+    },
+    {
+      pattern: /\b(parents?|moms?|dads?|families)\b/i,
+      name: "Parents & Families",
+    },
     { pattern: /\b(students?|college|university)\b/i, name: "Students" },
-    { pattern: /\b(professionals?|working\s*professionals?)\b/i, name: "Working Professionals" },
+    {
+      pattern: /\b(professionals?|working\s*professionals?)\b/i,
+      name: "Working Professionals",
+    },
   ];
 
   for (const { pattern, name } of demographicKeywords) {
@@ -454,7 +740,9 @@ function extractAudienceFromText(text: string): AudienceBrief | null {
       const ageMatch = text.match(/(?:ages?|aged)\s*(\d+)\s*[-–to]+\s*(\d+)/i);
       return {
         name,
-        demographics: ageMatch ? `Ages ${ageMatch[1]}-${ageMatch[2]}` : undefined,
+        demographics: ageMatch
+          ? `Ages ${ageMatch[1]}-${ageMatch[2]}`
+          : undefined,
         source: "inferred",
       };
     }
@@ -485,8 +773,12 @@ export function matchAudience(
       const audienceName = audience.name.toLowerCase();
       const keywords = [
         audienceName,
-        ...(audience.firmographics?.jobTitles || []).map((t) => t.toLowerCase()),
-        ...(audience.firmographics?.industries || []).map((i) => i.toLowerCase()),
+        ...(audience.firmographics?.jobTitles || []).map((t) =>
+          t.toLowerCase()
+        ),
+        ...(audience.firmographics?.industries || []).map((i) =>
+          i.toLowerCase()
+        ),
         ...(audience.psychographics?.values || []).map((v) => v.toLowerCase()),
       ];
 
@@ -536,7 +828,9 @@ function formatDemographics(
 
   const parts: string[] = [];
   if (demographics.ageRange) {
-    parts.push(`Ages ${demographics.ageRange.min}-${demographics.ageRange.max}`);
+    parts.push(
+      `Ages ${demographics.ageRange.min}-${demographics.ageRange.max}`
+    );
   }
   if (demographics.income) {
     parts.push(`${demographics.income} income`);
@@ -569,7 +863,10 @@ export function inferFromMessage(input: InferenceInput): InferenceResult {
 
   const intent = inferFromPatterns<Intent>(fullContext, INTENT_PATTERNS);
   const platform = inferFromPatterns<Platform>(fullContext, PLATFORM_PATTERNS);
-  const contentType = inferFromPatterns<ContentType>(fullContext, CONTENT_TYPE_PATTERNS);
+  const contentType = inferFromPatterns<ContentType>(
+    fullContext,
+    CONTENT_TYPE_PATTERNS
+  );
   const quantity = extractQuantity(fullContext);
   const duration = extractDuration(fullContext);
   const topic = extractTopic(message); // Use only current message for topic
@@ -578,7 +875,8 @@ export function inferFromMessage(input: InferenceInput): InferenceResult {
   // Boost confidence if platform explicitly mentioned in current message
   if (platform.value && new RegExp(platform.value, "i").test(message)) {
     platform.confidence = Math.min(0.98, platform.confidence + 0.1);
-    platform.source = platform.confidence >= CONFIDENCE_THRESHOLD ? "inferred" : "pending";
+    platform.source =
+      platform.confidence >= CONFIDENCE_THRESHOLD ? "inferred" : "pending";
   }
 
   return {
@@ -589,7 +887,11 @@ export function inferFromMessage(input: InferenceInput): InferenceResult {
     quantity,
     duration,
     topic,
-    audienceId: { value: audienceMatch.value?.name || null, confidence: audienceMatch.confidence, source: audienceMatch.source },
+    audienceId: {
+      value: audienceMatch.value?.name || null,
+      confidence: audienceMatch.confidence,
+      source: audienceMatch.source,
+    },
   };
 }
 
@@ -603,7 +905,11 @@ export function generateTaskSummary(inference: InferenceResult): string {
   // Quantity/Duration - include specific quantity for multi-asset requests
   if (inference.duration.value) {
     parts.push(`${inference.duration.value}`);
-  } else if (inference.quantity.value && inference.quantity.value >= 2 && inference.taskType.value === "multi_asset_plan") {
+  } else if (
+    inference.quantity.value &&
+    inference.quantity.value >= 2 &&
+    inference.taskType.value === "multi_asset_plan"
+  ) {
     // Include the quantity for multi-asset plans (e.g., "5")
     parts.push(`${inference.quantity.value}`);
   }
@@ -629,10 +935,14 @@ export function generateTaskSummary(inference: InferenceResult): string {
   if (inference.taskType.value === "multi_asset_plan") {
     // For multi-asset with quantity, use "Posts" instead of "Content Plan"
     if (inference.quantity.value && inference.quantity.value >= 2) {
-      const contentLabel = inference.contentType.value === "carousel" ? "Carousels" :
-                          inference.contentType.value === "story" ? "Stories" :
-                          inference.contentType.value === "reel" ? "Reels" :
-                          "Posts";
+      const contentLabel =
+        inference.contentType.value === "carousel"
+          ? "Carousels"
+          : inference.contentType.value === "story"
+          ? "Stories"
+          : inference.contentType.value === "reel"
+          ? "Reels"
+          : "Posts";
       parts.push(contentLabel);
     } else {
       parts.push("Content Plan");
@@ -681,7 +991,8 @@ export function generateTaskSummary(inference: InferenceResult): string {
       .replace(/^(a|an|the|my|our)\s+/i, "")
       .trim();
     if (cleanTopic.length > 0 && cleanTopic.length < 50) {
-      const formattedTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
+      const formattedTopic =
+        cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
       if (parts.length > 0) {
         parts.push(`- ${formattedTopic}`);
       } else {
@@ -692,7 +1003,10 @@ export function generateTaskSummary(inference: InferenceResult): string {
 
   // Fallback: if we only have topic, make it the whole summary
   if (parts.length === 0 && inference.topic.value) {
-    return inference.topic.value.charAt(0).toUpperCase() + inference.topic.value.slice(1);
+    return (
+      inference.topic.value.charAt(0).toUpperCase() +
+      inference.topic.value.slice(1)
+    );
   }
 
   return parts.join(" ") || "New Brief";
@@ -744,10 +1058,26 @@ export function generateClarifyingQuestions(
         field: "intent",
         question: "What's the main goal?",
         options: [
-          { label: "Get signups", value: "signups", description: "Drive registrations" },
-          { label: "Build authority", value: "authority", description: "Establish expertise" },
-          { label: "Increase awareness", value: "awareness", description: "Brand visibility" },
-          { label: "Drive sales", value: "sales", description: "Generate revenue" },
+          {
+            label: "Get signups",
+            value: "signups",
+            description: "Drive registrations",
+          },
+          {
+            label: "Build authority",
+            value: "authority",
+            description: "Establish expertise",
+          },
+          {
+            label: "Increase awareness",
+            value: "awareness",
+            description: "Brand visibility",
+          },
+          {
+            label: "Drive sales",
+            value: "sales",
+            description: "Generate revenue",
+          },
         ],
         priority: 2,
       });
@@ -774,74 +1104,165 @@ export function applyInferenceToBrief(
   const updated = { ...brief, updatedAt: new Date() };
 
   // Apply task type - only if confidence is higher
-  if (inference.taskType.value && inference.taskType.confidence > (updated.taskType.confidence || 0)) {
+  if (
+    inference.taskType.value &&
+    inference.taskType.confidence > (updated.taskType.confidence || 0)
+  ) {
     updated.taskType = inference.taskType;
   }
 
-  // Apply intent - only if confidence is higher
-  if (inference.intent.value && inference.intent.confidence > (updated.intent.confidence || 0)) {
-    updated.intent = inference.intent;
+  // Apply intent - be more aggressive, show even low-confidence values as "inferred"
+  // This helps populate the brief panel from the first message
+  if (inference.intent.value) {
+    const shouldUpdate =
+      inference.intent.confidence > (updated.intent.confidence || 0) ||
+      (!updated.intent.value && inference.intent.confidence > 0.3);
+    if (shouldUpdate) {
+      updated.intent = {
+        ...inference.intent,
+        source: inference.intent.confidence >= 0.6 ? "inferred" : "pending",
+      };
+    }
   }
 
-  // Apply platform and dimensions - only if confidence is higher
-  if (inference.platform.value && inference.platform.confidence > (updated.platform.confidence || 0)) {
-    updated.platform = inference.platform;
+  // Apply platform and dimensions - be more aggressive for first message
+  if (inference.platform.value) {
+    const shouldUpdate =
+      inference.platform.confidence > (updated.platform.confidence || 0) ||
+      (!updated.platform.value && inference.platform.confidence > 0.3);
+    if (shouldUpdate) {
+      updated.platform = {
+        ...inference.platform,
+        source: inference.platform.confidence >= 0.6 ? "inferred" : "pending",
+      };
 
-    // Auto-apply dimensions
-    const dimensions = getDimensionsForPlatform(
-      inference.platform.value,
-      inference.contentType.value || undefined
-    );
-    updated.dimensions = dimensions;
+      // Auto-apply dimensions
+      const dimensions = getDimensionsForPlatform(
+        inference.platform.value,
+        inference.contentType.value || undefined
+      );
+      updated.dimensions = dimensions;
+    }
   }
 
-  // Apply topic - only if confidence is higher
-  if (inference.topic.value && inference.topic.confidence > (updated.topic.confidence || 0)) {
-    updated.topic = inference.topic;
+  // Apply topic - be more aggressive, extract something from the message
+  if (inference.topic.value) {
+    const shouldUpdate =
+      inference.topic.confidence > (updated.topic.confidence || 0) ||
+      (!updated.topic.value && inference.topic.confidence > 0.2);
+    if (shouldUpdate) {
+      updated.topic = {
+        ...inference.topic,
+        source: inference.topic.confidence >= 0.5 ? "inferred" : "pending",
+      };
+    }
   }
 
   // Apply audience - use the actual message context for matching, not empty string
   if (brandAudiences && brandAudiences.length > 0) {
     // Re-match using the original message if provided, otherwise use empty string for default
     const audienceMatch = matchAudience(messageText || "", brandAudiences);
-    if (audienceMatch.value && audienceMatch.confidence > (updated.audience.confidence || 0)) {
+    // Be more aggressive about showing audience - default to primary if nothing better found
+    if (
+      audienceMatch.value &&
+      (audienceMatch.confidence > (updated.audience.confidence || 0) ||
+        !updated.audience.value)
+    ) {
       updated.audience = audienceMatch;
     }
   }
 
-  // Generate task summary - always update if we have any meaningful inference
+  // Generate task summary from the message - always try to extract something meaningful
   const summary = generateTaskSummary(inference);
-  const hasAnyContent = inference.platform.value || inference.taskType.value || inference.topic.value;
+  const hasAnyContent =
+    inference.platform.value ||
+    inference.taskType.value ||
+    inference.topic.value ||
+    inference.intent.value ||
+    inference.contentType.value;
 
-  if (hasAnyContent) {
+  if (hasAnyContent || messageText) {
     // Calculate confidence based on available fields
     const confidences = [
       inference.platform.confidence,
       inference.taskType.confidence,
       inference.topic.confidence,
-    ].filter(c => c > 0);
+      inference.intent.confidence,
+    ].filter((c) => c > 0);
 
-    const avgConfidence = confidences.length > 0
-      ? confidences.reduce((a, b) => a + b, 0) / confidences.length
-      : 0.5;
+    const avgConfidence =
+      confidences.length > 0
+        ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+        : 0.3;
 
     // Update summary if we have one and it's better than current
-    if (summary && (summary !== "New Brief" || !updated.taskSummary.value)) {
-      const newSummary = summary === "New Brief" && inference.topic.value
-        ? inference.topic.value
-        : summary;
+    // Or if we have no summary at all, extract one from the message
+    const shouldUpdateSummary =
+      !updated.taskSummary.value ||
+      avgConfidence > (updated.taskSummary.confidence || 0) ||
+      (summary && summary !== "New Brief" && avgConfidence >= 0.3);
 
-      if (avgConfidence > (updated.taskSummary.confidence || 0)) {
+    if (shouldUpdateSummary) {
+      let newSummary = summary;
+
+      // If generated summary is weak but we have message text, create a better one
+      if ((summary === "New Brief" || !summary) && messageText) {
+        newSummary = extractSummaryFromMessage(messageText);
+      } else if (summary === "New Brief" && inference.topic.value) {
+        newSummary = inference.topic.value;
+      }
+
+      if (newSummary && newSummary !== "New Brief") {
         updated.taskSummary = {
           value: newSummary,
-          confidence: avgConfidence,
-          source: "inferred",
+          confidence: Math.max(avgConfidence, 0.4),
+          source: avgConfidence >= 0.5 ? "inferred" : "pending",
         };
       }
     }
   }
 
   return updated;
+}
+
+/**
+ * Extract a meaningful summary from a user message
+ * Used when pattern-based inference doesn't produce a clear summary
+ */
+function extractSummaryFromMessage(message: string): string {
+  // Clean up the message
+  let cleaned = message
+    .replace(
+      /\b(please|can you|could you|i need|i want|help me|create|make|design)\b/gi,
+      ""
+    )
+    .replace(/^\s*[,.\s]+/, "")
+    .trim();
+
+  // If still too long, get the first meaningful clause
+  if (cleaned.length > 80) {
+    // Try to find a natural break point
+    const breakPoints = [" for ", " to ", " that ", " which ", " with "];
+    for (const bp of breakPoints) {
+      const idx = cleaned.toLowerCase().indexOf(bp);
+      if (idx > 15 && idx < 70) {
+        cleaned = cleaned.substring(0, idx);
+        break;
+      }
+    }
+  }
+
+  // Still too long? Just truncate nicely
+  if (cleaned.length > 60) {
+    cleaned = cleaned.substring(0, 57) + "...";
+  }
+
+  // Capitalize first letter
+  if (cleaned.length > 0) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  return cleaned || "New project request";
 }
 
 // =============================================================================
@@ -852,7 +1273,9 @@ export function applyInferenceToBrief(
  * Analyze how complete/detailed a user's request is
  * Used to determine if AI should ask questions or proceed directly
  */
-export function analyzeRequestCompleteness(inference: InferenceResult): "detailed" | "moderate" | "vague" {
+export function analyzeRequestCompleteness(
+  inference: InferenceResult
+): "detailed" | "moderate" | "vague" {
   const highConfidenceFields = [
     inference.platform.confidence >= 0.75,
     inference.intent.confidence >= 0.6,
@@ -877,8 +1300,13 @@ export function detectBrandMention(
   message: string,
   companyName: string | null,
   companyKeywords: string[] = []
-): { detected: boolean; mentionedBrand: string | null; matchesProfile: boolean } {
-  if (!companyName) return { detected: false, mentionedBrand: null, matchesProfile: false };
+): {
+  detected: boolean;
+  mentionedBrand: string | null;
+  matchesProfile: boolean;
+} {
+  if (!companyName)
+    return { detected: false, mentionedBrand: null, matchesProfile: false };
 
   const messageLower = message.toLowerCase();
   const companyLower = companyName.toLowerCase();
@@ -903,12 +1331,28 @@ export function detectBrandMention(
       const mentioned = match[1].trim();
 
       // Skip common words that might be false positives
-      const commonWords = ["instagram", "linkedin", "facebook", "twitter", "youtube", "tiktok",
-                           "carousel", "post", "story", "reel", "ad", "banner", "content"];
+      const commonWords = [
+        "instagram",
+        "linkedin",
+        "facebook",
+        "twitter",
+        "youtube",
+        "tiktok",
+        "carousel",
+        "post",
+        "story",
+        "reel",
+        "ad",
+        "banner",
+        "content",
+      ];
       if (commonWords.includes(mentioned.toLowerCase())) continue;
 
-      const matchesProfile = mentioned.toLowerCase() === companyLower ||
-        companyKeywords.some(k => k.toLowerCase() === mentioned.toLowerCase()) ||
+      const matchesProfile =
+        mentioned.toLowerCase() === companyLower ||
+        companyKeywords.some(
+          (k) => k.toLowerCase() === mentioned.toLowerCase()
+        ) ||
         companyLower.includes(mentioned.toLowerCase()) ||
         mentioned.toLowerCase().includes(companyLower);
 
@@ -918,7 +1362,11 @@ export function detectBrandMention(
 
   // Also check if the company name itself is mentioned (positive match)
   if (messageLower.includes(companyLower)) {
-    return { detected: true, mentionedBrand: companyName, matchesProfile: true };
+    return {
+      detected: true,
+      mentionedBrand: companyName,
+      matchesProfile: true,
+    };
   }
 
   return { detected: false, mentionedBrand: null, matchesProfile: false };
@@ -928,16 +1376,22 @@ export function detectBrandMention(
 // SHOULD ASK QUESTION
 // =============================================================================
 
-export function shouldAskClarifyingQuestion(inference: InferenceResult): boolean {
+export function shouldAskClarifyingQuestion(
+  inference: InferenceResult
+): boolean {
   // Ask if platform is not confident
-  if (!inference.platform.value || inference.platform.confidence < CONFIDENCE_THRESHOLD) {
+  if (
+    !inference.platform.value ||
+    inference.platform.confidence < CONFIDENCE_THRESHOLD
+  ) {
     return true;
   }
 
   // Ask if intent is not confident and task seems complex
   if (
     inference.taskType.value === "multi_asset_plan" &&
-    (!inference.intent.value || inference.intent.confidence < CONFIDENCE_THRESHOLD)
+    (!inference.intent.value ||
+      inference.intent.confidence < CONFIDENCE_THRESHOLD)
   ) {
     return true;
   }

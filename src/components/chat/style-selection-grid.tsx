@@ -34,6 +34,7 @@ export function StyleSelectionGrid({
   const [selectedStyle, setSelectedStyle] = useState<DeliverableStyle | null>(
     null
   );
+  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
 
   if (!styles || styles.length === 0) {
     return null;
@@ -61,20 +62,23 @@ export function StyleSelectionGrid({
   return (
     <div className={cn("space-y-4", className)}>
       {/* Clean style grid */}
-      <div className="grid grid-cols-3 gap-3 max-w-2xl">
+      <div className="grid grid-cols-3 gap-6 max-w-2xl">
         {displayedStyles.map((style, index) => {
           const isSelected = selectedStyle?.id === style.id;
+          const isHovered = hoveredStyleId === style.id;
 
           return (
             <motion.button
               key={style.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05, zIndex: 10 }}
+              whileHover={{ scale: 1.5, zIndex: 50 }}
               transition={{ duration: 0.2, delay: index * 0.05 }}
               onClick={() => handleCardClick(style)}
+              onMouseEnter={() => setHoveredStyleId(style.id)}
+              onMouseLeave={() => setHoveredStyleId(null)}
               className={cn(
-                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-shadow duration-200",
+                "relative aspect-[4/5] rounded-xl overflow-hidden transition-shadow duration-200",
                 isSelected
                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
                   : "hover:shadow-2xl hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
@@ -92,20 +96,16 @@ export function StyleSelectionGrid({
                 }}
               />
 
-              {/* Hover overlay with name - only visible on hover */}
-              <div
-                className={cn(
-                  "absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent",
-                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                  isSelected && "opacity-100"
-                )}
-              >
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-sm font-medium truncate">
-                    {style.name}
-                  </p>
+              {/* Hover overlay with name - only visible on THIS card's hover */}
+              {(isHovered || isSelected) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-white text-sm font-medium truncate">
+                      {style.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Selected indicator */}
               {isSelected && (
