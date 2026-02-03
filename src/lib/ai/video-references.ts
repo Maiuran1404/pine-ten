@@ -238,21 +238,37 @@ export async function getVideoReferencesForChat(
     ? extractVideoTagsFromMessage(userMessage)
     : [];
 
-  // Get video references with detected tags
+  console.log(`[Video References] Getting videos for type: ${deliverableType}`);
+  console.log(
+    `[Video References] Detected tags from message: ${
+      messageTags.join(", ") || "none"
+    }`
+  );
+
+  // For video requests, show ALL video references (not filtered by exact deliverable type)
+  // since all our video references are relevant launch video examples
   const videos = await getVideoReferences({
-    deliverableType,
+    // Don't filter by deliverable type - show all video references
     tags: messageTags.length > 0 ? messageTags : undefined,
     limit,
   });
+
+  console.log(
+    `[Video References] Found ${videos.length} videos with tag filter`
+  );
 
   // If we got good results with tags, return them
   if (videos.length >= 3) {
     return videos;
   }
 
-  // Otherwise, get videos without tag filtering
-  return getVideoReferences({
-    deliverableType,
+  // Otherwise, get all videos without tag filtering
+  const allVideos = await getVideoReferences({
     limit,
   });
+
+  console.log(
+    `[Video References] Found ${allVideos.length} total videos without filter`
+  );
+  return allVideos;
 }

@@ -39,10 +39,27 @@ interface VideoReferenceGridProps {
   title?: string;
 }
 
-// Extract YouTube video ID from URL
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
+// Extract YouTube video ID from various URL formats
+function extractYouTubeId(url: string | null | undefined): string | null {
+  if (!url) return null;
+
+  // Try multiple patterns - order matters, try most specific first
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/, // ?v= or &v= parameter
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/, // youtu.be shortlinks
+    /embed\/([a-zA-Z0-9_-]{11})/, // /embed/ URLs
+    /\/v\/([a-zA-Z0-9_-]{11})/, // /v/ URLs
+    /^([a-zA-Z0-9_-]{11})$/, // Just the ID itself
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
 }
 
 // Video preview modal with YouTube embed
@@ -54,6 +71,10 @@ function VideoPreviewModal({
   onClose: () => void;
 }) {
   const videoId = extractYouTubeId(video.videoUrl);
+
+  // Debug log
+  console.log("[VideoPreviewModal] video.videoUrl:", video.videoUrl);
+  console.log("[VideoPreviewModal] extracted videoId:", videoId);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -68,20 +89,26 @@ function VideoPreviewModal({
             </p>
           )}
         </DialogHeader>
-        <div className="aspect-video w-full bg-black">
+        <div className="aspect-video w-full bg-black relative">
           {videoId ? (
             <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+              key={videoId}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
               title={video.name}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
+              loading="lazy"
+              className="absolute inset-0 w-full h-full border-0"
+              style={{ border: 0 }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center flex-col gap-2">
               <p className="text-white/60">Unable to load video</p>
+              {video.videoUrl && (
+                <p className="text-white/40 text-xs font-mono max-w-md truncate px-4">
+                  URL: {video.videoUrl}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -93,15 +120,17 @@ function VideoPreviewModal({
               </Badge>
             ))}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(video.videoUrl, "_blank")}
-            className="gap-1.5"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Open on YouTube
-          </Button>
+          {video.videoUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(video.videoUrl, "_blank")}
+              className="gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open on YouTube
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -92,7 +92,10 @@ const publicPaths = [
  */
 function isPublicPath(pathname: string): boolean {
   return publicPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + "/") || pathname.startsWith(path)
+    (path) =>
+      pathname === path ||
+      pathname.startsWith(path + "/") ||
+      pathname.startsWith(path)
   );
 }
 
@@ -156,7 +159,7 @@ export async function proxy(request: NextRequest) {
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob: https: http:",
         "connect-src 'self' https://api.stripe.com wss: https:",
-        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com",
       ].join("; ")
     );
   }

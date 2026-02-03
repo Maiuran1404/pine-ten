@@ -68,6 +68,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https: http:",
               "font-src 'self' data:",
               "connect-src 'self' https: wss:",
+              "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://js.stripe.com https://hooks.stripe.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

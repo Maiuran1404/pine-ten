@@ -31,12 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/shared/loading";
 import {
   Plus,
@@ -131,7 +126,8 @@ function TagSelector({
         ))}
       </div>
       {/* Custom tags */}
-      {selected.filter((t) => !VIDEO_STYLE_TAGS.includes(t as any)).length > 0 && (
+      {selected.filter((t) => !VIDEO_STYLE_TAGS.includes(t as any)).length >
+        0 && (
         <div className="flex flex-wrap gap-2">
           {selected
             .filter((t) => !VIDEO_STYLE_TAGS.includes(t as any))
@@ -160,12 +156,31 @@ function TagSelector({
           }}
           className="flex-1"
         />
-        <Button type="button" variant="outline" size="sm" onClick={addCustomTag}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addCustomTag}
+        >
           Add
         </Button>
       </div>
     </div>
   );
+}
+
+// Extract YouTube video ID from various URL formats
+function extractVideoId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/, // Just the ID
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
 }
 
 // YouTube embed modal
@@ -176,39 +191,60 @@ function VideoPreviewModal({
   video: VideoReference;
   onClose: () => void;
 }) {
-  const videoId = video.videoUrl.match(/v=([a-zA-Z0-9_-]{11})/)?.[1];
+  const videoId = extractVideoId(video.videoUrl);
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>{video.name}</DialogTitle>
-          <DialogDescription>{video.description}</DialogDescription>
+          {video.description && (
+            <DialogDescription>{video.description}</DialogDescription>
+          )}
         </DialogHeader>
-        <div className="aspect-video w-full">
+        <div className="aspect-video w-full bg-black">
           {videoId ? (
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
               title={video.name}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              className="rounded-lg"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
-              <p className="text-muted-foreground">Unable to load video</p>
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <div className="text-center">
+                <p className="text-muted-foreground">Unable to load video</p>
+                {video.videoUrl && (
+                  <p className="text-xs text-muted-foreground mt-2 font-mono">
+                    URL: {video.videoUrl}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {video.videoTags?.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
+        <div className="p-4 flex items-center justify-between border-t">
+          <div className="flex flex-wrap gap-2">
+            {video.videoTags?.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+          {video.videoUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(video.videoUrl, "_blank")}
+              className="gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open on YouTube
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -327,7 +363,11 @@ export default function VideoReferencesPage() {
       setFormState(defaultFormState);
       setEditingVideo(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save video reference");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save video reference"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -366,7 +406,9 @@ export default function VideoReferencesPage() {
       setVideos((prev) =>
         prev.map((v) => (v.id === video.id ? result.data.video : v))
       );
-      toast.success(result.data.video.isActive ? "Video activated" : "Video deactivated");
+      toast.success(
+        result.data.video.isActive ? "Video activated" : "Video deactivated"
+      );
     } catch {
       toast.error("Failed to toggle status");
     } finally {
@@ -416,7 +458,9 @@ export default function VideoReferencesPage() {
       setBulkUrls("");
       setBulkTags([]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to import videos");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to import videos"
+      );
     } finally {
       setIsBulkImporting(false);
     }
@@ -426,7 +470,9 @@ export default function VideoReferencesPage() {
     const matchesSearch =
       searchTerm === "" ||
       video.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.videoTags?.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase()));
+      video.videoTags?.some((t) =>
+        t.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
     const matchesTag =
       tagFilter === "all" || video.videoTags?.includes(tagFilter);
@@ -445,7 +491,9 @@ export default function VideoReferencesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Video References</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Video References
+          </h1>
           <p className="text-muted-foreground">
             Manage video style references for launch videos and video ads
           </p>
@@ -462,7 +510,8 @@ export default function VideoReferencesPage() {
               <DialogHeader>
                 <DialogTitle>Bulk Import YouTube Videos</DialogTitle>
                 <DialogDescription>
-                  Paste YouTube URLs (one per line) to import multiple videos at once.
+                  Paste YouTube URLs (one per line) to import multiple videos at
+                  once.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -478,7 +527,8 @@ https://youtu.be/xyz789
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {bulkUrls.split("\n").filter((u) => u.trim()).length} URLs entered
+                    {bulkUrls.split("\n").filter((u) => u.trim()).length} URLs
+                    entered
                   </p>
                 </div>
 
@@ -507,7 +557,10 @@ https://youtu.be/xyz789
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleBulkImport} disabled={isBulkImporting}>
@@ -537,7 +590,9 @@ https://youtu.be/xyz789
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingVideo ? "Edit Video Reference" : "Add Video Reference"}
+                  {editingVideo
+                    ? "Edit Video Reference"
+                    : "Add Video Reference"}
                 </DialogTitle>
                 <DialogDescription>
                   {editingVideo
@@ -563,7 +618,9 @@ https://youtu.be/xyz789
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => window.open(formState.videoUrl, "_blank")}
+                        onClick={() =>
+                          window.open(formState.videoUrl, "_blank")
+                        }
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -584,7 +641,9 @@ https://youtu.be/xyz789
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-muted-foreground text-sm">Invalid URL</p>
+                            <p className="text-muted-foreground text-sm">
+                              Invalid URL
+                            </p>
                           </div>
                         );
                       })()}
@@ -610,7 +669,10 @@ https://youtu.be/xyz789
                       id="duration"
                       value={formState.videoDuration}
                       onChange={(e) =>
-                        setFormState({ ...formState, videoDuration: e.target.value })
+                        setFormState({
+                          ...formState,
+                          videoDuration: e.target.value,
+                        })
                       }
                       placeholder="e.g., 1:30"
                     />
@@ -623,7 +685,10 @@ https://youtu.be/xyz789
                     id="description"
                     value={formState.description}
                     onChange={(e) =>
-                      setFormState({ ...formState, description: e.target.value })
+                      setFormState({
+                        ...formState,
+                        description: e.target.value,
+                      })
                     }
                     placeholder="Brief description of this video style..."
                     rows={2}
@@ -645,7 +710,9 @@ https://youtu.be/xyz789
                       <SelectContent>
                         {VIDEO_DELIVERABLE_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                            {type
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -656,7 +723,10 @@ https://youtu.be/xyz789
                     <Select
                       value={formState.styleAxis}
                       onValueChange={(value) =>
-                        setFormState({ ...formState, styleAxis: value as StyleAxis })
+                        setFormState({
+                          ...formState,
+                          styleAxis: value as StyleAxis,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -677,7 +747,9 @@ https://youtu.be/xyz789
                   <Label>Tags</Label>
                   <TagSelector
                     selected={formState.videoTags}
-                    onChange={(tags) => setFormState({ ...formState, videoTags: tags })}
+                    onChange={(tags) =>
+                      setFormState({ ...formState, videoTags: tags })
+                    }
                   />
                 </div>
 
@@ -704,7 +776,13 @@ https://youtu.be/xyz789
                   Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? <LoadingSpinner size="sm" /> : editingVideo ? "Update" : "Add"}
+                  {isSaving ? (
+                    <LoadingSpinner size="sm" />
+                  ) : editingVideo ? (
+                    "Update"
+                  ) : (
+                    "Add"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -803,7 +881,10 @@ https://youtu.be/xyz789
               {filteredVideos.map((video) => (
                 <Card
                   key={video.id}
-                  className={cn("overflow-hidden group", !video.isActive && "opacity-60")}
+                  className={cn(
+                    "overflow-hidden group",
+                    !video.isActive && "opacity-60"
+                  )}
                 >
                   <div
                     className="aspect-video relative bg-muted cursor-pointer"
@@ -817,7 +898,9 @@ https://youtu.be/xyz789
                       onError={(e) => {
                         // Try fallback thumbnail
                         const img = e.target as HTMLImageElement;
-                        const videoId = video.videoUrl.match(/v=([a-zA-Z0-9_-]{11})/)?.[1];
+                        const videoId = video.videoUrl.match(
+                          /v=([a-zA-Z0-9_-]{11})/
+                        )?.[1];
                         if (videoId && !img.src.includes("hqdefault")) {
                           img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                         }
@@ -845,9 +928,12 @@ https://youtu.be/xyz789
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-sm truncate">{video.name}</h3>
+                        <h3 className="font-medium text-sm truncate">
+                          {video.name}
+                        </h3>
                         <p className="text-xs text-muted-foreground capitalize">
-                          {video.styleAxis} • {video.deliverableType.replace(/_/g, " ")}
+                          {video.styleAxis} •{" "}
+                          {video.deliverableType.replace(/_/g, " ")}
                         </p>
                       </div>
                       <div className="flex gap-0.5 ml-2">
@@ -893,12 +979,19 @@ https://youtu.be/xyz789
                     {video.videoTags && video.videoTags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {video.videoTags.slice(0, 3).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-[10px] px-1.5 py-0"
+                          >
                             {tag}
                           </Badge>
                         ))}
                         {video.videoTags.length > 3 && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0"
+                          >
                             +{video.videoTags.length - 3}
                           </Badge>
                         )}
@@ -917,7 +1010,8 @@ https://youtu.be/xyz789
             <CardHeader>
               <CardTitle>Videos by Tag</CardTitle>
               <CardDescription>
-                Click a tag to filter videos. Tags help match videos to user requests.
+                Click a tag to filter videos. Tags help match videos to user
+                requests.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -928,7 +1022,9 @@ https://youtu.be/xyz789
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {allTags.map((tag) => {
-                    const count = videos.filter((v) => v.videoTags?.includes(tag)).length;
+                    const count = videos.filter((v) =>
+                      v.videoTags?.includes(tag)
+                    ).length;
                     return (
                       <Button
                         key={tag}
@@ -955,7 +1051,10 @@ https://youtu.be/xyz789
 
       {/* Video Preview Modal */}
       {previewVideo && (
-        <VideoPreviewModal video={previewVideo} onClose={() => setPreviewVideo(null)} />
+        <VideoPreviewModal
+          video={previewVideo}
+          onClose={() => setPreviewVideo(null)}
+        />
       )}
     </div>
   );

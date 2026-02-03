@@ -546,7 +546,29 @@ async function handler(request: NextRequest) {
         combinedContext.includes("promotional video") ||
         combinedContext.includes("marketing video") ||
         combinedContext.includes("brand video") ||
-        combinedContext.includes("commercial")
+        combinedContext.includes("commercial") ||
+        combinedContext.includes("cinematic video") ||
+        combinedContext.includes("intro video") ||
+        combinedContext.includes("introduction video") ||
+        combinedContext.includes("explainer video") ||
+        combinedContext.includes("teaser video") ||
+        combinedContext.includes("announcement video") ||
+        combinedContext.includes("brand film") ||
+        combinedContext.includes("company video") ||
+        combinedContext.includes("startup video") ||
+        combinedContext.includes("saas video") ||
+        // Generic video requests with product/brand context
+        (combinedContext.includes("video") &&
+          (combinedContext.includes("product") ||
+            combinedContext.includes("introduces") ||
+            combinedContext.includes("launch") ||
+            combinedContext.includes("brand") ||
+            combinedContext.includes("company") ||
+            combinedContext.includes("startup") ||
+            combinedContext.includes("saas") ||
+            combinedContext.includes("cinematic") ||
+            combinedContext.includes("professional") ||
+            combinedContext.includes("polished")))
       ) {
         detectedType = "launch_video";
       } else if (
@@ -578,6 +600,10 @@ async function handler(request: NextRequest) {
       // Normalize deliverable type in case AI generated an alias
       const normalizedType = normalizeDeliverableType(deliverableType);
 
+      // Check if this is a video deliverable type - if so, skip image styles
+      // as we'll show video references instead
+      const isVideoType = isVideoDeliverableType(normalizedType);
+
       try {
         switch (type) {
           case "initial":
@@ -590,6 +616,13 @@ async function handler(request: NextRequest) {
               deliverableStyleMarker = undefined; // Clear the marker so no grid is shown
               break;
             }
+            // SKIP image styles for video types - video references will be shown instead
+            if (isVideoType) {
+              console.log(
+                "[Chat API] Skipping image styles for video type - will show video references"
+              );
+              break;
+            }
             // Use brand-aware styles with one per axis, sorted by brand match
             deliverableStyles = await getBrandAwareStyles(
               normalizedType,
@@ -598,6 +631,8 @@ async function handler(request: NextRequest) {
             );
             break;
           case "more":
+            // Skip image styles for video types
+            if (isVideoType) break;
             deliverableStyles = await getBrandAwareStylesOfAxis(
               normalizedType,
               styleAxis as StyleAxis,
@@ -606,6 +641,8 @@ async function handler(request: NextRequest) {
             );
             break;
           case "different":
+            // Skip image styles for video types
+            if (isVideoType) break;
             deliverableStyles = await getBrandAwareStyles(
               normalizedType,
               session.user.id,
@@ -619,6 +656,8 @@ async function handler(request: NextRequest) {
             }
             break;
           case "semantic":
+            // Skip image styles for video types
+            if (isVideoType) break;
             // Use semantic search based on the query
             const { searchQuery } = deliverableStyleMarker;
             if (searchQuery) {
@@ -658,6 +697,8 @@ async function handler(request: NextRequest) {
             }
             break;
           case "refine":
+            // Skip image styles for video types
+            if (isVideoType) break;
             // Use style refinement based on base style and user feedback
             const { baseStyleId, refinementQuery } = deliverableStyleMarker;
             if (baseStyleId && refinementQuery) {
@@ -732,24 +773,59 @@ async function handler(request: NextRequest) {
 
     // Get video references for video deliverable types
     let videoReferences: VideoReference[] | undefined = undefined;
-    if (deliverableStyleMarker) {
-      const normalizedType = normalizeDeliverableType(
-        deliverableStyleMarker.deliverableType
-      );
-      if (isVideoDeliverableType(normalizedType)) {
-        try {
-          const lastUserMessage = messages[messages.length - 1]?.content || "";
-          videoReferences = await getVideoReferencesForChat(
-            normalizedType,
-            lastUserMessage,
-            6
-          );
-          console.log(
-            `[Chat API] Fetched ${videoReferences.length} video references for ${normalizedType}`
-          );
-        } catch (err) {
-          console.error("Error fetching video references:", err);
+
+    // Check for video-related content in the conversation
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
+    const lastUserMessageLower = lastUserMessage.toLowerCase();
+    const responseContentLower = response.content.toLowerCase();
+    const combinedVideoContext = `${lastUserMessageLower} ${responseContentLower}`;
+
+    // Direct video detection - more aggressive approach
+    const isVideoRequest =
+      combinedVideoContext.includes("video") ||
+      combinedVideoContext.includes("cinematic") ||
+      combinedVideoContext.includes("motion") ||
+      combinedVideoContext.includes("animation") ||
+      combinedVideoContext.includes("commercial") ||
+      combinedVideoContext.includes("reel");
+
+    console.log(
+      `[Chat API] Video detection - isVideoRequest: ${isVideoRequest}`
+    );
+    console.log(
+      `[Chat API] deliverableStyleMarker: ${JSON.stringify(
+        deliverableStyleMarker
+      )}`
+    );
+
+    if (
+      isVideoRequest ||
+      (deliverableStyleMarker &&
+        isVideoDeliverableType(
+          normalizeDeliverableType(deliverableStyleMarker.deliverableType)
+        ))
+    ) {
+      try {
+        const deliverableType = deliverableStyleMarker?.deliverableType
+          ? normalizeDeliverableType(deliverableStyleMarker.deliverableType)
+          : "launch_video";
+
+        videoReferences = await getVideoReferencesForChat(
+          deliverableType,
+          lastUserMessage,
+          6
+        );
+        console.log(
+          `[Chat API] Fetched ${videoReferences.length} video references for ${deliverableType}`
+        );
+        
+        // For video requests, ONLY show video references - clear image styles
+        if (videoReferences.length > 0) {
+          deliverableStyles = undefined;
+          console.log("[Chat API] Cleared image styles - showing only video references");
         }
+      } catch (err) {
+        console.error("Error fetching video references:", err);
       }
     }
 
