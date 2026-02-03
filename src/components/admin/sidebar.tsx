@@ -31,6 +31,7 @@ import {
   Image,
   Sparkles,
   Brain,
+  Video,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -107,6 +108,11 @@ const navigationGroups: NavigationGroup[] = [
         name: "Reference Library",
         href: "/admin/deliverable-styles",
         icon: LayoutTemplate,
+      },
+      {
+        name: "Video Library",
+        href: "/admin/video-references",
+        icon: Video,
       },
     ],
   },

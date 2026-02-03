@@ -8,6 +8,7 @@ import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
 import { useSubdomain } from "@/hooks/use-subdomain";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { CreditProvider } from "@/providers/credit-provider";
 
 interface Task {
   id: string;
@@ -63,7 +64,12 @@ export default function AdminLayout({
         .then((res) => res.json())
         .then((data) => {
           if (data.tasks) {
-            setRecentTasks(data.tasks.map((t: { id: string; title: string }) => ({ id: t.id, title: t.title })));
+            setRecentTasks(
+              data.tasks.map((t: { id: string; title: string }) => ({
+                id: t.id,
+                title: t.title,
+              }))
+            );
           }
         })
         .catch(console.error);
@@ -79,22 +85,26 @@ export default function AdminLayout({
   }
 
   return (
-    <SidebarProvider
-      defaultOpen={true}
-      className="bg-background outline-none focus:outline-none"
-      style={
-        {
-          fontFamily: "'Satoshi', sans-serif",
-          "--sidebar-width": "16rem",
-          "--sidebar-width-icon": "3rem",
-        } as React.CSSProperties
-      }
-    >
-      <AdminSidebar recentTasks={recentTasks} />
-      <SidebarInset className="bg-background outline-none focus:outline-none">
-        <Header />
-        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <CreditProvider>
+      <SidebarProvider
+        defaultOpen={true}
+        className="bg-background outline-none focus:outline-none"
+        style={
+          {
+            fontFamily: "'Satoshi', sans-serif",
+            "--sidebar-width": "16rem",
+            "--sidebar-width-icon": "3rem",
+          } as React.CSSProperties
+        }
+      >
+        <AdminSidebar recentTasks={recentTasks} />
+        <SidebarInset className="bg-background outline-none focus:outline-none">
+          <Header />
+          <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </CreditProvider>
   );
 }
