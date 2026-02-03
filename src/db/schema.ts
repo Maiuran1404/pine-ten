@@ -777,6 +777,12 @@ export const deliverableStyleReferences = pgTable(
     // Example output for preview
     exampleOutputUrl: text("example_output_url"), // URL to an example of generated output using this style
 
+    // Video support (for launch video references)
+    videoUrl: text("video_url"), // YouTube or other video URL for video style references
+    videoThumbnailUrl: text("video_thumbnail_url"), // Cached thumbnail URL from video
+    videoDuration: text("video_duration"), // Video duration e.g., "1:30"
+    videoTags: jsonb("video_tags").$type<string[]>().default([]), // Tags for video categorization
+
     // Ordering
     featuredOrder: integer("featured_order").notNull().default(0),
     displayOrder: integer("display_order").notNull().default(0),
@@ -2087,101 +2093,3 @@ export const tasksBriefsRelation = relations(tasks, ({ one }) => ({
     references: [briefs.taskId],
   }),
 }));
-
-// ============================================
-// Early Access / Invite Code Tables
-// ============================================
-
-// Early access codes - stores valid invite codes
-export const earlyAccessCodes = pgTable(
-  "early_access_codes",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    code: text("code").notNull().unique(), // e.g., "EARLY-ABC123"
-    description: text("description"), // Admin note
-    maxUses: integer("max_uses"), // null = unlimited
-    usedCount: integer("used_count").notNull().default(0),
-    expiresAt: timestamp("expires_at"), // null = never expires
-    isActive: boolean("is_active").notNull().default(true),
-    createdBy: text("created_by").references(() => users.id, {
-      onDelete: "set null",
-    }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("early_access_codes_code_idx").on(table.code),
-    index("early_access_codes_is_active_idx").on(table.isActive),
-  ]
-);
-
-// Early access waitlist status enum
-export const waitlistStatusEnum = pgEnum("waitlist_status", [
-  "PENDING",
-  "INVITED",
-  "REGISTERED",
-]);
-
-// Early access waitlist - collects emails from interested users
-export const earlyAccessWaitlist = pgTable(
-  "early_access_waitlist",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    email: text("email").notNull().unique(),
-    name: text("name"),
-    referralSource: text("referral_source"), // "google", "twitter", etc.
-    status: waitlistStatusEnum("status").notNull().default("PENDING"),
-    invitedAt: timestamp("invited_at"), // When they were sent an invite
-    registeredAt: timestamp("registered_at"), // When they actually registered
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("early_access_waitlist_email_idx").on(table.email),
-    index("early_access_waitlist_status_idx").on(table.status),
-  ]
-);
-
-// Early access code usages - tracks which user used which code
-export const earlyAccessCodeUsages = pgTable(
-  "early_access_code_usages",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    codeId: uuid("code_id")
-      .notNull()
-      .references(() => earlyAccessCodes.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    usedAt: timestamp("used_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("early_access_code_usages_code_id_idx").on(table.codeId),
-    index("early_access_code_usages_user_id_idx").on(table.userId),
-  ]
-);
-
-// Relations for early access tables
-export const earlyAccessCodesRelations = relations(
-  earlyAccessCodes,
-  ({ one, many }) => ({
-    creator: one(users, {
-      fields: [earlyAccessCodes.createdBy],
-      references: [users.id],
-    }),
-    usages: many(earlyAccessCodeUsages),
-  })
-);
-
-export const earlyAccessCodeUsagesRelations = relations(
-  earlyAccessCodeUsages,
-  ({ one }) => ({
-    code: one(earlyAccessCodes, {
-      fields: [earlyAccessCodeUsages.codeId],
-      references: [earlyAccessCodes.id],
-    }),
-    user: one(users, {
-      fields: [earlyAccessCodeUsages.userId],
-      references: [users.id],
-    }),
-  })
-);

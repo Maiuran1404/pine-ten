@@ -31,7 +31,6 @@ import {
   Image,
   Sparkles,
   Brain,
-  KeyRound,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -88,11 +87,6 @@ const navigationGroups: NavigationGroup[] = [
         name: "Artists",
         href: "/admin/freelancers",
         icon: UserCheck,
-      },
-      {
-        name: "Early Access",
-        href: "/admin/early-access",
-        icon: KeyRound,
       },
     ],
   },

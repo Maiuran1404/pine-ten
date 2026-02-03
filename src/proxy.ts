@@ -74,7 +74,6 @@ function getSubdomain(request: NextRequest): SubdomainType | null {
 const publicPaths = [
   "/login",
   "/register",
-  "/waitlist",
   "/onboarding",
   "/auth-error",
   "/api/auth",
@@ -82,7 +81,6 @@ const publicPaths = [
   "/api/health",
   "/api/openapi",
   "/api-docs",
-  "/api/early-access",
   "/_next",
   "/favicon.ico",
   "/robots.txt",

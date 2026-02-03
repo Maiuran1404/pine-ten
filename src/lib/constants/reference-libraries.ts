@@ -28,9 +28,58 @@ export const DELIVERABLE_TYPES = [
   { value: "web_banner", label: "Web Banner" },
   { value: "static_ad", label: "Static Ad" },
   { value: "video_ad", label: "Video Ad" },
+  { value: "launch_video", label: "Launch Video" },
   { value: "logo", label: "Logo" },
   { value: "brand_identity", label: "Brand Identity" },
 ] as const;
+
+// Video deliverable types (these use video references)
+export const VIDEO_DELIVERABLE_TYPES = [
+  "instagram_reel",
+  "video_ad",
+  "launch_video",
+] as const;
+
+export type VideoDeliverableType = (typeof VIDEO_DELIVERABLE_TYPES)[number];
+
+// Common video style tags for categorization
+export const VIDEO_STYLE_TAGS = [
+  // Style categories
+  "cinematic",
+  "documentary",
+  "animated",
+  "motion-graphics",
+  "live-action",
+  "mixed-media",
+  // Pace/Energy
+  "fast-paced",
+  "slow-motion",
+  "dynamic",
+  "calm",
+  // Mood
+  "inspirational",
+  "dramatic",
+  "playful",
+  "professional",
+  "emotional",
+  "exciting",
+  // Industry
+  "tech",
+  "saas",
+  "ecommerce",
+  "lifestyle",
+  "corporate",
+  "startup",
+  // Format
+  "product-showcase",
+  "testimonial",
+  "explainer",
+  "teaser",
+  "announcement",
+  "brand-story",
+] as const;
+
+export type VideoStyleTag = (typeof VIDEO_STYLE_TAGS)[number];
 
 export type DeliverableType = (typeof DELIVERABLE_TYPES)[number]["value"];
 
@@ -132,6 +181,15 @@ export const DELIVERABLE_TYPE_ALIASES: Record<string, DeliverableType> = {
   // LinkedIn variations
   linkedin_ad: "static_ad",
   linkedin_carousel: "linkedin_post",
+
+  // Video variations
+  product_video: "launch_video",
+  promo_video: "launch_video",
+  promotional_video: "launch_video",
+  brand_video: "launch_video",
+  marketing_video: "launch_video",
+  commercial: "launch_video",
+  video: "launch_video",
 
   // Generic variations
   social_post: "instagram_post",
