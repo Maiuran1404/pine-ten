@@ -70,13 +70,14 @@ export function StyleSelectionGrid({
               key={style.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.05, zIndex: 10 }}
               transition={{ duration: 0.2, delay: index * 0.05 }}
               onClick={() => handleCardClick(style)}
               className={cn(
-                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
+                "group relative aspect-[4/5] rounded-xl overflow-hidden transition-shadow duration-200",
                 isSelected
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                  : "hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
+                  : "hover:shadow-2xl hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
               )}
             >
               {/* Image */}
@@ -84,17 +85,17 @@ export function StyleSelectionGrid({
               <img
                 src={style.imageUrl}
                 alt={style.name}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "https://via.placeholder.com/400x500?text=Style";
                 }}
               />
 
-              {/* Hover overlay with name */}
+              {/* Hover overlay with name - only visible on hover */}
               <div
                 className={cn(
-                  "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent",
+                  "absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent",
                   "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                   isSelected && "opacity-100"
                 )}
