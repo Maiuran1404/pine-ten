@@ -41,7 +41,6 @@ import {
   Tag,
   FileText,
   Activity,
-  ChevronRight,
   PanelRightClose,
   PanelRight,
   User,
@@ -2654,7 +2653,10 @@ export function ChatInterface({
                             <div className="mt-4 ml-8">
                               <TaskProposalCard
                                 proposal={message.taskProposal}
-                                showActions={pendingTask?.title === message.taskProposal.title}
+                                showActions={
+                                  pendingTask?.title ===
+                                  message.taskProposal.title
+                                }
                                 onSubmit={handleOpenSubmissionModal}
                                 onMakeChanges={handleRejectTask}
                                 isLoading={isLoading}
@@ -2750,47 +2752,56 @@ export function ChatInterface({
                 requestStartTime={requestStartTimeRef.current}
               />
             )}
+
+            {/* Inline submit prompt - shown as an AI message when ready to submit */}
+            {!isLoading && !pendingTask && !isTaskMode && (
+              <>
+                {/* Show when AI indicates ready or user has enough context */}
+                {(showManualSubmit ||
+                  (moodboardItems.length > 0 &&
+                    messages.filter((m) => m.role === "user").length >= 2)) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex justify-start"
+                  >
+                    <div className="group max-w-[85%] flex items-start gap-3">
+                      {/* Sparkle avatar - matching assistant messages */}
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {/* Message bubble with submit prompt */}
+                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                          <p className="text-sm text-foreground mb-3">
+                            {showManualSubmit
+                              ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
+                              : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={handleRequestTaskSummary}
+                              disabled={isLoading}
+                              size="sm"
+                              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              Generate Summary
+                            </Button>
+                            <span className="text-xs text-muted-foreground self-center">
+                              or keep chatting to add more details
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </>
+            )}
           </div>
         </ScrollArea>
-
-        {/* Skip to Submit option - shows when user has styles selected and some context */}
-        {!pendingTask &&
-          !showManualSubmit &&
-          moodboardItems.length > 0 &&
-          messages.filter((m) => m.role === "user").length >= 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-center mb-3"
-            >
-              <button
-                onClick={handleRequestTaskSummary}
-                disabled={isLoading}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 disabled:opacity-50"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-                Skip to submit
-              </button>
-            </motion.div>
-          )}
-
-        {/* Manual submit prompt - now shown inline in chat via quick action */}
-        {showManualSubmit && !pendingTask && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-3"
-          >
-            <button
-              onClick={handleRequestTaskSummary}
-              disabled={isLoading}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 bg-amber-500/10 border border-amber-500/20 disabled:opacity-50"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              Ready to submit? Generate summary
-            </button>
-          </motion.div>
-        )}
 
         {/* Input area */}
         <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
