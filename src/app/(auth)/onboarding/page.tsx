@@ -3822,6 +3822,38 @@ function OnboardingContent() {
     }
   }, [route, step]);
 
+  // Handle early access code for Google OAuth signups
+  useEffect(() => {
+    if (typeof window === "undefined" || !session?.user) return;
+
+    const earlyAccessCode = sessionStorage.getItem("earlyAccessCode");
+    const codeUsed = sessionStorage.getItem("earlyAccessCodeUsed");
+
+    // If we have a code and haven't used it yet, use it now
+    if (earlyAccessCode && !codeUsed) {
+      const useCode = async () => {
+        try {
+          await fetch("/api/early-access/use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: earlyAccessCode,
+              userId: session.user.id,
+              email: session.user.email,
+            }),
+          });
+          // Mark as used so we don't try again
+          sessionStorage.setItem("earlyAccessCodeUsed", "true");
+          // Clean up the code
+          sessionStorage.removeItem("earlyAccessCode");
+        } catch (e) {
+          console.error("Failed to record early access code usage:", e);
+        }
+      };
+      useCode();
+    }
+  }, [session]);
+
   // Clear sessionStorage when onboarding is completed
   const clearOnboardingState = useCallback(() => {
     if (typeof window !== "undefined") {

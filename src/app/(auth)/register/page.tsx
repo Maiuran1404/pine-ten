@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { useDebouncedCallback } from "use-debounce";
 
 import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
 import { signUp, signIn, useSession } from "@/lib/auth-client";
@@ -21,6 +22,14 @@ const registerSchema = z.object({
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+// Type for early access code validation response
+type CodeValidationResult = {
+  valid: boolean;
+  error?: string;
+  codeId?: string;
+  description?: string;
+};
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -113,10 +122,74 @@ function RegisterContent() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Early access code state
+  const [earlyAccessCode, setEarlyAccessCode] = useState("");
+  const [codeValidation, setCodeValidation] = useState<{
+    status: "idle" | "validating" | "valid" | "invalid";
+    message?: string;
+    codeId?: string;
+  }>({ status: "idle" });
+
+  // Get code from URL if provided
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl) {
+      setEarlyAccessCode(codeFromUrl.toUpperCase());
+    }
+  }, [searchParams]);
+
+  // Debounced code validation
+  const validateCode = useDebouncedCallback(async (code: string) => {
+    if (!code || code.length < 3) {
+      setCodeValidation({ status: "idle" });
+      return;
+    }
+
+    setCodeValidation({ status: "validating" });
+
+    try {
+      const response = await fetch("/api/early-access/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      const data: CodeValidationResult = await response.json();
+
+      if (data.valid) {
+        setCodeValidation({
+          status: "valid",
+          message: data.description || "Valid invite code",
+          codeId: data.codeId,
+        });
+      } else {
+        setCodeValidation({
+          status: "invalid",
+          message: data.error || "Invalid code",
+        });
+      }
+    } catch {
+      setCodeValidation({
+        status: "invalid",
+        message: "Failed to validate code",
+      });
+    }
+  }, 500);
+
+  // Handle code input change
+  const handleCodeChange = (value: string) => {
+    const normalized = value.toUpperCase().trim();
+    setEarlyAccessCode(normalized);
+    validateCode(normalized);
+  };
+
   // Determine account type based on portal
   const isArtistPortal = portal.type === "artist";
   const accountType = isArtistPortal ? "freelancer" : "client";
   const showSocialLogin = true; // Enable Google sign-in for all portals
+
+  // Check if registration is allowed (valid code)
+  const canRegister = codeValidation.status === "valid";
 
   // Get redirect destination
   const getRedirectUrl = () => {
@@ -149,6 +222,12 @@ function RegisterContent() {
   });
 
   async function onSubmit(data: RegisterForm) {
+    // Validate early access code before proceeding
+    if (!canRegister) {
+      toast.error("Please enter a valid invite code to register");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -162,6 +241,24 @@ function RegisterContent() {
         toast.error(result.error.message || "Failed to create account");
         setIsLoading(false);
         return;
+      }
+
+      // Record the early access code usage
+      if (result.data?.user?.id) {
+        try {
+          await fetch("/api/early-access/use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: earlyAccessCode,
+              userId: result.data.user.id,
+              email: data.email,
+            }),
+          });
+        } catch (e) {
+          console.error("Failed to record code usage:", e);
+          // Don't block registration if code usage recording fails
+        }
       }
 
       // Note: Don't set role to FREELANCER here - let the onboarding API handle it
@@ -182,8 +279,17 @@ function RegisterContent() {
   }
 
   async function handleGoogleSignIn() {
+    // Validate early access code before proceeding
+    if (!canRegister) {
+      toast.error("Please enter a valid invite code to register");
+      return;
+    }
+
     setIsGoogleLoading(true);
     try {
+      // Store the code in sessionStorage so we can use it after OAuth callback
+      sessionStorage.setItem("earlyAccessCode", earlyAccessCode);
+
       // For Google sign-up, we'll redirect to onboarding after auth
       // Artists go to freelancer onboarding
       const callbackURL = isArtistPortal
@@ -247,7 +353,56 @@ function RegisterContent() {
               {isArtistPortal ? "Welcome to Crafted for Artists" : `Welcome to ${portal.name}`}
             </h1>
             <p className="text-white/50 text-sm">
-              Begin by creating an account
+              Enter your invite code to create an account
+            </p>
+          </div>
+
+          {/* Early Access Code Field */}
+          <div className="mb-6">
+            <div
+              className="relative rounded-xl overflow-hidden"
+              style={{
+                background: "rgba(40, 40, 40, 0.6)",
+                border: codeValidation.status === "invalid"
+                  ? "1px solid rgba(239, 68, 68, 0.5)"
+                  : codeValidation.status === "valid"
+                  ? "1px solid rgba(34, 197, 94, 0.5)"
+                  : "1px solid rgba(255, 255, 255, 0.12)",
+              }}
+            >
+              <label className="absolute left-4 top-2.5 text-xs text-white/40">
+                Invite Code
+              </label>
+              <input
+                type="text"
+                value={earlyAccessCode}
+                onChange={(e) => handleCodeChange(e.target.value)}
+                className="w-full bg-transparent pt-7 pb-3 px-4 pr-12 text-white placeholder:text-white/30 focus:outline-none text-sm font-mono tracking-wider"
+                placeholder="EARLY-XXXXXX"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                {codeValidation.status === "validating" && (
+                  <Loader2 className="w-4 h-4 text-white/40 animate-spin" />
+                )}
+                {codeValidation.status === "valid" && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+                {codeValidation.status === "invalid" && (
+                  <XCircle className="w-4 h-4 text-red-400" />
+                )}
+              </div>
+            </div>
+            {codeValidation.status === "invalid" && codeValidation.message && (
+              <p className="text-xs text-red-400 px-1 mt-2">{codeValidation.message}</p>
+            )}
+            {codeValidation.status === "valid" && codeValidation.message && (
+              <p className="text-xs text-green-500/70 px-1 mt-2">{codeValidation.message}</p>
+            )}
+            <p className="text-xs text-white/30 px-1 mt-2">
+              No code?{" "}
+              <Link href="/waitlist" className="text-[#8bb58b] hover:text-[#a8d4a8] underline underline-offset-2">
+                Join the waitlist
+              </Link>
             </p>
           </div>
 
@@ -257,8 +412,8 @@ function RegisterContent() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
-                className="w-full py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-3 mb-6 disabled:opacity-70"
+                disabled={isGoogleLoading || !canRegister}
+                className="w-full py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-3 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "rgba(40, 40, 40, 0.6)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
@@ -392,10 +547,10 @@ function RegisterContent() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-70"
+              disabled={isLoading || !canRegister}
+              className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: "#f5f5f0",
+                background: canRegister ? "#f5f5f0" : "rgba(245, 245, 240, 0.5)",
                 color: "#1a1a1a",
               }}
             >
