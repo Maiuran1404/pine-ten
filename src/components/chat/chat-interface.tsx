@@ -2620,8 +2620,32 @@ export function ChatInterface({
       creditsRequired,
     };
 
-    // Set pending task - this will show the Task Confirmation Bar
+    // Add an AI message with the task proposal so it appears as a chat bubble
+    const summaryMessage: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content:
+        "Here's a summary of your design brief. Review the details below and submit when you're ready!",
+      taskProposal: constructedTask,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, summaryMessage]);
+
+    // Set pending task - this enables the submit actions on the TaskProposalCard
     setPendingTask(constructedTask);
+
+    // Scroll to bottom to show the new message
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector(
+          "[data-radix-scroll-area-viewport]"
+        );
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+      }
+    }, 100);
   };
 
   // Generate smart chat title
