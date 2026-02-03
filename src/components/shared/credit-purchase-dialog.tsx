@@ -85,11 +85,16 @@ export function CreditPurchaseDialog({
     try {
       // Save pending task state to sessionStorage so we can restore it after payment
       if (pendingTaskState) {
-        sessionStorage.setItem("pending_task_state", JSON.stringify(pendingTaskState));
+        sessionStorage.setItem(
+          "pending_task_state",
+          JSON.stringify(pendingTaskState)
+        );
       }
 
-      // Get current URL path to return to after payment (without query params)
-      const currentPath = returnUrl || window.location.pathname;
+      // Get current URL INCLUDING query params (like draft ID) to return to after payment
+      // This ensures the user returns to the same draft context
+      const currentPath =
+        returnUrl || window.location.pathname + window.location.search;
 
       const response = await fetch("/api/webhooks/stripe/checkout", {
         method: "POST",
@@ -113,9 +118,9 @@ export function CreditPurchaseDialog({
   };
 
   // Find recommended package (smallest that covers the need)
-  const recommendedPackage = creditPackages.find(
-    (pkg) => pkg.credits >= creditsNeeded
-  ) || creditPackages[creditPackages.length - 1];
+  const recommendedPackage =
+    creditPackages.find((pkg) => pkg.credits >= creditsNeeded) ||
+    creditPackages[creditPackages.length - 1];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,8 +134,12 @@ export function CreditPurchaseDialog({
           <DialogDescription>
             {creditsNeeded > 0 ? (
               <>
-                You need <span className="font-semibold text-foreground">{creditsNeeded} more credits</span> to submit this task.
-                Your current balance is {currentCredits} credits.
+                You need{" "}
+                <span className="font-semibold text-foreground">
+                  {creditsNeeded} more credits
+                </span>{" "}
+                to submit this task. Your current balance is {currentCredits}{" "}
+                credits.
               </>
             ) : (
               "Select a credit package to continue creating design tasks."
@@ -140,7 +149,8 @@ export function CreditPurchaseDialog({
 
         <div className="grid gap-3 py-4">
           {creditPackages.map((pkg) => {
-            const isRecommended = pkg.id === recommendedPackage.id && creditsNeeded > 0;
+            const isRecommended =
+              pkg.id === recommendedPackage.id && creditsNeeded > 0;
 
             return (
               <div
@@ -153,10 +163,14 @@ export function CreditPurchaseDialog({
                 onClick={() => !isLoading && handlePurchase(pkg.id)}
               >
                 <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-full",
-                    isRecommended ? "bg-primary text-primary-foreground" : "bg-muted"
-                  )}>
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-full",
+                      isRecommended
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    )}
+                  >
                     {isRecommended ? (
                       <Zap className="h-5 w-5" />
                     ) : (
@@ -165,7 +179,9 @@ export function CreditPurchaseDialog({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{pkg.credits} credits</span>
+                      <span className="font-semibold">
+                        {pkg.credits} credits
+                      </span>
                       {pkg.popular && (
                         <Badge variant="secondary" className="text-xs">
                           <Sparkles className="h-3 w-3 mr-1" />
@@ -173,14 +189,15 @@ export function CreditPurchaseDialog({
                         </Badge>
                       )}
                       {pkg.discount && (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                        <Badge
+                          variant="outline"
+                          className="text-xs text-green-600 border-green-600"
+                        >
                           {pkg.discount}
                         </Badge>
                       )}
                       {isRecommended && (
-                        <Badge className="text-xs">
-                          Recommended
-                        </Badge>
+                        <Badge className="text-xs">Recommended</Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">

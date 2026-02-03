@@ -1331,6 +1331,8 @@ export function ChatInterface({
         deliverableStyles: m.deliverableStyles,
         deliverableStyleMarker: m.deliverableStyleMarker,
         selectedStyle: m.selectedStyle,
+        taskProposal: m.taskProposal, // Save task proposal with message
+        videoReferences: m.videoReferences, // Save video references with message
       })),
       selectedStyles,
       moodboardItems: moodboardItems.map((item) => ({
@@ -1385,13 +1387,18 @@ export function ChatInterface({
           const { taskProposal } = JSON.parse(savedState);
           sessionStorage.removeItem("pending_task_state");
 
-          // Restore pending task
+          // Restore pending task and automatically open submission modal
           if (taskProposal) {
             setPendingTask(taskProposal);
-            toast.info(
-              "Your task is ready to submit. Click 'Confirm & Submit' to proceed.",
-              { duration: 5000 }
-            );
+            // Automatically open submission modal after a brief delay to let state settle
+            // This provides a seamless flow after purchasing credits
+            setTimeout(() => {
+              setShowSubmissionModal(true);
+              toast.success(
+                "Credits purchased! Review your task and click Submit.",
+                { duration: 5000 }
+              );
+            }, 500);
           }
         }
       } catch {

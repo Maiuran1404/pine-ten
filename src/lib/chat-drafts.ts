@@ -2,7 +2,7 @@
 
 export interface MoodboardItemData {
   id: string;
-  type: 'style' | 'color' | 'image' | 'upload';
+  type: "style" | "color" | "image" | "upload";
   imageUrl: string;
   name: string;
   metadata?: {
@@ -61,6 +61,27 @@ export interface ChatDraft {
       subStyle: string | null;
       semanticTags: string[];
     };
+    taskProposal?: {
+      title: string;
+      description: string;
+      category: string;
+      estimatedHours: number;
+      deliveryDays?: number;
+      creditsRequired: number;
+      deadline?: string;
+    };
+    videoReferences?: {
+      id: string;
+      name: string;
+      description: string | null;
+      imageUrl: string;
+      videoUrl: string;
+      videoThumbnailUrl?: string | null;
+      videoDuration?: string | null;
+      videoTags?: string[];
+      deliverableType: string;
+      styleAxis: string;
+    }[];
   }[];
   selectedStyles: string[];
   moodboardItems?: MoodboardItemData[];
@@ -109,10 +130,15 @@ function deduplicateDrafts(drafts: ChatDraft[]): ChatDraft[] {
   for (const draft of drafts) {
     // Create a key based on title (without the time suffix) and approximate creation time
     // Strip the time/date suffix (e.g., " · 12:46 pm" or " · Jan 20")
-    const titleBase = draft.title.replace(/\s*·\s*[\d:apm]+\s*$/i, "").replace(/\s*·\s*\w+\s+\d+\s*$/i, "").trim();
+    const titleBase = draft.title
+      .replace(/\s*·\s*[\d:apm]+\s*$/i, "")
+      .replace(/\s*·\s*\w+\s+\d+\s*$/i, "")
+      .trim();
 
     // Get creation time rounded to nearest 5 minutes
-    const createdTime = draft.createdAt ? new Date(draft.createdAt).getTime() : 0;
+    const createdTime = draft.createdAt
+      ? new Date(draft.createdAt).getTime()
+      : 0;
     const roundedTime = Math.floor(createdTime / (5 * 60 * 1000));
 
     const key = `${titleBase}_${roundedTime}`;
@@ -222,15 +248,17 @@ export async function fetchAndSyncDrafts(): Promise<ChatDraft[]> {
     if (!response.ok) throw new Error("Failed to fetch");
 
     const data = await response.json();
-    const serverDrafts: ChatDraft[] = data.drafts.map((d: Record<string, unknown>) => ({
-      id: d.id,
-      title: d.title,
-      messages: d.messages,
-      selectedStyles: d.selectedStyles,
-      pendingTask: d.pendingTask,
-      createdAt: d.createdAt,
-      updatedAt: d.updatedAt,
-    }));
+    const serverDrafts: ChatDraft[] = data.drafts.map(
+      (d: Record<string, unknown>) => ({
+        id: d.id,
+        title: d.title,
+        messages: d.messages,
+        selectedStyles: d.selectedStyles,
+        pendingTask: d.pendingTask,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+      })
+    );
 
     // Update local storage with server data
     setLocalDrafts(serverDrafts);
@@ -272,14 +300,33 @@ export function generateDraftTitle(
 
   // Extract key terms for a more meaningful title
   const deliverableTypes = [
-    "instagram", "linkedin", "facebook", "twitter", "tiktok",
-    "post", "story", "reel", "carousel", "ad", "banner",
-    "logo", "brand", "video"
+    "instagram",
+    "linkedin",
+    "facebook",
+    "twitter",
+    "tiktok",
+    "post",
+    "story",
+    "reel",
+    "carousel",
+    "ad",
+    "banner",
+    "logo",
+    "brand",
+    "video",
   ];
 
   const purposeWords = [
-    "launch", "announcement", "promotion", "sale", "event",
-    "campaign", "marketing", "showcase", "reveal", "update"
+    "launch",
+    "announcement",
+    "promotion",
+    "sale",
+    "event",
+    "campaign",
+    "marketing",
+    "showcase",
+    "reveal",
+    "update",
   ];
 
   const lowerContent = firstMessage.toLowerCase();
@@ -295,24 +342,34 @@ export function generateDraftTitle(
 
   if (foundType && foundPurpose) {
     // Capitalize first letters
-    const typeCapitalized = foundType.charAt(0).toUpperCase() + foundType.slice(1);
-    const purposeCapitalized = foundPurpose.charAt(0).toUpperCase() + foundPurpose.slice(1);
+    const typeCapitalized =
+      foundType.charAt(0).toUpperCase() + foundType.slice(1);
+    const purposeCapitalized =
+      foundPurpose.charAt(0).toUpperCase() + foundPurpose.slice(1);
     title = `${typeCapitalized} - ${purposeCapitalized}`;
   } else if (foundType) {
-    const typeCapitalized = foundType.charAt(0).toUpperCase() + foundType.slice(1);
+    const typeCapitalized =
+      foundType.charAt(0).toUpperCase() + foundType.slice(1);
     title = `${typeCapitalized} Design`;
   } else {
     // Fall back to truncated first message
-    title = firstMessage.length > 40 ? firstMessage.substring(0, 37) + "..." : firstMessage;
+    title =
+      firstMessage.length > 40
+        ? firstMessage.substring(0, 37) + "..."
+        : firstMessage;
   }
 
   // Try to extract product/brand name or key subject for more specificity
   // Look for quoted text, capitalized words, or specific nouns
   const quotedMatch = firstMessage.match(/"([^"]+)"|'([^']+)'/);
-  const keySubject = quotedMatch ? (quotedMatch[1] || quotedMatch[2]) : null;
+  const keySubject = quotedMatch ? quotedMatch[1] || quotedMatch[2] : null;
 
   // Add key subject if found and short enough
-  if (keySubject && keySubject.length < 20 && !title.toLowerCase().includes(keySubject.toLowerCase())) {
+  if (
+    keySubject &&
+    keySubject.length < 20 &&
+    !title.toLowerCase().includes(keySubject.toLowerCase())
+  ) {
     title = `${title} - ${keySubject}`;
   }
 
@@ -320,7 +377,8 @@ export function generateDraftTitle(
   if (!keySubject && moodboardItems && moodboardItems.length > 0) {
     const firstStyle = moodboardItems[0];
     if (firstStyle.metadata?.styleAxis) {
-      const axis = firstStyle.metadata.styleAxis.charAt(0).toUpperCase() +
+      const axis =
+        firstStyle.metadata.styleAxis.charAt(0).toUpperCase() +
         firstStyle.metadata.styleAxis.slice(1).replace(/_/g, " ");
       // Only add if it doesn't make title too long
       if (title.length + axis.length < 50) {
@@ -336,11 +394,13 @@ export function generateDraftTitle(
 
   if (isToday) {
     // Show time if created today (e.g., "2:30pm")
-    const timeStr = date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).toLowerCase();
+    const timeStr = date
+      .toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
     title = `${title} · ${timeStr}`;
   } else {
     // Show date (e.g., "Jan 20")
