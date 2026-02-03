@@ -1078,7 +1078,9 @@ export function ChatInterface({
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
+            attachments: m.attachments,
           })),
+          attachments: currentFiles.length > 0 ? currentFiles : undefined,
           selectedStyles,
           moodboardHasStyles,
         }),
