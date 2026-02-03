@@ -29,6 +29,11 @@ import {
   detectBrandMention,
   analyzeRequestCompleteness,
 } from "@/lib/ai/inference-engine";
+import {
+  getVideoReferencesForChat,
+  isVideoDeliverableType,
+  type VideoReference,
+} from "@/lib/ai/video-references";
 import type {
   DeliverableType,
   StyleAxis,
@@ -535,6 +540,21 @@ async function handler(request: NextRequest) {
       ) {
         detectedType = "linkedin_post";
       } else if (
+        combinedContext.includes("launch video") ||
+        combinedContext.includes("product video") ||
+        combinedContext.includes("promo video") ||
+        combinedContext.includes("promotional video") ||
+        combinedContext.includes("marketing video") ||
+        combinedContext.includes("brand video") ||
+        combinedContext.includes("commercial")
+      ) {
+        detectedType = "launch_video";
+      } else if (
+        combinedContext.includes("video ad") ||
+        combinedContext.includes("video advertisement")
+      ) {
+        detectedType = "video_ad";
+      } else if (
         combinedContext.includes("ad") ||
         combinedContext.includes("banner") ||
         combinedContext.includes("promotion")
@@ -710,6 +730,29 @@ async function handler(request: NextRequest) {
       }
     }
 
+    // Get video references for video deliverable types
+    let videoReferences: VideoReference[] | undefined = undefined;
+    if (deliverableStyleMarker) {
+      const normalizedType = normalizeDeliverableType(
+        deliverableStyleMarker.deliverableType
+      );
+      if (isVideoDeliverableType(normalizedType)) {
+        try {
+          const lastUserMessage = messages[messages.length - 1]?.content || "";
+          videoReferences = await getVideoReferencesForChat(
+            normalizedType,
+            lastUserMessage,
+            6
+          );
+          console.log(
+            `[Chat API] Fetched ${videoReferences.length} video references for ${normalizedType}`
+          );
+        } catch (err) {
+          console.error("Error fetching video references:", err);
+        }
+      }
+    }
+
     // Auto-generate quick options from deliverable styles if AI didn't provide any
     let quickOptions = response.quickOptions;
     if (!quickOptions && deliverableStyles && deliverableStyles.length > 0) {
@@ -733,6 +776,7 @@ async function handler(request: NextRequest) {
       deliverableStyleMarker,
       selectedStyles,
       quickOptions,
+      videoReferences, // Video style references for launch videos, video ads, etc.
     });
   } catch (error) {
     console.error("Chat error:", error);

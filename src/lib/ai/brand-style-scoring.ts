@@ -35,7 +35,8 @@ const DELIVERABLE_TYPE_FALLBACKS: Partial<
   brand_identity: ["static_ad", "instagram_post"],
   instagram_reel: ["instagram_story", "instagram_post"],
   youtube_thumbnail: ["static_ad", "instagram_post"],
-  video_ad: ["static_ad", "instagram_post"],
+  video_ad: ["launch_video", "static_ad", "instagram_post"],
+  launch_video: ["video_ad", "instagram_reel", "static_ad"],
   linkedin_banner: ["web_banner", "static_ad"],
 };
 

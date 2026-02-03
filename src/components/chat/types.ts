@@ -59,6 +59,24 @@ export interface DeliverableStyle {
   matchReason?: string;
 }
 
+export interface VideoReference {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string;
+  videoUrl: string;
+  videoThumbnailUrl?: string | null;
+  videoDuration?: string | null;
+  videoTags?: string[];
+  deliverableType: string;
+  styleAxis: string;
+  subStyle?: string | null;
+  semanticTags?: string[];
+  brandMatchScore?: number;
+  matchReason?: string;
+  isVideoReference?: boolean;
+}
+
 export interface DeliverableStyleMarker {
   type: "initial" | "more" | "different";
   deliverableType: string;
@@ -84,6 +102,7 @@ export interface ChatMessage {
   styleReferences?: StyleReference[];
   deliverableStyles?: DeliverableStyle[];
   deliverableStyleMarker?: DeliverableStyleMarker;
+  videoReferences?: VideoReference[]; // Video style references for launch videos, video ads, etc.
   taskProposal?: TaskProposal;
   attachments?: UploadedFile[];
   quickOptions?: QuickOptions;

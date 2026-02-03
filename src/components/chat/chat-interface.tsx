@@ -89,6 +89,7 @@ import {
   type StyleReference,
   type DeliverableStyle,
   type DeliverableStyleMarker,
+  type VideoReference,
   type TaskProposal,
   type ChatMessage as Message,
   type MoodboardItem,
@@ -99,6 +100,7 @@ import { TaskProposalCard } from "./task-proposal-card";
 import { FileAttachmentList } from "./file-attachment";
 import { QuickOptions } from "./quick-options";
 import { DeliverableStyleGrid } from "./deliverable-style-grid";
+import { VideoReferenceGrid } from "./video-reference-grid";
 import { ChatLayout } from "./chat-layout";
 import { StyleSelectionGrid } from "./style-selection-grid";
 import { StyleDetailModal } from "./style-detail-modal";
@@ -1258,6 +1260,7 @@ export function ChatInterface({
           styleReferences: data.styleReferences,
           deliverableStyles: data.deliverableStyles,
           deliverableStyleMarker: data.deliverableStyleMarker,
+          videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions,
         };
@@ -1638,6 +1641,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -1699,6 +1703,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -2051,6 +2056,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -2140,6 +2146,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -2228,6 +2235,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -2299,6 +2307,7 @@ export function ChatInterface({
         styleReferences: data.styleReferences,
         deliverableStyles: data.deliverableStyles,
         deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions,
       };
@@ -3236,6 +3245,24 @@ export function ChatInterface({
                                     )}
                                   </div>
                                 )}
+                              </motion.div>
+                            )}
+
+                          {/* Video References - for launch videos and video ads */}
+                          {message.videoReferences &&
+                            message.videoReferences.length > 0 &&
+                            (animatingMessageId !== message.id ||
+                              completedTypingIds.has(message.id)) && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: 0.2 }}
+                                className="mt-5 ml-8"
+                              >
+                                <VideoReferenceGrid
+                                  videos={message.videoReferences}
+                                  title="Video Style References"
+                                />
                               </motion.div>
                             )}
 
