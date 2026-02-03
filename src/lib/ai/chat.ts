@@ -91,16 +91,15 @@ TYPE MAPPING:
 - Branding → brand_identity
 
 RESPONSE FORMAT (when showing styles):
-Write 1-2 sentences of creative direction, then end with the marker. Do NOT ask a question - the styles ARE the question.
+Write 1-2 sentences of creative direction, then ask which style they prefer.
 Example:
-"For a cinematic product introduction, we'll craft something that feels like a movie trailer for your brand."
+"For a cinematic product introduction, we'll craft something that feels like a movie trailer for your brand. Which of these styles catches your eye?"
 [DELIVERABLE_STYLES: instagram_reel]
 
 RULES:
-- 15-30 words max before the marker
+- 20-40 words max before the marker
 - No exclamation marks
-- ONE question per response maximum
-- When showing styles, do NOT also ask a question - the style selection IS the question
+- When showing styles, ALWAYS ask which one they prefer (e.g., "Which of these speaks to you?" or "Which style fits your vision?")
 - Always end with the [DELIVERABLE_STYLES: type] marker when you have enough context`;
 
 function getSystemPrompt(): string {
@@ -125,7 +124,8 @@ IF THE REQUEST IS COMPLETELY UNCLEAR:
 ABSOLUTE REQUIREMENTS:
 1. If user mentions ANY content type or describes what they want → ALWAYS include [DELIVERABLE_STYLES: type]
 2. The marker MUST be on its own line at the end of your response
-3. 15-30 words max, no exclamation marks`;
+3. 20-40 words max, no exclamation marks
+4. When showing styles, always end with a question like "Which of these resonates with you?" or "Which style do you prefer?"`;
 }
 
 export interface ChatMessage {
