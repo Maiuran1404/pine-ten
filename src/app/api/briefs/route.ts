@@ -8,7 +8,8 @@ import type { LiveBrief, Dimension } from "@/components/chat/brief-panel/types";
 import { calculateBriefCompletion } from "@/components/chat/brief-panel/types";
 
 // UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isValidUUID(str: string | null | undefined): boolean {
   if (!str) return false;
@@ -34,10 +35,7 @@ export async function GET(request: NextRequest) {
     // Get specific brief by ID
     if (briefId) {
       const brief = await db.query.briefs.findFirst({
-        where: and(
-          eq(briefs.id, briefId),
-          eq(briefs.userId, session.user.id)
-        ),
+        where: and(eq(briefs.id, briefId), eq(briefs.userId, session.user.id)),
       });
 
       if (!brief) {
@@ -107,7 +105,10 @@ export async function POST(request: NextRequest) {
       draftId?: string;
     };
 
-    console.log("POST /api/briefs - liveBrief:", liveBrief ? Object.keys(liveBrief) : "null");
+    console.log(
+      "POST /api/briefs - liveBrief:",
+      liveBrief ? Object.keys(liveBrief) : "null"
+    );
     console.log("POST /api/briefs - draftId:", draftId);
 
     if (!liveBrief) {
@@ -189,7 +190,10 @@ export async function POST(request: NextRequest) {
     };
 
     console.log("POST /api/briefs - briefData keys:", Object.keys(briefData));
-    console.log("POST /api/briefs - existingBrief:", existingBrief?.id || "null");
+    console.log(
+      "POST /api/briefs - existingBrief:",
+      existingBrief?.id || "null"
+    );
 
     let savedBrief;
 
@@ -213,9 +217,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error saving brief:", error);
-    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "Error details:",
+      error instanceof Error ? error.message : String(error)
+    );
     return NextResponse.json(
-      { error: "Failed to save brief", details: error instanceof Error ? error.message : String(error) },
+      {
+        error: "Failed to save brief",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
@@ -236,15 +246,12 @@ export async function DELETE(request: NextRequest) {
     const briefId = searchParams.get("id");
 
     if (!briefId) {
-      return NextResponse.json(
-        { error: "Brief ID required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Brief ID required" }, { status: 400 });
     }
 
-    await db.delete(briefs).where(
-      and(eq(briefs.id, briefId), eq(briefs.userId, session.user.id))
-    );
+    await db
+      .delete(briefs)
+      .where(and(eq(briefs.id, briefId), eq(briefs.userId, session.user.id)));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -257,7 +264,9 @@ export async function DELETE(request: NextRequest) {
 }
 
 // Helper to convert DB brief to LiveBrief format
-function convertDbBriefToLiveBrief(dbBrief: typeof briefs.$inferSelect): LiveBrief {
+function convertDbBriefToLiveBrief(
+  dbBrief: typeof briefs.$inferSelect
+): LiveBrief {
   // Safe conversion of dimensions
   const dimensionsRaw = dbBrief.dimensions as Array<{
     width: number;
@@ -312,10 +321,14 @@ function convertDbBriefToLiveBrief(dbBrief: typeof briefs.$inferSelect): LiveBri
       source: "pending",
     },
     dimensions,
-    visualDirection: (dbBrief.visualDirection as LiveBrief["visualDirection"]) || null,
-    contentOutline: (dbBrief.contentOutline as LiveBrief["contentOutline"]) || null,
-    clarifyingQuestionsAsked: (dbBrief.clarifyingQuestionsAsked as string[]) || [],
+    visualDirection:
+      (dbBrief.visualDirection as LiveBrief["visualDirection"]) || null,
+    contentOutline:
+      (dbBrief.contentOutline as LiveBrief["contentOutline"]) || null,
+    clarifyingQuestionsAsked:
+      (dbBrief.clarifyingQuestionsAsked as string[]) || [],
     completionPercentage: dbBrief.completionPercentage,
-    isReadyForDesigner: dbBrief.status === "READY" || dbBrief.status === "SUBMITTED",
+    isReadyForDesigner:
+      dbBrief.status === "READY" || dbBrief.status === "SUBMITTED",
   };
 }

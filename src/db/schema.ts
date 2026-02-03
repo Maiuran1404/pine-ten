@@ -13,7 +13,11 @@ import {
 import { relations } from "drizzle-orm";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["CLIENT", "FREELANCER", "ADMIN"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "CLIENT",
+  "FREELANCER",
+  "ADMIN",
+]);
 export const onboardingStatusEnum = pgEnum("onboarding_status", [
   "NOT_STARTED",
   "IN_PROGRESS",
@@ -112,7 +116,9 @@ export const users = pgTable(
     phone: text("phone"),
     credits: integer("credits").notNull().default(0),
     companyId: uuid("company_id"),
-    onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+    onboardingCompleted: boolean("onboarding_completed")
+      .notNull()
+      .default(false),
     onboardingData: jsonb("onboarding_data"),
     notificationPreferences: jsonb("notification_preferences"),
     // Slack integration
@@ -210,7 +216,9 @@ export const companies = pgTable("companies", {
   tagline: text("tagline"),
   keywords: jsonb("keywords").$type<string[]>().default([]),
   // Onboarding status
-  onboardingStatus: onboardingStatusEnum("onboarding_status").notNull().default("NOT_STARTED"),
+  onboardingStatus: onboardingStatusEnum("onboarding_status")
+    .notNull()
+    .default("NOT_STARTED"),
   // Slack integration
   slackChannelId: text("slack_channel_id"), // Client-specific Slack channel
   slackChannelName: text("slack_channel_name"), // Stored for reference
@@ -238,7 +246,8 @@ export const freelancerProfiles = pgTable("freelancer_profiles", {
   whatsappNumber: text("whatsapp_number"),
   availability: boolean("availability").notNull().default(true),
   // New assignment algorithm fields
-  experienceLevel: artistExperienceLevelEnum("experience_level").default("JUNIOR"),
+  experienceLevel:
+    artistExperienceLevelEnum("experience_level").default("JUNIOR"),
   maxConcurrentTasks: integer("max_concurrent_tasks").notNull().default(3),
   acceptsUrgentTasks: boolean("accepts_urgent_tasks").notNull().default(true),
   workingHoursStart: text("working_hours_start").default("09:00"), // HH:MM format
@@ -248,7 +257,9 @@ export const freelancerProfiles = pgTable("freelancer_profiles", {
   acceptanceRate: decimal("acceptance_rate", { precision: 5, scale: 2 }),
   onTimeRate: decimal("on_time_rate", { precision: 5, scale: 2 }),
   // Preferences
-  preferredCategories: jsonb("preferred_categories").$type<string[]>().default([]),
+  preferredCategories: jsonb("preferred_categories")
+    .$type<string[]>()
+    .default([]),
   minCreditsToAccept: integer("min_credits_to_accept").default(1),
   vacationMode: boolean("vacation_mode").notNull().default(false),
   vacationUntil: timestamp("vacation_until"),
@@ -295,7 +306,9 @@ export const artistSkills = pgTable(
     skillId: uuid("skill_id")
       .notNull()
       .references(() => skills.id, { onDelete: "cascade" }),
-    proficiencyLevel: skillProficiencyEnum("proficiency_level").notNull().default("INTERMEDIATE"),
+    proficiencyLevel: skillProficiencyEnum("proficiency_level")
+      .notNull()
+      .default("INTERMEDIATE"),
     yearsExperience: decimal("years_experience", { precision: 3, scale: 1 }),
     verified: boolean("verified").notNull().default(false), // Admin verified
     verifiedAt: timestamp("verified_at"),
@@ -321,7 +334,8 @@ export const taskSkillRequirements = pgTable(
       .notNull()
       .references(() => skills.id, { onDelete: "cascade" }),
     isRequired: boolean("is_required").notNull().default(true), // required vs nice-to-have
-    minProficiency: skillProficiencyEnum("min_proficiency").default("INTERMEDIATE"),
+    minProficiency:
+      skillProficiencyEnum("min_proficiency").default("INTERMEDIATE"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -368,131 +382,168 @@ export const taskOffers = pgTable(
 );
 
 // Assignment algorithm configuration - editable by admin
-export const assignmentAlgorithmConfig = pgTable("assignment_algorithm_config", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  version: integer("version").notNull().default(1),
-  isActive: boolean("is_active").notNull().default(false),
-  name: text("name").notNull(),
-  description: text("description"),
+export const assignmentAlgorithmConfig = pgTable(
+  "assignment_algorithm_config",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    version: integer("version").notNull().default(1),
+    isActive: boolean("is_active").notNull().default(false),
+    name: text("name").notNull(),
+    description: text("description"),
 
-  // Scoring weights (must sum to 100)
-  weights: jsonb("weights").notNull().$type<{
-    skillMatch: number;
-    timezoneFit: number;
-    experienceMatch: number;
-    workloadBalance: number;
-    performanceHistory: number;
-  }>().default({
-    skillMatch: 35,
-    timezoneFit: 20,
-    experienceMatch: 20,
-    workloadBalance: 15,
-    performanceHistory: 10,
-  }),
+    // Scoring weights (must sum to 100)
+    weights: jsonb("weights")
+      .notNull()
+      .$type<{
+        skillMatch: number;
+        timezoneFit: number;
+        experienceMatch: number;
+        workloadBalance: number;
+        performanceHistory: number;
+      }>()
+      .default({
+        skillMatch: 35,
+        timezoneFit: 20,
+        experienceMatch: 20,
+        workloadBalance: 15,
+        performanceHistory: 10,
+      }),
 
-  // Acceptance windows by urgency (in minutes)
-  acceptanceWindows: jsonb("acceptance_windows").notNull().$type<{
-    critical: number;
-    urgent: number;
-    standard: number;
-    flexible: number;
-  }>().default({
-    critical: 10,
-    urgent: 30,
-    standard: 120,
-    flexible: 240,
-  }),
+    // Acceptance windows by urgency (in minutes)
+    acceptanceWindows: jsonb("acceptance_windows")
+      .notNull()
+      .$type<{
+        critical: number;
+        urgent: number;
+        standard: number;
+        flexible: number;
+      }>()
+      .default({
+        critical: 10,
+        urgent: 30,
+        standard: 120,
+        flexible: 240,
+      }),
 
-  // Escalation settings
-  escalationSettings: jsonb("escalation_settings").notNull().$type<{
-    level1SkillThreshold: number;
-    level2SkillThreshold: number;
-    level1MaxOffers: number;
-    level2MaxOffers: number;
-    level3BroadcastMinutes: number;
-    maxWorkloadOverride: number; // Allow +1 task for level 2
-  }>().default({
-    level1SkillThreshold: 70,
-    level2SkillThreshold: 50,
-    level1MaxOffers: 3,
-    level2MaxOffers: 3,
-    level3BroadcastMinutes: 30,
-    maxWorkloadOverride: 1,
-  }),
+    // Escalation settings
+    escalationSettings: jsonb("escalation_settings")
+      .notNull()
+      .$type<{
+        level1SkillThreshold: number;
+        level2SkillThreshold: number;
+        level1MaxOffers: number;
+        level2MaxOffers: number;
+        level3BroadcastMinutes: number;
+        maxWorkloadOverride: number; // Allow +1 task for level 2
+      }>()
+      .default({
+        level1SkillThreshold: 70,
+        level2SkillThreshold: 50,
+        level1MaxOffers: 3,
+        level2MaxOffers: 3,
+        level3BroadcastMinutes: 30,
+        maxWorkloadOverride: 1,
+      }),
 
-  // Timezone scoring settings
-  timezoneSettings: jsonb("timezone_settings").notNull().$type<{
-    peakHoursStart: string; // "09:00"
-    peakHoursEnd: string; // "18:00"
-    peakScore: number;
-    eveningScore: number;
-    earlyMorningScore: number;
-    lateEveningScore: number;
-    nightScore: number;
-  }>().default({
-    peakHoursStart: "09:00",
-    peakHoursEnd: "18:00",
-    peakScore: 100,
-    eveningScore: 80,
-    earlyMorningScore: 70,
-    lateEveningScore: 50,
-    nightScore: 20,
-  }),
+    // Timezone scoring settings
+    timezoneSettings: jsonb("timezone_settings")
+      .notNull()
+      .$type<{
+        peakHoursStart: string; // "09:00"
+        peakHoursEnd: string; // "18:00"
+        peakScore: number;
+        eveningScore: number;
+        earlyMorningScore: number;
+        lateEveningScore: number;
+        nightScore: number;
+      }>()
+      .default({
+        peakHoursStart: "09:00",
+        peakHoursEnd: "18:00",
+        peakScore: 100,
+        eveningScore: 80,
+        earlyMorningScore: 70,
+        lateEveningScore: 50,
+        nightScore: 20,
+      }),
 
-  // Experience matching matrix
-  experienceMatrix: jsonb("experience_matrix").notNull().$type<{
-    // [taskComplexity][artistExperience] = score
-    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-  }>().default({
-    SIMPLE: { JUNIOR: 100, MID: 90, SENIOR: 70, EXPERT: 50 },
-    INTERMEDIATE: { JUNIOR: 60, MID: 100, SENIOR: 90, EXPERT: 80 },
-    ADVANCED: { JUNIOR: 20, MID: 70, SENIOR: 100, EXPERT: 95 },
-    EXPERT: { JUNIOR: 0, MID: 40, SENIOR: 80, EXPERT: 100 },
-  }),
+    // Experience matching matrix
+    experienceMatrix: jsonb("experience_matrix")
+      .notNull()
+      .$type<{
+        // [taskComplexity][artistExperience] = score
+        SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+        INTERMEDIATE: {
+          JUNIOR: number;
+          MID: number;
+          SENIOR: number;
+          EXPERT: number;
+        };
+        ADVANCED: {
+          JUNIOR: number;
+          MID: number;
+          SENIOR: number;
+          EXPERT: number;
+        };
+        EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
+      }>()
+      .default({
+        SIMPLE: { JUNIOR: 100, MID: 90, SENIOR: 70, EXPERT: 50 },
+        INTERMEDIATE: { JUNIOR: 60, MID: 100, SENIOR: 90, EXPERT: 80 },
+        ADVANCED: { JUNIOR: 20, MID: 70, SENIOR: 100, EXPERT: 95 },
+        EXPERT: { JUNIOR: 0, MID: 40, SENIOR: 80, EXPERT: 100 },
+      }),
 
-  // Workload scoring settings
-  workloadSettings: jsonb("workload_settings").notNull().$type<{
-    maxActiveTasks: number;
-    scorePerTask: number; // Points deducted per active task
-  }>().default({
-    maxActiveTasks: 5,
-    scorePerTask: 20,
-  }),
+    // Workload scoring settings
+    workloadSettings: jsonb("workload_settings")
+      .notNull()
+      .$type<{
+        maxActiveTasks: number;
+        scorePerTask: number; // Points deducted per active task
+      }>()
+      .default({
+        maxActiveTasks: 5,
+        scorePerTask: 20,
+      }),
 
-  // Hard exclusion rules
-  exclusionRules: jsonb("exclusion_rules").notNull().$type<{
-    minSkillScoreToInclude: number;
-    excludeOverloaded: boolean;
-    excludeNightHoursForUrgent: boolean;
-    excludeVacationMode: boolean;
-  }>().default({
-    minSkillScoreToInclude: 50,
-    excludeOverloaded: true,
-    excludeNightHoursForUrgent: true,
-    excludeVacationMode: true,
-  }),
+    // Hard exclusion rules
+    exclusionRules: jsonb("exclusion_rules")
+      .notNull()
+      .$type<{
+        minSkillScoreToInclude: number;
+        excludeOverloaded: boolean;
+        excludeNightHoursForUrgent: boolean;
+        excludeVacationMode: boolean;
+      }>()
+      .default({
+        minSkillScoreToInclude: 50,
+        excludeOverloaded: true,
+        excludeNightHoursForUrgent: true,
+        excludeVacationMode: true,
+      }),
 
-  // Bonus modifiers
-  bonusModifiers: jsonb("bonus_modifiers").notNull().$type<{
-    categorySpecializationBonus: number;
-    niceToHaveSkillBonus: number;
-    favoriteArtistBonus: number;
-  }>().default({
-    categorySpecializationBonus: 10,
-    niceToHaveSkillBonus: 5,
-    favoriteArtistBonus: 10,
-  }),
+    // Bonus modifiers
+    bonusModifiers: jsonb("bonus_modifiers")
+      .notNull()
+      .$type<{
+        categorySpecializationBonus: number;
+        niceToHaveSkillBonus: number;
+        favoriteArtistBonus: number;
+      }>()
+      .default({
+        categorySpecializationBonus: 10,
+        niceToHaveSkillBonus: 5,
+        favoriteArtistBonus: 10,
+      }),
 
-  // Audit fields
-  createdBy: text("created_by").references(() => users.id),
-  updatedBy: text("updated_by").references(() => users.id),
-  publishedAt: timestamp("published_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+    // Audit fields
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }
+);
 
 // Client-artist affinity (favorites and history)
 export const clientArtistAffinity = pgTable(
@@ -533,18 +584,22 @@ export const tasks = pgTable(
     status: taskStatusEnum("status").notNull().default("PENDING"),
     requirements: jsonb("requirements"),
     styleReferences: jsonb("style_references").$type<string[]>().default([]),
-    moodboardItems: jsonb("moodboard_items").$type<{
-      id: string;
-      type: "style" | "color" | "image" | "upload";
-      imageUrl: string;
-      name: string;
-      metadata?: {
-        styleAxis?: string;
-        deliverableType?: string;
-        colorSamples?: string[];
-        styleId?: string;
-      };
-    }[]>().default([]),
+    moodboardItems: jsonb("moodboard_items")
+      .$type<
+        {
+          id: string;
+          type: "style" | "color" | "image" | "upload";
+          imageUrl: string;
+          name: string;
+          metadata?: {
+            styleAxis?: string;
+            deliverableType?: string;
+            colorSamples?: string[];
+            styleId?: string;
+          };
+        }[]
+      >()
+      .default([]),
     chatHistory: jsonb("chat_history").$type<object[]>().default([]),
     estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
     creditsUsed: integer("credits_used").notNull().default(1),
@@ -607,27 +662,31 @@ export const taskMessages = pgTable("task_messages", {
 });
 
 // Task activity log (for timeline tracking)
-export const taskActivityLog = pgTable("task_activity_log", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  taskId: uuid("task_id")
-    .notNull()
-    .references(() => tasks.id, { onDelete: "cascade" }),
-  actorId: text("actor_id").references(() => users.id),
-  actorType: text("actor_type").notNull(), // "client", "freelancer", "admin", "system"
-  action: text("action").notNull(), // "created", "assigned", "started", "submitted", "approved", "revision_requested", "completed", "cancelled"
-  previousStatus: text("previous_status"),
-  newStatus: text("new_status"),
-  metadata: jsonb("metadata").$type<{
-    freelancerName?: string;
-    deliverableCount?: number;
-    revisionFeedback?: string;
-    [key: string]: unknown;
-  }>(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("task_activity_log_task_id_idx").on(table.taskId),
-  index("task_activity_log_created_at_idx").on(table.createdAt),
-]);
+export const taskActivityLog = pgTable(
+  "task_activity_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => users.id),
+    actorType: text("actor_type").notNull(), // "client", "freelancer", "admin", "system"
+    action: text("action").notNull(), // "created", "assigned", "started", "submitted", "approved", "revision_requested", "completed", "cancelled"
+    previousStatus: text("previous_status"),
+    newStatus: text("new_status"),
+    metadata: jsonb("metadata").$type<{
+      freelancerName?: string;
+      deliverableCount?: number;
+      revisionFeedback?: string;
+      [key: string]: unknown;
+    }>(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_activity_log_task_id_idx").on(table.taskId),
+    index("task_activity_log_created_at_idx").on(table.createdAt),
+  ]
+);
 
 // Style references (for AI chat suggestions)
 export const styleReferences = pgTable("style_references", {
@@ -792,9 +851,18 @@ export const payouts = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     // Amount details
     creditsAmount: integer("credits_amount").notNull(), // Credits being paid out
-    grossAmountUsd: decimal("gross_amount_usd", { precision: 10, scale: 2 }).notNull(), // Total value before fees
-    platformFeeUsd: decimal("platform_fee_usd", { precision: 10, scale: 2 }).notNull(), // Platform's cut
-    netAmountUsd: decimal("net_amount_usd", { precision: 10, scale: 2 }).notNull(), // Amount artist receives
+    grossAmountUsd: decimal("gross_amount_usd", {
+      precision: 10,
+      scale: 2,
+    }).notNull(), // Total value before fees
+    platformFeeUsd: decimal("platform_fee_usd", {
+      precision: 10,
+      scale: 2,
+    }).notNull(), // Platform's cut
+    netAmountUsd: decimal("net_amount_usd", {
+      precision: 10,
+      scale: 2,
+    }).notNull(), // Amount artist receives
     // Revenue split snapshot (in case config changes)
     artistPercentage: integer("artist_percentage").notNull(), // e.g., 70 for 70%
     // Status tracking
@@ -849,7 +917,9 @@ export const stripeConnectAccounts = pgTable(
   },
   (table) => [
     index("stripe_connect_accounts_freelancer_id_idx").on(table.freelancerId),
-    index("stripe_connect_accounts_stripe_account_id_idx").on(table.stripeAccountId),
+    index("stripe_connect_accounts_stripe_account_id_idx").on(
+      table.stripeAccountId
+    ),
   ]
 );
 
@@ -862,12 +932,15 @@ export const payoutsRelations = relations(payouts, ({ one }) => ({
 }));
 
 // Stripe Connect accounts relations
-export const stripeConnectAccountsRelations = relations(stripeConnectAccounts, ({ one }) => ({
-  freelancer: one(users, {
-    fields: [stripeConnectAccounts.freelancerId],
-    references: [users.id],
-  }),
-}));
+export const stripeConnectAccountsRelations = relations(
+  stripeConnectAccounts,
+  ({ one }) => ({
+    freelancer: one(users, {
+      fields: [stripeConnectAccounts.freelancerId],
+      references: [users.id],
+    }),
+  })
+);
 
 // Platform settings (admin-configurable)
 export const platformSettings = pgTable("platform_settings", {
@@ -924,13 +997,16 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   messages: many(taskMessages),
 }));
 
-export const freelancerProfilesRelations = relations(freelancerProfiles, ({ one, many }) => ({
-  user: one(users, {
-    fields: [freelancerProfiles.userId],
-    references: [users.id],
-  }),
-  artistSkills: many(artistSkills),
-}));
+export const freelancerProfilesRelations = relations(
+  freelancerProfiles,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [freelancerProfiles.userId],
+      references: [users.id],
+    }),
+    artistSkills: many(artistSkills),
+  })
+);
 
 // Skills relations
 export const skillsRelations = relations(skills, ({ many }) => ({
@@ -955,16 +1031,19 @@ export const artistSkillsRelations = relations(artistSkills, ({ one }) => ({
 }));
 
 // Task skill requirements relations
-export const taskSkillRequirementsRelations = relations(taskSkillRequirements, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskSkillRequirements.taskId],
-    references: [tasks.id],
-  }),
-  skill: one(skills, {
-    fields: [taskSkillRequirements.skillId],
-    references: [skills.id],
-  }),
-}));
+export const taskSkillRequirementsRelations = relations(
+  taskSkillRequirements,
+  ({ one }) => ({
+    task: one(tasks, {
+      fields: [taskSkillRequirements.taskId],
+      references: [tasks.id],
+    }),
+    skill: one(skills, {
+      fields: [taskSkillRequirements.skillId],
+      references: [skills.id],
+    }),
+  })
+);
 
 // Task offers relations
 export const taskOffersRelations = relations(taskOffers, ({ one }) => ({
@@ -979,16 +1058,19 @@ export const taskOffersRelations = relations(taskOffers, ({ one }) => ({
 }));
 
 // Client-artist affinity relations
-export const clientArtistAffinityRelations = relations(clientArtistAffinity, ({ one }) => ({
-  client: one(users, {
-    fields: [clientArtistAffinity.clientId],
-    references: [users.id],
-  }),
-  artist: one(users, {
-    fields: [clientArtistAffinity.artistId],
-    references: [users.id],
-  }),
-}));
+export const clientArtistAffinityRelations = relations(
+  clientArtistAffinity,
+  ({ one }) => ({
+    client: one(users, {
+      fields: [clientArtistAffinity.clientId],
+      references: [users.id],
+    }),
+    artist: one(users, {
+      fields: [clientArtistAffinity.artistId],
+      references: [users.id],
+    }),
+  })
+);
 
 export const taskFilesRelations = relations(taskFiles, ({ one }) => ({
   task: one(tasks, {
@@ -1019,18 +1101,22 @@ export const chatDrafts = pgTable("chat_drafts", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull().default("New Request"),
-  messages: jsonb("messages").$type<{
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: string;
-    attachments?: {
-      fileName: string;
-      fileUrl: string;
-      fileType: string;
-      fileSize: number;
-    }[];
-  }[]>().default([]),
+  messages: jsonb("messages")
+    .$type<
+      {
+        id: string;
+        role: "user" | "assistant";
+        content: string;
+        timestamp: string;
+        attachments?: {
+          fileName: string;
+          fileUrl: string;
+          fileType: string;
+          fileSize: number;
+        }[];
+      }[]
+    >()
+    .default([]),
   selectedStyles: jsonb("selected_styles").$type<string[]>().default([]),
   pendingTask: jsonb("pending_task").$type<{
     title: string;
@@ -1103,20 +1189,18 @@ export const orshotTemplates = pgTable(
     category: text("category").notNull(), // 'social_media', 'marketing', 'brand_assets'
     orshotTemplateId: integer("orshot_template_id").notNull(), // Orshot Studio template ID
     previewImageUrl: text("preview_image_url"), // Preview thumbnail for selector
-    parameterMapping: jsonb("parameter_mapping")
-      .notNull()
-      .$type<{
-        [brandField: string]: {
-          paramId: string;
-          type: "text" | "color" | "image" | "number";
-          style?: {
-            fontSize?: string;
-            fontFamily?: string;
-            fontWeight?: string;
-            textAlign?: string;
-          };
+    parameterMapping: jsonb("parameter_mapping").notNull().$type<{
+      [brandField: string]: {
+        paramId: string;
+        type: "text" | "color" | "image" | "number";
+        style?: {
+          fontSize?: string;
+          fontFamily?: string;
+          fontWeight?: string;
+          textAlign?: string;
         };
-      }>(),
+      };
+    }>(),
     outputFormat: text("output_format").notNull().default("png"), // 'png', 'jpg', 'webp', 'pdf'
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -1139,9 +1223,8 @@ export const generatedDesigns = pgTable(
     templateName: text("template_name").notNull(), // Store name in case template is deleted
     imageUrl: text("image_url").notNull(),
     imageFormat: text("image_format").notNull(),
-    modificationsUsed: jsonb("modifications_used").$type<
-      Record<string, unknown>
-    >(), // Store what values were used
+    modificationsUsed:
+      jsonb("modifications_used").$type<Record<string, unknown>>(), // Store what values were used
     savedToAssets: boolean("saved_to_assets").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -1374,9 +1457,10 @@ export const securitySnapshots = pgTable(
     // Overall health metrics
     overallScore: decimal("overall_score", { precision: 5, scale: 2 }),
     // Category scores
-    categoryScores: jsonb("category_scores").$type<
-      Record<string, { score: number; passed: number; failed: number }>
-    >(),
+    categoryScores:
+      jsonb("category_scores").$type<
+        Record<string, { score: number; passed: number; failed: number }>
+      >(),
     // Security checks
     sslValid: boolean("ssl_valid"),
     sslExpiry: timestamp("ssl_expiry"),
@@ -1403,7 +1487,9 @@ export const securitySnapshots = pgTable(
     mediumIssues: integer("medium_issues").notNull().default(0),
     lowIssues: integer("low_issues").notNull().default(0),
     // Last test run reference
-    lastTestRunId: uuid("last_test_run_id").references(() => securityTestRuns.id),
+    lastTestRunId: uuid("last_test_run_id").references(
+      () => securityTestRuns.id
+    ),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("security_snapshots_created_at_idx").on(table.createdAt)]
@@ -1430,7 +1516,9 @@ export const styleSelectionHistory = pgTable(
     wasConfirmed: boolean("was_confirmed").notNull().default(false), // Did they proceed with this style?
 
     // Session tracking
-    draftId: uuid("draft_id").references(() => chatDrafts.id, { onDelete: "set null" }),
+    draftId: uuid("draft_id").references(() => chatDrafts.id, {
+      onDelete: "set null",
+    }),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -1442,20 +1530,23 @@ export const styleSelectionHistory = pgTable(
 );
 
 // Relations for style selection history
-export const styleSelectionHistoryRelations = relations(styleSelectionHistory, ({ one }) => ({
-  user: one(users, {
-    fields: [styleSelectionHistory.userId],
-    references: [users.id],
-  }),
-  style: one(deliverableStyleReferences, {
-    fields: [styleSelectionHistory.styleId],
-    references: [deliverableStyleReferences.id],
-  }),
-  draft: one(chatDrafts, {
-    fields: [styleSelectionHistory.draftId],
-    references: [chatDrafts.id],
-  }),
-}));
+export const styleSelectionHistoryRelations = relations(
+  styleSelectionHistory,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [styleSelectionHistory.userId],
+      references: [users.id],
+    }),
+    style: one(deliverableStyleReferences, {
+      fields: [styleSelectionHistory.styleId],
+      references: [deliverableStyleReferences.id],
+    }),
+    draft: one(chatDrafts, {
+      fields: [styleSelectionHistory.draftId],
+      references: [chatDrafts.id],
+    }),
+  })
+);
 
 // Relations for security tables
 export const securityTestsRelations = relations(securityTests, ({ many }) => ({
@@ -1467,36 +1558,45 @@ export const testUsersRelations = relations(testUsers, ({ many }) => ({
   testRuns: many(securityTestRuns),
 }));
 
-export const testSchedulesRelations = relations(testSchedules, ({ one, many }) => ({
-  testUser: one(testUsers, {
-    fields: [testSchedules.testUserId],
-    references: [testUsers.id],
-  }),
-  runs: many(securityTestRuns),
-}));
+export const testSchedulesRelations = relations(
+  testSchedules,
+  ({ one, many }) => ({
+    testUser: one(testUsers, {
+      fields: [testSchedules.testUserId],
+      references: [testUsers.id],
+    }),
+    runs: many(securityTestRuns),
+  })
+);
 
-export const securityTestRunsRelations = relations(securityTestRuns, ({ one, many }) => ({
-  schedule: one(testSchedules, {
-    fields: [securityTestRuns.scheduleId],
-    references: [testSchedules.id],
-  }),
-  testUser: one(testUsers, {
-    fields: [securityTestRuns.testUserId],
-    references: [testUsers.id],
-  }),
-  results: many(securityTestResults),
-}));
+export const securityTestRunsRelations = relations(
+  securityTestRuns,
+  ({ one, many }) => ({
+    schedule: one(testSchedules, {
+      fields: [securityTestRuns.scheduleId],
+      references: [testSchedules.id],
+    }),
+    testUser: one(testUsers, {
+      fields: [securityTestRuns.testUserId],
+      references: [testUsers.id],
+    }),
+    results: many(securityTestResults),
+  })
+);
 
-export const securityTestResultsRelations = relations(securityTestResults, ({ one }) => ({
-  run: one(securityTestRuns, {
-    fields: [securityTestResults.runId],
-    references: [securityTestRuns.id],
-  }),
-  test: one(securityTests, {
-    fields: [securityTestResults.testId],
-    references: [securityTests.id],
-  }),
-}));
+export const securityTestResultsRelations = relations(
+  securityTestResults,
+  ({ one }) => ({
+    run: one(securityTestRuns, {
+      fields: [securityTestResults.runId],
+      references: [securityTestRuns.id],
+    }),
+    test: one(securityTests, {
+      fields: [securityTestResults.testId],
+      references: [securityTests.id],
+    }),
+  })
+);
 
 // ============================================
 // Audit Logging Tables
@@ -1550,7 +1650,9 @@ export const auditLogs = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     // Who performed the action
-    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorId: text("actor_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     actorEmail: text("actor_email"), // Stored separately for persistence even if user deleted
     actorRole: text("actor_role"),
     // What action was performed
@@ -1616,7 +1718,9 @@ export const importLogs = pgTable(
     target: importLogTargetEnum("target").notNull(),
 
     // Who triggered the import
-    triggeredBy: text("triggered_by").references(() => users.id, { onDelete: "set null" }),
+    triggeredBy: text("triggered_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     triggeredByEmail: text("triggered_by_email"),
 
     // Import parameters
@@ -1630,30 +1734,45 @@ export const importLogs = pgTable(
     totalSkipped: integer("total_skipped").notNull().default(0), // Duplicates
 
     // Detailed results
-    importedItems: jsonb("imported_items").$type<Array<{
-      id: string;
-      name: string;
-      imageUrl: string;
-      deliverableType?: string;
-      styleAxis?: string;
-      toneBucket?: string;
-      energyBucket?: string;
-      confidence?: number;
-    }>>().default([]),
+    importedItems: jsonb("imported_items")
+      .$type<
+        Array<{
+          id: string;
+          name: string;
+          imageUrl: string;
+          deliverableType?: string;
+          styleAxis?: string;
+          toneBucket?: string;
+          energyBucket?: string;
+          confidence?: number;
+        }>
+      >()
+      .default([]),
 
-    failedItems: jsonb("failed_items").$type<Array<{
-      url: string;
-      error: string;
-    }>>().default([]),
+    failedItems: jsonb("failed_items")
+      .$type<
+        Array<{
+          url: string;
+          error: string;
+        }>
+      >()
+      .default([]),
 
-    skippedItems: jsonb("skipped_items").$type<Array<{
-      url: string;
-      reason: string;
-    }>>().default([]),
+    skippedItems: jsonb("skipped_items")
+      .$type<
+        Array<{
+          url: string;
+          reason: string;
+        }>
+      >()
+      .default([]),
 
     // Processing details
     processingTimeMs: integer("processing_time_ms"),
-    confidenceThreshold: decimal("confidence_threshold", { precision: 3, scale: 2 }),
+    confidenceThreshold: decimal("confidence_threshold", {
+      precision: 3,
+      scale: 2,
+    }),
 
     // Status
     status: text("status").notNull().default("completed"), // completed, partial, failed
@@ -1783,11 +1902,17 @@ export const briefs = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    companyId: uuid("company_id").references(() => companies.id, { onDelete: "set null" }),
+    companyId: uuid("company_id").references(() => companies.id, {
+      onDelete: "set null",
+    }),
 
     // Link to draft or task
-    draftId: uuid("draft_id").references(() => chatDrafts.id, { onDelete: "set null" }),
-    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+    draftId: uuid("draft_id").references(() => chatDrafts.id, {
+      onDelete: "set null",
+    }),
+    taskId: uuid("task_id").references(() => tasks.id, {
+      onDelete: "set null",
+    }),
 
     // Status
     status: briefStatusEnum("status").notNull().default("DRAFT"),
@@ -1844,12 +1969,14 @@ export const briefs = pgTable(
     }>(),
 
     // Dimensions
-    dimensions: jsonb("dimensions").$type<{
-      width: number;
-      height: number;
-      label: string;
-      aspectRatio: string;
-    }[]>(),
+    dimensions: jsonb("dimensions").$type<
+      {
+        width: number;
+        height: number;
+        label: string;
+        aspectRatio: string;
+      }[]
+    >(),
 
     // Visual direction
     visualDirection: jsonb("visual_direction").$type<{
@@ -1885,7 +2012,12 @@ export const briefs = pgTable(
           description: string;
           platform: string;
           contentType: string;
-          dimensions: { width: number; height: number; label: string; aspectRatio: string };
+          dimensions: {
+            width: number;
+            height: number;
+            label: string;
+            aspectRatio: string;
+          };
           week: number;
           day: number;
           status: "draft" | "in_progress" | "completed";
@@ -1902,7 +2034,9 @@ export const briefs = pgTable(
     }>(),
 
     // Clarifying questions tracking
-    clarifyingQuestionsAsked: jsonb("clarifying_questions_asked").$type<string[]>().default([]),
+    clarifyingQuestionsAsked: jsonb("clarifying_questions_asked")
+      .$type<string[]>()
+      .default([]),
 
     // Timestamps
     createdAt: timestamp("created_at").notNull().defaultNow(),

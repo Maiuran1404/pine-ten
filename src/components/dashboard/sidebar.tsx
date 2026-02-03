@@ -71,9 +71,9 @@ export function AppSidebar() {
             <PanelLeft className="h-5 w-5" />
           </button>
         </SidebarHeader>
-        <SidebarContent className="px-2">
-          {/* New Chat button - icon only */}
-          <div className="py-2">
+        <SidebarContent className="px-2 flex flex-col items-center">
+          {/* New Chat button - icon only, centered */}
+          <div className="py-2 flex justify-center w-full">
             <Button
               onClick={handleStartNewChat}
               variant="outline"
@@ -84,8 +84,8 @@ export function AppSidebar() {
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          {/* Feature icons */}
-          <nav className="space-y-1 py-2">
+          {/* Feature icons - centered */}
+          <nav className="space-y-1 py-2 w-full">
             {features.map((item) => (
               <Link
                 key={item.label}
@@ -156,7 +156,9 @@ export function AppSidebar() {
 
         {/* Features section */}
         <div className="px-4 pb-2 flex-1">
-          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Features</p>
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+            Features
+          </p>
           <nav className="space-y-1">
             {features.map((item) => (
               <Link
@@ -186,16 +188,24 @@ export function AppSidebar() {
 
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-green-800 dark:text-green-300">Starter Plan</span>
-              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">{credits} Credits</span>
+              <span className="text-sm font-semibold text-green-800 dark:text-green-300">
+                Starter Plan
+              </span>
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">
+                {credits} Credits
+              </span>
             </div>
             <Link href="/dashboard/credits">
-              <Button size="sm" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium">
+              <Button
+                size="sm"
+                className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium"
+              >
                 Get more Credits!
               </Button>
             </Link>
             <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
-              Boost productivity with seamless tasks request and responsive AI, built to assist you.
+              Boost productivity with seamless tasks request and responsive AI,
+              built to assist you.
             </p>
           </div>
         </div>

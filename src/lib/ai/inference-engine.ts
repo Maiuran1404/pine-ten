@@ -1303,8 +1303,13 @@ function extractTopicFallback(message: string): string | null {
   const words = message
     .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length > 2)
-    .filter(w => !/^(the|and|for|that|with|from|this|have|will|can|could|would|please|need|want|help|create|make|design|build|get|more)$/i.test(w));
+    .filter((w) => w.length > 2)
+    .filter(
+      (w) =>
+        !/^(the|and|for|that|with|from|this|have|will|can|could|would|please|need|want|help|create|make|design|build|get|more)$/i.test(
+          w
+        )
+    );
 
   // Find a meaningful content word sequence
   const contentWords = words.slice(0, 5).join(" ");
