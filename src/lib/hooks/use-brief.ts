@@ -141,7 +141,7 @@ export function useBrief({
           goals: primaryAudience.psychographics?.goals,
           source: "inferred",
         },
-        confidence: 0.6,
+        confidence: 0.75, // Higher confidence since it's from brand data
         source: "inferred",
       };
     }
@@ -196,7 +196,7 @@ export function useBrief({
 
   // Apply brand audiences when they become available
   useEffect(() => {
-    if (brandAudiences.length > 0) {
+    if (brandAudiences.length > 0 && !isLoading) {
       setBrief((current) => {
         // Don't overwrite if audience is already set (user might have confirmed it)
         if (current.audience.source === "confirmed") {
@@ -206,6 +206,13 @@ export function useBrief({
         const primaryAudience =
           brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
         if (current.audience.value?.name === primaryAudience.name) {
+          return current;
+        }
+        // Only apply if current audience is empty or pending
+        if (
+          current.audience.value?.name &&
+          current.audience.source !== "pending"
+        ) {
           return current;
         }
         return {
@@ -222,14 +229,14 @@ export function useBrief({
               goals: primaryAudience.psychographics?.goals,
               source: "inferred",
             },
-            confidence: 0.6,
+            confidence: 0.75, // Higher confidence since it's from brand data
             source: "inferred",
           },
           updatedAt: new Date(),
         };
       });
     }
-  }, [brandAudiences]);
+  }, [brandAudiences, isLoading]);
 
   // Debounce brief changes for auto-save (500ms delay - fast enough to save before refresh)
   const debouncedBrief = useDebounce(brief, 500);
@@ -249,9 +256,60 @@ export function useBrief({
 
         const data = await response.json();
         if (data.brief) {
-          setBrief(data.brief);
+          // Merge loaded brief with brand data - ensure brand audience is populated if not set
+          let loadedBrief = data.brief;
+
+          // If loaded brief has no audience but we have brand audiences, apply them
+          if (
+            (!loadedBrief.audience?.value ||
+              !loadedBrief.audience.value.name) &&
+            brandAudiences.length > 0
+          ) {
+            const primaryAudience =
+              brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+            loadedBrief = {
+              ...loadedBrief,
+              audience: {
+                value: {
+                  name: primaryAudience.name,
+                  demographics: primaryAudience.demographics
+                    ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
+                    : undefined,
+                  psychographics:
+                    primaryAudience.psychographics?.values?.join(", "),
+                  painPoints: primaryAudience.psychographics?.painPoints,
+                  goals: primaryAudience.psychographics?.goals,
+                  source: "inferred",
+                },
+                confidence: 0.7,
+                source: "inferred",
+              },
+            };
+          }
+
+          // If loaded brief has no colors but we have brand colors, apply them
+          if (
+            brandColors.length > 0 &&
+            (!loadedBrief.visualDirection?.colorPalette ||
+              loadedBrief.visualDirection.colorPalette.length === 0)
+          ) {
+            loadedBrief = {
+              ...loadedBrief,
+              visualDirection: {
+                ...loadedBrief.visualDirection,
+                selectedStyles:
+                  loadedBrief.visualDirection?.selectedStyles || [],
+                moodKeywords: loadedBrief.visualDirection?.moodKeywords || [],
+                colorPalette: brandColors,
+                typography: brandTypography,
+                avoidElements: loadedBrief.visualDirection?.avoidElements || [],
+              },
+            };
+          }
+
+          setBrief(loadedBrief);
           setBriefId(data.brief.id);
-          lastSavedRef.current = JSON.stringify(data.brief);
+          lastSavedRef.current = JSON.stringify(loadedBrief);
         }
       } catch (error) {
         console.error("Failed to load brief:", error);

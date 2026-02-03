@@ -141,14 +141,18 @@ interface BrandExtraction {
 }
 
 // Extract social links from page links
-function extractSocialLinks(links: string[] | undefined): BrandExtraction["socialLinks"] {
+function extractSocialLinks(
+  links: string[] | undefined
+): BrandExtraction["socialLinks"] {
   const socialLinks: BrandExtraction["socialLinks"] = {};
   if (!links) return socialLinks;
 
   const linkStr = links.join(" ");
 
   if (linkStr.includes("twitter.com") || linkStr.includes("x.com")) {
-    const link = links.find((l) => l.includes("twitter.com") || l.includes("x.com"));
+    const link = links.find(
+      (l) => l.includes("twitter.com") || l.includes("x.com")
+    );
     if (link) socialLinks.twitter = link;
   }
   if (linkStr.includes("linkedin.com")) {
@@ -173,19 +177,37 @@ function extractSocialLinks(links: string[] | undefined): BrandExtraction["socia
 
 // Create default brand data from metadata and Firecrawl branding
 function createDefaultBrandData(
-  metadata: { title?: string; description?: string; ogImage?: string; favicon?: string } | undefined,
-  branding: {
-    colors?: { primary?: string; secondary?: string; accent?: string; background?: string; textPrimary?: string; link?: string; [key: string]: string | undefined };
-    typography?: { fontFamilies?: { primary?: string } };
-    fonts?: Array<{ family: string }>;
-    images?: { logo?: string | null; favicon?: string | null };
-  } | undefined,
+  metadata:
+    | {
+        title?: string;
+        description?: string;
+        ogImage?: string;
+        favicon?: string;
+      }
+    | undefined,
+  branding:
+    | {
+        colors?: {
+          primary?: string;
+          secondary?: string;
+          accent?: string;
+          background?: string;
+          textPrimary?: string;
+          link?: string;
+          [key: string]: string | undefined;
+        };
+        typography?: { fontFamilies?: { primary?: string } };
+        fonts?: Array<{ family: string }>;
+        images?: { logo?: string | null; favicon?: string | null };
+      }
+    | undefined,
   links: string[] | undefined
 ): BrandExtraction {
-
   // Get all hex colors from branding, excluding background and text colors
   const brandColors: string[] = branding?.colors
-    ? Object.values(branding.colors).filter((c): c is string => typeof c === "string" && c.startsWith("#"))
+    ? Object.values(branding.colors).filter(
+        (c): c is string => typeof c === "string" && c.startsWith("#")
+      )
     : [];
 
   // Get primary color
@@ -196,24 +218,39 @@ function createDefaultBrandData(
   // Map: primary -> primaryColor, accent -> secondaryColor, link -> accentColor (if different)
 
   // Secondary color: use Firecrawl's accent as our secondary (it's typically the 2nd brand color)
-  const secondaryColor: string | null = branding?.colors?.accent || branding?.colors?.secondary || null;
+  const secondaryColor: string | null =
+    branding?.colors?.accent || branding?.colors?.secondary || null;
 
   // Accent color: use link if it's different from what we've already used, otherwise null
   let accentColor: string | null = null;
-  if (branding?.colors?.link && branding?.colors?.link !== primaryColor && branding?.colors?.link !== secondaryColor) {
+  if (
+    branding?.colors?.link &&
+    branding?.colors?.link !== primaryColor &&
+    branding?.colors?.link !== secondaryColor
+  ) {
     accentColor = branding.colors.link;
   }
 
   // If we still don't have an accent but have textPrimary that's not too dark/light, consider it
-  if (!accentColor && branding?.colors?.textPrimary && branding.colors.textPrimary !== primaryColor && branding.colors.textPrimary !== secondaryColor) {
+  if (
+    !accentColor &&
+    branding?.colors?.textPrimary &&
+    branding.colors.textPrimary !== primaryColor &&
+    branding.colors.textPrimary !== secondaryColor
+  ) {
     // Only use textPrimary as accent if it's not pure black/white
-    if (branding.colors.textPrimary !== "#000000" && branding.colors.textPrimary !== "#ffffff") {
+    if (
+      branding.colors.textPrimary !== "#000000" &&
+      branding.colors.textPrimary !== "#ffffff"
+    ) {
       accentColor = branding.colors.textPrimary;
     }
   }
 
   return {
-    name: metadata?.title?.split("|")[0]?.split("-")[0]?.split("–")[0]?.trim() || "Unknown Company",
+    name:
+      metadata?.title?.split("|")[0]?.split("-")[0]?.split("–")[0]?.trim() ||
+      "Unknown Company",
     description: metadata?.description || "",
     tagline: null,
     industry: null,
@@ -226,7 +263,10 @@ function createDefaultBrandData(
     backgroundColor: branding?.colors?.background || "#ffffff",
     textColor: branding?.colors?.textPrimary || "#1f2937",
     brandColors,
-    primaryFont: branding?.typography?.fontFamilies?.primary || branding?.fonts?.[0]?.family || null,
+    primaryFont:
+      branding?.typography?.fontFamilies?.primary ||
+      branding?.fonts?.[0]?.family ||
+      null,
     secondaryFont: null,
     socialLinks: extractSocialLinks(links),
     contactEmail: null,
@@ -273,7 +313,10 @@ export async function POST(request: NextRequest) {
 
     // Normalize URL
     let normalizedUrl = websiteUrl.trim();
-    if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
+    if (
+      !normalizedUrl.startsWith("http://") &&
+      !normalizedUrl.startsWith("https://")
+    ) {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
@@ -292,66 +335,75 @@ export async function POST(request: NextRequest) {
     } catch (scrapeError) {
       console.error("Firecrawl scrape error:", scrapeError);
       return NextResponse.json(
-        { error: "Failed to scrape website. Please check the URL and try again." },
+        {
+          error:
+            "Failed to scrape website. Please check the URL and try again.",
+        },
         { status: 400 }
       );
     }
 
-    const { markdown, screenshot, links, metadata, branding } = scrapeResult as {
-      markdown?: string;
-      screenshot?: string;
-      links?: string[];
-      metadata?: {
-        title?: string;
-        description?: string;
-        ogImage?: string;
-        favicon?: string;
-      };
-      branding?: {
-        colors?: {
-          primary?: string;
-          secondary?: string;
-          accent?: string;
-          background?: string;
-          textPrimary?: string;
-          link?: string;
-          [key: string]: string | undefined;
+    const { markdown, screenshot, links, metadata, branding } =
+      scrapeResult as {
+        markdown?: string;
+        screenshot?: string;
+        links?: string[];
+        metadata?: {
+          title?: string;
+          description?: string;
+          ogImage?: string;
+          favicon?: string;
         };
-        typography?: {
-          fontFamilies?: {
+        branding?: {
+          colors?: {
             primary?: string;
+            secondary?: string;
+            accent?: string;
+            background?: string;
+            textPrimary?: string;
+            link?: string;
+            [key: string]: string | undefined;
+          };
+          typography?: {
+            fontFamilies?: {
+              primary?: string;
+            };
+          };
+          fonts?: Array<{ family: string }>;
+          images?: {
+            logo?: string | null;
+            favicon?: string | null;
+          };
+          confidence?: {
+            colors?: number;
+            buttons?: number;
+            overall?: number;
           };
         };
-        fonts?: Array<{ family: string }>;
-        images?: {
-          logo?: string | null;
-          favicon?: string | null;
-        };
-        confidence?: {
-          colors?: number;
-          buttons?: number;
-          overall?: number;
-        };
       };
-    };
 
     // Check if Firecrawl has good branding data with reasonable confidence
     // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
     const colorConfidence = branding?.confidence?.colors ?? 0;
-    const hasColorsWithConfidence = branding?.colors &&
+    const hasColorsWithConfidence =
+      branding?.colors &&
       Object.keys(branding.colors).length > 2 &&
       colorConfidence >= 0.3;
 
     // If confidence is too low, use Claude for better color extraction
     const hasBrandingColors = hasColorsWithConfidence;
-    console.log(`Brand extraction for ${normalizedUrl}: Using ${hasBrandingColors ? "Firecrawl" : "Claude"} (color confidence: ${colorConfidence})`);
+    console.log(
+      `Brand extraction for ${normalizedUrl}: Using ${
+        hasBrandingColors ? "Firecrawl" : "Claude"
+      } (color confidence: ${colorConfidence})`
+    );
 
     // Even if Firecrawl has good branding colors, we still need Claude for:
     // 1. Target audience inference
     // 2. Visual style and brand tone detection
     // 3. Industry classification
     // So we always run Claude analysis, but may use Firecrawl colors as fallback
-    const firecrawlBrandData = hasBrandingColors 
+    const firecrawlBrandData = hasBrandingColors
       ? createDefaultBrandData(metadata, branding, links)
       : null;
 
@@ -366,14 +418,20 @@ Page Title: ${metadata?.title || "Unknown"}
 Page Description: ${metadata?.description || "Unknown"}
 
 Website Content (markdown):
-${markdown?.slice(0, 20000) || "No content available"}
+${markdown?.slice(0, 8000) || "No content available"}
 
 Links found on page:
-${links?.slice(0, 50).join("\n") || "No links available"}
+${links?.slice(0, 20).join("\n") || "No links available"}
 
-${screenshot ? "A screenshot of the website is also provided for visual analysis." : ""}
+${
+  screenshot
+    ? "A screenshot of the website is also provided for visual analysis."
+    : ""
+}
 
-Based on the content${screenshot ? " and screenshot" : ""} above, extract the following brand information in JSON format:
+Based on the content${
+      screenshot ? " and screenshot" : ""
+    } above, extract the following brand information in JSON format:
 
 1. **Company Name**: The company/brand name
 2. **Description**: A brief description of what the company does (2-3 sentences)
@@ -560,7 +618,7 @@ Return ONLY a valid JSON object with this exact structure:
         });
 
         const response = await getAnthropic().messages.create({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-3-5-haiku-20241022", // Faster model for brand extraction
           max_tokens: 2000,
           messages: [
             {
@@ -572,7 +630,10 @@ Return ONLY a valid JSON object with this exact structure:
 
         // Extract JSON from Claude's response
         const responseText = response.content
-          .filter((block): block is Anthropic.Messages.TextBlock => block.type === "text")
+          .filter(
+            (block): block is Anthropic.Messages.TextBlock =>
+              block.type === "text"
+          )
           .map((block) => block.text)
           .join("");
 
@@ -583,14 +644,17 @@ Return ONLY a valid JSON object with this exact structure:
         }
         brandData = JSON.parse(jsonMatch[0]);
         break; // Success, exit retry loop
-
       } catch (error) {
         lastError = error as Error;
         console.error(`Claude analysis attempt ${attempt + 1} failed:`, error);
 
         // Check if it's an image size error
         const errorMessage = String(error);
-        if (errorMessage.includes("8000 pixels") || errorMessage.includes("image") || errorMessage.includes("dimension")) {
+        if (
+          errorMessage.includes("8000 pixels") ||
+          errorMessage.includes("image") ||
+          errorMessage.includes("dimension")
+        ) {
           console.log("Image too large, retrying without screenshot...");
           useScreenshot = false;
           continue; // Retry without screenshot
@@ -603,7 +667,10 @@ Return ONLY a valid JSON object with this exact structure:
 
     // If Claude analysis failed entirely, use fallback data
     if (!brandData) {
-      console.error("All Claude analysis attempts failed, using fallback data. Last error:", lastError);
+      console.error(
+        "All Claude analysis attempts failed, using fallback data. Last error:",
+        lastError
+      );
       brandData = createDefaultBrandData(metadata, branding, links);
     }
 
@@ -618,7 +685,9 @@ Return ONLY a valid JSON object with this exact structure:
       if (firecrawlBrandData.brandColors.length > 0) {
         brandData.brandColors = firecrawlBrandData.brandColors;
       }
-      console.log("Using high-confidence Firecrawl colors with Claude's audience analysis");
+      console.log(
+        "Using high-confidence Firecrawl colors with Claude's audience analysis"
+      );
     } else {
       // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
       // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
@@ -632,18 +701,26 @@ Return ONLY a valid JSON object with this exact structure:
         if (branding.colors.accent && !brandData.secondaryColor) {
           brandData.secondaryColor = branding.colors.accent;
         }
-        if (branding.colors.link && !brandData.accentColor && branding.colors.link !== brandData.secondaryColor) {
+        if (
+          branding.colors.link &&
+          !brandData.accentColor &&
+          branding.colors.link !== brandData.secondaryColor
+        ) {
           brandData.accentColor = branding.colors.link;
         }
-        if (branding.colors.background && brandData.backgroundColor === "#ffffff") {
+        if (
+          branding.colors.background &&
+          brandData.backgroundColor === "#ffffff"
+        ) {
           brandData.backgroundColor = branding.colors.background;
         }
         if (branding.colors.textPrimary && brandData.textColor === "#1f2937") {
           brandData.textColor = branding.colors.textPrimary;
         }
         if (brandData.brandColors.length === 0) {
-          brandData.brandColors = Object.values(branding.colors)
-            .filter((c): c is string => typeof c === "string" && c.startsWith("#"));
+          brandData.brandColors = Object.values(branding.colors).filter(
+            (c): c is string => typeof c === "string" && c.startsWith("#")
+          );
         }
       }
     }
@@ -656,7 +733,8 @@ Return ONLY a valid JSON object with this exact structure:
 
     // Add favicon and logo from branding/metadata if not found
     if (!brandData.faviconUrl) {
-      brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null;
+      brandData.faviconUrl =
+        branding?.images?.favicon || metadata?.favicon || null;
     }
     if (!brandData.logoUrl) {
       brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null;
@@ -670,9 +748,12 @@ Return ONLY a valid JSON object with this exact structure:
     // Remove any undefined/null/empty string values from social links
     if (brandData.socialLinks) {
       Object.keys(brandData.socialLinks).forEach((key) => {
-        const value = brandData.socialLinks[key as keyof typeof brandData.socialLinks];
+        const value =
+          brandData.socialLinks[key as keyof typeof brandData.socialLinks];
         if (!value || value.trim() === "") {
-          delete brandData.socialLinks[key as keyof typeof brandData.socialLinks];
+          delete brandData.socialLinks[
+            key as keyof typeof brandData.socialLinks
+          ];
         }
       });
     }
@@ -682,22 +763,37 @@ Return ONLY a valid JSON object with this exact structure:
     const brandDataWithFeels = brandData as BrandExtraction;
     brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50;
     brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50;
-    brandDataWithFeels.feelExperimentalClassic = brandData.feelExperimentalClassic ?? 50;
-    brandDataWithFeels.feelFriendlyProfessional = brandData.feelFriendlyProfessional ?? 50;
-    brandDataWithFeels.feelPremiumAccessible = brandData.feelPremiumAccessible ?? 50;
+    brandDataWithFeels.feelExperimentalClassic =
+      brandData.feelExperimentalClassic ?? 50;
+    brandDataWithFeels.feelFriendlyProfessional =
+      brandData.feelFriendlyProfessional ?? 50;
+    brandDataWithFeels.feelPremiumAccessible =
+      brandData.feelPremiumAccessible ?? 50;
     brandDataWithFeels.signalTone = brandData.signalTone ?? 50;
     brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50;
     brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
     brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50;
 
     // Validate and set defaults for visualStyle, brandTone, and industryArchetype
-    const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(brandData.visualStyle as typeof VISUAL_STYLE_VALUES[number]);
-    const isValidBrandTone = BRAND_TONE_VALUES.includes(brandData.brandTone as typeof BRAND_TONE_VALUES[number]);
-    const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(brandData.industryArchetype as typeof INDUSTRY_ARCHETYPE_VALUES[number]);
+    const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(
+      brandData.visualStyle as (typeof VISUAL_STYLE_VALUES)[number]
+    );
+    const isValidBrandTone = BRAND_TONE_VALUES.includes(
+      brandData.brandTone as (typeof BRAND_TONE_VALUES)[number]
+    );
+    const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(
+      brandData.industryArchetype as (typeof INDUSTRY_ARCHETYPE_VALUES)[number]
+    );
 
-    brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : "modern-sleek";
-    brandDataWithFeels.brandTone = isValidBrandTone ? brandData.brandTone : "professional-trustworthy";
-    brandDataWithFeels.industryArchetype = isValidIndustryArchetype ? brandData.industryArchetype : null;
+    brandDataWithFeels.visualStyle = isValidVisualStyle
+      ? brandData.visualStyle
+      : "modern-sleek";
+    brandDataWithFeels.brandTone = isValidBrandTone
+      ? brandData.brandTone
+      : "professional-trustworthy";
+    brandDataWithFeels.industryArchetype = isValidIndustryArchetype
+      ? brandData.industryArchetype
+      : null;
 
     // Ensure audiences is an array and validate each audience
     const rawAudiences = brandData.audiences || [];
@@ -709,7 +805,10 @@ Return ONLY a valid JSON object with this exact structure:
           firmographics: audience.firmographics || {},
           psychographics: audience.psychographics || {},
           behavioral: audience.behavioral || {},
-          confidence: typeof audience.confidence === "number" ? Math.min(100, Math.max(0, audience.confidence)) : 50,
+          confidence:
+            typeof audience.confidence === "number"
+              ? Math.min(100, Math.max(0, audience.confidence))
+              : 50,
         }))
       : [];
 

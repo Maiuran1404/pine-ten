@@ -346,23 +346,18 @@ export default function BrandPage() {
     toast.success("Color copied to clipboard");
   };
 
-  const handleRedoOnboarding = async () => {
+  const handleRedoOnboarding = () => {
     setIsResettingOnboarding(true);
-    try {
-      const response = await fetch("/api/brand/reset-onboarding", {
-        method: "POST",
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to reset onboarding");
-      }
+    // Start the API call but don't wait for it - redirect immediately
+    fetch("/api/brand/reset-onboarding", {
+      method: "POST",
+    }).catch(() => {
+      // Silently ignore errors - onboarding page will handle any issues
+    });
 
-      toast.success("Redirecting to onboarding...");
-      router.push("/onboarding");
-    } catch {
-      toast.error("Failed to reset onboarding");
-      setIsResettingOnboarding(false);
-    }
+    // Redirect immediately using window.location for faster navigation
+    window.location.href = "/onboarding";
   };
 
   const updateField = (field: keyof BrandData, value: unknown) => {
@@ -407,14 +402,13 @@ export default function BrandPage() {
             Complete onboarding to set up your brand.
           </p>
           <Button
-            onClick={async () => {
-              // Reset onboarding status first to ensure clean slate
-              try {
-                await fetch("/api/brand/reset-onboarding", { method: "POST" });
-              } catch {
-                // Ignore errors - just proceed to onboarding
-              }
-              router.push("/onboarding");
+            onClick={() => {
+              // Reset onboarding status in background - don't wait
+              fetch("/api/brand/reset-onboarding", { method: "POST" }).catch(
+                () => {}
+              );
+              // Redirect immediately
+              window.location.href = "/onboarding";
             }}
             className="mt-2"
           >

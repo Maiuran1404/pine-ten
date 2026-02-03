@@ -3423,7 +3423,7 @@ export function ChatInterface({
             </div>
           )}
 
-          {/* Skip to submit button - positioned above input on the right */}
+          {/* Quick submit button - positioned above input on the right */}
           {messages.length > 0 && !pendingTask && !isLoading && (
             <div className="flex justify-end mb-2">
               <Button
@@ -3432,8 +3432,8 @@ export function ChatInterface({
                 onClick={handleRequestTaskSummary}
                 className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
               >
-                <ArrowRight className="h-3.5 w-3.5" />
-                Skip to submit
+                <Sparkles className="h-3.5 w-3.5" />
+                You decide & submit
               </Button>
             </div>
           )}

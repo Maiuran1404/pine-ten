@@ -455,14 +455,14 @@ function DashboardContent() {
             <span className="relative inline-block">
               {userName}!
               <svg
-                className="absolute -bottom-1 left-0 w-full h-2.5 text-emerald-500"
-                viewBox="0 0 100 8"
+                className="absolute -bottom-2 left-0 w-full h-5 text-emerald-500"
+                viewBox="0 0 100 20"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 preserveAspectRatio="none"
               >
                 <path
-                  d="M0 4C10 2 20 6 30 4C40 2 50 6 60 4C70 2 80 6 90 4C95 3 100 5 100 4"
+                  d="M0 18 Q50 0 100 18"
                   stroke="currentColor"
                   strokeWidth="2.5"
                   strokeLinecap="round"
