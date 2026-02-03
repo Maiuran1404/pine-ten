@@ -805,6 +805,11 @@ async function handler(request: NextRequest) {
           normalizeDeliverableType(deliverableStyleMarker.deliverableType)
         ))
     ) {
+      // For video requests, ALWAYS clear image styles - we only want to show video references
+      // Do this BEFORE fetching video references so even if fetch fails, we don't show images
+      deliverableStyles = undefined;
+      console.log("[Chat API] Video request detected - cleared image styles");
+      
       try {
         const deliverableType = deliverableStyleMarker?.deliverableType
           ? normalizeDeliverableType(deliverableStyleMarker.deliverableType)
@@ -818,14 +823,9 @@ async function handler(request: NextRequest) {
         console.log(
           `[Chat API] Fetched ${videoReferences.length} video references for ${deliverableType}`
         );
-        
-        // For video requests, ONLY show video references - clear image styles
-        if (videoReferences.length > 0) {
-          deliverableStyles = undefined;
-          console.log("[Chat API] Cleared image styles - showing only video references");
-        }
       } catch (err) {
         console.error("Error fetching video references:", err);
+        // Even if video fetch fails, don't fall back to image styles for video requests
       }
     }
 

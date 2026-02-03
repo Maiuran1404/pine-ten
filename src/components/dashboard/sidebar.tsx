@@ -32,7 +32,7 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   const handleStartNewChat = () => {
-    router.push("/dashboard/chat");
+    router.push("/dashboard");
   };
 
   // Features menu items - matching chat page design

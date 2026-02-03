@@ -3622,7 +3622,16 @@ export function ChatInterface({
                 <div className="h-4 w-px bg-border" />
                 {/* Credits indicator */}
                 <div className="flex items-center gap-1.5 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                  <span
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      userCredits === 0
+                        ? "bg-red-500"
+                        : userCredits < 15
+                        ? "bg-amber-500"
+                        : "bg-emerald-600"
+                    )}
+                  />
                   <span className="text-muted-foreground">
                     {userCredits} credits available
                   </span>

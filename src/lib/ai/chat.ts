@@ -420,7 +420,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   // Banned opener patterns (expanded list)
   const BANNED_OPENERS = [
     // Standalone "Choice" at the start (common AI mistake)
-    /^Choice[!,.\s]+/i,
+    /^Choice[\s\-!,.]+/i,
     // Enthusiastic affirmations
     /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
     // Enthusiastic affirmations with "choice/pick"
