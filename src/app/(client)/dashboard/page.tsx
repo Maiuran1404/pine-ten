@@ -53,12 +53,12 @@ const TEMPLATE_CATEGORIES = {
     icon: Megaphone,
     description: "Product videos that convert",
     modalDescription:
-      "Select the video type that fits your launch goals. Add details about your product and we'll craft the perfect brief.",
+      "Select the video type that fits my launch goals. Add details about my product and we'll craft the perfect brief.",
     options: [
       {
         title: "Product Launch Video",
         description:
-          "A polished 30-60 second cinematic video that introduces your product to the world. Perfect for social media announcements, landing pages, and investor presentations.",
+          "A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.",
         prompt: "Create a product launch video",
         image:
           "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop&q=80",
@@ -66,7 +66,7 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Feature Highlight",
         description:
-          "A focused video that showcases a specific feature or capability of your product. Great for explaining complex functionality in a digestible way.",
+          "A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.",
         prompt: "Create a feature highlight video",
         image:
           "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80",
@@ -74,7 +74,7 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "App Walkthrough",
         description:
-          "A clear, guided tour of your app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.",
+          "A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.",
         prompt: "Create an app walkthrough video",
         image:
           "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&q=80",
@@ -85,12 +85,12 @@ const TEMPLATE_CATEGORIES = {
     icon: Presentation,
     description: "Investor-ready presentations",
     modalDescription:
-      "Choose the presentation style that matches your audience. Share your existing deck or key points and we'll design something compelling.",
+      "Choose the presentation style that matches my audience. Share my existing deck or key points and we'll design something compelling.",
     options: [
       {
         title: "Investor Pitch Deck",
         description:
-          "A visually striking presentation designed to capture investor attention and communicate your vision clearly. Typically 10-15 slides.",
+          "A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.",
         prompt: "Redesign my investor pitch deck",
         image:
           "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop&q=80",
@@ -106,7 +106,7 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Company Overview",
         description:
-          "A versatile introduction to your company that works for partners, clients, and new team members.",
+          "A versatile introduction to my company that works for partners, clients, and new team members.",
         prompt: "Design a company overview presentation",
         image:
           "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=400&h=300&fit=crop&q=80",
@@ -117,7 +117,7 @@ const TEMPLATE_CATEGORIES = {
     icon: Palette,
     description: "Complete visual identity",
     modalDescription:
-      "Tell us about your brand personality and goals. We'll create a visual identity that sets you apart.",
+      "Tell us about my brand personality and goals. We'll create a visual identity that sets me apart.",
     options: [
       {
         title: "Full Brand Package",
@@ -130,7 +130,7 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Logo Design",
         description:
-          "A custom logo crafted for your brand, including primary logo, wordmark, and icon variations.",
+          "A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.",
         prompt: "Design a logo for my brand",
         image:
           "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&q=80",
@@ -138,7 +138,7 @@ const TEMPLATE_CATEGORIES = {
       {
         title: "Brand Refresh",
         description:
-          "Modernize and elevate your existing brand while maintaining recognition with updated visual elements.",
+          "Modernize and elevate my existing brand while maintaining recognition with updated visual elements.",
         prompt: "Refresh and modernize my existing brand",
         image:
           "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop&q=80",
@@ -149,7 +149,7 @@ const TEMPLATE_CATEGORIES = {
     icon: Share2,
     description: "Ads, content & video edits",
     modalDescription:
-      "Select the content type and platform. Share your goals and any assets, and we'll create scroll-stopping content.",
+      "Select the content type and platform. Share my goals and any assets, and we'll create scroll-stopping content.",
     options: [
       {
         title: "Instagram Post",

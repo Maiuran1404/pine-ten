@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, startTransition } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getDrafts, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { useCredits } from "@/providers/credit-provider";
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const initializedRef = useRef(false);
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
@@ -181,7 +182,7 @@ export default function ChatPage() {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  item.active
+                  pathname === item.href || pathname.startsWith(item.href + "/")
                     ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
                     : "text-foreground hover:bg-muted"
                 )}
