@@ -2649,11 +2649,16 @@ export function ChatInterface({
                               </motion.div>
                             )}
 
-                          {/* Task Proposal */}
+                          {/* Task Proposal - with actions when it's the pending task */}
                           {message.taskProposal && (
                             <div className="mt-4 ml-8">
                               <TaskProposalCard
                                 proposal={message.taskProposal}
+                                showActions={pendingTask?.title === message.taskProposal.title}
+                                onSubmit={handleOpenSubmissionModal}
+                                onMakeChanges={handleRejectTask}
+                                isLoading={isLoading}
+                                userCredits={userCredits}
                               />
                             </div>
                           )}
@@ -2769,98 +2774,21 @@ export function ChatInterface({
             </motion.div>
           )}
 
-        {/* Manual submit fallback when AI says "ready" but no [TASK_READY] */}
+        {/* Manual submit prompt - now shown inline in chat via quick action */}
         {showManualSubmit && !pendingTask && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="border border-amber-500/50 bg-amber-500/5 rounded-xl p-4 mb-4"
+            className="flex justify-center mb-3"
           >
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    Ready to submit?
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Click to generate your task summary
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={handleRequestTaskSummary}
-                disabled={isLoading}
-                className="h-9"
-              >
-                {isLoading ? (
-                  <LoadingSpinner size="sm" className="mr-2" />
-                ) : (
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                )}
-                Generate Summary
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Task Confirmation Bar */}
-        {pendingTask && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border border-border bg-card rounded-xl p-4 mb-4"
-          >
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600/10 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    Ready to submit this task?
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {pendingTask.creditsRequired ?? 15} credits required
-                    {userCredits < (pendingTask.creditsRequired ?? 15) ? (
-                      <span className="text-destructive ml-1">
-                        (You have {userCredits} credits)
-                      </span>
-                    ) : (
-                      <span className="text-emerald-500 ml-1">
-                        (You have {userCredits} credits)
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleRejectTask}
-                  disabled={isLoading}
-                  className="h-9"
-                >
-                  Make Changes
-                </Button>
-                <Button
-                  onClick={handleOpenSubmissionModal}
-                  disabled={isLoading}
-                  className="h-9"
-                >
-                  {isLoading ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
-                  )}
-                  {userCredits < (pendingTask.creditsRequired ?? 15)
-                    ? "Buy Credits"
-                    : "Review & Submit"}
-                </Button>
-              </div>
-            </div>
+            <button
+              onClick={handleRequestTaskSummary}
+              disabled={isLoading}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-muted/50 bg-amber-500/10 border border-amber-500/20 disabled:opacity-50"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              Ready to submit? Generate summary
+            </button>
           </motion.div>
         )}
 
