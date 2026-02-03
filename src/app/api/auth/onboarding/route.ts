@@ -4,9 +4,16 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, freelancerProfiles, companies, audiences } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { adminNotifications, sendEmail, emailTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
+import {
+  adminNotifications,
+  sendEmail,
+  emailTemplates,
+  notifyAdminWhatsApp,
+  adminWhatsAppTemplates,
+} from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { withRateLimit } from "@/lib/rate-limit";
+import { inferAudiencesFromBrand } from "@/lib/ai/infer-audiences";
 
 async function handler(request: NextRequest) {
   try {
@@ -37,7 +44,10 @@ async function handler(request: NextRequest) {
     // Once completed, users cannot change their role or re-onboard
     if (currentUser.onboardingCompleted) {
       return NextResponse.json(
-        { error: "Onboarding already completed. Contact support to make changes." },
+        {
+          error:
+            "Onboarding already completed. Contact support to make changes.",
+        },
         { status: 403 }
       );
     }
@@ -86,27 +96,63 @@ async function handler(request: NextRequest) {
         })
         .returning();
 
-      // Save inferred audiences if any
-      if (brand.audiences && Array.isArray(brand.audiences) && brand.audiences.length > 0) {
-        const audienceValues = brand.audiences.map((audience: {
-          name: string;
-          isPrimary?: boolean;
-          demographics?: Record<string, unknown>;
-          firmographics?: Record<string, unknown>;
-          psychographics?: Record<string, unknown>;
-          behavioral?: Record<string, unknown>;
-          confidence?: number;
-        }) => ({
-          companyId: company.id,
-          name: audience.name,
-          isPrimary: audience.isPrimary || false,
-          demographics: audience.demographics || null,
-          firmographics: audience.firmographics || null,
-          psychographics: audience.psychographics || null,
-          behavioral: audience.behavioral || null,
-          confidence: audience.confidence || 50,
-          sources: ["website"],
-        }));
+      // Save inferred audiences if any, or infer from brand data if none provided
+      let audiencesToSave = brand.audiences;
+      let audienceSource = "website";
+
+      // If no audiences from website extraction, infer from brand data
+      if (
+        !audiencesToSave ||
+        !Array.isArray(audiencesToSave) ||
+        audiencesToSave.length === 0
+      ) {
+        try {
+          console.log(
+            "No audiences from website, inferring from brand data..."
+          );
+          audiencesToSave = await inferAudiencesFromBrand({
+            name: brand.name,
+            industry: brand.industry,
+            industryArchetype: brand.industryArchetype,
+            description: brand.description,
+            creativeFocus: brand.creativeFocus,
+          });
+          audienceSource = "inferred";
+          console.log(
+            `Inferred ${audiencesToSave.length} audience(s) from brand data`
+          );
+        } catch (error) {
+          console.error("Failed to infer audiences from brand data:", error);
+          audiencesToSave = [];
+        }
+      }
+
+      if (
+        audiencesToSave &&
+        Array.isArray(audiencesToSave) &&
+        audiencesToSave.length > 0
+      ) {
+        const audienceValues = audiencesToSave.map(
+          (audience: {
+            name: string;
+            isPrimary?: boolean;
+            demographics?: Record<string, unknown>;
+            firmographics?: Record<string, unknown>;
+            psychographics?: Record<string, unknown>;
+            behavioral?: Record<string, unknown>;
+            confidence?: number;
+          }) => ({
+            companyId: company.id,
+            name: audience.name,
+            isPrimary: audience.isPrimary || false,
+            demographics: audience.demographics || null,
+            firmographics: audience.firmographics || null,
+            psychographics: audience.psychographics || null,
+            behavioral: audience.behavioral || null,
+            confidence: audience.confidence || 50,
+            sources: [audienceSource],
+          })
+        );
 
         await db.insert(audiences).values(audienceValues);
       }
@@ -128,7 +174,10 @@ async function handler(request: NextRequest) {
       // Fire-and-forget: Send notifications without blocking the response
       const userName = session.user.name || "Unknown";
       const userEmail = session.user.email || "";
-      const companyInfo = { name: company.name, industry: company.industry || undefined };
+      const companyInfo = {
+        name: company.name,
+        industry: company.industry || undefined,
+      };
       Promise.resolve().then(async () => {
         try {
           await adminNotifications.newClientSignup({
@@ -137,8 +186,15 @@ async function handler(request: NextRequest) {
             userId: session.user.id,
             company: companyInfo,
           });
-          const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`);
-          await sendEmail({ to: userEmail, subject: welcomeEmail.subject, html: welcomeEmail.html });
+          const welcomeEmail = emailTemplates.welcomeClient(
+            userName,
+            `${config.app.url}/dashboard`
+          );
+          await sendEmail({
+            to: userEmail,
+            subject: welcomeEmail.subject,
+            html: welcomeEmail.html,
+          });
 
           // Send WhatsApp notification to admin
           const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
@@ -149,7 +205,10 @@ async function handler(request: NextRequest) {
           });
           await notifyAdminWhatsApp(whatsappMessage);
         } catch (error) {
-          console.error("Failed to send client onboarding notifications:", error);
+          console.error(
+            "Failed to send client onboarding notifications:",
+            error
+          );
         }
       });
 
@@ -209,7 +268,10 @@ async function handler(request: NextRequest) {
           });
           await notifyAdminWhatsApp(whatsappMessage);
         } catch (error) {
-          console.error("Failed to send freelancer application notification:", error);
+          console.error(
+            "Failed to send freelancer application notification:",
+            error
+          );
         }
       });
 
