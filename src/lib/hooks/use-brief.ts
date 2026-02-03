@@ -81,7 +81,10 @@ interface UseBriefReturn {
   // Actions
   processMessage: (message: string) => void;
   confirmField: (field: keyof LiveBrief) => void;
-  updateField: <K extends keyof LiveBrief>(field: K, value: LiveBrief[K]) => void;
+  updateField: <K extends keyof LiveBrief>(
+    field: K,
+    value: LiveBrief[K]
+  ) => void;
   updateBrief: (brief: LiveBrief) => void;
   setIntent: (intent: Intent) => void;
   setPlatform: (platform: Platform) => void;
@@ -125,7 +128,8 @@ export function useBrief({
 
     // Set default audience if available
     if (brandAudiences.length > 0) {
-      const primaryAudience = brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+      const primaryAudience =
+        brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
       newBrief.audience = {
         value: {
           name: primaryAudience.name,
@@ -145,7 +149,8 @@ export function useBrief({
     return newBrief;
   });
 
-  const [pendingQuestion, setPendingQuestion] = useState<ClarifyingQuestion | null>(null);
+  const [pendingQuestion, setPendingQuestion] =
+    useState<ClarifyingQuestion | null>(null);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,6 +161,75 @@ export function useBrief({
   // Computed values
   const completion = useMemo(() => calculateBriefCompletion(brief), [brief]);
   const isReady = useMemo(() => isBriefReadyForDesigner(brief), [brief]);
+
+  // Apply brand data when it becomes available (after async load)
+  // This ensures brand colors and audiences show up immediately
+  useEffect(() => {
+    // Only apply if we have brand data and the brief doesn't already have it
+    if (brandColors.length > 0) {
+      setBrief((current) => {
+        // Don't overwrite if visual direction already has the colors
+        if (
+          current.visualDirection?.colorPalette?.length ===
+            brandColors.length &&
+          current.visualDirection.colorPalette.every(
+            (c, i) => c === brandColors[i]
+          )
+        ) {
+          return current;
+        }
+        return {
+          ...current,
+          visualDirection: {
+            ...current.visualDirection,
+            selectedStyles: current.visualDirection?.selectedStyles || [],
+            moodKeywords: current.visualDirection?.moodKeywords || [],
+            colorPalette: brandColors,
+            typography: brandTypography,
+            avoidElements: current.visualDirection?.avoidElements || [],
+          },
+          updatedAt: new Date(),
+        };
+      });
+    }
+  }, [brandColors, brandTypography]);
+
+  // Apply brand audiences when they become available
+  useEffect(() => {
+    if (brandAudiences.length > 0) {
+      setBrief((current) => {
+        // Don't overwrite if audience is already set (user might have confirmed it)
+        if (current.audience.source === "confirmed") {
+          return current;
+        }
+        // Don't overwrite if audience is already populated with same name
+        const primaryAudience =
+          brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+        if (current.audience.value?.name === primaryAudience.name) {
+          return current;
+        }
+        return {
+          ...current,
+          audience: {
+            value: {
+              name: primaryAudience.name,
+              demographics: primaryAudience.demographics
+                ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
+                : undefined,
+              psychographics:
+                primaryAudience.psychographics?.values?.join(", "),
+              painPoints: primaryAudience.psychographics?.painPoints,
+              goals: primaryAudience.psychographics?.goals,
+              source: "inferred",
+            },
+            confidence: 0.6,
+            source: "inferred",
+          },
+          updatedAt: new Date(),
+        };
+      });
+    }
+  }, [brandAudiences]);
 
   // Debounce brief changes for auto-save (500ms delay - fast enough to save before refresh)
   const debouncedBrief = useDebounce(brief, 500);
@@ -288,7 +362,11 @@ export function useBrief({
   const confirmField = useCallback((field: keyof LiveBrief) => {
     setBrief((current) => {
       const fieldValue = current[field];
-      if (fieldValue && typeof fieldValue === "object" && "source" in fieldValue) {
+      if (
+        fieldValue &&
+        typeof fieldValue === "object" &&
+        "source" in fieldValue
+      ) {
         return {
           ...current,
           [field]: { ...fieldValue, source: "confirmed" as const },
@@ -300,16 +378,16 @@ export function useBrief({
   }, []);
 
   // Update a specific field
-  const updateField = useCallback(<K extends keyof LiveBrief>(
-    field: K,
-    value: LiveBrief[K]
-  ) => {
-    setBrief((current) => ({
-      ...current,
-      [field]: value,
-      updatedAt: new Date(),
-    }));
-  }, []);
+  const updateField = useCallback(
+    <K extends keyof LiveBrief>(field: K, value: LiveBrief[K]) => {
+      setBrief((current) => ({
+        ...current,
+        [field]: value,
+        updatedAt: new Date(),
+      }));
+    },
+    []
+  );
 
   // Update entire brief
   const updateBrief = useCallback((newBrief: LiveBrief) => {
@@ -364,40 +442,46 @@ export function useBrief({
   }, []);
 
   // Set visual direction
-  const setVisualDirection = useCallback((direction: VisualDirection | null) => {
-    setBrief((current) => ({
-      ...current,
-      visualDirection: direction,
-      updatedAt: new Date(),
-    }));
-  }, []);
+  const setVisualDirection = useCallback(
+    (direction: VisualDirection | null) => {
+      setBrief((current) => ({
+        ...current,
+        visualDirection: direction,
+        updatedAt: new Date(),
+      }));
+    },
+    []
+  );
 
   // Add a style to visual direction
-  const addStyleToVisualDirection = useCallback((style: DeliverableStyle) => {
-    setBrief((current) => {
-      const currentDirection = current.visualDirection || {
-        selectedStyles: [],
-        moodKeywords: [],
-        colorPalette: brandColors,
-        typography: brandTypography,
-        avoidElements: [],
-      };
+  const addStyleToVisualDirection = useCallback(
+    (style: DeliverableStyle) => {
+      setBrief((current) => {
+        const currentDirection = current.visualDirection || {
+          selectedStyles: [],
+          moodKeywords: [],
+          colorPalette: brandColors,
+          typography: brandTypography,
+          avoidElements: [],
+        };
 
-      // Don't add if already exists
-      if (currentDirection.selectedStyles.some((s) => s.id === style.id)) {
-        return current;
-      }
+        // Don't add if already exists
+        if (currentDirection.selectedStyles.some((s) => s.id === style.id)) {
+          return current;
+        }
 
-      return {
-        ...current,
-        visualDirection: {
-          ...currentDirection,
-          selectedStyles: [...currentDirection.selectedStyles, style],
-        },
-        updatedAt: new Date(),
-      };
-    });
-  }, [brandColors, brandTypography]);
+        return {
+          ...current,
+          visualDirection: {
+            ...currentDirection,
+            selectedStyles: [...currentDirection.selectedStyles, style],
+          },
+          updatedAt: new Date(),
+        };
+      });
+    },
+    [brandColors, brandTypography]
+  );
 
   // Sync moodboard items to visual direction
   const syncMoodboardToVisualDirection = useCallback(
@@ -450,13 +534,21 @@ export function useBrief({
           const dimensions = getDimensionsForPlatform(answer as Platform);
           updated = {
             ...updated,
-            platform: { value: answer as Platform, confidence: 1, source: "confirmed" },
+            platform: {
+              value: answer as Platform,
+              confidence: 1,
+              source: "confirmed",
+            },
             dimensions,
           };
         } else if (questionId === "intent") {
           updated = {
             ...updated,
-            intent: { value: answer as Intent, confidence: 1, source: "confirmed" },
+            intent: {
+              value: answer as Intent,
+              confidence: 1,
+              source: "confirmed",
+            },
           };
         }
 
@@ -516,7 +608,10 @@ export function useBrief({
           updatedAt: new Date(),
         }));
       } catch (error) {
-        console.error("Failed to generate AI outline, falling back to template:", error);
+        console.error(
+          "Failed to generate AI outline, falling back to template:",
+          error
+        );
 
         // Fallback to local template-based generation
         const outline = generateContentOutline({
@@ -537,7 +632,16 @@ export function useBrief({
         setIsGeneratingOutline(false);
       }
     },
-    [brief.platform.value, brief.intent.value, brief.topic.value, brief.audience.value?.name, brief.audience.value?.psychographics, brandName, brandIndustry, brandToneOfVoice]
+    [
+      brief.platform.value,
+      brief.intent.value,
+      brief.topic.value,
+      brief.audience.value?.name,
+      brief.audience.value?.psychographics,
+      brandName,
+      brandIndustry,
+      brandToneOfVoice,
+    ]
   );
 
   // Reset brief
@@ -573,7 +677,14 @@ export function useBrief({
     );
 
     return exportBriefAsMarkdown(designerBrief);
-  }, [brief, brandName, brandIndustry, brandToneOfVoice, brandDescription, draftId]);
+  }, [
+    brief,
+    brandName,
+    brandIndustry,
+    brandToneOfVoice,
+    brandDescription,
+    draftId,
+  ]);
 
   return {
     brief,

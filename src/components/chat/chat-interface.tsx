@@ -479,58 +479,307 @@ export function ChatInterface({
   // Generate smart completions based on what the user is typing
   const generateSmartCompletion = useCallback((text: string): string | null => {
     if (!text || text.length < 3) return null;
-    
+
     const lowerText = text.toLowerCase().trim();
     const words = lowerText.split(/\s+/);
     const lastWord = words[words.length - 1] || "";
-    
+
     // Context-aware completions based on common chat patterns
-    const completions: Array<{ pattern: RegExp | string; completion: string }> = [
-      // Style selection responses
-      { pattern: /^i('ll| will)?\s*(go|like|choose|pick|want)\s*(with|the)?\s*$/i, completion: "the first style" },
-      { pattern: /^the\s+first\s*$/i, completion: "one looks great" },
-      { pattern: /^the\s+second\s*$/i, completion: "option please" },
-      { pattern: /^i\s+like\s*$/i, completion: "the minimal style" },
-      { pattern: /^let('s|s)?\s*go\s*$/i, completion: "with the first option" },
-      { pattern: /^show\s+me\s*$/i, completion: "more options" },
-      { pattern: /^something\s+more\s*$/i, completion: "minimal and clean" },
-      
-      // Product/project descriptions
-      { pattern: /^it('s| is)?\s*(a|an)?\s*$/i, completion: "a SaaS product" },
-      { pattern: /^we('re| are)?\s*(a|an)?\s*$/i, completion: "launching next month" },
-      { pattern: /^my\s+(product|app|company)\s*$/i, completion: "helps businesses" },
-      { pattern: /^for\s+(my|our)\s*$/i, completion: "product launch" },
-      { pattern: /^targeting\s*$/i, completion: "young professionals" },
-      { pattern: /^the\s+audience\s+(is|are)?\s*$/i, completion: "primarily business owners" },
-      
-      // Platform mentions
-      { pattern: /^(for|on)\s+instagram\s*$/i, completion: "reels" },
-      { pattern: /^(for|on)\s+linkedin\s*$/i, completion: "post" },
-      { pattern: /^(for|on)\s+tiktok\s*$/i, completion: "video" },
-      
-      // Intent descriptions
-      { pattern: /^(to|we want to)\s+drive\s*$/i, completion: "signups and awareness" },
-      { pattern: /^(to|we want to)\s+increase\s*$/i, completion: "brand awareness" },
-      { pattern: /^(to|we want to)\s+launch\s*$/i, completion: "our new product" },
-      { pattern: /^(to|we want to)\s+promote\s*$/i, completion: "our upcoming event" },
-      { pattern: /^(to|we want to)\s+build\s*$/i, completion: "brand authority" },
-      
-      // General continuations
-      { pattern: /^(yes|yeah|yep),?\s*$/i, completion: "let's go with that" },
-      { pattern: /^(no|nope),?\s*$/i, completion: "show me different options" },
-      { pattern: /^can\s+you\s*$/i, completion: "make it more minimal?" },
-      { pattern: /^i\s+need\s*$/i, completion: "something eye-catching" },
-      { pattern: /^make\s+it\s*$/i, completion: "more bold and vibrant" },
-      { pattern: /^keep\s+it\s*$/i, completion: "simple and clean" },
-      { pattern: /^something\s+that\s*$/i, completion: "stands out" },
-      { pattern: /^i\s+want\s*$/i, completion: "something modern" },
-      { pattern: /^we\s+need\s*$/i, completion: "this by next week" },
-      
-      // Quantity and timing
-      { pattern: /^(\d+)\s+(posts?|videos?|pieces?)\s*$/i, completion: "for the campaign" },
-      { pattern: /^by\s+(next|this)\s*$/i, completion: "week if possible" },
-      { pattern: /^as\s+soon\s*$/i, completion: "as possible" },
-    ];
+    const completions: Array<{ pattern: RegExp | string; completion: string }> =
+      [
+        // ========== PRODUCT DESCRIPTIONS (most common follow-ups) ==========
+        // "A [type] for" patterns - very common when answering "What product?"
+        {
+          pattern:
+            /^a\s+(tech\s+)?(product|app|platform|tool|software|service)\s*(\/\s*\w+)?\s+for\s*$/i,
+          completion: "businesses to streamline their workflows",
+        },
+        {
+          pattern:
+            /^a\s+(saas|b2b|b2c)\s+(product|app|platform|tool)\s+for\s*$/i,
+          completion: "managing team productivity",
+        },
+        {
+          pattern: /^a\s+(mobile|web)\s+app\s+for\s*$/i,
+          completion: "tracking fitness goals",
+        },
+        { pattern: /^a\s+new\s*$/i, completion: "product we're launching" },
+        {
+          pattern: /^an\s+app\s+(that|which|for)\s*$/i,
+          completion: "helps people save time",
+        },
+        {
+          pattern: /^an\s+ai\s*$/i,
+          completion: "powered tool for content creation",
+        },
+
+        // "It's a" / "We have a" patterns
+        {
+          pattern: /^it('s| is)\s+(a|an)\s*$/i,
+          completion: "SaaS platform for businesses",
+        },
+        {
+          pattern: /^it('s| is)\s+called\s*$/i,
+          completion: "and it helps businesses",
+        },
+        {
+          pattern: /^we\s+(have|built|created|made)\s+(a|an)\s*$/i,
+          completion: "platform that helps businesses",
+        },
+        {
+          pattern: /^we('re| are)\s+(a|an)?\s*$/i,
+          completion: "launching next month",
+        },
+        {
+          pattern: /^we('re| are)\s+launching\s*$/i,
+          completion: "a new product next month",
+        },
+        {
+          pattern: /^we('re| are)\s+building\s*$/i,
+          completion: "a platform for teams",
+        },
+
+        // "My/Our product" patterns
+        {
+          pattern: /^my\s+(product|app|company|startup|business)\s*$/i,
+          completion: "helps businesses save time",
+        },
+        {
+          pattern: /^our\s+(product|app|company|startup|business)\s*$/i,
+          completion: "is a platform for teams",
+        },
+        {
+          pattern: /^our\s+new\s*$/i,
+          completion: "product launches next month",
+        },
+
+        // Product type continuations
+        {
+          pattern: /^(a|an)\s+(fitness|health|wellness)\s*$/i,
+          completion: "tracking app",
+        },
+        {
+          pattern: /^(a|an)\s+(project|task)\s+management\s*$/i,
+          completion: "tool for remote teams",
+        },
+        {
+          pattern: /^(a|an)\s+(e-?commerce|shopping)\s*$/i,
+          completion: "platform for small businesses",
+        },
+        {
+          pattern: /^(a|an)\s+(fintech|finance)\s*$/i,
+          completion: "app for personal budgeting",
+        },
+        {
+          pattern: /^(a|an)\s+(social|community)\s*$/i,
+          completion: "platform for creators",
+        },
+        {
+          pattern: /^(a|an)\s+(marketing|crm)\s*$/i,
+          completion: "tool for small businesses",
+        },
+
+        // Describing what the product does
+        {
+          pattern:
+            /that\s+helps\s+(people|users|businesses|teams|companies)\s*$/i,
+          completion: "save time and money",
+        },
+        {
+          pattern: /that\s+lets\s+(people|users|you)\s*$/i,
+          completion: "manage their projects easily",
+        },
+        {
+          pattern: /that\s+makes\s+(it\s+)?(easy|easier|simple)\s*$/i,
+          completion: "to collaborate with teams",
+        },
+        { pattern: /that\s+automates\s*$/i, completion: "repetitive tasks" },
+        {
+          pattern: /that\s+connects\s*$/i,
+          completion: "businesses with customers",
+        },
+        {
+          pattern: /to\s+help\s+(people|users|businesses|teams)\s*$/i,
+          completion: "be more productive",
+        },
+
+        // ========== STYLE SELECTION RESPONSES ==========
+        {
+          pattern:
+            /^i('ll| will)?\s*(go|like|choose|pick|want)\s*(with|the)?\s*$/i,
+          completion: "the first style",
+        },
+        { pattern: /^the\s+first\s*$/i, completion: "one looks great" },
+        { pattern: /^the\s+second\s*$/i, completion: "option please" },
+        { pattern: /^the\s+third\s*$/i, completion: "style works well" },
+        { pattern: /^i\s+like\s+(the\s+)?$/i, completion: "minimal style" },
+        {
+          pattern: /^let('s|s)?\s*go\s*(with)?\s*$/i,
+          completion: "the first option",
+        },
+        { pattern: /^show\s+me\s*$/i, completion: "more options" },
+        { pattern: /^something\s+more\s*$/i, completion: "minimal and clean" },
+        {
+          pattern: /^something\s+less\s*$/i,
+          completion: "busy and more focused",
+        },
+
+        // ========== AUDIENCE DESCRIPTIONS ==========
+        {
+          pattern: /^for\s+(my|our)\s*$/i,
+          completion: "target audience of professionals",
+        },
+        {
+          pattern: /^targeting\s*$/i,
+          completion: "young professionals aged 25-40",
+        },
+        {
+          pattern: /^the\s+audience\s+(is|are)?\s*$/i,
+          completion: "primarily business owners",
+        },
+        {
+          pattern: /^(mainly|mostly|primarily)\s*$/i,
+          completion: "business professionals",
+        },
+        {
+          pattern: /^(aimed\s+at|for)\s+(small|medium|large)\s*$/i,
+          completion: "businesses",
+        },
+        {
+          pattern: /^(aimed\s+at|for)\s+(young|older)\s*$/i,
+          completion: "professionals",
+        },
+
+        // ========== PLATFORM MENTIONS ==========
+        {
+          pattern: /^(for|on)\s+instagram\s*$/i,
+          completion: "reels and stories",
+        },
+        {
+          pattern: /^(for|on)\s+linkedin\s*$/i,
+          completion: "thought leadership posts",
+        },
+        { pattern: /^(for|on)\s+tiktok\s*$/i, completion: "short-form videos" },
+        {
+          pattern: /^(for|on)\s+twitter\s*$/i,
+          completion: "engagement threads",
+        },
+        { pattern: /^(for|on)\s+youtube\s*$/i, completion: "video content" },
+        {
+          pattern: /^(for|on)\s+(the\s+)?web\s*$/i,
+          completion: "landing page",
+        },
+
+        // ========== INTENT DESCRIPTIONS ==========
+        {
+          pattern: /^(to|we want to)\s+drive\s*$/i,
+          completion: "signups and conversions",
+        },
+        {
+          pattern: /^(to|we want to)\s+increase\s*$/i,
+          completion: "brand awareness",
+        },
+        {
+          pattern: /^(to|we want to)\s+launch\s*$/i,
+          completion: "our new product",
+        },
+        {
+          pattern: /^(to|we want to)\s+promote\s*$/i,
+          completion: "our upcoming launch",
+        },
+        {
+          pattern: /^(to|we want to)\s+build\s*$/i,
+          completion: "brand authority",
+        },
+        { pattern: /^(to|we want to)\s+grow\s*$/i, completion: "our audience" },
+        {
+          pattern: /^(to|we want to)\s+get\s*$/i,
+          completion: "more customers",
+        },
+        { pattern: /^(to|we want to)\s+attract\s*$/i, completion: "new users" },
+        {
+          pattern: /^(to|we want to)\s+generate\s*$/i,
+          completion: "leads and sales",
+        },
+
+        // ========== TIMING & URGENCY ==========
+        {
+          pattern: /^launching\s+(in|on|next|this)\s*$/i,
+          completion: "2 weeks",
+        },
+        {
+          pattern: /^we\s+launch\s+(in|on|next|this)\s*$/i,
+          completion: "2 weeks",
+        },
+        { pattern: /^need\s+(this|it)\s+by\s*$/i, completion: "next week" },
+        { pattern: /^by\s+(next|this)\s*$/i, completion: "week if possible" },
+        { pattern: /^as\s+soon\s*$/i, completion: "as possible" },
+        { pattern: /^in\s+(the\s+)?next\s*$/i, completion: "few days" },
+        { pattern: /^within\s*$/i, completion: "the next week" },
+
+        // ========== QUANTITY ==========
+        {
+          pattern: /^(\d+)\s+(posts?|videos?|pieces?|assets?)\s*$/i,
+          completion: "for the campaign",
+        },
+        {
+          pattern: /^a\s+series\s+of\s*$/i,
+          completion: "posts for our launch",
+        },
+        { pattern: /^multiple\s*$/i, completion: "versions for A/B testing" },
+        {
+          pattern: /^just\s+(one|1|a\s+single)\s*$/i,
+          completion: "hero video",
+        },
+
+        // ========== GENERAL CONTINUATIONS ==========
+        {
+          pattern: /^(yes|yeah|yep|sure|perfect),?\s*$/i,
+          completion: "let's go with that",
+        },
+        {
+          pattern: /^(no|nope|not\s+quite),?\s*$/i,
+          completion: "show me different options",
+        },
+        {
+          pattern: /^(great|nice|good|love\s+it),?\s*$/i,
+          completion: "let's move forward",
+        },
+        { pattern: /^can\s+you\s*$/i, completion: "make it more minimal?" },
+        {
+          pattern: /^could\s+(you|we)\s*$/i,
+          completion: "try a different style?",
+        },
+        { pattern: /^i\s+need\s*$/i, completion: "something eye-catching" },
+        { pattern: /^make\s+it\s*$/i, completion: "more bold and vibrant" },
+        { pattern: /^keep\s+it\s*$/i, completion: "simple and clean" },
+        { pattern: /^something\s+that\s*$/i, completion: "stands out" },
+        { pattern: /^i\s+want\s*$/i, completion: "something modern and clean" },
+        { pattern: /^we\s+need\s*$/i, completion: "this by next week" },
+        {
+          pattern: /^i('m| am)\s+looking\s+for\s*$/i,
+          completion: "something bold and modern",
+        },
+        {
+          pattern: /^i\s+was\s+thinking\s*$/i,
+          completion: "something more minimal",
+        },
+
+        // ========== FOLLOW-UP QUESTIONS ==========
+        {
+          pattern: /^what\s+about\s*$/i,
+          completion: "a more colorful version?",
+        },
+        {
+          pattern: /^how\s+about\s*$/i,
+          completion: "we try a different approach?",
+        },
+        {
+          pattern: /^can\s+we\s+(also|add)\s*$/i,
+          completion: "include our tagline?",
+        },
+        { pattern: /^should\s+(we|i)\s*$/i, completion: "include the logo?" },
+      ];
 
     // Check for pattern matches
     for (const { pattern, completion } of completions) {
@@ -543,30 +792,100 @@ export function ChatInterface({
       }
     }
 
-    // Word-level completions for partial words
+    // Word-level completions for partial words (last word being typed)
     const wordCompletions: Record<string, string> = {
-      "inst": "agram",
-      "link": "edIn",
-      "tikt": "ok",
-      "face": "book",
-      "yout": "ube",
-      "mini": "mal and clean",
-      "prof": "essional",
-      "moder": "n style",
-      "cine": "matic",
-      "prod": "uct launch",
-      "anno": "uncement",
-      "awar": "eness campaign",
-      "sign": "ups",
-      "conv": "ersion focused",
+      // Platforms
+      inst: "agram",
+      link: "edIn",
+      tikt: "ok",
+      face: "book",
+      yout: "ube",
+      twit: "ter",
+      // Style words
+      mini: "mal",
+      moder: "n",
+      cine: "matic",
+      prof: "essional",
+      eleg: "ant",
+      vibr: "ant",
+      dynam: "ic",
+      sleek: " and modern",
+      // Business words
+      prod: "uct",
+      serv: "ice",
+      plat: "form",
+      busin: "esses",
+      enter: "prise",
+      start: "up",
+      compan: "y",
+      // Intent words
+      anno: "uncement",
+      awar: "eness",
+      laun: "ch",
+      prom: "otion",
+      conv: "ersion",
+      sign: "ups",
+      engag: "ement",
+      // Common continuations
+      stream: "line workflows",
+      auto: "mate tasks",
+      manag: "e their projects",
+      track: "ing and analytics",
+      colla: "borate",
     };
 
     // Check partial word completions
     if (lastWord.length >= 3) {
       for (const [prefix, suffix] of Object.entries(wordCompletions)) {
-        if (lastWord.startsWith(prefix) && !lastWord.includes(suffix.charAt(0).toLowerCase())) {
+        if (
+          lastWord.startsWith(prefix) &&
+          !lastWord.includes(suffix.charAt(0).toLowerCase())
+        ) {
           return suffix;
         }
+      }
+    }
+
+    // Ending-based completions - check what the sentence ends with
+    // These work regardless of what came before
+    const endingCompletions: Array<{ ending: string; completion: string }> = [
+      // Product description endings
+      { ending: " for", completion: "businesses to manage their workflows" },
+      { ending: " for ", completion: "businesses to manage their workflows" },
+      { ending: " that", completion: "helps teams be more productive" },
+      { ending: " that ", completion: "helps teams be more productive" },
+      { ending: " which", completion: "helps businesses save time" },
+      { ending: " to", completion: "help businesses grow" },
+      { ending: " to ", completion: "help businesses grow" },
+
+      // Common preposition endings
+      { ending: " with", completion: "a modern, clean design" },
+      { ending: " about", completion: "our new product launch" },
+      { ending: " like", completion: "something bold and eye-catching" },
+      { ending: " using", completion: "AI and automation" },
+
+      // Action endings
+      { ending: " helps", completion: "businesses save time" },
+      { ending: " lets", completion: "users manage their projects" },
+      { ending: " allows", completion: "teams to collaborate" },
+      { ending: " enables", completion: "businesses to scale" },
+      { ending: " makes", completion: "it easy to get started" },
+
+      // Common phrase endings
+      { ending: " and", completion: "increase conversions" },
+      { ending: " or", completion: "something similar" },
+      { ending: " but", completion: "more minimal" },
+      { ending: " by", completion: "next week" },
+      { ending: " in", completion: "the next few days" },
+      { ending: " on", completion: "social media" },
+
+      // Question-like endings
+      { ending: "?", completion: "" }, // Don't complete questions
+    ];
+
+    for (const { ending, completion } of endingCompletions) {
+      if (lowerText.endsWith(ending) && completion) {
+        return completion;
       }
     }
 
@@ -588,7 +907,10 @@ export function ChatInterface({
     // Check if input matches a quick option - if so, don't override with smart completion
     if (quickOptionSuggestion) {
       const trimmedInput = input.trim().toLowerCase();
-      if (trimmedInput.length === 0 || quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)) {
+      if (
+        trimmedInput.length === 0 ||
+        quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)
+      ) {
         setSmartCompletion(null);
         return;
       }
@@ -610,9 +932,9 @@ export function ChatInterface({
   // Determine which suggestion to show (quick option or smart completion)
   const currentSuggestion = useMemo(() => {
     if (isLoading) return null;
-    
+
     const trimmedInput = input.trim().toLowerCase();
-    
+
     // First priority: quick options when input is empty or matches
     if (quickOptionSuggestion) {
       if (trimmedInput.length === 0) return quickOptionSuggestion;
@@ -620,42 +942,47 @@ export function ChatInterface({
         return quickOptionSuggestion;
       }
     }
-    
+
     // Second priority: smart completion when typing
     if (smartCompletion && trimmedInput.length >= 3) {
       return input.trim() + " " + smartCompletion;
     }
-    
+
     return null;
   }, [quickOptionSuggestion, smartCompletion, input, isLoading]);
-
-  // Check if current input matches the start of the suggestion
-  const showSuggestion = useMemo(() => {
-    if (!currentSuggestion || isLoading) return false;
-    const trimmedInput = input.trim().toLowerCase();
-    if (trimmedInput.length === 0) return true; // Show full suggestion when empty
-    // Show if input matches the beginning of the suggestion
-    return currentSuggestion.toLowerCase().startsWith(trimmedInput);
-  }, [currentSuggestion, input, isLoading]);
 
   // Get the ghost text to display (the part after what's typed)
   const ghostText = useMemo(() => {
     if (!currentSuggestion || isLoading) return "";
     const trimmedInput = input.trim();
-    
+
     // For smart completions, just show the completion part
-    if (smartCompletion && trimmedInput.length >= 3 && !quickOptionSuggestion?.toLowerCase().startsWith(trimmedInput.toLowerCase())) {
+    if (
+      smartCompletion &&
+      trimmedInput.length >= 3 &&
+      !quickOptionSuggestion
+        ?.toLowerCase()
+        .startsWith(trimmedInput.toLowerCase())
+    ) {
       return " " + smartCompletion;
     }
-    
+
     // For quick options, show the remaining part
     if (trimmedInput.length === 0) return currentSuggestion;
-    if (currentSuggestion.toLowerCase().startsWith(trimmedInput.toLowerCase())) {
+    if (
+      currentSuggestion.toLowerCase().startsWith(trimmedInput.toLowerCase())
+    ) {
       return currentSuggestion.slice(trimmedInput.length);
     }
-    
+
     return "";
-  }, [currentSuggestion, smartCompletion, quickOptionSuggestion, input, isLoading]);
+  }, [
+    currentSuggestion,
+    smartCompletion,
+    quickOptionSuggestion,
+    input,
+    isLoading,
+  ]);
 
   // Find the index of the last message with deliverable styles (for collapsing older grids)
   // Also check if the user has already made a selection (any user message after this style message)
@@ -777,6 +1104,31 @@ export function ChatInterface({
     setIsInitialized(true);
   }, [draftId, isTaskMode, taskData, clearMoodboard, addMoodboardItem]);
 
+  // Track if we've processed messages for brief inference on load
+  const hasProcessedMessagesForBriefRef = useRef(false);
+
+  // Process all user messages for brief inference when messages are loaded
+  // This ensures the brief panel is populated on page refresh or draft loading
+  useEffect(() => {
+    if (
+      !isInitialized ||
+      messages.length === 0 ||
+      hasProcessedMessagesForBriefRef.current
+    )
+      return;
+
+    // Mark as processed to avoid re-running
+    hasProcessedMessagesForBriefRef.current = true;
+
+    // Process all user messages to populate the brief
+    const userMessages = messages.filter((m) => m.role === "user");
+    userMessages.forEach((msg) => {
+      if (msg.content) {
+        processBriefMessage(msg.content);
+      }
+    });
+  }, [isInitialized, messages, processBriefMessage]);
+
   // Handle initial message from URL param
   useEffect(() => {
     if (!initialMessage || initialMessageProcessed || !isInitialized) return;
@@ -835,6 +1187,12 @@ export function ChatInterface({
       setMessages((prev) => [...prev, userMessage]);
     }
 
+    // Process the initial message through brief inference engine
+    // This ensures the brief panel gets populated from template prompts
+    if (initialMessage) {
+      processBriefMessage(initialMessage);
+    }
+
     // Update URL to use draft param instead of message param
     // This ensures refresh loads the draft instead of regenerating
     const url = new URL(window.location.href);
@@ -850,6 +1208,7 @@ export function ChatInterface({
     seamlessTransition,
     messages,
     draftId,
+    processBriefMessage,
   ]);
 
   // Auto-continue conversation if last message was from user
@@ -3040,12 +3399,27 @@ export function ChatInterface({
             </div>
           )}
 
+          {/* Skip to submit button - positioned above input on the right */}
+          {messages.length > 0 && !pendingTask && !isLoading && (
+            <div className="flex justify-end mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRequestTaskSummary}
+                className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+                Skip to submit
+              </Button>
+            </div>
+          )}
+
           {/* Modern input box - matching design reference */}
           <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
             {/* Input field with auto-resize and ghost text */}
             <div className="relative">
               {/* Ghost text suggestion overlay */}
-              {showSuggestion && ghostText && (
+              {ghostText && (
                 <div className="absolute inset-0 px-4 py-4 pointer-events-none flex items-start">
                   <span className="text-sm text-transparent">{input}</span>
                   <span className="text-sm text-muted-foreground/40">
@@ -3109,8 +3483,8 @@ export function ChatInterface({
                   }
                 }}
                 placeholder={
-                  showSuggestion && currentSuggestion
-                    ? "" // Hide placeholder when showing suggestion
+                  ghostText
+                    ? "" // Hide placeholder when showing ghost text
                     : messages.length === 0
                     ? "What would you like to create today?"
                     : "Type your message..."
@@ -3120,23 +3494,28 @@ export function ChatInterface({
                 className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
                 style={{ height: "auto", overflow: "hidden" }}
               />
-              {/* Tab hint with arrow key navigation */}
-              {showSuggestion && ghostText && !input.trim() && (
+              {/* Tab hint - show different hints based on context */}
+              {ghostText && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs text-muted-foreground/50 z-0 pointer-events-none">
-                  <div className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
-                      ↑
-                    </kbd>
-                    <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
-                      ↓
-                    </kbd>
-                  </div>
-                  <span className="text-muted-foreground/40">|</span>
+                  {/* Show arrow keys only when empty and have quick options */}
+                  {!input.trim() && quickOptionSuggestion && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                          ↑
+                        </kbd>
+                        <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                          ↓
+                        </kbd>
+                      </div>
+                      <span className="text-muted-foreground/40">|</span>
+                    </>
+                  )}
                   <div className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
                       Tab
                     </kbd>
-                    <span>to accept</span>
+                    <span>{input.trim() ? "to complete" : "to accept"}</span>
                   </div>
                 </div>
               )}
