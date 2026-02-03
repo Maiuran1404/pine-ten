@@ -174,6 +174,7 @@ export async function POST(request: NextRequest) {
       draftId: validDraftId,
       status: status as "DRAFT" | "READY",
       completionPercentage: completion,
+      taskSummary: safeSerialize(liveBrief.taskSummary),
       topic: safeSerialize(liveBrief.topic),
       platform: safeSerialize(liveBrief.platform),
       contentType: null,
@@ -280,7 +281,11 @@ function convertDbBriefToLiveBrief(dbBrief: typeof briefs.$inferSelect): LiveBri
     id: dbBrief.draftId || dbBrief.id,
     createdAt: dbBrief.createdAt,
     updatedAt: dbBrief.updatedAt,
-    taskSummary: { value: null, confidence: 0, source: "pending" },
+    taskSummary: (dbBrief.taskSummary as LiveBrief["taskSummary"]) || {
+      value: null,
+      confidence: 0,
+      source: "pending",
+    },
     topic: (dbBrief.topic as LiveBrief["topic"]) || {
       value: null,
       confidence: 0,

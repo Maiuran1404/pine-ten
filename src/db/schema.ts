@@ -1794,6 +1794,12 @@ export const briefs = pgTable(
     completionPercentage: integer("completion_percentage").notNull().default(0),
 
     // Core brief fields (mirroring LiveBrief structure)
+    taskSummary: jsonb("task_summary").$type<{
+      value: string | null;
+      confidence: number;
+      source: "pending" | "inferred" | "confirmed";
+    }>(),
+
     topic: jsonb("topic").$type<{
       value: string | null;
       confidence: number;

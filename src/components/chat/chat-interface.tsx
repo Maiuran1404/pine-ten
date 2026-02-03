@@ -450,9 +450,13 @@ export function ChatInterface({
     [moodboardItems]
   );
 
+  // Smart autocomplete state
+  const [smartCompletion, setSmartCompletion] = useState<string | null>(null);
+  const smartCompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Get suggestion text from the last assistant message's quick options
-  const currentSuggestion = useMemo(() => {
-    // Don't show suggestions while loading or if user is typing something different
+  const quickOptionSuggestion = useMemo(() => {
+    // Don't show suggestions while loading
     if (isLoading) return null;
 
     // Find the last assistant message with quick options
@@ -472,6 +476,159 @@ export function ChatInterface({
     return null;
   }, [messages, isLoading, suggestionIndex]);
 
+  // Generate smart completions based on what the user is typing
+  const generateSmartCompletion = useCallback((text: string): string | null => {
+    if (!text || text.length < 3) return null;
+    
+    const lowerText = text.toLowerCase().trim();
+    const words = lowerText.split(/\s+/);
+    const lastWord = words[words.length - 1] || "";
+    
+    // Context-aware completions based on common chat patterns
+    const completions: Array<{ pattern: RegExp | string; completion: string }> = [
+      // Style selection responses
+      { pattern: /^i('ll| will)?\s*(go|like|choose|pick|want)\s*(with|the)?\s*$/i, completion: "the first style" },
+      { pattern: /^the\s+first\s*$/i, completion: "one looks great" },
+      { pattern: /^the\s+second\s*$/i, completion: "option please" },
+      { pattern: /^i\s+like\s*$/i, completion: "the minimal style" },
+      { pattern: /^let('s|s)?\s*go\s*$/i, completion: "with the first option" },
+      { pattern: /^show\s+me\s*$/i, completion: "more options" },
+      { pattern: /^something\s+more\s*$/i, completion: "minimal and clean" },
+      
+      // Product/project descriptions
+      { pattern: /^it('s| is)?\s*(a|an)?\s*$/i, completion: "a SaaS product" },
+      { pattern: /^we('re| are)?\s*(a|an)?\s*$/i, completion: "launching next month" },
+      { pattern: /^my\s+(product|app|company)\s*$/i, completion: "helps businesses" },
+      { pattern: /^for\s+(my|our)\s*$/i, completion: "product launch" },
+      { pattern: /^targeting\s*$/i, completion: "young professionals" },
+      { pattern: /^the\s+audience\s+(is|are)?\s*$/i, completion: "primarily business owners" },
+      
+      // Platform mentions
+      { pattern: /^(for|on)\s+instagram\s*$/i, completion: "reels" },
+      { pattern: /^(for|on)\s+linkedin\s*$/i, completion: "post" },
+      { pattern: /^(for|on)\s+tiktok\s*$/i, completion: "video" },
+      
+      // Intent descriptions
+      { pattern: /^(to|we want to)\s+drive\s*$/i, completion: "signups and awareness" },
+      { pattern: /^(to|we want to)\s+increase\s*$/i, completion: "brand awareness" },
+      { pattern: /^(to|we want to)\s+launch\s*$/i, completion: "our new product" },
+      { pattern: /^(to|we want to)\s+promote\s*$/i, completion: "our upcoming event" },
+      { pattern: /^(to|we want to)\s+build\s*$/i, completion: "brand authority" },
+      
+      // General continuations
+      { pattern: /^(yes|yeah|yep),?\s*$/i, completion: "let's go with that" },
+      { pattern: /^(no|nope),?\s*$/i, completion: "show me different options" },
+      { pattern: /^can\s+you\s*$/i, completion: "make it more minimal?" },
+      { pattern: /^i\s+need\s*$/i, completion: "something eye-catching" },
+      { pattern: /^make\s+it\s*$/i, completion: "more bold and vibrant" },
+      { pattern: /^keep\s+it\s*$/i, completion: "simple and clean" },
+      { pattern: /^something\s+that\s*$/i, completion: "stands out" },
+      { pattern: /^i\s+want\s*$/i, completion: "something modern" },
+      { pattern: /^we\s+need\s*$/i, completion: "this by next week" },
+      
+      // Quantity and timing
+      { pattern: /^(\d+)\s+(posts?|videos?|pieces?)\s*$/i, completion: "for the campaign" },
+      { pattern: /^by\s+(next|this)\s*$/i, completion: "week if possible" },
+      { pattern: /^as\s+soon\s*$/i, completion: "as possible" },
+    ];
+
+    // Check for pattern matches
+    for (const { pattern, completion } of completions) {
+      if (typeof pattern === "string") {
+        if (lowerText.endsWith(pattern.toLowerCase())) {
+          return completion;
+        }
+      } else if (pattern.test(lowerText)) {
+        return completion;
+      }
+    }
+
+    // Word-level completions for partial words
+    const wordCompletions: Record<string, string> = {
+      "inst": "agram",
+      "link": "edIn",
+      "tikt": "ok",
+      "face": "book",
+      "yout": "ube",
+      "mini": "mal and clean",
+      "prof": "essional",
+      "moder": "n style",
+      "cine": "matic",
+      "prod": "uct launch",
+      "anno": "uncement",
+      "awar": "eness campaign",
+      "sign": "ups",
+      "conv": "ersion focused",
+    };
+
+    // Check partial word completions
+    if (lastWord.length >= 3) {
+      for (const [prefix, suffix] of Object.entries(wordCompletions)) {
+        if (lastWord.startsWith(prefix) && !lastWord.includes(suffix.charAt(0).toLowerCase())) {
+          return suffix;
+        }
+      }
+    }
+
+    return null;
+  }, []);
+
+  // Update smart completion when input changes (debounced)
+  useEffect(() => {
+    if (smartCompleteTimeoutRef.current) {
+      clearTimeout(smartCompleteTimeoutRef.current);
+    }
+
+    // Don't generate completions while loading or for very short input
+    if (isLoading || input.length < 3) {
+      setSmartCompletion(null);
+      return;
+    }
+
+    // Check if input matches a quick option - if so, don't override with smart completion
+    if (quickOptionSuggestion) {
+      const trimmedInput = input.trim().toLowerCase();
+      if (trimmedInput.length === 0 || quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)) {
+        setSmartCompletion(null);
+        return;
+      }
+    }
+
+    // Debounce the smart completion generation
+    smartCompleteTimeoutRef.current = setTimeout(() => {
+      const completion = generateSmartCompletion(input);
+      setSmartCompletion(completion);
+    }, 150);
+
+    return () => {
+      if (smartCompleteTimeoutRef.current) {
+        clearTimeout(smartCompleteTimeoutRef.current);
+      }
+    };
+  }, [input, isLoading, quickOptionSuggestion, generateSmartCompletion]);
+
+  // Determine which suggestion to show (quick option or smart completion)
+  const currentSuggestion = useMemo(() => {
+    if (isLoading) return null;
+    
+    const trimmedInput = input.trim().toLowerCase();
+    
+    // First priority: quick options when input is empty or matches
+    if (quickOptionSuggestion) {
+      if (trimmedInput.length === 0) return quickOptionSuggestion;
+      if (quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)) {
+        return quickOptionSuggestion;
+      }
+    }
+    
+    // Second priority: smart completion when typing
+    if (smartCompletion && trimmedInput.length >= 3) {
+      return input.trim() + " " + smartCompletion;
+    }
+    
+    return null;
+  }, [quickOptionSuggestion, smartCompletion, input, isLoading]);
+
   // Check if current input matches the start of the suggestion
   const showSuggestion = useMemo(() => {
     if (!currentSuggestion || isLoading) return false;
@@ -483,12 +640,22 @@ export function ChatInterface({
 
   // Get the ghost text to display (the part after what's typed)
   const ghostText = useMemo(() => {
-    if (!showSuggestion || !currentSuggestion) return "";
+    if (!currentSuggestion || isLoading) return "";
     const trimmedInput = input.trim();
+    
+    // For smart completions, just show the completion part
+    if (smartCompletion && trimmedInput.length >= 3 && !quickOptionSuggestion?.toLowerCase().startsWith(trimmedInput.toLowerCase())) {
+      return " " + smartCompletion;
+    }
+    
+    // For quick options, show the remaining part
     if (trimmedInput.length === 0) return currentSuggestion;
-    // Return the remaining part of the suggestion
-    return currentSuggestion.slice(trimmedInput.length);
-  }, [showSuggestion, currentSuggestion, input]);
+    if (currentSuggestion.toLowerCase().startsWith(trimmedInput.toLowerCase())) {
+      return currentSuggestion.slice(trimmedInput.length);
+    }
+    
+    return "";
+  }, [currentSuggestion, smartCompletion, quickOptionSuggestion, input, isLoading]);
 
   // Find the index of the last message with deliverable styles (for collapsing older grids)
   // Also check if the user has already made a selection (any user message after this style message)
@@ -2706,27 +2873,7 @@ export function ChatInterface({
                             </div>
                           )}
 
-                          {/* Quick Options - only show if NO deliverable styles AND after typing completes */}
-                          {message.quickOptions &&
-                            (!message.deliverableStyles ||
-                              message.deliverableStyles.length === 0) &&
-                            (animatingMessageId !== message.id ||
-                              completedTypingIds.has(message.id)) && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="mt-4"
-                              >
-                                <QuickOptions
-                                  options={message.quickOptions}
-                                  onSelect={handleQuickOptionClick}
-                                  disabled={
-                                    isLoading || index < messages.length - 1
-                                  }
-                                />
-                              </motion.div>
-                            )}
+                          {/* Quick Options removed - using input field suggestions instead */}
                         </div>
                       </div>
                     </div>
@@ -2790,53 +2937,60 @@ export function ChatInterface({
             )}
 
             {/* Inline submit prompt - shown as an AI message when ready to submit */}
-            {!isLoading && !pendingTask && !isTaskMode && (() => {
-              // Check if the last assistant message asked a question (ends with ?)
-              const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop();
-              const lastMsg = messages[messages.length - 1];
-              const aiJustAskedQuestion = lastMsg?.role === "assistant" && 
-                lastAssistantMsg?.content?.trim().endsWith("?");
-              
-              // Don't show submit prompt if AI just asked a question
-              if (aiJustAskedQuestion) return null;
-              
-              // Show when AI indicates ready or user has enough context
-              const shouldShow = showManualSubmit ||
-                (moodboardItems.length > 0 &&
-                  messages.filter((m) => m.role === "user").length >= 2);
-              
-              if (!shouldShow) return null;
-              
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex justify-start"
-                >
-                  <div className="group max-w-[85%] flex items-start gap-3">
-                    {/* Sparkle avatar - matching assistant messages */}
-                    <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
-                      <Sparkles className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {/* Message bubble with submit prompt */}
-                      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
-                        <p className="text-sm text-foreground mb-3">
-                          {showManualSubmit
-                            ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
-                            : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            onClick={handleRequestTaskSummary}
-                            disabled={isLoading}
-                            size="sm"
-                            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Generate Summary
-                          </Button>
+            {!isLoading &&
+              !pendingTask &&
+              !isTaskMode &&
+              (() => {
+                // Check if the last assistant message asked a question (ends with ?)
+                const lastAssistantMsg = messages
+                  .filter((m) => m.role === "assistant")
+                  .pop();
+                const lastMsg = messages[messages.length - 1];
+                const aiJustAskedQuestion =
+                  lastMsg?.role === "assistant" &&
+                  lastAssistantMsg?.content?.trim().endsWith("?");
+
+                // Don't show submit prompt if AI just asked a question
+                if (aiJustAskedQuestion) return null;
+
+                // Show when AI indicates ready or user has enough context
+                const shouldShow =
+                  showManualSubmit ||
+                  (moodboardItems.length > 0 &&
+                    messages.filter((m) => m.role === "user").length >= 2);
+
+                if (!shouldShow) return null;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex justify-start"
+                  >
+                    <div className="group max-w-[85%] flex items-start gap-3">
+                      {/* Sparkle avatar - matching assistant messages */}
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {/* Message bubble with submit prompt */}
+                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                          <p className="text-sm text-foreground mb-3">
+                            {showManualSubmit
+                              ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
+                              : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={handleRequestTaskSummary}
+                              disabled={isLoading}
+                              size="sm"
+                              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              Generate Summary
+                            </Button>
                             <span className="text-xs text-muted-foreground self-center">
                               or keep chatting to add more details
                             </span>
@@ -2845,9 +2999,8 @@ export function ChatInterface({
                       </div>
                     </div>
                   </motion.div>
-                )}
-              </>
-            )}
+                );
+              })()}
           </div>
         </ScrollArea>
 
@@ -2912,30 +3065,39 @@ export function ChatInterface({
                     Math.min(target.scrollHeight, 200) + "px";
                 }}
                 onKeyDown={(e) => {
-                  // Tab to accept suggestion
-                  if (e.key === "Tab" && showSuggestion && currentSuggestion) {
+                  // Tab to accept suggestion (smart completion or quick option)
+                  if (e.key === "Tab" && ghostText) {
                     e.preventDefault();
-                    setInput(currentSuggestion);
-                    // Optionally auto-submit after accepting
-                    // handleSend();
+                    // For smart completions, append the completion
+                    if (smartCompletion && input.trim().length >= 3) {
+                      setInput(input.trim() + " " + smartCompletion);
+                      setSmartCompletion(null); // Clear so new completions can generate
+                    } else if (currentSuggestion) {
+                      // For quick options, use the full suggestion
+                      setInput(currentSuggestion);
+                    }
                   }
-                  // Arrow down to cycle through suggestions
+                  // Arrow down to cycle through quick options (only when empty)
                   else if (
                     e.key === "ArrowDown" &&
-                    showSuggestion &&
+                    quickOptionSuggestion &&
                     !input.trim()
                   ) {
                     e.preventDefault();
                     setSuggestionIndex((prev) => prev + 1);
                   }
-                  // Arrow up to cycle back
+                  // Arrow up to cycle back through quick options
                   else if (
                     e.key === "ArrowUp" &&
-                    showSuggestion &&
+                    quickOptionSuggestion &&
                     !input.trim()
                   ) {
                     e.preventDefault();
                     setSuggestionIndex((prev) => Math.max(0, prev - 1));
+                  }
+                  // Escape to clear smart completion
+                  else if (e.key === "Escape" && smartCompletion) {
+                    setSmartCompletion(null);
                   }
                   // Submit on Enter (without shift) or Cmd/Ctrl+Enter
                   else if (e.key === "Enter" && !e.shiftKey) {

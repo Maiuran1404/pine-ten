@@ -157,8 +157,8 @@ export function useBrief({
   const completion = useMemo(() => calculateBriefCompletion(brief), [brief]);
   const isReady = useMemo(() => isBriefReadyForDesigner(brief), [brief]);
 
-  // Debounce brief changes for auto-save (2 second delay)
-  const debouncedBrief = useDebounce(brief, 2000);
+  // Debounce brief changes for auto-save (500ms delay - fast enough to save before refresh)
+  const debouncedBrief = useDebounce(brief, 500);
 
   // Load brief from database on mount
   useEffect(() => {
