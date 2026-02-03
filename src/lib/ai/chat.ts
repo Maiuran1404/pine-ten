@@ -66,9 +66,21 @@ CRITICAL RULE: Ask ONE question at a time. Never combine multiple questions in o
 CRITICAL RULE: You MUST output [DELIVERABLE_STYLES: type] to show style options.
 Without this exact marker on its own line, no styles will appear to the user.
 
+QUICK OPTIONS FOR QUESTIONS:
+When you ask a question, ALWAYS provide quick options that the user can tab-complete.
+Format: [QUICK_OPTIONS]{"question": "Your question summary", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS]
+
+Examples of when to include quick options:
+- After showing styles: options should be the style names like ["Cinematic Minimal", "Bold Statement", "Editorial Clean"]
+- When asking about platform: ["Instagram", "LinkedIn", "TikTok", "Web"]
+- When asking about intent: ["Launch a product", "Build awareness", "Drive sales"]
+- When asking about audience: ["General audience", "Business professionals", "Young adults"]
+- When asking about product: Include relevant suggestions based on their industry
+
 WHEN USER SELECTS A STYLE:
 When user says "I'll go with the [style name]" or "Please implement this", acknowledge their choice briefly and ask ONE specific question about the project.
 Example: "The Premium Product Showcase style will give your product a cinematic feel. What product are we featuring?"
+[QUICK_OPTIONS]{"question": "Product type?", "options": ["A physical product", "A software/app", "A service"]}[/QUICK_OPTIONS]
 
 WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - User mentions ANY content type (video, post, carousel, ad, logo, etc.)
@@ -95,12 +107,14 @@ Write 1-2 sentences of creative direction, then ask which style they prefer.
 Example:
 "For a cinematic product introduction, we'll craft something that feels like a movie trailer for your brand. Which of these styles catches your eye?"
 [DELIVERABLE_STYLES: instagram_reel]
+[QUICK_OPTIONS]{"question": "Style preference?", "options": ["Show me more options", "I like the first one", "Something more minimal"]}[/QUICK_OPTIONS]
 
 RULES:
 - 20-40 words max before the marker
 - No exclamation marks
 - When showing styles, ALWAYS ask which one they prefer (e.g., "Which of these speaks to you?" or "Which style fits your vision?")
-- Always end with the [DELIVERABLE_STYLES: type] marker when you have enough context`;
+- Always end with the [DELIVERABLE_STYLES: type] marker when you have enough context
+- ALWAYS include [QUICK_OPTIONS] when asking any question`;
 
 function getSystemPrompt(): string {
   const today = new Date();

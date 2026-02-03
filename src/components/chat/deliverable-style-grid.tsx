@@ -146,7 +146,7 @@ export function DeliverableStyleGrid({
               onMouseLeave={() => setHoveredStyleId(null)}
               className={cn(
                 "relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
-                isHovered && "scale-150 z-50 shadow-2xl",
+                isHovered && "scale-110 z-10 shadow-2xl",
                 isSelected
                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
                   : isHovered &&

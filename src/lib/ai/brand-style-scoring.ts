@@ -1,8 +1,14 @@
 import { db } from "@/db";
 import { deliverableStyleReferences, users, companies } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
-import { analyzeColorBucketFromHex, type ColorBucket } from "@/lib/constants/reference-libraries";
+import type {
+  DeliverableType,
+  StyleAxis,
+} from "@/lib/constants/reference-libraries";
+import {
+  analyzeColorBucketFromHex,
+  type ColorBucket,
+} from "@/lib/constants/reference-libraries";
 import { getHistoryBoostScores } from "./selection-history";
 import { extractStyleDNA, type StyleDNA } from "./style-dna";
 
@@ -12,17 +18,19 @@ import { extractStyleDNA, type StyleDNA } from "./style-dna";
  * All weights should sum to 1.0
  */
 const SCORING_WEIGHTS = {
-  brand: 0.35,      // Brand color + industry match
-  history: 0.30,    // User selection history
-  popularity: 0.20, // Overall usage popularity
-  freshness: 0.15,  // Recently added bonus
+  brand: 0.35, // Brand color + industry match
+  history: 0.3, // User selection history
+  popularity: 0.2, // Overall usage popularity
+  freshness: 0.15, // Recently added bonus
 };
 
 /**
  * Fallback deliverable types for types that may not have styles in the database.
  * When a deliverable type has no styles, we fall back to a related type with available styles.
  */
-const DELIVERABLE_TYPE_FALLBACKS: Partial<Record<DeliverableType, DeliverableType[]>> = {
+const DELIVERABLE_TYPE_FALLBACKS: Partial<
+  Record<DeliverableType, DeliverableType[]>
+> = {
   logo: ["static_ad", "instagram_post"],
   brand_identity: ["static_ad", "instagram_post"],
   instagram_reel: ["instagram_story", "instagram_post"],
@@ -35,20 +43,29 @@ const DELIVERABLE_TYPE_FALLBACKS: Partial<Record<DeliverableType, DeliverableTyp
  * Style axis characteristics for brand matching
  * Maps each style to its typical color temperature, energy level, and density
  */
-const STYLE_CHARACTERISTICS: Record<StyleAxis, {
-  colorAffinity: ColorBucket[];  // Preferred color temperatures
-  energyLevel: "calm" | "balanced" | "energetic";
-  densityLevel: "minimal" | "balanced" | "rich";
-  industryAffinity: string[];  // Industries that typically prefer this style
-}> = {
+const STYLE_CHARACTERISTICS: Record<
+  StyleAxis,
+  {
+    colorAffinity: ColorBucket[]; // Preferred color temperatures
+    energyLevel: "calm" | "balanced" | "energetic";
+    densityLevel: "minimal" | "balanced" | "rich";
+    industryAffinity: string[]; // Industries that typically prefer this style
+  }
+> = {
   minimal: {
     colorAffinity: ["cool", "neutral"],
     energyLevel: "calm",
     densityLevel: "minimal",
-    industryAffinity: ["technology", "saas", "finance", "consulting", "healthcare"],
+    industryAffinity: [
+      "technology",
+      "saas",
+      "finance",
+      "consulting",
+      "healthcare",
+    ],
   },
   bold: {
-    colorAffinity: ["warm", "cool"],  // Bold works with high contrast in any temperature
+    colorAffinity: ["warm", "cool"], // Bold works with high contrast in any temperature
     energyLevel: "energetic",
     densityLevel: "rich",
     industryAffinity: ["entertainment", "sports", "gaming", "food", "retail"],
@@ -63,31 +80,66 @@ const STYLE_CHARACTERISTICS: Record<StyleAxis, {
     colorAffinity: ["cool", "neutral"],
     energyLevel: "calm",
     densityLevel: "balanced",
-    industryAffinity: ["finance", "legal", "consulting", "insurance", "b2b", "enterprise"],
+    industryAffinity: [
+      "finance",
+      "legal",
+      "consulting",
+      "insurance",
+      "b2b",
+      "enterprise",
+    ],
   },
   playful: {
     colorAffinity: ["warm", "neutral"],
     energyLevel: "energetic",
     densityLevel: "balanced",
-    industryAffinity: ["education", "kids", "gaming", "food", "entertainment", "consumer"],
+    industryAffinity: [
+      "education",
+      "kids",
+      "gaming",
+      "food",
+      "entertainment",
+      "consumer",
+    ],
   },
   premium: {
     colorAffinity: ["neutral", "cool"],
     energyLevel: "calm",
     densityLevel: "balanced",
-    industryAffinity: ["luxury", "fashion", "automotive", "real estate", "jewelry", "hospitality"],
+    industryAffinity: [
+      "luxury",
+      "fashion",
+      "automotive",
+      "real estate",
+      "jewelry",
+      "hospitality",
+    ],
   },
   organic: {
     colorAffinity: ["warm", "neutral"],
     energyLevel: "balanced",
     densityLevel: "balanced",
-    industryAffinity: ["wellness", "health", "food", "beauty", "sustainability", "eco"],
+    industryAffinity: [
+      "wellness",
+      "health",
+      "food",
+      "beauty",
+      "sustainability",
+      "eco",
+    ],
   },
   tech: {
     colorAffinity: ["cool", "neutral"],
     energyLevel: "energetic",
     densityLevel: "minimal",
-    industryAffinity: ["technology", "saas", "ai", "crypto", "fintech", "startup"],
+    industryAffinity: [
+      "technology",
+      "saas",
+      "ai",
+      "crypto",
+      "fintech",
+      "startup",
+    ],
   },
 };
 
@@ -108,10 +160,17 @@ function analyzeBrandColorTemperature(company: {
   if (company.brandColors?.length) colors.push(...company.brandColors);
 
   if (colors.length === 0) {
-    return { dominant: "neutral", distribution: { warm: 0, cool: 0, neutral: 1 } };
+    return {
+      dominant: "neutral",
+      distribution: { warm: 0, cool: 0, neutral: 1 },
+    };
   }
 
-  const bucketCounts: Record<ColorBucket, number> = { warm: 0, cool: 0, neutral: 0 };
+  const bucketCounts: Record<ColorBucket, number> = {
+    warm: 0,
+    cool: 0,
+    neutral: 0,
+  };
 
   // Primary color has more weight
   const primaryBucket = company.primaryColor
@@ -128,7 +187,7 @@ function analyzeBrandColorTemperature(company: {
   }
 
   // Additional brand colors
-  company.brandColors?.forEach(color => {
+  company.brandColors?.forEach((color) => {
     bucketCounts[analyzeColorBucketFromHex(color)] += 0.5;
   });
 
@@ -139,8 +198,9 @@ function analyzeBrandColorTemperature(company: {
     neutral: bucketCounts.neutral / total,
   };
 
-  const dominant = (Object.entries(bucketCounts) as [ColorBucket, number][])
-    .sort((a, b) => b[1] - a[1])[0][0];
+  const dominant = (
+    Object.entries(bucketCounts) as [ColorBucket, number][]
+  ).sort((a, b) => b[1] - a[1])[0][0];
 
   return { dominant, distribution };
 }
@@ -150,20 +210,28 @@ function analyzeBrandColorTemperature(company: {
  */
 function calculateStyleScore(
   styleAxis: StyleAxis,
-  brandColorProfile: { dominant: ColorBucket; distribution: Record<ColorBucket, number> },
+  brandColorProfile: {
+    dominant: ColorBucket;
+    distribution: Record<ColorBucket, number>;
+  },
   industry: string | null
 ): number {
   const characteristics = STYLE_CHARACTERISTICS[styleAxis];
   let score = 0;
 
   // Color affinity score (0-40 points)
-  const colorMatch = characteristics.colorAffinity.includes(brandColorProfile.dominant);
+  const colorMatch = characteristics.colorAffinity.includes(
+    brandColorProfile.dominant
+  );
   if (colorMatch) {
     score += 30;
     // Bonus for strong color match
-    const affinityScore = characteristics.colorAffinity.reduce((acc, bucket) => {
-      return acc + (brandColorProfile.distribution[bucket] || 0);
-    }, 0);
+    const affinityScore = characteristics.colorAffinity.reduce(
+      (acc, bucket) => {
+        return acc + (brandColorProfile.distribution[bucket] || 0);
+      },
+      0
+    );
     score += affinityScore * 10;
   } else {
     // Partial score for neutral brands (they work with most styles)
@@ -175,8 +243,9 @@ function calculateStyleScore(
   // Industry affinity score (0-30 points)
   if (industry) {
     const normalizedIndustry = industry.toLowerCase();
-    const industryMatch = characteristics.industryAffinity.some(ind =>
-      normalizedIndustry.includes(ind) || ind.includes(normalizedIndustry)
+    const industryMatch = characteristics.industryAffinity.some(
+      (ind) =>
+        normalizedIndustry.includes(ind) || ind.includes(normalizedIndustry)
     );
     if (industryMatch) {
       score += 30;
@@ -199,7 +268,10 @@ function calculateStyleScore(
  * Calculate popularity score (0-100)
  * Based on usage count relative to the most popular style
  */
-function calculatePopularityScore(usageCount: number, maxUsageCount: number): number {
+function calculatePopularityScore(
+  usageCount: number,
+  maxUsageCount: number
+): number {
   if (maxUsageCount === 0) return 50;
 
   const normalizedPopularity = usageCount / maxUsageCount;
@@ -215,7 +287,8 @@ function calculateFreshnessScore(createdAt: Date | null): number {
   if (!createdAt) return 50;
 
   const now = new Date();
-  const ageInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+  const ageInDays =
+    (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
 
   // Brand new styles get 100, decays over 60 days to 50
   if (ageInDays <= 7) return 100;
@@ -228,12 +301,15 @@ function calculateFreshnessScore(createdAt: Date | null): number {
 /**
  * Calculate multi-factor score with configurable weights
  */
-function calculateMultiFactorScore(factors: {
-  brand: number;
-  history: number;
-  popularity: number;
-  freshness: number;
-}, hasHistory: boolean): number {
+function calculateMultiFactorScore(
+  factors: {
+    brand: number;
+    history: number;
+    popularity: number;
+    freshness: number;
+  },
+  hasHistory: boolean
+): number {
   const weights = { ...SCORING_WEIGHTS };
 
   // If no history, redistribute that weight
@@ -245,9 +321,9 @@ function calculateMultiFactorScore(factors: {
 
   return Math.round(
     factors.brand * weights.brand +
-    factors.history * weights.history +
-    factors.popularity * weights.popularity +
-    factors.freshness * weights.freshness
+      factors.history * weights.history +
+      factors.popularity * weights.popularity +
+      factors.freshness * weights.freshness
   );
 }
 
@@ -261,7 +337,9 @@ function getStyleDNABoost(
 ): { boost: number; reason: string | null } {
   if (!styleDNA) return { boost: 0, reason: null };
 
-  const axisRecommendation = styleDNA.recommendedAxes.find(r => r.axis === styleAxis);
+  const axisRecommendation = styleDNA.recommendedAxes.find(
+    (r) => r.axis === styleAxis
+  );
   if (!axisRecommendation) return { boost: 0, reason: null };
 
   // Convert confidence (0-100) to boost (0-15)
@@ -282,7 +360,7 @@ export interface ScoreFactors {
   history: number;
   popularity: number;
   freshness: number;
-  dnaBoost?: number;  // Additional boost from Style DNA analysis
+  dnaBoost?: number; // Additional boost from Style DNA analysis
 }
 
 export interface BrandAwareStyle {
@@ -296,36 +374,75 @@ export interface BrandAwareStyle {
   semanticTags: string[];
   brandMatchScore: number;
   matchReason?: string;
-  matchReasons?: string[];  // Multiple reasons for rich tooltips
-  historyBoost?: number;  // Bonus from user's selection history
-  scoreFactors?: ScoreFactors;  // Breakdown of scoring factors
+  matchReasons?: string[]; // Multiple reasons for rich tooltips
+  historyBoost?: number; // Bonus from user's selection history
+  scoreFactors?: ScoreFactors; // Breakdown of scoring factors
 }
 
 /**
  * Context for content-aware style filtering
  */
 export interface StyleContext {
-  topic?: string;        // e.g., "fitness app", "payment APIs"
-  industry?: string;     // e.g., "technology", "health & wellness"
-  keywords?: string[];   // Additional keywords from the conversation
-  platform?: string;     // e.g., "youtube", "instagram"
+  topic?: string; // e.g., "fitness app", "payment APIs"
+  industry?: string; // e.g., "technology", "health & wellness"
+  keywords?: string[]; // Additional keywords from the conversation
+  platform?: string; // e.g., "youtube", "instagram"
 }
 
 // Industry affinity mapping for style axes
 // Used to boost/penalize styles based on detected industry context
-const INDUSTRY_STYLE_AFFINITY: Record<string, { preferred: StyleAxis[]; avoided: StyleAxis[] }> = {
-  "food_beverage": { preferred: ["organic", "playful", "premium"], avoided: ["tech", "corporate"] },
-  "fitness": { preferred: ["bold", "playful", "organic"], avoided: ["corporate", "editorial"] },
-  "technology": { preferred: ["tech", "minimal", "corporate"], avoided: ["organic", "playful"] },
-  "finance": { preferred: ["corporate", "minimal", "premium"], avoided: ["playful", "organic"] },
-  "fashion": { preferred: ["editorial", "premium", "bold"], avoided: ["corporate", "tech"] },
-  "beauty": { preferred: ["organic", "premium", "minimal"], avoided: ["tech", "corporate"] },
-  "real_estate": { preferred: ["premium", "minimal", "corporate"], avoided: ["playful", "tech"] },
-  "education": { preferred: ["playful", "minimal", "corporate"], avoided: ["premium", "editorial"] },
-  "healthcare": { preferred: ["organic", "minimal", "corporate"], avoided: ["bold", "playful"] },
-  "entertainment": { preferred: ["bold", "playful", "editorial"], avoided: ["corporate", "minimal"] },
-  "retail": { preferred: ["bold", "playful", "premium"], avoided: ["corporate", "tech"] },
-  "luxury": { preferred: ["premium", "editorial", "minimal"], avoided: ["playful", "tech"] },
+const INDUSTRY_STYLE_AFFINITY: Record<
+  string,
+  { preferred: StyleAxis[]; avoided: StyleAxis[] }
+> = {
+  food_beverage: {
+    preferred: ["organic", "playful", "premium"],
+    avoided: ["tech", "corporate"],
+  },
+  fitness: {
+    preferred: ["bold", "playful", "organic"],
+    avoided: ["corporate", "editorial"],
+  },
+  technology: {
+    preferred: ["tech", "minimal", "corporate"],
+    avoided: ["organic", "playful"],
+  },
+  finance: {
+    preferred: ["corporate", "minimal", "premium"],
+    avoided: ["playful", "organic"],
+  },
+  fashion: {
+    preferred: ["editorial", "premium", "bold"],
+    avoided: ["corporate", "tech"],
+  },
+  beauty: {
+    preferred: ["organic", "premium", "minimal"],
+    avoided: ["tech", "corporate"],
+  },
+  real_estate: {
+    preferred: ["premium", "minimal", "corporate"],
+    avoided: ["playful", "tech"],
+  },
+  education: {
+    preferred: ["playful", "minimal", "corporate"],
+    avoided: ["premium", "editorial"],
+  },
+  healthcare: {
+    preferred: ["organic", "minimal", "corporate"],
+    avoided: ["bold", "playful"],
+  },
+  entertainment: {
+    preferred: ["bold", "playful", "editorial"],
+    avoided: ["corporate", "minimal"],
+  },
+  retail: {
+    preferred: ["bold", "playful", "premium"],
+    avoided: ["corporate", "tech"],
+  },
+  luxury: {
+    preferred: ["premium", "editorial", "minimal"],
+    avoided: ["playful", "tech"],
+  },
 };
 
 /**
@@ -357,31 +474,31 @@ function calculateContextScore(
     contextTerms.push(context.industry.toLowerCase());
   }
   if (context.keywords) {
-    contextTerms.push(...context.keywords.map(k => k.toLowerCase()));
+    contextTerms.push(...context.keywords.map((k) => k.toLowerCase()));
   }
 
   // Check semantic tags
-  const tags = (style.semanticTags || []).map(t => t.toLowerCase());
+  const tags = (style.semanticTags || []).map((t) => t.toLowerCase());
   for (const term of contextTerms) {
-    if (tags.some(tag => tag.includes(term) || term.includes(tag))) {
+    if (tags.some((tag) => tag.includes(term) || term.includes(tag))) {
       score += 20;
       matchCount++;
     }
   }
 
   // Check industries
-  const industries = (style.industries || []).map(i => i.toLowerCase());
+  const industries = (style.industries || []).map((i) => i.toLowerCase());
   for (const term of contextTerms) {
-    if (industries.some(ind => ind.includes(term) || term.includes(ind))) {
+    if (industries.some((ind) => ind.includes(term) || term.includes(ind))) {
       score += 25;
       matchCount++;
     }
   }
 
   // Check mood keywords
-  const moods = (style.moodKeywords || []).map(m => m.toLowerCase());
+  const moods = (style.moodKeywords || []).map((m) => m.toLowerCase());
   for (const term of contextTerms) {
-    if (moods.some(mood => mood.includes(term) || term.includes(mood))) {
+    if (moods.some((mood) => mood.includes(term) || term.includes(mood))) {
       score += 15;
       matchCount++;
     }
@@ -420,8 +537,8 @@ export async function getBrandAwareStyles(
   userId: string,
   options?: {
     limit?: number;
-    includeAllAxes?: boolean;  // If true, returns top style per axis
-    context?: StyleContext;     // Optional context for content-aware filtering
+    includeAllAxes?: boolean; // If true, returns top style per axis
+    context?: StyleContext; // Optional context for content-aware filtering
   }
 ): Promise<BrandAwareStyle[]> {
   // Fetch user's company data
@@ -507,7 +624,9 @@ export async function getBrandAwareStyles(
         if (fallbackStyles.length > 0) {
           finalStyles = fallbackStyles;
           actualDeliverableType = fallbackType;
-          console.log(`[Brand Scoring] No styles for "${deliverableType}", using fallback "${fallbackType}" (${fallbackStyles.length} styles)`);
+          console.log(
+            `[Brand Scoring] No styles for "${deliverableType}", using fallback "${fallbackType}" (${fallbackStyles.length} styles)`
+          );
           break;
         }
       }
@@ -517,12 +636,15 @@ export async function getBrandAwareStyles(
   const styleContext = options?.context;
 
   // Calculate max usage for popularity normalization
-  const maxUsage = Math.max(...finalStyles.map(s => s.usageCount || 0), 1);
+  const maxUsage = Math.max(...finalStyles.map((s) => s.usageCount || 0), 1);
 
   // If no company data, use popularity, freshness, and context scoring
   if (!company) {
-    const neutralScored: BrandAwareStyle[] = finalStyles.map(style => {
-      const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
+    const neutralScored: BrandAwareStyle[] = finalStyles.map((style) => {
+      const popularityScore = calculatePopularityScore(
+        style.usageCount || 0,
+        maxUsage
+      );
       const freshnessScore = calculateFreshnessScore(style.createdAt);
       const contextScore = styleContext
         ? calculateContextScore(style, styleContext)
@@ -530,12 +652,20 @@ export async function getBrandAwareStyles(
 
       // Use multi-factor with context boost instead of brand
       const baseScore = calculateMultiFactorScore(
-        { brand: contextScore, history: 0, popularity: popularityScore, freshness: freshnessScore },
+        {
+          brand: contextScore,
+          history: 0,
+          popularity: popularityScore,
+          freshness: freshnessScore,
+        },
         false
       );
 
       // Apply context boost more aggressively when we have context
-      const contextBoost = styleContext && contextScore > 60 ? Math.round((contextScore - 60) * 0.5) : 0;
+      const contextBoost =
+        styleContext && contextScore > 60
+          ? Math.round((contextScore - 60) * 0.5)
+          : 0;
       const totalScore = Math.min(100, baseScore + contextBoost);
 
       const matchReasons: string[] = [];
@@ -547,9 +677,15 @@ export async function getBrandAwareStyles(
         ...style,
         semanticTags: style.semanticTags || [],
         brandMatchScore: totalScore,
-        matchReason: matchReasons.length > 0 ? matchReasons[0] : "Versatile option",
+        matchReason:
+          matchReasons.length > 0 ? matchReasons[0] : "Versatile option",
         matchReasons,
-        scoreFactors: { brand: contextScore, history: 0, popularity: popularityScore, freshness: freshnessScore },
+        scoreFactors: {
+          brand: contextScore,
+          history: 0,
+          popularity: popularityScore,
+          freshness: freshnessScore,
+        },
       };
     });
 
@@ -591,7 +727,7 @@ export async function getBrandAwareStyles(
   const hasHistory = historyBoosts.size > 0;
 
   // Score each style using multi-factor scoring
-  const scoredStyles: BrandAwareStyle[] = finalStyles.map(style => {
+  const scoredStyles: BrandAwareStyle[] = finalStyles.map((style) => {
     const characteristics = STYLE_CHARACTERISTICS[style.styleAxis as StyleAxis];
 
     // Calculate individual factor scores
@@ -610,7 +746,10 @@ export async function getBrandAwareStyles(
     const historyBoost = historyBoosts.get(style.styleAxis) || 0;
     const historyScore = Math.round((historyBoost / 30) * 100);
 
-    const popularityScore = calculatePopularityScore(style.usageCount || 0, maxUsage);
+    const popularityScore = calculatePopularityScore(
+      style.usageCount || 0,
+      maxUsage
+    );
     const freshnessScore = calculateFreshnessScore(style.createdAt);
 
     // Get Style DNA boost for this axis
@@ -635,7 +774,8 @@ export async function getBrandAwareStyles(
     // When we have context keywords, reduce history weight for low-context matches
     // This prevents unrelated styles from ranking high just because of past usage
     let effectiveHistoryScore = historyScore;
-    const hasContextKeywords = styleContext && (styleContext.keywords?.length || styleContext.topic);
+    const hasContextKeywords =
+      styleContext && (styleContext.keywords?.length || styleContext.topic);
     if (hasContextKeywords && contextScore < 40) {
       // Low context match with keywords present - reduce history influence significantly
       effectiveHistoryScore = Math.round(historyScore * 0.3);
@@ -677,7 +817,10 @@ export async function getBrandAwareStyles(
       contextPenalty = 8;
     }
 
-    const totalScore = Math.min(100, Math.max(0, baseScore + dnaResult.boost + contextBoost - contextPenalty));
+    const totalScore = Math.min(
+      100,
+      Math.max(0, baseScore + dnaResult.boost + contextBoost - contextPenalty)
+    );
 
     // Generate match reasons
     const matchReasons: string[] = [];
@@ -698,11 +841,14 @@ export async function getBrandAwareStyles(
     }
 
     // Brand-based reasons
-    if (characteristics && characteristics.colorAffinity.includes(colorProfile.dominant)) {
+    if (
+      characteristics &&
+      characteristics.colorAffinity.includes(colorProfile.dominant)
+    ) {
       matchReasons.push(`Matches your ${colorProfile.dominant} palette`);
     }
     if (company.industry) {
-      const industryMatch = characteristics?.industryAffinity.some(ind =>
+      const industryMatch = characteristics?.industryAffinity.some((ind) =>
         company.industry!.toLowerCase().includes(ind)
       );
       if (industryMatch) {
@@ -775,6 +921,7 @@ function getTopPerAxis(
 
 /**
  * Get more styles of a specific axis, scored by brand match
+ * Always returns styles - falls back to cycling or showing other axes
  */
 export async function getBrandAwareStylesOfAxis(
   deliverableType: DeliverableType,
@@ -792,7 +939,42 @@ export async function getBrandAwareStylesOfAxis(
 
   const company = user?.company;
 
-  let styles = await db
+  // Helper to score styles
+  const scoreStyles = (
+    styles: typeof rawStyles,
+    axis: StyleAxis,
+    reason: string
+  ): BrandAwareStyle[] => {
+    if (company) {
+      const colorProfile = analyzeBrandColorTemperature({
+        primaryColor: company.primaryColor,
+        secondaryColor: company.secondaryColor,
+        accentColor: company.accentColor,
+        brandColors: company.brandColors,
+      });
+
+      return styles.map((style) => ({
+        ...style,
+        semanticTags: style.semanticTags || [],
+        brandMatchScore: calculateStyleScore(
+          axis,
+          colorProfile,
+          company.industry
+        ),
+        matchReason: reason,
+      }));
+    }
+
+    return styles.map((style) => ({
+      ...style,
+      semanticTags: style.semanticTags || [],
+      brandMatchScore: 50,
+      matchReason: reason,
+    }));
+  };
+
+  // Try to get styles with the given offset
+  let rawStyles = await db
     .select({
       id: deliverableStyleReferences.id,
       name: deliverableStyleReferences.name,
@@ -811,68 +993,173 @@ export async function getBrandAwareStylesOfAxis(
         eq(deliverableStyleReferences.isActive, true)
       )
     )
-    .orderBy(deliverableStyleReferences.displayOrder)
+    .orderBy(
+      desc(deliverableStyleReferences.usageCount),
+      deliverableStyleReferences.displayOrder
+    )
     .limit(limit)
     .offset(offset);
 
-  // If no styles found, try fallback deliverable types
-  if (styles.length === 0) {
-    const fallbacks = DELIVERABLE_TYPE_FALLBACKS[deliverableType];
-    if (fallbacks) {
-      for (const fallbackType of fallbacks) {
-        const fallbackStyles = await db
-          .select({
-            id: deliverableStyleReferences.id,
-            name: deliverableStyleReferences.name,
-            description: deliverableStyleReferences.description,
-            imageUrl: deliverableStyleReferences.imageUrl,
-            deliverableType: deliverableStyleReferences.deliverableType,
-            styleAxis: deliverableStyleReferences.styleAxis,
-            subStyle: deliverableStyleReferences.subStyle,
-            semanticTags: deliverableStyleReferences.semanticTags,
-          })
-          .from(deliverableStyleReferences)
-          .where(
-            and(
-              eq(deliverableStyleReferences.deliverableType, fallbackType),
-              eq(deliverableStyleReferences.styleAxis, styleAxis),
-              eq(deliverableStyleReferences.isActive, true)
-            )
-          )
-          .orderBy(deliverableStyleReferences.displayOrder)
-          .limit(limit)
-          .offset(offset);
+  if (rawStyles.length > 0) {
+    return scoreStyles(rawStyles, styleAxis, `More ${styleAxis} options`);
+  }
 
-        if (fallbackStyles.length > 0) {
-          styles = fallbackStyles;
-          console.log(`[Brand Scoring] No "${styleAxis}" styles for "${deliverableType}", using fallback "${fallbackType}"`);
-          break;
-        }
+  // FALLBACK 1: Try from the beginning of the same axis (cycle through)
+  if (offset > 0) {
+    console.log(
+      `[Brand Scoring] No more styles at offset ${offset} for "${styleAxis}", cycling to beginning`
+    );
+    rawStyles = await db
+      .select({
+        id: deliverableStyleReferences.id,
+        name: deliverableStyleReferences.name,
+        description: deliverableStyleReferences.description,
+        imageUrl: deliverableStyleReferences.imageUrl,
+        deliverableType: deliverableStyleReferences.deliverableType,
+        styleAxis: deliverableStyleReferences.styleAxis,
+        subStyle: deliverableStyleReferences.subStyle,
+        semanticTags: deliverableStyleReferences.semanticTags,
+      })
+      .from(deliverableStyleReferences)
+      .where(
+        and(
+          eq(deliverableStyleReferences.deliverableType, deliverableType),
+          eq(deliverableStyleReferences.styleAxis, styleAxis),
+          eq(deliverableStyleReferences.isActive, true)
+        )
+      )
+      .orderBy(
+        desc(deliverableStyleReferences.usageCount),
+        deliverableStyleReferences.displayOrder
+      )
+      .limit(limit);
+
+    if (rawStyles.length > 0) {
+      return scoreStyles(rawStyles, styleAxis, `Top ${styleAxis} styles`);
+    }
+  }
+
+  // FALLBACK 2: Try fallback deliverable types for the same axis
+  const fallbacks = DELIVERABLE_TYPE_FALLBACKS[deliverableType];
+  if (fallbacks) {
+    for (const fallbackType of fallbacks) {
+      const fallbackStyles = await db
+        .select({
+          id: deliverableStyleReferences.id,
+          name: deliverableStyleReferences.name,
+          description: deliverableStyleReferences.description,
+          imageUrl: deliverableStyleReferences.imageUrl,
+          deliverableType: deliverableStyleReferences.deliverableType,
+          styleAxis: deliverableStyleReferences.styleAxis,
+          subStyle: deliverableStyleReferences.subStyle,
+          semanticTags: deliverableStyleReferences.semanticTags,
+        })
+        .from(deliverableStyleReferences)
+        .where(
+          and(
+            eq(deliverableStyleReferences.deliverableType, fallbackType),
+            eq(deliverableStyleReferences.styleAxis, styleAxis),
+            eq(deliverableStyleReferences.isActive, true)
+          )
+        )
+        .orderBy(
+          desc(deliverableStyleReferences.usageCount),
+          deliverableStyleReferences.displayOrder
+        )
+        .limit(limit);
+
+      if (fallbackStyles.length > 0) {
+        console.log(
+          `[Brand Scoring] Using fallback "${fallbackType}" for "${styleAxis}" styles`
+        );
+        return scoreStyles(
+          fallbackStyles,
+          styleAxis,
+          `Similar ${styleAxis} styles`
+        );
       }
     }
   }
 
-  // Score styles if we have company data
-  if (company) {
-    const colorProfile = analyzeBrandColorTemperature({
-      primaryColor: company.primaryColor,
-      secondaryColor: company.secondaryColor,
-      accentColor: company.accentColor,
-      brandColors: company.brandColors,
-    });
+  // FALLBACK 3: Get top styles from ANY axis for this deliverable type
+  console.log(
+    `[Brand Scoring] No "${styleAxis}" styles found, showing top styles from other axes`
+  );
+  const anyAxisStyles = await db
+    .select({
+      id: deliverableStyleReferences.id,
+      name: deliverableStyleReferences.name,
+      description: deliverableStyleReferences.description,
+      imageUrl: deliverableStyleReferences.imageUrl,
+      deliverableType: deliverableStyleReferences.deliverableType,
+      styleAxis: deliverableStyleReferences.styleAxis,
+      subStyle: deliverableStyleReferences.subStyle,
+      semanticTags: deliverableStyleReferences.semanticTags,
+    })
+    .from(deliverableStyleReferences)
+    .where(
+      and(
+        eq(deliverableStyleReferences.deliverableType, deliverableType),
+        eq(deliverableStyleReferences.isActive, true)
+      )
+    )
+    .orderBy(
+      desc(deliverableStyleReferences.usageCount),
+      deliverableStyleReferences.displayOrder
+    )
+    .limit(limit);
 
-    return styles.map(style => ({
-      ...style,
-      semanticTags: style.semanticTags || [],
-      brandMatchScore: calculateStyleScore(styleAxis, colorProfile, company.industry),
-      matchReason: `More ${styleAxis} options`,
-    }));
+  if (anyAxisStyles.length > 0) {
+    return scoreStyles(
+      anyAxisStyles,
+      anyAxisStyles[0].styleAxis as StyleAxis,
+      "Top recommended styles"
+    );
   }
 
-  return styles.map(style => ({
-    ...style,
-    semanticTags: style.semanticTags || [],
-    brandMatchScore: 50,
-    matchReason: `More ${styleAxis} options`,
-  }));
+  // FALLBACK 4: Get ANY active styles from fallback types
+  if (fallbacks) {
+    for (const fallbackType of fallbacks) {
+      const anyFallbackStyles = await db
+        .select({
+          id: deliverableStyleReferences.id,
+          name: deliverableStyleReferences.name,
+          description: deliverableStyleReferences.description,
+          imageUrl: deliverableStyleReferences.imageUrl,
+          deliverableType: deliverableStyleReferences.deliverableType,
+          styleAxis: deliverableStyleReferences.styleAxis,
+          subStyle: deliverableStyleReferences.subStyle,
+          semanticTags: deliverableStyleReferences.semanticTags,
+        })
+        .from(deliverableStyleReferences)
+        .where(
+          and(
+            eq(deliverableStyleReferences.deliverableType, fallbackType),
+            eq(deliverableStyleReferences.isActive, true)
+          )
+        )
+        .orderBy(
+          desc(deliverableStyleReferences.usageCount),
+          deliverableStyleReferences.displayOrder
+        )
+        .limit(limit);
+
+      if (anyFallbackStyles.length > 0) {
+        console.log(
+          `[Brand Scoring] Using any styles from fallback "${fallbackType}"`
+        );
+        return scoreStyles(
+          anyFallbackStyles,
+          anyFallbackStyles[0].styleAxis as StyleAxis,
+          "Recommended styles"
+        );
+      }
+    }
+  }
+
+  // Absolute last resort - should rarely happen
+  console.warn(
+    `[Brand Scoring] No styles found for any fallback - database may be empty`
+  );
+  return [];
 }

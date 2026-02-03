@@ -99,6 +99,19 @@ const PLATFORM_PATTERNS: PatternMatch[] = [
     value: "presentation",
     confidence: 0.9,
   },
+
+  // Social media (generic) - defaults to instagram as most common
+  {
+    pattern: /\b(social\s*media)\s*(content|post|announcement|video|graphic)?/i,
+    value: "instagram",
+    confidence: 0.6,
+  },
+  // Video content without specific platform - often for web/social
+  {
+    pattern: /\b(video|cinematic|promotional\s*video|product\s*video)\b/i,
+    value: "web",
+    confidence: 0.5,
+  },
 ];
 
 // Intent patterns
@@ -1111,29 +1124,30 @@ export function applyInferenceToBrief(
     updated.taskType = inference.taskType;
   }
 
-  // Apply intent - be more aggressive, show even low-confidence values as "inferred"
-  // This helps populate the brief panel from the first message
+  // Apply intent - be VERY aggressive, show any detected value
+  // Users want to see the brief populated immediately
   if (inference.intent.value) {
     const shouldUpdate =
       inference.intent.confidence > (updated.intent.confidence || 0) ||
-      (!updated.intent.value && inference.intent.confidence > 0.3);
+      (!updated.intent.value && inference.intent.confidence > 0.1);
     if (shouldUpdate) {
       updated.intent = {
         ...inference.intent,
-        source: inference.intent.confidence >= 0.6 ? "inferred" : "pending",
+        // Always show as inferred or pending, never hide
+        source: inference.intent.confidence >= 0.5 ? "inferred" : "pending",
       };
     }
   }
 
-  // Apply platform and dimensions - be more aggressive for first message
+  // Apply platform and dimensions - be VERY aggressive for first message
   if (inference.platform.value) {
     const shouldUpdate =
       inference.platform.confidence > (updated.platform.confidence || 0) ||
-      (!updated.platform.value && inference.platform.confidence > 0.3);
+      (!updated.platform.value && inference.platform.confidence > 0.1);
     if (shouldUpdate) {
       updated.platform = {
         ...inference.platform,
-        source: inference.platform.confidence >= 0.6 ? "inferred" : "pending",
+        source: inference.platform.confidence >= 0.5 ? "inferred" : "pending",
       };
 
       // Auto-apply dimensions
@@ -1145,15 +1159,27 @@ export function applyInferenceToBrief(
     }
   }
 
-  // Apply topic - be more aggressive, extract something from the message
+  // Apply topic - extract something from every message if possible
   if (inference.topic.value) {
     const shouldUpdate =
       inference.topic.confidence > (updated.topic.confidence || 0) ||
-      (!updated.topic.value && inference.topic.confidence > 0.2);
+      (!updated.topic.value && inference.topic.confidence > 0.1);
     if (shouldUpdate) {
       updated.topic = {
         ...inference.topic,
-        source: inference.topic.confidence >= 0.5 ? "inferred" : "pending",
+        source: inference.topic.confidence >= 0.4 ? "inferred" : "pending",
+      };
+    }
+  }
+
+  // FALLBACK: If no topic extracted but we have message text, try to extract something
+  if (!updated.topic.value && messageText) {
+    const fallbackTopic = extractTopicFallback(messageText);
+    if (fallbackTopic) {
+      updated.topic = {
+        value: fallbackTopic,
+        confidence: 0.4,
+        source: "pending",
       };
     }
   }
@@ -1222,7 +1248,71 @@ export function applyInferenceToBrief(
     }
   }
 
+  // FALLBACK: Always try to populate taskSummary from message if empty
+  if (!updated.taskSummary.value && messageText) {
+    const fallbackSummary = extractSummaryFromMessage(messageText);
+    if (fallbackSummary && fallbackSummary !== "New project request") {
+      updated.taskSummary = {
+        value: fallbackSummary,
+        confidence: 0.35,
+        source: "pending",
+      };
+    }
+  }
+
   return updated;
+}
+
+/**
+ * Fallback topic extraction when pattern matching fails
+ * Extracts the most meaningful noun phrase from the message
+ */
+function extractTopicFallback(message: string): string | null {
+  // Look for key descriptive phrases
+  const descriptors = [
+    /\b(cinematic|promotional|marketing|brand|product)\s+(video|intro|introduction|content|ad|commercial)/i,
+    /\b(video|content|post|ad)\s+(?:that\s+)?(?:introduces?|showcases?|announces?|promotes?)\s+(?:my|our|the|a)?\s*([\w\s]+?)(?:\s+to|\.|,|$)/i,
+    /\b(launch|launching|announcing|introducing)\s+(?:my|our|the|a)?\s*([\w\s]+?)(?:\s+to|\.|,|$)/i,
+    /\b(?:my|our)\s+(product|service|app|platform|business|brand|company)\b/i,
+  ];
+
+  for (const pattern of descriptors) {
+    const match = message.match(pattern);
+    if (match) {
+      // Get the best capture group (last non-empty one)
+      const captured = match.slice(1).filter(Boolean).pop();
+      if (captured && captured.length > 2 && captured.length < 50) {
+        const cleaned = captured.trim().replace(/^(my|our|the|a|an)\s+/i, "");
+        if (cleaned.length > 2) {
+          return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+        }
+      }
+    }
+  }
+
+  // Look for quoted text
+  const quoted = message.match(/"([^"]+)"|'([^']+)'/);
+  if (quoted) {
+    const text = (quoted[1] || quoted[2]).trim();
+    if (text.length > 2 && text.length < 50) {
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+  }
+
+  // Extract first meaningful phrase (skip common words)
+  const words = message
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2)
+    .filter(w => !/^(the|and|for|that|with|from|this|have|will|can|could|would|please|need|want|help|create|make|design|build|get|more)$/i.test(w));
+
+  // Find a meaningful content word sequence
+  const contentWords = words.slice(0, 5).join(" ");
+  if (contentWords.length > 3 && contentWords.length < 40) {
+    return contentWords.charAt(0).toUpperCase() + contentWords.slice(1);
+  }
+
+  return null;
 }
 
 /**

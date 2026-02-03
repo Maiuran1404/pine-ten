@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { chat, parseTaskFromChat, getStyleReferencesByCategory, type ChatContext } from "@/lib/ai/chat";
+import {
+  chat,
+  parseTaskFromChat,
+  getStyleReferencesByCategory,
+  type ChatContext,
+} from "@/lib/ai/chat";
 import { withRateLimit } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
 import {
@@ -24,7 +29,10 @@ import {
   detectBrandMention,
   analyzeRequestCompleteness,
 } from "@/lib/ai/inference-engine";
-import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import type {
+  DeliverableType,
+  StyleAxis,
+} from "@/lib/constants/reference-libraries";
 import { normalizeDeliverableType } from "@/lib/constants/reference-libraries";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -32,28 +40,156 @@ import { eq } from "drizzle-orm";
 
 // Industry detection from message content
 const INDUSTRY_KEYWORDS: Record<string, string[]> = {
-  "food_beverage": ["coffee", "cafe", "restaurant", "bakery", "food", "drinks", "menu", "recipe", "catering", "bar", "kitchen", "chef", "brew", "roast", "dining"],
-  "fitness": ["gym", "fitness", "workout", "exercise", "yoga", "wellness", "training", "athletic", "sports", "running", "crossfit"],
-  "technology": ["tech", "software", "app", "saas", "ai", "api", "platform", "startup", "developer", "engineering", "data", "cloud", "machine learning"],
-  "finance": ["bank", "finance", "fintech", "investment", "insurance", "payment", "crypto", "trading", "accounting"],
-  "fashion": ["fashion", "clothing", "apparel", "boutique", "style", "designer", "wear", "outfit", "accessories"],
-  "beauty": ["beauty", "skincare", "cosmetics", "spa", "salon", "makeup", "skin", "hair", "nails"],
-  "real_estate": ["real estate", "property", "home", "apartment", "rental", "house", "realtor", "housing"],
-  "education": ["education", "course", "learning", "school", "university", "teach", "tutor", "academy", "training"],
-  "healthcare": ["health", "medical", "clinic", "doctor", "patient", "care", "hospital", "therapy", "dental"],
-  "entertainment": ["entertainment", "music", "gaming", "movie", "film", "video", "streaming", "podcast"],
-  "retail": ["retail", "shop", "store", "ecommerce", "shopping", "product", "merchandise"],
-  "luxury": ["luxury", "premium", "exclusive", "high-end", "upscale", "boutique", "designer"],
+  food_beverage: [
+    "coffee",
+    "cafe",
+    "restaurant",
+    "bakery",
+    "food",
+    "drinks",
+    "menu",
+    "recipe",
+    "catering",
+    "bar",
+    "kitchen",
+    "chef",
+    "brew",
+    "roast",
+    "dining",
+  ],
+  fitness: [
+    "gym",
+    "fitness",
+    "workout",
+    "exercise",
+    "yoga",
+    "wellness",
+    "training",
+    "athletic",
+    "sports",
+    "running",
+    "crossfit",
+  ],
+  technology: [
+    "tech",
+    "software",
+    "app",
+    "saas",
+    "ai",
+    "api",
+    "platform",
+    "startup",
+    "developer",
+    "engineering",
+    "data",
+    "cloud",
+    "machine learning",
+  ],
+  finance: [
+    "bank",
+    "finance",
+    "fintech",
+    "investment",
+    "insurance",
+    "payment",
+    "crypto",
+    "trading",
+    "accounting",
+  ],
+  fashion: [
+    "fashion",
+    "clothing",
+    "apparel",
+    "boutique",
+    "style",
+    "designer",
+    "wear",
+    "outfit",
+    "accessories",
+  ],
+  beauty: [
+    "beauty",
+    "skincare",
+    "cosmetics",
+    "spa",
+    "salon",
+    "makeup",
+    "skin",
+    "hair",
+    "nails",
+  ],
+  real_estate: [
+    "real estate",
+    "property",
+    "home",
+    "apartment",
+    "rental",
+    "house",
+    "realtor",
+    "housing",
+  ],
+  education: [
+    "education",
+    "course",
+    "learning",
+    "school",
+    "university",
+    "teach",
+    "tutor",
+    "academy",
+    "training",
+  ],
+  healthcare: [
+    "health",
+    "medical",
+    "clinic",
+    "doctor",
+    "patient",
+    "care",
+    "hospital",
+    "therapy",
+    "dental",
+  ],
+  entertainment: [
+    "entertainment",
+    "music",
+    "gaming",
+    "movie",
+    "film",
+    "video",
+    "streaming",
+    "podcast",
+  ],
+  retail: [
+    "retail",
+    "shop",
+    "store",
+    "ecommerce",
+    "shopping",
+    "product",
+    "merchandise",
+  ],
+  luxury: [
+    "luxury",
+    "premium",
+    "exclusive",
+    "high-end",
+    "upscale",
+    "boutique",
+    "designer",
+  ],
 };
 
 /**
  * Detect industry from conversation messages
  */
-function detectIndustryFromMessage(messages: { role: string; content: string }[]): string | null {
+function detectIndustryFromMessage(
+  messages: { role: string; content: string }[]
+): string | null {
   const recentText = messages
-    .filter(m => m.role === "user")
+    .filter((m) => m.role === "user")
     .slice(-3)
-    .map(m => m.content.toLowerCase())
+    .map((m) => m.content.toLowerCase())
     .join(" ");
 
   // Count keyword matches per industry
@@ -72,19 +208,23 @@ function detectIndustryFromMessage(messages: { role: string; content: string }[]
   }
 
   // Return the industry with the highest score
-  const sortedIndustries = Object.entries(industryScores).sort((a, b) => b[1] - a[1]);
+  const sortedIndustries = Object.entries(industryScores).sort(
+    (a, b) => b[1] - a[1]
+  );
   return sortedIndustries.length > 0 ? sortedIndustries[0][0] : null;
 }
 
 /**
  * Extract context from conversation messages for style filtering
  */
-function extractStyleContext(messages: { role: string; content: string }[]): StyleContext {
+function extractStyleContext(
+  messages: { role: string; content: string }[]
+): StyleContext {
   // Combine recent messages for context extraction
   const recentUserMessages = messages
-    .filter(m => m.role === "user")
+    .filter((m) => m.role === "user")
     .slice(-3) // Last 3 user messages
-    .map(m => m.content)
+    .map((m) => m.content)
     .join(" ");
 
   const contextText = recentUserMessages.toLowerCase();
@@ -95,12 +235,46 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
 
   // Industry-related keywords
   const industryKeywords = [
-    "tech", "technology", "ai", "artificial intelligence", "machine learning", "ml",
-    "fitness", "health", "wellness", "finance", "fintech", "crypto", "blockchain",
-    "food", "restaurant", "retail", "ecommerce", "fashion", "beauty", "travel",
-    "education", "gaming", "entertainment", "music", "sports", "automotive",
-    "real estate", "healthcare", "saas", "startup", "b2b", "b2c", "luxury",
-    "developer", "developers", "api", "software", "engineering", "data", "cloud"
+    "tech",
+    "technology",
+    "ai",
+    "artificial intelligence",
+    "machine learning",
+    "ml",
+    "fitness",
+    "health",
+    "wellness",
+    "finance",
+    "fintech",
+    "crypto",
+    "blockchain",
+    "food",
+    "restaurant",
+    "retail",
+    "ecommerce",
+    "fashion",
+    "beauty",
+    "travel",
+    "education",
+    "gaming",
+    "entertainment",
+    "music",
+    "sports",
+    "automotive",
+    "real estate",
+    "healthcare",
+    "saas",
+    "startup",
+    "b2b",
+    "b2c",
+    "luxury",
+    "developer",
+    "developers",
+    "api",
+    "software",
+    "engineering",
+    "data",
+    "cloud",
   ];
 
   for (const keyword of industryKeywords) {
@@ -111,10 +285,35 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
 
   // Visual style keywords
   const styleKeywords = [
-    "minimal", "minimalist", "bold", "vibrant", "colorful", "elegant", "premium",
-    "playful", "fun", "professional", "corporate", "modern", "classic", "vintage",
-    "retro", "clean", "simple", "complex", "detailed", "sleek", "fresh", "dynamic",
-    "energetic", "calm", "serene", "sophisticated", "luxurious", "organic", "natural"
+    "minimal",
+    "minimalist",
+    "bold",
+    "vibrant",
+    "colorful",
+    "elegant",
+    "premium",
+    "playful",
+    "fun",
+    "professional",
+    "corporate",
+    "modern",
+    "classic",
+    "vintage",
+    "retro",
+    "clean",
+    "simple",
+    "complex",
+    "detailed",
+    "sleek",
+    "fresh",
+    "dynamic",
+    "energetic",
+    "calm",
+    "serene",
+    "sophisticated",
+    "luxurious",
+    "organic",
+    "natural",
   ];
 
   for (const keyword of styleKeywords) {
@@ -133,7 +332,7 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
   for (const pattern of productPatterns) {
     const matches = contextText.match(pattern);
     if (matches) {
-      topicKeywords.push(...matches.slice(0, 2).map(m => m.trim()));
+      topicKeywords.push(...matches.slice(0, 2).map((m) => m.trim()));
     }
   }
 
@@ -143,7 +342,8 @@ function extractStyleContext(messages: { role: string; content: string }[]): Sty
   else if (contextText.includes("tiktok")) platform = "tiktok";
   else if (contextText.includes("linkedin")) platform = "linkedin";
   else if (contextText.includes("instagram")) platform = "instagram";
-  else if (contextText.includes("twitter") || contextText.includes("x.com")) platform = "twitter";
+  else if (contextText.includes("twitter") || contextText.includes("x.com"))
+    platform = "twitter";
   else if (contextText.includes("facebook")) platform = "facebook";
 
   // Build topic string
@@ -221,16 +421,28 @@ async function handler(request: NextRequest) {
     // Extract confirmed fields from brief to prevent re-asking
     if (brief) {
       chatContext.confirmedFields = {
-        platform: brief.platform?.source === "confirmed" ? brief.platform.value : undefined,
-        intent: brief.intent?.source === "confirmed" ? brief.intent.value : undefined,
-        topic: brief.topic?.source === "confirmed" ? brief.topic.value : undefined,
+        platform:
+          brief.platform?.source === "confirmed"
+            ? brief.platform.value
+            : undefined,
+        intent:
+          brief.intent?.source === "confirmed" ? brief.intent.value : undefined,
+        topic:
+          brief.topic?.source === "confirmed" ? brief.topic.value : undefined,
         audience: brief.audience?.value?.name,
-        contentType: brief.contentType?.source === "confirmed" ? brief.contentType.value : undefined,
+        contentType:
+          brief.contentType?.source === "confirmed"
+            ? brief.contentType.value
+            : undefined,
       };
     }
 
     // If client is requesting more/different styles directly, skip AI call
-    if (clientStyleMarker && (clientStyleMarker.type === "more" || clientStyleMarker.type === "different")) {
+    if (
+      clientStyleMarker &&
+      (clientStyleMarker.type === "more" ||
+        clientStyleMarker.type === "different")
+    ) {
       let deliverableStyles = undefined;
       const { type, deliverableType, styleAxis } = clientStyleMarker;
       // Normalize deliverable type in case AI generated an alias
@@ -255,7 +467,7 @@ async function handler(request: NextRequest) {
           // Filter out excluded axes
           if (excludeStyleAxes?.length) {
             deliverableStyles = deliverableStyles.filter(
-              s => !excludeStyleAxes.includes(s.styleAxis)
+              (s) => !excludeStyleAxes.includes(s.styleAxis)
             );
           }
         }
@@ -280,7 +492,9 @@ async function handler(request: NextRequest) {
     // Get style reference images if categories were mentioned
     let styleReferences = undefined;
     if (response.styleReferences && response.styleReferences.length > 0) {
-      styleReferences = await getStyleReferencesByCategory(response.styleReferences);
+      styleReferences = await getStyleReferencesByCategory(
+        response.styleReferences
+      );
     }
 
     // Get deliverable styles if marker was present from AI response
@@ -292,20 +506,39 @@ async function handler(request: NextRequest) {
     // automatically detect and show styles to ensure user sees visual options
     if (!deliverableStyleMarker) {
       const contentLower = response.content.toLowerCase();
-      const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
+      const lastUserMessage =
+        messages[messages.length - 1]?.content?.toLowerCase() || "";
       const combinedContext = `${lastUserMessage} ${contentLower}`;
 
       // Detect deliverable type from context
       let detectedType: string | null = null;
-      if (combinedContext.includes("instagram") && (combinedContext.includes("post") || combinedContext.includes("carousel") || combinedContext.includes("feed"))) {
+      if (
+        combinedContext.includes("instagram") &&
+        (combinedContext.includes("post") ||
+          combinedContext.includes("carousel") ||
+          combinedContext.includes("feed"))
+      ) {
         detectedType = "instagram_post";
-      } else if (combinedContext.includes("instagram") && combinedContext.includes("story")) {
+      } else if (
+        combinedContext.includes("instagram") &&
+        combinedContext.includes("story")
+      ) {
         detectedType = "instagram_story";
-      } else if (combinedContext.includes("instagram") && combinedContext.includes("reel")) {
+      } else if (
+        combinedContext.includes("instagram") &&
+        combinedContext.includes("reel")
+      ) {
         detectedType = "instagram_reel";
-      } else if (combinedContext.includes("linkedin") && combinedContext.includes("post")) {
+      } else if (
+        combinedContext.includes("linkedin") &&
+        combinedContext.includes("post")
+      ) {
         detectedType = "linkedin_post";
-      } else if (combinedContext.includes("ad") || combinedContext.includes("banner") || combinedContext.includes("promotion")) {
+      } else if (
+        combinedContext.includes("ad") ||
+        combinedContext.includes("banner") ||
+        combinedContext.includes("promotion")
+      ) {
         detectedType = "static_ad";
       }
 
@@ -314,7 +547,9 @@ async function handler(request: NextRequest) {
           type: "initial",
           deliverableType: detectedType,
         };
-        console.log(`[Chat API] Auto-detected deliverable type: ${detectedType}`);
+        console.log(
+          `[Chat API] Auto-detected deliverable type: ${detectedType}`
+        );
       }
     }
 
@@ -329,7 +564,9 @@ async function handler(request: NextRequest) {
             // SKIP showing styles if moodboard already has style items
             // This prevents the style grid from appearing 5+ times in a conversation
             if (moodboardHasStyles) {
-              console.log("[Chat API] Skipping style grid - moodboard already has styles");
+              console.log(
+                "[Chat API] Skipping style grid - moodboard already has styles"
+              );
               deliverableStyleMarker = undefined; // Clear the marker so no grid is shown
               break;
             }
@@ -357,7 +594,7 @@ async function handler(request: NextRequest) {
             // Filter out excluded axes
             if (excludeStyleAxes?.length) {
               deliverableStyles = deliverableStyles.filter(
-                s => !excludeStyleAxes.includes(s.styleAxis)
+                (s) => !excludeStyleAxes.includes(s.styleAxis)
               );
             }
             break;
@@ -373,13 +610,17 @@ async function handler(request: NextRequest) {
               );
 
               // If we get good results, use them; otherwise fall back to AI-enhanced search
-              if (semanticResults.length >= 3 && semanticResults[0].semanticScore >= 40) {
-                deliverableStyles = semanticResults.map(s => ({
+              if (
+                semanticResults.length >= 3 &&
+                semanticResults[0].semanticScore >= 40
+              ) {
+                deliverableStyles = semanticResults.map((s) => ({
                   ...s,
                   brandMatchScore: s.semanticScore,
-                  matchReason: s.matchedKeywords.length > 0
-                    ? `Matches: ${s.matchedKeywords.slice(0, 3).join(", ")}`
-                    : "Semantic match",
+                  matchReason:
+                    s.matchedKeywords.length > 0
+                      ? `Matches: ${s.matchedKeywords.slice(0, 3).join(", ")}`
+                      : "Semantic match",
                 }));
               } else {
                 // Use AI-enhanced search for complex queries
@@ -388,7 +629,7 @@ async function handler(request: NextRequest) {
                   normalizedType,
                   6
                 );
-                deliverableStyles = aiResults.map(s => ({
+                deliverableStyles = aiResults.map((s) => ({
                   ...s,
                   brandMatchScore: s.semanticScore,
                   matchReason: "AI-matched to your description",
@@ -402,7 +643,9 @@ async function handler(request: NextRequest) {
             if (baseStyleId && refinementQuery) {
               // First, get the base style's details (can be ID or name)
               const { db } = await import("@/db");
-              const { deliverableStyleReferences } = await import("@/db/schema");
+              const { deliverableStyleReferences } = await import(
+                "@/db/schema"
+              );
               const { eq, ilike } = await import("drizzle-orm");
 
               // Try to find by ID first, then by name
@@ -417,7 +660,9 @@ async function handler(request: NextRequest) {
                 baseStyles = await db
                   .select()
                   .from(deliverableStyleReferences)
-                  .where(ilike(deliverableStyleReferences.name, `%${baseStyleId}%`))
+                  .where(
+                    ilike(deliverableStyleReferences.name, `%${baseStyleId}%`)
+                  )
                   .limit(1);
               }
 
@@ -436,10 +681,13 @@ async function handler(request: NextRequest) {
                   6
                 );
 
-                deliverableStyles = refinedResults.map(s => ({
+                deliverableStyles = refinedResults.map((s) => ({
                   ...s,
                   brandMatchScore: s.semanticScore,
-                  matchReason: `Refined: ${s.matchedKeywords.slice(0, 2).join(", ") || "based on your feedback"}`,
+                  matchReason: `Refined: ${
+                    s.matchedKeywords.slice(0, 2).join(", ") ||
+                    "based on your feedback"
+                  }`,
                 }));
               } else {
                 // Base style not found, fall back to semantic search
@@ -448,7 +696,7 @@ async function handler(request: NextRequest) {
                   normalizedType,
                   6
                 );
-                deliverableStyles = fallbackResults.map(s => ({
+                deliverableStyles = fallbackResults.map((s) => ({
                   ...s,
                   brandMatchScore: s.semanticScore,
                   matchReason: "Matched to your refinement",
@@ -462,14 +710,29 @@ async function handler(request: NextRequest) {
       }
     }
 
+    // Auto-generate quick options from deliverable styles if AI didn't provide any
+    let quickOptions = response.quickOptions;
+    if (!quickOptions && deliverableStyles && deliverableStyles.length > 0) {
+      // Generate options from the style names
+      const styleOptions = deliverableStyles
+        .slice(0, 4)
+        .map((style) => style.name);
+      quickOptions = {
+        question: "Which style do you prefer?",
+        options: [...styleOptions, "Show me more options"],
+      };
+    }
+
     return NextResponse.json({
-      content: response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, "").trim(),
+      content: response.content
+        .replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, "")
+        .trim(),
       taskProposal,
       styleReferences,
       deliverableStyles,
       deliverableStyleMarker,
       selectedStyles,
-      quickOptions: response.quickOptions,
+      quickOptions,
     });
   } catch (error) {
     console.error("Chat error:", error);

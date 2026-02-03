@@ -340,6 +340,12 @@ export function ChatInterface({
     new Set()
   );
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+
+  // Reset suggestion index when messages change (new options available)
+  useEffect(() => {
+    setSuggestionIndex(0);
+  }, [messages.length]);
+
   const [messageFeedback, setMessageFeedback] = useState<
     Record<string, "up" | "down" | null>
   >({});
@@ -1323,16 +1329,34 @@ export function ChatInterface({
       const data = await response.json();
 
       if (data.deliverableStyles && data.deliverableStyles.length > 0) {
-        // Update offset for this style axis
-        setStyleOffset((prev) => ({
-          ...prev,
-          [styleAxis]: newOffset,
-        }));
+        // Check if we got cycled styles (matchReason indicates top/similar styles)
+        const isCycled = data.deliverableStyles.some(
+          (s: { matchReason?: string }) =>
+            s.matchReason?.includes("Top") ||
+            s.matchReason?.includes("Similar") ||
+            s.matchReason?.includes("Recommended")
+        );
+
+        // If we cycled, reset offset for next time
+        if (isCycled) {
+          setStyleOffset((prev) => ({
+            ...prev,
+            [styleAxis]: 0,
+          }));
+        } else {
+          // Update offset for this style axis
+          setStyleOffset((prev) => ({
+            ...prev,
+            [styleAxis]: newOffset,
+          }));
+        }
 
         const assistantMessage: Message = {
           id: Date.now().toString(),
           role: "assistant",
-          content: `Here are more ${styleAxis} style options:`,
+          content: isCycled
+            ? `Here are some recommended ${styleAxis} styles:`
+            : `Here are more ${styleAxis} style options:`,
           timestamp: new Date(),
           deliverableStyles: data.deliverableStyles,
           deliverableStyleMarker: data.deliverableStyleMarker,
@@ -1341,7 +1365,8 @@ export function ChatInterface({
         setMessages((prev) => [...prev, assistantMessage]);
         setAnimatingMessageId(assistantMessage.id);
       } else {
-        toast.info("No more styles available in this direction");
+        // This should rarely happen now with the fallbacks
+        toast.info("Showing top recommended styles");
       }
     } catch {
       toast.error("Failed to load more styles");
@@ -2494,7 +2519,7 @@ export function ChatInterface({
                                             "relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200",
                                             "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                                             isHovered &&
-                                              "scale-150 z-50 shadow-2xl",
+                                              "scale-110 z-10 shadow-2xl",
                                             isSelected
                                               ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
                                               : isHovered &&
@@ -2707,12 +2732,12 @@ export function ChatInterface({
                     </div>
                   ) : (
                     /* User message - beige/cream bubble with edit icon and avatar */
-                    <div className="max-w-[75%] group flex items-start gap-3">
-                      <div className="flex-1">
+                    <div className="max-w-[75%] group">
+                      <div className="flex flex-col items-end">
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle &&
                           message.selectedStyle.imageUrl && (
-                            <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] ml-auto border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
+                            <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
                               <img
                                 src={message.selectedStyle.imageUrl}
                                 alt={message.selectedStyle.name}
@@ -2725,25 +2750,23 @@ export function ChatInterface({
                               />
                             </div>
                           )}
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30">
-                          <p className="text-sm text-foreground whitespace-pre-wrap pr-16">
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30 w-fit">
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
                             {message.content}
                           </p>
-                          {/* Edit and user icons - inside the bubble on the right */}
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                            {index === lastUserMessageIndex &&
-                              !isLoading &&
-                              !isTaskMode &&
-                              !pendingTask && (
-                                <button
-                                  onClick={handleEditLastMessage}
-                                  className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
-                                  title="Edit this message"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                          </div>
+                          {/* Edit icon - appears on hover for last message */}
+                          {index === lastUserMessageIndex &&
+                            !isLoading &&
+                            !isTaskMode &&
+                            !pendingTask && (
+                              <button
+                                onClick={handleEditLastMessage}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
+                                title="Edit this message"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                         </div>
                         {/* User attachments */}
                         {message.attachments &&
@@ -2767,41 +2790,53 @@ export function ChatInterface({
             )}
 
             {/* Inline submit prompt - shown as an AI message when ready to submit */}
-            {!isLoading && !pendingTask && !isTaskMode && (
-              <>
-                {/* Show when AI indicates ready or user has enough context */}
-                {(showManualSubmit ||
-                  (moodboardItems.length > 0 &&
-                    messages.filter((m) => m.role === "user").length >= 2)) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex justify-start"
-                  >
-                    <div className="group max-w-[85%] flex items-start gap-3">
-                      {/* Sparkle avatar - matching assistant messages */}
-                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
-                        <Sparkles className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {/* Message bubble with submit prompt */}
-                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
-                          <p className="text-sm text-foreground mb-3">
-                            {showManualSubmit
-                              ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
-                              : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              onClick={handleRequestTaskSummary}
-                              disabled={isLoading}
-                              size="sm"
-                              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                            >
-                              <Sparkles className="h-3.5 w-3.5" />
-                              Generate Summary
-                            </Button>
+            {!isLoading && !pendingTask && !isTaskMode && (() => {
+              // Check if the last assistant message asked a question (ends with ?)
+              const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop();
+              const lastMsg = messages[messages.length - 1];
+              const aiJustAskedQuestion = lastMsg?.role === "assistant" && 
+                lastAssistantMsg?.content?.trim().endsWith("?");
+              
+              // Don't show submit prompt if AI just asked a question
+              if (aiJustAskedQuestion) return null;
+              
+              // Show when AI indicates ready or user has enough context
+              const shouldShow = showManualSubmit ||
+                (moodboardItems.length > 0 &&
+                  messages.filter((m) => m.role === "user").length >= 2);
+              
+              if (!shouldShow) return null;
+              
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex justify-start"
+                >
+                  <div className="group max-w-[85%] flex items-start gap-3">
+                    {/* Sparkle avatar - matching assistant messages */}
+                    <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {/* Message bubble with submit prompt */}
+                      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                        <p className="text-sm text-foreground mb-3">
+                          {showManualSubmit
+                            ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
+                            : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            onClick={handleRequestTaskSummary}
+                            disabled={isLoading}
+                            size="sm"
+                            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Generate Summary
+                          </Button>
                             <span className="text-xs text-muted-foreground self-center">
                               or keep chatting to add more details
                             </span>
@@ -2923,13 +2958,24 @@ export function ChatInterface({
                 className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
                 style={{ height: "auto", overflow: "hidden" }}
               />
-              {/* Tab hint */}
+              {/* Tab hint with arrow key navigation */}
               {showSuggestion && ghostText && !input.trim() && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-muted-foreground/50 z-0 pointer-events-none">
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
-                    Tab
-                  </kbd>
-                  <span>to accept</span>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs text-muted-foreground/50 z-0 pointer-events-none">
+                  <div className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                      ↑
+                    </kbd>
+                    <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                      ↓
+                    </kbd>
+                  </div>
+                  <span className="text-muted-foreground/40">|</span>
+                  <div className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                      Tab
+                    </kbd>
+                    <span>to accept</span>
+                  </div>
                 </div>
               )}
             </div>

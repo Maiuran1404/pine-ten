@@ -72,7 +72,7 @@ export function StyleSelectionGrid({
               key={style.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.5, zIndex: 50 }}
+              whileHover={{ scale: 1.1, zIndex: 10 }}
               transition={{ duration: 0.2, delay: index * 0.05 }}
               onClick={() => handleCardClick(style)}
               onMouseEnter={() => setHoveredStyleId(style.id)}
