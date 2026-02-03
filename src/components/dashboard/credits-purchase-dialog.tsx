@@ -128,7 +128,8 @@ export function CreditsPurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
+      {/* Override sidebar offset to always center on viewport */}
+      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden !left-1/2 !-translate-x-1/2">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">

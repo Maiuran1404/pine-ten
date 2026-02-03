@@ -119,7 +119,8 @@ export function CreditPurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      {/* Override sidebar offset to always center on viewport */}
+      <DialogContent className="sm:max-w-[500px] left-1/2! -translate-x-1/2!">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5" />

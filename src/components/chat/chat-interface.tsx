@@ -3520,26 +3520,31 @@ export function ChatInterface({
               />
               {/* Tab hint - show different hints based on context */}
               {ghostText && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs text-muted-foreground/50 z-0 pointer-events-none">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3 text-xs z-0 pointer-events-none">
                   {/* Show arrow keys only when empty and have quick options */}
                   {!input.trim() && quickOptionSuggestion && (
                     <>
-                      <div className="flex items-center gap-1">
-                        <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
-                          ↑
-                        </kbd>
-                        <kbd className="px-1 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
-                          ↓
-                        </kbd>
+                      <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                        <div className="flex items-center gap-0.5">
+                          <kbd className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
+                            ↑
+                          </kbd>
+                          <kbd className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
+                            ↓
+                          </kbd>
+                        </div>
+                        <span className="text-[11px]">browse</span>
                       </div>
-                      <span className="text-muted-foreground/40">|</span>
+                      <span className="text-muted-foreground/30">•</span>
                     </>
                   )}
-                  <div className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/50 text-[10px] font-mono">
+                  <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                    <kbd className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
                       Tab
                     </kbd>
-                    <span>{input.trim() ? "to complete" : "to accept"}</span>
+                    <span className="text-[11px]">
+                      {input.trim() ? "insert suggestion" : "use suggestion"}
+                    </span>
                   </div>
                 </div>
               )}
