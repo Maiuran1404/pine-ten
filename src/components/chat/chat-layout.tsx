@@ -226,44 +226,8 @@ export function ChatLayout({
                 transition={{ duration: 0.2 }}
                 className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
               >
-                {/* Minimal Tab Header */}
-                <div className="shrink-0 flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    {showBrief && (
-                      <button
-                        onClick={() => setActiveTab("brief")}
-                        className={cn(
-                          "text-xs font-medium transition-colors",
-                          activeTab === "brief"
-                            ? "text-foreground"
-                            : "text-muted-foreground/50 hover:text-muted-foreground"
-                        )}
-                      >
-                        Brief
-                      </button>
-                    )}
-                    {showBrief && showMoodboard && (
-                      <span className="text-muted-foreground/30">·</span>
-                    )}
-                    {showMoodboard && (
-                      <button
-                        onClick={() => setActiveTab("moodboard")}
-                        className={cn(
-                          "text-xs font-medium transition-colors flex items-center gap-1",
-                          activeTab === "moodboard"
-                            ? "text-foreground"
-                            : "text-muted-foreground/50 hover:text-muted-foreground"
-                        )}
-                      >
-                        Moodboard
-                        {moodboardItems.length > 0 && (
-                          <span className="text-[10px] text-muted-foreground">
-                            ({moodboardItems.length})
-                          </span>
-                        )}
-                      </button>
-                    )}
-                  </div>
+                {/* Minimal Header - Brief only */}
+                <div className="shrink-0 flex items-center justify-end px-3 py-2">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -274,51 +238,21 @@ export function ChatLayout({
                   </Button>
                 </div>
 
-                {/* Tab Content */}
+                {/* Brief Content - No tabs, just brief */}
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  <AnimatePresence mode="wait">
-                    {activeTab === "brief" && showBrief && (
-                      <motion.div
-                        key="brief-panel"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="h-full"
-                      >
-                        {brief && onBriefUpdate ? (
-                          <BriefPanel
-                            brief={brief}
-                            onBriefUpdate={onBriefUpdate}
-                            onExportBrief={onExportBrief}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                            <p className="text-xs text-muted-foreground/50">
-                              Brief builds as you chat
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                    {activeTab === "moodboard" && showMoodboard && (
-                      <motion.div
-                        key="moodboard-panel"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        transition={{ duration: 0.15 }}
-                        className="h-full"
-                      >
-                        <MoodboardPanel
-                          items={moodboardItems}
-                          onRemoveItem={onRemoveMoodboardItem}
-                          onClearAll={onClearMoodboard}
-                          className="w-full h-full"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {brief && onBriefUpdate ? (
+                    <BriefPanel
+                      brief={brief}
+                      onBriefUpdate={onBriefUpdate}
+                      onExportBrief={onExportBrief}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                      <p className="text-xs text-muted-foreground/50">
+                        Brief builds as you chat
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

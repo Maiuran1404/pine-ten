@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Plus,
   Sparkles,
-  MessageCircle,
   CheckSquare,
   FolderOpen,
   Coins,
@@ -107,14 +106,8 @@ export default function ChatPage() {
   // Get user credits from context
   const { credits: userCredits } = useCredits();
 
-  // Features menu items
+  // Features menu items (Chat removed - use New Chat button instead)
   const features = [
-    {
-      icon: MessageCircle,
-      label: "Chat",
-      href: "/dashboard/chat",
-      active: true,
-    },
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
