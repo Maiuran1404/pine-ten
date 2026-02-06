@@ -31,7 +31,8 @@ function extractImagesFromHtml(html: string, baseUrl: string): ScrapedImage[] {
       if (src.startsWith("/")) return new URL(src, baseUrl).href;
       if (src.startsWith("http")) return src;
       return new URL(src, baseUrl).href;
-    } catch {
+    } catch (error) {
+      logger.debug({ err: error, src }, "Failed to resolve URL");
       return null;
     }
   };
@@ -349,7 +350,8 @@ export async function POST(request: NextRequest) {
       if (!["http:", "https:"].includes(parsedUrl.protocol)) {
         throw new Error("Invalid protocol");
       }
-    } catch {
+    } catch (error) {
+      logger.warn({ err: error, url }, "Invalid URL provided for scraping");
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 

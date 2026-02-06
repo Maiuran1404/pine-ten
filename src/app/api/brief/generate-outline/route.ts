@@ -98,7 +98,8 @@ Brand Context:
 - Description: ${user.company.description || ""}
 `;
       }
-    } catch {
+    } catch (error) {
+      logger.warn({ err: error, userId: session.user.id }, "Failed to fetch company context for outline generation");
       // Continue without company context
     }
 

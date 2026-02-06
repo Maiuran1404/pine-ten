@@ -99,8 +99,8 @@ export async function apiClient<T = unknown>(
     try {
       const token = await getCsrfToken();
       headers.set(CSRF_HEADER_NAME, token);
-    } catch {
-      logger.warn("Failed to get CSRF token, proceeding without it");
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to get CSRF token, proceeding without it");
     }
   }
 
@@ -165,8 +165,8 @@ export async function uploadFile(
   try {
     const token = await getCsrfToken();
     headers.set(CSRF_HEADER_NAME, token);
-  } catch {
-    logger.warn("Failed to get CSRF token for upload");
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to get CSRF token for upload");
   }
 
   const response = await fetch(url, {

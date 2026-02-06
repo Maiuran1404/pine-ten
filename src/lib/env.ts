@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 /**
  * Environment variable validation schema
@@ -95,7 +96,8 @@ export function getEnv(): Env {
 export function getEnvSafe<K extends keyof Env>(key: K): Env[K] | undefined {
   try {
     return getEnv()[key];
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, key }, "Failed to get environment variable safely");
     return undefined;
   }
 }

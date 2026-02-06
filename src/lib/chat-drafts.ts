@@ -109,7 +109,8 @@ function getLocalDrafts(): ChatDraft[] {
     const drafts = localStorage.getItem(DRAFTS_KEY);
     if (!drafts) return [];
     return JSON.parse(drafts);
-  } catch {
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to parse drafts from localStorage");
     return [];
   }
 }
@@ -120,8 +121,8 @@ function setLocalDrafts(drafts: ChatDraft[]): void {
     localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
     // Dispatch custom event to notify sidebar of changes
     window.dispatchEvent(new CustomEvent("drafts-updated"));
-  } catch {
-    logger.error("Failed to save drafts to localStorage");
+  } catch (error) {
+    logger.error({ err: error }, "Failed to save drafts to localStorage");
   }
 }
 

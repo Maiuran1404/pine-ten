@@ -7,6 +7,7 @@ import {
   audiences as audiencesTable,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -399,8 +400,8 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
   if (quickOptionsMatch) {
     try {
       quickOptions = JSON.parse(quickOptionsMatch[1].trim());
-    } catch {
-      // Ignore parse errors
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to parse quick options JSON from chat response");
     }
   }
 
@@ -584,7 +585,8 @@ export function parseTaskFromChat(content: string): object | null {
     }
 
     return task;
-  } catch {
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to parse task from chat content");
     return null;
   }
 }

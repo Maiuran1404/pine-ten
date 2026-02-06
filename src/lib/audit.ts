@@ -95,8 +95,9 @@ async function getRequestContext(): Promise<{
     const ipAddress = forwarded?.split(",")[0]?.trim() || realIp || null;
     const userAgent = headersList.get("user-agent");
     return { ipAddress, userAgent };
-  } catch {
-    // Headers might not be available in some contexts
+  } catch (error) {
+    // Headers might not be available in some contexts (e.g., background jobs)
+    logger.debug({ err: error }, "Could not get request context for audit log");
     return { ipAddress: null, userAgent: null };
   }
 }

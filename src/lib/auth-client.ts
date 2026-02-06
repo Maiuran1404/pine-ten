@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { logger } from "@/lib/logger";
 
 // For cross-subdomain auth, we need to use the canonical auth URL
 // All auth requests should go through the same origin
@@ -36,7 +37,8 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     const session = await getSession();
     return !!session?.data?.user;
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error }, "Failed to check authentication status");
     return false;
   }
 }
@@ -45,7 +47,8 @@ export async function isAuthenticated(): Promise<boolean> {
 export async function clearAuthState(): Promise<void> {
   try {
     await signOut();
-  } catch {
-    // Ignore errors - the session might already be invalid
+  } catch (error) {
+    // Session might already be invalid, but log for debugging
+    logger.debug({ err: error }, "Error during auth state clear (session may already be invalid)");
   }
 }

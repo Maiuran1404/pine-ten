@@ -12,6 +12,7 @@
  */
 
 import { createHash } from "crypto";
+import { logger } from "@/lib/logger";
 
 /**
  * Generate a simple hash from image buffer using SHA-256
@@ -93,7 +94,8 @@ export function isValidImageUrl(url: string): boolean {
     const isImageCdn = imageCdnPatterns.some((pattern) => url.includes(pattern));
 
     return hasImageExtension || isImageCdn || url.includes("/image");
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, url }, "Failed to validate image URL format");
     return false;
   }
 }

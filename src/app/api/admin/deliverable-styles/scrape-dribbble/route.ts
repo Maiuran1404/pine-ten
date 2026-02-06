@@ -61,7 +61,8 @@ function isDribbbleShot(url: string): boolean {
       parsed.hostname === "dribbble.com" &&
       parsed.pathname.startsWith("/shots/")
     );
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, url }, "Failed to parse Dribbble URL");
     return false;
   }
 }

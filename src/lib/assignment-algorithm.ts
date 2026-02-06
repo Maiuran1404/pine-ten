@@ -314,7 +314,8 @@ export function isNightHours(artistTimezone: string | null): boolean {
     );
     const hour = artistTime.getHours();
     return hour >= 23 || hour < 7;
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, artistTimezone }, "Failed to check night hours for timezone");
     return false;
   }
 }

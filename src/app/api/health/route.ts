@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { checkEnvHealth } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -59,7 +60,8 @@ export async function GET(): Promise<NextResponse<HealthStatus>> {
     if (!envHealth.healthy && overallStatus === "healthy") {
       overallStatus = "degraded";
     }
-  } catch {
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to check environment health");
     checks.environment = { status: "unknown" };
   }
 

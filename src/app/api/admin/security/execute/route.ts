@@ -8,6 +8,7 @@ import {
   securityTests,
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // Test execution helper types
 interface TestResult {
@@ -82,8 +83,9 @@ async function checkApiAuthentication(targetUrl: string): Promise<TestResult> {
             location: `${targetUrl}${path}`,
           });
         }
-      } catch {
+      } catch (error) {
         // Endpoint doesn't exist or network error - not a security issue
+        logger.debug({ err: error, path }, "API endpoint check failed (expected for non-existent endpoints)");
       }
     }
 
@@ -201,7 +203,8 @@ async function checkSensitiveDataExposure(targetUrl: string): Promise<TestResult
       findings,
       durationMs: Date.now() - startTime,
     };
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, targetUrl }, "Sensitive data exposure check could not complete");
     return {
       status: "PASSED",
       durationMs: Date.now() - startTime,
@@ -250,7 +253,8 @@ async function checkCookieSecurity(targetUrl: string): Promise<TestResult> {
       findings,
       durationMs: Date.now() - startTime,
     };
-  } catch {
+  } catch (error) {
+    logger.debug({ err: error, targetUrl }, "Cookie security check could not complete");
     return {
       status: "PASSED",
       durationMs: Date.now() - startTime,

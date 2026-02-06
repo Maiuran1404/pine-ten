@@ -7,6 +7,7 @@
  */
 
 import type { ServiceType } from "./types";
+import { logger } from "@/lib/logger";
 
 // =============================================================================
 // BASE SYSTEM PROMPT
@@ -464,8 +465,8 @@ export function parseIntakeResponse(response: string): ParsedIntakeResponse {
     try {
       result.groupedQuestions = JSON.parse(groupedMatch[1]);
       result.text = response.replace(/```intake_questions\n[\s\S]*?```/, "").trim();
-    } catch {
-      // Invalid JSON, ignore
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to parse intake grouped questions JSON");
     }
   }
 
@@ -475,8 +476,8 @@ export function parseIntakeResponse(response: string): ParsedIntakeResponse {
     try {
       result.quickOptions = JSON.parse(optionsMatch[1]);
       result.text = result.text.replace(/```intake_options\n[\s\S]*?```/, "").trim();
-    } catch {
-      // Invalid JSON, ignore
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to parse intake quick options JSON");
     }
   }
 
@@ -486,8 +487,8 @@ export function parseIntakeResponse(response: string): ParsedIntakeResponse {
     try {
       result.summary = JSON.parse(summaryMatch[1]);
       result.text = result.text.replace(/```intake_summary\n[\s\S]*?```/, "").trim();
-    } catch {
-      // Invalid JSON, ignore
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to parse intake summary JSON");
     }
   }
 
@@ -497,8 +498,8 @@ export function parseIntakeResponse(response: string): ParsedIntakeResponse {
     try {
       result.serviceSelect = JSON.parse(serviceMatch[1]);
       result.text = result.text.replace(/```intake_service_select\n[\s\S]*?```/, "").trim();
-    } catch {
-      // Invalid JSON, ignore
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to parse intake service select JSON");
     }
   }
 

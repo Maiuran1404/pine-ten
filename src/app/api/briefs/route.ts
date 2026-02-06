@@ -163,7 +163,8 @@ export async function POST(request: NextRequest) {
       if (value === undefined || value === null) return null;
       try {
         return JSON.parse(JSON.stringify(value));
-      } catch {
+      } catch (error) {
+        logger.warn({ err: error }, "Failed to serialize value for brief");
         return null;
       }
     };
