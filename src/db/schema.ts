@@ -320,7 +320,7 @@ export const artistSkills = pgTable(
     yearsExperience: decimal("years_experience", { precision: 3, scale: 1 }),
     verified: boolean("verified").notNull().default(false), // Admin verified
     verifiedAt: timestamp("verified_at"),
-    verifiedBy: text("verified_by").references(() => users.id),
+    verifiedBy: text("verified_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -545,8 +545,8 @@ export const assignmentAlgorithmConfig = pgTable(
       }),
 
     // Audit fields
-    createdBy: text("created_by").references(() => users.id),
-    updatedBy: text("updated_by").references(() => users.id),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
     publishedAt: timestamp("published_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -585,8 +585,8 @@ export const tasks = pgTable(
     clientId: text("client_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    freelancerId: text("freelancer_id").references(() => users.id),
-    categoryId: uuid("category_id").references(() => taskCategories.id),
+    freelancerId: text("freelancer_id").references(() => users.id, { onDelete: "set null" }),
+    categoryId: uuid("category_id").references(() => taskCategories.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     description: text("description").notNull(),
     status: taskStatusEnum("status").notNull().default("PENDING"),
@@ -620,7 +620,7 @@ export const tasks = pgTable(
     // New assignment algorithm fields
     complexity: taskComplexityEnum("complexity").default("INTERMEDIATE"),
     urgency: taskUrgencyEnum("urgency").default("STANDARD"),
-    offeredTo: text("offered_to").references(() => users.id),
+    offeredTo: text("offered_to").references(() => users.id, { onDelete: "set null" }),
     offerExpiresAt: timestamp("offer_expires_at"),
     escalationLevel: integer("escalation_level").notNull().default(0),
     requiredSkills: jsonb("required_skills").$type<string[]>().default([]),
@@ -648,7 +648,7 @@ export const taskFiles = pgTable(
       .references(() => tasks.id, { onDelete: "cascade" }),
     uploadedBy: text("uploaded_by")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     fileName: text("file_name").notNull(),
     fileUrl: text("file_url").notNull(),
     fileType: text("file_type").notNull(),
@@ -672,7 +672,7 @@ export const taskMessages = pgTable(
       .references(() => tasks.id, { onDelete: "cascade" }),
     senderId: text("sender_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     attachments: jsonb("attachments").$type<string[]>().default([]),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -691,7 +691,7 @@ export const taskActivityLog = pgTable(
     taskId: uuid("task_id")
       .notNull()
       .references(() => tasks.id, { onDelete: "cascade" }),
-    actorId: text("actor_id").references(() => users.id),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
     actorType: text("actor_type").notNull(), // "client", "freelancer", "admin", "system"
     action: text("action").notNull(), // "created", "assigned", "started", "submitted", "approved", "revision_requested", "completed", "cancelled"
     previousStatus: text("previous_status"),
@@ -833,7 +833,7 @@ export const notifications = pgTable(
     channel: notificationChannelEnum("channel").notNull(),
     title: text("title").notNull(),
     content: text("content").notNull(),
-    relatedTaskId: uuid("related_task_id").references(() => tasks.id),
+    relatedTaskId: uuid("related_task_id").references(() => tasks.id, { onDelete: "set null" }),
     sentAt: timestamp("sent_at"),
     readAt: timestamp("read_at"),
     status: text("status").notNull().default("PENDING"),
@@ -857,7 +857,7 @@ export const creditTransactions = pgTable(
     amount: integer("amount").notNull(),
     type: text("type").notNull(), // PURCHASE, USAGE, REFUND, BONUS
     description: text("description"),
-    relatedTaskId: uuid("related_task_id").references(() => tasks.id),
+    relatedTaskId: uuid("related_task_id").references(() => tasks.id, { onDelete: "set null" }),
     stripePaymentId: text("stripe_payment_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -1227,7 +1227,7 @@ export const notificationSettings = pgTable("notification_settings", {
   whatsappTemplate: text("whatsapp_template"), // Plain text with {{variables}}
   // Metadata
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  updatedBy: text("updated_by").references(() => users.id),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
 });
 
 // Orshot template presets (admin-configurable)
@@ -1403,7 +1403,7 @@ export const testSchedules = pgTable("test_schedules", {
   // What to run
   testIds: jsonb("test_ids").$type<string[]>().default([]), // Specific tests or empty for all
   categories: jsonb("categories").$type<string[]>().default([]), // Run tests in these categories
-  testUserId: uuid("test_user_id").references(() => testUsers.id),
+  testUserId: uuid("test_user_id").references(() => testUsers.id, { onDelete: "set null" }),
   targetEnvironment: text("target_environment").notNull().default("production"), // production, staging
   // Status
   isActive: boolean("is_active").notNull().default(true),
@@ -1418,13 +1418,13 @@ export const securityTestRuns = pgTable(
   "security_test_runs",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    scheduleId: uuid("schedule_id").references(() => testSchedules.id),
+    scheduleId: uuid("schedule_id").references(() => testSchedules.id, { onDelete: "set null" }),
     triggeredBy: text("triggered_by"), // user ID or "schedule"
     status: securityTestRunStatusEnum("status").notNull().default("PENDING"),
     // Configuration snapshot at run time
     targetUrl: text("target_url").notNull(),
     environment: text("environment").notNull().default("production"),
-    testUserId: uuid("test_user_id").references(() => testUsers.id),
+    testUserId: uuid("test_user_id").references(() => testUsers.id, { onDelete: "set null" }),
     // Results summary
     totalTests: integer("total_tests").notNull().default(0),
     passedTests: integer("passed_tests").notNull().default(0),
@@ -1462,7 +1462,7 @@ export const securityTestResults = pgTable(
       .references(() => securityTestRuns.id, { onDelete: "cascade" }),
     testId: uuid("test_id")
       .notNull()
-      .references(() => securityTests.id),
+      .references(() => securityTests.id, { onDelete: "cascade" }),
     status: securityTestStatusEnum("status").notNull().default("PENDING"),
     // Results
     errorMessage: text("error_message"),

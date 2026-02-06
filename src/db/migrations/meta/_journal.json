@@ -176,6 +176,13 @@
       "when": 1770417209899,
       "tag": "0024_add_missing_fk_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1770418297268,
+      "tag": "0025_familiar_solo",
+      "breakpoints": true
     }
   ]
 }
