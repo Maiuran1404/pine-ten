@@ -5,9 +5,6 @@ import { toast } from "sonner";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,54 +44,12 @@ import {
   Eye,
   User,
   Palette,
-  Image as ImageIcon,
   Paperclip,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-  attachments?: {
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize: number;
-  }[];
-}
-
-interface StyleDetail {
-  id: string;
-  name: string;
-  imageUrl: string;
-  deliverableType: string;
-  styleAxis: string;
-}
-
-interface ChatLog {
-  id: string;
-  type: "draft" | "task";
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userImage: string | null;
-  title: string;
-  messages: ChatMessage[];
-  selectedStyles: string[];
-  styleDetails?: StyleDetail[];
-  taskStatus?: string;
-  pendingTask?: {
-    title: string;
-    description: string;
-    category: string;
-    creditsRequired: number;
-  } | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { logger } from "@/lib/logger";
+import type { AdminChatMessage, ChatLog } from "@/types/admin-chat-logs";
 
 interface Stats {
   total: number;
@@ -130,7 +85,7 @@ export default function ChatLogsPage() {
         setStats(data.stats || { total: 0, drafts: 0, tasks: 0, avgMessages: 0 });
       }
     } catch (error) {
-      console.error("Failed to fetch chat logs:", error);
+      logger.error({ err: error }, "Failed to fetch chat logs");
       toast.error("Failed to load chat logs");
     } finally {
       setIsLoading(false);
@@ -174,7 +129,7 @@ export default function ChatLogsPage() {
       .slice(0, 2);
   };
 
-  const getMessagePreview = (messages: ChatMessage[]) => {
+  const getMessagePreview = (messages: AdminChatMessage[]) => {
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
     if (lastUserMessage) {
       return lastUserMessage.content.length > 100

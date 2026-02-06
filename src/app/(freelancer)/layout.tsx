@@ -6,8 +6,11 @@ import { FreelancerSidebar } from "@/components/freelancer/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
+import { logger } from "@/lib/logger";
+import type { FreelancerStatus } from "@/types";
 
-export type FreelancerStatus = "NOT_FOUND" | "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED" | null;
+/** UI state that extends FreelancerStatus with loading states */
+export type FreelancerProfileState = FreelancerStatus | "NOT_FOUND" | null;
 
 export default function FreelancerLayout({
   children,
@@ -17,7 +20,7 @@ export default function FreelancerLayout({
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileStatus, setProfileStatus] = useState<FreelancerStatus>(null);
+  const [profileStatus, setProfileStatus] = useState<FreelancerProfileState>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
 
   // Set page title for artist portal
@@ -35,7 +38,7 @@ export default function FreelancerLayout({
           setProfileStatus(data.status);
         }
       } catch (error) {
-        console.error("Failed to fetch profile status:", error);
+        logger.error({ err: error }, "Failed to fetch profile status");
       } finally {
         setIsStatusLoading(false);
       }

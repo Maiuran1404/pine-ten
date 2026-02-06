@@ -2,23 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { chatDrafts, tasks, users, deliverableStyleReferences } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-auth";
-import { desc, eq, or, ilike, sql, inArray } from "drizzle-orm";
+import { desc, eq, or, ilike, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import type { AdminChatMessage, StyleDetail, PendingTaskInfo } from "@/types/admin-chat-logs";
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-  attachments?: {
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize: number;
-  }[];
-}
-
-interface ChatLog {
+// Internal type with Date objects (before serialization)
+interface InternalChatLog {
   id: string;
   type: "draft" | "task";
   userId: string;
@@ -26,22 +15,11 @@ interface ChatLog {
   userEmail: string;
   userImage: string | null;
   title: string;
-  messages: ChatMessage[];
+  messages: AdminChatMessage[];
   selectedStyles: string[];
-  styleDetails?: {
-    id: string;
-    name: string;
-    imageUrl: string;
-    deliverableType: string;
-    styleAxis: string;
-  }[];
+  styleDetails?: StyleDetail[];
   taskStatus?: string;
-  pendingTask?: {
-    title: string;
-    description: string;
-    category: string;
-    creditsRequired: number;
-  } | null;
+  pendingTask?: PendingTaskInfo | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,7 +35,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const offset = (page - 1) * limit;
 
-    const logs: ChatLog[] = [];
+    const logs: InternalChatLog[] = [];
 
     // Fetch drafts if needed
     if (status === "all" || status === "draft") {
@@ -100,9 +78,9 @@ export async function GET(request: NextRequest) {
           userEmail: draft.userEmail || "",
           userImage: draft.userImage,
           title: draft.title,
-          messages: (draft.messages as ChatMessage[]) || [],
+          messages: (draft.messages as AdminChatMessage[]) || [],
           selectedStyles: (draft.selectedStyles as string[]) || [],
-          pendingTask: draft.pendingTask as ChatLog["pendingTask"],
+          pendingTask: draft.pendingTask as PendingTaskInfo | null,
           createdAt: draft.createdAt,
           updatedAt: draft.updatedAt,
         });
@@ -143,7 +121,7 @@ export async function GET(request: NextRequest) {
 
       for (const task of tasksResult) {
         // Only include tasks that have chat history
-        const chatHistory = task.chatHistory as ChatMessage[] | null;
+        const chatHistory = task.chatHistory as AdminChatMessage[] | null;
         if (chatHistory && chatHistory.length > 0) {
           logs.push({
             id: task.id,
@@ -170,13 +148,7 @@ export async function GET(request: NextRequest) {
     const allStyleIds = [...new Set(logs.flatMap((log) => log.selectedStyles))];
 
     // Fetch style details if there are any
-    let styleDetailsMap: Record<string, {
-      id: string;
-      name: string;
-      imageUrl: string;
-      deliverableType: string;
-      styleAxis: string;
-    }> = {};
+    let styleDetailsMap: Record<string, StyleDetail> = {};
 
     if (allStyleIds.length > 0) {
       const styleDetails = await db

@@ -19,7 +19,7 @@ import {
   Lock,
   Wallet,
 } from "lucide-react";
-import type { FreelancerStatus } from "@/app/(freelancer)/layout";
+import type { FreelancerProfileState } from "@/app/(freelancer)/layout";
 
 const navigation = [
   {
@@ -51,7 +51,7 @@ const navigation = [
 interface FreelancerSidebarProps {
   open?: boolean;
   onClose?: () => void;
-  profileStatus?: FreelancerStatus;
+  profileStatus?: FreelancerProfileState;
 }
 
 export function FreelancerSidebar({ open, onClose, profileStatus }: FreelancerSidebarProps) {
