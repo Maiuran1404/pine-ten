@@ -180,6 +180,16 @@ function LoginContent() {
   }
 
   async function handleGoogleSignIn() {
+    // Check for embedded browsers (Instagram, Facebook, TikTok, etc.)
+    // Google blocks OAuth from these for security reasons
+    const ua = navigator.userAgent;
+    if (/FBAN|FBAV|Instagram|TikTok|Twitter|LinkedInApp|Snapchat|Pinterest/i.test(ua)) {
+      toast.error("Please open this page in Safari or Chrome to sign in with Google", {
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsGoogleLoading(true);
     try {
       const callbackURL = `${window.location.origin}${getRedirectUrl()}`;
