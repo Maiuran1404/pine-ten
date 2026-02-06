@@ -227,7 +227,7 @@ export function ChatLayout({
                 className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
               >
                 {/* Minimal Header - Brief only */}
-                <div className="shrink-0 flex items-center justify-end px-3 py-2">
+                <div className="shrink-0 flex items-center justify-start px-3 py-2">
                   <Button
                     variant="ghost"
                     size="icon"
