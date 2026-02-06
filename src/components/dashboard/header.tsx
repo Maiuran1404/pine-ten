@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { CreditsPurchaseDialog } from "./credits-purchase-dialog";
+import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { useCredits } from "@/providers/credit-provider";
 
 interface HeaderProps {
@@ -72,7 +72,7 @@ export function Header({ onMenuClick, basePath = "/dashboard", showUpgrade = tru
         </div>
       </header>
 
-      <CreditsPurchaseDialog
+      <CreditPurchaseDialog
         open={showCreditsDialog}
         onOpenChange={setShowCreditsDialog}
         currentCredits={credits}

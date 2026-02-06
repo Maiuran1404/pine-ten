@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { Coins, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 const creditPackages = [
   {
@@ -65,18 +66,48 @@ interface CreditPurchaseDialogProps {
   returnUrl?: string;
   /** Pending task state to restore after payment */
   pendingTaskState?: PendingTaskState;
+  /** If true, fetches current credits from API when dialog opens */
+  fetchCredits?: boolean;
 }
 
 export function CreditPurchaseDialog({
   open,
   onOpenChange,
   requiredCredits = 0,
-  currentCredits = 0,
+  currentCredits: initialCredits,
   returnUrl,
   pendingTaskState,
+  fetchCredits: shouldFetchCredits = false,
 }: CreditPurchaseDialogProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [credits, setCredits] = useState(initialCredits ?? 0);
 
+  // Fetch credits from API if needed
+  useEffect(() => {
+    if (open && shouldFetchCredits && initialCredits === undefined) {
+      const fetchCreditsFromApi = async () => {
+        try {
+          const response = await fetch("/api/user/credits");
+          if (response.ok) {
+            const data = await response.json();
+            setCredits(data.credits);
+          }
+        } catch (error) {
+          logger.error({ err: error }, "Failed to fetch credits");
+        }
+      };
+      fetchCreditsFromApi();
+    }
+  }, [open, shouldFetchCredits, initialCredits]);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    if (initialCredits !== undefined) {
+      setCredits(initialCredits);
+    }
+  }, [initialCredits]);
+
+  const currentCredits = credits;
   const creditsNeeded = Math.max(0, requiredCredits - currentCredits);
 
   const handlePurchase = async (packageId: string) => {
