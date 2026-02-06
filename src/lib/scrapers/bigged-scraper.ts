@@ -161,9 +161,9 @@ export async function scrapeBiggedUrls(
       scrollAttempts++;
 
       // Extract media URLs
-      const media = await iframe.locator("img, video").evaluateAll((elements) => {
+      const media = await iframe.locator("img, video").evaluateAll((elements: Element[]) => {
         const results: Array<{ src: string; type: string }> = [];
-        elements.forEach((el) => {
+        elements.forEach((el: Element) => {
           const src = (el as HTMLImageElement | HTMLVideoElement).src;
           if (src && src.includes("library.bigged.com")) {
             results.push({ src, type: el.tagName });
@@ -223,13 +223,13 @@ export async function scrapeBiggedUrls(
       // Improved scrolling - try multiple scroll strategies
       try {
         // Strategy 1: Scroll the iframe body
-        await iframe.locator("body").evaluate((el) => {
+        await iframe.locator("body").evaluate((el: HTMLElement) => {
           el.scrollTo(0, el.scrollHeight);
         });
       } catch {
         // Strategy 2: Scroll the main content area
         try {
-          await iframe.locator('[class*="scroll"], [class*="content"]').first().evaluate((el) => {
+          await iframe.locator('[class*="scroll"], [class*="content"]').first().evaluate((el: HTMLElement) => {
             el.scrollTo(0, el.scrollHeight);
           });
         } catch {
