@@ -4,13 +4,14 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, payouts, stripeConnectAccounts } from "@/db/schema";
 import { eq, and, gte, lt, desc, sum, count, sql } from "drizzle-orm";
-import { config } from "@/lib/config";
+import { getPayoutSettings } from "@/lib/platform-settings";
 import {
   calculatePayoutAmounts,
   createPayoutRequest,
   processPayoutTransfer,
   getConnectAccount,
 } from "@/lib/stripe-connect";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,13 +25,16 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id;
 
+    // Get payout settings from database
+    const payoutSettings = await getPayoutSettings();
+
     // Calculate date boundaries
     const now = new Date();
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Define the holding period (7 days after completion for funds to become "available")
-    const holdingPeriodDays = 7;
+    // Define the holding period from database settings
+    const holdingPeriodDays = payoutSettings.holdingPeriodDays;
     const availableCutoff = new Date();
     availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays);
 
@@ -256,12 +260,12 @@ export async function GET(request: NextRequest) {
     // Get Stripe Connect status
     const connectAccount = await getConnectAccount(userId);
 
-    // Get payout configuration
+    // Get payout configuration from database settings
     const payoutConfig = {
-      minimumPayoutCredits: config.payouts.minimumPayoutCredits,
-      artistPercentage: config.payouts.artistPercentage,
-      holdingPeriodDays: config.payouts.holdingPeriodDays,
-      creditValueUsd: config.payouts.creditValueUSD,
+      minimumPayoutCredits: payoutSettings.minimumPayoutCredits,
+      artistPercentage: payoutSettings.artistPercentage,
+      holdingPeriodDays: payoutSettings.holdingPeriodDays,
+      creditValueUsd: payoutSettings.creditValueUSD,
     };
 
     return NextResponse.json({
@@ -285,7 +289,7 @@ export async function GET(request: NextRequest) {
         : { connected: false },
     });
   } catch (error) {
-    console.error("Payout data fetch error:", error);
+    logger.error({ error }, "Payout data fetch error");
     return NextResponse.json(
       { error: "Failed to fetch payout data" },
       { status: 500 }
@@ -311,9 +315,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { creditsAmount } = body;
 
-    if (!creditsAmount || creditsAmount < config.payouts.minimumPayoutCredits) {
+    // Get payout settings from database
+    const payoutSettings = await getPayoutSettings();
+
+    if (!creditsAmount || creditsAmount < payoutSettings.minimumPayoutCredits) {
       return NextResponse.json(
-        { error: `Minimum payout is ${config.payouts.minimumPayoutCredits} credits` },
+        { error: `Minimum payout is ${payoutSettings.minimumPayoutCredits} credits` },
         { status: 400 }
       );
     }
@@ -334,8 +341,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate available balance
-    const holdingPeriodDays = config.payouts.holdingPeriodDays;
+    // Calculate available balance using settings from database
+    const holdingPeriodDays = payoutSettings.holdingPeriodDays;
     const availableCutoff = new Date();
     availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays);
 
@@ -404,7 +411,7 @@ export async function POST(request: NextRequest) {
       transferId: transferResult.transferId,
     });
   } catch (error) {
-    console.error("Payout request error:", error);
+    logger.error({ error }, "Payout request error");
     return NextResponse.json(
       { error: "Failed to process payout request" },
       { status: 500 }

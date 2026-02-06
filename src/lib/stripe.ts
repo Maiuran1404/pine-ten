@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { db } from "@/db";
 import { webhookEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getCreditSettings } from "@/lib/platform-settings";
 
 // Lazy initialization to avoid errors during build when env vars aren't available
 let stripeInstance: Stripe | null = null;
@@ -46,38 +47,87 @@ export function getWebhookSecret(): string {
   return secret;
 }
 
-// Credit packages for purchase (10x credits, same price)
-export const creditPackages = [
+// Credit package definitions (prices calculated dynamically from platform settings)
+export interface CreditPackage {
+  id: string;
+  name: string;
+  credits: number;
+  price: number; // in cents
+  description: string;
+  popular?: boolean;
+  discount?: number; // percentage discount
+}
+
+// Base package definitions (without prices)
+const creditPackageDefinitions = [
   {
     id: "credits_50",
     name: "50 Credits",
     credits: 50,
-    price: 50 * config.credits.pricePerCredit * 100, // in cents (~$245)
     description: "Perfect for trying out the service",
+    discount: 0,
   },
   {
     id: "credits_100",
     name: "100 Credits",
     credits: 100,
-    price: 100 * config.credits.pricePerCredit * 100, // (~$490)
     description: "Great for small projects",
     popular: true,
+    discount: 0,
   },
   {
     id: "credits_250",
     name: "250 Credits",
     credits: 250,
-    price: 250 * config.credits.pricePerCredit * 100 * 0.95, // 5% discount (~$1164)
     description: "Save 5% - Best for regular use",
+    discount: 5, // 5% off
   },
   {
     id: "credits_500",
     name: "500 Credits",
     credits: 500,
-    price: 500 * config.credits.pricePerCredit * 100 * 0.9, // 10% discount (~$2205)
     description: "Save 10% - Best value for teams",
+    discount: 10, // 10% off
   },
 ] as const;
+
+/**
+ * Get credit packages with current pricing from platform settings
+ * This fetches prices from database for admin-configurable pricing
+ */
+export async function getCreditPackages(): Promise<CreditPackage[]> {
+  const settings = await getCreditSettings();
+  const pricePerCredit = settings.pricePerCredit;
+
+  return creditPackageDefinitions.map((pkg) => {
+    const basePrice = pkg.credits * pricePerCredit * 100; // in cents
+    const discountMultiplier = (100 - pkg.discount) / 100;
+    return {
+      id: pkg.id,
+      name: pkg.name,
+      credits: pkg.credits,
+      price: Math.round(basePrice * discountMultiplier),
+      description: pkg.description,
+      popular: "popular" in pkg ? pkg.popular : undefined,
+      discount: pkg.discount > 0 ? pkg.discount : undefined,
+    };
+  });
+}
+
+// Static export for backwards compatibility (uses default config values)
+// Prefer getCreditPackages() for dynamic pricing
+export const creditPackages = creditPackageDefinitions.map((pkg) => {
+  const basePrice = pkg.credits * config.credits.pricePerCredit * 100;
+  const discountMultiplier = (100 - pkg.discount) / 100;
+  return {
+    id: pkg.id,
+    name: pkg.name,
+    credits: pkg.credits,
+    price: Math.round(basePrice * discountMultiplier),
+    description: pkg.description,
+    popular: "popular" in pkg ? pkg.popular : undefined,
+  };
+});
 
 export async function createCheckoutSession(
   userId: string,
@@ -85,11 +135,16 @@ export async function createCheckoutSession(
   packageId: string,
   returnUrl?: string
 ) {
-  const creditPackage = creditPackages.find((p) => p.id === packageId);
+  // Fetch packages with current pricing from database
+  const packages = await getCreditPackages();
+  const creditPackage = packages.find((p) => p.id === packageId);
 
   if (!creditPackage) {
     throw new Error("Invalid package selected");
   }
+
+  // Get currency from platform settings
+  const settings = await getCreditSettings();
 
   // Build success and cancel URLs
   // If returnUrl is provided, redirect back there with payment params
@@ -107,7 +162,7 @@ export async function createCheckoutSession(
     line_items: [
       {
         price_data: {
-          currency: config.credits.currency.toLowerCase(),
+          currency: settings.currency.toLowerCase(),
           product_data: {
             name: creditPackage.name,
             description: creditPackage.description,
@@ -214,9 +269,17 @@ export async function handleWebhook(
   return null;
 }
 
-export function formatPrice(cents: number): string {
+export function formatPrice(cents: number, currency: string = config.credits.currency): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: config.credits.currency,
+    currency: currency,
   }).format(cents / 100);
+}
+
+/**
+ * Format price using platform settings currency
+ */
+export async function formatPriceFromSettings(cents: number): Promise<string> {
+  const settings = await getCreditSettings();
+  return formatPrice(cents, settings.currency);
 }

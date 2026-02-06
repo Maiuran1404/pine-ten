@@ -5,11 +5,16 @@ import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { getStripe } from "@/lib/stripe";
-import { config } from "@/lib/config";
+import { getCreditSettings } from "@/lib/platform-settings";
 
 export async function GET(request: Request) {
   return withErrorHandling(async () => {
     await requireAdmin();
+
+    // Get credit settings from database
+    const creditSettings = await getCreditSettings();
+    const pricePerCredit = creditSettings.pricePerCredit;
+    const currency = creditSettings.currency;
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "all"; // all, month, week, year
@@ -49,7 +54,7 @@ export async function GET(request: Request) {
       [{ total: "0" }]
     );
     const totalCreditsPurchased = Number(totalCreditsResult[0]?.total) || 0;
-    const totalRevenue = totalCreditsPurchased * config.credits.pricePerCredit;
+    const totalRevenue = totalCreditsPurchased * pricePerCredit;
 
     // Get transaction counts by type
     const transactionsByType = await safeQuery(
@@ -297,30 +302,30 @@ export async function GET(request: Request) {
       credits: Number(p.amount),
       packageName: packageNames[Number(p.amount)] || `${p.amount} Credits`,
       count: Number(p.count),
-      revenue: Number(p.amount) * Number(p.count) * config.credits.pricePerCredit,
+      revenue: Number(p.amount) * Number(p.count) * pricePerCredit,
     }));
 
     return successResponse({
       overview: {
         totalRevenue,
         totalCreditsPurchased,
-        pricePerCredit: config.credits.pricePerCredit,
-        currency: config.credits.currency,
+        pricePerCredit: pricePerCredit,
+        currency: currency,
         uniquePayingCustomers: uniqueCustomersResult.length,
         averageOrderValue: purchaseTransactions
-          ? (totalCreditsPurchased / Number(purchaseTransactions.count)) * config.credits.pricePerCredit
+          ? (totalCreditsPurchased / Number(purchaseTransactions.count)) * pricePerCredit
           : 0,
       },
       periodRevenue: {
-        today: (Number(todayRevenueResult[0]?.total) || 0) * config.credits.pricePerCredit,
-        thisWeek: (Number(weekRevenueResult[0]?.total) || 0) * config.credits.pricePerCredit,
-        thisMonth: (Number(monthRevenueResult[0]?.total) || 0) * config.credits.pricePerCredit,
+        today: (Number(todayRevenueResult[0]?.total) || 0) * pricePerCredit,
+        thisWeek: (Number(weekRevenueResult[0]?.total) || 0) * pricePerCredit,
+        thisMonth: (Number(monthRevenueResult[0]?.total) || 0) * pricePerCredit,
       },
       transactionSummary: {
         purchases: {
           count: Number(purchaseTransactions?.count) || 0,
           totalCredits: Number(purchaseTransactions?.totalAmount) || 0,
-          revenue: (Number(purchaseTransactions?.totalAmount) || 0) * config.credits.pricePerCredit,
+          revenue: (Number(purchaseTransactions?.totalAmount) || 0) * pricePerCredit,
         },
         usage: {
           count: Number(usageTransactions?.count) || 0,
@@ -338,7 +343,7 @@ export async function GET(request: Request) {
       monthlyRevenue: monthlyRevenue.map(m => ({
         month: m.month,
         credits: Number(m.credits) || 0,
-        revenue: (Number(m.credits) || 0) * config.credits.pricePerCredit,
+        revenue: (Number(m.credits) || 0) * pricePerCredit,
         transactionCount: Number(m.transactionCount) || 0,
       })),
       topCustomers: topCustomers.map(c => ({
@@ -346,7 +351,7 @@ export async function GET(request: Request) {
         name: c.userName,
         email: c.userEmail,
         totalCredits: Number(c.totalCredits) || 0,
-        totalRevenue: (Number(c.totalCredits) || 0) * config.credits.pricePerCredit,
+        totalRevenue: (Number(c.totalCredits) || 0) * pricePerCredit,
         transactionCount: Number(c.transactionCount) || 0,
       })),
       packageDistribution: formattedPackageDistribution,
@@ -356,7 +361,7 @@ export async function GET(request: Request) {
         userName: t.userName,
         userEmail: t.userEmail,
         credits: t.amount,
-        revenue: (t.amount || 0) * config.credits.pricePerCredit,
+        revenue: (t.amount || 0) * pricePerCredit,
         type: t.type,
         description: t.description,
         stripePaymentId: t.stripePaymentId,
