@@ -10,8 +10,28 @@
  * - Supports parallel batch processing
  */
 
-import { chromium, type Browser, type Page } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+
+// Dynamic import for playwright to avoid build errors on Vercel
+// Note: This scraper requires Playwright and won't work on serverless platforms
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let playwrightModule: any = null;
+
+async function getPlaywright() {
+  if (!playwrightModule) {
+    try {
+      // Use string variable to prevent TypeScript from trying to resolve the module
+      const moduleName = "playwright";
+      playwrightModule = await import(/* webpackIgnore: true */ moduleName);
+    } catch {
+      throw new Error(
+        "Playwright is not available. This scraper requires a local environment with Playwright installed. " +
+        "Run 'pnpm add playwright' and 'npx playwright install chromium' to set it up."
+      );
+    }
+  }
+  return playwrightModule as { chromium: { launch: (options?: { headless?: boolean }) => Promise<any> } };
+}
 import { db } from "@/db";
 import { deliverableStyleReferences, importLogs } from "@/db/schema";
 import { eq, or, like } from "drizzle-orm";
@@ -101,7 +121,9 @@ export async function scrapeBiggedUrls(
   onProgress?: (message: string) => void,
   includeVideos: boolean = false
 ): Promise<ScrapedMedia[]> {
-  let browser: Browser | null = null;
+  const { chromium } = await getPlaywright();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let browser: any = null;
 
   try {
     onProgress?.(`Starting scrape for: "${query}"`);

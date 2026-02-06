@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         const thumbnailUrl = getYouTubeThumbnailUrl(videoId);
 
         // Merge tags
-        const itemData = typeof item === "string" ? {} : item;
+        const itemData: Partial<BulkImportItem> = typeof item === "string" ? {} : item;
         const tags = [...new Set([...defaultTags, ...(itemData.tags || [])])];
 
         // Create the video reference

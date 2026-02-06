@@ -20,6 +20,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Building2,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCredits } from "@/providers/credit-provider";
@@ -42,6 +43,7 @@ export function AppSidebar() {
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
     { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
+    { icon: User, label: "Account", href: "/dashboard/settings" },
   ];
 
   const isActive = (href: string) => {
