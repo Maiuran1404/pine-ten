@@ -134,37 +134,45 @@ export const users = pgTable(
 );
 
 // BetterAuth sessions table
-export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("sessions_user_id_idx").on(table.userId)]
+);
 
 // BetterAuth accounts table
-export const accounts = pgTable("accounts", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("accounts_user_id_idx").on(table.userId)]
+);
 
 // BetterAuth verifications table
 export const verifications = pgTable("verifications", {
@@ -631,35 +639,49 @@ export const tasks = pgTable(
 );
 
 // Task files
-export const taskFiles = pgTable("task_files", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  taskId: uuid("task_id")
-    .notNull()
-    .references(() => tasks.id, { onDelete: "cascade" }),
-  uploadedBy: text("uploaded_by")
-    .notNull()
-    .references(() => users.id),
-  fileName: text("file_name").notNull(),
-  fileUrl: text("file_url").notNull(),
-  fileType: text("file_type").notNull(),
-  fileSize: integer("file_size").notNull(),
-  isDeliverable: boolean("is_deliverable").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const taskFiles = pgTable(
+  "task_files",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    uploadedBy: text("uploaded_by")
+      .notNull()
+      .references(() => users.id),
+    fileName: text("file_name").notNull(),
+    fileUrl: text("file_url").notNull(),
+    fileType: text("file_type").notNull(),
+    fileSize: integer("file_size").notNull(),
+    isDeliverable: boolean("is_deliverable").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_files_task_id_idx").on(table.taskId),
+    index("task_files_uploaded_by_idx").on(table.uploadedBy),
+  ]
+);
 
 // Task messages (for communication between client and freelancer)
-export const taskMessages = pgTable("task_messages", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  taskId: uuid("task_id")
-    .notNull()
-    .references(() => tasks.id, { onDelete: "cascade" }),
-  senderId: text("sender_id")
-    .notNull()
-    .references(() => users.id),
-  content: text("content").notNull(),
-  attachments: jsonb("attachments").$type<string[]>().default([]),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const taskMessages = pgTable(
+  "task_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => users.id),
+    content: text("content").notNull(),
+    attachments: jsonb("attachments").$type<string[]>().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_messages_task_id_idx").on(table.taskId),
+    index("task_messages_sender_id_idx").on(table.senderId),
+  ]
+);
 
 // Task activity log (for timeline tracking)
 export const taskActivityLog = pgTable(
@@ -800,35 +822,51 @@ export const deliverableStyleReferences = pgTable(
 );
 
 // Notifications
-export const notifications = pgTable("notifications", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  channel: notificationChannelEnum("channel").notNull(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  relatedTaskId: uuid("related_task_id").references(() => tasks.id),
-  sentAt: timestamp("sent_at"),
-  readAt: timestamp("read_at"),
-  status: text("status").notNull().default("PENDING"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    channel: notificationChannelEnum("channel").notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    relatedTaskId: uuid("related_task_id").references(() => tasks.id),
+    sentAt: timestamp("sent_at"),
+    readAt: timestamp("read_at"),
+    status: text("status").notNull().default("PENDING"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("notifications_user_id_idx").on(table.userId),
+    index("notifications_related_task_id_idx").on(table.relatedTaskId),
+    index("notifications_created_at_idx").on(table.createdAt),
+  ]
+);
 
 // Credit transactions
-export const creditTransactions = pgTable("credit_transactions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  amount: integer("amount").notNull(),
-  type: text("type").notNull(), // PURCHASE, USAGE, REFUND, BONUS
-  description: text("description"),
-  relatedTaskId: uuid("related_task_id").references(() => tasks.id),
-  stripePaymentId: text("stripe_payment_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const creditTransactions = pgTable(
+  "credit_transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    amount: integer("amount").notNull(),
+    type: text("type").notNull(), // PURCHASE, USAGE, REFUND, BONUS
+    description: text("description"),
+    relatedTaskId: uuid("related_task_id").references(() => tasks.id),
+    stripePaymentId: text("stripe_payment_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("credit_transactions_user_id_idx").on(table.userId),
+    index("credit_transactions_related_task_id_idx").on(table.relatedTaskId),
+    index("credit_transactions_created_at_idx").on(table.createdAt),
+  ]
+);
 
 // Payout status enum
 export const payoutStatusEnum = pgEnum("payout_status", [
@@ -1101,40 +1139,47 @@ export const taskMessagesRelations = relations(taskMessages, ({ one }) => ({
 }));
 
 // Chat drafts (in-progress task requests)
-export const chatDrafts = pgTable("chat_drafts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  clientId: text("client_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull().default("New Request"),
-  messages: jsonb("messages")
-    .$type<
-      {
-        id: string;
-        role: "user" | "assistant";
-        content: string;
-        timestamp: string;
-        attachments?: {
-          fileName: string;
-          fileUrl: string;
-          fileType: string;
-          fileSize: number;
-        }[];
-      }[]
-    >()
-    .default([]),
-  selectedStyles: jsonb("selected_styles").$type<string[]>().default([]),
-  pendingTask: jsonb("pending_task").$type<{
-    title: string;
-    description: string;
-    category: string;
-    estimatedHours: number;
-    deliveryDays?: number;
-    creditsRequired: number;
-  } | null>(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const chatDrafts = pgTable(
+  "chat_drafts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("New Request"),
+    messages: jsonb("messages")
+      .$type<
+        {
+          id: string;
+          role: "user" | "assistant";
+          content: string;
+          timestamp: string;
+          attachments?: {
+            fileName: string;
+            fileUrl: string;
+            fileType: string;
+            fileSize: number;
+          }[];
+        }[]
+      >()
+      .default([]),
+    selectedStyles: jsonb("selected_styles").$type<string[]>().default([]),
+    pendingTask: jsonb("pending_task").$type<{
+      title: string;
+      description: string;
+      category: string;
+      estimatedHours: number;
+      deliveryDays?: number;
+      creditsRequired: number;
+    } | null>(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("chat_drafts_client_id_idx").on(table.clientId),
+    index("chat_drafts_updated_at_idx").on(table.updatedAt),
+  ]
+);
 
 export const chatDraftsRelations = relations(chatDrafts, ({ one }) => ({
   client: one(users, {
