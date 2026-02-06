@@ -7,6 +7,8 @@ import {
   getUserStylePreferences,
 } from "@/lib/ai/selection-history";
 import { logger } from "@/lib/logger";
+import type { DeliverableType } from "@/lib/constants/reference-libraries";
+import { DELIVERABLE_TYPES } from "@/lib/constants/reference-libraries";
 
 // POST - Record a style selection
 export async function POST(request: NextRequest) {
@@ -101,11 +103,18 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const deliverableType = searchParams.get("deliverableType") || undefined;
+    const deliverableTypeParam = searchParams.get("deliverableType");
+
+    // Validate deliverable type parameter against known types
+    const validDeliverableTypes = DELIVERABLE_TYPES.map((dt) => dt.value);
+    const deliverableType: DeliverableType | undefined =
+      deliverableTypeParam && validDeliverableTypes.includes(deliverableTypeParam as DeliverableType)
+        ? (deliverableTypeParam as DeliverableType)
+        : undefined;
 
     const preferences = await getUserStylePreferences(
       session.user.id,
-      deliverableType as any
+      deliverableType
     );
 
     return NextResponse.json(preferences);

@@ -41,9 +41,9 @@ export interface VideoMatchContext {
  * Check if a deliverable type should show video references
  */
 export function isVideoDeliverableType(
-  deliverableType: DeliverableType
+  deliverableType: DeliverableType | string
 ): boolean {
-  return VIDEO_DELIVERABLE_TYPES.includes(deliverableType as any);
+  return (VIDEO_DELIVERABLE_TYPES as readonly string[]).includes(deliverableType);
 }
 
 /**

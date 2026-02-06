@@ -126,11 +126,11 @@ function TagSelector({
         ))}
       </div>
       {/* Custom tags */}
-      {selected.filter((t) => !VIDEO_STYLE_TAGS.includes(t as any)).length >
+      {selected.filter((t) => !(VIDEO_STYLE_TAGS as readonly string[]).includes(t)).length >
         0 && (
         <div className="flex flex-wrap gap-2">
           {selected
-            .filter((t) => !VIDEO_STYLE_TAGS.includes(t as any))
+            .filter((t) => !(VIDEO_STYLE_TAGS as readonly string[]).includes(t))
             .map((tag) => (
               <Badge
                 key={tag}
