@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminStorageClient } from "@/lib/supabase/server";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { config } from "@/lib/config";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-// Initialize Supabase client with service role for storage operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 /**
  * Allowed MIME types for upload
@@ -203,6 +197,7 @@ export async function POST(request: NextRequest) {
     const filePath = `${folder}/${session.user.id}/${fileName}`;
 
     // Upload to Supabase Storage
+    const supabase = getAdminStorageClient();
     const { data, error } = await supabase.storage
       .from("uploads")
       .upload(filePath, buffer, {

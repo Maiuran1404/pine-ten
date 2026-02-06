@@ -4,14 +4,8 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { classifyDeliverableStyle } from "@/lib/ai/classify-deliverable-style";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminStorageClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-
-// Initialize Supabase client for storage
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const BUCKET_NAME = "deliverable-styles";
 
@@ -90,6 +84,7 @@ export async function POST(request: NextRequest) {
         const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         const storagePath = `${timestamp}-${cleanFilename}`;
 
+        const supabase = getAdminStorageClient();
         const { error: uploadError } = await supabase.storage
           .from(BUCKET_NAME)
           .upload(storagePath, file, {

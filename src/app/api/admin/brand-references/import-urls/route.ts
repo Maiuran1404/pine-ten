@@ -4,14 +4,9 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { classifyBrandImage } from "@/lib/ai/classify-brand-image";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminStorageClient } from "@/lib/supabase/server";
 import { optimizeImage } from "@/lib/image/optimize";
 import { logger } from "@/lib/logger";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const BUCKET_NAME = "brand-references";
 
@@ -109,6 +104,7 @@ export async function POST(request: NextRequest) {
           const folderPath = `${timestamp}-${cleanFilename}`;
 
           // Helper to upload a variant
+          const supabase = getAdminStorageClient();
           const uploadVariant = async (variantName: string, variantBuffer: Buffer) => {
             const path = `${folderPath}/${variantName}.webp`;
             const { error } = await supabase.storage
@@ -278,6 +274,7 @@ export async function POST(request: NextRequest) {
         const folderPath = `${timestamp}-${cleanFilename}`;
 
         // Helper to upload a variant
+        const supabase = getAdminStorageClient();
         const uploadVariant = async (
           variantName: string,
           variantBuffer: Buffer

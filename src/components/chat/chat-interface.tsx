@@ -100,7 +100,7 @@ import { TaskProposalCard } from "./task-proposal-card";
 import { FileAttachmentList } from "./file-attachment";
 import { QuickOptions } from "./quick-options";
 import { DeliverableStyleGrid } from "./deliverable-style-grid";
-import { VideoReferenceGrid } from "./video-reference-grid";
+import { VideoReferenceGrid, type VideoReferenceStyle } from "./video-reference-grid";
 import { ChatLayout } from "./chat-layout";
 import { StyleSelectionGrid } from "./style-selection-grid";
 import { StyleDetailModal } from "./style-detail-modal";
@@ -324,6 +324,7 @@ export function ChatInterface({
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<
     string[]
   >([]);
+  const [selectedVideoStyles, setSelectedVideoStyles] = useState<string[]>([]);
   const [selectedStyleForModal, setSelectedStyleForModal] =
     useState<DeliverableStyle | null>(null);
   const [currentDeliverableType, setCurrentDeliverableType] = useState<
@@ -2273,6 +2274,127 @@ export function ChatInterface({
     }
   };
 
+  // Handle toggling video selection
+  const handleSelectVideo = (video: VideoReferenceStyle) => {
+    setSelectedVideoStyles((prev) =>
+      prev.includes(video.id)
+        ? prev.filter((id) => id !== video.id)
+        : [...prev, video.id]
+    );
+  };
+
+  // Handle confirming video selection from the grid
+  const handleConfirmVideoSelection = async (
+    selectedVideos: VideoReferenceStyle[]
+  ) => {
+    if (selectedVideos.length === 0 || isLoading) {
+      return;
+    }
+
+    const video = selectedVideos[0];
+    const videoMessage =
+      selectedVideos.length === 1
+        ? `Video style selected: ${video.name}`
+        : `Video styles selected: ${selectedVideos.map((v) => v.name).join(", ")}`;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: videoMessage,
+      timestamp: new Date(),
+      selectedStyle: {
+        id: video.id,
+        name: video.name,
+        description: video.description,
+        imageUrl: video.imageUrl,
+        deliverableType: video.deliverableType,
+        styleAxis: video.styleAxis,
+        subStyle: video.subStyle || null,
+        semanticTags: video.semanticTags || [],
+      },
+    };
+
+    // Force React to synchronously commit this state update
+    flushSync(() => {
+      setMessages((prev) => [...prev, userMessage]);
+    });
+
+    // Wait for browser to paint
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 100);
+        });
+      });
+    });
+
+    setIsLoading(true);
+    // Clear selection after submitting
+    setSelectedVideoStyles([]);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          selectedDeliverableStyles: selectedVideos.map((v) => v.id),
+          moodboardHasStyles: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.content,
+        timestamp: new Date(),
+        styleReferences: data.styleReferences,
+        deliverableStyles: data.deliverableStyles,
+        deliverableStyleMarker: data.deliverableStyleMarker,
+        videoReferences: data.videoReferences,
+        taskProposal: data.taskProposal,
+        quickOptions: data.quickOptions,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setAnimatingMessageId(assistantMessage.id);
+
+      if (data.taskProposal) {
+        setPendingTask(data.taskProposal);
+      }
+
+      // Add videos to moodboard
+      selectedVideos.forEach((v) => {
+        if (!hasMoodboardItem(v.id)) {
+          // Add video as a moodboard item
+          addFromStyle({
+            id: v.id,
+            name: v.name,
+            description: v.description,
+            imageUrl: v.imageUrl,
+            deliverableType: v.deliverableType,
+            styleAxis: v.styleAxis,
+            subStyle: v.subStyle || null,
+            semanticTags: v.semanticTags || [],
+          });
+        }
+      });
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleQuickOptionClick = async (option: string) => {
     if (isLoading) return;
 
@@ -3268,6 +3390,11 @@ export function ChatInterface({
                               >
                                 <VideoReferenceGrid
                                   videos={message.videoReferences}
+                                  selectedVideos={selectedVideoStyles}
+                                  onSelectVideo={handleSelectVideo}
+                                  onConfirmSelection={handleConfirmVideoSelection}
+                                  selectionMode={true}
+                                  isLoading={isLoading}
                                   title="Video Style References"
                                 />
                               </motion.div>

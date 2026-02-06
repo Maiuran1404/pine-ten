@@ -169,6 +169,13 @@
       "when": 1770097489488,
       "tag": "0023_early_access_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1770417209899,
+      "tag": "0024_add_missing_fk_indexes",
+      "breakpoints": true
     }
   ]
 }

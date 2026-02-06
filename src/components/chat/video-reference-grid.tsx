@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Play, X, ExternalLink } from "lucide-react";
+import { Check, Play, X, ExternalLink, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,9 +34,11 @@ interface VideoReferenceGridProps {
   videos: VideoReferenceStyle[];
   selectedVideos?: string[];
   onSelectVideo?: (video: VideoReferenceStyle) => void;
+  onConfirmSelection?: (videos: VideoReferenceStyle[]) => void;
   onShowMore?: () => void;
   isLoading?: boolean;
   title?: string;
+  selectionMode?: boolean; // Enable click-to-select behavior
 }
 
 // Extract YouTube video ID from various URL formats
@@ -141,18 +143,51 @@ export function VideoReferenceGrid({
   videos,
   selectedVideos = [],
   onSelectVideo,
+  onConfirmSelection,
   onShowMore,
   isLoading,
   title = "Video Style References",
+  selectionMode = false,
 }: VideoReferenceGridProps) {
   const [previewVideo, setPreviewVideo] = useState<VideoReferenceStyle | null>(
     null
   );
   const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null);
+  // Local selection state when no external handler provided
+  const [localSelectedVideos, setLocalSelectedVideos] = useState<string[]>([]);
+
+  // Use external selection if provided, otherwise use local
+  const effectiveSelectedVideos = onSelectVideo ? selectedVideos : localSelectedVideos;
 
   if (!videos || videos.length === 0) {
     return null;
   }
+
+  const handleVideoClick = (video: VideoReferenceStyle) => {
+    if (selectionMode || onSelectVideo) {
+      // Selection mode: toggle selection
+      if (onSelectVideo) {
+        onSelectVideo(video);
+      } else {
+        // Local selection toggle
+        setLocalSelectedVideos(prev =>
+          prev.includes(video.id)
+            ? prev.filter(id => id !== video.id)
+            : [...prev, video.id]
+        );
+      }
+    } else {
+      // Preview mode: show video preview
+      setPreviewVideo(video);
+    }
+  };
+
+  const handleConfirm = () => {
+    const selectedVideoObjects = videos.filter(v => effectiveSelectedVideos.includes(v.id));
+    if (onConfirmSelection && selectedVideoObjects.length > 0) {
+      onConfirmSelection(selectedVideoObjects);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -172,7 +207,7 @@ export function VideoReferenceGrid({
       {/* Video grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {videos.map((video) => {
-          const isSelected = selectedVideos.includes(video.id);
+          const isSelected = effectiveSelectedVideos.includes(video.id);
           const isHovered = hoveredVideoId === video.id;
           const videoId = extractYouTubeId(video.videoUrl);
           const thumbnailUrl =
@@ -195,13 +230,7 @@ export function VideoReferenceGrid({
               )}
               onMouseEnter={() => setHoveredVideoId(video.id)}
               onMouseLeave={() => setHoveredVideoId(null)}
-              onClick={() => {
-                if (onSelectVideo) {
-                  onSelectVideo(video);
-                } else {
-                  setPreviewVideo(video);
-                }
-              }}
+              onClick={() => handleVideoClick(video)}
             >
               {/* Thumbnail */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -287,11 +316,28 @@ export function VideoReferenceGrid({
         })}
       </div>
 
-      {/* Helper text */}
-      <p className="text-xs text-muted-foreground text-center">
-        Click to preview • These videos show the style direction for your
-        project
-      </p>
+      {/* Helper text and confirm button */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs text-muted-foreground">
+          {selectionMode || onSelectVideo
+            ? "Click to select • These videos show the style direction"
+            : "Click to preview • These videos show the style direction"}
+        </p>
+        {(selectionMode || onConfirmSelection) && effectiveSelectedVideos.length > 0 && (
+          <Button
+            onClick={handleConfirm}
+            disabled={isLoading}
+            size="sm"
+            className="gap-2"
+          >
+            Continue with{" "}
+            {effectiveSelectedVideos.length === 1
+              ? "video"
+              : `${effectiveSelectedVideos.length} videos`}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
 
       {/* Video preview modal */}
       {previewVideo && (
