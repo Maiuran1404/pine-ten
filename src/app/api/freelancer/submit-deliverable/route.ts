@@ -6,6 +6,7 @@ import { tasks, taskFiles, taskMessages, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -111,12 +112,12 @@ export async function POST(request: NextRequest) {
         credits: task.creditsUsed,
       });
     } catch (notifyError) {
-      console.error("Failed to send admin notification:", notifyError);
+      logger.error({ error: notifyError }, "Failed to send admin notification");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Submit deliverable error:", error);
+    logger.error({ error }, "Submit deliverable error");
     return NextResponse.json(
       { error: "Failed to submit deliverable" },
       { status: 500 }

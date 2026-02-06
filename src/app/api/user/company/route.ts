@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -31,7 +32,7 @@ export async function GET() {
       company: user.company || null,
     });
   } catch (error) {
-    console.error("Company fetch error:", error);
+    logger.error({ error }, "Company fetch error");
     return NextResponse.json(
       { error: "Failed to fetch company data" },
       { status: 500 }

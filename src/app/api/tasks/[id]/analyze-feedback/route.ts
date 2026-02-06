@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Anthropic from "@anthropic-ai/sdk";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic();
 
@@ -114,7 +115,7 @@ Respond with JSON only:
         reason: "This appears to be a revision request based on the original scope.",
       });
     } catch (aiError) {
-      console.error("AI analysis error:", aiError);
+      logger.error({ error: aiError }, "AI analysis error");
       // Default to treating as revision if AI fails
       return NextResponse.json({
         isRevision: true,
@@ -122,7 +123,7 @@ Respond with JSON only:
       });
     }
   } catch (error) {
-    console.error("Feedback analysis error:", error);
+    logger.error({ error }, "Feedback analysis error");
     return NextResponse.json(
       { error: "Failed to analyze feedback" },
       { status: 500 }

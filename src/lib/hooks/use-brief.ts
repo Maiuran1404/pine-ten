@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { logger } from "@/lib/logger";
 import type {
   LiveBrief,
   InferenceResult,
@@ -312,7 +313,7 @@ export function useBrief({
           lastSavedRef.current = JSON.stringify(loadedBrief);
         }
       } catch (error) {
-        console.error("Failed to load brief:", error);
+        logger.error({ err: error }, "Failed to load brief");
       } finally {
         setIsLoading(false);
       }
@@ -346,7 +347,7 @@ export function useBrief({
           lastSavedRef.current = briefJson;
         }
       } catch (error) {
-        console.error("Failed to auto-save brief:", error);
+        logger.error({ err: error }, "Failed to auto-save brief");
       } finally {
         setIsSaving(false);
       }
@@ -374,7 +375,7 @@ export function useBrief({
         lastSavedRef.current = JSON.stringify(brief);
       }
     } catch (error) {
-      console.error("Failed to save brief:", error);
+      logger.error({ err: error }, "Failed to save brief");
     } finally {
       setIsSaving(false);
     }
@@ -666,9 +667,9 @@ export function useBrief({
           updatedAt: new Date(),
         }));
       } catch (error) {
-        console.error(
-          "Failed to generate AI outline, falling back to template:",
-          error
+        logger.error(
+          { err: error },
+          "Failed to generate AI outline, falling back to template"
         );
 
         // Fallback to local template-based generation

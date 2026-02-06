@@ -5,6 +5,7 @@ import type {
   DensityBucket,
   ColorBucket,
 } from "@/lib/constants/reference-libraries";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -117,7 +118,7 @@ export async function classifyBrandImage(
 
     return classification;
   } catch (error) {
-    console.error("Failed to classify brand image:", error);
+    logger.error({ err: error }, "Failed to classify brand image");
     // Return default classification on error
     return {
       name: "Unknown Brand",
@@ -158,7 +159,7 @@ export async function classifyBrandImageFromUrl(
 
     return classifyBrandImage(base64, mediaType);
   } catch (error) {
-    console.error("Failed to classify brand image from URL:", error);
+    logger.error({ err: error }, "Failed to classify brand image from URL");
     throw error;
   }
 }

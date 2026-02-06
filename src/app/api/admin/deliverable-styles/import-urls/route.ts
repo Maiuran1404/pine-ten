@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { classifyDeliverableStyle } from "@/lib/ai/classify-deliverable-style";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -220,7 +221,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        console.error(`Error processing URL ${url}:`, error);
+        logger.error({ error, url }, "Error processing URL");
         results.push({
           url,
           success: false,

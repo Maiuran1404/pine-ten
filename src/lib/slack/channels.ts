@@ -16,6 +16,7 @@ import {
   lookupUserByEmail,
 } from "./client";
 import { clientChannelWelcomeBlock, artistAddedToChannelBlock } from "./blocks";
+import { logger } from "@/lib/logger";
 
 /**
  * Get or create a Slack channel for a client/company
@@ -66,7 +67,7 @@ export async function getOrCreateClientChannel(
 
     return { success: true, channelId };
   } catch (error) {
-    console.error("[Slack] Failed to get/create client channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to get/create client channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -101,7 +102,7 @@ export async function addArtistToClientChannel(
     // Try to find their Slack user ID by email
     const slackUser = await lookupUserByEmail(freelancer.email);
     if (!slackUser.success || !slackUser.userId) {
-      console.warn(`[Slack] Could not find Slack user for ${freelancer.email}`);
+      logger.warn({ email: freelancer.email }, "[Slack] Could not find Slack user");
       // Still mark as success - they might not be in the workspace
       return { success: true };
     }
@@ -125,7 +126,7 @@ export async function addArtistToClientChannel(
 
     return { success: true };
   } catch (error) {
-    console.error("[Slack] Failed to add artist to channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to add artist to channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -176,7 +177,7 @@ export async function removeArtistFromClientChannel(
     // Remove them from the channel
     return removeFromChannel(channelId, slackUser.userId);
   } catch (error) {
-    console.error("[Slack] Failed to remove artist from channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to remove artist from channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -200,11 +201,11 @@ export async function syncClientChannelMembers(
     // Get all freelancers assigned to this company's tasks
     // This would require a more complex query in a real implementation
     // For now, we'll just return success
-    console.log(`[Slack] Would sync members for channel ${channelResult.channelId}`);
+    logger.debug({ channelId: channelResult.channelId }, "[Slack] Would sync members for channel");
 
     return { success: true, added: 0 };
   } catch (error) {
-    console.error("[Slack] Failed to sync channel members:", error);
+    logger.error({ err: error }, "[Slack] Failed to sync channel members");
     return {
       success: false,
       added: 0,
@@ -231,7 +232,7 @@ export async function getClientChannelId(
     const channelName = `client-${slugify(company.name)}`;
     return findChannelByName(channelName);
   } catch (error) {
-    console.error("[Slack] Failed to get client channel ID:", error);
+    logger.error({ err: error }, "[Slack] Failed to get client channel ID");
     return null;
   }
 }

@@ -6,6 +6,7 @@ import { tasks, freelancerProfiles, users } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,13 +106,13 @@ export async function POST(request: NextRequest) {
           credits: task[0].creditsUsed,
         });
       } catch (emailError) {
-        console.error("Failed to send task assigned notification:", emailError);
+        logger.error({ error: emailError }, "Failed to send task assigned notification");
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Claim task error:", error);
+    logger.error({ error }, "Claim task error");
     return NextResponse.json(
       { error: "Failed to claim task" },
       { status: 500 }

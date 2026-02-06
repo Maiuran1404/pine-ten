@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, freelancerProfiles } from "@/db/schema";
 import { eq, count, sql, sum, and, gte } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
       monthlyTasks: Number(monthlyEarningsResult[0]?.monthlyTasks) || 0,
     });
   } catch (error) {
-    console.error("Stats fetch error:", error);
+    logger.error({ error }, "Stats fetch error");
     return NextResponse.json(
       { error: "Failed to fetch stats" },
       { status: 500 }

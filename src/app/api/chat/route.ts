@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { logger } from "@/lib/logger";
 import {
   chat,
   parseTaskFromChat,
@@ -33,6 +34,7 @@ import {
   getVideoReferencesForChat,
   isVideoDeliverableType,
   type VideoReference,
+  type VideoMatchContext,
 } from "@/lib/ai/video-references";
 import type {
   DeliverableType,
@@ -477,7 +479,7 @@ async function handler(request: NextRequest) {
           }
         }
       } catch (err) {
-        console.error("Error fetching deliverable styles:", err);
+        logger.error({ err }, "Error fetching deliverable styles");
       }
 
       return NextResponse.json({
@@ -589,9 +591,7 @@ async function handler(request: NextRequest) {
           type: "initial",
           deliverableType: detectedType,
         };
-        console.log(
-          `[Chat API] Auto-detected deliverable type: ${detectedType}`
-        );
+        logger.debug({ detectedType }, "Auto-detected deliverable type");
       }
     }
 
@@ -610,17 +610,13 @@ async function handler(request: NextRequest) {
             // SKIP showing styles if moodboard already has style items
             // This prevents the style grid from appearing 5+ times in a conversation
             if (moodboardHasStyles) {
-              console.log(
-                "[Chat API] Skipping style grid - moodboard already has styles"
-              );
+              logger.debug("Skipping style grid - moodboard already has styles");
               deliverableStyleMarker = undefined; // Clear the marker so no grid is shown
               break;
             }
             // SKIP image styles for video types - video references will be shown instead
             if (isVideoType) {
-              console.log(
-                "[Chat API] Skipping image styles for video type - will show video references"
-              );
+              logger.debug("Skipping image styles for video type - will show video references");
               break;
             }
             // Use brand-aware styles with one per axis, sorted by brand match
@@ -767,7 +763,7 @@ async function handler(request: NextRequest) {
             break;
         }
       } catch (err) {
-        console.error("Error fetching deliverable styles:", err);
+        logger.error({ err }, "Error fetching deliverable styles");
       }
     }
 
@@ -789,14 +785,7 @@ async function handler(request: NextRequest) {
       combinedVideoContext.includes("commercial") ||
       combinedVideoContext.includes("reel");
 
-    console.log(
-      `[Chat API] Video detection - isVideoRequest: ${isVideoRequest}`
-    );
-    console.log(
-      `[Chat API] deliverableStyleMarker: ${JSON.stringify(
-        deliverableStyleMarker
-      )}`
-    );
+    logger.debug({ isVideoRequest, deliverableStyleMarker }, "Video detection check");
 
     if (
       isVideoRequest ||
@@ -808,23 +797,31 @@ async function handler(request: NextRequest) {
       // For video requests, ALWAYS clear image styles - we only want to show video references
       // Do this BEFORE fetching video references so even if fetch fails, we don't show images
       deliverableStyles = undefined;
-      console.log("[Chat API] Video request detected - cleared image styles");
+      logger.debug("Video request detected - cleared image styles");
       
       try {
         const deliverableType = deliverableStyleMarker?.deliverableType
           ? normalizeDeliverableType(deliverableStyleMarker.deliverableType)
           : "launch_video";
 
+        // Build rich context for smart video matching
+        const videoMatchContext: VideoMatchContext = {
+          intent: chatContext.confirmedFields?.intent || brief?.intent?.value,
+          platform: chatContext.confirmedFields?.platform || brief?.platform?.value,
+          topic: chatContext.confirmedFields?.topic || brief?.topic?.value,
+          audience: chatContext.confirmedFields?.audience || brief?.audience?.value?.name,
+          aiResponse: response.content, // AI's response describes the video direction
+        };
+
         videoReferences = await getVideoReferencesForChat(
           deliverableType,
           lastUserMessage,
-          6
+          3, // Show only 3 videos for cleaner UX
+          videoMatchContext
         );
-        console.log(
-          `[Chat API] Fetched ${videoReferences.length} video references for ${deliverableType}`
-        );
+        logger.debug({ count: videoReferences.length, deliverableType, context: videoMatchContext }, "Fetched video references with smart matching");
       } catch (err) {
-        console.error("Error fetching video references:", err);
+        logger.error({ err }, "Error fetching video references");
         // Even if video fetch fails, don't fall back to image styles for video requests
       }
     }
@@ -855,7 +852,7 @@ async function handler(request: NextRequest) {
       videoReferences, // Video style references for launch videos, video ads, etc.
     });
   } catch (error) {
-    console.error("Chat error:", error);
+    logger.error({ error }, "Chat error");
     return NextResponse.json(
       { error: "Failed to process chat message" },
       { status: 500 }

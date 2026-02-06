@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { InferredAudience } from "@/components/onboarding/types";
+import { logger } from "@/lib/logger";
 
 // =============================================================================
 // TYPES
@@ -126,7 +127,7 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
           }
         } catch {
           // Audiences fetch failed, but we still have brand data
-          console.warn("Failed to fetch audiences");
+          logger.warn("Failed to fetch audiences");
         }
       }
     } catch (err) {

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { taskCategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/freelancer/earnings-guide
@@ -93,7 +94,7 @@ export async function GET() {
       ],
     });
   } catch (error) {
-    console.error("Earnings guide fetch error:", error);
+    logger.error({ error }, "Earnings guide fetch error");
     return NextResponse.json(
       { error: "Failed to fetch earnings guide" },
       { status: 500 }

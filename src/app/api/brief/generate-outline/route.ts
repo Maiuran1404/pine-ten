@@ -15,6 +15,7 @@ import type {
 } from "@/components/chat/brief-panel/types";
 import { PLATFORM_DISPLAY_NAMES, INTENT_DESCRIPTIONS } from "@/components/chat/brief-panel/types";
 import { getDefaultDimension } from "@/lib/constants/platform-dimensions";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -181,8 +182,7 @@ Generate the content outline now:`;
       const parsed = JSON.parse(jsonStr);
       aiItems = parsed.items || [];
     } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
-      console.error("Response was:", responseText);
+      logger.error({ error: parseError, responseText }, "Failed to parse AI response");
 
       // Fallback: generate basic outline
       aiItems = generateFallbackItems(topic, intent, totalPosts);
@@ -199,7 +199,7 @@ Generate the content outline now:`;
 
     return NextResponse.json({ outline });
   } catch (error) {
-    console.error("Outline generation error:", error);
+    logger.error({ error }, "Outline generation error");
     return NextResponse.json(
       { error: "Failed to generate outline" },
       { status: 500 }

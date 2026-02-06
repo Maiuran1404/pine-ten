@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { generatedDesigns, orshotTemplates } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/orshot/designs
@@ -40,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ designs });
   } catch (error) {
-    console.error("Designs list error:", error);
+    logger.error({ error }, "Designs list error");
     return NextResponse.json(
       { error: "Failed to fetch designs" },
       { status: 500 }

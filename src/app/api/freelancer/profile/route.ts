@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { freelancerProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(profile[0]);
   } catch (error) {
-    console.error("Profile fetch error:", error);
+    logger.error({ error }, "Profile fetch error");
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -64,7 +65,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Profile update error:", error);
+    logger.error({ error }, "Profile update error");
     return NextResponse.json(
       { error: "Failed to update profile" },
       { status: 500 }

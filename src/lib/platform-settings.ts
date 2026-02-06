@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { config } from "./config";
+import { logger } from "@/lib/logger";
 
 // Types for platform settings
 export interface CreditSettings {
@@ -68,7 +69,7 @@ async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
     return defaultValue;
   } catch (error) {
     // Log error but don't throw - return default value
-    console.error(`Failed to fetch setting "${key}":`, error);
+    logger.error({ err: error, key }, "Failed to fetch setting");
     return defaultValue;
   }
 }

@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { requireAdmin } from "@/lib/require-auth";
 import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { auditHelpers, actorFromUser } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 import {
   users,
   sessions,
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
           const [r] = await query;
           return { name, count: r.count };
         } catch (err) {
-          console.error(`Failed to count ${name}:`, err);
+          logger.error({ error: err, table: name }, "Failed to count table");
           return { name, count: 0 };
         }
       };

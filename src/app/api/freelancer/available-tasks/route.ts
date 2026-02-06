@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, taskCategories, freelancerProfiles } from "@/db/schema";
 import { eq, isNull, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ tasks: availableTasks });
   } catch (error) {
-    console.error("Available tasks fetch error:", error);
+    logger.error({ error }, "Available tasks fetch error");
     return NextResponse.json(
       { error: "Failed to fetch available tasks" },
       { status: 500 }

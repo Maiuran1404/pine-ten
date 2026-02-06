@@ -6,6 +6,7 @@ import { brandReferences } from "@/db/schema";
 import { classifyBrandImage } from "@/lib/ai/classify-brand-image";
 import { createClient } from "@supabase/supabase-js";
 import { optimizeImage } from "@/lib/image/optimize";
+import { logger } from "@/lib/logger";
 
 // Initialize Supabase client for storage
 const supabase = createClient(
@@ -130,8 +131,9 @@ export async function POST(request: NextRequest) {
         // Log size savings
         const originalSize = buffer.length;
         const optimizedSize = variants.full.size + variants.preview.size + variants.thumbnail.size;
-        console.log(
-          `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(optimizedSize / 1024).toFixed(0)}KB (${((1 - optimizedSize / originalSize) * 100).toFixed(0)}% saved)`
+        logger.debug(
+          { originalSize, optimizedSize, percentSaved: ((1 - optimizedSize / originalSize) * 100).toFixed(0) },
+          "Image optimized"
         );
 
         // Insert into database
@@ -168,7 +170,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        console.error(`Error processing file ${file.name}:`, error);
+        logger.error({ error, filename: file.name }, "Error processing file");
         results.push({
           filename: file.name,
           success: false,

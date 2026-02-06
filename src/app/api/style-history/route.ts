@@ -6,6 +6,7 @@ import {
   confirmStyleSelection,
   getUserStylePreferences,
 } from "@/lib/ai/selection-history";
+import { logger } from "@/lib/logger";
 
 // POST - Record a style selection
 export async function POST(request: NextRequest) {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error recording style selection:", error);
+    logger.error({ error }, "Error recording style selection");
     return NextResponse.json(
       { error: "Failed to record style selection" },
       { status: 500 }
@@ -80,7 +81,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error confirming style selection:", error);
+    logger.error({ error }, "Error confirming style selection");
     return NextResponse.json(
       { error: "Failed to confirm style selection" },
       { status: 500 }
@@ -109,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(preferences);
   } catch (error) {
-    console.error("Error fetching style preferences:", error);
+    logger.error({ error }, "Error fetching style preferences");
     return NextResponse.json(
       { error: "Failed to fetch style preferences" },
       { status: 500 }

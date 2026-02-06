@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { orshotTemplates } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/orshot/templates
@@ -34,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json({ templates });
   } catch (error) {
-    console.error("Orshot templates error:", error);
+    logger.error({ error }, "Orshot templates error");
     return NextResponse.json(
       { error: "Failed to fetch templates" },
       { status: 500 }

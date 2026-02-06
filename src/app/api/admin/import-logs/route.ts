@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { importLogs, users } from "@/db/schema";
 import { desc, eq, and, gte, lte, sql } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Failed to fetch import logs:", error);
+    logger.error({ error }, "Failed to fetch import logs");
     return NextResponse.json(
       { success: false, error: "Failed to fetch import logs" },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete import log:", error);
+    logger.error({ error }, "Failed to delete import log");
     return NextResponse.json(
       { success: false, error: "Failed to delete import log" },
       { status: 500 }

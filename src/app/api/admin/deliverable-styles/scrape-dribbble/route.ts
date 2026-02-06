@@ -6,6 +6,7 @@ import { deliverableStyleReferences } from "@/db/schema";
 import { classifyDeliverableStyle } from "@/lib/ai/classify-deliverable-style";
 import { createClient } from "@supabase/supabase-js";
 import FirecrawlApp from "@mendable/firecrawl-js";
+import { logger } from "@/lib/logger";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -126,8 +127,9 @@ export async function POST(request: NextRequest) {
               });
               html = scrapeResult.html || null;
             } catch (firecrawlError) {
-              console.log(
-                `Firecrawl failed for ${dribbbleUrl}, falling back to fetch`
+              logger.debug(
+                { error: firecrawlError, url: dribbbleUrl },
+                "Firecrawl failed, falling back to fetch"
               );
             }
           }
@@ -342,7 +344,7 @@ export async function POST(request: NextRequest) {
           // Small delay between imports to avoid rate limiting
           await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (error) {
-          console.error(`Error processing ${dribbbleUrl}:`, error);
+          logger.error({ error, url: dribbbleUrl }, "Error processing Dribbble URL");
           results.push({
             dribbbleUrl,
             cdnUrl: null,

@@ -14,6 +14,7 @@ import {
   type DensityBucket,
   type ColorBucket,
 } from "@/lib/constants/reference-libraries";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Brand references match error:", error);
+    logger.error({ error }, "Brand references match error");
     return NextResponse.json(
       { error: "Failed to fetch matching brand references" },
       { status: 500 }
@@ -183,7 +184,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ references });
   } catch (error) {
-    console.error("Brand references fetch error:", error);
+    logger.error({ error }, "Brand references fetch error");
     return NextResponse.json(
       { error: "Failed to fetch brand references" },
       { status: 500 }

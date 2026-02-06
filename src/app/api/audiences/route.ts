@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { audiences, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -41,7 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ audiences: sortedAudiences });
   } catch (error) {
-    console.error("Error fetching audiences:", error);
+    logger.error({ error }, "Error fetching audiences");
     return NextResponse.json(
       { error: "Failed to fetch audiences" },
       { status: 500 }

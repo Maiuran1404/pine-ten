@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -189,7 +190,7 @@ export async function classifyDeliverableStyle(
 
     return classification;
   } catch (error) {
-    console.error("Failed to classify deliverable style:", error);
+    logger.error({ err: error }, "Failed to classify deliverable style");
     // Return default classification on error
     return {
       name: "Unknown Style",
@@ -240,7 +241,7 @@ export async function classifyDeliverableStyleFromUrl(
 
     return classifyDeliverableStyle(base64, mediaType);
   } catch (error) {
-    console.error("Failed to classify deliverable style from URL:", error);
+    logger.error({ err: error }, "Failed to classify deliverable style from URL");
     throw error;
   }
 }

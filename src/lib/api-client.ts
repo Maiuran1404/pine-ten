@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 /**
  * Centralized API client with automatic CSRF token handling
  * Use this for all API calls to ensure consistent security and error handling
@@ -98,7 +100,7 @@ export async function apiClient<T = unknown>(
       const token = await getCsrfToken();
       headers.set(CSRF_HEADER_NAME, token);
     } catch {
-      console.warn("Failed to get CSRF token, proceeding without it");
+      logger.warn("Failed to get CSRF token, proceeding without it");
     }
   }
 
@@ -164,7 +166,7 @@ export async function uploadFile(
     const token = await getCsrfToken();
     headers.set(CSRF_HEADER_NAME, token);
   } catch {
-    console.warn("Failed to get CSRF token for upload");
+    logger.warn("Failed to get CSRF token for upload");
   }
 
   const response = await fetch(url, {

@@ -1,5 +1,7 @@
 // Chat drafts storage - uses server API with localStorage fallback for offline
 
+import { logger } from "@/lib/logger";
+
 export interface MoodboardItemData {
   id: string;
   type: "style" | "color" | "image" | "upload";
@@ -119,7 +121,7 @@ function setLocalDrafts(drafts: ChatDraft[]): void {
     // Dispatch custom event to notify sidebar of changes
     window.dispatchEvent(new CustomEvent("drafts-updated"));
   } catch {
-    console.error("Failed to save drafts to localStorage");
+    logger.error("Failed to save drafts to localStorage");
   }
 }
 
@@ -227,7 +229,7 @@ async function syncDraftToServer(draft: ChatDraft): Promise<void> {
       }
     }
   } catch (error) {
-    console.error("Failed to sync draft to server:", error);
+    logger.error({ err: error }, "Failed to sync draft to server");
   }
 }
 
@@ -237,7 +239,7 @@ async function deleteDraftFromServer(id: string): Promise<void> {
       method: "DELETE",
     });
   } catch (error) {
-    console.error("Failed to delete draft from server:", error);
+    logger.error({ err: error }, "Failed to delete draft from server");
   }
 }
 
@@ -264,7 +266,7 @@ export async function fetchAndSyncDrafts(): Promise<ChatDraft[]> {
     setLocalDrafts(serverDrafts);
     return serverDrafts;
   } catch (error) {
-    console.error("Failed to fetch drafts from server:", error);
+    logger.error({ err: error }, "Failed to fetch drafts from server");
     return getLocalDrafts();
   }
 }

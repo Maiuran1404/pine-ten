@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
 import { users, companies, styleReferences, taskCategories, platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
           controller.close();
         } catch (error) {
-          console.error("Streaming error:", error);
+          logger.error({ error }, "Streaming error");
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream error" })}\n\n`));
           controller.close();
         }
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Chat stream error:", error);
+    logger.error({ error }, "Chat stream error");
     return new Response("Internal server error", { status: 500 });
   }
 }

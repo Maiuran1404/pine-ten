@@ -5,6 +5,7 @@
 
 import { WebClient, type ChatPostMessageResponse } from "@slack/web-api";
 import type { Block, KnownBlock } from "@slack/web-api";
+import { logger } from "@/lib/logger";
 
 // Initialize client lazily to avoid issues during build
 let slackClient: WebClient | null = null;
@@ -49,12 +50,12 @@ export async function postMessage(
   }
 ): Promise<{ success: boolean; ts?: string; error?: string }> {
   if (!isSlackConfigured()) {
-    console.warn("[Slack] Not configured, skipping message");
+    logger.warn("[Slack] Not configured, skipping message");
     return { success: false, error: "Slack not configured" };
   }
 
   if (!channelId) {
-    console.warn("[Slack] No channel ID provided, skipping message");
+    logger.warn("[Slack] No channel ID provided, skipping message");
     return { success: false, error: "No channel ID provided" };
   }
 
@@ -74,7 +75,7 @@ export async function postMessage(
       ts: response.ts,
     };
   } catch (error) {
-    console.error("[Slack] Failed to post message:", error);
+    logger.error({ err: error }, "[Slack] Failed to post message");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -104,7 +105,7 @@ export async function updateMessage(
 
     return { success: response.ok ?? false };
   } catch (error) {
-    console.error("[Slack] Failed to update message:", error);
+    logger.error({ err: error }, "[Slack] Failed to update message");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -153,7 +154,7 @@ export async function createChannel(
       }
     }
 
-    console.error("[Slack] Failed to create channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to create channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -197,7 +198,7 @@ export async function findChannelByName(
 
     return null;
   } catch (error) {
-    console.error("[Slack] Failed to find channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to find channel");
     return null;
   }
 }
@@ -218,7 +219,7 @@ export async function archiveChannel(
 
     return { success: response.ok ?? false };
   } catch (error) {
-    console.error("[Slack] Failed to archive channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to archive channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -252,7 +253,7 @@ export async function inviteToChannel(
       }
     }
 
-    console.error("[Slack] Failed to invite to channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to invite to channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -278,7 +279,7 @@ export async function removeFromChannel(
 
     return { success: response.ok ?? false };
   } catch (error) {
-    console.error("[Slack] Failed to remove from channel:", error);
+    logger.error({ err: error }, "[Slack] Failed to remove from channel");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -305,7 +306,7 @@ export async function lookupUserByEmail(
       userId: response.user?.id,
     };
   } catch (error) {
-    console.error("[Slack] Failed to lookup user by email:", error);
+    logger.error({ err: error }, "[Slack] Failed to lookup user by email");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -332,7 +333,7 @@ export async function openDM(
       channelId: response.channel?.id,
     };
   } catch (error) {
-    console.error("[Slack] Failed to open DM:", error);
+    logger.error({ err: error }, "[Slack] Failed to open DM");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -379,7 +380,7 @@ export async function uploadFile(
       fileId: (response as { file?: { id?: string } }).file?.id,
     };
   } catch (error) {
-    console.error("[Slack] Failed to upload file:", error);
+    logger.error({ err: error }, "[Slack] Failed to upload file");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -405,7 +406,7 @@ export async function setChannelTopic(
 
     return { success: response.ok ?? false };
   } catch (error) {
-    console.error("[Slack] Failed to set channel topic:", error);
+    logger.error({ err: error }, "[Slack] Failed to set channel topic");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -434,7 +435,7 @@ export async function openModal(
       viewId: response.view?.id,
     };
   } catch (error) {
-    console.error("[Slack] Failed to open modal:", error);
+    logger.error({ err: error }, "[Slack] Failed to open modal");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -450,7 +451,7 @@ export function verifySlackSignature(
 ): boolean {
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
   if (!signingSecret) {
-    console.error("[Slack] SLACK_SIGNING_SECRET not configured");
+    logger.error("[Slack] SLACK_SIGNING_SECRET not configured");
     return false;
   }
 
@@ -458,7 +459,7 @@ export function verifySlackSignature(
   const now = Math.floor(Date.now() / 1000);
   const timeDiff = Math.abs(now - parseInt(timestamp));
   if (timeDiff > 60 * 5) {
-    console.error("[Slack] Request timestamp too old", { timeDiff, now, timestamp });
+    logger.error({ timeDiff, now, timestamp }, "[Slack] Request timestamp too old");
     return false;
   }
 
@@ -479,16 +480,16 @@ export function verifySlackSignature(
       Buffer.from(signature)
     );
     if (!isValid) {
-      console.error("[Slack] Signature mismatch", {
+      logger.error({
         received: signature.slice(0, 20) + "...",
         expected: mySignature.slice(0, 20) + "...",
         bodyLength: body.length,
         signingSecretLength: signingSecret.length,
-      });
+      }, "[Slack] Signature mismatch");
     }
     return isValid;
   } catch (err) {
-    console.error("[Slack] Signature comparison error", err);
+    logger.error({ err }, "[Slack] Signature comparison error");
     return false;
   }
 }

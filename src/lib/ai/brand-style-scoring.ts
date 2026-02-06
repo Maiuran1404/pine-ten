@@ -11,6 +11,7 @@ import {
 } from "@/lib/constants/reference-libraries";
 import { getHistoryBoostScores } from "./selection-history";
 import { extractStyleDNA, type StyleDNA } from "./style-dna";
+import { logger } from "@/lib/logger";
 
 /**
  * Multi-Factor Scoring Weights
@@ -625,8 +626,9 @@ export async function getBrandAwareStyles(
         if (fallbackStyles.length > 0) {
           finalStyles = fallbackStyles;
           actualDeliverableType = fallbackType;
-          console.log(
-            `[Brand Scoring] No styles for "${deliverableType}", using fallback "${fallbackType}" (${fallbackStyles.length} styles)`
+          logger.debug(
+            { deliverableType, fallbackType, styleCount: fallbackStyles.length },
+            "[Brand Scoring] No styles for type, using fallback"
           );
           break;
         }
@@ -712,7 +714,7 @@ export async function getBrandAwareStyles(
   try {
     styleDNA = await extractStyleDNA(userId);
   } catch (error) {
-    console.error("Error extracting Style DNA:", error);
+    logger.error({ err: error }, "Error extracting Style DNA");
     // Continue without DNA analysis
   }
 
@@ -721,7 +723,7 @@ export async function getBrandAwareStyles(
   try {
     historyBoosts = await getHistoryBoostScores(userId, deliverableType);
   } catch (error) {
-    console.error("Error fetching history boosts:", error);
+    logger.error({ err: error }, "Error fetching history boosts");
     // Continue without history boosts
   }
 
@@ -1007,8 +1009,9 @@ export async function getBrandAwareStylesOfAxis(
 
   // FALLBACK 1: Try from the beginning of the same axis (cycle through)
   if (offset > 0) {
-    console.log(
-      `[Brand Scoring] No more styles at offset ${offset} for "${styleAxis}", cycling to beginning`
+    logger.debug(
+      { offset, styleAxis },
+      "[Brand Scoring] No more styles at offset, cycling to beginning"
     );
     rawStyles = await db
       .select({
@@ -1070,8 +1073,9 @@ export async function getBrandAwareStylesOfAxis(
         .limit(limit);
 
       if (fallbackStyles.length > 0) {
-        console.log(
-          `[Brand Scoring] Using fallback "${fallbackType}" for "${styleAxis}" styles`
+        logger.debug(
+          { fallbackType, styleAxis },
+          "[Brand Scoring] Using fallback for styles"
         );
         return scoreStyles(
           fallbackStyles,
@@ -1083,8 +1087,9 @@ export async function getBrandAwareStylesOfAxis(
   }
 
   // FALLBACK 3: Get top styles from ANY axis for this deliverable type
-  console.log(
-    `[Brand Scoring] No "${styleAxis}" styles found, showing top styles from other axes`
+  logger.debug(
+    { styleAxis },
+    "[Brand Scoring] No styles found, showing top styles from other axes"
   );
   const anyAxisStyles = await db
     .select({
@@ -1146,8 +1151,9 @@ export async function getBrandAwareStylesOfAxis(
         .limit(limit);
 
       if (anyFallbackStyles.length > 0) {
-        console.log(
-          `[Brand Scoring] Using any styles from fallback "${fallbackType}"`
+        logger.debug(
+          { fallbackType },
+          "[Brand Scoring] Using any styles from fallback"
         );
         return scoreStyles(
           anyFallbackStyles,
@@ -1159,8 +1165,8 @@ export async function getBrandAwareStylesOfAxis(
   }
 
   // Absolute last resort - should rarely happen
-  console.warn(
-    `[Brand Scoring] No styles found for any fallback - database may be empty`
+  logger.warn(
+    "[Brand Scoring] No styles found for any fallback - database may be empty"
   );
   return [];
 }

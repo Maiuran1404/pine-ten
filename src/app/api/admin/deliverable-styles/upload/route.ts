@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { classifyDeliverableStyle } from "@/lib/ai/classify-deliverable-style";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 // Initialize Supabase client for storage
 const supabase = createClient(
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        console.error(`Error processing file ${file.name}:`, error);
+        logger.error({ error, filename: file.name }, "Error processing file");
         results.push({
           filename: file.name,
           success: false,

@@ -9,6 +9,7 @@ import type {
 } from "@/lib/creative-intake/types";
 import { getSystemPrompt, parseIntakeResponse } from "@/lib/creative-intake/prompts";
 import { getFlowStep, getNextStep, applySmartDefaults } from "@/lib/creative-intake/flow-config";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic();
 
@@ -120,7 +121,7 @@ If this is the final step, generate a summary of all collected information.
       dataWithDefaults,
     });
   } catch (error) {
-    console.error("Creative intake error:", error);
+    logger.error({ error }, "Creative intake error");
     return NextResponse.json(
       { error: "Failed to process intake message" },
       { status: 500 }

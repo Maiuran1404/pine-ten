@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { audiences, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function DELETE(
   request: NextRequest,
@@ -48,7 +49,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting audience:", error);
+    logger.error({ error }, "Error deleting audience");
     return NextResponse.json(
       { error: "Failed to delete audience" },
       { status: 500 }

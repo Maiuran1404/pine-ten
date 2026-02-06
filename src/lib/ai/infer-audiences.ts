@@ -4,6 +4,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { logger } from "@/lib/logger";
 
 // Lazy initialization to avoid errors during build
 let anthropic: Anthropic | null = null;
@@ -148,7 +149,7 @@ Return ONLY a valid JSON array:
     // Parse the JSON response
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      console.error("No JSON array found in audience inference response");
+      logger.error("No JSON array found in audience inference response");
       return [];
     }
 
@@ -180,7 +181,7 @@ Return ONLY a valid JSON array:
 
     return validatedAudiences;
   } catch (error) {
-    console.error("Failed to infer audiences from brand data:", error);
+    logger.error({ err: error }, "Failed to infer audiences from brand data");
     return [];
   }
 }

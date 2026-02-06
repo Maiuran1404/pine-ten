@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 // Force clear all auth-related cookies
 // This is useful when session state becomes corrupted
@@ -46,7 +47,7 @@ export async function GET() {
     }
   }
 
-  console.log("Cleared cookies:", clearedCookies);
+  logger.info({ clearedCookies }, "Cleared cookies");
 
   // Redirect to login after clearing
   return NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"));

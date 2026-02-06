@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -35,7 +36,7 @@ export async function GET() {
 
     return NextResponse.json({ user: userResult[0] });
   } catch (error) {
-    console.error("Settings fetch error:", error);
+    logger.error({ error }, "Settings fetch error");
     return NextResponse.json(
       { error: "Failed to fetch settings" },
       { status: 500 }
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Settings update error:", error);
+    logger.error({ error }, "Settings update error");
     return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { scrapeBigged, type BiggedScraperOptions } from "@/lib/scrapers/bigged-scraper";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 300; // 5 minutes for long scraping operations
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       error: result.error,
     });
   } catch (error) {
-    console.error("Bigged scrape error:", error);
+    logger.error({ error }, "Bigged scrape error");
     return NextResponse.json(
       {
         success: false,

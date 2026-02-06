@@ -1,5 +1,6 @@
 import twilio from "twilio";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
@@ -24,7 +25,7 @@ export async function sendWhatsApp({ to, message }: WhatsAppParams) {
 
     return { success: true, sid: result.sid };
   } catch (error) {
-    console.error("WhatsApp send error:", error);
+    logger.error({ err: error }, "WhatsApp send error");
     return { success: false, error };
   }
 }
@@ -34,7 +35,7 @@ export async function notifyAdminWhatsApp(message: string) {
   const adminNumber = config.notifications.whatsapp.adminNumber;
   
   if (!adminNumber) {
-    console.warn("ADMIN_WHATSAPP_NUMBER is not set, skipping WhatsApp notification");
+    logger.warn("ADMIN_WHATSAPP_NUMBER is not set, skipping WhatsApp notification");
     return { success: false, error: "ADMIN_WHATSAPP_NUMBER not configured" };
   }
 

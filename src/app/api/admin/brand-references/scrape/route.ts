@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import FirecrawlApp from "@mendable/firecrawl-js";
+import { logger } from "@/lib/logger";
 
 interface ScrapedImage {
   url: string;
@@ -381,14 +382,14 @@ export async function POST(request: NextRequest) {
         // Use rawHtml first (more complete), fall back to html
         const htmlContent = scrapeResult.rawHtml || scrapeResult.html;
         if (htmlContent) {
-          console.log(`Firecrawl returned HTML with ${htmlContent.length} characters for ${url}`);
+          logger.debug({ url, htmlLength: htmlContent.length }, "Firecrawl returned HTML");
           images = extractImagesFromHtml(htmlContent, baseUrl);
-          console.log(`Firecrawl extracted ${images.length} raw images from ${url}`);
+          logger.debug({ url, imageCount: images.length }, "Firecrawl extracted raw images");
         } else {
-          console.log(`Firecrawl returned no HTML content for ${url}`);
+          logger.debug({ url }, "Firecrawl returned no HTML content");
         }
       } catch (error: unknown) {
-        console.error("Firecrawl error:", error);
+        logger.error({ error }, "Firecrawl error");
         // Check if it's a "website not supported" error
         if (error && typeof error === 'object' && 'details' in error) {
           const details = (error as { details?: { error?: string } }).details;
@@ -432,7 +433,7 @@ export async function POST(request: NextRequest) {
         const html = await response.text();
         images = extractImagesFromHtml(html, baseUrl);
       } catch (error) {
-        console.error("Fetch error:", error);
+        logger.error({ error }, "Fetch error");
         return NextResponse.json(
           { error: "Failed to fetch page" },
           { status: 500 }
@@ -469,7 +470,7 @@ export async function POST(request: NextRequest) {
       warning: firecrawlError,
     });
   } catch (error) {
-    console.error("Scrape error:", error);
+    logger.error({ error }, "Scrape error");
     return NextResponse.json(
       { error: "Failed to scrape page" },
       { status: 500 }

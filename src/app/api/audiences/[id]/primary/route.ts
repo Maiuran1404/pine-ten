@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { audiences, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function PUT(
   request: NextRequest,
@@ -55,7 +56,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error setting primary audience:", error);
+    logger.error({ error }, "Error setting primary audience");
     return NextResponse.json(
       { error: "Failed to set primary audience" },
       { status: 500 }

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, taskMessages } from "@/db/schema";
 import { eq, and, gt, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
           lastCheckTime = new Date();
         } catch (error) {
-          console.error("SSE polling error:", error);
+          logger.error({ error }, "SSE polling error");
         }
       }, 5000);
     },
@@ -211,7 +212,7 @@ async function getNotifications(
       }
     }
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    logger.error({ error }, "Error fetching notifications");
   }
 
   return notifications;

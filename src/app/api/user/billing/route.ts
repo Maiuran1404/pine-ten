@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, creditTransactions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -47,7 +48,7 @@ export async function GET() {
       transactions,
     });
   } catch (error) {
-    console.error("Billing fetch error:", error);
+    logger.error({ error }, "Billing fetch error");
     return NextResponse.json(
       { error: "Failed to fetch billing data" },
       { status: 500 }

@@ -6,6 +6,7 @@ import { briefs, users, chatDrafts } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { LiveBrief, Dimension } from "@/components/chat/brief-panel/types";
 import { calculateBriefCompletion } from "@/components/chat/brief-panel/types";
+import { logger } from "@/lib/logger";
 
 // UUID validation regex
 const UUID_REGEX =
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
       briefs: userBriefs.map(convertDbBriefToLiveBrief),
     });
   } catch (error) {
-    console.error("Error fetching briefs:", error);
+    logger.error({ error }, "Error fetching briefs");
     return NextResponse.json(
       { error: "Failed to fetch briefs" },
       { status: 500 }
@@ -98,18 +99,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log("POST /api/briefs - received body keys:", Object.keys(body));
+    logger.debug({ bodyKeys: Object.keys(body) }, "POST /api/briefs - received body keys");
 
     const { brief: liveBrief, draftId } = body as {
       brief: LiveBrief;
       draftId?: string;
     };
 
-    console.log(
-      "POST /api/briefs - liveBrief:",
-      liveBrief ? Object.keys(liveBrief) : "null"
+    logger.debug(
+      { liveBriefKeys: liveBrief ? Object.keys(liveBrief) : null, draftId },
+      "POST /api/briefs - liveBrief and draftId"
     );
-    console.log("POST /api/briefs - draftId:", draftId);
 
     if (!liveBrief) {
       return NextResponse.json(
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     try {
       completion = calculateBriefCompletion(liveBrief);
     } catch (e) {
-      console.warn("Failed to calculate brief completion:", e);
+      logger.warn({ error: e }, "Failed to calculate brief completion");
     }
     const status = completion >= 80 ? "READY" : "DRAFT";
 
@@ -189,10 +189,9 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    console.log("POST /api/briefs - briefData keys:", Object.keys(briefData));
-    console.log(
-      "POST /api/briefs - existingBrief:",
-      existingBrief?.id || "null"
+    logger.debug(
+      { briefDataKeys: Object.keys(briefData), existingBriefId: existingBrief?.id || null },
+      "POST /api/briefs - briefData and existingBrief"
     );
 
     let savedBrief;
@@ -216,10 +215,9 @@ export async function POST(request: NextRequest) {
       id: savedBrief.id,
     });
   } catch (error) {
-    console.error("Error saving brief:", error);
-    console.error(
-      "Error details:",
-      error instanceof Error ? error.message : String(error)
+    logger.error(
+      { error, details: error instanceof Error ? error.message : String(error) },
+      "Error saving brief"
     );
     return NextResponse.json(
       {
@@ -255,7 +253,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting brief:", error);
+    logger.error({ error }, "Error deleting brief");
     return NextResponse.json(
       { error: "Failed to delete brief" },
       { status: 500 }

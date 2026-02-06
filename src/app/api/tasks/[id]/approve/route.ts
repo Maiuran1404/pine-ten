@@ -6,6 +6,7 @@ import { tasks, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   request: NextRequest,
@@ -73,7 +74,7 @@ export async function POST(
           },
         });
       } catch (error) {
-        console.error("Failed to send approval notification:", error);
+        logger.error({ error }, "Failed to send approval notification");
       }
     }
 
@@ -82,7 +83,7 @@ export async function POST(
       message: "Task approved and marked as completed",
     });
   } catch (error) {
-    console.error("Task approval error:", error);
+    logger.error({ error }, "Task approval error");
     return NextResponse.json(
       { error: "Failed to approve task" },
       { status: 500 }

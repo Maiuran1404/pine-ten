@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 const BUCKET_NAME = "task-files";
 
@@ -16,7 +17,7 @@ export async function uploadFile(
     });
 
   if (error) {
-    console.error("Upload error:", error);
+    logger.error({ err: error }, "Upload error");
     return { url: "", path: "", error: error.message };
   }
 
@@ -26,7 +27,7 @@ export async function uploadFile(
     .createSignedUrl(data.path, 3600);
 
   if (signedError) {
-    console.error("Signed URL error:", signedError);
+    logger.error({ err: signedError }, "Signed URL error");
     return { url: "", path: data.path, error: signedError.message };
   }
 
@@ -39,7 +40,7 @@ export async function deleteFile(path: string): Promise<boolean> {
   const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
 
   if (error) {
-    console.error("Delete error:", error);
+    logger.error({ err: error }, "Delete error");
     return false;
   }
 
@@ -57,7 +58,7 @@ export async function getSignedUrl(
     .createSignedUrl(path, expiresIn);
 
   if (error) {
-    console.error("Signed URL error:", error);
+    logger.error({ err: error }, "Signed URL error");
     return null;
   }
 

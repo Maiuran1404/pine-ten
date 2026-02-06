@@ -6,6 +6,7 @@ import { brandReferences } from "@/db/schema";
 import { classifyBrandImage } from "@/lib/ai/classify-brand-image";
 import { createClient } from "@supabase/supabase-js";
 import { optimizeImage } from "@/lib/image/optimize";
+import { logger } from "@/lib/logger";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
             },
           });
         } catch (error) {
-          console.error(`Error processing base64 image ${image.url}:`, error);
+          logger.error({ error, url: image.url }, "Error processing base64 image");
           results.push({
             url: image.url,
             success: false,
@@ -326,8 +327,9 @@ export async function POST(request: NextRequest) {
         // Log size savings
         const originalSize = buffer.length;
         const optimizedSize = variants.full.size + variants.preview.size + variants.thumbnail.size;
-        console.log(
-          `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(optimizedSize / 1024).toFixed(0)}KB (${((1 - optimizedSize / originalSize) * 100).toFixed(0)}% saved)`
+        logger.debug(
+          { originalSize, optimizedSize, percentSaved: ((1 - optimizedSize / originalSize) * 100).toFixed(0) },
+          "Image optimized"
         );
 
         // Insert into database
@@ -364,7 +366,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        console.error(`Error processing URL ${url}:`, error);
+        logger.error({ error, url }, "Error processing URL");
         results.push({
           url,
           success: false,
@@ -543,7 +545,7 @@ export async function PATCH(request: NextRequest) {
           classification,
         });
       } catch (error) {
-        console.error(`Error classifying image ${image.url}:`, error);
+        logger.error({ error, url: image.url }, "Error classifying image");
         results.push({
           url: image.url,
           success: false,

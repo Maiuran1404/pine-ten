@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Firecrawl from "@mendable/firecrawl-js";
 import Anthropic from "@anthropic-ai/sdk";
+import { logger } from "@/lib/logger";
 
 // Lazy initialization to avoid errors during build
 let firecrawl: Firecrawl | null = null;
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
         onlyMainContent: false,
       });
     } catch (scrapeError) {
-      console.error("Firecrawl scrape error:", scrapeError);
+      logger.error({ error: scrapeError }, "Firecrawl scrape error");
       return NextResponse.json(
         {
           error:
@@ -392,10 +393,9 @@ export async function POST(request: NextRequest) {
 
     // If confidence is too low, use Claude for better color extraction
     const hasBrandingColors = hasColorsWithConfidence;
-    console.log(
-      `Brand extraction for ${normalizedUrl}: Using ${
-        hasBrandingColors ? "Firecrawl" : "Claude"
-      } (color confidence: ${colorConfidence})`
+    logger.info(
+      { url: normalizedUrl, source: hasBrandingColors ? "Firecrawl" : "Claude", colorConfidence },
+      "Brand extraction source selected"
     );
 
     // Even if Firecrawl has good branding colors, we still need Claude for:
@@ -646,7 +646,7 @@ Return ONLY a valid JSON object with this exact structure:
         break; // Success, exit retry loop
       } catch (error) {
         lastError = error as Error;
-        console.error(`Claude analysis attempt ${attempt + 1} failed:`, error);
+        logger.error({ error, attempt: attempt + 1 }, "Claude analysis attempt failed");
 
         // Check if it's an image size error
         const errorMessage = String(error);
@@ -655,7 +655,7 @@ Return ONLY a valid JSON object with this exact structure:
           errorMessage.includes("image") ||
           errorMessage.includes("dimension")
         ) {
-          console.log("Image too large, retrying without screenshot...");
+          logger.info("Image too large, retrying without screenshot");
           useScreenshot = false;
           continue; // Retry without screenshot
         }
@@ -667,9 +667,9 @@ Return ONLY a valid JSON object with this exact structure:
 
     // If Claude analysis failed entirely, use fallback data
     if (!brandData) {
-      console.error(
-        "All Claude analysis attempts failed, using fallback data. Last error:",
-        lastError
+      logger.error(
+        { error: lastError },
+        "All Claude analysis attempts failed, using fallback data"
       );
       brandData = createDefaultBrandData(metadata, branding, links);
     }
@@ -685,9 +685,7 @@ Return ONLY a valid JSON object with this exact structure:
       if (firecrawlBrandData.brandColors.length > 0) {
         brandData.brandColors = firecrawlBrandData.brandColors;
       }
-      console.log(
-        "Using high-confidence Firecrawl colors with Claude's audience analysis"
-      );
+      logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis");
     } else {
       // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
       // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
@@ -829,7 +827,7 @@ Return ONLY a valid JSON object with this exact structure:
       },
     });
   } catch (error) {
-    console.error("Brand extraction error:", error);
+    logger.error({ error }, "Brand extraction error");
     return NextResponse.json(
       { error: "Failed to extract brand information. Please try again." },
       { status: 500 }

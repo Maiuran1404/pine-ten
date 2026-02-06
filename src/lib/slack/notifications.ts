@@ -15,6 +15,7 @@ import type {
   SlackCompanyInfo,
   SlackNotificationResult,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 type SlackEventType = SlackEventTypeValue;
 
@@ -26,7 +27,7 @@ export async function notifySlack(
   data: Record<string, unknown>
 ): Promise<SlackNotificationResult> {
   if (!isSlackConfigured()) {
-    console.log("[Slack] Not configured, skipping notification");
+    logger.debug("[Slack] Not configured, skipping notification");
     return { success: false, error: "Slack not configured" };
   }
 
@@ -157,11 +158,11 @@ export async function notifySlack(
         );
 
       default:
-        console.warn(`[Slack] Unknown event type: ${event}`);
+        logger.warn({ event }, "[Slack] Unknown event type");
         return { success: false, error: `Unknown event type: ${event}` };
     }
   } catch (error) {
-    console.error(`[Slack] Failed to send notification for ${event}:`, error);
+    logger.error({ err: error, event }, "[Slack] Failed to send notification");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { extractStyleDNA, getStyleDNASummary } from "@/lib/ai/style-dna";
+import { logger } from "@/lib/logger";
 
 // GET - Get user's Style DNA
 export async function GET(request: NextRequest) {
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       summary,
     });
   } catch (error) {
-    console.error("Error extracting Style DNA:", error);
+    logger.error({ error }, "Error extracting Style DNA");
     return NextResponse.json(
       { error: "Failed to extract Style DNA" },
       { status: 500 }

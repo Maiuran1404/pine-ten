@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { sendEmail, emailTemplates } from "./email";
 import { sendWhatsApp, whatsappTemplates } from "./whatsapp";
 import type { NotificationPreferences } from "@/types";
+import { logger } from "@/lib/logger";
 
 type NotificationType =
   | "TASK_ASSIGNED"
@@ -42,7 +43,7 @@ export async function notify({
     .limit(1);
 
   if (!user.length) {
-    console.error("User not found for notification:", userId);
+    logger.error({ userId }, "User not found for notification");
     return;
   }
 

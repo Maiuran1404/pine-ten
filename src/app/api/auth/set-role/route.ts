@@ -6,6 +6,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { withRateLimit } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 // Set user role after registration based on portal type
 async function handler(request: NextRequest) {
@@ -48,7 +49,7 @@ async function handler(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Set role error:", error);
+    logger.error({ error }, "Set role error");
     return NextResponse.json(
       { error: "Failed to set role" },
       { status: 500 }

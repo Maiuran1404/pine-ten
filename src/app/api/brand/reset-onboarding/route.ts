@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/require-auth";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -41,7 +42,7 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Reset onboarding error:", error);
+    logger.error({ error }, "Reset onboarding error");
     return NextResponse.json(
       { error: "Failed to reset onboarding" },
       { status: 500 }

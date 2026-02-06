@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { generatedDesigns, orshotTemplates, companies, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ design });
   } catch (error) {
-    console.error("Design fetch error:", error);
+    logger.error({ error }, "Design fetch error");
     return NextResponse.json(
       { error: "Failed to fetch design" },
       { status: 500 }
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: "Design saved to brand assets",
     });
   } catch (error) {
-    console.error("Save to assets error:", error);
+    logger.error({ error }, "Save to assets error");
     return NextResponse.json(
       { error: "Failed to save design to assets" },
       { status: 500 }

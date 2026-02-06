@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { tasks, users, taskCategories, taskFiles, taskMessages, companies, taskActivityLog } from "@/db/schema";
 import { eq, desc, and, ne } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // Type alias for better readability
 const freelancerUsers = users;
@@ -270,7 +271,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Task fetch error:", error);
+    logger.error({ error }, "Task fetch error");
     return NextResponse.json(
       { error: "Failed to fetch task" },
       { status: 500 }

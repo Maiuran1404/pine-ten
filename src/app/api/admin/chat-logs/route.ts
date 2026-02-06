@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { chatDrafts, tasks, users, deliverableStyleReferences } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-auth";
 import { desc, eq, or, ilike, sql, inArray } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 interface ChatMessage {
   id: string;
@@ -225,7 +226,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching chat logs:", error);
+    logger.error({ error }, "Error fetching chat logs");
     return NextResponse.json(
       { error: "Failed to fetch chat logs" },
       { status: 500 }

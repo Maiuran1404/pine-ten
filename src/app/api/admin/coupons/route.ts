@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { stripe } from "@/lib/stripe";
 import { auditHelpers, actorFromUser } from "@/lib/audit";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 // Validation schemas for coupon operations
 const createCouponSchema = z.object({
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("Failed to create promotion code:", error);
+        logger.error({ error }, "Failed to create promotion code");
       } else {
         promotionCode = await response.json();
       }

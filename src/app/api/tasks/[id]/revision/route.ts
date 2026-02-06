@@ -6,6 +6,7 @@ import { tasks, taskMessages } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   request: NextRequest,
@@ -99,7 +100,7 @@ export async function POST(
           },
         });
       } catch (error) {
-        console.error("Failed to send revision notification:", error);
+        logger.error({ error }, "Failed to send revision notification");
       }
     }
 
@@ -110,7 +111,7 @@ export async function POST(
       maxRevisions: task.maxRevisions,
     });
   } catch (error) {
-    console.error("Revision request error:", error);
+    logger.error({ error }, "Revision request error");
     return NextResponse.json(
       { error: "Failed to request revision" },
       { status: 500 }

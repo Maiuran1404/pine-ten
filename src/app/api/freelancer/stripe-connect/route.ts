@@ -8,6 +8,7 @@ import {
   getDashboardLink,
   syncConnectAccountStatus,
 } from "@/lib/stripe-connect";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/freelancer/stripe-connect
@@ -50,7 +51,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Get Stripe Connect status error:", error);
+    logger.error({ error }, "Get Stripe Connect status error");
     return NextResponse.json(
       { error: "Failed to get Stripe Connect status" },
       { status: 500 }
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("Stripe Connect action error:", error);
+    logger.error({ error }, "Stripe Connect action error");
     return NextResponse.json(
       { error: "Failed to process Stripe Connect action" },
       { status: 500 }

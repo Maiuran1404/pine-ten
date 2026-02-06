@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -29,7 +30,7 @@ export async function GET() {
 
     return NextResponse.json({ credits: userResult[0].credits });
   } catch (error) {
-    console.error("Credits fetch error:", error);
+    logger.error({ error }, "Credits fetch error");
     return NextResponse.json(
       { error: "Failed to fetch credits" },
       { status: 500 }

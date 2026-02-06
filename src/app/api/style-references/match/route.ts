@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, deliverableStyleReferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // Color distance calculation (simple RGB euclidean)
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -338,7 +339,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Style reference match error:", error);
+    logger.error({ error }, "Style reference match error");
     return NextResponse.json(
       { error: "Failed to fetch style references" },
       { status: 500 }

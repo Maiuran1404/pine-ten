@@ -6,6 +6,7 @@ import { tasks, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,12 +78,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (notifyError) {
-      console.error("Failed to send start notification:", notifyError);
+      logger.error({ error: notifyError }, "Failed to send start notification");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Start task error:", error);
+    logger.error({ error }, "Start task error");
     return NextResponse.json(
       { error: "Failed to start task" },
       { status: 500 }

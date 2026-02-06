@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { chatDrafts, users, companies } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // GET - Fetch all drafts (admin only)
 export async function GET() {
@@ -47,7 +48,7 @@ export async function GET() {
 
     return NextResponse.json({ drafts });
   } catch (error) {
-    console.error("Fetch admin drafts error:", error);
+    logger.error({ error }, "Fetch admin drafts error");
     return NextResponse.json(
       { error: "Failed to fetch drafts" },
       { status: 500 }

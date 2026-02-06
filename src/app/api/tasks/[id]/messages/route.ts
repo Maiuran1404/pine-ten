@@ -6,6 +6,7 @@ import { tasks, taskMessages, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 // GET - Fetch messages for a task
 export async function GET(
@@ -64,7 +65,7 @@ export async function GET(
 
     return NextResponse.json({ messages });
   } catch (error) {
-    console.error("Messages fetch error:", error);
+    logger.error({ error }, "Messages fetch error");
     return NextResponse.json(
       { error: "Failed to fetch messages" },
       { status: 500 }
@@ -150,7 +151,7 @@ export async function POST(
           },
         });
       } catch (error) {
-        console.error("Failed to send message notification:", error);
+        logger.error({ error }, "Failed to send message notification");
       }
     }
 
@@ -175,7 +176,7 @@ export async function POST(
       message: messageWithSender[0],
     });
   } catch (error) {
-    console.error("Message send error:", error);
+    logger.error({ error }, "Message send error");
     return NextResponse.json(
       { error: "Failed to send message" },
       { status: 500 }

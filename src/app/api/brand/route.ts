@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // GET - Fetch the user's company/brand
 export async function GET() {
@@ -30,7 +31,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: user.company });
   } catch (error) {
-    console.error("Fetch brand error:", error);
+    logger.error({ error }, "Fetch brand error");
     return NextResponse.json(
       { error: "Failed to fetch brand" },
       { status: 500 }
@@ -113,7 +114,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
-    console.error("Update brand error:", error);
+    logger.error({ error }, "Update brand error");
     return NextResponse.json(
       { error: "Failed to update brand" },
       { status: 500 }

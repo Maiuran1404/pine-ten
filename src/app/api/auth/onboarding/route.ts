@@ -14,6 +14,7 @@ import {
 import { config } from "@/lib/config";
 import { withRateLimit } from "@/lib/rate-limit";
 import { inferAudiencesFromBrand } from "@/lib/ai/infer-audiences";
+import { logger } from "@/lib/logger";
 
 async function handler(request: NextRequest) {
   try {
@@ -107,9 +108,7 @@ async function handler(request: NextRequest) {
         audiencesToSave.length === 0
       ) {
         try {
-          console.log(
-            "No audiences from website, inferring from brand data..."
-          );
+          logger.info("No audiences from website, inferring from brand data");
           audiencesToSave = await inferAudiencesFromBrand({
             name: brand.name,
             industry: brand.industry,
@@ -118,11 +117,12 @@ async function handler(request: NextRequest) {
             creativeFocus: brand.creativeFocus,
           });
           audienceSource = "inferred";
-          console.log(
-            `Inferred ${audiencesToSave.length} audience(s) from brand data`
+          logger.info(
+            { count: audiencesToSave.length },
+            "Inferred audiences from brand data"
           );
         } catch (error) {
-          console.error("Failed to infer audiences from brand data:", error);
+          logger.error({ error }, "Failed to infer audiences from brand data");
           audiencesToSave = [];
         }
       }
@@ -205,9 +205,9 @@ async function handler(request: NextRequest) {
           });
           await notifyAdminWhatsApp(whatsappMessage);
         } catch (error) {
-          console.error(
-            "Failed to send client onboarding notifications:",
-            error
+          logger.error(
+            { error },
+            "Failed to send client onboarding notifications"
           );
         }
       });
@@ -268,9 +268,9 @@ async function handler(request: NextRequest) {
           });
           await notifyAdminWhatsApp(whatsappMessage);
         } catch (error) {
-          console.error(
-            "Failed to send freelancer application notification:",
-            error
+          logger.error(
+            { error },
+            "Failed to send freelancer application notification"
           );
         }
       });
@@ -280,7 +280,7 @@ async function handler(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   } catch (error) {
-    console.error("Onboarding error:", error);
+    logger.error({ error }, "Onboarding error");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -3,6 +3,7 @@ import { deliverableStyleReferences } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import Anthropic from "@anthropic-ai/sdk";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -293,7 +294,7 @@ Only return the JSON array, nothing else.`,
 
     return results.slice(0, limit);
   } catch (error) {
-    console.error("Error parsing AI style ranking:", error);
+    logger.error({ err: error }, "Error parsing AI style ranking");
     // Fallback to keyword-based search
     return searchStylesByQuery(conversationContext, deliverableType, limit);
   }

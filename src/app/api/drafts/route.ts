@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { chatDrafts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // GET - Fetch all drafts for current user
 export async function GET() {
@@ -23,7 +24,7 @@ export async function GET() {
 
     return NextResponse.json({ drafts });
   } catch (error) {
-    console.error("Fetch drafts error:", error);
+    logger.error({ error }, "Fetch drafts error");
     return NextResponse.json(
       { error: "Failed to fetch drafts" },
       { status: 500 }
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ draft, localId: id });
   } catch (error) {
-    console.error("Save draft error:", error);
+    logger.error({ error }, "Save draft error");
     return NextResponse.json(
       { error: "Failed to save draft" },
       { status: 500 }
@@ -131,7 +132,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete draft error:", error);
+    logger.error({ error }, "Delete draft error");
     return NextResponse.json(
       { error: "Failed to delete draft" },
       { status: 500 }

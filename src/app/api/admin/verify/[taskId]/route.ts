@@ -6,6 +6,7 @@ import { tasks, users, taskFiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 // GET - Fetch task details for verification
 export async function GET(
@@ -151,7 +152,7 @@ export async function POST(
             taskUrl: `${config.app.url}/dashboard/tasks/${taskId}`,
           });
         } catch (notifyError) {
-          console.error("Failed to send client notification:", notifyError);
+          logger.error({ error: notifyError }, "Failed to send client notification");
         }
       }
 
@@ -184,7 +185,7 @@ export async function POST(
             html: emailData.html,
           });
         } catch (notifyError) {
-          console.error("Failed to send freelancer notification:", notifyError);
+          logger.error({ error: notifyError }, "Failed to send freelancer notification");
         }
       }
 
