@@ -3471,11 +3471,22 @@ export function ChatInterface({
                 // Don't show submit prompt if AI just asked a question
                 if (aiJustAskedQuestion) return null;
 
+                // Don't show immediately after a style selection
+                const lastUserMessage = messages
+                  .filter((m) => m.role === "user")
+                  .slice(-1)[0];
+                const lastUserWasStyleSelection =
+                  lastUserMessage?.content?.includes("style selected") ||
+                  lastUserMessage?.content?.includes("Style selected") ||
+                  lastUserMessage?.selectedStyle != null;
+
                 // Show when AI indicates ready or user has enough context
+                // BUT not right after a style selection (let user respond first)
                 const shouldShow =
                   showManualSubmit ||
                   (moodboardItems.length > 0 &&
-                    messages.filter((m) => m.role === "user").length >= 2);
+                    messages.filter((m) => m.role === "user").length >= 3 &&
+                    !lastUserWasStyleSelection);
 
                 if (!shouldShow) return null;
 

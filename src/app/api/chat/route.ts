@@ -787,18 +787,22 @@ async function handler(request: NextRequest) {
 
     logger.debug({ isVideoRequest, deliverableStyleMarker }, "Video detection check");
 
+    // Skip video references if user has already selected a style (moodboardHasStyles)
+    // This prevents showing the same video grid repeatedly after selection
     if (
-      isVideoRequest ||
-      (deliverableStyleMarker &&
-        isVideoDeliverableType(
-          normalizeDeliverableType(deliverableStyleMarker.deliverableType)
-        ))
+      !moodboardHasStyles && (
+        isVideoRequest ||
+        (deliverableStyleMarker &&
+          isVideoDeliverableType(
+            normalizeDeliverableType(deliverableStyleMarker.deliverableType)
+          ))
+      )
     ) {
       // For video requests, ALWAYS clear image styles - we only want to show video references
       // Do this BEFORE fetching video references so even if fetch fails, we don't show images
       deliverableStyles = undefined;
       logger.debug("Video request detected - cleared image styles");
-      
+
       try {
         const deliverableType = deliverableStyleMarker?.deliverableType
           ? normalizeDeliverableType(deliverableStyleMarker.deliverableType)
@@ -824,6 +828,10 @@ async function handler(request: NextRequest) {
         logger.error({ err }, "Error fetching video references");
         // Even if video fetch fails, don't fall back to image styles for video requests
       }
+    } else if (moodboardHasStyles && isVideoRequest) {
+      // Still clear image styles for video requests even when skipping video references
+      deliverableStyles = undefined;
+      logger.debug("Video request with moodboard styles - skipping video grid");
     }
 
     // Auto-generate quick options from deliverable styles if AI didn't provide any
