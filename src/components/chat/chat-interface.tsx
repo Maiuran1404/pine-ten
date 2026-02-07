@@ -324,7 +324,6 @@ export function ChatInterface({
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<
     string[]
   >([]);
-  const [selectedVideoStyles, setSelectedVideoStyles] = useState<string[]>([]);
   const [selectedStyleForModal, setSelectedStyleForModal] =
     useState<DeliverableStyle | null>(null);
   const [currentDeliverableType, setCurrentDeliverableType] = useState<
@@ -2274,28 +2273,11 @@ export function ChatInterface({
     }
   };
 
-  // Handle toggling video selection
-  const handleSelectVideo = (video: VideoReferenceStyle) => {
-    setSelectedVideoStyles((prev) =>
-      prev.includes(video.id)
-        ? prev.filter((id) => id !== video.id)
-        : [...prev, video.id]
-    );
-  };
+  // Handle selecting a video from the preview modal
+  const handleSelectVideo = async (video: VideoReferenceStyle) => {
+    if (isLoading) return;
 
-  // Handle confirming video selection from the grid
-  const handleConfirmVideoSelection = async (
-    selectedVideos: VideoReferenceStyle[]
-  ) => {
-    if (selectedVideos.length === 0 || isLoading) {
-      return;
-    }
-
-    const video = selectedVideos[0];
-    const videoMessage =
-      selectedVideos.length === 1
-        ? `Video style selected: ${video.name}`
-        : `Video styles selected: ${selectedVideos.map((v) => v.name).join(", ")}`;
+    const videoMessage = `Video style selected: ${video.name}`;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -2329,8 +2311,6 @@ export function ChatInterface({
     });
 
     setIsLoading(true);
-    // Clear selection after submitting
-    setSelectedVideoStyles([]);
 
     try {
       const response = await fetch("/api/chat", {
@@ -2341,7 +2321,7 @@ export function ChatInterface({
             role: m.role,
             content: m.content,
           })),
-          selectedDeliverableStyles: selectedVideos.map((v) => v.id),
+          selectedDeliverableStyles: [video.id],
           moodboardHasStyles: true,
         }),
       });
@@ -2372,22 +2352,19 @@ export function ChatInterface({
         setPendingTask(data.taskProposal);
       }
 
-      // Add videos to moodboard
-      selectedVideos.forEach((v) => {
-        if (!hasMoodboardItem(v.id)) {
-          // Add video as a moodboard item
-          addFromStyle({
-            id: v.id,
-            name: v.name,
-            description: v.description,
-            imageUrl: v.imageUrl,
-            deliverableType: v.deliverableType,
-            styleAxis: v.styleAxis,
-            subStyle: v.subStyle || null,
-            semanticTags: v.semanticTags || [],
-          });
-        }
-      });
+      // Add video to moodboard
+      if (!hasMoodboardItem(video.id)) {
+        addFromStyle({
+          id: video.id,
+          name: video.name,
+          description: video.description,
+          imageUrl: video.imageUrl,
+          deliverableType: video.deliverableType,
+          styleAxis: video.styleAxis,
+          subStyle: video.subStyle || null,
+          semanticTags: video.semanticTags || [],
+        });
+      }
     } catch {
       toast.error("Failed to send message. Please try again.");
     } finally {
@@ -3390,10 +3367,7 @@ export function ChatInterface({
                               >
                                 <VideoReferenceGrid
                                   videos={message.videoReferences}
-                                  selectedVideos={selectedVideoStyles}
                                   onSelectVideo={handleSelectVideo}
-                                  onConfirmSelection={handleConfirmVideoSelection}
-                                  selectionMode={true}
                                   isLoading={isLoading}
                                   title="Video Style References"
                                 />
