@@ -91,6 +91,9 @@ Acknowledge briefly, then state your recommendations for the remaining details.
 Example: "The Dark Tech style is perfect for your launch. I'll design this for Instagram Reels targeting startup founders, emphasizing speed and efficiency. Ready to proceed, or any tweaks?"
 [QUICK_OPTIONS]{"question": "Ready?", "options": ["Let's do it", "Change the platform", "Different audience"]}[/QUICK_OPTIONS]
 
+CRITICAL: EVERY SINGLE RESPONSE MUST END WITH [QUICK_OPTIONS].
+There are NO exceptions. Even after style selection, after confirmations, after providing information - ALWAYS end with quick options that give the user a clear next step.
+
 WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - User mentions ANY content type (video, post, carousel, ad, logo, etc.)
 - User describes what they want to create
@@ -98,7 +101,7 @@ WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - Basically: if you can pick a deliverable type, SHOW STYLES
 
 TYPE MAPPING:
-- Video/reel/motion → instagram_reel
+- Video/reel/motion/walkthrough/demo/tutorial/onboarding/explainer/guided tour → instagram_reel
 - Post/carousel/feed → instagram_post
 - Story/stories → instagram_story
 - LinkedIn → linkedin_post
@@ -106,6 +109,8 @@ TYPE MAPPING:
 - Logo → logo
 - Branding → brand_identity
 - Pitch deck/presentation/slides → presentation_slide
+
+IMPORTANT: Any request involving "video", "walkthrough", "demo", "tutorial", "guided tour", "app tour", "onboarding", "explainer", or "motion" MUST use instagram_reel as the deliverable type. Never show static image styles for video requests.
 
 IMPORTANT: Only show styles when we have relevant references. For pitch decks and presentations, DO NOT include [DELIVERABLE_STYLES] unless the user specifically asks for style references. Instead, focus on understanding their content and goals.
 
@@ -154,7 +159,8 @@ ABSOLUTE REQUIREMENTS:
 2. The marker MUST be on its own line at the end of your response
 3. 20-40 words max, no exclamation marks
 4. Make recommendations based on brand data - don't ask questions you can answer yourself
-5. Use confirmation questions ("Sound good?" "Any changes?") instead of open questions ("What platform?")`;
+5. Use confirmation questions ("Sound good?" "Any changes?") instead of open questions ("What platform?")
+6. EVERY response MUST include [QUICK_OPTIONS] with 2-3 clear next-step actions. Never leave the user without a CTA.`;
 }
 
 export interface ChatMessage {
@@ -405,6 +411,29 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
       quickOptions = JSON.parse(quickOptionsMatch[1].trim());
     } catch (error) {
       logger.warn({ err: error }, "Failed to parse quick options JSON from chat response");
+    }
+  }
+
+  // Fallback: if AI didn't include quick options, generate contextual defaults
+  if (!quickOptions) {
+    const hasStyleMarker = !!deliverableStyleMarker;
+    const messageCount = messages.length;
+
+    if (hasStyleMarker) {
+      quickOptions = {
+        question: "What would you like to do?",
+        options: ["I like the first one", "Show me more options", "Something different"],
+      };
+    } else if (messageCount <= 2) {
+      quickOptions = {
+        question: "What next?",
+        options: ["Sounds good", "Tell me more", "Something different"],
+      };
+    } else {
+      quickOptions = {
+        question: "Ready to proceed?",
+        options: ["Let's do it", "I want to make changes", "Start over"],
+      };
     }
   }
 

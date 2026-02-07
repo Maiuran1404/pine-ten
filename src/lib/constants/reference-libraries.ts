@@ -190,6 +190,16 @@ export const DELIVERABLE_TYPE_ALIASES: Record<string, DeliverableType> = {
   marketing_video: "launch_video",
   commercial: "launch_video",
   video: "launch_video",
+  walkthrough_video: "launch_video",
+  app_walkthrough: "launch_video",
+  demo_video: "launch_video",
+  tutorial_video: "launch_video",
+  onboarding_video: "launch_video",
+  showcase_video: "launch_video",
+  overview_video: "launch_video",
+  explainer_video: "launch_video",
+  intro_video: "launch_video",
+  guided_tour: "launch_video",
 
   // Generic variations
   social_post: "instagram_post",

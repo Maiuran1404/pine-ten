@@ -850,8 +850,8 @@ function DashboardContent() {
                             );
                             if (option) {
                               const fullPrompt = modalNotes
-                                ? `${option.description} Additional notes: ${modalNotes}`
-                                : option.description;
+                                ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                : `${option.prompt}. ${option.description}`;
                               handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);
@@ -870,8 +870,8 @@ function DashboardContent() {
                             );
                             if (option) {
                               const fullPrompt = modalNotes
-                                ? `${option.description} Additional notes: ${modalNotes}`
-                                : option.description;
+                                ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                : `${option.prompt}. ${option.description}`;
                               handleSubmit(fullPrompt);
                               setSelectedCategory(null);
                               setSelectedOption(null);

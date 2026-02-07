@@ -559,6 +559,14 @@ async function handler(request: NextRequest) {
         combinedContext.includes("company video") ||
         combinedContext.includes("startup video") ||
         combinedContext.includes("saas video") ||
+        combinedContext.includes("walkthrough video") ||
+        combinedContext.includes("app walkthrough") ||
+        combinedContext.includes("demo video") ||
+        combinedContext.includes("tutorial video") ||
+        combinedContext.includes("onboarding video") ||
+        combinedContext.includes("showcase video") ||
+        combinedContext.includes("overview video") ||
+        combinedContext.includes("guided tour") ||
         // Generic video requests with product/brand context
         (combinedContext.includes("video") &&
           (combinedContext.includes("product") ||
@@ -570,7 +578,18 @@ async function handler(request: NextRequest) {
             combinedContext.includes("saas") ||
             combinedContext.includes("cinematic") ||
             combinedContext.includes("professional") ||
-            combinedContext.includes("polished")))
+            combinedContext.includes("polished") ||
+            combinedContext.includes("walkthrough") ||
+            combinedContext.includes("demo") ||
+            combinedContext.includes("tutorial") ||
+            combinedContext.includes("onboarding") ||
+            combinedContext.includes("showcase") ||
+            combinedContext.includes("app") ||
+            combinedContext.includes("software") ||
+            combinedContext.includes("platform") ||
+            combinedContext.includes("guided") ||
+            combinedContext.includes("tour") ||
+            combinedContext.includes("overview")))
       ) {
         detectedType = "launch_video";
       } else if (

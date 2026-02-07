@@ -46,6 +46,9 @@ const ALLOWED_TYPES: Record<string, { extensions: string[]; maxSize?: number }> 
 
 const MAX_FILE_SIZE = config.uploads.maxFileSizeMB * 1024 * 1024;
 
+// Increase Next.js body size limit to support large file uploads (default is 10MB)
+export const maxDuration = 60; // 60 seconds timeout for large uploads
+
 /**
  * Validate file magic bytes (first few bytes of file)
  * This prevents MIME type spoofing attacks

@@ -51,7 +51,9 @@ export function NotificationBell({ className, basePath = "/dashboard" }: Notific
   });
 
   const handleNotificationClick = (notification: Notification) => {
-    if (notification.taskId) {
+    // Don't dismiss task assignment notifications — they should persist until acknowledged
+    const persistentTypes = ["TASK_ASSIGNED", "TASK_OFFERED"];
+    if (notification.taskId && !persistentTypes.includes(notification.type)) {
       markAsRead(notification.taskId);
     }
     setOpen(false);

@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
   // Externalize pino and its dependencies to avoid Turbopack bundling issues
   serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
 
+  // Increase body size limit for file uploads (default 10MB)
+  experimental: {
+    proxyClientMaxBodySize: "50mb",
+  },
+
   // Security headers
   async headers() {
     return [

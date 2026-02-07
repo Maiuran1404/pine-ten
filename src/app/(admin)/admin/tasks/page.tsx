@@ -37,7 +37,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye, AlertTriangle, FolderOpen, Clock, CheckCircle2, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ExternalLink, MessageSquare, Eye, AlertTriangle, FolderOpen, Clock, CheckCircle2, Play, Trash2, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import {
   calculateWorkingDeadline,
   getTaskProgressPercent,
@@ -103,7 +115,56 @@ export default function AllTasksPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const limit = 20;
+
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTaskIds.size === filteredTasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(filteredTasks.map((t) => t.id)));
+    }
+  };
+
+  const handleDeleteTasks = async () => {
+    if (selectedTaskIds.size === 0) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/admin/tasks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskIds: Array.from(selectedTaskIds) }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`Deleted ${data.data?.deleted || selectedTaskIds.size} task(s)`);
+        setSelectedTaskIds(new Set());
+        setShowDeleteDialog(false);
+        fetchTasks();
+      } else {
+        const error = await response.json();
+        toast.error(error.error?.message || "Failed to delete tasks");
+      }
+    } catch {
+      toast.error("Failed to delete tasks");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "tasks") {
@@ -313,6 +374,17 @@ export default function AllTasksPage() {
                 className="pl-9"
               />
             </div>
+            {selectedTaskIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? "s" : ""}
+              </Button>
+            )}
           </div>
 
           <Tabs value={filter} onValueChange={setFilter}>
@@ -349,6 +421,13 @@ export default function AllTasksPage() {
                       <Table className="min-w-[800px]">
                         <TableHeader>
                           <TableRow>
+                            <TableHead className="w-10">
+                              <Checkbox
+                                checked={filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length}
+                                onCheckedChange={toggleSelectAll}
+                                aria-label="Select all tasks"
+                              />
+                            </TableHead>
                             <TableHead>Task</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead>Freelancer</TableHead>
@@ -374,7 +453,14 @@ export default function AllTasksPage() {
                             };
 
                             return (
-                              <TableRow key={task.id}>
+                              <TableRow key={task.id} className={selectedTaskIds.has(task.id) ? "bg-muted/50" : ""}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedTaskIds.has(task.id)}
+                                    onCheckedChange={() => toggleTaskSelection(task.id)}
+                                    aria-label={`Select ${task.title}`}
+                                  />
+                                </TableCell>
                                 <TableCell>
                                   <div className="max-w-xs">
                                     <p className="font-medium truncate">{task.title}</p>
@@ -594,6 +680,38 @@ export default function AllTasksPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected task{selectedTaskIds.size !== 1 ? "s" : ""} and all associated files, messages, and data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTasks}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Draft Preview Dialog */}
       <Dialog open={!!selectedDraft} onOpenChange={() => setSelectedDraft(null)}>

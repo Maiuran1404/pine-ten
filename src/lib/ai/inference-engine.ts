@@ -997,13 +997,16 @@ export function generateTaskSummary(inference: InferenceResult): string {
     parts.push(intentDescriptions[inference.intent.value]);
   }
 
-  // Topic (as suffix)
+  // Topic (as suffix) - only if it adds meaningful context
   if (inference.topic.value) {
     // Clean up the topic - capitalize first letter, limit length
-    const cleanTopic = inference.topic.value
+    let cleanTopic = inference.topic.value
       .replace(/^(a|an|the|my|our)\s+/i, "")
+      // Remove trailing dangling prepositions/articles
+      .replace(/\s+(of|for|to|in|on|at|by|with|my|our|the|a|an)\s*$/i, "")
       .trim();
-    if (cleanTopic.length > 0 && cleanTopic.length < 50) {
+
+    if (cleanTopic.length > 3 && cleanTopic.length < 50) {
       const formattedTopic =
         cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
       if (parts.length > 0) {
@@ -1016,10 +1019,12 @@ export function generateTaskSummary(inference: InferenceResult): string {
 
   // Fallback: if we only have topic, make it the whole summary
   if (parts.length === 0 && inference.topic.value) {
-    return (
-      inference.topic.value.charAt(0).toUpperCase() +
-      inference.topic.value.slice(1)
-    );
+    const fallback = inference.topic.value
+      .replace(/\s+(of|for|to|in|on|at|by|with|my|our|the|a|an)\s*$/i, "")
+      .trim();
+    if (fallback.length > 3) {
+      return fallback.charAt(0).toUpperCase() + fallback.slice(1);
+    }
   }
 
   return parts.join(" ") || "New Brief";
@@ -1238,7 +1243,15 @@ export function applyInferenceToBrief(
         newSummary = inference.topic.value;
       }
 
-      if (newSummary && newSummary !== "New Brief") {
+      // Validate summary isn't a fragment (less than 5 chars, or just prepositions/articles)
+      const isSummaryValid = (s: string) => {
+        if (!s || s.length < 5 || s === "New Brief" || s === "New project request") return false;
+        // Reject summaries that are just dangling words like "Of my", "For the"
+        if (/^(of|for|to|in|on|at|by|with|my|our|the|a|an)\b/i.test(s) && s.split(" ").length <= 2) return false;
+        return true;
+      };
+
+      if (newSummary && isSummaryValid(newSummary)) {
         updated.taskSummary = {
           value: newSummary,
           confidence: Math.max(avgConfidence, 0.4),
@@ -1251,7 +1264,7 @@ export function applyInferenceToBrief(
   // FALLBACK: Always try to populate taskSummary from message if empty
   if (!updated.taskSummary.value && messageText) {
     const fallbackSummary = extractSummaryFromMessage(messageText);
-    if (fallbackSummary && fallbackSummary !== "New project request") {
+    if (fallbackSummary && fallbackSummary !== "New project request" && fallbackSummary.length >= 5) {
       updated.taskSummary = {
         value: fallbackSummary,
         confidence: 0.35,
@@ -1306,13 +1319,17 @@ function extractTopicFallback(message: string): string | null {
     .filter((w) => w.length > 2)
     .filter(
       (w) =>
-        !/^(the|and|for|that|with|from|this|have|will|can|could|would|please|need|want|help|create|make|design|build|get|more)$/i.test(
+        !/^(the|and|for|that|with|from|this|have|will|can|could|would|please|need|want|help|create|make|design|build|get|more|just|also|really|very)$/i.test(
           w
         )
     );
 
-  // Find a meaningful content word sequence
-  const contentWords = words.slice(0, 5).join(" ");
+  // Find a meaningful content word sequence — ensure it doesn't end with a dangling word
+  let contentWords = words.slice(0, 5).join(" ");
+  // Remove trailing prepositions, articles, possessives
+  contentWords = contentWords
+    .replace(/\s+(of|for|to|in|on|at|by|with|my|our|the|a|an)\s*$/i, "")
+    .trim();
   if (contentWords.length > 3 && contentWords.length < 40) {
     return contentWords.charAt(0).toUpperCase() + contentWords.slice(1);
   }
@@ -1325,39 +1342,63 @@ function extractTopicFallback(message: string): string | null {
  * Used when pattern-based inference doesn't produce a clear summary
  */
 function extractSummaryFromMessage(message: string): string {
-  // Clean up the message
-  let cleaned = message
-    .replace(
-      /\b(please|can you|could you|i need|i want|help me|create|make|design)\b/gi,
-      ""
-    )
-    .replace(/^\s*[,.\s]+/, "")
-    .trim();
+  // First, try to extract the core request using natural patterns
+  const requestPatterns = [
+    // "I want/need a X" or "Create a X"
+    /(?:i\s+(?:want|need|would like)(?:\s+to)?|(?:please\s+)?(?:create|make|design|build))\s+(?:me\s+)?(?:a\s+)?(.+?)(?:\.|$)/i,
+    // "Can you make X" 
+    /(?:can|could)\s+you\s+(?:create|make|design|build)\s+(?:me\s+)?(?:a\s+)?(.+?)(?:\.|$)/i,
+    // "Looking for X"
+    /(?:looking for|interested in)\s+(?:a\s+)?(.+?)(?:\.|$)/i,
+    // Direct description - "A clear guided tour..."
+    /^(?:a\s+)?(.{15,})$/i,
+  ];
 
-  // If still too long, get the first meaningful clause
-  if (cleaned.length > 80) {
-    // Try to find a natural break point
-    const breakPoints = [" for ", " to ", " that ", " which ", " with "];
-    for (const bp of breakPoints) {
-      const idx = cleaned.toLowerCase().indexOf(bp);
-      if (idx > 15 && idx < 70) {
-        cleaned = cleaned.substring(0, idx);
-        break;
+  for (const pattern of requestPatterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      let extracted = match[1].trim();
+      // Remove trailing incomplete clauses
+      extracted = extracted
+        .replace(/\s+(that|which|who|where|when)\s*$/i, "")
+        .replace(/\s+(of|for|to|in|on|at|by|with)\s*$/i, "")
+        .replace(/\s+(my|our|the|a|an)\s*$/i, "")
+        .trim();
+
+      if (extracted.length >= 5 && extracted.length <= 80) {
+        // Truncate at word boundary if too long
+        if (extracted.length > 60) {
+          const truncated = extracted.substring(0, 60);
+          const lastSpace = truncated.lastIndexOf(" ");
+          extracted = lastSpace > 20 ? truncated.substring(0, lastSpace) : truncated;
+        }
+        return extracted.charAt(0).toUpperCase() + extracted.slice(1);
       }
     }
   }
 
-  // Still too long? Just truncate nicely
+  // Fallback: clean up the message itself
+  let cleaned = message
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Truncate at word boundary
   if (cleaned.length > 60) {
-    cleaned = cleaned.substring(0, 57) + "...";
+    const truncated = cleaned.substring(0, 60);
+    const lastSpace = truncated.lastIndexOf(" ");
+    cleaned = lastSpace > 15 ? truncated.substring(0, lastSpace) : truncated;
   }
 
-  // Capitalize first letter
-  if (cleaned.length > 0) {
-    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  // Remove trailing dangling words
+  cleaned = cleaned
+    .replace(/\s+(of|for|to|in|on|at|by|with|my|our|the|a|an|and|or)\s*$/i, "")
+    .trim();
+
+  if (cleaned.length >= 5) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
-  return cleaned || "New project request";
+  return "New project request";
 }
 
 // =============================================================================

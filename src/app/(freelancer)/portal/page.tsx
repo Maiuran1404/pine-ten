@@ -64,7 +64,7 @@ export default function FreelancerDashboardPage() {
     try {
       const [statsRes, tasksRes, profileRes] = await Promise.all([
         fetch("/api/freelancer/stats"),
-        fetch("/api/tasks?status=IN_PROGRESS&limit=5"),
+        fetch("/api/tasks?limit=5&view=freelancer"),
         fetch("/api/freelancer/profile"),
       ]);
 
@@ -75,7 +75,11 @@ export default function FreelancerDashboardPage() {
 
       if (tasksRes.ok) {
         const data = await tasksRes.json();
-        setActiveTasks(data.tasks || []);
+        const taskList = data.data?.tasks || data.tasks || [];
+        // Show ASSIGNED and IN_PROGRESS tasks (not just IN_PROGRESS)
+        setActiveTasks(taskList.filter((t: { status: string }) => 
+          ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(t.status)
+        ));
       }
 
       if (profileRes.ok) {
@@ -345,6 +349,33 @@ export default function FreelancerDashboardPage() {
           )}
         </div>
       </Card>
+
+      {/* New Task Assignment Banners */}
+      {activeTasks.filter((t) => t.status === "ASSIGNED").length > 0 && (
+        <div className="space-y-3">
+          {activeTasks.filter((t) => t.status === "ASSIGNED").map((task) => (
+            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+              <Card className="border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">New task assigned to you</span>
+                    </div>
+                    <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+                  </div>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+                    View Task
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Stats Row */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">

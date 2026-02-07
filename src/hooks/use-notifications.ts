@@ -69,9 +69,11 @@ export function useNotifications({
           setNotifications((prev) => [notification, ...prev].slice(0, 50));
 
           // Show toast notification
-          if (showToasts && notification.message) {
+          const messageText = typeof notification.message === "string" ? notification.message : String(notification.message || "");
+          const titleText = typeof notification.title === "string" ? notification.title : String(notification.title || "");
+          if (showToasts && messageText) {
             const toastOptions = {
-              description: notification.title,
+              description: titleText || undefined,
               action: notification.taskId
                 ? {
                     label: "View",
@@ -84,16 +86,16 @@ export function useNotifications({
 
             switch (notification.type) {
               case "task_completed":
-                toast.success(notification.message, toastOptions);
+                toast.success(messageText, toastOptions);
                 break;
               case "task_assigned":
-                toast.info(notification.message, toastOptions);
+                toast.info(messageText, toastOptions);
                 break;
               case "new_message":
-                toast(notification.message, toastOptions);
+                toast(messageText, toastOptions);
                 break;
               default:
-                toast(notification.message, toastOptions);
+                toast(messageText, toastOptions);
             }
           }
 

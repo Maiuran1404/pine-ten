@@ -1584,7 +1584,7 @@ export function ChatInterface({
   };
 
   const handleSend = async () => {
-    if ((!input.trim() && uploadedFiles.length === 0) || isLoading) return;
+    if (!input.trim() && uploadedFiles.length === 0) return;
 
     const currentFiles = [...uploadedFiles];
     // Auto-capitalize "i" to "I" in user messages
@@ -3527,42 +3527,28 @@ export function ChatInterface({
 
                 if (!shouldShow) return null;
 
+                // Render as a subtle inline CTA, not a fake AI message
                 return (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex justify-start"
+                    className="flex justify-center"
                   >
-                    <div className="group max-w-[85%] flex items-start gap-3">
-                      {/* Sparkle avatar - matching assistant messages */}
-                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
-                        <Sparkles className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {/* Message bubble with submit prompt */}
-                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
-                          <p className="text-sm text-foreground mb-3">
-                            {showManualSubmit
-                              ? "Looking good! When you're ready, I can generate a summary of your design brief for review."
-                              : "I see you've been building your moodboard. Ready to move forward? I can create a summary of your design brief whenever you'd like."}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              onClick={handleRequestTaskSummary}
-                              disabled={isLoading}
-                              size="sm"
-                              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                            >
-                              <Sparkles className="h-3.5 w-3.5" />
-                              Generate Summary
-                            </Button>
-                            <span className="text-xs text-muted-foreground self-center">
-                              or keep chatting to add more details
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border/50 backdrop-blur-sm">
+                      <Button
+                        onClick={handleRequestTaskSummary}
+                        disabled={isLoading}
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Generate Summary
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        or keep chatting
+                      </span>
                     </div>
                   </motion.div>
                 );
@@ -3696,7 +3682,6 @@ export function ChatInterface({
                     ? "What would you like to create today?"
                     : "Type your message..."
                 }
-                disabled={isLoading}
                 rows={1}
                 className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
                 style={{ height: "auto", overflow: "hidden" }}
@@ -3748,7 +3733,7 @@ export function ChatInterface({
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || isUploading}
+                    disabled={isUploading}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                     title="Attach files"
                   >
@@ -3760,7 +3745,7 @@ export function ChatInterface({
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || isUploading}
+                    disabled={isUploading}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                     title="Add image"
                   >
@@ -3851,7 +3836,7 @@ export function ChatInterface({
                 <Button
                   onClick={handleSend}
                   disabled={
-                    (!input.trim() && uploadedFiles.length === 0) || isLoading
+                    !input.trim() && uploadedFiles.length === 0
                   }
                   className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
                 >

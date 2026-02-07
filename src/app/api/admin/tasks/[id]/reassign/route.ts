@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const reassignSchema = z.object({
-  freelancerId: z.string().uuid("Invalid freelancer ID"),
+  freelancerId: z.string().min(1, "Freelancer ID is required"),
 });
 
 export async function POST(

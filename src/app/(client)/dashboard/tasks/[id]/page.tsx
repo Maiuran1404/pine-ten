@@ -543,7 +543,7 @@ export default function TaskDetailPage() {
               <div className="bg-muted/30 border border-border rounded-lg">
                 {/* Messages */}
                 <div className="p-4 max-h-[400px] overflow-y-auto space-y-4">
-                  {task.messages.length === 0 && deliverables.length === 0 ? (
+                  {task.chatHistory.length === 0 && task.messages.length === 0 && deliverables.length === 0 ? (
                     <div className="text-center py-8">
                       <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
                       <p className="text-sm text-muted-foreground">No messages yet</p>
@@ -551,9 +551,39 @@ export default function TaskDetailPage() {
                     </div>
                   ) : (
                     <>
+                      {/* AI Chat History from task creation */}
+                      {task.chatHistory.length > 0 && (
+                        <div className="space-y-3 pb-3">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Creation Chat</p>
+                          {task.chatHistory.map((msg, i) => (
+                            <div key={`chat-${i}`} className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "")}>
+                              {msg.role === "assistant" && (
+                                <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                                  <Sparkles className="h-3 w-3 text-white" />
+                                </div>
+                              )}
+                              <div className={cn(
+                                "rounded-xl px-3 py-2 text-sm max-w-[80%]",
+                                msg.role === "user"
+                                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-foreground"
+                                  : "bg-muted/50 text-muted-foreground"
+                              )}>
+                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          {task.messages.length > 0 && (
+                            <div className="border-t border-border pt-3 mt-3">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Designer Messages</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Designer/Client Messages */}
                       {task.messages.map((msg) => (
                         <div key={msg.id} className="flex gap-3">
-                          <Avatar className="h-8 w-8 flex-shrink-0">
+                          <Avatar className="h-8 w-8 shrink-0">
                             <AvatarImage src={msg.senderImage || undefined} />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                               {msg.senderName?.[0]?.toUpperCase() || "U"}

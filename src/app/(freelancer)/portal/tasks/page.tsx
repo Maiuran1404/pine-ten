@@ -120,10 +120,10 @@ export default function FreelancerTasksPage() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch("/api/tasks?limit=50");
+      const response = await fetch("/api/tasks?limit=50&view=freelancer");
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.tasks || []);
+        setTasks(data.data?.tasks || data.tasks || []);
       }
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
@@ -277,6 +277,9 @@ export default function FreelancerTasksPage() {
     );
   };
 
+  // Get newly assigned tasks that need attention
+  const newAssignments = tasks.filter((t) => t.status === "ASSIGNED");
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
@@ -285,6 +288,36 @@ export default function FreelancerTasksPage() {
           Manage and track your assigned tasks
         </p>
       </div>
+
+      {/* New Task Assignment Banner */}
+      {newAssignments.length > 0 && (
+        <div className="space-y-3">
+          {newAssignments.map((task) => (
+            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+              <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">New task assigned</span>
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-xs">
+                      Action required
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+                </div>
+                <div className="shrink-0">
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    View Task
+                  </Button>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <Tabs value={filter} onValueChange={setFilter}>
         {/* Sticky tabs on mobile */}
