@@ -381,9 +381,13 @@ export default function BrandPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-8 w-48" />
+      <div className="min-h-full bg-background">
+        <div className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-5">
+            <Skeleton className="h-7 w-32" />
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
           <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>
       </div>
@@ -392,7 +396,13 @@ export default function BrandPage() {
 
   if (!brand) {
     return (
-      <div className="min-h-full bg-background p-6 flex items-center justify-center">
+      <div className="min-h-full bg-background">
+        <div className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-5">
+            <h1 className="text-xl font-semibold text-foreground">My Brand</h1>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20">
         <div className="text-center space-y-4">
           <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
           <h3 className="text-lg font-medium text-foreground">
@@ -415,6 +425,7 @@ export default function BrandPage() {
             <Sparkles className="h-4 w-4 mr-2" />
             Set Up Brand
           </Button>
+        </div>
         </div>
       </div>
     );
@@ -445,19 +456,11 @@ export default function BrandPage() {
         }}
       />
 
-      <div className="relative z-10 flex flex-col lg:flex-row min-h-full">
-        {/* Left side - Form */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:max-w-2xl">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-                My Brand
-              </h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-                Manage your brand identity and visual guidelines
-              </p>
-            </div>
+      {/* Header */}
+      <div className="relative z-10 border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">My Brand</h1>
             <div className="flex gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -520,7 +523,12 @@ export default function BrandPage() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div className="relative z-10 flex flex-col lg:flex-row min-h-full">
+        {/* Left side - Form */}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:max-w-2xl">
           {/* Tabs */}
           <div className="flex gap-1 p-1 bg-muted rounded-xl mb-4 sm:mb-6 border border-border overflow-x-auto">
             {tabs.map((tab) => (

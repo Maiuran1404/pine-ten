@@ -116,7 +116,7 @@ export function AppSidebar() {
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
       {/* Logo and collapse toggle */}
-      <SidebarHeader className="flex flex-row items-center justify-between p-4 border-b border-border">
+      <SidebarHeader className="flex flex-row items-center justify-between p-4">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
             src="/craftedfigureblack.png"

@@ -336,7 +336,26 @@ export default function LibraryPage() {
   const totalFiles = files.length;
 
   return (
-    <div className="min-h-full bg-[#f8faf8] dark:bg-zinc-950 p-4 sm:p-6 space-y-6">
+    <div className="min-h-full bg-background">
+      {/* Header */}
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Library</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New Design
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
         {isLoading ? (
           <LoadingSkeleton />
         ) : files.length === 0 ? (
@@ -424,14 +443,6 @@ export default function LibraryPage() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={() => router.push("/dashboard")}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
                   <Button variant="outline" size="sm" className="gap-2">
                     <Filter className="h-4 w-4" />
                     Filter
@@ -512,6 +523,7 @@ export default function LibraryPage() {
             </div>
           </>
         )}
+      </div>
     </div>
   );
 }

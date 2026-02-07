@@ -180,29 +180,34 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full p-6 space-y-6">
-        <div>
-          <Skeleton className="h-7 w-32" />
-          <Skeleton className="h-4 w-64 mt-2" />
+      <div className="min-h-full bg-background">
+        <div className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-5">
+            <Skeleton className="h-7 w-32" />
+          </div>
         </div>
-        <Skeleton className="h-10 w-64" />
-        <Card className="p-6">
-          <Skeleton className="h-32 w-full" />
-        </Card>
+        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <Card className="p-6">
+            <Skeleton className="h-32 w-full" />
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="min-h-full bg-background">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          Manage your account settings and billing
-        </p>
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Account</h1>
+          </div>
+        </div>
       </div>
 
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
       {/* Tabs */}
       <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
         <TabsList className="w-full sm:w-auto flex overflow-x-auto">
@@ -463,6 +468,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

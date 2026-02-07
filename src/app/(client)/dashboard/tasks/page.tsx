@@ -64,6 +64,7 @@ interface Task {
   deadline?: string | null;
   assignedAt?: string | null;
   moodboardItems?: MoodboardItem[];
+  styleReferences?: string[];
   freelancer?: {
     id: string;
     name: string | null;
@@ -232,7 +233,8 @@ export default function TasksPage() {
 
   const TaskRow = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
-    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
+    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload")
+      || (task.styleReferences?.[0] ? { imageUrl: task.styleReferences[0], name: "Reference" } : null);
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
@@ -352,29 +354,101 @@ export default function TasksPage() {
 
   const TaskCard = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
-    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
+
+    // Get inspiration images from moodboard items, falling back to styleReferences
+    const moodboardImages = task.moodboardItems?.filter(
+      (item) => item.type === "style" || item.type === "image" || item.type === "upload"
+    ) || [];
+    const styleRefImages: { id: string; imageUrl: string; name: string }[] =
+      moodboardImages.length === 0 && task.styleReferences?.length
+        ? task.styleReferences.map((url, i) => ({ id: `ref-${i}`, imageUrl: url, name: `Reference ${i + 1}` }))
+        : [];
+    const allImages = moodboardImages.length > 0 ? moodboardImages : styleRefImages;
+    const imageCount = allImages.length;
+    const extraCount = imageCount > 4 ? imageCount - 4 : 0;
+    const visibleImages = allImages.slice(0, 4);
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
-        <div className="rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors cursor-pointer group overflow-hidden flex flex-col">
-          {/* Card Thumbnail */}
+        <div className="rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors cursor-pointer group overflow-hidden flex flex-col h-full">
+          {/* Card Thumbnail — collage of inspiration images */}
           {displayProperties.thumbnail && (
-            <div className="w-full aspect-[16/10] bg-muted border-b border-border relative overflow-hidden">
-              {thumbnailItem ? (
-                <Image
-                  src={thumbnailItem.imageUrl}
-                  alt={thumbnailItem.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
+            <div className="w-full aspect-[16/10] bg-muted border-b border-border relative overflow-hidden shrink-0">
+              {imageCount === 0 ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <Palette className="h-8 w-8 text-muted-foreground/50" />
                 </div>
+              ) : imageCount === 1 ? (
+                /* Single image — full bleed */
+                <Image
+                  src={visibleImages[0].imageUrl}
+                  alt={visibleImages[0].name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : imageCount === 2 ? (
+                /* Two images — side by side */
+                <div className="w-full h-full grid grid-cols-2 gap-px">
+                  {visibleImages.map((item) => (
+                    <div key={item.id} className="relative overflow-hidden">
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : imageCount === 3 ? (
+                /* Three images — one large left, two stacked right */
+                <div className="w-full h-full grid grid-cols-2 gap-px">
+                  <div className="relative overflow-hidden">
+                    <Image
+                      src={visibleImages[0].imageUrl}
+                      alt={visibleImages[0].name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="grid grid-rows-2 gap-px">
+                    {visibleImages.slice(1).map((item) => (
+                      <div key={item.id} className="relative overflow-hidden">
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Four+ images — 2×2 grid */
+                <div className="w-full h-full grid grid-cols-2 grid-rows-2 gap-px">
+                  {visibleImages.map((item, i) => (
+                    <div key={item.id} className="relative overflow-hidden">
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {/* "+X more" overlay on last cell */}
+                      {i === 3 && extraCount > 0 && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <span className="text-white text-sm font-semibold">+{extraCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
-              {/* Status badge overlay on thumbnail */}
+
+              {/* Status badge overlay */}
               {displayProperties.status && (
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 z-10">
                   <span className={cn(
                     "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border backdrop-blur-sm",
                     status.bgColor,
@@ -389,7 +463,7 @@ export default function TasksPage() {
           )}
 
           {/* Card Body */}
-          <div className="p-3.5 flex flex-col gap-2.5 flex-1">
+          <div className="p-3.5 flex flex-col gap-2 flex-1 min-h-0">
             {/* Title */}
             <h3 className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-foreground/80">
               {task.title}
@@ -397,7 +471,7 @@ export default function TasksPage() {
 
             {/* Description */}
             {displayProperties.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-10">
                 {task.description}
               </p>
             )}
@@ -487,7 +561,7 @@ export default function TasksPage() {
       </div>
 
       {/* Controls Bar - Filter, Display, Search like Dub */}
-      <div className="border-b border-border bg-background">
+      <div className="bg-background">
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Left: Filter & Display Dropdowns */}

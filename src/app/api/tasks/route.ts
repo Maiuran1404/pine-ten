@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
         assignedAt: tasks.assignedAt,
         completedAt: tasks.completedAt,
         moodboardItems: tasks.moodboardItems,
+        styleReferences: tasks.styleReferences,
         freelancerId: tasks.freelancerId,
         freelancerName: users.name,
         freelancerImage: users.image,
@@ -128,6 +129,7 @@ export async function GET(request: NextRequest) {
       assignedAt: task.assignedAt,
       completedAt: task.completedAt,
       moodboardItems: task.moodboardItems,
+      styleReferences: task.styleReferences,
       freelancer: task.freelancerId ? {
         id: task.freelancerId,
         name: task.freelancerName,

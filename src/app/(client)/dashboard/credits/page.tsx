@@ -88,15 +88,17 @@ export default function CreditsPage() {
   };
 
   return (
-    <div className="min-h-full p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="min-h-full bg-background">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Credits</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          Purchase credits to create design tasks
-        </p>
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Credits</h1>
+          </div>
+        </div>
       </div>
 
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
       {/* Current Balance */}
       <div className="rounded-xl overflow-hidden border border-border bg-card">
         <div className="p-6">
@@ -257,6 +259,7 @@ export default function CreditsPage() {
             ))}
           </ul>
         </div>
+      </div>
       </div>
     </div>
   );
