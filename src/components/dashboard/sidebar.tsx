@@ -21,6 +21,7 @@ import {
   Building2,
   User,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useCredits } from "@/providers/credit-provider";
 
@@ -99,6 +100,10 @@ export function AppSidebar() {
               </Link>
             ))}
           </nav>
+          {/* Theme toggle */}
+          <div className="py-2 flex justify-center w-full mt-auto">
+            <ThemeToggle />
+          </div>
         </SidebarContent>
       </Sidebar>
     );
@@ -176,8 +181,12 @@ export function AppSidebar() {
         </div>
       </SidebarContent>
 
-      {/* Credits card at bottom */}
-      <SidebarFooter className="p-4">
+      {/* Theme toggle and Credits card at bottom */}
+      <SidebarFooter className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
         <div className="rounded-2xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-950/40 p-4 border border-green-200/50 dark:border-green-800/50 relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-2 right-2 w-16 h-16 bg-green-200/30 dark:bg-green-700/20 rounded-lg transform rotate-12" />

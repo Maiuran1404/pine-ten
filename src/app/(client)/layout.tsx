@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/sidebar";
-import { Header } from "@/components/dashboard/header";
 import { FullPageLoader } from "@/components/shared/loading";
 import { useSession } from "@/lib/auth-client";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
 import { CreditProvider } from "@/providers/credit-provider";
 
@@ -148,7 +147,10 @@ export default function ClientLayout({
             sphereBlur={180}
             className="!fixed inset-0"
           />
-          <Header />
+          {/* Mobile sidebar trigger */}
+          <div className="md:hidden sticky top-0 z-30 p-2">
+            <SidebarTrigger />
+          </div>
           <main className="relative z-10 flex-1 overflow-auto">{children}</main>
         </SidebarInset>
       </SidebarProvider>
