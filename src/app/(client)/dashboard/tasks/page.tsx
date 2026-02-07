@@ -239,7 +239,7 @@ export default function TasksPage() {
         <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group">
           {/* Thumbnail */}
           {displayProperties.thumbnail && (
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
               {thumbnailItem ? (
                 <Image
                   src={thumbnailItem.imageUrl}
@@ -272,7 +272,7 @@ export default function TasksPage() {
 
           {/* Designer */}
           {displayProperties.designer && (
-            <div className="hidden md:flex items-center gap-2 w-28 flex-shrink-0">
+            <div className="hidden md:flex items-center gap-2 w-28 shrink-0">
               {task.freelancer ? (
                 <>
                   {task.freelancer.image ? (
@@ -300,14 +300,14 @@ export default function TasksPage() {
 
           {/* Date */}
           {displayProperties.createdDate && (
-            <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right flex-shrink-0">
+            <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right shrink-0">
               {formatDate(task.createdAt)}
             </div>
           )}
 
           {/* Status */}
           {displayProperties.status && (
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
                 status.bgColor,
@@ -321,7 +321,7 @@ export default function TasksPage() {
 
           {/* Credits */}
           {displayProperties.credits && (
-            <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end shrink-0">
               <Coins className="h-3 w-3" />
               {task.creditsUsed}
             </div>
@@ -333,7 +333,7 @@ export default function TasksPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 onClick={(e) => e.preventDefault()}
               >
                 <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -345,6 +345,125 @@ export default function TasksPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+      </Link>
+    );
+  };
+
+  const TaskCard = ({ task }: { task: Task }) => {
+    const status = statusConfig[task.status] || statusConfig.PENDING;
+    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
+
+    return (
+      <Link href={`/dashboard/tasks/${task.id}`}>
+        <div className="rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors cursor-pointer group overflow-hidden flex flex-col">
+          {/* Card Thumbnail */}
+          {displayProperties.thumbnail && (
+            <div className="w-full aspect-[16/10] bg-muted border-b border-border relative overflow-hidden">
+              {thumbnailItem ? (
+                <Image
+                  src={thumbnailItem.imageUrl}
+                  alt={thumbnailItem.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Palette className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              )}
+              {/* Status badge overlay on thumbnail */}
+              {displayProperties.status && (
+                <div className="absolute top-2 right-2">
+                  <span className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border backdrop-blur-sm",
+                    status.bgColor,
+                    status.color
+                  )}>
+                    {status.icon}
+                    {status.label}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Card Body */}
+          <div className="p-3.5 flex flex-col gap-2.5 flex-1">
+            {/* Title */}
+            <h3 className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-foreground/80">
+              {task.title}
+            </h3>
+
+            {/* Description */}
+            {displayProperties.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                {task.description}
+              </p>
+            )}
+
+            {/* Status (shown here if thumbnail is hidden) */}
+            {displayProperties.status && !displayProperties.thumbnail && (
+              <div>
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
+                  status.bgColor,
+                  status.color
+                )}>
+                  {status.icon}
+                  {status.label}
+                </span>
+              </div>
+            )}
+
+            {/* Bottom metadata row */}
+            <div className="flex items-center justify-between mt-auto pt-1">
+              {/* Designer */}
+              {displayProperties.designer && (
+                <div className="flex items-center gap-1.5">
+                  {task.freelancer ? (
+                    <>
+                      {task.freelancer.image ? (
+                        <Image
+                          src={task.freelancer.image}
+                          alt={task.freelancer.name || "Designer"}
+                          width={18}
+                          height={18}
+                          className="w-[18px] h-[18px] rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-2.5 w-2.5 text-primary" />
+                        </div>
+                      )}
+                      <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                        {task.freelancer.name?.split(" ")[0]}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Unassigned</span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 ml-auto">
+                {/* Credits */}
+                {displayProperties.credits && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Coins className="h-3 w-3" />
+                    {task.creditsUsed}
+                  </div>
+                )}
+
+                {/* Date */}
+                {displayProperties.createdDate && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(task.createdAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </Link>
     );
@@ -571,18 +690,36 @@ export default function TasksPage() {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-4">
         {isLoading ? (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0">
-                <Skeleton className="w-10 h-10 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-64" />
+          viewMode === "cards" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="rounded-lg border border-border bg-card overflow-hidden">
+                  <Skeleton className="w-full aspect-[16/10]" />
+                  <div className="p-3.5 space-y-2.5">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <div className="flex items-center justify-between pt-1">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
                 </div>
-                <Skeleton className="h-6 w-20 rounded-full" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0">
+                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-64" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+              ))}
+            </div>
+          )
         ) : filteredTasks.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-12 text-center">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
@@ -611,14 +748,23 @@ export default function TasksPage() {
           </div>
         ) : (
           <>
-            {/* Task List */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden">
-              {filteredTasks.map((task) => (
-                <TaskRow key={task.id} task={task} />
-              ))}
-            </div>
+            {viewMode === "cards" ? (
+              /* Cards Grid */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            ) : (
+              /* Rows List */
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                {filteredTasks.map((task) => (
+                  <TaskRow key={task.id} task={task} />
+                ))}
+              </div>
+            )}
 
-            {/* Pagination Footer - Centered like Dub */}
+            {/* Pagination Footer */}
             <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span>
