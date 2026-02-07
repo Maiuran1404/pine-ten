@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { cn } from "@/lib/utils";
 import {
@@ -379,11 +378,27 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                                   : "border-border hover:border-foreground/50 bg-background"
                               )}
                             >
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => handleSkillToggle(skill.id)}
-                                className="pointer-events-none"
-                              />
+                              {/* Visual checkbox indicator (not a button) */}
+                              <div
+                                className={cn(
+                                  "h-4 w-4 shrink-0 rounded-sm border transition-colors",
+                                  isSelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-input"
+                                )}
+                              >
+                                {isSelected && (
+                                  <svg
+                                    className="h-4 w-4 text-current"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={3}
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
                               <span className="text-sm font-medium">{skill.label}</span>
                             </button>
                           );
@@ -408,11 +423,27 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                                   : "border-border hover:border-foreground/50 bg-background"
                               )}
                             >
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => handleSpecializationToggle(spec.id)}
-                                className="pointer-events-none"
-                              />
+                              {/* Visual checkbox indicator (not a button) */}
+                              <div
+                                className={cn(
+                                  "h-4 w-4 shrink-0 rounded-sm border transition-colors",
+                                  isSelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-input"
+                                )}
+                              >
+                                {isSelected && (
+                                  <svg
+                                    className="h-4 w-4 text-current"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={3}
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
                               <span className="text-sm font-medium">{spec.label}</span>
                             </button>
                           );

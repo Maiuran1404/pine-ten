@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Coins,
   Target,
+  DollarSign,
 } from "lucide-react";
 
 interface FreelancerStats {
@@ -407,15 +408,15 @@ export default function FreelancerDashboardPage() {
       {/* Quick Actions */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         <Card className="border-dashed hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/portal/available">
+          <Link href="/portal/tasks">
             <CardHeader className="flex flex-row items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-                <FolderOpen className="h-6 w-6 text-primary-foreground" />
+                <CheckCircle className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <CardTitle className="text-lg">Available Tasks</CardTitle>
+                <CardTitle className="text-lg">My Tasks</CardTitle>
                 <CardDescription>
-                  Browse and claim new tasks matching your skills
+                  View and manage your assigned tasks
                 </CardDescription>
               </div>
             </CardHeader>
@@ -423,15 +424,15 @@ export default function FreelancerDashboardPage() {
         </Card>
 
         <Card className="border-dashed hover:border-primary/50 transition-colors cursor-pointer">
-          <Link href="/portal/tasks">
+          <Link href="/portal/payouts">
             <CardHeader className="flex flex-row items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                <CheckCircle className="h-6 w-6 text-muted-foreground" />
+                <DollarSign className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
-                <CardTitle className="text-lg">My Tasks</CardTitle>
+                <CardTitle className="text-lg">Payouts</CardTitle>
                 <CardDescription>
-                  View and manage your assigned tasks
+                  View your earnings and request payouts
                 </CardDescription>
               </div>
             </CardHeader>
@@ -467,15 +468,9 @@ export default function FreelancerDashboardPage() {
             </div>
           ) : activeTasks.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                No active tasks. Browse available tasks to get started!
+              <p className="text-muted-foreground">
+                No active tasks. New tasks will be assigned to you automatically.
               </p>
-              <Button asChild>
-                <Link href="/portal/available">
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Browse Tasks
-                </Link>
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">

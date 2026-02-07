@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
-import { useCredits } from "@/providers/credit-provider";
+import { CreditContext } from "@/providers/credit-provider";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -17,7 +17,9 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, basePath = "/dashboard", showUpgrade = true }: HeaderProps) {
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
-  const { credits } = useCredits();
+  // Use context directly to avoid throwing error when not wrapped in CreditProvider
+  const creditContext = useContext(CreditContext);
+  const credits = creditContext?.credits;
 
   return (
     <>

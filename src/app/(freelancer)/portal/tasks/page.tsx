@@ -242,14 +242,13 @@ export default function FreelancerTasksPage() {
     );
   };
 
-  // Empty state component with actionable CTAs
+  // Empty state component
   const EmptyState = ({ type }: { type: string }) => {
-    const states: Record<string, { icon: React.ReactNode; title: string; description: string; action?: { label: string; href: string } }> = {
+    const states: Record<string, { icon: React.ReactNode; title: string; description: string }> = {
       active: {
         icon: <Sparkles className="h-12 w-12 text-muted-foreground" />,
         title: "No active tasks",
-        description: "Browse available tasks and claim one to get started",
-        action: { label: "Browse Available Tasks", href: "/portal/available" },
+        description: "New tasks will be assigned to you automatically. Check back soon!",
       },
       submitted: {
         icon: <FileCheck className="h-12 w-12 text-muted-foreground" />,
@@ -260,7 +259,6 @@ export default function FreelancerTasksPage() {
         icon: <FolderOpen className="h-12 w-12 text-muted-foreground" />,
         title: "No completed tasks yet",
         description: "Tasks you've successfully completed will be shown here",
-        action: activeTasks.length > 0 ? undefined : { label: "Find Your First Task", href: "/portal/available" },
       },
     };
 
@@ -271,15 +269,9 @@ export default function FreelancerTasksPage() {
         <CardContent className="py-12 text-center">
           <div className="flex justify-center mb-4">{state.icon}</div>
           <h3 className="text-lg font-semibold mb-2">{state.title}</h3>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+          <p className="text-muted-foreground max-w-md mx-auto">
             {state.description}
           </p>
-          {state.action && (
-            <Button onClick={() => router.push(state.action!.href)}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              {state.action.label}
-            </Button>
-          )}
         </CardContent>
       </Card>
     );

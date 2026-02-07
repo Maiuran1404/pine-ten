@@ -11,7 +11,7 @@ interface CreditContextType {
   deductCredits: (amount: number) => void;
 }
 
-const CreditContext = createContext<CreditContextType | null>(null);
+export const CreditContext = createContext<CreditContextType | null>(null);
 
 export function CreditProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();

@@ -118,9 +118,11 @@ export default function AllTasksPage() {
     try {
       const response = await fetch(`/api/admin/tasks?limit=${limit}&offset=${page * limit}`);
       if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks || []);
-        setHasMore((data.tasks || []).length === limit);
+        const result = await response.json();
+        // successResponse wraps data in { success: true, data: { tasks: [...] } }
+        const taskList = result.data?.tasks || result.tasks || [];
+        setTasks(taskList);
+        setHasMore(taskList.length === limit);
       }
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
@@ -134,8 +136,10 @@ export default function AllTasksPage() {
     try {
       const response = await fetch("/api/admin/drafts");
       if (response.ok) {
-        const data = await response.json();
-        setDrafts(data.drafts || []);
+        const result = await response.json();
+        // successResponse wraps data in { success: true, data: { drafts: [...] } }
+        const draftList = result.data?.drafts || result.drafts || [];
+        setDrafts(draftList);
       }
     } catch (error) {
       console.error("Failed to fetch drafts:", error);
