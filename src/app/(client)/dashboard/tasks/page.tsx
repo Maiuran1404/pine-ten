@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import {
   MessageSquarePlus,
-  Calendar,
   Coins,
   Clock,
   CheckCircle2,
@@ -15,13 +21,12 @@ import {
   User,
   Palette,
   MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Search,
   SlidersHorizontal,
-  LayoutGrid,
-  List,
+  ChevronDown,
+  ListFilter,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -69,16 +74,24 @@ const statusConfig: Record<string, { color: string; bgColor: string; label: stri
   CANCELLED: { color: "text-red-600", bgColor: "bg-red-50 border-red-200", label: "Cancelled", icon: <AlertCircle className="h-3 w-3" /> },
 };
 
+const filterOptions = [
+  { value: "all", label: "All Tasks" },
+  { value: "active", label: "Active" },
+  { value: "in_review", label: "In Review" },
+  { value: "completed", label: "Completed" },
+];
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchTasks();
 
-    // Poll for updates every 30 seconds
     const interval = setInterval(() => {
       fetchTasks();
     }, 30000);
@@ -86,13 +99,17 @@ export default function TasksPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
+
   const fetchTasks = async () => {
     try {
-      // Explicitly request client view to show tasks the user created
       const response = await fetch("/api/tasks?limit=50&view=client");
       if (response.ok) {
         const result = await response.json();
-        // API uses successResponse which wraps data in { success: true, data: ... }
         setTasks(result.data?.tasks || result.tasks || []);
       }
     } catch (error) {
@@ -103,11 +120,10 @@ export default function TasksPage() {
   };
 
   const filteredTasks = tasks.filter((task) => {
-    // Filter by status
     if (filter === "active" && ["COMPLETED", "CANCELLED"].includes(task.status)) return false;
+    if (filter === "in_review" && task.status !== "IN_REVIEW") return false;
     if (filter === "completed" && task.status !== "COMPLETED") return false;
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -127,10 +143,12 @@ export default function TasksPage() {
 
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
 
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
+
+  const currentFilter = filterOptions.find(f => f.value === filter) || filterOptions[0];
 
   const TaskRow = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
@@ -169,7 +187,7 @@ export default function TasksPage() {
           </div>
 
           {/* Designer */}
-          <div className="hidden md:flex items-center gap-2 w-32 flex-shrink-0">
+          <div className="hidden md:flex items-center gap-2 w-28 flex-shrink-0">
             {task.freelancer ? (
               <>
                 {task.freelancer.image ? (
@@ -190,12 +208,12 @@ export default function TasksPage() {
                 </span>
               </>
             ) : (
-              <span className="text-xs text-muted-foreground">Finding artist...</span>
+              <span className="text-xs text-muted-foreground">—</span>
             )}
           </div>
 
           {/* Date */}
-          <div className="hidden sm:block text-xs text-muted-foreground w-24 text-right flex-shrink-0">
+          <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right flex-shrink-0">
             {formatDate(task.createdAt)}
           </div>
 
@@ -212,24 +230,29 @@ export default function TasksPage() {
           </div>
 
           {/* Credits */}
-          <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-16 justify-end flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end flex-shrink-0">
             <Coins className="h-3 w-3" />
             {task.creditsUsed}
           </div>
 
           {/* More Actions */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Could open a dropdown menu here
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                onClick={(e) => e.preventDefault()}
+              >
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/tasks/${task.id}`}>View Details</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </Link>
     );
@@ -237,17 +260,12 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-full bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">My Tasks</h1>
-              <p className="text-muted-foreground mt-1">
-                View and manage all your design projects
-              </p>
-            </div>
-            <Button asChild>
+      {/* Header - Minimal like Dub */}
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Tasks</h1>
+            <Button asChild size="sm">
               <Link href="/dashboard">
                 <MessageSquarePlus className="h-4 w-4 mr-2" />
                 New Request
@@ -257,49 +275,123 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-border bg-card">
+      {/* Controls Bar - Filter, Display, Search like Dub */}
+      <div className="border-b border-border bg-background">
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Left: Tabs */}
-            <div className="flex items-center gap-1">
-              {[
-                { value: "all", label: "All Tasks" },
-                { value: "active", label: "Active" },
-                { value: "completed", label: "Completed" },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setFilter(tab.value)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    filter === tab.value
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* Left: Filter & Display Dropdowns */}
+            <div className="flex items-center gap-2">
+              {/* Filter Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-2">
+                    <ListFilter className="h-4 w-4" />
+                    <span>{currentFilter.label}</span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  {filterOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={filter === option.value}
+                      onCheckedChange={() => setFilter(option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Display Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Display</span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuCheckboxItem checked>
+                    Show Designer
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked>
+                    Show Credits
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked>
+                    Show Date
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
-            {/* Right: Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 h-9 pl-9 pr-4 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-              />
+            {/* Right: Search & More */}
+            <div className="flex items-center gap-2">
+              {showSearch ? (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by task or description"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => {
+                      if (!searchQuery) setShowSearch(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setSearchQuery("");
+                        setShowSearch(false);
+                      }
+                    }}
+                    className="w-64 h-9 pl-9 pr-8 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        searchInputRef.current?.focus();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-2"
+                  onClick={() => setShowSearch(true)}
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">Search</span>
+                </Button>
+              )}
+
+              {/* More Options */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => fetchTasks()}>
+                    Refresh
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-6 py-4">
         {isLoading ? (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -323,7 +415,7 @@ export default function TasksPage() {
                 ? "No tasks found"
                 : filter === "all"
                 ? "No tasks yet"
-                : `No ${filter} tasks`}
+                : `No ${currentFilter.label.toLowerCase()}`}
             </h3>
             <p className="text-muted-foreground mb-6">
               {searchQuery
@@ -348,20 +440,20 @@ export default function TasksPage() {
               ))}
             </div>
 
-            {/* Pagination Footer */}
-            <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-              <span>
-                Viewing {filteredTasks.length} of {tasks.length} task{tasks.length !== 1 ? "s" : ""}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled className="h-8">
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled className="h-8">
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+            {/* Pagination Footer - Centered like Dub */}
+            <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4">
+                <span>
+                  Viewing {filteredTasks.length} of {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" disabled className="h-8 px-3">
+                    Previous
+                  </Button>
+                  <Button variant="outline" size="sm" disabled className="h-8 px-3">
+                    Next
+                  </Button>
+                </div>
               </div>
             </div>
           </>
