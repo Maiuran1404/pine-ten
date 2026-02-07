@@ -125,8 +125,8 @@ export default function AdminDashboardPage() {
   const statsConfig = [
     { key: "totalClients", label: "Clients", icon: Users, href: "/admin/clients" },
     { key: "totalFreelancers", label: "Artists", icon: UserCheck, href: "/admin/freelancers" },
-    { key: "pendingApprovals", label: "Pending", icon: AlertTriangle, href: "/admin/verify", highlight: true },
-    { key: "activeTasks", label: "Active", icon: Clock, href: "/admin/tasks" },
+    { key: "pendingApprovals", label: "Pending Artists", icon: AlertTriangle, href: "/admin/freelancers", highlight: true },
+    { key: "activeTasks", label: "Active Tasks", icon: Clock, href: "/admin/tasks" },
     { key: "completedTasks", label: "Completed", icon: CheckCircle, href: "/admin/tasks?status=completed" },
     { key: "totalRevenue", label: "Revenue", icon: DollarSign, href: "/admin/revenue", isCurrency: true },
   ];
