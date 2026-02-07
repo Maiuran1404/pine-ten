@@ -181,7 +181,7 @@ function EmptyState() {
         Start a conversation to create designs and files. All your generated content will appear here.
       </p>
       <Button
-        onClick={() => router.push("/dashboard/chat")}
+        onClick={() => router.push("/dashboard")}
         className="gap-2 bg-green-600 hover:bg-green-700"
       >
         <MessageCircle className="h-4 w-4" />
@@ -428,7 +428,7 @@ export default function LibraryPage() {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9"
-                    onClick={() => router.push("/dashboard/chat")}
+                    onClick={() => router.push("/dashboard")}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

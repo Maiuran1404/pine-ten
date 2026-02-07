@@ -105,6 +105,9 @@ TYPE MAPPING:
 - Ad/banner → static_ad
 - Logo → logo
 - Branding → brand_identity
+- Pitch deck/presentation/slides → presentation_slide
+
+IMPORTANT: Only show styles when we have relevant references. For pitch decks and presentations, DO NOT include [DELIVERABLE_STYLES] unless the user specifically asks for style references. Instead, focus on understanding their content and goals.
 
 RESPONSE FORMAT (when showing styles):
 State your creative direction confidently, show styles.
@@ -264,7 +267,7 @@ ${audienceContext ? "AUDIENCE: Known" : ""}
 You already know their brand. DO NOT ask about: company, industry, audience, colors, fonts.`
     : "";
 
-  const basePrompt = await getSystemPrompt();
+  const basePrompt = getSystemPrompt();
 
   // Build brand detection context
   // NOTE: We don't add brand questions here anymore - we assume the user's saved brand is correct

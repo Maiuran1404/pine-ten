@@ -11,6 +11,7 @@ import {
   taskActivityLog,
   briefs,
   taskOffers,
+  freelancerProfiles,
 } from "@/db/schema";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
@@ -28,7 +29,6 @@ import {
   getActiveConfig,
   detectTaskComplexity,
   detectTaskUrgency,
-  calculateOfferExpiration,
   type TaskData,
   type ArtistScore,
 } from "@/lib/assignment-algorithm";
@@ -282,37 +282,97 @@ export async function POST(request: NextRequest) {
         deadline: taskDeadline,
       };
 
-      // Get algorithm config and rank artists
-      const algorithmConfig = await getActiveConfig();
+      // Rank artists to find the best match
       const rankedArtists = await rankArtistsForTask(taskData, 1);
 
       let bestArtist: ArtistScore | null = null;
-      let offerExpiresAt: Date | null = null;
+      let isFallbackAssignment = false;
 
       if (rankedArtists.length > 0) {
         bestArtist = rankedArtists[0];
-        offerExpiresAt = calculateOfferExpiration(taskUrgency, algorithmConfig);
+      } else {
+        // Fallback: Get ANY approved freelancer (ignore availability)
+        const [fallbackArtist] = await tx
+          .select({
+            userId: freelancerProfiles.userId,
+            name: users.name,
+            email: users.email,
+            timezone: freelancerProfiles.timezone,
+            experienceLevel: freelancerProfiles.experienceLevel,
+            rating: freelancerProfiles.rating,
+            completedTasks: freelancerProfiles.completedTasks,
+            acceptanceRate: freelancerProfiles.acceptanceRate,
+            onTimeRate: freelancerProfiles.onTimeRate,
+            maxConcurrentTasks: freelancerProfiles.maxConcurrentTasks,
+            workingHoursStart: freelancerProfiles.workingHoursStart,
+            workingHoursEnd: freelancerProfiles.workingHoursEnd,
+            acceptsUrgentTasks: freelancerProfiles.acceptsUrgentTasks,
+            vacationMode: freelancerProfiles.vacationMode,
+            skills: freelancerProfiles.skills,
+            specializations: freelancerProfiles.specializations,
+            preferredCategories: freelancerProfiles.preferredCategories,
+          })
+          .from(freelancerProfiles)
+          .innerJoin(users, eq(freelancerProfiles.userId, users.id))
+          .where(eq(freelancerProfiles.status, "APPROVED"))
+          .limit(1);
 
-        // Update task with offer info
+        if (fallbackArtist) {
+          isFallbackAssignment = true;
+          bestArtist = {
+            artist: {
+              userId: fallbackArtist.userId,
+              name: fallbackArtist.name,
+              email: fallbackArtist.email,
+              timezone: fallbackArtist.timezone,
+              experienceLevel: (fallbackArtist.experienceLevel || "JUNIOR") as "JUNIOR" | "MID" | "SENIOR" | "EXPERT",
+              rating: Number(fallbackArtist.rating) || 0,
+              completedTasks: fallbackArtist.completedTasks,
+              acceptanceRate: fallbackArtist.acceptanceRate ? Number(fallbackArtist.acceptanceRate) : null,
+              onTimeRate: fallbackArtist.onTimeRate ? Number(fallbackArtist.onTimeRate) : null,
+              maxConcurrentTasks: fallbackArtist.maxConcurrentTasks,
+              workingHoursStart: fallbackArtist.workingHoursStart || "09:00",
+              workingHoursEnd: fallbackArtist.workingHoursEnd || "18:00",
+              acceptsUrgentTasks: fallbackArtist.acceptsUrgentTasks,
+              vacationMode: fallbackArtist.vacationMode,
+              skills: (fallbackArtist.skills as string[]) || [],
+              specializations: (fallbackArtist.specializations as string[]) || [],
+              preferredCategories: (fallbackArtist.preferredCategories as string[]) || [],
+            },
+            totalScore: 0, // No score for fallback
+            breakdown: {
+              skillScore: 0,
+              timezoneScore: 0,
+              experienceScore: 0,
+              workloadScore: 0,
+              performanceScore: 0,
+            },
+            excluded: false,
+          };
+        }
+      }
+
+      // Always assign if we found any artist
+      if (bestArtist) {
         await tx
           .update(tasks)
           .set({
-            status: "OFFERED",
-            offeredTo: bestArtist.artist.userId,
-            offerExpiresAt,
-            escalationLevel: 1,
+            status: "ASSIGNED",
+            freelancerId: bestArtist.artist.userId,
+            assignedAt: new Date(),
             updatedAt: new Date(),
           })
           .where(eq(tasks.id, newTask.id));
 
-        // Create offer record
+        // Create offer record for tracking purposes (auto-accepted)
         await tx.insert(taskOffers).values({
           taskId: newTask.id,
           artistId: bestArtist.artist.userId,
           matchScore: bestArtist.totalScore.toString(),
           escalationLevel: 1,
-          expiresAt: offerExpiresAt,
-          response: "PENDING",
+          expiresAt: new Date(), // Already assigned
+          response: "ACCEPTED",
+          respondedAt: new Date(),
           scoreBreakdown: bestArtist.breakdown,
         });
       }
@@ -323,7 +383,7 @@ export async function POST(request: NextRequest) {
         actorId: session.user.id,
         actorType: "client",
         action: "created",
-        newStatus: bestArtist ? "OFFERED" : "PENDING",
+        newStatus: bestArtist ? "ASSIGNED" : "PENDING",
         metadata: {
           creditsUsed: creditsRequired,
           category: category || undefined,
@@ -332,20 +392,19 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Log offer if made
+      // Log assignment if made
       if (bestArtist) {
         await tx.insert(taskActivityLog).values({
           taskId: newTask.id,
           actorId: null,
           actorType: "system",
-          action: "offered",
+          action: "assigned",
           previousStatus: "PENDING",
-          newStatus: "OFFERED",
+          newStatus: "ASSIGNED",
           metadata: {
-            artistId: bestArtist.artist.userId,
-            artistName: bestArtist.artist.name,
+            freelancerName: bestArtist.artist.name,
             matchScore: bestArtist.totalScore,
-            expiresAt: offerExpiresAt?.toISOString(),
+            isFallback: isFallbackAssignment,
           },
         });
       }
@@ -397,8 +456,7 @@ export async function POST(request: NextRequest) {
 
       return {
         task: newTask,
-        offeredTo: bestArtist,
-        offerExpiresAt,
+        assignedTo: bestArtist,
         companyId: userCompanyId
       };
     });
@@ -434,25 +492,25 @@ export async function POST(request: NextRequest) {
       logger.error({ err: error, taskId: result.task.id }, "Failed to send admin WhatsApp notification");
     }
 
-    // Notify artist of the offer (not assignment - they need to accept)
-    if (result.offeredTo) {
+    // Notify artist of the assignment
+    if (result.assignedTo) {
       try {
         await notify({
-          userId: result.offeredTo.artist.userId,
-          type: "TASK_OFFERED",
-          title: "New Task Offer",
-          content: `You have been offered a new task: ${title}. Accept within the time limit to claim it.`,
+          userId: result.assignedTo.artist.userId,
+          type: "TASK_ASSIGNED",
+          title: "New Task Assigned",
+          content: `You have been assigned a new task: ${title}. Get started when you're ready!`,
           taskId: result.task.id,
           taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
           additionalData: {
             taskTitle: title,
-            matchScore: result.offeredTo.totalScore.toString(),
+            matchScore: result.assignedTo.totalScore.toString(),
           },
         });
       } catch (error) {
         logger.error(
-          { err: error, artistId: result.offeredTo.artist.userId },
-          "Failed to send artist offer notification"
+          { err: error, artistId: result.assignedTo.artist.userId },
+          "Failed to send artist assignment notification"
         );
       }
     }
@@ -462,8 +520,8 @@ export async function POST(request: NextRequest) {
         taskId: result.task.id,
         userId: session.user.id,
         creditsUsed: creditsRequired,
-        offeredTo: result.offeredTo?.artist.userId,
-        matchScore: result.offeredTo?.totalScore,
+        assignedTo: result.assignedTo?.artist.userId,
+        matchScore: result.assignedTo?.totalScore,
       },
       "Task created successfully"
     );
@@ -471,10 +529,9 @@ export async function POST(request: NextRequest) {
     return successResponse(
       {
         taskId: result.task.id,
-        status: result.offeredTo ? "OFFERED" : "PENDING",
-        offeredTo: result.offeredTo?.artist.name || null,
-        matchScore: result.offeredTo?.totalScore || null,
-        expiresAt: result.offerExpiresAt?.toISOString() || null,
+        status: result.assignedTo ? "ASSIGNED" : "PENDING",
+        assignedTo: result.assignedTo?.artist.name || null,
+        matchScore: result.assignedTo?.totalScore || null,
       },
       201
     );

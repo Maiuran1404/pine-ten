@@ -27,6 +27,8 @@ export default function ClientLayout({
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   // Check if we're on the chat page - which has its own layout
+  // Note: /dashboard/chat now redirects to /dashboard, but we keep this check
+  // in case anyone lands on the redirect page briefly
   const isChatPage = pathname?.startsWith("/dashboard/chat");
 
   // Redirect based on auth state only (NOT role)

@@ -132,7 +132,21 @@ export async function POST(request: NextRequest) {
       throw Errors.unauthorized();
     }
 
-    const formData = await request.formData();
+    // Verify content type is multipart/form-data
+    const contentType = request.headers.get("content-type");
+    if (!contentType || !contentType.includes("multipart/form-data")) {
+      logger.warn({ contentType }, "Invalid content type for file upload");
+      throw Errors.badRequest("Invalid request format. Expected multipart/form-data.");
+    }
+
+    // Parse FormData with better error handling
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (parseError) {
+      logger.error({ err: parseError }, "Failed to parse FormData");
+      throw Errors.badRequest("Failed to process file upload. Please try again.");
+    }
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) || "attachments";
 

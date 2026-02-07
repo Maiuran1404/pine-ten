@@ -418,7 +418,113 @@ export default function TaskDetailPage() {
             </div>
           )}
 
-          {/* Chat / Messages with Deliverables - MOVED TO TOP */}
+          {/* Description - MOVED TO TOP */}
+          <GlassCard>
+            <div className="p-5 border-b border-border/40">
+              <h2 className="text-sm font-medium text-foreground">Description</h2>
+            </div>
+            <div className="p-5">
+              <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+            </div>
+          </GlassCard>
+
+          {/* Original Conversation (chatHistory) */}
+          {task.chatHistory && task.chatHistory.length > 0 && (
+            <GlassCard>
+              <div className="p-5 border-b border-border/40">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Request Details</h2>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Your original conversation when creating this task</p>
+              </div>
+              <div className="p-5 space-y-4 max-h-[400px] overflow-y-auto">
+                {task.chatHistory.map((msg, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-medium",
+                      msg.role === "user"
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : "bg-purple-500/10 text-purple-500"
+                    )}>
+                      {msg.role === "user" ? "You" : "AI"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm text-foreground">
+                          {msg.role === "user" ? "You" : "Assistant"}
+                        </span>
+                        {msg.timestamp && (
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(msg.timestamp).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{msg.content}</p>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {msg.attachments.map((attachment, attachIndex) => (
+                            <a
+                              key={attachIndex}
+                              href={attachment.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            >
+                              {attachment.fileType?.startsWith("image/") ? (
+                                <ImageIcon className="h-3.5 w-3.5" />
+                              ) : (
+                                <FileIcon className="h-3.5 w-3.5" />
+                              )}
+                              <span className="max-w-[120px] truncate">{attachment.fileName}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Style References / Inspirations */}
+          {task.styleReferences && task.styleReferences.length > 0 && (
+            <GlassCard>
+              <div className="p-5 border-b border-border/40">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-medium text-foreground">Style Inspirations</h2>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Reference styles selected for this task</p>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {task.styleReferences.map((ref, index) => (
+                    <a
+                      key={index}
+                      href={ref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-square rounded-lg overflow-hidden border border-border/40 bg-muted"
+                    >
+                      <Image
+                        src={ref}
+                        alt={`Style reference ${index + 1}`}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ExternalLink className="h-5 w-5 text-white" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Chat / Messages with Deliverables */}
           <GlassCard>
             <div className="p-5 border-b border-border/40">
               <div className="flex items-center justify-between">
@@ -678,16 +784,6 @@ export default function TaskDetailPage() {
             </div>
           </GlassCard>
 
-          {/* Description */}
-          <GlassCard>
-            <div className="p-5 border-b border-border/40">
-              <h2 className="text-sm font-medium text-foreground">Description</h2>
-            </div>
-            <div className="p-5">
-              <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
-            </div>
-          </GlassCard>
-
           {/* Requirements */}
           {task.requirements && Object.keys(task.requirements).length > 0 && (() => {
             const req = task.requirements as {
@@ -912,8 +1008,21 @@ export default function TaskDetailPage() {
                       <Clock className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Estimated Time</p>
-                      <p className="text-sm font-medium text-foreground">{task.estimatedHours} hours</p>
+                      <p className="text-xs text-muted-foreground">Estimated Completion</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {(() => {
+                          const startDate = task.assignedAt ? new Date(task.assignedAt) : new Date(task.createdAt);
+                          const hours = parseFloat(task.estimatedHours);
+                          const completionDate = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
+                          return completionDate.toLocaleString(undefined, {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          });
+                        })()}
+                      </p>
                     </div>
                   </div>
                 </>

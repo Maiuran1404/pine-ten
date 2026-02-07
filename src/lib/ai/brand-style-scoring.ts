@@ -28,6 +28,9 @@ const SCORING_WEIGHTS = {
 /**
  * Fallback deliverable types for types that may not have styles in the database.
  * When a deliverable type has no styles, we fall back to a related type with available styles.
+ *
+ * IMPORTANT: Types NOT listed here will return empty results if no styles exist.
+ * This is intentional - we don't want to show random/unrelated styles.
  */
 const DELIVERABLE_TYPE_FALLBACKS: Partial<
   Record<DeliverableType, DeliverableType[]>
@@ -39,6 +42,7 @@ const DELIVERABLE_TYPE_FALLBACKS: Partial<
   video_ad: ["launch_video", "static_ad", "instagram_post"],
   launch_video: ["video_ad", "instagram_reel", "static_ad"],
   linkedin_banner: ["web_banner", "static_ad"],
+  // Note: presentation_slide intentionally has NO fallback - don't show random social media styles for presentations
 };
 
 /**
@@ -1086,10 +1090,11 @@ export async function getBrandAwareStylesOfAxis(
     }
   }
 
-  // FALLBACK 3: Get top styles from ANY axis for this deliverable type
+  // FALLBACK 3: Get top styles from ANY axis for this deliverable type (same type, different axis)
+  // This is acceptable because it's still the correct content type
   logger.debug(
     { styleAxis },
-    "[Brand Scoring] No styles found, showing top styles from other axes"
+    "[Brand Scoring] No styles found for axis, checking other axes of same type"
   );
   const anyAxisStyles = await db
     .select({
@@ -1123,8 +1128,9 @@ export async function getBrandAwareStylesOfAxis(
     );
   }
 
-  // FALLBACK 4: Get ANY active styles from fallback types
-  if (fallbacks) {
+  // FALLBACK 4: Only use styles from fallback types if we have explicit fallbacks configured
+  // This prevents showing random/unrelated styles for types like presentation_slide
+  if (fallbacks && fallbacks.length > 0) {
     for (const fallbackType of fallbacks) {
       const anyFallbackStyles = await db
         .select({
@@ -1153,7 +1159,7 @@ export async function getBrandAwareStylesOfAxis(
       if (anyFallbackStyles.length > 0) {
         logger.debug(
           { fallbackType },
-          "[Brand Scoring] Using any styles from fallback"
+          "[Brand Scoring] Using styles from explicit fallback type"
         );
         return scoreStyles(
           anyFallbackStyles,
@@ -1164,9 +1170,11 @@ export async function getBrandAwareStylesOfAxis(
     }
   }
 
-  // Absolute last resort - should rarely happen
-  logger.warn(
-    "[Brand Scoring] No styles found for any fallback - database may be empty"
+  // No styles found and no fallbacks configured - return empty
+  // This is intentional - we don't want to show random/unrelated styles
+  logger.debug(
+    { deliverableType, styleAxis },
+    "[Brand Scoring] No styles found and no fallbacks - returning empty"
   );
   return [];
 }

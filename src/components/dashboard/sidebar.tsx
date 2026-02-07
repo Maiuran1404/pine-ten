@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Plus,
-  MessageCircle,
   CheckSquare,
   FolderOpen,
   Coins,
@@ -36,9 +35,8 @@ export function AppSidebar() {
     router.push("/dashboard");
   };
 
-  // Features menu items - matching chat page design
+  // Features menu items
   const features = [
-    { icon: MessageCircle, label: "Chat", href: "/dashboard/chat" },
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
     { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
     { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
@@ -47,9 +45,6 @@ export function AppSidebar() {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/dashboard/chat") {
-      return pathname?.startsWith("/dashboard/chat");
-    }
     if (href === "/dashboard/tasks") {
       return pathname === href || pathname?.startsWith("/dashboard/tasks/");
     }

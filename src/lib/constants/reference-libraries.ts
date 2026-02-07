@@ -195,6 +195,13 @@ export const DELIVERABLE_TYPE_ALIASES: Record<string, DeliverableType> = {
   social_post: "instagram_post",
   ad: "static_ad",
   banner: "web_banner",
+
+  // Presentation variations
+  pitch_deck: "presentation_slide",
+  presentation: "presentation_slide",
+  slide: "presentation_slide",
+  slides: "presentation_slide",
+  deck: "presentation_slide",
 };
 
 export function normalizeDeliverableType(type: string): DeliverableType {

@@ -289,7 +289,8 @@ function DashboardContent() {
         }
 
         const data = await response.json();
-        return data.file as UploadedFile;
+        // API returns { success: true, data: { file: {...} } }
+        return (data.data?.file || data.file) as UploadedFile;
       });
 
       const newFiles = await Promise.all(uploadPromises);
@@ -441,6 +442,99 @@ function DashboardContent() {
               <p className="text-sm text-muted-foreground mt-2">
                 Images, videos, PDFs, and more
               </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Submitting loading overlay */}
+      <AnimatePresence>
+        {isSending && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-background flex items-center justify-center"
+          >
+            <div className="text-center">
+              {/* Animated logo/icon */}
+              <div className="relative mb-8">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-500/25"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  >
+                    <svg
+                      className="w-10 h-10 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  </motion.div>
+                </motion.div>
+
+                {/* Pulsing ring */}
+                <motion.div
+                  initial={{ scale: 1, opacity: 0.5 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+                  className="absolute inset-0 w-20 h-20 mx-auto rounded-2xl bg-emerald-500"
+                />
+              </div>
+
+              {/* Text */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  Creating your request
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Setting things up for you...
+                </p>
+              </motion.div>
+
+              {/* Animated dots */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center justify-center gap-1.5 mt-6"
+              >
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                    className="w-2 h-2 rounded-full bg-emerald-500"
+                  />
+                ))}
+              </motion.div>
             </div>
           </motion.div>
         )}
@@ -619,16 +713,19 @@ function DashboardContent() {
                     setSelectedOption(null);
                     setModalNotes("");
                   }}
-                  className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border border-border/40 bg-white/80 dark:bg-card/50 backdrop-blur-xl hover:bg-white dark:hover:bg-card/70 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200"
+                  className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border-2 border-border/60 bg-white dark:bg-card/60 backdrop-blur-xl shadow-sm hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 hover:border-emerald-500 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
                 >
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
                     <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <span className="font-medium text-sm text-foreground mb-1">
+                  <span className="font-semibold text-sm text-foreground mb-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
                     {category}
                   </span>
                   <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
                     {description}
+                  </span>
+                  <span className="mt-2 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wide">
+                    Select →
                   </span>
                 </button>
               )

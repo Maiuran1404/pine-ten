@@ -2615,41 +2615,78 @@ export function ChatInterface({
     const userContent = userMessages.map((m) => m.content).join(" ");
     const allContent = messages.map((m) => m.content).join(" ");
 
-    // Extract title from first user message or moodboard context
-    let title = "Design Request";
+    // Extract title from first user message with better context
     const firstUserMsg = userMessages[0]?.content || "";
-
-    // Use user content for category/credit detection (avoid AI response words like "brand")
     const contentLower = userContent.toLowerCase();
-    if (contentLower.includes("carousel")) {
-      title = "Instagram Carousel";
-    } else if (
-      contentLower.includes("instagram") &&
-      contentLower.includes("story")
-    ) {
-      title = "Instagram Stories";
-    } else if (
-      contentLower.includes("instagram") ||
-      contentLower.includes("post")
-    ) {
-      title = "Instagram Posts";
-    } else if (contentLower.includes("linkedin")) {
-      title = "LinkedIn Content";
-    } else if (
-      contentLower.includes("video") ||
-      contentLower.includes("reel")
-    ) {
-      title = "Video Content";
-    } else if (contentLower.includes("logo")) {
-      title = "Logo Design";
-    } else if (contentLower.includes("banner") || contentLower.includes("ad")) {
-      title = "Banner/Ad Design";
+
+    // Extract product/brand name from conversation (look for capitalized words, "for X", etc.)
+    let productContext = "";
+    const forPattern = /(?:for|about|showcasing?|featuring?|promoting?|introducing?)\s+(?:my\s+)?(?:the\s+)?([A-Z][A-Za-z0-9]*(?:\s+[A-Z][A-Za-z0-9]*)*(?:'s)?)/;
+    const forMatch = userContent.match(forPattern);
+    if (forMatch) {
+      productContext = forMatch[1].replace(/'s$/, "");
     }
 
-    // Add context from first message if available
-    const quotedMatch = firstUserMsg.match(/["']([^"']+)["']/);
-    if (quotedMatch && quotedMatch[1].length < 30) {
-      title = `${title} - ${quotedMatch[1]}`;
+    // Extract the purpose/type of content
+    let contentType = "";
+    let baseTitle = "";
+
+    if (contentLower.includes("feature") && (contentLower.includes("video") || contentLower.includes("explainer"))) {
+      contentType = "Feature Explainer";
+      baseTitle = "Video";
+    } else if (contentLower.includes("launch") && contentLower.includes("video")) {
+      contentType = "Launch";
+      baseTitle = "Video";
+    } else if (contentLower.includes("demo") || contentLower.includes("walkthrough")) {
+      contentType = "Product Demo";
+      baseTitle = "Video";
+    } else if (contentLower.includes("testimonial")) {
+      contentType = "Testimonial";
+      baseTitle = contentLower.includes("video") ? "Video" : "Content";
+    } else if (contentLower.includes("carousel")) {
+      baseTitle = "Instagram Carousel";
+    } else if (contentLower.includes("instagram") && contentLower.includes("story")) {
+      baseTitle = "Instagram Stories";
+    } else if (contentLower.includes("instagram") || contentLower.includes("post")) {
+      baseTitle = "Instagram Posts";
+    } else if (contentLower.includes("linkedin")) {
+      baseTitle = "LinkedIn Content";
+    } else if (contentLower.includes("video") || contentLower.includes("reel")) {
+      baseTitle = "Video Content";
+    } else if (contentLower.includes("logo")) {
+      baseTitle = "Logo Design";
+    } else if (contentLower.includes("banner") || contentLower.includes("ad")) {
+      baseTitle = "Banner/Ad Design";
+    } else if (contentLower.includes("pitch") && contentLower.includes("deck")) {
+      baseTitle = "Pitch Deck";
+    } else if (contentLower.includes("presentation")) {
+      baseTitle = "Presentation";
+    } else {
+      baseTitle = "Design Request";
+    }
+
+    // Construct descriptive title
+    let title = baseTitle;
+    if (contentType && productContext) {
+      title = `${productContext} ${contentType} ${baseTitle}`;
+    } else if (productContext) {
+      title = `${productContext} ${baseTitle}`;
+    } else if (contentType) {
+      title = `${contentType} ${baseTitle}`;
+    }
+
+    // Try to add more context from quoted text if title is still generic
+    if (!productContext) {
+      const quotedMatch = firstUserMsg.match(/["']([^"']+)["']/);
+      if (quotedMatch && quotedMatch[1].length < 30) {
+        title = `${title}: ${quotedMatch[1]}`;
+      }
+    }
+
+    // Clean up title (remove redundant words, trim)
+    title = title.replace(/\s+/g, " ").trim();
+    if (title.length > 60) {
+      title = title.substring(0, 57) + "...";
     }
 
     // Build description from conversation
@@ -2857,7 +2894,7 @@ export function ChatInterface({
     }
 
     // Navigate to fresh chat
-    router.push("/dashboard/chat");
+    router.push("/dashboard");
     setShowStartOverDialog(false);
   };
 

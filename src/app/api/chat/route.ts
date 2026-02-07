@@ -765,6 +765,16 @@ async function handler(request: NextRequest) {
       } catch (err) {
         logger.error({ err }, "Error fetching deliverable styles");
       }
+
+      // If no styles were found, clear the marker so UI doesn't show empty style grid
+      if (!deliverableStyles || deliverableStyles.length === 0) {
+        logger.debug(
+          { deliverableType: deliverableStyleMarker?.deliverableType },
+          "No styles found for deliverable type - clearing marker"
+        );
+        deliverableStyleMarker = undefined;
+        deliverableStyles = undefined;
+      }
     }
 
     // Get video references for video deliverable types

@@ -39,6 +39,14 @@ export default function ChatPage() {
   const messageParam = searchParams.get("message");
   const paymentParam = searchParams.get("payment");
 
+  // If no params at all, redirect to dashboard
+  // This prevents showing an empty chat page
+  useEffect(() => {
+    if (!draftParam && !messageParam && !paymentParam) {
+      router.replace("/dashboard");
+    }
+  }, [draftParam, messageParam, paymentParam, router]);
+
   // Initialize drafts directly (only runs once on mount due to lazy initializer)
   const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
     if (typeof window === "undefined") return [];
@@ -97,7 +105,7 @@ export default function ChatPage() {
     const newId = generateDraftId();
     setCurrentDraftId(newId);
     setInitialMessage(null);
-    router.push("/dashboard/chat");
+    router.push("/dashboard");
   };
 
   const handleDraftUpdate = () => {
@@ -114,6 +122,11 @@ export default function ChatPage() {
     { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
   ];
+
+  // Don't render anything if we're about to redirect
+  if (!draftParam && !messageParam && !paymentParam) {
+    return null;
+  }
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-zinc-950">
