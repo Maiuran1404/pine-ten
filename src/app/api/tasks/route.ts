@@ -13,7 +13,7 @@ import {
   taskOffers,
   freelancerProfiles,
 } from "@/db/schema";
-import { eq, desc, and, sql, count } from "drizzle-orm";
+import { eq, desc, and, sql, count, inArray, like } from "drizzle-orm";
 import { notify, adminNotifications, notifyAdminWhatsApp, adminWhatsAppTemplates } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { createTaskSchema } from "@/lib/validations";
@@ -116,6 +116,33 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
+    // Fetch first image attachment per task as fallback thumbnail
+    const taskIds = taskListRaw.map(t => t.id);
+    const imageAttachments = taskIds.length > 0
+      ? await db
+          .select({
+            taskId: taskFiles.taskId,
+            fileUrl: taskFiles.fileUrl,
+            fileName: taskFiles.fileName,
+          })
+          .from(taskFiles)
+          .where(
+            and(
+              inArray(taskFiles.taskId, taskIds),
+              like(taskFiles.fileType, 'image/%'),
+              eq(taskFiles.isDeliverable, false)
+            )
+          )
+      : [];
+
+    // Group by taskId — keep first image per task
+    const thumbnailByTaskId = new Map<string, string>();
+    for (const img of imageAttachments) {
+      if (!thumbnailByTaskId.has(img.taskId)) {
+        thumbnailByTaskId.set(img.taskId, img.fileUrl);
+      }
+    }
+
     // Transform to include nested freelancer object
     const taskList = taskListRaw.map(task => ({
       id: task.id,
@@ -130,6 +157,7 @@ export async function GET(request: NextRequest) {
       completedAt: task.completedAt,
       moodboardItems: task.moodboardItems,
       styleReferences: task.styleReferences,
+      thumbnailUrl: thumbnailByTaskId.get(task.id) || null,
       freelancer: task.freelancerId ? {
         id: task.freelancerId,
         name: task.freelancerName,

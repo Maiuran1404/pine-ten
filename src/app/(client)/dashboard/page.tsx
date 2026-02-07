@@ -546,24 +546,9 @@ function DashboardContent() {
         <div className="text-center mb-8 sm:mb-10">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
             Welcome back,{" "}
-            <span className="relative inline-block">
-              {userName}!
-              <svg
-                className="absolute -bottom-2 left-0 w-full h-5 text-emerald-500"
-                viewBox="0 0 100 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M0 18 Q50 0 100 18"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </svg>
-            </span>
+            <span className="bg-gradient-to-r from-emerald-600 to-green-500 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
+              {userName}
+            </span>!
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground">
             What would you like to create{" "}

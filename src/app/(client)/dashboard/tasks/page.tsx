@@ -65,6 +65,7 @@ interface Task {
   assignedAt?: string | null;
   moodboardItems?: MoodboardItem[];
   styleReferences?: string[];
+  thumbnailUrl?: string | null;
   freelancer?: {
     id: string;
     name: string | null;
@@ -233,8 +234,18 @@ export default function TasksPage() {
 
   const TaskRow = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
-    const thumbnailItem = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload")
-      || (task.styleReferences?.[0] ? { imageUrl: task.styleReferences[0], name: "Reference" } : null);
+    // Thumbnail fallback chain: moodboardItems → styleReferences → thumbnailUrl (uploaded attachments)
+    const moodboardThumb = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
+    const thumbnailUrl = moodboardThumb?.imageUrl
+      || task.styleReferences?.[0]
+      || task.thumbnailUrl
+      || null;
+
+    // Build a more descriptive display — combine title with first line of description if title is short
+    const displayTitle = task.title.length < 25 && task.description
+      ? `${task.title} — ${task.description.split('.')[0]}`
+      : task.title;
+    const displayDescription = task.description;
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
@@ -242,10 +253,10 @@ export default function TasksPage() {
           {/* Thumbnail */}
           {displayProperties.thumbnail && (
             <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
-              {thumbnailItem ? (
+              {thumbnailUrl ? (
                 <Image
-                  src={thumbnailItem.imageUrl}
-                  alt={thumbnailItem.name}
+                  src={thumbnailUrl}
+                  alt={displayTitle}
                   width={40}
                   height={40}
                   className="w-full h-full object-cover"
@@ -262,12 +273,12 @@ export default function TasksPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-medium text-foreground truncate group-hover:text-foreground/80">
-                {task.title}
+                {displayTitle}
               </h3>
             </div>
             {displayProperties.description && (
               <p className="text-xs text-muted-foreground truncate mt-0.5">
-                {task.description}
+                {displayDescription}
               </p>
             )}
           </div>
@@ -355,7 +366,7 @@ export default function TasksPage() {
   const TaskCard = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING;
 
-    // Get inspiration images from moodboard items, falling back to styleReferences
+    // Get inspiration images — fallback chain: moodboardItems → styleReferences → thumbnailUrl
     const moodboardImages = task.moodboardItems?.filter(
       (item) => item.type === "style" || item.type === "image" || item.type === "upload"
     ) || [];
@@ -363,7 +374,11 @@ export default function TasksPage() {
       moodboardImages.length === 0 && task.styleReferences?.length
         ? task.styleReferences.map((url, i) => ({ id: `ref-${i}`, imageUrl: url, name: `Reference ${i + 1}` }))
         : [];
-    const allImages = moodboardImages.length > 0 ? moodboardImages : styleRefImages;
+    const attachmentImages: { id: string; imageUrl: string; name: string }[] =
+      moodboardImages.length === 0 && styleRefImages.length === 0 && task.thumbnailUrl
+        ? [{ id: "attachment-0", imageUrl: task.thumbnailUrl, name: "Attachment" }]
+        : [];
+    const allImages = moodboardImages.length > 0 ? moodboardImages : styleRefImages.length > 0 ? styleRefImages : attachmentImages;
     const imageCount = allImages.length;
     const extraCount = imageCount > 4 ? imageCount - 4 : 0;
     const visibleImages = allImages.slice(0, 4);
