@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Calendar,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Coins,
   Clock,
   AlertTriangle,
@@ -23,15 +18,15 @@ import {
   RefreshCw,
   FileCheck,
   Sparkles,
-  Check,
-  FolderOpen,
+  Search,
+  ChevronDown,
+  ListFilter,
+  X,
+  Eye,
+  User,
+  Calendar,
 } from "lucide-react";
-import {
-  calculateWorkingDeadline,
-  getDeadlineUrgency,
-  formatTimeRemaining,
-  cn,
-} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -45,78 +40,39 @@ interface Task {
   estimatedHours: string | null;
 }
 
-const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
-  ASSIGNED: { variant: "outline", label: "Assigned" },
-  IN_PROGRESS: { variant: "default", label: "In Progress" },
-  IN_REVIEW: { variant: "secondary", label: "Submitted" },
-  REVISION_REQUESTED: { variant: "destructive", label: "Revision Needed" },
-  COMPLETED: { variant: "secondary", label: "Completed" },
+const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
+  ASSIGNED: { color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200", label: "Assigned", icon: <User className="h-3 w-3" /> },
+  IN_PROGRESS: { color: "text-purple-600", bgColor: "bg-purple-50 border-purple-200", label: "In Progress", icon: <RefreshCw className="h-3 w-3" /> },
+  PENDING_ADMIN_REVIEW: { color: "text-amber-600", bgColor: "bg-amber-50 border-amber-200", label: "Under Review", icon: <Clock className="h-3 w-3" /> },
+  IN_REVIEW: { color: "text-orange-600", bgColor: "bg-orange-50 border-orange-200", label: "Client Review", icon: <Eye className="h-3 w-3" /> },
+  REVISION_REQUESTED: { color: "text-red-600", bgColor: "bg-red-50 border-red-200", label: "Revision", icon: <AlertTriangle className="h-3 w-3" /> },
+  COMPLETED: { color: "text-green-600", bgColor: "bg-green-50 border-green-200", label: "Completed", icon: <CheckCircle2 className="h-3 w-3" /> },
 };
 
-// Mini workflow stepper for task cards
-function MiniWorkflowStepper({ status }: { status: string }) {
-  const steps = [
-    { key: "ASSIGNED", icon: Clock, label: "Assigned" },
-    { key: "IN_PROGRESS", icon: RefreshCw, label: "Working" },
-    { key: "IN_REVIEW", icon: FileCheck, label: "Review" },
-    { key: "COMPLETED", icon: CheckCircle2, label: "Done" },
-  ];
-
-  const statusOrder = ["ASSIGNED", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
-  const currentIndex = statusOrder.indexOf(status);
-  const isRevision = status === "REVISION_REQUESTED";
-
-  return (
-    <div className="flex items-center gap-1 w-full">
-      {steps.map((step, index) => {
-        const isCompleted = currentIndex > index || status === "COMPLETED";
-        const isCurrent = status === step.key || (isRevision && step.key === "IN_PROGRESS");
-        const isRevisionStep = isRevision && step.key === "IN_PROGRESS";
-        const Icon = step.icon;
-
-        return (
-          <div key={step.key} className="flex items-center flex-1">
-            <div
-              className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
-                isCompleted && "bg-green-500 text-white",
-                isCurrent && !isRevisionStep && "bg-primary text-primary-foreground",
-                isRevisionStep && "bg-orange-500 text-white",
-                !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
-              )}
-            >
-              {isCompleted ? (
-                <Check className="h-3 w-3" />
-              ) : isRevisionStep ? (
-                <AlertTriangle className="h-3 w-3" />
-              ) : (
-                <Icon className="h-3 w-3" />
-              )}
-            </div>
-            {index < steps.length - 1 && (
-              <div
-                className={cn(
-                  "flex-1 h-0.5 mx-1",
-                  currentIndex > index ? "bg-green-500" : "bg-muted"
-                )}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+const filterOptions = [
+  { value: "all", label: "All Tasks" },
+  { value: "active", label: "Active" },
+  { value: "submitted", label: "Submitted" },
+  { value: "completed", label: "Completed" },
+];
 
 export default function FreelancerTasksPage() {
-  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState("active");
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
 
   const fetchTasks = async () => {
     try {
@@ -132,254 +88,253 @@ export default function FreelancerTasksPage() {
     }
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    if (filter === "active") {
-      return ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
-    }
-    if (filter === "submitted") {
-      return task.status === "IN_REVIEW";
-    }
-    if (filter === "completed") {
-      return task.status === "COMPLETED";
-    }
-    return true;
-  });
+  const filteredTasks = tasks
+    .filter((task) => {
+      if (filter === "active" && !["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status)) return false;
+      if (filter === "submitted" && !["IN_REVIEW", "PENDING_ADMIN_REVIEW"].includes(task.status)) return false;
+      if (filter === "completed" && task.status !== "COMPLETED") return false;
 
-  // Count tasks for badges
-  const activeTasks = tasks.filter((t) =>
-    ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(t.status)
-  );
-  const submittedTasks = tasks.filter((t) => t.status === "IN_REVIEW");
-  const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
-  const revisionTasks = tasks.filter((t) => t.status === "REVISION_REQUESTED");
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          task.title.toLowerCase().includes(query) ||
+          task.description.toLowerCase().includes(query)
+        );
+      }
 
-  const TaskCard = ({ task }: { task: Task }) => {
-    const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline);
-    const urgency = getDeadlineUrgency(task.deadline, workingDeadline);
-    const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  };
+
+  const currentFilter = filterOptions.find(f => f.value === filter) || filterOptions[0];
+
+  // Count tasks by category
+  const activeTasks = tasks.filter(t => ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(t.status));
+  const newAssignments = tasks.filter(t => t.status === "ASSIGNED");
+
+  const TaskRow = ({ task }: { task: Task }) => {
+    const status = statusConfig[task.status] || statusConfig.ASSIGNED;
     const isRevision = task.status === "REVISION_REQUESTED";
-
-    const urgencyStyles: Record<string, string> = {
-      overdue: "text-destructive",
-      urgent: "text-orange-500",
-      warning: "text-yellow-600",
-      safe: "text-muted-foreground",
-    };
 
     return (
       <Link href={`/portal/tasks/${task.id}`}>
-        <Card
-          className={cn(
-            "hover:border-primary/50 transition-colors cursor-pointer h-full",
-            isRevision && "border-orange-500/50 bg-orange-500/5"
-          )}
-        >
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-base sm:text-lg line-clamp-1">{task.title}</CardTitle>
-              <Badge
-                variant={statusConfig[task.status]?.variant || "secondary"}
-                className={cn(
-                  "shrink-0",
-                  isRevision && "bg-orange-500 hover:bg-orange-600"
-                )}
-              >
-                {isRevision && <AlertTriangle className="h-3 w-3 mr-1" />}
-                {statusConfig[task.status]?.label || task.status}
-              </Badge>
+        <div className={cn(
+          "flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group",
+          isRevision && "bg-red-50/50 dark:bg-red-900/5"
+        )}>
+          {/* Status dot */}
+          <div className={cn(
+            "w-2.5 h-2.5 rounded-full shrink-0",
+            task.status === "ASSIGNED" ? "bg-blue-500" :
+            task.status === "IN_PROGRESS" ? "bg-purple-500" :
+            task.status === "REVISION_REQUESTED" ? "bg-red-500 animate-pulse" :
+            task.status === "IN_REVIEW" || task.status === "PENDING_ADMIN_REVIEW" ? "bg-orange-500" :
+            task.status === "COMPLETED" ? "bg-green-500" :
+            "bg-muted-foreground"
+          )} />
+
+          {/* Title and Description */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-foreground truncate group-hover:text-foreground/80">
+                {task.title}
+              </h3>
+              {isRevision && (
+                <span className="text-xs text-red-600 font-medium shrink-0">Action needed</span>
+              )}
             </div>
-            <CardDescription className="line-clamp-2 text-xs sm:text-sm">
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
               {task.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Mini Workflow Stepper */}
-            <div className="pt-1">
-              <MiniWorkflowStepper status={task.status} />
-            </div>
+            </p>
+          </div>
 
-            {/* Revision Alert */}
-            {isRevision && (
-              <div className="flex items-center gap-2 p-2 rounded-md bg-orange-500/10 border border-orange-500/20">
-                <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                  Revision requested - click to view feedback
-                </span>
-              </div>
+          {/* Deadline */}
+          <div className="hidden md:block text-xs text-muted-foreground w-24 text-right shrink-0">
+            {task.deadline ? (
+              <span className="flex items-center gap-1 justify-end">
+                <Calendar className="h-3 w-3" />
+                {new Date(task.deadline).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              </span>
+            ) : (
+              formatDate(task.createdAt)
             )}
+          </div>
 
-            {/* Task metadata */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Coins className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {task.creditsUsed} credits
-              </div>
-              {task.estimatedHours && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  ~{task.estimatedHours}h
-                </div>
-              )}
-              {workingDeadline && isActiveTask && (
-                <div className={cn("flex items-center gap-1", urgency ? urgencyStyles[urgency] : "")}>
-                  {(urgency === "overdue" || urgency === "urgent") && (
-                    <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  )}
-                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Due {workingDeadline.toLocaleDateString()}</span>
-                </div>
-              )}
-              {!workingDeadline && task.deadline && isActiveTask && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  Due {new Date(task.deadline).toLocaleDateString()}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Status */}
+          <div className="shrink-0">
+            <span className={cn(
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
+              status.bgColor,
+              status.color
+            )}>
+              {status.icon}
+              <span className="hidden sm:inline">{status.label}</span>
+            </span>
+          </div>
+
+          {/* Credits */}
+          <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end shrink-0">
+            <Coins className="h-3 w-3" />
+            {task.creditsUsed}
+          </div>
+        </div>
       </Link>
     );
   };
 
-  // Empty state component
-  const EmptyState = ({ type }: { type: string }) => {
-    const states: Record<string, { icon: React.ReactNode; title: string; description: string }> = {
-      active: {
-        icon: <Sparkles className="h-12 w-12 text-muted-foreground" />,
-        title: "No active tasks",
-        description: "New tasks will be assigned to you automatically. Check back soon!",
-      },
-      submitted: {
-        icon: <FileCheck className="h-12 w-12 text-muted-foreground" />,
-        title: "No submitted tasks",
-        description: "Your submitted tasks awaiting client review will appear here",
-      },
-      completed: {
-        icon: <FolderOpen className="h-12 w-12 text-muted-foreground" />,
-        title: "No completed tasks yet",
-        description: "Tasks you've successfully completed will be shown here",
-      },
-    };
-
-    const state = states[type] || states.active;
-
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <div className="flex justify-center mb-4">{state.icon}</div>
-          <h3 className="text-lg font-semibold mb-2">{state.title}</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            {state.description}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Get newly assigned tasks that need attention
-  const newAssignments = tasks.filter((t) => t.status === "ASSIGNED");
-
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Tasks</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          Manage and track your assigned tasks
-        </p>
+    <div className="min-h-full bg-background">
+      {/* Header */}
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">My Tasks</h1>
+            <div className="text-sm text-muted-foreground">
+              {activeTasks.length} active
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* New Task Assignment Banner */}
-      {newAssignments.length > 0 && (
-        <div className="space-y-3">
-          {newAssignments.map((task) => (
-            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-              <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                  <Sparkles className="h-5 w-5 text-emerald-600" />
+      {/* Controls Bar */}
+      <div className="bg-background">
+        <div className="max-w-6xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Filter */}
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-2">
+                    <ListFilter className="h-4 w-4" />
+                    <span>{currentFilter.label}</span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  {filterOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={filter === option.value}
+                      onCheckedChange={() => setFilter(option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Right: Search */}
+            <div className="flex items-center gap-2">
+              {showSearch ? (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search tasks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setShowSearch(false); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { setSearchQuery(""); setShowSearch(false); }
+                    }}
+                    className="w-64 h-9 pl-9 pr-8 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">New task assigned</span>
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-xs">
-                      Action required
-                    </Badge>
+              ) : (
+                <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => setShowSearch(true)}>
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">Search</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4">
+        {/* New Assignment Banners */}
+        {newAssignments.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {newAssignments.map((task) => (
+              <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+                <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
+                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">New: </span>
+                    <span className="text-sm text-foreground">{task.title}</span>
                   </div>
-                  <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{task.description}</p>
-                </div>
-                <div className="shrink-0">
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    View Task
+                  <Button size="sm" variant="ghost" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 shrink-0">
+                    Start Working
                   </Button>
                 </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Task List */}
+        {isLoading ? (
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0">
+                <Skeleton className="w-2.5 h-2.5 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <Tabs value={filter} onValueChange={setFilter}>
-        {/* Sticky tabs on mobile */}
-        <div className="sticky top-0 z-10 bg-background pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent">
-          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
-            <TabsTrigger value="active" className="text-xs sm:text-sm relative">
-              Active
-              {activeTasks.length > 0 && (
-                <Badge
-                  variant={revisionTasks.length > 0 ? "destructive" : "secondary"}
-                  className="ml-1.5 h-5 px-1.5 text-xs"
-                >
-                  {activeTasks.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="submitted" className="text-xs sm:text-sm">
-              Submitted
-              {submittedTasks.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
-                  {submittedTasks.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="text-xs sm:text-sm">
-              Completed
-              {completedTasks.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
-                  {completedTasks.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value={filter} className="mt-4 sm:mt-6">
-          {isLoading ? (
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-full mt-2" />
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
+            ))}
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card p-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <FileCheck className="h-6 w-6 text-muted-foreground" />
             </div>
-          ) : filteredTasks.length === 0 ? (
-            <EmptyState type={filter} />
-          ) : (
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+            <h3 className="text-lg font-medium text-foreground mb-1">
+              {searchQuery ? "No tasks found" : filter === "all" ? "No tasks yet" : `No ${currentFilter.label.toLowerCase()}`}
+            </h3>
+            <p className="text-muted-foreground">
+              {searchQuery ? "Try a different search term" : "New tasks will be assigned to you automatically"}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
               {filteredTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+                <TaskRow key={task.id} task={task} />
               ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+
+            {/* Footer */}
+            <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
+              Viewing {filteredTasks.length} of {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

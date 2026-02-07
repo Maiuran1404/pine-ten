@@ -61,7 +61,7 @@ export default function AdminVerifyListPage() {
       const response = await fetch("/api/admin/verify");
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.tasks || []);
+        setTasks(data.data?.tasks || data.tasks || []);
       } else {
         setError("Failed to load pending verifications");
       }
@@ -105,20 +105,21 @@ export default function AdminVerifyListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Verify Deliverables</h1>
-          <p className="text-muted-foreground">
-            Review and approve deliverables before they&apos;re sent to clients
-          </p>
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Verify Deliverables</h1>
+            <Button variant="outline" size="sm" onClick={fetchPendingTasks} disabled={isLoading}>
+              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={fetchPendingTasks} disabled={isLoading}>
-          <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-          Refresh
-        </Button>
       </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
 
       {/* Stats */}
       {isLoading ? (
@@ -268,6 +269,7 @@ export default function AdminVerifyListPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }

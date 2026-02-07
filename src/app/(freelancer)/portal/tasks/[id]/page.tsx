@@ -178,6 +178,11 @@ const statusConfig: Record<
     label: "In Review",
     icon: <FileText className="h-4 w-4" />,
   },
+  PENDING_ADMIN_REVIEW: {
+    variant: "outline",
+    label: "Under Review",
+    icon: <Clock className="h-4 w-4" />,
+  },
   REVISION_REQUESTED: {
     variant: "destructive",
     label: "Revision Requested",
@@ -332,7 +337,7 @@ export default function FreelancerTaskDetailPage() {
         }
 
         const data = await response.json();
-        return data.file as UploadedFile;
+        return (data.data?.file || data.file) as UploadedFile;
       });
 
       const newFiles = await Promise.all(uploadPromises);
@@ -372,9 +377,10 @@ export default function FreelancerTaskDetailPage() {
       });
 
       if (response.ok) {
-        toast.success("Deliverable submitted successfully!");
+        toast.success("Deliverable submitted! It's now under review.");
         setUploadedFiles([]);
         setMessage("");
+        setActiveTab("history");
         fetchTask(params.id as string);
       } else {
         const error = await response.json();
@@ -569,14 +575,14 @@ export default function FreelancerTaskDetailPage() {
           </Button>
         </div>
       )}
-      {task.status === "IN_REVIEW" && (
-        <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">
-          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-            <Clock className="h-5 w-5 text-muted-foreground" />
+      {(task.status === "IN_REVIEW" || task.status === "PENDING_ADMIN_REVIEW") && (
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <p className="font-semibold text-foreground">Waiting for review</p>
-            <p className="text-sm text-muted-foreground">Your work has been submitted. The client is reviewing it.</p>
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300">Submitted successfully</p>
+            <p className="text-sm text-emerald-700/70 dark:text-emerald-400/70">Your work is being reviewed. You&apos;ll be notified of any updates.</p>
           </div>
         </div>
       )}
@@ -991,59 +997,79 @@ export default function FreelancerTaskDetailPage() {
                 </div>
               </div>
 
-              {task.estimatedHours && (
-                <>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Estimated Time</p>
-                      <p className="font-medium">{task.estimatedHours} hours</p>
-                    </div>
-                  </div>
-                </>
-              )}
+              {(() => {
+                // Calculate artist deadline at 50% of the total time window
+                const assignedDate = task.assignedAt ? new Date(task.assignedAt) : null;
+                const clientDeadline = task.deadline ? new Date(task.deadline) : null;
 
-              {(workingDeadline || task.deadline) && (
-                <>
-                  <Separator />
-                  {workingDeadline && isActiveTask ? (
+                // Compute the artist deadline: 50% of (assigned → client deadline)
+                // Fallback: use estimatedHours from assignedAt if no client deadline
+                let artistDeadline: Date | null = null;
+                if (assignedDate && clientDeadline) {
+                  const totalMs = clientDeadline.getTime() - assignedDate.getTime();
+                  artistDeadline = new Date(assignedDate.getTime() + totalMs * 0.5);
+                } else if (assignedDate && task.estimatedHours) {
+                  // Fallback: use estimated hours as the artist deadline
+                  const estMs = parseFloat(task.estimatedHours) * 60 * 60 * 1000;
+                  artistDeadline = new Date(assignedDate.getTime() + estMs);
+                }
+
+                if (!artistDeadline) return null;
+
+                const now = new Date();
+                const remainingMs = artistDeadline.getTime() - now.getTime();
+                const isOverdue = remainingMs < 0;
+                const absMs = Math.abs(remainingMs);
+                const days = Math.floor(absMs / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((absMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((absMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                let countdown = "";
+                if (days > 0) countdown = `${days}d ${hours}h`;
+                else if (hours > 0) countdown = `${hours}h ${mins}m`;
+                else countdown = `${mins}m`;
+
+                const isUrgent = !isOverdue && remainingMs < 24 * 60 * 60 * 1000;
+
+                return (
+                  <>
+                    <Separator />
                     <div className={cn(
                       "flex items-start gap-3 p-3 -mx-3 rounded-lg border",
-                      urgency ? urgencyBgStyles[urgency] : ""
+                      isOverdue ? "bg-destructive/10 border-destructive/20" :
+                      isUrgent ? "bg-orange-500/10 border-orange-500/20" :
+                      "border-transparent"
                     )}>
-                      {(urgency === "overdue" || urgency === "urgent") ? (
-                        <AlertTriangle className={cn("h-5 w-5 mt-0.5", urgency ? urgencyStyles[urgency] : "")} />
-                      ) : (
-                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      )}
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Your Deadline</p>
-                        <p className={cn("font-medium", urgency ? urgencyStyles[urgency] : "")}>
-                          {workingDeadline.toLocaleDateString()}
-                        </p>
-                        <p className={cn("text-sm", urgency ? urgencyStyles[urgency] : "text-muted-foreground")}>
-                          {formatTimeRemaining(workingDeadline)}
-                        </p>
-                      </div>
-                    </div>
-                  ) : task.deadline ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                        isOverdue ? "bg-destructive/10" : isUrgent ? "bg-orange-500/10" : "bg-muted"
+                      )}>
+                        {isOverdue ? (
+                          <AlertTriangle className="h-5 w-5 text-destructive" />
+                        ) : (
+                          <Clock className={cn("h-5 w-5", isUrgent ? "text-orange-500" : "text-muted-foreground")} />
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Deadline</p>
-                        <p className="font-medium">
-                          {new Date(task.deadline).toLocaleDateString()}
+                        <p className="text-sm text-muted-foreground">Your Deadline</p>
+                        <p className={cn(
+                          "font-medium",
+                          isOverdue ? "text-destructive" : isUrgent ? "text-orange-500" : ""
+                        )}>
+                          {artistDeadline.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })},{" "}
+                          {artistDeadline.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        <p className={cn(
+                          "text-sm",
+                          isOverdue ? "text-destructive" : isUrgent ? "text-orange-500" : "text-muted-foreground"
+                        )}>
+                          ({isOverdue ? `overdue by ${countdown}` : `${countdown} remaining`})
                         </p>
                       </div>
                     </div>
-                  ) : null}
-                </>
-              )}
+                  </>
+                );
+              })()}
 
               <Separator />
 

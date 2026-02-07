@@ -353,17 +353,21 @@ export default function PayoutsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-4 sm:p-0">
-        <div>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72 mt-2" />
+      <div className="min-h-full bg-background">
+        <div className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-5">
+            <Skeleton className="h-7 w-32" />
+          </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+          <Skeleton className="h-4 w-72" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+          <Skeleton className="h-64" />
         </div>
-        <Skeleton className="h-64" />
       </div>
     );
   }
@@ -376,45 +380,15 @@ export default function PayoutsPage() {
     stripeConnectStatus?.payoutsEnabled;
 
   return (
-    <div className="space-y-6 p-4 sm:p-0">
+    <div className="min-h-full bg-background">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Payouts
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
-            Track your earnings and request payouts
-          </p>
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <h1 className="text-xl font-semibold text-foreground">Payouts</h1>
         </div>
-        <Button
-          size="lg"
-          disabled={!canRequestPayout}
-          onClick={() => setPayoutDialogOpen(true)}
-          className="gap-2"
-        >
-          <Wallet className="h-4 w-4" />
-          Request Payout
-          {!canRequestPayout && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 ml-1" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  {!stripeConnectStatus?.connected ? (
-                    <p>Connect your Stripe account first</p>
-                  ) : !stripeConnectStatus?.payoutsEnabled ? (
-                    <p>Complete Stripe onboarding to enable payouts</p>
-                  ) : (
-                    <p>Minimum {minimumPayout} credits required for payout</p>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </Button>
       </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
 
       {/* Stripe Connect Banner - if not connected */}
       {(!stripeConnectStatus?.connected || !stripeConnectStatus?.payoutsEnabled) && (
@@ -549,8 +523,8 @@ export default function PayoutsPage() {
         </Card>
       </div>
 
-      {/* What You Can Earn - Task-based Earnings */}
-      <Card>
+      {/* What You Can Earn - Hidden for now */}
+      {false && <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
@@ -664,7 +638,7 @@ export default function PayoutsPage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Monthly Comparison */}
       <Card>
@@ -1057,6 +1031,7 @@ export default function PayoutsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

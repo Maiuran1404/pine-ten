@@ -716,6 +716,60 @@ export const emailTemplates = {
     `,
   }),
 
+  taskAssignedToClient: (clientName: string, taskTitle: string, designerName: string, taskUrl: string) => ({
+    subject: `Designer Assigned: ${taskTitle}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #16a34a;">Your Task Has Been Assigned</h2>
+        <p>Hi ${clientName},</p>
+        <p><strong>${designerName}</strong> has been assigned to work on <strong>${taskTitle}</strong>.</p>
+        <p>They'll start working on your task shortly. You'll receive updates as work progresses.</p>
+        <a href="${taskUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Task</a>
+        <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
+  deliverableSubmittedToClient: (clientName: string, taskTitle: string, designerName: string, taskUrl: string) => ({
+    subject: `Work Submitted: ${taskTitle}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #16a34a;">Deliverables Submitted</h2>
+        <p>Hi ${clientName},</p>
+        <p><strong>${designerName}</strong> has submitted deliverables for <strong>${taskTitle}</strong>.</p>
+        <p>Our team is reviewing the work to ensure quality. You'll be notified once it's ready for your review.</p>
+        <a href="${taskUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Task</a>
+        <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
+  taskApprovedForClient: (clientName: string, taskTitle: string, assetsUrl: string) => ({
+    subject: `Task Complete: ${taskTitle}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #16a34a;">Your Task is Complete!</h2>
+        <p>Hi ${clientName},</p>
+        <p>Your task <strong>${taskTitle}</strong> has been marked as complete. All deliverables are now available in your Assets.</p>
+        <a href="${assetsUrl}" style="display: inline-block; background: #16a34a; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Assets</a>
+        <p style="margin-top: 24px; color: #666;">- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
+  taskApprovedForFreelancer: (freelancerName: string, taskTitle: string, credits: number) => ({
+    subject: `Task Approved: ${taskTitle}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #16a34a;">Your Work Has Been Approved!</h2>
+        <p>Hi ${freelancerName},</p>
+        <p>Great news — the client has approved your work on <strong>${taskTitle}</strong>.</p>
+        <p><strong>${credits} credits</strong> have been added to your earnings balance.</p>
+        <p style="margin-top: 24px; color: #666;">Keep up the excellent work!<br/>- The ${config.app.name} Team</p>
+      </div>
+    `,
+  }),
+
   lowCredits: (userName: string, remainingCredits: number, purchaseUrl: string) => ({
     subject: `Low Credit Balance Alert`,
     html: `

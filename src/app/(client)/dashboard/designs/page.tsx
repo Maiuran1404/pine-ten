@@ -176,9 +176,9 @@ function EmptyState() {
       <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-6">
         <FolderOpen className="h-10 w-10 text-green-600" />
       </div>
-      <h3 className="text-xl font-semibold text-foreground mb-2">Your library is empty</h3>
+      <h3 className="text-xl font-semibold text-foreground mb-2">No assets yet</h3>
       <p className="text-muted-foreground text-center max-w-md mb-6">
-        Start a conversation to create designs and files. All your generated content will appear here.
+        Completed task deliverables and generated designs will appear here.
       </p>
       <Button
         onClick={() => router.push("/dashboard")}
@@ -257,21 +257,25 @@ export default function LibraryPage() {
         allFiles.push(...designs.map(designToLibraryFile));
       }
 
-      // Fetch tasks with deliverables
-      const tasksResponse = await fetch("/api/tasks?view=client&status=COMPLETED");
+      // Fetch tasks with deliverables (completed + in review)
+      const tasksResponse = await fetch("/api/tasks?view=client&limit=50");
       if (tasksResponse.ok) {
         const tasksData = await tasksResponse.json();
-        const tasks = tasksData.tasks || [];
+        const tasks = tasksData.data?.tasks || tasksData.tasks || [];
+        const completedTasks = tasks.filter((t: { status: string }) =>
+          ["COMPLETED", "IN_REVIEW"].includes(t.status)
+        );
 
-        // For each completed task, fetch its files
-        for (const task of tasks.slice(0, 10)) {
+        // For each task with deliverables, fetch its files
+        for (const task of completedTasks.slice(0, 20)) {
           try {
             const taskResponse = await fetch(`/api/tasks/${task.id}`);
             if (taskResponse.ok) {
               const taskData = await taskResponse.json();
-              const taskFiles = taskData.task?.files || [];
+              const taskDetail = taskData.data?.task || taskData.task;
+              const taskFiles = taskDetail?.files || [];
 
-              // Add deliverables to the library
+              // Add deliverables to assets
               for (const file of taskFiles) {
                 if (file.isDeliverable) {
                   allFiles.push({
@@ -341,7 +345,7 @@ export default function LibraryPage() {
       <div className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-foreground">Library</h1>
+            <h1 className="text-xl font-semibold text-foreground">Assets</h1>
             <Button
               variant="outline"
               size="sm"

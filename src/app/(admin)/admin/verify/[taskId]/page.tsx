@@ -79,7 +79,7 @@ export default function AdminVerifyDeliverablePage() {
       const response = await fetch(`/api/admin/verify/${id}`);
       if (response.ok) {
         const data = await response.json();
-        setTask(data.task);
+        setTask(data.data?.task || data.task);
       } else if (response.status === 404) {
         setError("Task not found");
       } else {
@@ -101,12 +101,14 @@ export default function AdminVerifyDeliverablePage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/admin/verify/${params.taskId}`, {
+      const taskId = params.taskId as string;
+      const response = await fetch(`/api/admin/verify/${taskId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, feedback: feedback.trim() }),
       });
 
+      const contentType = response.headers.get("content-type");
       if (response.ok) {
         toast.success(
           action === "approve"
@@ -114,9 +116,11 @@ export default function AdminVerifyDeliverablePage() {
             : "Deliverable rejected. Freelancer has been notified."
         );
         router.push("/admin/verify");
-      } else {
+      } else if (contentType?.includes("application/json")) {
         const data = await response.json();
-        toast.error(data.error || "Failed to process verification");
+        toast.error(data.error?.message || data.error || "Failed to process verification");
+      } else {
+        toast.error("Failed to process verification. Please try again.");
       }
     } catch (err) {
       console.error("Verification error:", err);

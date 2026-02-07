@@ -7,6 +7,28 @@ import { stripeConnectAccounts, payouts } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 /**
+ * Get the artist portal URL (handles subdomain for dev/prod)
+ */
+function getArtistPortalUrl(): string {
+  const appUrl = config.app.url;
+  const baseDomain = config.app.baseDomain;
+
+  // In production: use artist.baseDomain
+  if (appUrl.includes(baseDomain)) {
+    const protocol = appUrl.startsWith("https") ? "https" : "http";
+    return `${protocol}://artist.${baseDomain}`;
+  }
+
+  // In development: use artist.localhost:3000
+  try {
+    const url = new URL(appUrl);
+    return `${url.protocol}//artist.${url.host}`;
+  } catch {
+    return appUrl; // fallback
+  }
+}
+
+/**
  * Create a Stripe Connect Express account for an artist
  */
 export async function createConnectAccount(
@@ -37,11 +59,12 @@ export async function createConnectAccount(
     country,
   });
 
-  // Generate onboarding link
+  // Generate onboarding link — use artist subdomain for redirect
+  const artistUrl = getArtistPortalUrl();
   const accountLink = await stripe.accountLinks.create({
     account: account.id,
-    refresh_url: `${config.app.url}/portal/payouts?stripe_refresh=true`,
-    return_url: `${config.app.url}/portal/payouts?stripe_onboarded=true`,
+    refresh_url: `${artistUrl}/portal/payouts?stripe_refresh=true`,
+    return_url: `${artistUrl}/portal/payouts?stripe_onboarded=true`,
     type: "account_onboarding",
   });
 
@@ -60,11 +83,12 @@ export async function getOnboardingLink(
   stripeAccountId: string
 ): Promise<string> {
   const stripe = getStripe();
+  const artistUrl = getArtistPortalUrl();
 
   const accountLink = await stripe.accountLinks.create({
     account: stripeAccountId,
-    refresh_url: `${config.app.url}/portal/payouts?stripe_refresh=true`,
-    return_url: `${config.app.url}/portal/payouts?stripe_onboarded=true`,
+    refresh_url: `${artistUrl}/portal/payouts?stripe_refresh=true`,
+    return_url: `${artistUrl}/portal/payouts?stripe_onboarded=true`,
     type: "account_onboarding",
   });
 

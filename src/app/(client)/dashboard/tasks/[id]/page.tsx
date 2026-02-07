@@ -236,35 +236,34 @@ export default function TaskDetailPage() {
     }
   };
 
-  const analyzeFeedback = async () => {
+  const handleRequestRevision = async () => {
     if (!message.trim() || !task) return;
 
     setIsAnalyzing(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/analyze-feedback`, {
+      const response = await fetch(`/api/tasks/${task.id}/revision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feedback: message.trim(),
-          originalRequirements: task.requirements,
-          description: task.description,
-        }),
+        body: JSON.stringify({ feedback: message.trim() }),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setFeedbackAnalysis(data);
+        toast.success("Revision requested! The designer has been notified.");
+        setMessage("");
+        setFeedbackAnalysis({ isRevision: true, reason: "Revision submitted" });
+        fetchTask(task.id);
       } else {
-        setFeedbackAnalysis({
-          isRevision: true,
-          reason: "Unable to analyze - treating as revision request",
-        });
+        const contentType = response.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          const error = await response.json();
+          toast.error(error.error || "Failed to request revision");
+        } else {
+          toast.error("Failed to request revision. Please try again.");
+        }
       }
     } catch (err) {
-      setFeedbackAnalysis({
-        isRevision: true,
-        reason: "Unable to analyze - treating as revision request",
-      });
+      console.error("Revision request error:", err);
+      toast.error("Failed to request revision");
     } finally {
       setIsAnalyzing(false);
     }
@@ -406,30 +405,72 @@ export default function TaskDetailPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Approve Banner */}
+        {/* Review Decision Banner */}
         {isInReview && deliverables.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-4 rounded-xl border border-green-200 bg-green-50 mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <div className="rounded-xl border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/10 mb-8 overflow-hidden">
+            <div className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-800/40 flex items-center justify-center shrink-0">
+                  <Eye className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Your deliverables are ready</p>
+                  <p className="text-sm text-muted-foreground">Review the work below, then approve or request changes</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-green-900">Ready to approve?</p>
-                <p className="text-xs text-green-700">Review the deliverables and approve when satisfied</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 text-white w-full"
+                >
+                  {isApproving ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <ThumbsUp className="h-4 w-4 mr-2" />
+                  )}
+                  Approve & Complete
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-orange-400 text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/20 w-full"
+                  onClick={() => {
+                    const el = document.getElementById("conversation-section");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Request Revision
+                  {hasRevisionsLeft && (
+                    <span className="text-xs ml-2 opacity-70">({task.maxRevisions - task.revisionsUsed} left)</span>
+                  )}
+                </Button>
               </div>
             </div>
-            <Button
-              onClick={handleApprove}
-              disabled={isApproving}
-              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-            >
-              {isApproving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <ThumbsUp className="h-4 w-4 mr-2" />
-              )}
-              Approve & Complete
-            </Button>
+            {hasRevisionsLeft && (
+              <div className="px-5 py-2.5 bg-orange-100/50 dark:bg-orange-900/20 border-t border-orange-200 dark:border-orange-800/30">
+                <p className="text-xs text-orange-700 dark:text-orange-400">
+                  To request a revision, click &quot;Request Revision&quot; and describe what changes you need in the conversation below
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Revision Requested State */}
+        {task.status === "REVISION_REQUESTED" && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-5 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center shrink-0">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-amber-800 dark:text-amber-300">Revision requested</p>
+                <p className="text-sm text-amber-700/70 dark:text-amber-400/70">Your feedback has been sent to the designer. They&apos;ll submit an updated version soon.</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -527,9 +568,11 @@ export default function TaskDetailPage() {
             )}
 
             {/* Conversation */}
-            <div>
+            <div id="conversation-section">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm text-muted-foreground">Conversation</label>
+                <label className="text-sm text-muted-foreground">
+                  {isInReview ? "Feedback & Conversation" : "Conversation"}
+                </label>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -644,35 +687,42 @@ export default function TaskDetailPage() {
                 {canChat && !feedbackAnalysis && (
                   <div className="border-t border-border p-4">
                     <Textarea
-                      placeholder={isInReview ? "Share your feedback..." : "Add a comment..."}
+                      placeholder={isInReview ? "Describe what changes you need (e.g. 'Make the colors brighter' or 'Change the font')..." : "Add a comment..."}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           if (isInReview && message.trim()) {
-                            analyzeFeedback();
+                            handleRequestRevision();
                           } else {
                             handleSendMessage();
                           }
                         }
                       }}
-                      className="min-h-[80px] bg-background resize-none mb-3"
+                      className={cn(
+                        "min-h-[80px] bg-background resize-none mb-3",
+                        isInReview && "border-orange-300 focus-visible:ring-orange-400"
+                      )}
                     />
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">
                         {isInReview && hasRevisionsLeft && `${task.maxRevisions - task.revisionsUsed} revisions remaining`}
                       </p>
                       <Button
-                        onClick={isInReview ? analyzeFeedback : () => handleSendMessage()}
+                        onClick={isInReview ? handleRequestRevision : () => handleSendMessage()}
                         disabled={!message.trim() || isSendingMessage || isAnalyzing}
                         size="sm"
+                        className={isInReview ? "bg-orange-600 hover:bg-orange-700 text-white" : ""}
                       >
                         {(isSendingMessage || isAnalyzing) ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : isInReview ? (
+                          <AlertCircle className="h-4 w-4 mr-1" />
                         ) : (
-                          <Send className="h-4 w-4" />
+                          <Send className="h-4 w-4 mr-1" />
                         )}
+                        {isInReview ? "Send Revision Request" : "Send"}
                       </Button>
                     </div>
                   </div>
@@ -1013,14 +1063,14 @@ export default function TaskDetailPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      if (isInReview && message.trim()) analyzeFeedback();
+                      if (isInReview && message.trim()) handleRequestRevision();
                       else handleSendMessage();
                     }
                   }}
                   className="flex-1 min-h-[60px] max-h-[120px] resize-none"
                 />
                 <Button
-                  onClick={isInReview ? analyzeFeedback : () => handleSendMessage()}
+                  onClick={isInReview ? handleRequestRevision : () => handleSendMessage()}
                   disabled={!message.trim() || isSendingMessage || isAnalyzing}
                   className="px-6"
                 >

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +24,9 @@ import {
   Search,
   Presentation,
   Palette,
+  Eye,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/shared/loading";
@@ -219,6 +222,7 @@ function DashboardContent() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [modalNotes, setModalNotes] = useState("");
+  const [tasksForReview, setTasksForReview] = useState<{ id: string; title: string; description: string }[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -239,6 +243,15 @@ function DashboardContent() {
     fetch("/api/user/credits")
       .then((res) => res.json())
       .then((data) => setCredits(data.credits))
+      .catch(console.error);
+
+    // Fetch tasks needing client review
+    fetch("/api/tasks?limit=10&view=client")
+      .then((res) => res.json())
+      .then((data) => {
+        const allTasks = data.data?.tasks || data.tasks || [];
+        setTasksForReview(allTasks.filter((t: { status: string }) => t.status === "IN_REVIEW"));
+      })
       .catch(console.error);
 
     // Fetch brand-matched style references (increased limit for all categories)
@@ -539,6 +552,30 @@ function DashboardContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Tasks Needing Review Banner */}
+      {tasksForReview.length > 0 && (
+        <div className="px-4 sm:px-6 pt-6 max-w-3xl mx-auto w-full">
+          {tasksForReview.map((task) => (
+            <Link key={task.id} href={`/dashboard/tasks/${task.id}`}>
+              <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer mb-3">
+                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0 animate-pulse">
+                  <Eye className="h-5 w-5 text-orange-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-orange-800 dark:text-orange-300">
+                    Deliverable ready for review
+                  </p>
+                  <p className="text-sm text-foreground font-medium truncate">{task.title}</p>
+                </div>
+                <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white shrink-0">
+                  Review Now
+                </Button>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex flex-col items-center px-4 sm:px-6 pt-20 sm:pt-32 md:pt-40 pb-8">

@@ -75,6 +75,7 @@ const QUICK_ACTIONS = [
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+  const [pendingVerifications, setPendingVerifications] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -84,9 +85,10 @@ export default function AdminDashboardPage() {
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      const [statsRes, tasksRes] = await Promise.all([
+      const [statsRes, tasksRes, verifyRes] = await Promise.all([
         fetch("/api/admin/stats"),
         fetch("/api/admin/tasks?limit=10"),
+        fetch("/api/admin/verify"),
       ]);
 
       if (statsRes.ok) {
@@ -96,7 +98,13 @@ export default function AdminDashboardPage() {
 
       if (tasksRes.ok) {
         const data = await tasksRes.json();
-        setRecentTasks(data.tasks || []);
+        setRecentTasks(data.data?.tasks || data.tasks || []);
+      }
+
+      if (verifyRes.ok) {
+        const data = await verifyRes.json();
+        const verifyTasks = data.data?.tasks || data.tasks || [];
+        setPendingVerifications(verifyTasks.length);
       }
     } catch (err) {
       console.error("Failed to fetch admin data:", err);
@@ -111,6 +119,7 @@ export default function AdminDashboardPage() {
       ASSIGNED: { variant: "outline", label: "Assigned", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
       IN_PROGRESS: { variant: "default", label: "In Progress", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
       IN_REVIEW: { variant: "outline", label: "In Review", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+      PENDING_ADMIN_REVIEW: { variant: "destructive", label: "Needs Verification", color: "bg-red-500/20 text-red-400 border-red-500/30" },
       REVISION_REQUESTED: { variant: "destructive", label: "Revision", color: "bg-red-500/20 text-red-400 border-red-500/30" },
       COMPLETED: { variant: "secondary", label: "Completed", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
     };
@@ -159,6 +168,38 @@ export default function AdminDashboardPage() {
             Sign Out
           </Button>
         </div>
+
+        {/* Critical Actions Banner */}
+        {pendingVerifications > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-4 sm:px-0"
+          >
+            <Link href="/admin/verify">
+              <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-red-800 dark:text-red-300">
+                      {pendingVerifications} deliverable{pendingVerifications !== 1 ? "s" : ""} awaiting verification
+                    </p>
+                    <p className="text-sm text-red-700/70 dark:text-red-400/70">
+                      Artists have submitted work that needs your review before clients can see it
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+                  Review Now
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         {/* Stats Grid */}
         <motion.div

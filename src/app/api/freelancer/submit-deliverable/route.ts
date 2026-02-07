@@ -111,8 +111,20 @@ export async function POST(request: NextRequest) {
         fileCount: files.length,
         credits: task.creditsUsed,
       });
+
+      // Notify client that deliverables have been submitted
+      if (client?.email) {
+        const { sendEmail, emailTemplates } = await import("@/lib/notifications/email");
+        const emailData = emailTemplates.deliverableSubmittedToClient(
+          client.name || "there",
+          task.title,
+          freelancer?.name || "Your designer",
+          `${config.app.url}/dashboard/tasks/${task.id}`
+        );
+        await sendEmail({ to: client.email, subject: emailData.subject, html: emailData.html });
+      }
     } catch (notifyError) {
-      logger.error({ error: notifyError }, "Failed to send admin notification");
+      logger.error({ error: notifyError }, "Failed to send notifications");
     }
 
     return NextResponse.json({ success: true });

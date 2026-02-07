@@ -83,7 +83,7 @@ export async function GET(
   }, { endpoint: "GET /api/admin/verify/[taskId]" });
 }
 
-// POST - Approve or reject deliverables
+// POST - Approve or reject deliverable (approve sends to client, reject sends back to artist)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
@@ -110,8 +110,9 @@ export async function POST(
       throw Errors.notFound("Task");
     }
 
-    if (task.status !== "PENDING_ADMIN_REVIEW") {
-      throw Errors.badRequest("Task is not pending admin review");
+    const verifiableStatuses = ["PENDING_ADMIN_REVIEW", "IN_REVIEW", "REVISION_REQUESTED"];
+    if (!verifiableStatuses.includes(task.status)) {
+      throw Errors.badRequest(`Cannot verify task with status: ${task.status}`);
     }
 
     // Get client and freelancer info for notifications
@@ -176,7 +177,7 @@ export async function POST(
           const emailData = emailTemplates.revisionRequested(
             freelancer.name || "Designer",
             task.title,
-            `${config.app.url}/freelancer/tasks/${taskId}`,
+            `${config.app.url}/portal/tasks/${taskId}`,
             feedback || "Admin review: Please revise the deliverables and resubmit."
           );
           await sendEmail({

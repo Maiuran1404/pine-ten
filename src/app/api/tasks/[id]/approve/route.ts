@@ -59,9 +59,29 @@ export async function POST(
       })
       .where(eq(tasks.id, id));
 
-    // Notify the freelancer
-    if (task.freelancerId) {
-      try {
+    // Send email notifications
+    try {
+      const { sendEmail, emailTemplates } = await import("@/lib/notifications/email");
+
+      // Get client details
+      const [clientUser] = await db
+        .select({ name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+
+      // Email client: task complete confirmation
+      if (clientUser?.email) {
+        const emailData = emailTemplates.taskApprovedForClient(
+          clientUser.name || "there",
+          task.title,
+          `${config.app.url}/dashboard/designs`
+        );
+        await sendEmail({ to: clientUser.email, subject: emailData.subject, html: emailData.html });
+      }
+
+      // Notify + email freelancer: work approved
+      if (task.freelancerId) {
         await notify({
           userId: task.freelancerId,
           type: "TASK_COMPLETED",
@@ -69,13 +89,26 @@ export async function POST(
           content: `Your work on "${task.title}" has been approved by the client!`,
           taskId: task.id,
           taskUrl: `${config.app.url}/portal/tasks/${task.id}`,
-          additionalData: {
-            taskTitle: task.title,
-          },
+          additionalData: { taskTitle: task.title },
         });
-      } catch (error) {
-        logger.error({ error }, "Failed to send approval notification");
+
+        const [freelancerUser] = await db
+          .select({ name: users.name, email: users.email })
+          .from(users)
+          .where(eq(users.id, task.freelancerId))
+          .limit(1);
+
+        if (freelancerUser?.email) {
+          const emailData = emailTemplates.taskApprovedForFreelancer(
+            freelancerUser.name || "there",
+            task.title,
+            task.creditsUsed
+          );
+          await sendEmail({ to: freelancerUser.email, subject: emailData.subject, html: emailData.html });
+        }
       }
+    } catch (error) {
+      logger.error({ error }, "Failed to send approval notifications");
     }
 
     return NextResponse.json({

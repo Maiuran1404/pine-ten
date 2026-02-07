@@ -778,6 +778,29 @@ export default function TasksPage() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-4">
+        {/* Tasks needing review banner */}
+        {(() => {
+          const reviewTasks = filteredTasks.filter(t => t.status === "IN_REVIEW");
+          if (reviewTasks.length === 0) return null;
+          return (
+            <div className="mb-4 space-y-2">
+              {reviewTasks.map((task) => (
+                <Link key={task.id} href={`/dashboard/tasks/${task.id}`}>
+                  <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-800/40 flex items-center justify-center shrink-0 animate-pulse">
+                      <Eye className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-orange-700 dark:text-orange-400">Ready for review: </span>
+                      <span className="text-sm text-foreground">{task.title}</span>
+                    </div>
+                    <span className="text-sm font-medium text-orange-600 shrink-0">Review →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          );
+        })()}
         {isLoading ? (
           viewMode === "cards" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

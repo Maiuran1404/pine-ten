@@ -543,6 +543,28 @@ export async function POST(request: NextRequest) {
           "Failed to send artist assignment notification"
         );
       }
+
+      // Notify client that their task has been assigned
+      try {
+        const { sendEmail, emailTemplates } = await import("@/lib/notifications/email");
+        const [clientUser] = await db
+          .select({ name: users.name, email: users.email })
+          .from(users)
+          .where(eq(users.id, session.user.id))
+          .limit(1);
+
+        if (clientUser?.email) {
+          const emailData = emailTemplates.taskAssignedToClient(
+            clientUser.name || "there",
+            title,
+            result.assignedTo.artist.name || "A designer",
+            `${config.app.url}/dashboard/tasks/${result.task.id}`
+          );
+          await sendEmail({ to: clientUser.email, subject: emailData.subject, html: emailData.html });
+        }
+      } catch (error) {
+        logger.error({ err: error }, "Failed to send client assignment email");
+      }
     }
 
     logger.info(

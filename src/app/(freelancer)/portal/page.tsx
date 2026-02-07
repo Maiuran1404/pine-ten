@@ -350,6 +350,33 @@ export default function FreelancerDashboardPage() {
         </div>
       </Card>
 
+      {/* Revision Requested — Critical Banner */}
+      {activeTasks.filter((t) => t.status === "REVISION_REQUESTED").length > 0 && (
+        <div className="space-y-3">
+          {activeTasks.filter((t) => t.status === "REVISION_REQUESTED").map((task) => (
+            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+              <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:border-red-600 transition-colors cursor-pointer">
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-red-700 dark:text-red-400">Revision requested</span>
+                    </div>
+                    <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
+                    <p className="text-xs text-red-600/70 dark:text-red-400/70">Review feedback and submit an updated version</p>
+                  </div>
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+                    Fix Now
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* New Task Assignment Banners */}
       {activeTasks.filter((t) => t.status === "ASSIGNED").length > 0 && (
         <div className="space-y-3">

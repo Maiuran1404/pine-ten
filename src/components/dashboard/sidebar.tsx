@@ -39,7 +39,7 @@ export function AppSidebar() {
   // Features menu items
   const features = [
     { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
-    { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
+    { icon: FolderOpen, label: "Assets", href: "/dashboard/designs" },
     { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
     { icon: Coins, label: "Credits", href: "/dashboard/credits" },
     { icon: User, label: "Account", href: "/dashboard/settings" },

@@ -277,13 +277,14 @@ export default function AllTasksPage() {
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">All Tasks</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          View and manage all tasks on the platform
-        </p>
+    <div className="min-h-full bg-background">
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <h1 className="text-xl font-semibold text-foreground">All Tasks</h1>
+        </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
 
       {/* Stats */}
       {isLoading ? (
@@ -782,6 +783,7 @@ export default function AllTasksPage() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

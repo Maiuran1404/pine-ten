@@ -364,27 +364,30 @@ export default function FreelancerSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full bg-background p-6 space-y-6">
-        <div>
-          <Skeleton className="h-7 w-32" />
-          <Skeleton className="h-4 w-64 mt-2" />
+      <div className="min-h-full bg-background">
+        <div className="border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-5">
+            <Skeleton className="h-7 w-32" />
+          </div>
         </div>
-        <GlassCard className="p-6">
-          <Skeleton className="h-20 w-full" />
-        </GlassCard>
+        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-background p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="min-h-full bg-background">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
-          Manage your account settings and freelancer profile
-        </p>
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+        </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
 
       {/* Profile Section */}
       <GlassCard>
@@ -695,6 +698,7 @@ export default function FreelancerSettingsPage() {
           </div>
         </div>
       </GlassCard>
+      </div>
     </div>
   );
 }
