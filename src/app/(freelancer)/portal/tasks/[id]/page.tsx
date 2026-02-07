@@ -41,7 +41,6 @@ import {
   History,
   Check,
   Play,
-  Clock,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { BrandDNA } from "@/components/freelancer/brand-dna";
@@ -500,65 +499,92 @@ export default function FreelancerTaskDetailPage() {
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div className="flex items-start gap-3 sm:gap-4">
-          <Button variant="ghost" size="icon" asChild className="shrink-0">
-            <Link href="/portal/tasks">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{task.title}</h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <Badge variant={status.variant} className="flex items-center gap-1">
-                {status.icon}
-                {status.label}
-              </Badge>
-              {task.category && (
-                <Badge variant="outline">{task.category.name}</Badge>
-              )}
-            </div>
+      <div className="flex items-start gap-3 sm:gap-4">
+        <Button variant="ghost" size="icon" asChild className="shrink-0">
+          <Link href="/portal/tasks">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{task.title}</h1>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <Badge variant={status.variant} className="flex items-center gap-1">
+              {status.icon}
+              {status.label}
+            </Badge>
+            {task.category && (
+              <Badge variant="outline">{task.category.name}</Badge>
+            )}
           </div>
         </div>
-        {canStart && (
-          <Button onClick={handleStartTask} disabled={isSubmitting} className="sm:shrink-0">
-            {isSubmitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+      </div>
+
+      {/* Primary CTA Banner — full width, top of page */}
+      {task.status === "ASSIGNED" && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center shrink-0">
+              <Play className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-300">Ready to start</p>
+              <p className="text-sm text-emerald-700/70 dark:text-emerald-400/70">Review the brief below, then begin working on this task</p>
+            </div>
+          </div>
+          <Button onClick={handleStartTask} disabled={isSubmitting} size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+            {isSubmitting ? <LoadingSpinner size="sm" className="mr-2" /> : <Play className="h-4 w-4 mr-2" />}
             Start Working
           </Button>
-        )}
-      </div>
+        </div>
+      )}
+      {task.status === "IN_PROGRESS" && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Upload className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Work in progress</p>
+              <p className="text-sm text-muted-foreground">Upload your completed deliverables when ready</p>
+            </div>
+          </div>
+          <Button size="lg" className="shrink-0" onClick={() => setActiveTab("submit")}>
+            <Upload className="h-4 w-4 mr-2" />
+            Submit Deliverable
+          </Button>
+        </div>
+      )}
+      {task.status === "REVISION_REQUESTED" && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-orange-800 dark:text-orange-300">Revision requested</p>
+              <p className="text-sm text-orange-700/70 dark:text-orange-400/70">The client has requested changes. Review feedback and resubmit.</p>
+            </div>
+          </div>
+          <Button size="lg" variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-500/10 shrink-0" onClick={() => setActiveTab("submit")}>
+            <Upload className="h-4 w-4 mr-2" />
+            Submit Revision
+          </Button>
+        </div>
+      )}
+      {task.status === "IN_REVIEW" && (
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">
+          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">Waiting for review</p>
+            <p className="text-sm text-muted-foreground">Your work has been submitted. The client is reviewing it.</p>
+          </div>
+        </div>
+      )}
 
       {/* Workflow Stepper */}
       {!["PENDING", "CANCELLED"].includes(task.status) && (
         <Card className="p-4">
           <WorkflowStepper currentStatus={task.status} />
-        </Card>
-      )}
-
-      {/* Revision Alert Banner */}
-      {task.status === "REVISION_REQUESTED" && (
-        <Card className="border-orange-500 bg-orange-500/5">
-          <CardContent className="py-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-orange-700 dark:text-orange-400">Revision Requested</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    The client has requested changes. Review feedback and submit an updated version.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="border-orange-500 text-orange-600 hover:bg-orange-500/10 shrink-0"
-                onClick={() => setActiveTab("submit")}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Submit Revision
-              </Button>
-            </div>
-          </CardContent>
         </Card>
       )}
 
@@ -1054,86 +1080,6 @@ export default function FreelancerTaskDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Next Steps — status-aware CTA */}
-          {!["COMPLETED", "CANCELLED"].includes(task.status) && (
-            <Card className={cn(
-              "border-2",
-              task.status === "ASSIGNED" ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-900/10" :
-              task.status === "REVISION_REQUESTED" ? "border-orange-500/50 bg-orange-50/50 dark:bg-orange-900/10" :
-              task.status === "IN_PROGRESS" ? "border-primary/30" :
-              "border-border"
-            )}>
-              <CardContent className="pt-5 pb-4 space-y-3">
-                {task.status === "ASSIGNED" && (
-                  <>
-                    <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                      <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-                      Next Step
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Review the brief, then click &quot;Start Working&quot; to begin.
-                    </p>
-                    <Button onClick={handleStartTask} disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                      {isSubmitting ? <LoadingSpinner size="sm" className="mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                      Start Working
-                    </Button>
-                  </>
-                )}
-                {task.status === "IN_PROGRESS" && (
-                  <>
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
-                      Next Step
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Upload your completed work and submit for review.
-                    </p>
-                    <Button className="w-full" onClick={() => setActiveTab("submit")}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Submit Deliverable
-                    </Button>
-                  </>
-                )}
-                {task.status === "REVISION_REQUESTED" && (
-                  <>
-                    <div className="flex items-center gap-2 text-sm font-medium text-orange-600 dark:text-orange-400">
-                      <AlertTriangle className="h-4 w-4" />
-                      Revision Needed
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Review the client&apos;s feedback, make changes, and resubmit.
-                    </p>
-                    <Button className="w-full border-orange-500 text-orange-600 hover:bg-orange-500/10" variant="outline" onClick={() => setActiveTab("submit")}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Submit Revision
-                    </Button>
-                  </>
-                )}
-                {task.status === "IN_REVIEW" && (
-                  <>
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      Waiting for Review
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Your work has been submitted. The client is reviewing it.
-                    </p>
-                  </>
-                )}
-                {task.status === "PENDING" && (
-                  <>
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      Pending
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      This task is waiting to be assigned.
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>
