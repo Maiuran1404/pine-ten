@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import {
   MessageSquarePlus,
   Coins,
@@ -27,6 +33,9 @@ import {
   ChevronDown,
   ListFilter,
   X,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -81,6 +90,33 @@ const filterOptions = [
   { value: "completed", label: "Completed" },
 ];
 
+type OrderingKey = "date_created" | "status" | "credits";
+type ViewMode = "rows" | "cards";
+
+interface DisplayProperties {
+  thumbnail: boolean;
+  description: boolean;
+  designer: boolean;
+  status: boolean;
+  credits: boolean;
+  createdDate: boolean;
+}
+
+const orderingOptions: { value: OrderingKey; label: string }[] = [
+  { value: "date_created", label: "Date created" },
+  { value: "status", label: "Status" },
+  { value: "credits", label: "Credits" },
+];
+
+const displayPropertyOptions: { key: keyof DisplayProperties; label: string }[] = [
+  { key: "thumbnail", label: "Thumbnail" },
+  { key: "description", label: "Description" },
+  { key: "designer", label: "Designer" },
+  { key: "status", label: "Status" },
+  { key: "credits", label: "Credits" },
+  { key: "createdDate", label: "Created Date" },
+];
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +124,23 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Display settings
+  const [viewMode, setViewMode] = useState<ViewMode>("rows");
+  const [ordering, setOrdering] = useState<OrderingKey>("date_created");
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [displayProperties, setDisplayProperties] = useState<DisplayProperties>({
+    thumbnail: true,
+    description: true,
+    designer: true,
+    status: true,
+    credits: true,
+    createdDate: true,
+  });
+
+  const toggleDisplayProperty = useCallback((key: keyof DisplayProperties) => {
+    setDisplayProperties((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   useEffect(() => {
     fetchTasks();
@@ -119,21 +172,48 @@ export default function TasksPage() {
     }
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    if (filter === "active" && ["COMPLETED", "CANCELLED"].includes(task.status)) return false;
-    if (filter === "in_review" && task.status !== "IN_REVIEW") return false;
-    if (filter === "completed" && task.status !== "COMPLETED") return false;
+  const statusOrder: Record<string, number> = {
+    IN_PROGRESS: 0,
+    ASSIGNED: 1,
+    IN_REVIEW: 2,
+    PENDING_ADMIN_REVIEW: 3,
+    REVISION_REQUESTED: 4,
+    PENDING: 5,
+    OFFERED: 6,
+    COMPLETED: 7,
+    CANCELLED: 8,
+  };
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        task.title.toLowerCase().includes(query) ||
-        task.description.toLowerCase().includes(query)
-      );
-    }
+  const filteredTasks = tasks
+    .filter((task) => {
+      // Hide cancelled unless toggled on
+      if (!showCancelled && task.status === "CANCELLED") return false;
 
-    return true;
-  });
+      if (filter === "active" && ["COMPLETED", "CANCELLED"].includes(task.status)) return false;
+      if (filter === "in_review" && task.status !== "IN_REVIEW") return false;
+      if (filter === "completed" && task.status !== "COMPLETED") return false;
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          task.title.toLowerCase().includes(query) ||
+          task.description.toLowerCase().includes(query)
+        );
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      switch (ordering) {
+        case "status":
+          return (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
+        case "credits":
+          return b.creditsUsed - a.creditsUsed;
+        case "date_created":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -158,21 +238,23 @@ export default function TasksPage() {
       <Link href={`/dashboard/tasks/${task.id}`}>
         <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group">
           {/* Thumbnail */}
-          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
-            {thumbnailItem ? (
-              <Image
-                src={thumbnailItem.imageUrl}
-                alt={thumbnailItem.name}
-                width={40}
-                height={40}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Palette className="h-4 w-4 text-muted-foreground" />
-              </div>
-            )}
-          </div>
+          {displayProperties.thumbnail && (
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
+              {thumbnailItem ? (
+                <Image
+                  src={thumbnailItem.imageUrl}
+                  alt={thumbnailItem.name}
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Title and Description */}
           <div className="flex-1 min-w-0">
@@ -181,59 +263,69 @@ export default function TasksPage() {
                 {task.title}
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {task.description}
-            </p>
-          </div>
-
-          {/* Designer */}
-          <div className="hidden md:flex items-center gap-2 w-28 flex-shrink-0">
-            {task.freelancer ? (
-              <>
-                {task.freelancer.image ? (
-                  <Image
-                    src={task.freelancer.image}
-                    alt={task.freelancer.name || "Designer"}
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-3 w-3 text-primary" />
-                  </div>
-                )}
-                <span className="text-xs text-muted-foreground truncate">
-                  {task.freelancer.name?.split(" ")[0]}
-                </span>
-              </>
-            ) : (
-              <span className="text-xs text-muted-foreground">—</span>
+            {displayProperties.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {task.description}
+              </p>
             )}
           </div>
 
+          {/* Designer */}
+          {displayProperties.designer && (
+            <div className="hidden md:flex items-center gap-2 w-28 flex-shrink-0">
+              {task.freelancer ? (
+                <>
+                  {task.freelancer.image ? (
+                    <Image
+                      src={task.freelancer.image}
+                      alt={task.freelancer.name || "Designer"}
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-3 w-3 text-primary" />
+                    </div>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate">
+                    {task.freelancer.name?.split(" ")[0]}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+          )}
+
           {/* Date */}
-          <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right flex-shrink-0">
-            {formatDate(task.createdAt)}
-          </div>
+          {displayProperties.createdDate && (
+            <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right flex-shrink-0">
+              {formatDate(task.createdAt)}
+            </div>
+          )}
 
           {/* Status */}
-          <div className="flex-shrink-0">
-            <span className={cn(
-              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
-              status.bgColor,
-              status.color
-            )}>
-              {status.icon}
-              <span className="hidden sm:inline">{status.label}</span>
-            </span>
-          </div>
+          {displayProperties.status && (
+            <div className="flex-shrink-0">
+              <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
+                status.bgColor,
+                status.color
+              )}>
+                {status.icon}
+                <span className="hidden sm:inline">{status.label}</span>
+              </span>
+            </div>
+          )}
 
           {/* Credits */}
-          <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end flex-shrink-0">
-            <Coins className="h-3 w-3" />
-            {task.creditsUsed}
-          </div>
+          {displayProperties.credits && (
+            <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end flex-shrink-0">
+              <Coins className="h-3 w-3" />
+              {task.creditsUsed}
+            </div>
+          )}
 
           {/* More Actions */}
           <DropdownMenu>
@@ -303,27 +395,113 @@ export default function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Display Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              {/* Display Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9 gap-2">
                     <SlidersHorizontal className="h-4 w-4" />
                     <span>Display</span>
                     <ChevronDown className="h-3 w-3 opacity-50" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuCheckboxItem checked>
-                    Show Designer
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked>
-                    Show Credits
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem checked>
-                    Show Date
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-80 p-0" sideOffset={8}>
+                  {/* View Toggle */}
+                  <div className="p-3 border-b border-border">
+                    <div className="inline-flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                      <button
+                        onClick={() => setViewMode("cards")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                          viewMode === "cards"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                        Cards
+                      </button>
+                      <button
+                        onClick={() => setViewMode("rows")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                          viewMode === "rows"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <List className="h-3.5 w-3.5" />
+                        Rows
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Ordering */}
+                  <div className="p-3 border-b border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <ArrowUpDown className="h-3.5 w-3.5" />
+                        <span>Ordering</span>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors">
+                            {orderingOptions.find((o) => o.value === ordering)?.label}
+                            <ChevronDown className="h-3 w-3 opacity-50" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          {orderingOptions.map((option) => (
+                            <DropdownMenuCheckboxItem
+                              key={option.value}
+                              checked={ordering === option.value}
+                              onCheckedChange={() => setOrdering(option.value)}
+                            >
+                              {option.label}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+
+                  {/* Show Cancelled Toggle */}
+                  <div className="p-3 border-b border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        <span>Show cancelled tasks</span>
+                      </div>
+                      <Switch
+                        checked={showCancelled}
+                        onCheckedChange={setShowCancelled}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Display Properties */}
+                  <div className="p-3">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2.5">
+                      Display Properties
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {displayPropertyOptions.map((prop) => (
+                        <button
+                          key={prop.key}
+                          onClick={() => toggleDisplayProperty(prop.key)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-md text-xs font-medium border transition-all",
+                            displayProperties[prop.key]
+                              ? "bg-foreground text-background border-foreground"
+                              : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+                          )}
+                        >
+                          {prop.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Right: Search & More */}
