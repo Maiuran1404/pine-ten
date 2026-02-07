@@ -40,6 +40,8 @@ import {
   Palette,
   History,
   Check,
+  Play,
+  Clock,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading";
 import { BrandDNA } from "@/components/freelancer/brand-dna";
@@ -1052,38 +1054,83 @@ export default function FreelancerTaskDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
-          {canSubmit && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("files")}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  View Reference Files
-                </Button>
-                {task.brandDNA && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("brand")}
-                  >
-                    <Palette className="h-4 w-4 mr-2" />
-                    View Brand Guidelines
-                  </Button>
+          {/* Next Steps — status-aware CTA */}
+          {!["COMPLETED", "CANCELLED"].includes(task.status) && (
+            <Card className={cn(
+              "border-2",
+              task.status === "ASSIGNED" ? "border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-900/10" :
+              task.status === "REVISION_REQUESTED" ? "border-orange-500/50 bg-orange-50/50 dark:bg-orange-900/10" :
+              task.status === "IN_PROGRESS" ? "border-primary/30" :
+              "border-border"
+            )}>
+              <CardContent className="pt-5 pb-4 space-y-3">
+                {task.status === "ASSIGNED" && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                      <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">1</span>
+                      Next Step
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Review the brief, then click &quot;Start Working&quot; to begin.
+                    </p>
+                    <Button onClick={handleStartTask} disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-700">
+                      {isSubmitting ? <LoadingSpinner size="sm" className="mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+                      Start Working
+                    </Button>
+                  </>
                 )}
-                <Button
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("submit")}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Submit Deliverable
-                </Button>
+                {task.status === "IN_PROGRESS" && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
+                      Next Step
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Upload your completed work and submit for review.
+                    </p>
+                    <Button className="w-full" onClick={() => setActiveTab("submit")}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Submit Deliverable
+                    </Button>
+                  </>
+                )}
+                {task.status === "REVISION_REQUESTED" && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-orange-600 dark:text-orange-400">
+                      <AlertTriangle className="h-4 w-4" />
+                      Revision Needed
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Review the client&apos;s feedback, make changes, and resubmit.
+                    </p>
+                    <Button className="w-full border-orange-500 text-orange-600 hover:bg-orange-500/10" variant="outline" onClick={() => setActiveTab("submit")}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Submit Revision
+                    </Button>
+                  </>
+                )}
+                {task.status === "IN_REVIEW" && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      Waiting for Review
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Your work has been submitted. The client is reviewing it.
+                    </p>
+                  </>
+                )}
+                {task.status === "PENDING" && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      Pending
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      This task is waiting to be assigned.
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
