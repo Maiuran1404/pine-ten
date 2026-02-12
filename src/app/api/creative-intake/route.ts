@@ -10,6 +10,9 @@ import type {
 import { getSystemPrompt, parseIntakeResponse } from "@/lib/creative-intake/prompts";
 import { getFlowStep, getNextStep, applySmartDefaults } from "@/lib/creative-intake/flow-config";
 import { logger } from "@/lib/logger";
+import { creativeIntakeSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 const anthropic = new Anthropic();
 
@@ -41,15 +44,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body: IntakeRequest = await req.json();
-    const { serviceType, currentStep, messages, userMessage, currentData } = body;
-
-    if (!serviceType || !currentStep || !userMessage) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const { serviceType, currentStep, messages, userMessage, currentData } = creativeIntakeSchema.parse(body) as IntakeRequest;
 
     // Get system prompt for this service
     const systemPrompt = getSystemPrompt(serviceType);
@@ -121,6 +117,9 @@ If this is the final step, generate a summary of all collected information.
       dataWithDefaults,
     });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Creative intake error");
     return NextResponse.json(
       { error: "Failed to process intake message" },

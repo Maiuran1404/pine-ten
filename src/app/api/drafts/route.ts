@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { chatDrafts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { saveDraftSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 // GET - Fetch all drafts for current user
 export async function GET() {
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, messages, selectedStyles, pendingTask } = body;
+    const { id, title, messages, selectedStyles, pendingTask } = saveDraftSchema.parse(body);
 
     // Check if ID is a valid UUID (not a local draft ID like "draft_xxx")
     const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -89,6 +92,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ draft, localId: id });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Save draft error");
     return NextResponse.json(
       { error: "Failed to save draft" },

@@ -6,6 +6,8 @@ import { db } from "@/db";
 import { users, companies, styleReferences, taskCategories, platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { chatStreamSchema } from "@/lib/validations";
+import { ZodError } from "zod";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -57,11 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages } = body;
-
-    if (!messages || !Array.isArray(messages)) {
-      return new Response("Invalid messages", { status: 400 });
-    }
+    const { messages } = chatStreamSchema.parse(body);
 
     // Fetch user's company for context
     const user = await db.query.users.findFirst({
@@ -115,6 +113,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return new Response(JSON.stringify({ error: "Invalid messages format", details: error.issues }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     logger.error({ error }, "Chat stream error");
     return new Response("Internal server error", { status: 500 });
   }

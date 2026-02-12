@@ -4,6 +4,9 @@ import { headers } from "next/headers";
 import Firecrawl from "@mendable/firecrawl-js";
 import Anthropic from "@anthropic-ai/sdk";
 import { logger } from "@/lib/logger";
+import { extractBrandRequestSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 // Lazy initialization to avoid errors during build
 let firecrawl: Firecrawl | null = null;
@@ -303,14 +306,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { websiteUrl } = body;
-
-    if (!websiteUrl) {
-      return NextResponse.json(
-        { error: "Website URL is required" },
-        { status: 400 }
-      );
-    }
+    const { websiteUrl } = extractBrandRequestSchema.parse(body);
 
     // Normalize URL
     let normalizedUrl = websiteUrl.trim();
@@ -827,6 +823,9 @@ Return ONLY a valid JSON object with this exact structure:
       },
     });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Brand extraction error");
     return NextResponse.json(
       { error: "Failed to extract brand information. Please try again." },

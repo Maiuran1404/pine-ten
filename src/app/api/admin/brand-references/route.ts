@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { brandReferences } from "@/db/schema";
 import { desc, eq, and } from "drizzle-orm";
 import type { ToneBucket, EnergyBucket, ColorBucket } from "@/lib/constants/reference-libraries";
+import { createBrandReferenceSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   return withErrorHandling(async () => {
@@ -43,40 +44,23 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
 
     const body = await request.json();
-    const {
-      name,
-      description,
-      imageUrl,
-      toneBucket,
-      energyBucket,
-      densityBucket,
-      colorBucket,
-      premiumBucket,
-      colorSamples,
-      visualStyles,
-      industries,
-      displayOrder,
-    } = body;
-
-    if (!name || !imageUrl || !toneBucket || !energyBucket || !colorBucket) {
-      throw Errors.badRequest("Name, imageUrl, toneBucket, energyBucket, and colorBucket are required");
-    }
+    const validated = createBrandReferenceSchema.parse(body);
 
     const [newReference] = await db
       .insert(brandReferences)
       .values({
-        name,
-        description: description || null,
-        imageUrl,
-        toneBucket,
-        energyBucket,
-        densityBucket: densityBucket || "balanced",
-        colorBucket,
-        premiumBucket: premiumBucket || "balanced",
-        colorSamples: colorSamples || [],
-        visualStyles: visualStyles || [],
-        industries: industries || [],
-        displayOrder: displayOrder || 0,
+        name: validated.name,
+        description: validated.description || null,
+        imageUrl: validated.imageUrl,
+        toneBucket: validated.toneBucket,
+        energyBucket: validated.energyBucket,
+        densityBucket: validated.densityBucket,
+        colorBucket: validated.colorBucket,
+        premiumBucket: validated.premiumBucket,
+        colorSamples: validated.colorSamples,
+        visualStyles: validated.visualStyles,
+        industries: validated.industries,
+        displayOrder: validated.displayOrder,
         isActive: true,
       })
       .returning();

@@ -7,6 +7,9 @@ import { eq, and, isNull } from "drizzle-orm";
 import { notify, adminNotifications } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { claimTaskSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,14 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taskId } = body;
-
-    if (!taskId) {
-      return NextResponse.json(
-        { error: "Task ID is required" },
-        { status: 400 }
-      );
-    }
+    const { taskId } = claimTaskSchema.parse(body);
 
     // Check if user is an approved freelancer
     const profile = await db
@@ -112,6 +108,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Claim task error");
     return NextResponse.json(
       { error: "Failed to claim task" },

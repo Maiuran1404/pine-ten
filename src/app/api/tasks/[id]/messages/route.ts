@@ -7,6 +7,9 @@ import { eq, desc } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { taskMessageSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 // GET - Fetch messages for a task
 export async function GET(
@@ -89,14 +92,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { content, attachments = [] } = body;
-
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Message content is required" },
-        { status: 400 }
-      );
-    }
+    const { content, attachments } = taskMessageSchema.parse(body);
 
     // Get the task to verify permissions
     const taskResult = await db
@@ -176,6 +172,9 @@ export async function POST(
       message: messageWithSender[0],
     });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Message send error");
     return NextResponse.json(
       { error: "Failed to send message" },

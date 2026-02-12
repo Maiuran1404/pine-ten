@@ -7,6 +7,9 @@ import { eq } from "drizzle-orm";
 import { withRateLimit } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { setRoleSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 // Set user role after registration based on portal type
 async function handler(request: NextRequest) {
@@ -20,7 +23,7 @@ async function handler(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { role } = body;
+    const { role } = setRoleSchema.parse(body);
 
     // Only allow setting to FREELANCER from this endpoint
     // CLIENT is the default, ADMIN should never be set this way
@@ -49,6 +52,9 @@ async function handler(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Set role error");
     return NextResponse.json(
       { error: "Failed to set role" },

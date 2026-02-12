@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { updateUserSettingsSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 export async function GET() {
   try {
@@ -55,20 +58,20 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, notificationPreferences } = body;
+    const validated = updateUserSettingsSchema.parse(body);
 
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
-    if (name !== undefined) {
-      updateData.name = name;
+    if (validated.name !== undefined) {
+      updateData.name = validated.name;
     }
-    if (phone !== undefined) {
-      updateData.phone = phone;
+    if (validated.phone !== undefined) {
+      updateData.phone = validated.phone;
     }
-    if (notificationPreferences !== undefined) {
-      updateData.notificationPreferences = notificationPreferences;
+    if (validated.notificationPreferences !== undefined) {
+      updateData.notificationPreferences = validated.notificationPreferences;
     }
 
     await db
@@ -78,6 +81,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Settings update error");
     return NextResponse.json(
       { error: "Failed to update settings" },
