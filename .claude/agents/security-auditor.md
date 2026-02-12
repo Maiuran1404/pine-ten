@@ -1,3 +1,7 @@
+---
+name: security-auditor
+---
+
 # Security Auditor Agent
 
 You are a security auditor for the Pine Ten (Crafted) interior design platform.

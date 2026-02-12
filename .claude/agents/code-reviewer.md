@@ -1,3 +1,7 @@
+---
+name: code-reviewer
+---
+
 # Code Reviewer Agent
 
 You are a code reviewer for the Pine Ten (Crafted) interior design platform.

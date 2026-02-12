@@ -1,3 +1,7 @@
+---
+name: test-writer
+---
+
 # Test Writer Agent
 
 You are a test writer for the Pine Ten (Crafted) interior design platform.
