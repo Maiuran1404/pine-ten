@@ -1,42 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, payouts, stripeConnectAccounts } from "@/db/schema";
-import { eq, and, gte, lt, desc, sum, count, sql } from "drizzle-orm";
-import { getPayoutSettings } from "@/lib/platform-settings";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { tasks, payouts, stripeConnectAccounts } from '@/db/schema'
+import { eq, and, gte, lt, desc, sum, count, sql } from 'drizzle-orm'
+import { getPayoutSettings } from '@/lib/platform-settings'
 import {
   calculatePayoutAmounts,
   createPayoutRequest,
   processPayoutTransfer,
   getConnectAccount,
-} from "@/lib/stripe-connect";
-import { logger } from "@/lib/logger";
+} from '@/lib/stripe-connect'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = session.user.id;
+    const userId = session.user.id
 
     // Get payout settings from database
-    const payoutSettings = await getPayoutSettings();
+    const payoutSettings = await getPayoutSettings()
 
     // Calculate date boundaries
-    const now = new Date();
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const now = new Date()
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
     // Define the holding period from database settings
-    const holdingPeriodDays = payoutSettings.holdingPeriodDays;
-    const availableCutoff = new Date();
-    availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays);
+    const holdingPeriodDays = payoutSettings.holdingPeriodDays
+    const availableCutoff = new Date()
+    availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays)
 
     // Get lifetime earnings from completed tasks
     const lifetimeResult = await db
@@ -44,12 +44,7 @@ export async function GET(request: NextRequest) {
         total: sum(tasks.creditsUsed),
       })
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED")
-        )
-      );
+      .where(and(eq(tasks.freelancerId, userId), eq(tasks.status, 'COMPLETED')))
 
     // Get available balance (completed tasks older than 7 days)
     const availableResult = await db
@@ -60,10 +55,10 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED"),
+          eq(tasks.status, 'COMPLETED'),
           lt(tasks.completedAt, availableCutoff)
         )
-      );
+      )
 
     // Get pending balance (completed tasks within last 7 days + tasks in review)
     const pendingCompletedResult = await db
@@ -74,10 +69,10 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED"),
+          eq(tasks.status, 'COMPLETED'),
           gte(tasks.completedAt, availableCutoff)
         )
-      );
+      )
 
     // Get pending from tasks in review
     const pendingReviewResult = await db
@@ -91,7 +86,7 @@ export async function GET(request: NextRequest) {
           eq(tasks.freelancerId, userId),
           sql`${tasks.status} IN ('IN_REVIEW', 'PENDING_ADMIN_REVIEW')`
         )
-      );
+      )
 
     // This month's earnings
     const thisMonthResult = await db
@@ -102,10 +97,10 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED"),
+          eq(tasks.status, 'COMPLETED'),
           gte(tasks.completedAt, startOfThisMonth)
         )
-      );
+      )
 
     // Last month's earnings
     const lastMonthResult = await db
@@ -116,11 +111,11 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED"),
+          eq(tasks.status, 'COMPLETED'),
           gte(tasks.completedAt, startOfLastMonth),
           lt(tasks.completedAt, startOfThisMonth)
         )
-      );
+      )
 
     // Get recent earnings (individual tasks)
     const recentEarnings = await db
@@ -132,14 +127,9 @@ export async function GET(request: NextRequest) {
         completedAt: tasks.completedAt,
       })
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED")
-        )
-      )
+      .where(and(eq(tasks.freelancerId, userId), eq(tasks.status, 'COMPLETED')))
       .orderBy(desc(tasks.completedAt))
-      .limit(20);
+      .limit(20)
 
     // Format earnings with status
     const earnings = recentEarnings.map((entry) => ({
@@ -148,46 +138,60 @@ export async function GET(request: NextRequest) {
       taskTitle: entry.taskTitle,
       credits: entry.credits,
       completedAt: entry.completedAt?.toISOString() || new Date().toISOString(),
-      status: entry.completedAt && entry.completedAt < availableCutoff
-        ? "available" as const
-        : "pending" as const,
-    }));
+      status:
+        entry.completedAt && entry.completedAt < availableCutoff
+          ? ('available' as const)
+          : ('pending' as const),
+    }))
 
-    // Get monthly earnings breakdown (last 6 months)
-    const monthlyEarnings = [];
+    // Get monthly earnings breakdown (last 6 months) — single aggregation query
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
+    const monthlyResult = await db
+      .select({
+        month: sql<string>`to_char(date_trunc('month', ${tasks.completedAt}), 'YYYY-MM')`,
+        total: sum(tasks.creditsUsed),
+        taskCount: count(),
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.freelancerId, userId),
+          eq(tasks.status, 'COMPLETED'),
+          gte(tasks.completedAt, sixMonthsAgo)
+        )
+      )
+      .groupBy(sql`date_trunc('month', ${tasks.completedAt})`)
+
+    // Build a lookup map from the aggregated results
+    const monthlyMap = new Map<string, { total: number; taskCount: number }>()
+    for (const row of monthlyResult) {
+      monthlyMap.set(row.month, {
+        total: Number(row.total) || 0,
+        taskCount: Number(row.taskCount) || 0,
+      })
+    }
+
+    // Fill in all 6 months (including months with no earnings)
+    const monthlyEarnings = []
     for (let i = 0; i < 6; i++) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-
-      const monthResult = await db
-        .select({
-          total: sum(tasks.creditsUsed),
-          taskCount: count(),
-        })
-        .from(tasks)
-        .where(
-          and(
-            eq(tasks.freelancerId, userId),
-            eq(tasks.status, "COMPLETED"),
-            gte(tasks.completedAt, monthStart),
-            lt(tasks.completedAt, monthEnd)
-          )
-        );
-
-      const monthName = monthStart.toLocaleString("en-US", { month: "long" });
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
+      const data = monthlyMap.get(key)
+      const monthName = monthDate.toLocaleString('en-US', { month: 'long' })
 
       monthlyEarnings.push({
         month: monthName,
-        year: monthStart.getFullYear(),
-        credits: Number(monthResult[0]?.total) || 0,
-        tasksCompleted: Number(monthResult[0]?.taskCount) || 0,
-      });
+        year: monthDate.getFullYear(),
+        credits: data?.total || 0,
+        tasksCompleted: data?.taskCount || 0,
+      })
     }
 
     // Calculate totals
-    const pendingFromCompleted = Number(pendingCompletedResult[0]?.total) || 0;
-    const pendingFromReview = Number(pendingReviewResult[0]?.total) || 0;
-    const pendingTasksCount = Number(pendingReviewResult[0]?.count) || 0;
+    const pendingFromCompleted = Number(pendingCompletedResult[0]?.total) || 0
+    const pendingFromReview = Number(pendingReviewResult[0]?.total) || 0
+    const pendingTasksCount = Number(pendingReviewResult[0]?.count) || 0
 
     const stats = {
       availableBalance: Number(availableResult[0]?.total) || 0,
@@ -196,7 +200,7 @@ export async function GET(request: NextRequest) {
       thisMonthEarnings: Number(thisMonthResult[0]?.total) || 0,
       lastMonthEarnings: Number(lastMonthResult[0]?.total) || 0,
       pendingTasksCount: pendingTasksCount,
-    };
+    }
 
     // Get payout history from database
     const payoutHistoryResult = await db
@@ -213,18 +217,18 @@ export async function GET(request: NextRequest) {
       .from(payouts)
       .where(eq(payouts.freelancerId, userId))
       .orderBy(desc(payouts.requestedAt))
-      .limit(20);
+      .limit(20)
 
     const payoutHistory = payoutHistoryResult.map((p) => ({
       id: p.id,
       amount: p.amount,
       netAmountUsd: Number(p.netAmountUsd),
       status: p.status.toLowerCase(),
-      method: p.payoutMethod || "stripe_connect",
+      method: p.payoutMethod || 'stripe_connect',
       requestedAt: p.requestedAt.toISOString(),
       completedAt: p.processedAt?.toISOString() || null,
       failureReason: p.failureReason,
-    }));
+    }))
 
     // Calculate total paid out
     const totalPaidOutResult = await db
@@ -232,14 +236,9 @@ export async function GET(request: NextRequest) {
         total: sum(payouts.creditsAmount),
       })
       .from(payouts)
-      .where(
-        and(
-          eq(payouts.freelancerId, userId),
-          eq(payouts.status, "COMPLETED")
-        )
-      );
+      .where(and(eq(payouts.freelancerId, userId), eq(payouts.status, 'COMPLETED')))
 
-    const totalPaidOut = Number(totalPaidOutResult[0]?.total) || 0;
+    const totalPaidOut = Number(totalPaidOutResult[0]?.total) || 0
 
     // Adjust available balance by subtracting already paid out and pending payouts
     const pendingPayoutsResult = await db
@@ -248,17 +247,17 @@ export async function GET(request: NextRequest) {
       })
       .from(payouts)
       .where(
-        and(
-          eq(payouts.freelancerId, userId),
-          sql`${payouts.status} IN ('PENDING', 'PROCESSING')`
-        )
-      );
+        and(eq(payouts.freelancerId, userId), sql`${payouts.status} IN ('PENDING', 'PROCESSING')`)
+      )
 
-    const pendingPayouts = Number(pendingPayoutsResult[0]?.total) || 0;
-    const adjustedAvailableBalance = Math.max(0, stats.availableBalance - totalPaidOut - pendingPayouts);
+    const pendingPayouts = Number(pendingPayoutsResult[0]?.total) || 0
+    const adjustedAvailableBalance = Math.max(
+      0,
+      stats.availableBalance - totalPaidOut - pendingPayouts
+    )
 
     // Get Stripe Connect status
-    const connectAccount = await getConnectAccount(userId);
+    const connectAccount = await getConnectAccount(userId)
 
     // Get payout configuration from database settings
     const payoutConfig = {
@@ -266,7 +265,7 @@ export async function GET(request: NextRequest) {
       artistPercentage: payoutSettings.artistPercentage,
       holdingPeriodDays: payoutSettings.holdingPeriodDays,
       creditValueUsd: payoutSettings.creditValueUSD,
-    };
+    }
 
     return NextResponse.json({
       stats: {
@@ -287,13 +286,10 @@ export async function GET(request: NextRequest) {
             externalAccountLast4: connectAccount.externalAccountLast4,
           }
         : { connected: false },
-    });
+    })
   } catch (error) {
-    logger.error({ error }, "Payout data fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch payout data" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Payout data fetch error')
+    return NextResponse.json({ error: 'Failed to fetch payout data' }, { status: 500 })
   }
 }
 
@@ -305,46 +301,46 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = session.user.id;
-    const body = await request.json();
-    const { creditsAmount } = body;
+    const userId = session.user.id
+    const body = await request.json()
+    const { creditsAmount } = body
 
     // Get payout settings from database
-    const payoutSettings = await getPayoutSettings();
+    const payoutSettings = await getPayoutSettings()
 
     if (!creditsAmount || creditsAmount < payoutSettings.minimumPayoutCredits) {
       return NextResponse.json(
         { error: `Minimum payout is ${payoutSettings.minimumPayoutCredits} credits` },
         { status: 400 }
-      );
+      )
     }
 
     // Check Stripe Connect account
-    const connectAccount = await getConnectAccount(userId);
+    const connectAccount = await getConnectAccount(userId)
     if (!connectAccount) {
       return NextResponse.json(
-        { error: "Please connect your Stripe account first" },
+        { error: 'Please connect your Stripe account first' },
         { status: 400 }
-      );
+      )
     }
 
     if (!connectAccount.payoutsEnabled) {
       return NextResponse.json(
-        { error: "Please complete Stripe onboarding to enable payouts" },
+        { error: 'Please complete Stripe onboarding to enable payouts' },
         { status: 400 }
-      );
+      )
     }
 
     // Calculate available balance using settings from database
-    const holdingPeriodDays = payoutSettings.holdingPeriodDays;
-    const availableCutoff = new Date();
-    availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays);
+    const holdingPeriodDays = payoutSettings.holdingPeriodDays
+    const availableCutoff = new Date()
+    availableCutoff.setDate(availableCutoff.getDate() - holdingPeriodDays)
 
     const availableResult = await db
       .select({
@@ -354,10 +350,10 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(tasks.freelancerId, userId),
-          eq(tasks.status, "COMPLETED"),
+          eq(tasks.status, 'COMPLETED'),
           lt(tasks.completedAt, availableCutoff)
         )
-      );
+      )
 
     // Get already paid out
     const paidOutResult = await db
@@ -370,37 +366,33 @@ export async function POST(request: NextRequest) {
           eq(payouts.freelancerId, userId),
           sql`${payouts.status} IN ('COMPLETED', 'PENDING', 'PROCESSING')`
         )
-      );
+      )
 
-    const totalEarned = Number(availableResult[0]?.total) || 0;
-    const totalPaidOrPending = Number(paidOutResult[0]?.total) || 0;
-    const actualAvailable = totalEarned - totalPaidOrPending;
+    const totalEarned = Number(availableResult[0]?.total) || 0
+    const totalPaidOrPending = Number(paidOutResult[0]?.total) || 0
+    const actualAvailable = totalEarned - totalPaidOrPending
 
     if (creditsAmount > actualAvailable) {
       return NextResponse.json(
         { error: `Insufficient balance. Available: ${actualAvailable} credits` },
         { status: 400 }
-      );
+      )
     }
 
     // Calculate payout amounts
-    const amounts = calculatePayoutAmounts(creditsAmount);
+    const amounts = calculatePayoutAmounts(creditsAmount)
 
     // Create payout request
-    const result = await createPayoutRequest(
-      userId,
-      creditsAmount,
-      connectAccount.stripeAccountId
-    );
+    const result = await createPayoutRequest(userId, creditsAmount, connectAccount.stripeAccountId)
 
     // Process the transfer immediately (or you could queue this for manual review)
-    const transferResult = await processPayoutTransfer(result.payoutId);
+    const transferResult = await processPayoutTransfer(result.payoutId)
 
     if (!transferResult.success) {
       return NextResponse.json(
-        { error: transferResult.error || "Payout processing failed" },
+        { error: transferResult.error || 'Payout processing failed' },
         { status: 500 }
-      );
+      )
     }
 
     return NextResponse.json({
@@ -409,12 +401,9 @@ export async function POST(request: NextRequest) {
       creditsAmount,
       netAmountUsd: amounts.netAmountUsd,
       transferId: transferResult.transferId,
-    });
+    })
   } catch (error) {
-    logger.error({ error }, "Payout request error");
-    return NextResponse.json(
-      { error: "Failed to process payout request" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Payout request error')
+    return NextResponse.json({ error: 'Failed to process payout request' }, { status: 500 })
   }
 }

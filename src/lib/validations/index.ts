@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 /**
  * Centralized Zod validation schemas for API requests
@@ -9,26 +9,22 @@ import { z } from "zod";
 export const createTaskSchema = z.object({
   title: z
     .string()
-    .min(3, "Title must be at least 3 characters")
-    .max(200, "Title must be less than 200 characters")
+    .min(3, 'Title must be at least 3 characters')
+    .max(200, 'Title must be less than 200 characters')
     .transform((val) => val.trim()),
   description: z
     .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(5000, "Description must be less than 5000 characters")
+    .min(10, 'Description must be at least 10 characters')
+    .max(5000, 'Description must be less than 5000 characters')
     .transform((val) => val.trim()),
-  category: z
-    .string()
-    .max(100)
-    .optional()
-    .nullable(),
+  category: z.string().max(100).optional().nullable(),
   requirements: z.record(z.string(), z.unknown()).optional().nullable(),
   estimatedHours: z.number().positive().optional().nullable(),
   creditsRequired: z
-    .number({ message: "Credits required must be a number" })
-    .int({ message: "Credits must be a whole number" })
-    .min(1, { message: "At least 1 credit required" })
-    .max(100, { message: "Maximum 100 credits per task" }),
+    .number({ message: 'Credits required must be a number' })
+    .int({ message: 'Credits must be a whole number' })
+    .min(1, { message: 'At least 1 credit required' })
+    .max(100, { message: 'Maximum 100 credits per task' }),
   deadline: z.string().datetime().optional().nullable(),
   chatHistory: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   styleReferences: z.array(z.string()).optional().default([]),
@@ -47,7 +43,7 @@ export const createTaskSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        type: z.enum(["style", "color", "image", "upload"]),
+        type: z.enum(['style', 'color', 'image', 'upload']),
         imageUrl: z.string(),
         name: z.string(),
         metadata: z
@@ -65,42 +61,42 @@ export const createTaskSchema = z.object({
   // Brief integration
   briefId: z.string().uuid().optional().nullable(),
   briefData: z.record(z.string(), z.unknown()).optional().nullable(),
-});
+})
 
 export const updateTaskSchema = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().min(10).max(5000).optional(),
   status: z
     .enum([
-      "PENDING",
-      "ASSIGNED",
-      "IN_PROGRESS",
-      "IN_REVIEW",
-      "REVISION_REQUESTED",
-      "COMPLETED",
-      "CANCELLED",
+      'PENDING',
+      'ASSIGNED',
+      'IN_PROGRESS',
+      'IN_REVIEW',
+      'REVISION_REQUESTED',
+      'COMPLETED',
+      'CANCELLED',
     ])
     .optional(),
-  priority: z.number().int({ message: "Priority must be a whole number" }).min(0).max(3).optional(),
+  priority: z.number().int({ message: 'Priority must be a whole number' }).min(0).max(3).optional(),
   deadline: z.string().datetime().optional().nullable(),
-});
+})
 
 export const taskMessageSchema = z.object({
   content: z
     .string()
-    .min(1, "Message cannot be empty")
-    .max(5000, "Message too long")
+    .min(1, 'Message cannot be empty')
+    .max(5000, 'Message too long')
     .transform((val) => val.trim()),
   attachments: z.array(z.string().url()).optional().default([]),
-});
+})
 
 export const taskRevisionSchema = z.object({
   feedback: z
     .string()
-    .min(10, "Please provide detailed feedback")
-    .max(2000, "Feedback too long")
+    .min(10, 'Please provide detailed feedback')
+    .max(2000, 'Feedback too long')
     .transform((val) => val.trim()),
-});
+})
 
 // ============ User Schemas ============
 
@@ -108,7 +104,7 @@ export const updateUserSettingsSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   phone: z
     .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format")
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
     .optional()
     .nullable(),
   notificationPreferences: z
@@ -118,31 +114,31 @@ export const updateUserSettingsSchema = z.object({
       inApp: z.boolean().optional(),
     })
     .optional(),
-});
+})
 
 export const onboardingSchema = z.object({
-  role: z.enum(["CLIENT", "FREELANCER"]),
+  role: z.enum(['CLIENT', 'FREELANCER']),
   companyName: z.string().min(2).max(100).optional(),
   industry: z.string().max(100).optional(),
-  website: z.string().url().optional().or(z.literal("")),
+  website: z.string().url().optional().or(z.literal('')),
   // Freelancer-specific fields
   skills: z.array(z.string()).optional(),
   portfolioUrls: z.array(z.string().url()).optional(),
   bio: z.string().max(1000).optional(),
   whatsappNumber: z.string().optional(),
-});
+})
 
 // ============ Auth Schemas ============
 
 export const setRoleSchema = z.object({
-  role: z.enum(["CLIENT", "FREELANCER"]),
-});
+  role: z.enum(['CLIENT', 'FREELANCER']),
+})
 
 // ============ Brand Schemas ============
 
 export const updateBrandSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  website: z.string().url().optional().or(z.literal("")).nullable(),
+  website: z.string().url().optional().or(z.literal('')).nullable(),
   industry: z.string().max(100).optional().nullable(),
   industryArchetype: z.string().max(100).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
@@ -150,27 +146,27 @@ export const updateBrandSchema = z.object({
   faviconUrl: z.string().url().optional().nullable(),
   primaryColor: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional()
     .nullable(),
   secondaryColor: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional()
     .nullable(),
   accentColor: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional()
     .nullable(),
   backgroundColor: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional()
     .nullable(),
   textColor: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional()
     .nullable(),
   brandColors: z.array(z.string()).optional().nullable(),
@@ -182,25 +178,25 @@ export const updateBrandSchema = z.object({
   contactPhone: z.string().max(30).optional().nullable(),
   socialLinks: z
     .object({
-      twitter: z.string().url().optional().or(z.literal("")),
-      linkedin: z.string().url().optional().or(z.literal("")),
-      facebook: z.string().url().optional().or(z.literal("")),
-      instagram: z.string().url().optional().or(z.literal("")),
-      youtube: z.string().url().optional().or(z.literal("")),
+      twitter: z.string().url().optional().or(z.literal('')),
+      linkedin: z.string().url().optional().or(z.literal('')),
+      facebook: z.string().url().optional().or(z.literal('')),
+      instagram: z.string().url().optional().or(z.literal('')),
+      youtube: z.string().url().optional().or(z.literal('')),
     })
     .optional(),
-});
+})
 
 export const extractBrandSchema = z.object({
-  url: z.string().url("Please provide a valid URL"),
-});
+  url: z.string().url('Please provide a valid URL'),
+})
 
 // ============ Admin Schemas ============
 
 export const adminFreelancerActionSchema = z.object({
   freelancerId: z.string().uuid(),
   reason: z.string().max(500).optional(),
-});
+})
 
 export const createCategorySchema = z.object({
   name: z.string().min(2).max(100),
@@ -208,13 +204,13 @@ export const createCategorySchema = z.object({
     .string()
     .min(2)
     .max(100)
-    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens only"),
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only'),
   description: z.string().max(500).optional(),
   baseCredits: z.number().int().min(1).max(50),
   isActive: z.boolean().optional().default(true),
-});
+})
 
-export const updateCategorySchema = createCategorySchema.partial();
+export const updateCategorySchema = createCategorySchema.partial()
 
 export const createStyleReferenceSchema = z.object({
   category: z.string().min(2).max(100),
@@ -222,14 +218,14 @@ export const createStyleReferenceSchema = z.object({
   imageUrl: z.string().url(),
   tags: z.array(z.string()).optional().default([]),
   isActive: z.boolean().optional().default(true),
-});
+})
 
 export const adminCreditsSchema = z.object({
   userId: z.string(),
   amount: z.number().int(),
-  type: z.enum(["BONUS", "ADJUSTMENT", "REFUND"]),
+  type: z.enum(['BONUS', 'ADJUSTMENT', 'REFUND']),
   description: z.string().max(500).optional(),
-});
+})
 
 export const chatPromptsSchema = z.object({
   systemPrompt: z.string().min(10).max(10000),
@@ -238,20 +234,20 @@ export const chatPromptsSchema = z.object({
   socialMediaTree: z.string().max(10000).optional(),
   uiuxTree: z.string().max(10000).optional(),
   creditGuidelines: z.string().max(5000).optional(),
-});
+})
 
 // ============ Payment Schemas ============
 
 export const createCheckoutSchema = z.object({
-  packageId: z.enum(["credits_5", "credits_10", "credits_25", "credits_50"]),
-});
+  packageId: z.enum(['credits_5', 'credits_10', 'credits_25', 'credits_50']),
+})
 
 // ============ Chat Schemas ============
 
 export const chatMessageSchema = z.object({
   messages: z.array(
     z.object({
-      role: z.enum(["user", "assistant"]),
+      role: z.enum(['user', 'assistant']),
       content: z.string().min(1).max(10000),
     })
   ),
@@ -266,13 +262,13 @@ export const chatMessageSchema = z.object({
       })
     )
     .optional(),
-});
+})
 
 // ============ Freelancer Schemas ============
 
 export const claimTaskSchema = z.object({
   taskId: z.string().uuid(),
-});
+})
 
 export const submitDeliverableSchema = z.object({
   taskId: z.string().uuid(),
@@ -286,8 +282,8 @@ export const submitDeliverableSchema = z.object({
         fileSize: z.number(),
       })
     )
-    .min(1, "At least one deliverable file is required"),
-});
+    .min(1, 'At least one deliverable file is required'),
+})
 
 // ============ Coupon Schemas ============
 
@@ -296,18 +292,18 @@ export const createCouponSchema = z.object({
     .string()
     .min(3)
     .max(50)
-    .regex(/^[A-Z0-9_-]+$/, "Code must be uppercase alphanumeric"),
+    .regex(/^[A-Z0-9_-]+$/, 'Code must be uppercase alphanumeric'),
   percentOff: z.number().min(1).max(100).optional(),
   amountOff: z.number().min(1).optional(),
   maxRedemptions: z.number().int().min(1).optional(),
   expiresAt: z.string().datetime().optional(),
-});
+})
 
 // ============ Brand Extract Schema ============
 
 export const extractBrandRequestSchema = z.object({
-  websiteUrl: z.string().min(1, "Website URL is required").max(2000),
-});
+  websiteUrl: z.string().min(1, 'Website URL is required').max(2000),
+})
 
 // ============ Freelancer Profile Schema ============
 
@@ -318,25 +314,27 @@ export const updateFreelancerProfileSchema = z.object({
   portfolioUrls: z.array(z.string().url()).optional(),
   whatsappNumber: z.string().max(30).optional(),
   availability: z.string().max(50).optional(),
-});
+})
 
 // ============ Stripe Connect Schema ============
 
 export const stripeConnectActionSchema = z.object({
-  action: z.enum(["create", "onboarding", "dashboard"]),
+  action: z.enum(['create', 'onboarding', 'dashboard']),
   country: z.string().length(2).optional(),
-});
+})
 
 // ============ Chat Stream Schema ============
 
 export const chatStreamSchema = z.object({
-  messages: z.array(
-    z.object({
-      role: z.enum(["user", "assistant"]),
-      content: z.string().min(1).max(10000),
-    })
-  ).min(1, "At least one message is required"),
-});
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string().min(1).max(10000),
+      })
+    )
+    .min(1, 'At least one message is required'),
+})
 
 // ============ Draft Schema ============
 
@@ -346,58 +344,58 @@ export const saveDraftSchema = z.object({
   messages: z.array(z.any()).optional(),
   selectedStyles: z.array(z.any()).optional(),
   pendingTask: z.any().optional().nullable(),
-});
+})
 
 // ============ Creative Intake Schema ============
 
 export const creativeIntakeSchema = z.object({
-  serviceType: z.string().min(1, "Service type is required").max(100),
-  currentStep: z.string().min(1, "Current step is required").max(100),
+  serviceType: z.string().min(1, 'Service type is required').max(100),
+  currentStep: z.string().min(1, 'Current step is required').max(100),
   messages: z.array(
     z.object({
-      role: z.enum(["user", "assistant", "system"]),
+      role: z.enum(['user', 'assistant', 'system']),
       content: z.string().max(10000),
     })
   ),
-  userMessage: z.string().min(1, "User message is required").max(5000),
+  userMessage: z.string().min(1, 'User message is required').max(5000),
   currentData: z.record(z.string(), z.unknown()).optional().default({}),
-});
+})
 
 // ============ Brief Outline Schema ============
 
 export const generateOutlineSchema = z.object({
-  topic: z.string().min(1, "Topic is required").max(500),
-  platform: z.string().min(1, "Platform is required").max(50),
-  contentType: z.string().max(50).optional().default("post"),
-  intent: z.string().min(1, "Intent is required").max(50),
+  topic: z.string().min(1, 'Topic is required').max(500),
+  platform: z.string().min(1, 'Platform is required').max(50),
+  contentType: z.string().max(50).optional().default('post'),
+  intent: z.string().min(1, 'Intent is required').max(50),
   durationDays: z.number().int().min(1).max(365),
   audienceName: z.string().max(200).optional(),
   audienceDescription: z.string().max(1000).optional(),
   brandName: z.string().max(200).optional(),
   brandIndustry: z.string().max(200).optional(),
   brandTone: z.string().max(200).optional(),
-});
+})
 
 // ============ Task Feedback Analysis Schema ============
 
 export const analyzeFeedbackSchema = z.object({
-  feedback: z.string().min(1, "Feedback is required").max(5000),
+  feedback: z.string().min(1, 'Feedback is required').max(5000),
   originalRequirements: z.record(z.string(), z.unknown()).optional().nullable(),
   description: z.string().max(5000).optional(),
-});
+})
 
 // ============ Admin Settings Schema ============
 
 export const adminSettingsSchema = z.object({
-  key: z.string().min(1, "Key is required").max(200),
+  key: z.string().min(1, 'Key is required').max(200),
   value: z.unknown(),
   description: z.string().max(500).optional(),
-});
+})
 
 // ============ Admin Notification Settings Schema ============
 
 export const updateNotificationSettingSchema = z.object({
-  id: z.string().min(1, "Setting ID is required"),
+  id: z.string().min(1, 'Setting ID is required'),
   emailEnabled: z.boolean().optional(),
   whatsappEnabled: z.boolean().optional(),
   inAppEnabled: z.boolean().optional(),
@@ -407,7 +405,7 @@ export const updateNotificationSettingSchema = z.object({
   emailSubject: z.string().max(500).optional(),
   emailTemplate: z.string().max(10000).optional(),
   whatsappTemplate: z.string().max(2000).optional(),
-});
+})
 
 // ============ Admin Brand Reference Schema ============
 
@@ -417,14 +415,14 @@ export const createBrandReferenceSchema = z.object({
   imageUrl: z.string().url(),
   toneBucket: z.string().min(1),
   energyBucket: z.string().min(1),
-  densityBucket: z.string().optional().default("balanced"),
+  densityBucket: z.string().optional().default('balanced'),
   colorBucket: z.string().min(1),
-  premiumBucket: z.string().optional().default("balanced"),
+  premiumBucket: z.string().optional().default('balanced'),
   colorSamples: z.array(z.string()).optional().default([]),
   visualStyles: z.array(z.string()).optional().default([]),
   industries: z.array(z.string()).optional().default([]),
   displayOrder: z.number().int().optional().default(0),
-});
+})
 
 // ============ Admin Deliverable Style Schema ============
 
@@ -438,21 +436,83 @@ export const createDeliverableStyleSchema = z.object({
   semanticTags: z.array(z.string()).optional().default([]),
   featuredOrder: z.number().int().optional().default(0),
   displayOrder: z.number().int().optional().default(0),
-});
+})
 
 // ============ Onboarding Request Schema ============
 
-export const onboardingRequestSchema = z.object({
-  type: z.enum(["client", "freelancer"]),
-  data: z.record(z.string(), z.unknown()),
-});
+const clientOnboardingDataSchema = z.object({
+  brand: z.object({
+    name: z.string(),
+    website: z.string().optional().nullable(),
+    industry: z.string().optional().nullable(),
+    industryArchetype: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    logoUrl: z.string().optional().nullable(),
+    faviconUrl: z.string().optional().nullable(),
+    primaryColor: z.string().optional().nullable(),
+    secondaryColor: z.string().optional().nullable(),
+    accentColor: z.string().optional().nullable(),
+    backgroundColor: z.string().optional().nullable(),
+    textColor: z.string().optional().nullable(),
+    brandColors: z.array(z.string()).optional().default([]),
+    primaryFont: z.string().optional().nullable(),
+    secondaryFont: z.string().optional().nullable(),
+    socialLinks: z.record(z.string(), z.unknown()).optional().default({}),
+    contactEmail: z.string().optional().nullable(),
+    contactPhone: z.string().optional().nullable(),
+    tagline: z.string().optional().nullable(),
+    keywords: z.array(z.string()).optional().default([]),
+    creativeFocus: z.string().optional().nullable(),
+    audiences: z
+      .array(
+        z.object({
+          name: z.string(),
+          isPrimary: z.boolean().optional(),
+          demographics: z.record(z.string(), z.unknown()).optional(),
+          firmographics: z.record(z.string(), z.unknown()).optional(),
+          psychographics: z.record(z.string(), z.unknown()).optional(),
+          behavioral: z.record(z.string(), z.unknown()).optional(),
+          confidence: z.number().optional(),
+        })
+      )
+      .optional()
+      .nullable(),
+  }),
+  hasWebsite: z.boolean().optional(),
+})
+
+const freelancerOnboardingDataSchema = z.object({
+  whatsappNumber: z.string().optional().nullable(),
+  profileImage: z.string().optional().nullable(),
+  bio: z.string().optional().nullable(),
+  skills: z.array(z.string()).optional().default([]),
+  specializations: z.array(z.string()).optional().default([]),
+  portfolioUrls: z.array(z.string()).optional().default([]),
+  timezone: z.string().optional().nullable(),
+  hourlyRate: z.number().optional().nullable(),
+})
+
+export const onboardingRequestSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('client'),
+    data: clientOnboardingDataSchema,
+  }),
+  z.object({
+    type: z.literal('freelancer'),
+    data: freelancerOnboardingDataSchema,
+  }),
+])
+
+export type OnboardingRequest = z.infer<typeof onboardingRequestSchema>
+export type ClientOnboardingData = z.infer<typeof clientOnboardingDataSchema>
+export type FreelancerOnboardingData = z.infer<typeof freelancerOnboardingDataSchema>
 
 // ============ Helper Types ============
 
-export type CreateTaskInput = z.infer<typeof createTaskSchema>;
-export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
-export type TaskMessageInput = z.infer<typeof taskMessageSchema>;
-export type OnboardingInput = z.infer<typeof onboardingSchema>;
-export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
-export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
-export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>;
+export type CreateTaskInput = z.infer<typeof createTaskSchema>
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>
+export type TaskMessageInput = z.infer<typeof taskMessageSchema>
+export type OnboardingInput = z.infer<typeof onboardingSchema>
+export type UpdateBrandInput = z.infer<typeof updateBrandSchema>
+export type ChatMessageInput = z.infer<typeof chatMessageSchema>
+export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>

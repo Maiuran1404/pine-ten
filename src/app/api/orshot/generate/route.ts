@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { orshotTemplates, generatedDesigns, companies, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { orshotTemplates, generatedDesigns, companies, users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import {
   generateBrandedDesign,
   isOrshotEnabled,
   type BrandData,
   type ParameterMapping,
-} from "@/lib/orshot";
-import { logger } from "@/lib/logger";
+} from '@/lib/orshot'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/orshot/generate
@@ -20,28 +20,22 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if Orshot is configured
     if (!isOrshotEnabled()) {
-      return NextResponse.json(
-        { error: "Quick Design feature is not configured" },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Quick Design feature is not configured' }, { status: 503 })
     }
 
-    const body = await request.json();
-    const { templateId } = body;
+    const body = await request.json()
+    const { templateId } = body
 
     if (!templateId) {
-      return NextResponse.json(
-        { error: "Template ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
     }
 
     // Fetch the template
@@ -49,20 +43,14 @@ export async function POST(request: NextRequest) {
       .select()
       .from(orshotTemplates)
       .where(eq(orshotTemplates.id, templateId))
-      .limit(1);
+      .limit(1)
 
     if (!template) {
-      return NextResponse.json(
-        { error: "Template not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
     if (!template.isActive) {
-      return NextResponse.json(
-        { error: "Template is not available" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Template is not available' }, { status: 400 })
     }
 
     // Fetch the user's company/brand data
@@ -72,26 +60,26 @@ export async function POST(request: NextRequest) {
       })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!user?.companyId) {
       return NextResponse.json(
-        { error: "Please complete your brand profile first" },
+        { error: 'Please complete your brand profile first' },
         { status: 400 }
-      );
+      )
     }
 
     const [company] = await db
       .select()
       .from(companies)
       .where(eq(companies.id, user.companyId))
-      .limit(1);
+      .limit(1)
 
     if (!company) {
       return NextResponse.json(
-        { error: "Brand data not found. Please complete your brand profile." },
+        { error: 'Brand data not found. Please complete your brand profile.' },
         { status: 400 }
-      );
+      )
     }
 
     // Map company to BrandData
@@ -106,30 +94,27 @@ export async function POST(request: NextRequest) {
       primaryFont: company.primaryFont,
       secondaryFont: company.secondaryFont,
       tagline: company.tagline,
-    };
+    }
 
     logger.info(
       { userId: session.user.id, templateId, templateName: template.name },
-      "Generating design"
-    );
+      'Generating design'
+    )
 
     // Generate the design
     const result = await generateBrandedDesign(
       template.orshotTemplateId,
       brandData,
       template.parameterMapping as ParameterMapping,
-      template.outputFormat as "png" | "jpg" | "webp" | "pdf"
-    );
+      template.outputFormat as 'png' | 'jpg' | 'webp' | 'pdf'
+    )
 
     if (!result.success || !result.imageUrl) {
-      logger.error(
-        { error: result.error, templateId },
-        "Design generation failed"
-      );
+      logger.error({ error: result.error, templateId }, 'Design generation failed')
       return NextResponse.json(
-        { error: result.error || "Failed to generate design" },
+        { error: result.error || 'Failed to generate design' },
         { status: 500 }
-      );
+      )
     }
 
     // Save the generated design
@@ -141,10 +126,10 @@ export async function POST(request: NextRequest) {
         templateName: template.name,
         imageUrl: result.imageUrl,
         imageFormat: template.outputFormat,
-        modificationsUsed: brandData as unknown as Record<string, unknown>,
+        modificationsUsed: { ...brandData } as Record<string, unknown>,
         savedToAssets: false,
       })
-      .returning();
+      .returning()
 
     logger.info(
       {
@@ -152,8 +137,8 @@ export async function POST(request: NextRequest) {
         designId: savedDesign.id,
         responseTime: result.responseTime,
       },
-      "Design generated and saved"
-    );
+      'Design generated and saved'
+    )
 
     return NextResponse.json({
       success: true,
@@ -165,12 +150,9 @@ export async function POST(request: NextRequest) {
         format: template.outputFormat,
         createdAt: savedDesign.createdAt,
       },
-    });
+    })
   } catch (error) {
-    logger.error({ err: error }, "Design generation error");
-    return NextResponse.json(
-      { error: "Failed to generate design" },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Design generation error')
+    return NextResponse.json({ error: 'Failed to generate design' }, { status: 500 })
   }
 }

@@ -1,32 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { users, freelancerProfiles, companies, audiences } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { users, freelancerProfiles, companies, audiences } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import {
   adminNotifications,
   sendEmail,
   emailTemplates,
   notifyAdminWhatsApp,
   adminWhatsAppTemplates,
-} from "@/lib/notifications";
-import { config } from "@/lib/config";
-import { withRateLimit } from "@/lib/rate-limit";
-import { inferAudiencesFromBrand } from "@/lib/ai/infer-audiences";
-import { logger } from "@/lib/logger";
-import { onboardingRequestSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+} from '@/lib/notifications'
+import { config } from '@/lib/config'
+import { withRateLimit } from '@/lib/rate-limit'
+import { inferAudiencesFromBrand } from '@/lib/ai/infer-audiences'
+import { logger } from '@/lib/logger'
+import { onboardingRequestSchema } from '@/lib/validations'
+import { handleZodError } from '@/lib/errors'
+import { ZodError } from 'zod'
 
 async function handler(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Security: Get current user from database to check actual state
@@ -38,10 +38,10 @@ async function handler(request: NextRequest) {
       })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Security: Prevent re-submission of onboarding
@@ -49,30 +49,24 @@ async function handler(request: NextRequest) {
     if (currentUser.onboardingCompleted) {
       return NextResponse.json(
         {
-          error:
-            "Onboarding already completed. Contact support to make changes.",
+          error: 'Onboarding already completed. Contact support to make changes.',
         },
         { status: 403 }
-      );
+      )
     }
 
     // Security: Only CLIENT or FREELANCER role users can go through onboarding
     // ADMIN users should not be able to onboard
     // FREELANCER is allowed because users on artist subdomain may be assigned this role before onboarding
-    if (currentUser.role !== "CLIENT" && currentUser.role !== "FREELANCER") {
-      return NextResponse.json(
-        { error: "Only new users can complete onboarding" },
-        { status: 403 }
-      );
+    if (currentUser.role !== 'CLIENT' && currentUser.role !== 'FREELANCER') {
+      return NextResponse.json({ error: 'Only new users can complete onboarding' }, { status: 403 })
     }
 
-    const body = await request.json();
-    const { type, data: rawData } = onboardingRequestSchema.parse(body);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = rawData as any;
+    const body = await request.json()
+    const parsed = onboardingRequestSchema.parse(body)
 
-    if (type === "client") {
-      const { brand, hasWebsite } = data;
+    if (parsed.type === 'client') {
+      const { brand, hasWebsite } = parsed.data
 
       // Create company with brand information
       const [company] = await db
@@ -98,54 +92,43 @@ async function handler(request: NextRequest) {
           contactPhone: brand.contactPhone || null,
           tagline: brand.tagline || null,
           keywords: brand.keywords || [],
-          onboardingStatus: "COMPLETED",
+          onboardingStatus: 'COMPLETED',
         })
-        .returning();
+        .returning()
 
       // Save inferred audiences if any, or infer from brand data if none provided
-      let audiencesToSave = brand.audiences;
-      let audienceSource = "website";
+      let audiencesToSave = brand.audiences
+      let audienceSource = 'website'
 
       // If no audiences from website extraction, infer from brand data
-      if (
-        !audiencesToSave ||
-        !Array.isArray(audiencesToSave) ||
-        audiencesToSave.length === 0
-      ) {
+      if (!audiencesToSave || !Array.isArray(audiencesToSave) || audiencesToSave.length === 0) {
         try {
-          logger.info("No audiences from website, inferring from brand data");
+          logger.info('No audiences from website, inferring from brand data')
           audiencesToSave = await inferAudiencesFromBrand({
             name: brand.name,
             industry: brand.industry,
             industryArchetype: brand.industryArchetype,
             description: brand.description,
             creativeFocus: brand.creativeFocus,
-          });
-          audienceSource = "inferred";
-          logger.info(
-            { count: audiencesToSave.length },
-            "Inferred audiences from brand data"
-          );
+          })
+          audienceSource = 'inferred'
+          logger.info({ count: audiencesToSave.length }, 'Inferred audiences from brand data')
         } catch (error) {
-          logger.error({ error }, "Failed to infer audiences from brand data");
-          audiencesToSave = [];
+          logger.error({ error }, 'Failed to infer audiences from brand data')
+          audiencesToSave = []
         }
       }
 
-      if (
-        audiencesToSave &&
-        Array.isArray(audiencesToSave) &&
-        audiencesToSave.length > 0
-      ) {
+      if (audiencesToSave && Array.isArray(audiencesToSave) && audiencesToSave.length > 0) {
         const audienceValues = audiencesToSave.map(
           (audience: {
-            name: string;
-            isPrimary?: boolean;
-            demographics?: Record<string, unknown>;
-            firmographics?: Record<string, unknown>;
-            psychographics?: Record<string, unknown>;
-            behavioral?: Record<string, unknown>;
-            confidence?: number;
+            name: string
+            isPrimary?: boolean
+            demographics?: Record<string, unknown>
+            firmographics?: Record<string, unknown>
+            psychographics?: Record<string, unknown>
+            behavioral?: Record<string, unknown>
+            confidence?: number
           }) => ({
             companyId: company.id,
             name: audience.name,
@@ -157,9 +140,9 @@ async function handler(request: NextRequest) {
             confidence: audience.confidence || 50,
             sources: [audienceSource],
           })
-        );
+        )
 
-        await db.insert(audiences).values(audienceValues);
+        await db.insert(audiences).values(audienceValues)
       }
 
       // Update user with company link and onboarding completion
@@ -174,15 +157,15 @@ async function handler(request: NextRequest) {
           },
           updatedAt: new Date(),
         })
-        .where(eq(users.id, session.user.id));
+        .where(eq(users.id, session.user.id))
 
       // Fire-and-forget: Send notifications without blocking the response
-      const userName = session.user.name || "Unknown";
-      const userEmail = session.user.email || "";
+      const userName = session.user.name || 'Unknown'
+      const userEmail = session.user.email || ''
       const companyInfo = {
         name: company.name,
         industry: company.industry || undefined,
-      };
+      }
       Promise.resolve().then(async () => {
         try {
           await adminNotifications.newClientSignup({
@@ -190,54 +173,49 @@ async function handler(request: NextRequest) {
             email: userEmail,
             userId: session.user.id,
             company: companyInfo,
-          });
-          const welcomeEmail = emailTemplates.welcomeClient(
-            userName,
-            `${config.app.url}/dashboard`
-          );
+          })
+          const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`)
           await sendEmail({
             to: userEmail,
             subject: welcomeEmail.subject,
             html: welcomeEmail.html,
-          });
+          })
 
           // Send WhatsApp notification to admin
           const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
             name: userName,
             email: userEmail,
-            role: "CLIENT",
+            role: 'CLIENT',
             signupUrl: `${config.app.url}/admin/clients`,
-          });
-          await notifyAdminWhatsApp(whatsappMessage);
+          })
+          await notifyAdminWhatsApp(whatsappMessage)
         } catch (error) {
-          logger.error(
-            { error },
-            "Failed to send client onboarding notifications"
-          );
+          logger.error({ error }, 'Failed to send client onboarding notifications')
         }
-      });
+      })
 
-      return NextResponse.json({ success: true, companyId: company.id });
+      return NextResponse.json({ success: true, companyId: company.id })
     }
 
-    if (type === "freelancer") {
+    if (parsed.type === 'freelancer') {
+      const data = parsed.data
       // Update user role and create freelancer profile
       await db
         .update(users)
         .set({
-          role: "FREELANCER",
+          role: 'FREELANCER',
           phone: data.whatsappNumber || null,
           image: data.profileImage || null,
           onboardingCompleted: true,
           onboardingData: { bio: data.bio },
           updatedAt: new Date(),
         })
-        .where(eq(users.id, session.user.id));
+        .where(eq(users.id, session.user.id))
 
       // Create freelancer profile
       await db.insert(freelancerProfiles).values({
         userId: session.user.id,
-        status: "PENDING", // Needs admin approval
+        status: 'PENDING', // Needs admin approval
         skills: data.skills,
         specializations: data.specializations,
         portfolioUrls: data.portfolioUrls,
@@ -245,14 +223,14 @@ async function handler(request: NextRequest) {
         timezone: data.timezone || null,
         hourlyRate: data.hourlyRate || null,
         whatsappNumber: data.whatsappNumber || null,
-      });
+      })
 
       // Fire-and-forget: Send notification without blocking the response
-      const freelancerName = session.user.name || "Unknown";
-      const freelancerEmail = session.user.email || "";
-      const freelancerSkills = data.skills || [];
-      const freelancerPortfolio = data.portfolioUrls || [];
-      const freelancerHourlyRate = data.hourlyRate;
+      const freelancerName = session.user.name || 'Unknown'
+      const freelancerEmail = session.user.email || ''
+      const freelancerSkills = data.skills
+      const freelancerPortfolio = data.portfolioUrls
+      const freelancerHourlyRate = data.hourlyRate
       Promise.resolve().then(async () => {
         try {
           await adminNotifications.newFreelancerApplication({
@@ -262,39 +240,33 @@ async function handler(request: NextRequest) {
             portfolioUrls: freelancerPortfolio,
             userId: session.user.id,
             hourlyRate: freelancerHourlyRate,
-          });
+          })
 
           // Send WhatsApp notification to admin
           const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
             name: freelancerName,
             email: freelancerEmail,
-            role: "FREELANCER",
+            role: 'FREELANCER',
             signupUrl: `${config.app.url}/admin/freelancers`,
-          });
-          await notifyAdminWhatsApp(whatsappMessage);
+          })
+          await notifyAdminWhatsApp(whatsappMessage)
         } catch (error) {
-          logger.error(
-            { error },
-            "Failed to send freelancer application notification"
-          );
+          logger.error({ error }, 'Failed to send freelancer application notification')
         }
-      });
+      })
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
   } catch (error) {
     if (error instanceof ZodError) {
-      return handleZodError(error);
+      return handleZodError(error)
     }
-    logger.error({ error }, "Onboarding error");
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Onboarding error')
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // Apply auth rate limiting (20 req/min)
-export const POST = withRateLimit(handler, "auth", config.rateLimits.auth);
+export const POST = withRateLimit(handler, 'auth', config.rateLimits.auth)
