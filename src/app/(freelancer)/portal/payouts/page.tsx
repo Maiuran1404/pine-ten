@@ -348,8 +348,71 @@ export default function PayoutsPage() {
     }
   };
 
-  // Get selected category data
-  const selectedCategoryData = earningsGuide?.earningsGuide.find(c => c.slug === selectedCategory);
+  // Get guide categories and selected category data
+  const guideCategories = earningsGuide?.earningsGuide ?? [];
+  const selectedCategoryData = guideCategories.find(c => c.slug === selectedCategory);
+
+  // Pre-compute selected category details element (TypeScript 5.9 doesn't narrow in JSX ternaries)
+  let categoryDetailsEl: React.ReactNode = null;
+  if (selectedCategoryData) {
+    const cat = selectedCategoryData;
+    categoryDetailsEl = (
+      <motion.div
+        key={cat.slug}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
+      >
+        <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-green-700 dark:text-green-300">Earning Range</p>
+              <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+                ${cat.earnings.range.min} – ${cat.earnings.range.max}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">per task</p>
+              <p className="text-xs text-muted-foreground">Based on complexity</p>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Example Tasks</h4>
+          <div className="grid gap-2">
+            {cat.examples.map((example, index) => (
+              <motion.div
+                key={example.description}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={
+                      example.complexity === "Premium"
+                        ? "default"
+                        : example.complexity === "Complex"
+                        ? "secondary"
+                        : "outline"
+                    }
+                    className="text-xs min-w-[70px] justify-center"
+                  >
+                    {example.complexity}
+                  </Badge>
+                  <span className="text-sm">{example.description}</span>
+                </div>
+                <span className="font-semibold text-green-600 dark:text-green-400">
+                  ${example.earning}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -536,10 +599,10 @@ export default function PayoutsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Category Tabs */}
-          {earningsGuide && earningsGuide.earningsGuide.length > 0 && (
+          {guideCategories.length > 0 && (
             <>
               <div className="flex flex-wrap gap-2">
-                {earningsGuide.earningsGuide.map((category) => (
+                {guideCategories.map((category) => (
                   <Button
                     key={category.slug}
                     variant={selectedCategory === category.slug ? "default" : "outline"}
@@ -554,65 +617,7 @@ export default function PayoutsPage() {
               </div>
 
               {/* Selected Category Details */}
-              {selectedCategoryData && (
-                <motion.div
-                  key={selectedCategoryData.slug}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  {/* Earnings Range Header */}
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-green-700 dark:text-green-300">Earning Range</p>
-                        <p className="text-2xl font-bold text-green-800 dark:text-green-200">
-                          ${selectedCategoryData.earnings.range.min} – ${selectedCategoryData.earnings.range.max}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">per task</p>
-                        <p className="text-xs text-muted-foreground">Based on complexity</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Example Tasks */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Example Tasks</h4>
-                    <div className="grid gap-2">
-                      {selectedCategoryData.examples.map((example, index) => (
-                        <motion.div
-                          key={example.description}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Badge
-                              variant={
-                                example.complexity === "Premium"
-                                  ? "default"
-                                  : example.complexity === "Complex"
-                                  ? "secondary"
-                                  : "outline"
-                              }
-                              className="text-xs min-w-[70px] justify-center"
-                            >
-                              {example.complexity}
-                            </Badge>
-                            <span className="text-sm">{example.description}</span>
-                          </div>
-                          <span className="font-semibold text-green-600 dark:text-green-400">
-                            ${example.earning}
-                          </span>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+              {categoryDetailsEl}
             </>
           )}
 

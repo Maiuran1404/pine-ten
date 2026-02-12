@@ -44,6 +44,7 @@ interface FreelancerStats {
 interface Task {
   id: string;
   title: string;
+  description: string;
   status: string;
   deadline: string | null;
   creditsUsed: number;
