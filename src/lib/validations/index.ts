@@ -142,15 +142,17 @@ export const setRoleSchema = z.object({
 
 export const updateBrandSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  website: z.string().url().optional().or(z.literal("")),
-  industry: z.string().max(100).optional(),
-  description: z.string().max(1000).optional(),
+  website: z.string().url().optional().or(z.literal("")).nullable(),
+  industry: z.string().max(100).optional().nullable(),
+  industryArchetype: z.string().max(100).optional().nullable(),
+  description: z.string().max(1000).optional().nullable(),
   logoUrl: z.string().url().optional().nullable(),
   faviconUrl: z.string().url().optional().nullable(),
   primaryColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
-    .optional(),
+    .optional()
+    .nullable(),
   secondaryColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
@@ -161,9 +163,23 @@ export const updateBrandSchema = z.object({
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
     .optional()
     .nullable(),
-  primaryFont: z.string().max(100).optional(),
+  backgroundColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .optional()
+    .nullable(),
+  textColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .optional()
+    .nullable(),
+  brandColors: z.array(z.string()).optional().nullable(),
+  primaryFont: z.string().max(100).optional().nullable(),
   secondaryFont: z.string().max(100).optional().nullable(),
-  tagline: z.string().max(200).optional(),
+  tagline: z.string().max(200).optional().nullable(),
+  keywords: z.array(z.string()).optional().nullable(),
+  contactEmail: z.string().email().optional().nullable(),
+  contactPhone: z.string().max(30).optional().nullable(),
   socialLinks: z
     .object({
       twitter: z.string().url().optional().or(z.literal("")),
@@ -285,6 +301,150 @@ export const createCouponSchema = z.object({
   amountOff: z.number().min(1).optional(),
   maxRedemptions: z.number().int().min(1).optional(),
   expiresAt: z.string().datetime().optional(),
+});
+
+// ============ Brand Extract Schema ============
+
+export const extractBrandRequestSchema = z.object({
+  websiteUrl: z.string().min(1, "Website URL is required").max(2000),
+});
+
+// ============ Freelancer Profile Schema ============
+
+export const updateFreelancerProfileSchema = z.object({
+  bio: z.string().max(1000).optional(),
+  skills: z.array(z.string().max(100)).optional(),
+  specializations: z.array(z.string().max(100)).optional(),
+  portfolioUrls: z.array(z.string().url()).optional(),
+  whatsappNumber: z.string().max(30).optional(),
+  availability: z.string().max(50).optional(),
+});
+
+// ============ Stripe Connect Schema ============
+
+export const stripeConnectActionSchema = z.object({
+  action: z.enum(["create", "onboarding", "dashboard"]),
+  country: z.string().length(2).optional(),
+});
+
+// ============ Chat Stream Schema ============
+
+export const chatStreamSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string().min(1).max(10000),
+    })
+  ).min(1, "At least one message is required"),
+});
+
+// ============ Draft Schema ============
+
+export const saveDraftSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().max(200).optional(),
+  messages: z.array(z.any()).optional(),
+  selectedStyles: z.array(z.any()).optional(),
+  pendingTask: z.any().optional().nullable(),
+});
+
+// ============ Creative Intake Schema ============
+
+export const creativeIntakeSchema = z.object({
+  serviceType: z.string().min(1, "Service type is required").max(100),
+  currentStep: z.string().min(1, "Current step is required").max(100),
+  messages: z.array(
+    z.object({
+      role: z.enum(["user", "assistant", "system"]),
+      content: z.string().max(10000),
+    })
+  ),
+  userMessage: z.string().min(1, "User message is required").max(5000),
+  currentData: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+// ============ Brief Outline Schema ============
+
+export const generateOutlineSchema = z.object({
+  topic: z.string().min(1, "Topic is required").max(500),
+  platform: z.string().min(1, "Platform is required").max(50),
+  contentType: z.string().max(50).optional().default("post"),
+  intent: z.string().min(1, "Intent is required").max(50),
+  durationDays: z.number().int().min(1).max(365),
+  audienceName: z.string().max(200).optional(),
+  audienceDescription: z.string().max(1000).optional(),
+  brandName: z.string().max(200).optional(),
+  brandIndustry: z.string().max(200).optional(),
+  brandTone: z.string().max(200).optional(),
+});
+
+// ============ Task Feedback Analysis Schema ============
+
+export const analyzeFeedbackSchema = z.object({
+  feedback: z.string().min(1, "Feedback is required").max(5000),
+  originalRequirements: z.record(z.string(), z.unknown()).optional().nullable(),
+  description: z.string().max(5000).optional(),
+});
+
+// ============ Admin Settings Schema ============
+
+export const adminSettingsSchema = z.object({
+  key: z.string().min(1, "Key is required").max(200),
+  value: z.unknown(),
+  description: z.string().max(500).optional(),
+});
+
+// ============ Admin Notification Settings Schema ============
+
+export const updateNotificationSettingSchema = z.object({
+  id: z.string().min(1, "Setting ID is required"),
+  emailEnabled: z.boolean().optional(),
+  whatsappEnabled: z.boolean().optional(),
+  inAppEnabled: z.boolean().optional(),
+  notifyClient: z.boolean().optional(),
+  notifyFreelancer: z.boolean().optional(),
+  notifyAdmin: z.boolean().optional(),
+  emailSubject: z.string().max(500).optional(),
+  emailTemplate: z.string().max(10000).optional(),
+  whatsappTemplate: z.string().max(2000).optional(),
+});
+
+// ============ Admin Brand Reference Schema ============
+
+export const createBrandReferenceSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional().nullable(),
+  imageUrl: z.string().url(),
+  toneBucket: z.string().min(1),
+  energyBucket: z.string().min(1),
+  densityBucket: z.string().optional().default("balanced"),
+  colorBucket: z.string().min(1),
+  premiumBucket: z.string().optional().default("balanced"),
+  colorSamples: z.array(z.string()).optional().default([]),
+  visualStyles: z.array(z.string()).optional().default([]),
+  industries: z.array(z.string()).optional().default([]),
+  displayOrder: z.number().int().optional().default(0),
+});
+
+// ============ Admin Deliverable Style Schema ============
+
+export const createDeliverableStyleSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional().nullable(),
+  imageUrl: z.string().url(),
+  deliverableType: z.string().min(1),
+  styleAxis: z.string().min(1),
+  subStyle: z.string().optional().nullable(),
+  semanticTags: z.array(z.string()).optional().default([]),
+  featuredOrder: z.number().int().optional().default(0),
+  displayOrder: z.number().int().optional().default(0),
+});
+
+// ============ Onboarding Request Schema ============
+
+export const onboardingRequestSchema = z.object({
+  type: z.enum(["client", "freelancer"]),
+  data: z.record(z.string(), z.unknown()),
 });
 
 // ============ Helper Types ============

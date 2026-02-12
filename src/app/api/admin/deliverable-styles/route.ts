@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { deliverableStyleReferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import { createDeliverableStyleSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   return withErrorHandling(async () => {
@@ -49,34 +50,20 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
 
     const body = await request.json();
-    const {
-      name,
-      description,
-      imageUrl,
-      deliverableType,
-      styleAxis,
-      subStyle,
-      semanticTags,
-      featuredOrder,
-      displayOrder,
-    } = body;
-
-    if (!name || !imageUrl || !deliverableType || !styleAxis) {
-      throw Errors.badRequest("Name, imageUrl, deliverableType, and styleAxis are required");
-    }
+    const validated = createDeliverableStyleSchema.parse(body);
 
     const [newStyle] = await db
       .insert(deliverableStyleReferences)
       .values({
-        name,
-        description: description || null,
-        imageUrl,
-        deliverableType,
-        styleAxis,
-        subStyle: subStyle || null,
-        semanticTags: semanticTags || [],
-        featuredOrder: featuredOrder || 0,
-        displayOrder: displayOrder || 0,
+        name: validated.name,
+        description: validated.description || null,
+        imageUrl: validated.imageUrl,
+        deliverableType: validated.deliverableType,
+        styleAxis: validated.styleAxis,
+        subStyle: validated.subStyle || null,
+        semanticTags: validated.semanticTags,
+        featuredOrder: validated.featuredOrder,
+        displayOrder: validated.displayOrder,
         isActive: true,
       })
       .returning();

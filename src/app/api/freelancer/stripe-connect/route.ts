@@ -9,6 +9,9 @@ import {
   syncConnectAccountStatus,
 } from "@/lib/stripe-connect";
 import { logger } from "@/lib/logger";
+import { stripeConnectActionSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 /**
  * GET /api/freelancer/stripe-connect
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, country } = body;
+    const { action, country } = stripeConnectActionSchema.parse(body);
 
     const existingAccount = await getConnectAccount(session.user.id);
 
@@ -134,6 +137,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Stripe Connect action error");
     return NextResponse.json(
       { error: "Failed to process Stripe Connect action" },

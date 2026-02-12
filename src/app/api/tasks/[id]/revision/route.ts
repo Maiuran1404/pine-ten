@@ -7,6 +7,9 @@ import { eq } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { taskRevisionSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 export async function POST(
   request: NextRequest,
@@ -23,14 +26,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { feedback } = body;
-
-    if (!feedback || typeof feedback !== "string" || feedback.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Feedback is required for revision request" },
-        { status: 400 }
-      );
-    }
+    const { feedback } = taskRevisionSchema.parse(body);
 
     // Get the task
     const taskResult = await db
@@ -111,6 +107,9 @@ export async function POST(
       maxRevisions: task.maxRevisions,
     });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Revision request error");
     return NextResponse.json(
       { error: "Failed to request revision" },

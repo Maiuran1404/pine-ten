@@ -16,6 +16,9 @@ import type {
 import { PLATFORM_DISPLAY_NAMES, INTENT_DESCRIPTIONS } from "@/components/chat/brief-panel/types";
 import { getDefaultDimension } from "@/lib/constants/platform-dimensions";
 import { logger } from "@/lib/logger";
+import { generateOutlineSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -60,8 +63,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse request
-    const body: OutlineRequest = await request.json();
+    // Parse and validate request
+    const body = await request.json();
+    const validated = generateOutlineSchema.parse(body);
     const {
       topic,
       platform,
@@ -73,15 +77,7 @@ export async function POST(request: NextRequest) {
       brandName,
       brandIndustry,
       brandTone,
-    } = body;
-
-    // Validate required fields
-    if (!topic || !platform || !intent || !durationDays) {
-      return NextResponse.json(
-        { error: "Missing required fields: topic, platform, intent, durationDays" },
-        { status: 400 }
-      );
-    }
+    } = validated as OutlineRequest;
 
     // Fetch user's company for additional context
     let companyContext = "";
@@ -200,6 +196,9 @@ Generate the content outline now:`;
 
     return NextResponse.json({ outline });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Outline generation error");
     return NextResponse.json(
       { error: "Failed to generate outline" },

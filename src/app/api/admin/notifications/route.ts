@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
 import { db } from "@/db";
 import { notificationSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { updateNotificationSettingSchema } from "@/lib/validations";
 
 // Default notification settings to seed
 const defaultSettings = [
@@ -164,11 +165,7 @@ export async function PUT(request: NextRequest) {
     const { user } = await requireAdmin();
 
     const body = await request.json();
-    const { id, ...updates } = body;
-
-    if (!id) {
-      throw Errors.badRequest("Setting ID required");
-    }
+    const { id, ...updates } = updateNotificationSettingSchema.parse(body);
 
     // Update the setting
     await db

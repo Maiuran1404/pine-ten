@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { freelancerProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { updateFreelancerProfileSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,16 +50,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { bio, skills, specializations, portfolioUrls, whatsappNumber, availability } = body;
+    const validated = updateFreelancerProfileSchema.parse(body);
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
-    if (bio !== undefined) updateData.bio = bio;
-    if (skills !== undefined) updateData.skills = skills;
-    if (specializations !== undefined) updateData.specializations = specializations;
-    if (portfolioUrls !== undefined) updateData.portfolioUrls = portfolioUrls;
-    if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber;
-    if (availability !== undefined) updateData.availability = availability;
+    if (validated.bio !== undefined) updateData.bio = validated.bio;
+    if (validated.skills !== undefined) updateData.skills = validated.skills;
+    if (validated.specializations !== undefined) updateData.specializations = validated.specializations;
+    if (validated.portfolioUrls !== undefined) updateData.portfolioUrls = validated.portfolioUrls;
+    if (validated.whatsappNumber !== undefined) updateData.whatsappNumber = validated.whatsappNumber;
+    if (validated.availability !== undefined) updateData.availability = validated.availability;
 
     await db
       .update(freelancerProfiles)
@@ -65,6 +68,9 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Profile update error");
     return NextResponse.json(
       { error: "Failed to update profile" },

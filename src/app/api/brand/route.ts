@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { users, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { updateBrandSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 // GET - Fetch the user's company/brand
 export async function GET() {
@@ -60,6 +63,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    const validated = updateBrandSchema.parse(body);
     const {
       name,
       website,
@@ -81,7 +85,7 @@ export async function PUT(request: NextRequest) {
       contactPhone,
       tagline,
       keywords,
-    } = body;
+    } = validated;
 
     // Update company
     const [updated] = await db
@@ -114,6 +118,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Update brand error");
     return NextResponse.json(
       { error: "Failed to update brand" },

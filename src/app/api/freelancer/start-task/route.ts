@@ -7,6 +7,9 @@ import { eq, and } from "drizzle-orm";
 import { notify } from "@/lib/notifications";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { claimTaskSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taskId } = body;
-
-    if (!taskId) {
-      return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
-    }
+    const { taskId } = claimTaskSchema.parse(body);
 
     // Verify the task exists and is assigned to this freelancer
     const [task] = await db
@@ -83,6 +82,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Start task error");
     return NextResponse.json(
       { error: "Failed to start task" },

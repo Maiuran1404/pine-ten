@@ -15,6 +15,9 @@ import { config } from "@/lib/config";
 import { withRateLimit } from "@/lib/rate-limit";
 import { inferAudiencesFromBrand } from "@/lib/ai/infer-audiences";
 import { logger } from "@/lib/logger";
+import { onboardingRequestSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 async function handler(request: NextRequest) {
   try {
@@ -64,7 +67,9 @@ async function handler(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { type, data } = body;
+    const { type, data: rawData } = onboardingRequestSchema.parse(body);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = rawData as any;
 
     if (type === "client") {
       const { brand, hasWebsite } = data;
@@ -280,6 +285,9 @@ async function handler(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Onboarding error");
     return NextResponse.json(
       { error: "Internal server error" },

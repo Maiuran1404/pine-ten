@@ -6,6 +6,9 @@ import { tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Anthropic from "@anthropic-ai/sdk";
 import { logger } from "@/lib/logger";
+import { analyzeFeedbackSchema } from "@/lib/validations";
+import { handleZodError } from "@/lib/errors";
+import { ZodError } from "zod";
 
 const anthropic = new Anthropic();
 
@@ -24,14 +27,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { feedback, originalRequirements, description } = body;
-
-    if (!feedback || typeof feedback !== "string") {
-      return NextResponse.json(
-        { error: "Feedback is required" },
-        { status: 400 }
-      );
-    }
+    const { feedback, originalRequirements, description } = analyzeFeedbackSchema.parse(body);
 
     // Get the task
     const taskResult = await db
@@ -123,6 +119,9 @@ Respond with JSON only:
       });
     }
   } catch (error) {
+    if (error instanceof ZodError) {
+      return handleZodError(error);
+    }
     logger.error({ error }, "Feedback analysis error");
     return NextResponse.json(
       { error: "Failed to analyze feedback" },

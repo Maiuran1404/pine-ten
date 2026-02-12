@@ -5,6 +5,7 @@ import { auditHelpers, actorFromUser } from "@/lib/audit";
 import { db } from "@/db";
 import { platformSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { adminSettingsSchema } from "@/lib/validations";
 
 export async function GET() {
   return withErrorHandling(async () => {
@@ -27,11 +28,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAdmin();
 
     const body = await request.json();
-    const { key, value, description } = body;
-
-    if (!key || value === undefined) {
-      throw Errors.badRequest("Key and value are required");
-    }
+    const { key, value, description } = adminSettingsSchema.parse(body);
 
     // Upsert the setting
     const existing = await db
