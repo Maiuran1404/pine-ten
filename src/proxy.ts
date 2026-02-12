@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import { rateLimiters } from "@/lib/rate-limit";
 
 const isProduction = process.env.NODE_ENV === "production";
 const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai";
@@ -114,14 +115,68 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Rate limit auth routes (stricter — 20 req/min per IP)
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname === "/login" ||
+    pathname === "/register"
+  ) {
+    const { limited, remaining, resetIn } = rateLimiters.auth(request);
+    if (limited) {
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: "SRV_004",
+            message: "Too many requests. Please try again later.",
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(resetIn),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(resetIn),
+          },
+        }
+      );
+    }
+  }
+
+  // Rate limit all API routes (100 req/min per IP)
+  if (pathname.startsWith("/api/")) {
+    const { limited, remaining, resetIn } = rateLimiters.api(request);
+    if (limited) {
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: "SRV_004",
+            message: "Too many requests. Please try again later.",
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(resetIn),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(resetIn),
+          },
+        }
+      );
+    }
+
+    // API routes pass rate limit — let route handler check auth
+    const apiResponse = NextResponse.next();
+    apiResponse.headers.set("X-RateLimit-Remaining", String(remaining));
+    apiResponse.headers.set("X-RateLimit-Reset", String(resetIn));
+    return apiResponse;
+  }
+
   // Get subdomain context
   const subdomain = getSubdomain(request);
-
-  // For API routes, let the route handler check auth (they have full session access)
-  // This must be checked BEFORE the session cookie check to avoid redirecting API calls to HTML pages
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
 
   // Check for session cookie using BetterAuth's utility
   // Must pass cookiePrefix explicitly as Edge Runtime can't import auth config
