@@ -1,7 +1,9 @@
+import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/env";
 
 // Singleton admin client for storage operations (no cookie handling needed)
 let _adminStorageClient: ReturnType<typeof createSupabaseClient> | null = null;
@@ -13,9 +15,10 @@ let _adminStorageClient: ReturnType<typeof createSupabaseClient> | null = null;
  */
 export function getAdminStorageClient() {
   if (!_adminStorageClient) {
+    const env = getEnv();
     _adminStorageClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY
     );
   }
   return _adminStorageClient;
@@ -24,9 +27,10 @@ export function getAdminStorageClient() {
 export async function createClient() {
   const cookieStore = await cookies();
 
+  const env = getEnv();
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -49,10 +53,11 @@ export async function createClient() {
 
 export async function createAdminClient() {
   const cookieStore = await cookies();
+  const env = getEnv();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
         getAll() {
