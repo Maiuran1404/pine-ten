@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_APP_URL: 'https://app.example.com'
+          NEXT_PUBLIC_APP_NAME: 'Crafted'
+          NEXT_PUBLIC_BASE_DOMAIN: 'example.com'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock'
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_mock'
+          DATABASE_URL: 'postgresql://localhost:5432/test'
+          SUPABASE_SERVICE_ROLE_KEY: 'mock-service-role-key'
+          BETTER_AUTH_SECRET: 'this-is-a-mock-secret-for-ci-build-only-32chars'
+          BETTER_AUTH_URL: 'https://app.example.com'
+          STRIPE_SECRET_KEY: 'sk_test_mock'
+          STRIPE_WEBHOOK_SECRET: 'whsec_mock'
+          ANTHROPIC_API_KEY: 'sk-ant-mock'
+          RESEND_API_KEY: 're_mock'
+          EMAIL_FROM: 'test@example.com'

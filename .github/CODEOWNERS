@@ -1,0 +1,12 @@
+# Default owners for everything
+* @maiuranloganathan
+
+# Critical paths requiring review
+/src/lib/supabase/ @maiuranloganathan
+/src/middleware.ts @maiuranloganathan
+/src/proxy.ts @maiuranloganathan
+/scripts/ @maiuranloganathan
+/src/db/ @maiuranloganathan
+/src/lib/auth.ts @maiuranloganathan
+/src/lib/stripe.ts @maiuranloganathan
+/.github/ @maiuranloganathan
