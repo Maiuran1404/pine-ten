@@ -2,8 +2,15 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write",
-        "command": "npx prettier --write \"$CLAUDE_FILE_PATH\""
+        "matcher": {
+          "tools": ["Write"]
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write \"$CLAUDE_FILE_PATH\""
+          }
+        ]
       }
     ]
   }
