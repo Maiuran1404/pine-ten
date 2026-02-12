@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,445 +31,56 @@ import {
 import {
   DELIVERABLE_TYPES,
   STYLE_AXES,
-  type DeliverableType,
-  type StyleAxis,
 } from "@/lib/constants/reference-libraries";
 import { cn } from "@/lib/utils";
-
-interface ScrapedImage {
-  url: string;
-  alt?: string;
-  width?: number;
-  height?: number;
-  source: "img" | "og" | "meta" | "background";
-}
-
-interface ClassifiedImage {
-  url: string;
-  status: "pending" | "classifying" | "classified" | "uploading" | "done" | "error";
-  classification?: {
-    name: string;
-    description: string;
-    deliverableType: DeliverableType;
-    styleAxis: StyleAxis;
-    subStyle: string | null;
-    semanticTags: string[];
-    confidence: number;
-    colorTemperature?: string;
-    energyLevel?: string;
-    densityLevel?: string;
-    formalityLevel?: string;
-    colorSamples?: string[];
-    industries?: string[];
-    targetAudience?: string;
-    visualElements?: string[];
-    moodKeywords?: string[];
-  };
-  error?: string;
-}
+import { parseUrls, parseDribbbleUrls } from "./deliverable-style-scraper.utils";
+import { useDeliverableStyleScraperData } from "./useDeliverableStyleScraperData";
 
 interface DeliverableStyleScraperProps {
   onUploadComplete?: () => void;
 }
 
-interface DribbbleResult {
-  dribbbleUrl: string;
-  cdnUrl: string | null;
-  success: boolean;
-  imported?: {
-    id: string;
-    name: string;
-    imageUrl: string;
-    deliverableType: string;
-    styleAxis: string;
-  };
-  error?: string;
-  skipped?: boolean;
-  skipReason?: string;
-}
-
 export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleScraperProps) {
-  const [activeTab, setActiveTab] = useState<"urls" | "scrape" | "dribbble">("urls");
-
-  // URL Import state
-  const [urlInput, setUrlInput] = useState("");
-
-  // Dribbble Import state
-  const [dribbbleInput, setDribbbleInput] = useState("");
-  const [isDribbbleProcessing, setIsDribbbleProcessing] = useState(false);
-  const [dribbbleDryRun, setDribbbleDryRun] = useState(false);
-  const [dribbbleResults, setDribbbleResults] = useState<DribbbleResult[]>([]);
-  const [dribbbleSummary, setDribbbleSummary] = useState<{
-    total: number;
-    successful: number;
-    skipped: number;
-    failed: number;
-    invalidUrls: number;
-    remaining: number;
-  } | null>(null);
-
-  // Page Scraper state
-  const [pageUrl, setPageUrl] = useState("");
-  const [isScrapingPage, setIsScrapingPage] = useState(false);
-  const [scrapedImages, setScrapedImages] = useState<ScrapedImage[]>([]);
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
-  const [useFirecrawl, setUseFirecrawl] = useState(false);
-  const [minSize, setMinSize] = useState("200");
-
-  // Classification/Upload state
-  const [classifiedImages, setClassifiedImages] = useState<ClassifiedImage[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [step, setStep] = useState<"input" | "select" | "classify" | "review">("input");
-
-  // Parse URLs from textarea
-  const parseUrls = (input: string): string[] => {
-    return input
-      .split(/[\n,]/)
-      .map((url) => url.trim())
-      .filter((url) => {
-        try {
-          new URL(url);
-          return url.startsWith("http");
-        } catch {
-          return false;
-        }
-      });
-  };
-
-  // Parse Dribbble URLs from textarea
-  const parseDribbbleUrls = (input: string): string[] => {
-    return input
-      .split(/[\n,]/)
-      .map((url) => url.trim())
-      .filter((url) => {
-        try {
-          const parsed = new URL(url);
-          return (
-            parsed.hostname === "dribbble.com" &&
-            parsed.pathname.startsWith("/shots/")
-          );
-        } catch {
-          return false;
-        }
-      });
-  };
-
-  // Handle Dribbble import
-  const handleDribbbleImport = async () => {
-    const urls = parseDribbbleUrls(dribbbleInput);
-    if (urls.length === 0) {
-      toast.error("No valid Dribbble shot URLs found");
-      return;
-    }
-
-    setIsDribbbleProcessing(true);
-    setDribbbleResults([]);
-    setDribbbleSummary(null);
-
-    try {
-      const response = await fetch("/api/admin/deliverable-styles/scrape-dribbble", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          urls,
-          dryRun: dribbbleDryRun,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to process Dribbble URLs");
-      }
-
-      const data = await response.json();
-      setDribbbleResults(data.results || []);
-      setDribbbleSummary(data.summary || null);
-
-      if (!dribbbleDryRun) {
-        const successCount = data.summary?.successful || 0;
-        if (successCount > 0) {
-          toast.success(`Successfully imported ${successCount} design reference(s)`);
-          onUploadComplete?.();
-        }
-        if (data.summary?.failed > 0) {
-          toast.error(`Failed to import ${data.summary.failed} URL(s)`);
-        }
-      } else {
-        toast.success(`Dry run complete. Found ${data.results?.length || 0} images ready for import.`);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to process Dribbble URLs");
-    } finally {
-      setIsDribbbleProcessing(false);
-    }
-  };
-
-  // Reset Dribbble state
-  const handleDribbbleReset = () => {
-    setDribbbleInput("");
-    setDribbbleResults([]);
-    setDribbbleSummary(null);
-    setDribbbleDryRun(false);
-  };
-
-  // Scrape a page for images
-  const handleScrapePage = async () => {
-    if (!pageUrl) {
-      toast.error("Please enter a URL");
-      return;
-    }
-
-    setIsScrapingPage(true);
-    setScrapedImages([]);
-    setSelectedImages(new Set());
-
-    try {
-      const response = await fetch("/api/admin/deliverable-styles/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: pageUrl,
-          useFirecrawl,
-          minSize: parseInt(minSize) || 200,
-          limit: 100,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to scrape page");
-      }
-
-      const data = await response.json();
-      setScrapedImages(data.images);
-
-      if (data.images.length === 0) {
-        toast.error("No images found on this page");
-      } else {
-        toast.success(`Found ${data.images.length} images`);
-        setStep("select");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to scrape page");
-    } finally {
-      setIsScrapingPage(false);
-    }
-  };
-
-  // Toggle image selection
-  const toggleImageSelection = (url: string) => {
-    setSelectedImages((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(url)) {
-        newSet.delete(url);
-      } else {
-        newSet.add(url);
-      }
-      return newSet;
-    });
-  };
-
-  // Select all images
-  const selectAllImages = () => {
-    setSelectedImages(new Set(scrapedImages.map((img) => img.url)));
-  };
-
-  // Clear selection
-  const clearSelection = () => {
-    setSelectedImages(new Set());
-  };
-
-  // Start classification process
-  const handleStartClassification = async () => {
-    let urls: string[] = [];
-
-    if (activeTab === "urls") {
-      urls = parseUrls(urlInput);
-      if (urls.length === 0) {
-        toast.error("No valid URLs found");
-        return;
-      }
-    } else {
-      urls = Array.from(selectedImages);
-      if (urls.length === 0) {
-        toast.error("Please select at least one image");
-        return;
-      }
-    }
-
-    // Initialize classified images
-    setClassifiedImages(urls.map((url) => ({ url, status: "pending" })));
-    setStep("classify");
-    setIsProcessing(true);
-    setProgress(0);
-
-    // Classify each image
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-
-      setClassifiedImages((prev) =>
-        prev.map((img) =>
-          img.url === url ? { ...img, status: "classifying" } : img
-        )
-      );
-
-      try {
-        const response = await fetch("/api/admin/deliverable-styles/import-urls", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: [url] }),
-        });
-
-        const data = await response.json();
-        const result = data.results?.[0];
-
-        if (result?.success) {
-          setClassifiedImages((prev) =>
-            prev.map((img) =>
-              img.url === url
-                ? { ...img, status: "classified", classification: result.classification }
-                : img
-            )
-          );
-        } else {
-          setClassifiedImages((prev) =>
-            prev.map((img) =>
-              img.url === url
-                ? { ...img, status: "error", error: result?.error || "Classification failed" }
-                : img
-            )
-          );
-        }
-      } catch (error) {
-        setClassifiedImages((prev) =>
-          prev.map((img) =>
-            img.url === url
-              ? { ...img, status: "error", error: "Network error" }
-              : img
-          )
-        );
-      }
-
-      setProgress(((i + 1) / urls.length) * 100);
-    }
-
-    setIsProcessing(false);
-    setStep("review");
-  };
-
-  // Update classification for an image
-  const updateClassification = (url: string, field: string, value: string | string[]) => {
-    setClassifiedImages((prev) =>
-      prev.map((img) =>
-        img.url === url && img.classification
-          ? {
-              ...img,
-              classification: {
-                ...img.classification,
-                [field]: value,
-              },
-            }
-          : img
-      )
-    );
-  };
-
-  // Upload all classified images
-  const handleUploadAll = async () => {
-    const toUpload = classifiedImages.filter((img) => img.status === "classified");
-
-    if (toUpload.length === 0) {
-      toast.error("No images to upload");
-      return;
-    }
-
-    setIsProcessing(true);
-    setProgress(0);
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < toUpload.length; i++) {
-      const img = toUpload[i];
-
-      setClassifiedImages((prev) =>
-        prev.map((item) =>
-          item.url === img.url ? { ...item, status: "uploading" } : item
-        )
-      );
-
-      try {
-        const response = await fetch("/api/admin/deliverable-styles/import-urls", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: [img.url] }),
-        });
-
-        const data = await response.json();
-        const result = data.results?.[0];
-
-        if (result?.success) {
-          setClassifiedImages((prev) =>
-            prev.map((item) =>
-              item.url === img.url ? { ...item, status: "done" } : item
-            )
-          );
-          successCount++;
-        } else {
-          setClassifiedImages((prev) =>
-            prev.map((item) =>
-              item.url === img.url
-                ? { ...item, status: "error", error: result?.error || "Upload failed" }
-                : item
-            )
-          );
-          errorCount++;
-        }
-      } catch {
-        setClassifiedImages((prev) =>
-          prev.map((item) =>
-            item.url === img.url
-              ? { ...item, status: "error", error: "Network error" }
-              : item
-          )
-        );
-        errorCount++;
-      }
-
-      setProgress(((i + 1) / toUpload.length) * 100);
-    }
-
-    setIsProcessing(false);
-
-    if (successCount > 0) {
-      toast.success(`Successfully uploaded ${successCount} images`);
-      onUploadComplete?.();
-    }
-    if (errorCount > 0) {
-      toast.error(`Failed to upload ${errorCount} images`);
-    }
-  };
-
-  // Remove an image from the list
-  const removeImage = (url: string) => {
-    setClassifiedImages((prev) => prev.filter((img) => img.url !== url));
-  };
-
-  // Reset to start
-  const handleReset = () => {
-    setStep("input");
-    setUrlInput("");
-    setPageUrl("");
-    setScrapedImages([]);
-    setSelectedImages(new Set());
-    setClassifiedImages([]);
-    setProgress(0);
-  };
-
-  const classifiedCount = classifiedImages.filter((img) => img.status === "classified").length;
-  const doneCount = classifiedImages.filter((img) => img.status === "done").length;
-  const errorCount = classifiedImages.filter((img) => img.status === "error").length;
+  const {
+    activeTab,
+    setActiveTab,
+    urlInput,
+    setUrlInput,
+    dribbbleInput,
+    setDribbbleInput,
+    isDribbbleProcessing,
+    dribbbleDryRun,
+    setDribbbleDryRun,
+    dribbbleResults,
+    dribbbleSummary,
+    pageUrl,
+    setPageUrl,
+    isScrapingPage,
+    scrapedImages,
+    selectedImages,
+    useFirecrawl,
+    setUseFirecrawl,
+    minSize,
+    setMinSize,
+    classifiedImages,
+    isProcessing,
+    progress,
+    step,
+    classifiedCount,
+    doneCount,
+    errorCount,
+    handleDribbbleImport,
+    handleDribbbleReset,
+    handleScrapePage,
+    toggleImageSelection,
+    selectAllImages,
+    clearSelection,
+    handleStartClassification,
+    updateClassification,
+    handleUploadAll,
+    removeImage,
+    handleReset,
+  } = useDeliverableStyleScraperData({ onUploadComplete });
 
   return (
     <Card>
