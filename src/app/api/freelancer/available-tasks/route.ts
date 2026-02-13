@@ -1,54 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import 'server-only'
+
+import { NextRequest } from 'next/server'
 import { db } from '@/db'
 import { tasks, taskCategories, freelancerProfiles } from '@/db/schema'
 import { eq, isNull, and } from 'drizzle-orm'
-import { logger } from '@/lib/logger'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function GET(_request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
+  return withErrorHandling(
+    async () => {
+      const { user } = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      // Check if user is an approved freelancer
+      const profile = await db
+        .select()
+        .from(freelancerProfiles)
+        .where(eq(freelancerProfiles.userId, user.id))
+        .limit(1)
 
-    // Check if user is an approved freelancer
-    const profile = await db
-      .select()
-      .from(freelancerProfiles)
-      .where(eq(freelancerProfiles.userId, session.user.id))
-      .limit(1)
+      if (!profile.length || profile[0].status !== 'APPROVED') {
+        throw Errors.forbidden('Freelancer not approved')
+      }
 
-    if (!profile.length || profile[0].status !== 'APPROVED') {
-      return NextResponse.json({ error: 'Freelancer not approved' }, { status: 403 })
-    }
+      // Get available tasks (not assigned to anyone, status is PENDING)
+      const availableTasks = await db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          description: tasks.description,
+          creditsUsed: tasks.creditsUsed,
+          estimatedHours: tasks.estimatedHours,
+          deadline: tasks.deadline,
+          createdAt: tasks.createdAt,
+          requirements: tasks.requirements,
+          category: {
+            name: taskCategories.name,
+          },
+        })
+        .from(tasks)
+        .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+        .where(and(eq(tasks.status, 'PENDING'), isNull(tasks.freelancerId)))
 
-    // Get available tasks (not assigned to anyone, status is PENDING)
-    const availableTasks = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        creditsUsed: tasks.creditsUsed,
-        estimatedHours: tasks.estimatedHours,
-        deadline: tasks.deadline,
-        createdAt: tasks.createdAt,
-        requirements: tasks.requirements,
-        category: {
-          name: taskCategories.name,
-        },
-      })
-      .from(tasks)
-      .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-      .where(and(eq(tasks.status, 'PENDING'), isNull(tasks.freelancerId)))
-
-    return NextResponse.json({ tasks: availableTasks })
-  } catch (error) {
-    logger.error({ error }, 'Available tasks fetch error')
-    return NextResponse.json({ error: 'Failed to fetch available tasks' }, { status: 500 })
-  }
+      return successResponse({ tasks: availableTasks })
+    },
+    { endpoint: 'GET /api/freelancer/available-tasks' }
+  )
 }
