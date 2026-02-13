@@ -30,6 +30,7 @@ import {
   Sparkles,
   Brain,
   Video,
+  KeyRound,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -136,6 +137,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Coupons',
         href: '/admin/coupons',
         icon: Ticket,
+      },
+      {
+        name: 'Invite Codes',
+        href: '/admin/invite-codes',
+        icon: KeyRound,
       },
     ],
   },

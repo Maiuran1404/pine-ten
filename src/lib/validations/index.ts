@@ -523,6 +523,32 @@ export const joinWaitlistSchema = z.object({
   referralSource: z.string().max(200).optional(),
 })
 
+// ============ Admin Invite Code Schemas ============
+
+export const createInviteCodeSchema = z.object({
+  code: z
+    .string()
+    .max(50)
+    .regex(/^[A-Z0-9_-]*$/i, 'Code must be alphanumeric (dashes/underscores allowed)')
+    .optional()
+    .transform((val) => (val ? val.trim().toUpperCase() : undefined)),
+  description: z.string().max(200).optional(),
+  maxUses: z.number().int().min(1).optional(),
+  expiresAt: z
+    .string()
+    .datetime({ offset: true })
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => val || undefined),
+})
+
+export const updateInviteCodeSchema = z.object({
+  isActive: z.boolean().optional(),
+  description: z.string().max(200).optional(),
+  maxUses: z.number().int().min(1).nullable().optional(),
+  expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+})
+
 // ============ Helper Types ============
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
