@@ -115,6 +115,8 @@ function RegisterContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [codeValidated, setCodeValidated] = useState(false)
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
 
   // Determine account type based on portal
   const isArtistPortal = portal.type === 'artist'
@@ -129,6 +131,36 @@ function RegisterContent() {
     }
     return portal.defaultRedirect
   }
+
+  // Validate invite code on mount
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (!code) {
+      router.replace('/early-access')
+      return
+    }
+
+    async function validateCode() {
+      try {
+        const response = await fetch('/api/early-access/validate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        })
+        const result = await response.json()
+        if (!response.ok || !result.success) {
+          router.replace('/early-access')
+          return
+        }
+        setInviteCode(result.data.code)
+        setCodeValidated(true)
+      } catch {
+        router.replace('/early-access')
+      }
+    }
+
+    validateCode()
+  }, [searchParams, router])
 
   useEffect(() => {
     if (!isPending && session?.user) {
@@ -170,6 +202,17 @@ function RegisterContent() {
       // The onboarding API will update the role when the freelancer submits their application
       // Setting it here would cause the API to reject with 403 (only CLIENT role can onboard)
 
+      // Record invite code usage (non-blocking)
+      if (inviteCode) {
+        fetch('/api/early-access/record-usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: inviteCode }),
+        }).catch(() => {
+          // Silently fail - don't block registration
+        })
+      }
+
       toast.success('Account created successfully!')
 
       if (accountType === 'freelancer') {
@@ -198,9 +241,11 @@ function RegisterContent() {
     try {
       // For Google sign-up, we'll redirect to onboarding after auth
       // Artists go to freelancer onboarding
+      // Pass invite code through callback URL so it can be recorded after OAuth
+      const codeParam = inviteCode ? `&earlyAccessCode=${encodeURIComponent(inviteCode)}` : ''
       const callbackURL = isArtistPortal
-        ? `${window.location.origin}/onboarding?type=freelancer`
-        : `${window.location.origin}/onboarding`
+        ? `${window.location.origin}/onboarding?type=freelancer${codeParam}`
+        : `${window.location.origin}/onboarding${codeParam ? `?${codeParam.slice(1)}` : ''}`
 
       await signIn.social({
         provider: 'google',
@@ -213,8 +258,8 @@ function RegisterContent() {
     }
   }
 
-  // Show loading while checking initial session
-  if (isPending) {
+  // Show loading while checking initial session or validating code
+  if (isPending || !codeValidated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <FloatingBlobs />

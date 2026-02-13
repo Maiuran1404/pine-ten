@@ -99,6 +99,68 @@ export const notificationChannelEnum = pgEnum('notification_channel', [
   'IN_APP',
 ])
 
+// Early access enums
+export const waitlistStatusEnum = pgEnum('waitlist_status', ['PENDING', 'INVITED', 'REGISTERED'])
+
+// Early access codes
+export const earlyAccessCodes = pgTable(
+  'early_access_codes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    code: text('code').notNull().unique(),
+    description: text('description'),
+    maxUses: integer('max_uses'),
+    usedCount: integer('used_count').notNull().default(0),
+    expiresAt: timestamp('expires_at'),
+    isActive: boolean('is_active').notNull().default(true),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('early_access_codes_code_idx').on(table.code),
+    index('early_access_codes_is_active_idx').on(table.isActive),
+  ]
+)
+
+// Early access waitlist
+export const earlyAccessWaitlist = pgTable(
+  'early_access_waitlist',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: text('email').notNull().unique(),
+    name: text('name'),
+    referralSource: text('referral_source'),
+    status: waitlistStatusEnum('status').notNull().default('PENDING'),
+    invitedAt: timestamp('invited_at'),
+    registeredAt: timestamp('registered_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('early_access_waitlist_email_idx').on(table.email),
+    index('early_access_waitlist_status_idx').on(table.status),
+  ]
+)
+
+// Early access code usages
+export const earlyAccessCodeUsages = pgTable(
+  'early_access_code_usages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    codeId: uuid('code_id')
+      .notNull()
+      .references(() => earlyAccessCodes.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    usedAt: timestamp('used_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('early_access_code_usages_code_id_idx').on(table.codeId),
+    index('early_access_code_usages_user_id_idx').on(table.userId),
+  ]
+)
+
 // Users table (BetterAuth compatible)
 export const users = pgTable(
   'users',
@@ -2079,5 +2141,21 @@ export const tasksBriefsRelation = relations(tasks, ({ one }) => ({
   brief: one(briefs, {
     fields: [tasks.id],
     references: [briefs.taskId],
+  }),
+}))
+
+// Early access relations
+export const earlyAccessCodesRelations = relations(earlyAccessCodes, ({ many }) => ({
+  usages: many(earlyAccessCodeUsages),
+}))
+
+export const earlyAccessCodeUsagesRelations = relations(earlyAccessCodeUsages, ({ one }) => ({
+  code: one(earlyAccessCodes, {
+    fields: [earlyAccessCodeUsages.codeId],
+    references: [earlyAccessCodes.id],
+  }),
+  user: one(users, {
+    fields: [earlyAccessCodeUsages.userId],
+    references: [users.id],
   }),
 }))

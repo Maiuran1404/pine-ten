@@ -507,6 +507,22 @@ export type OnboardingRequest = z.infer<typeof onboardingRequestSchema>
 export type ClientOnboardingData = z.infer<typeof clientOnboardingDataSchema>
 export type FreelancerOnboardingData = z.infer<typeof freelancerOnboardingDataSchema>
 
+// ============ Early Access Schemas ============
+
+export const validateEarlyAccessCodeSchema = z.object({
+  code: z
+    .string()
+    .min(1, 'Invite code is required')
+    .max(50, 'Invalid invite code')
+    .transform((val) => val.trim().toUpperCase()),
+})
+
+export const joinWaitlistSchema = z.object({
+  email: z.string().email('Please enter a valid email'),
+  name: z.string().max(100).optional(),
+  referralSource: z.string().max(200).optional(),
+})
+
 // ============ Helper Types ============
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>

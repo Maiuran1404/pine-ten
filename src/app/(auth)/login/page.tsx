@@ -132,11 +132,11 @@ function LoginContent() {
     return portal.defaultRedirect
   }
 
-  // Redirect artists to signup by default (unless they explicitly chose to sign in)
+  // Redirect artists to early-access by default (unless they explicitly chose to sign in)
   useEffect(() => {
     const intentToSignIn = searchParams.get('intent') === 'signin'
     if (isArtist && !intentToSignIn && !session?.user) {
-      router.replace('/register')
+      router.replace('/early-access')
     }
   }, [isArtist, searchParams, router, session])
 
@@ -413,7 +413,7 @@ function LoginContent() {
               <p className="text-white/40 text-sm">
                 Don&apos;t have an account?{' '}
                 <Link
-                  href="/register"
+                  href="/early-access"
                   className="text-[#8bb58b] hover:text-[#a8d4a8] transition-colors"
                 >
                   Create one
