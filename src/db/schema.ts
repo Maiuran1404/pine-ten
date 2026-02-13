@@ -675,6 +675,10 @@ export const tasks = pgTable(
     index('tasks_status_idx').on(table.status),
     index('tasks_created_at_idx').on(table.createdAt),
     index('tasks_client_status_idx').on(table.clientId, table.status),
+    index('tasks_client_created_at_idx').on(table.clientId, table.createdAt),
+    index('tasks_status_created_at_idx').on(table.status, table.createdAt),
+    index('tasks_freelancer_status_idx').on(table.freelancerId, table.status),
+    index('tasks_category_status_idx').on(table.categoryId, table.status),
     index('tasks_offered_to_idx').on(table.offeredTo),
     index('tasks_offer_expires_at_idx').on(table.offerExpiresAt),
   ]
