@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/db'
 import { freelancerProfiles, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { notify, adminNotifications } from '@/lib/notifications'
+import { safeNotify, adminNotifications } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       ])
 
       // Notify the freelancer (in-app + email)
-      await notify({
+      await safeNotify({
         userId: freelancerUser.id,
         type: 'FREELANCER_APPROVED',
         title: 'Application Approved!',

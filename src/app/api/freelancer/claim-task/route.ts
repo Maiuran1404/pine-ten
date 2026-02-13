@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { db } from '@/db'
 import { tasks, freelancerProfiles, users } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
-import { notify, adminNotifications } from '@/lib/notifications'
+import { safeNotify, adminNotifications } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
 import { claimTaskSchema } from '@/lib/validations'
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const client = await db.select().from(users).where(eq(users.id, task[0].clientId)).limit(1)
 
     if (client.length) {
-      await notify({
+      await safeNotify({
         userId: client[0].id,
         type: 'TASK_ASSIGNED',
         title: 'Task Assigned',

@@ -184,6 +184,37 @@ function getWhatsAppMessage(
   }
 }
 
+/**
+ * Fire-and-forget notification wrapper. Catches all errors and logs them
+ * instead of throwing, so notification failures never crash the calling endpoint.
+ */
+export async function safeNotify(params: NotifyParams): Promise<void> {
+  try {
+    await notify(params)
+  } catch (error) {
+    logger.error(
+      { error, userId: params.userId, type: params.type, taskId: params.taskId },
+      'Notification failed (non-fatal)'
+    )
+  }
+}
+
+/**
+ * Fire-and-forget wrapper for any async notification function.
+ * Use for adminNotifications, sendEmail, or any side-effect that shouldn't crash the caller.
+ */
+export async function safeAsync<T>(
+  fn: () => Promise<T>,
+  context: Record<string, unknown> = {}
+): Promise<T | undefined> {
+  try {
+    return await fn()
+  } catch (error) {
+    logger.error({ error, ...context }, 'Async notification failed (non-fatal)')
+    return undefined
+  }
+}
+
 export { sendEmail, emailTemplates, adminNotifications, notifyAdmin } from './email'
 export {
   sendWhatsApp,
