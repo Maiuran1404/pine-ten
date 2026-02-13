@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { NextRequest } from 'next/server'
+import { requireAdmin } from '@/lib/require-auth'
 import FirecrawlApp from '@mendable/firecrawl-js'
 import { logger } from '@/lib/logger'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 
 interface ScrapedImage {
   url: string
@@ -349,115 +349,102 @@ function filterContentImages(images: ScrapedImage[], minSize = 200): ScrapedImag
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    // Auth check
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
+  return withErrorHandling(
+    async () => {
+      await requireAdmin()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = session.user as { role?: string }
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const {
-      url,
-      useFirecrawl = false,
-      minSize = 200,
-      limit = 50,
-    } = body as {
-      url: string
-      useFirecrawl?: boolean
-      minSize?: number
-      limit?: number
-    }
-
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 })
-    }
-
-    // Validate URL
-    let parsedUrl: URL
-    try {
-      parsedUrl = new URL(url)
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Invalid protocol')
+      const body = await request.json()
+      const {
+        url,
+        useFirecrawl = false,
+        minSize = 200,
+        limit = 50,
+      } = body as {
+        url: string
+        useFirecrawl?: boolean
+        minSize?: number
+        limit?: number
       }
-    } catch (error) {
-      logger.warn({ err: error, url }, 'Invalid URL provided for scraping')
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
-    }
 
-    const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`
-    let images: ScrapedImage[] = []
+      if (!url) {
+        throw Errors.badRequest('URL is required')
+      }
 
-    // Check if site is unsupported by Firecrawl (non-enterprise plans)
-    const isPinterest = url.includes('pinterest.com') || url.includes('pin.it')
-    const isCosmos = url.includes('cosmos.so')
-    const isUnsupportedSite = isPinterest || isCosmos
-    let firecrawlError: string | null = null
-
-    // Option 1: Use Firecrawl for JS-heavy sites (not unsupported sites)
-    if (useFirecrawl && firecrawl && !isUnsupportedSite) {
+      // Validate URL
+      let parsedUrl: URL
       try {
-        // Build extensive scroll actions to load more content
-        const scrollActions: Array<
-          { type: 'scroll'; direction: 'down' } | { type: 'wait'; milliseconds: number }
-        > = []
-        // Scroll 15 times to load lots of content
-        for (let i = 0; i < 15; i++) {
-          scrollActions.push({ type: 'scroll', direction: 'down' })
-          scrollActions.push({ type: 'wait', milliseconds: 1200 })
+        parsedUrl = new URL(url)
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new Error('Invalid protocol')
         }
+      } catch {
+        throw Errors.badRequest('Invalid URL')
+      }
 
-        const scrapeResult = await firecrawl.scrape(url, {
-          formats: ['html', 'rawHtml'],
-          waitFor: 8000, // Wait 8 seconds for initial JS to render
-          actions: scrollActions,
-        })
+      const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`
+      let images: ScrapedImage[] = []
 
-        // Use rawHtml first (more complete), fall back to html
-        const htmlContent = scrapeResult.rawHtml || scrapeResult.html
-        if (htmlContent) {
-          logger.debug({ url, htmlLength: htmlContent.length }, 'Firecrawl returned HTML')
-          images = extractImagesFromHtml(htmlContent, baseUrl)
-          logger.debug({ url, imageCount: images.length }, 'Firecrawl extracted raw images')
-        } else {
-          logger.debug({ url }, 'Firecrawl returned no HTML content')
-        }
-      } catch (error: unknown) {
-        logger.error({ error }, 'Firecrawl error')
-        // Check if it's a "website not supported" error
-        if (error && typeof error === 'object' && 'details' in error) {
-          const details = (error as { details?: { error?: string } }).details
-          if (details?.error?.includes('not currently supported')) {
-            firecrawlError =
-              'This website is not supported by Firecrawl. Try using the "Paste Image URLs" tab instead.'
+      // Check if site is unsupported by Firecrawl (non-enterprise plans)
+      const isPinterest = url.includes('pinterest.com') || url.includes('pin.it')
+      const isCosmos = url.includes('cosmos.so')
+      const isUnsupportedSite = isPinterest || isCosmos
+      let firecrawlError: string | null = null
+
+      // Option 1: Use Firecrawl for JS-heavy sites (not unsupported sites)
+      if (useFirecrawl && firecrawl && !isUnsupportedSite) {
+        try {
+          // Build extensive scroll actions to load more content
+          const scrollActions: Array<
+            { type: 'scroll'; direction: 'down' } | { type: 'wait'; milliseconds: number }
+          > = []
+          // Scroll 15 times to load lots of content
+          for (let i = 0; i < 15; i++) {
+            scrollActions.push({ type: 'scroll', direction: 'down' })
+            scrollActions.push({ type: 'wait', milliseconds: 1200 })
           }
+
+          const scrapeResult = await firecrawl.scrape(url, {
+            formats: ['html', 'rawHtml'],
+            waitFor: 8000, // Wait 8 seconds for initial JS to render
+            actions: scrollActions,
+          })
+
+          // Use rawHtml first (more complete), fall back to html
+          const htmlContent = scrapeResult.rawHtml || scrapeResult.html
+          if (htmlContent) {
+            logger.debug({ url, htmlLength: htmlContent.length }, 'Firecrawl returned HTML')
+            images = extractImagesFromHtml(htmlContent, baseUrl)
+            logger.debug({ url, imageCount: images.length }, 'Firecrawl extracted raw images')
+          } else {
+            logger.debug({ url }, 'Firecrawl returned no HTML content')
+          }
+        } catch (error: unknown) {
+          logger.error({ error }, 'Firecrawl error')
+          // Check if it's a "website not supported" error
+          if (error && typeof error === 'object' && 'details' in error) {
+            const details = (error as { details?: { error?: string } }).details
+            if (details?.error?.includes('not currently supported')) {
+              firecrawlError =
+                'This website is not supported by Firecrawl. Try using the "Paste Image URLs" tab instead.'
+            }
+          }
+          // Fall back to simple fetch
         }
-        // Fall back to simple fetch
       }
-    }
 
-    // For unsupported sites, return a helpful error message
-    if (isUnsupportedSite && images.length === 0) {
-      if (isPinterest) {
-        firecrawlError =
-          'Pinterest requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import Pinterest images directly. You can right-click images on Pinterest and copy their URLs.'
-      } else if (isCosmos) {
-        firecrawlError =
-          'Cosmos.so requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import images directly. You can right-click images on Cosmos and copy their URLs.'
+      // For unsupported sites, return a helpful error message
+      if (isUnsupportedSite && images.length === 0) {
+        if (isPinterest) {
+          firecrawlError =
+            'Pinterest requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import Pinterest images directly. You can right-click images on Pinterest and copy their URLs.'
+        } else if (isCosmos) {
+          firecrawlError =
+            'Cosmos.so requires browser-based scraping which is not available. Please use the "Paste Image URLs" tab to import images directly. You can right-click images on Cosmos and copy their URLs.'
+        }
       }
-    }
 
-    // Option 2: Simple fetch (for static sites or as fallback)
-    if (images.length === 0) {
-      try {
+      // Option 2: Simple fetch (for static sites or as fallback)
+      if (images.length === 0) {
         const response = await fetch(url, {
           headers: {
             'User-Agent':
@@ -469,59 +456,50 @@ export async function POST(request: NextRequest) {
         })
 
         if (!response.ok) {
-          return NextResponse.json(
-            { error: `Failed to fetch page: ${response.status}` },
-            { status: 400 }
-          )
+          throw Errors.badRequest(`Failed to fetch page: ${response.status}`)
         }
 
         const html = await response.text()
         images = extractImagesFromHtml(html, baseUrl)
-      } catch (error) {
-        logger.error({ error }, 'Fetch error')
-        return NextResponse.json({ error: 'Failed to fetch page' }, { status: 500 })
       }
-    }
 
-    // Filter and deduplicate
-    const filteredImages = filterContentImages(images, minSize)
+      // Filter and deduplicate
+      const filteredImages = filterContentImages(images, minSize)
 
-    // Sort by priority: og images first, then by size hints
-    filteredImages.sort((a, b) => {
-      if (a.source === 'og' && b.source !== 'og') return -1
-      if (b.source === 'og' && a.source !== 'og') return 1
-      const aSize = (a.width || 0) * (a.height || 0)
-      const bSize = (b.width || 0) * (b.height || 0)
-      return bSize - aSize
-    })
+      // Sort by priority: og images first, then by size hints
+      filteredImages.sort((a, b) => {
+        if (a.source === 'og' && b.source !== 'og') return -1
+        if (b.source === 'og' && a.source !== 'og') return 1
+        const aSize = (a.width || 0) * (a.height || 0)
+        const bSize = (b.width || 0) * (b.height || 0)
+        return bSize - aSize
+      })
 
-    // Limit results
-    const limitedImages = filteredImages.slice(0, limit)
+      // Limit results
+      const limitedImages = filteredImages.slice(0, limit)
 
-    return NextResponse.json({
-      success: true,
-      url,
-      totalFound: images.length,
-      filtered: filteredImages.length,
-      images: limitedImages,
-      firecrawlUsed: useFirecrawl && firecrawl !== null && !isUnsupportedSite,
-      firecrawlAvailable: firecrawl !== null,
-      warning: firecrawlError,
-      debug: {
-        rawImagesCount: images.length,
-        filteredCount: filteredImages.length,
-        isUnsupportedSite,
-        sources: images.reduce(
-          (acc, img) => {
-            acc[img.source] = (acc[img.source] || 0) + 1
-            return acc
-          },
-          {} as Record<string, number>
-        ),
-      },
-    })
-  } catch (error) {
-    logger.error({ error }, 'Scrape error')
-    return NextResponse.json({ error: 'Failed to scrape page' }, { status: 500 })
-  }
+      return successResponse({
+        url,
+        totalFound: images.length,
+        filtered: filteredImages.length,
+        images: limitedImages,
+        firecrawlUsed: useFirecrawl && firecrawl !== null && !isUnsupportedSite,
+        firecrawlAvailable: firecrawl !== null,
+        warning: firecrawlError,
+        debug: {
+          rawImagesCount: images.length,
+          filteredCount: filteredImages.length,
+          isUnsupportedSite,
+          sources: images.reduce(
+            (acc, img) => {
+              acc[img.source] = (acc[img.source] || 0) + 1
+              return acc
+            },
+            {} as Record<string, number>
+          ),
+        },
+      })
+    },
+    { endpoint: 'POST /api/admin/deliverable-styles/scrape' }
+  )
 }

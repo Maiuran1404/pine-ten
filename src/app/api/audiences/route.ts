@@ -1,48 +1,40 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 import { db } from '@/db'
 import { audiences, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { logger } from '@/lib/logger'
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
+  return withErrorHandling(
+    async () => {
+      const { user } = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      // Get user's company ID
+      const [dbUser] = await db
+        .select({ companyId: users.companyId })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1)
 
-    // Get user's company ID
-    const [user] = await db
-      .select({ companyId: users.companyId })
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1)
+      if (!dbUser?.companyId) {
+        return successResponse({ audiences: [] })
+      }
 
-    if (!user?.companyId) {
-      return NextResponse.json({ audiences: [] })
-    }
+      // Get audiences for the company, sorted by primary first then confidence descending
+      const companyAudiences = await db
+        .select()
+        .from(audiences)
+        .where(eq(audiences.companyId, dbUser.companyId))
 
-    // Get audiences for the company, sorted by primary first then confidence descending
-    const companyAudiences = await db
-      .select()
-      .from(audiences)
-      .where(eq(audiences.companyId, user.companyId))
+      // Sort so primary is first, then by confidence descending
+      const sortedAudiences = companyAudiences.sort((a, b) => {
+        if (a.isPrimary && !b.isPrimary) return -1
+        if (!a.isPrimary && b.isPrimary) return 1
+        return b.confidence - a.confidence
+      })
 
-    // Sort so primary is first, then by confidence descending
-    const sortedAudiences = companyAudiences.sort((a, b) => {
-      if (a.isPrimary && !b.isPrimary) return -1
-      if (!a.isPrimary && b.isPrimary) return 1
-      return b.confidence - a.confidence
-    })
-
-    return NextResponse.json({ audiences: sortedAudiences })
-  } catch (error) {
-    logger.error({ error }, 'Error fetching audiences')
-    return NextResponse.json({ error: 'Failed to fetch audiences' }, { status: 500 })
-  }
+      return successResponse({ audiences: sortedAudiences })
+    },
+    { endpoint: 'GET /api/audiences' }
+  )
 }

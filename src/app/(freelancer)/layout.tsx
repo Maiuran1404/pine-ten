@@ -7,10 +7,7 @@ import { Header } from '@/components/dashboard/header'
 import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { logger } from '@/lib/logger'
-import type { FreelancerStatus } from '@/types'
-
-/** UI state that extends FreelancerStatus with loading states */
-export type FreelancerProfileState = FreelancerStatus | 'NOT_FOUND' | null
+import type { FreelancerProfileState } from '@/types'
 
 export default function FreelancerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { NextRequest } from 'next/server'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 import { db } from '@/db'
 import { users, freelancerProfiles, companies, audiences } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -16,256 +16,243 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { inferAudiencesFromBrand } from '@/lib/ai/infer-audiences'
 import { logger } from '@/lib/logger'
 import { onboardingRequestSchema } from '@/lib/validations'
-import { handleZodError } from '@/lib/errors'
-import { ZodError } from 'zod'
 
 async function handler(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
+  return withErrorHandling(
+    async () => {
+      const { user } = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Security: Get current user from database to check actual state
-    // This prevents race conditions and ensures we have accurate data
-    const [currentUser] = await db
-      .select({
-        role: users.role,
-        onboardingCompleted: users.onboardingCompleted,
-      })
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1)
-
-    if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Security: Prevent re-submission of onboarding
-    // Once completed, users cannot change their role or re-onboard
-    if (currentUser.onboardingCompleted) {
-      return NextResponse.json(
-        {
-          error: 'Onboarding already completed. Contact support to make changes.',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Security: Only CLIENT or FREELANCER role users can go through onboarding
-    // ADMIN users should not be able to onboard
-    // FREELANCER is allowed because users on artist subdomain may be assigned this role before onboarding
-    if (currentUser.role !== 'CLIENT' && currentUser.role !== 'FREELANCER') {
-      return NextResponse.json({ error: 'Only new users can complete onboarding' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const parsed = onboardingRequestSchema.parse(body)
-
-    if (parsed.type === 'client') {
-      const { brand, hasWebsite } = parsed.data
-
-      // Create company with brand information
-      const [company] = await db
-        .insert(companies)
-        .values({
-          name: brand.name,
-          website: brand.website || null,
-          industry: brand.industry || null,
-          industryArchetype: brand.industryArchetype || null,
-          description: brand.description || null,
-          logoUrl: brand.logoUrl || null,
-          faviconUrl: brand.faviconUrl || null,
-          primaryColor: brand.primaryColor || null,
-          secondaryColor: brand.secondaryColor || null,
-          accentColor: brand.accentColor || null,
-          backgroundColor: brand.backgroundColor || null,
-          textColor: brand.textColor || null,
-          brandColors: brand.brandColors || [],
-          primaryFont: brand.primaryFont || null,
-          secondaryFont: brand.secondaryFont || null,
-          socialLinks: brand.socialLinks || {},
-          contactEmail: brand.contactEmail || null,
-          contactPhone: brand.contactPhone || null,
-          tagline: brand.tagline || null,
-          keywords: brand.keywords || [],
-          onboardingStatus: 'COMPLETED',
+      // Security: Get current user from database to check actual state
+      // This prevents race conditions and ensures we have accurate data
+      const [currentUser] = await db
+        .select({
+          role: users.role,
+          onboardingCompleted: users.onboardingCompleted,
         })
-        .returning()
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1)
 
-      // Save inferred audiences if any, or infer from brand data if none provided
-      let audiencesToSave = brand.audiences
-      let audienceSource = 'website'
+      if (!currentUser) {
+        throw Errors.notFound('User')
+      }
 
-      // If no audiences from website extraction, infer from brand data
-      if (!audiencesToSave || !Array.isArray(audiencesToSave) || audiencesToSave.length === 0) {
-        try {
-          logger.info('No audiences from website, inferring from brand data')
-          audiencesToSave = await inferAudiencesFromBrand({
+      // Security: Prevent re-submission of onboarding
+      // Once completed, users cannot change their role or re-onboard
+      if (currentUser.onboardingCompleted) {
+        throw Errors.forbidden('Onboarding already completed. Contact support to make changes.')
+      }
+
+      // Security: Only CLIENT or FREELANCER role users can go through onboarding
+      // ADMIN users should not be able to onboard
+      // FREELANCER is allowed because users on artist subdomain may be assigned this role before onboarding
+      if (currentUser.role !== 'CLIENT' && currentUser.role !== 'FREELANCER') {
+        throw Errors.forbidden('Only new users can complete onboarding')
+      }
+
+      const body = await request.json()
+      const parsed = onboardingRequestSchema.parse(body)
+
+      if (parsed.type === 'client') {
+        const { brand, hasWebsite } = parsed.data
+
+        // Create company with brand information
+        const [company] = await db
+          .insert(companies)
+          .values({
             name: brand.name,
-            industry: brand.industry,
-            industryArchetype: brand.industryArchetype,
-            description: brand.description,
-            creativeFocus: brand.creativeFocus ? [brand.creativeFocus] : undefined,
+            website: brand.website || null,
+            industry: brand.industry || null,
+            industryArchetype: brand.industryArchetype || null,
+            description: brand.description || null,
+            logoUrl: brand.logoUrl || null,
+            faviconUrl: brand.faviconUrl || null,
+            primaryColor: brand.primaryColor || null,
+            secondaryColor: brand.secondaryColor || null,
+            accentColor: brand.accentColor || null,
+            backgroundColor: brand.backgroundColor || null,
+            textColor: brand.textColor || null,
+            brandColors: brand.brandColors || [],
+            primaryFont: brand.primaryFont || null,
+            secondaryFont: brand.secondaryFont || null,
+            socialLinks: brand.socialLinks || {},
+            contactEmail: brand.contactEmail || null,
+            contactPhone: brand.contactPhone || null,
+            tagline: brand.tagline || null,
+            keywords: brand.keywords || [],
+            onboardingStatus: 'COMPLETED',
           })
-          audienceSource = 'inferred'
-          logger.info({ count: audiencesToSave.length }, 'Inferred audiences from brand data')
-        } catch (error) {
-          logger.error({ error }, 'Failed to infer audiences from brand data')
-          audiencesToSave = []
-        }
-      }
+          .returning()
 
-      if (audiencesToSave && Array.isArray(audiencesToSave) && audiencesToSave.length > 0) {
-        const audienceValues = audiencesToSave.map(
-          (audience: {
-            name: string
-            isPrimary?: boolean
-            demographics?: Record<string, unknown>
-            firmographics?: Record<string, unknown>
-            psychographics?: Record<string, unknown>
-            behavioral?: Record<string, unknown>
-            confidence?: number
-          }) => ({
+        // Save inferred audiences if any, or infer from brand data if none provided
+        let audiencesToSave = brand.audiences
+        let audienceSource = 'website'
+
+        // If no audiences from website extraction, infer from brand data
+        if (!audiencesToSave || !Array.isArray(audiencesToSave) || audiencesToSave.length === 0) {
+          try {
+            logger.info('No audiences from website, inferring from brand data')
+            audiencesToSave = await inferAudiencesFromBrand({
+              name: brand.name,
+              industry: brand.industry,
+              industryArchetype: brand.industryArchetype,
+              description: brand.description,
+              creativeFocus: brand.creativeFocus ? [brand.creativeFocus] : undefined,
+            })
+            audienceSource = 'inferred'
+            logger.info({ count: audiencesToSave.length }, 'Inferred audiences from brand data')
+          } catch (error) {
+            logger.error({ error }, 'Failed to infer audiences from brand data')
+            audiencesToSave = []
+          }
+        }
+
+        if (audiencesToSave && Array.isArray(audiencesToSave) && audiencesToSave.length > 0) {
+          const audienceValues = audiencesToSave.map(
+            (audience: {
+              name: string
+              isPrimary?: boolean
+              demographics?: Record<string, unknown>
+              firmographics?: Record<string, unknown>
+              psychographics?: Record<string, unknown>
+              behavioral?: Record<string, unknown>
+              confidence?: number
+            }) => ({
+              companyId: company.id,
+              name: audience.name,
+              isPrimary: audience.isPrimary || false,
+              demographics: audience.demographics || null,
+              firmographics: audience.firmographics || null,
+              psychographics: audience.psychographics || null,
+              behavioral: audience.behavioral || null,
+              confidence: audience.confidence || 50,
+              sources: [audienceSource],
+            })
+          )
+
+          await db.insert(audiences).values(audienceValues)
+        }
+
+        // Update user with company link and onboarding completion
+        await db
+          .update(users)
+          .set({
             companyId: company.id,
-            name: audience.name,
-            isPrimary: audience.isPrimary || false,
-            demographics: audience.demographics || null,
-            firmographics: audience.firmographics || null,
-            psychographics: audience.psychographics || null,
-            behavioral: audience.behavioral || null,
-            confidence: audience.confidence || 50,
-            sources: [audienceSource],
+            onboardingCompleted: true,
+            onboardingData: {
+              hasWebsite,
+              completedAt: new Date().toISOString(),
+            },
+            updatedAt: new Date(),
           })
-        )
+          .where(eq(users.id, user.id))
 
-        await db.insert(audiences).values(audienceValues)
-      }
-
-      // Update user with company link and onboarding completion
-      await db
-        .update(users)
-        .set({
-          companyId: company.id,
-          onboardingCompleted: true,
-          onboardingData: {
-            hasWebsite,
-            completedAt: new Date().toISOString(),
-          },
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, session.user.id))
-
-      // Fire-and-forget: Send notifications without blocking the response
-      const userName = session.user.name || 'Unknown'
-      const userEmail = session.user.email || ''
-      const companyInfo = {
-        name: company.name,
-        industry: company.industry || undefined,
-      }
-      Promise.resolve().then(async () => {
-        try {
-          await adminNotifications.newClientSignup({
-            name: userName,
-            email: userEmail,
-            userId: session.user.id,
-            company: companyInfo,
-          })
-          const welcomeEmail = emailTemplates.welcomeClient(userName, `${config.app.url}/dashboard`)
-          await sendEmail({
-            to: userEmail,
-            subject: welcomeEmail.subject,
-            html: welcomeEmail.html,
-          })
-
-          // Send WhatsApp notification to admin
-          const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
-            name: userName,
-            email: userEmail,
-            role: 'CLIENT',
-            signupUrl: `${config.app.url}/admin/clients`,
-          })
-          await notifyAdminWhatsApp(whatsappMessage)
-        } catch (error) {
-          logger.error({ error }, 'Failed to send client onboarding notifications')
+        // Fire-and-forget: Send notifications without blocking the response
+        const userName = user.name || 'Unknown'
+        const userEmail = user.email || ''
+        const companyInfo = {
+          name: company.name,
+          industry: company.industry || undefined,
         }
-      })
+        Promise.resolve().then(async () => {
+          try {
+            await adminNotifications.newClientSignup({
+              name: userName,
+              email: userEmail,
+              userId: user.id,
+              company: companyInfo,
+            })
+            const welcomeEmail = emailTemplates.welcomeClient(
+              userName,
+              `${config.app.url}/dashboard`
+            )
+            await sendEmail({
+              to: userEmail,
+              subject: welcomeEmail.subject,
+              html: welcomeEmail.html,
+            })
 
-      return NextResponse.json({ success: true, companyId: company.id })
-    }
-
-    if (parsed.type === 'freelancer') {
-      const data = parsed.data
-      // Update user role and create freelancer profile
-      await db
-        .update(users)
-        .set({
-          role: 'FREELANCER',
-          phone: data.whatsappNumber || null,
-          image: data.profileImage || null,
-          onboardingCompleted: true,
-          onboardingData: { bio: data.bio },
-          updatedAt: new Date(),
+            // Send WhatsApp notification to admin
+            const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
+              name: userName,
+              email: userEmail,
+              role: 'CLIENT',
+              signupUrl: `${config.app.url}/admin/clients`,
+            })
+            await notifyAdminWhatsApp(whatsappMessage)
+          } catch (error) {
+            logger.error({ error }, 'Failed to send client onboarding notifications')
+          }
         })
-        .where(eq(users.id, session.user.id))
 
-      // Create freelancer profile
-      await db.insert(freelancerProfiles).values({
-        userId: session.user.id,
-        status: 'PENDING', // Needs admin approval
-        skills: data.skills,
-        specializations: data.specializations,
-        portfolioUrls: data.portfolioUrls,
-        bio: data.bio,
-        timezone: data.timezone || null,
-        hourlyRate: data.hourlyRate != null ? String(data.hourlyRate) : null,
-        whatsappNumber: data.whatsappNumber || null,
-      })
+        return successResponse({ success: true, companyId: company.id })
+      }
 
-      // Fire-and-forget: Send notification without blocking the response
-      const freelancerName = session.user.name || 'Unknown'
-      const freelancerEmail = session.user.email || ''
-      const freelancerSkills = data.skills
-      const freelancerPortfolio = data.portfolioUrls
-      const freelancerHourlyRate = data.hourlyRate
-      Promise.resolve().then(async () => {
-        try {
-          await adminNotifications.newFreelancerApplication({
-            name: freelancerName,
-            email: freelancerEmail,
-            skills: freelancerSkills,
-            portfolioUrls: freelancerPortfolio,
-            userId: session.user.id,
-            hourlyRate: freelancerHourlyRate ?? undefined,
-          })
-
-          // Send WhatsApp notification to admin
-          const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
-            name: freelancerName,
-            email: freelancerEmail,
+      if (parsed.type === 'freelancer') {
+        const data = parsed.data
+        // Update user role and create freelancer profile
+        await db
+          .update(users)
+          .set({
             role: 'FREELANCER',
-            signupUrl: `${config.app.url}/admin/freelancers`,
+            phone: data.whatsappNumber || null,
+            image: data.profileImage || null,
+            onboardingCompleted: true,
+            onboardingData: { bio: data.bio },
+            updatedAt: new Date(),
           })
-          await notifyAdminWhatsApp(whatsappMessage)
-        } catch (error) {
-          logger.error({ error }, 'Failed to send freelancer application notification')
-        }
-      })
+          .where(eq(users.id, user.id))
 
-      return NextResponse.json({ success: true })
-    }
+        // Create freelancer profile
+        await db.insert(freelancerProfiles).values({
+          userId: user.id,
+          status: 'PENDING', // Needs admin approval
+          skills: data.skills,
+          specializations: data.specializations,
+          portfolioUrls: data.portfolioUrls,
+          bio: data.bio,
+          timezone: data.timezone || null,
+          hourlyRate: data.hourlyRate != null ? String(data.hourlyRate) : null,
+          whatsappNumber: data.whatsappNumber || null,
+        })
 
-    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error)
-    }
-    logger.error({ error }, 'Onboarding error')
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+        // Fire-and-forget: Send notification without blocking the response
+        const freelancerName = user.name || 'Unknown'
+        const freelancerEmail = user.email || ''
+        const freelancerSkills = data.skills
+        const freelancerPortfolio = data.portfolioUrls
+        const freelancerHourlyRate = data.hourlyRate
+        Promise.resolve().then(async () => {
+          try {
+            await adminNotifications.newFreelancerApplication({
+              name: freelancerName,
+              email: freelancerEmail,
+              skills: freelancerSkills,
+              portfolioUrls: freelancerPortfolio,
+              userId: user.id,
+              hourlyRate: freelancerHourlyRate ?? undefined,
+            })
+
+            // Send WhatsApp notification to admin
+            const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
+              name: freelancerName,
+              email: freelancerEmail,
+              role: 'FREELANCER',
+              signupUrl: `${config.app.url}/admin/freelancers`,
+            })
+            await notifyAdminWhatsApp(whatsappMessage)
+          } catch (error) {
+            logger.error({ error }, 'Failed to send freelancer application notification')
+          }
+        })
+
+        return successResponse({ success: true })
+      }
+
+      throw Errors.badRequest('Invalid type')
+    },
+    { endpoint: 'POST /api/auth/onboarding' }
+  )
 }
 
 // Apply auth rate limiting (20 req/min)

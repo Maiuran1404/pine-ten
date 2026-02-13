@@ -5,8 +5,8 @@ import { users, companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
 import { chatStreamSchema } from '@/lib/validations'
-import { ZodError } from 'zod'
 import { requireAuth } from '@/lib/require-auth'
+import { withErrorHandling } from '@/lib/errors'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -53,76 +53,67 @@ ${companyContext}`
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await requireAuth()
+  return withErrorHandling(
+    async () => {
+      const session = await requireAuth()
 
-    const body = await request.json()
-    const { messages } = chatStreamSchema.parse(body)
+      const body = await request.json()
+      const { messages } = chatStreamSchema.parse(body)
 
-    // Fetch user's company for context
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      with: {
-        company: true,
-      },
-    })
+      // Fetch user's company for context
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+        with: {
+          company: true,
+        },
+      })
 
-    const systemPrompt = await getSystemPrompt(user?.company || null)
+      const systemPrompt = await getSystemPrompt(user?.company || null)
 
-    // Create a streaming response
-    const stream = await anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    })
+      // Create a streaming response
+      const stream = await anthropic.messages.stream({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: messages.map((m: { role: string; content: string }) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })),
+      })
 
-    // Create a readable stream for the response
-    const encoder = new TextEncoder()
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const event of stream) {
-            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-              const text = event.delta.text
-              // Send as Server-Sent Event format
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
+      // Create a readable stream for the response
+      const encoder = new TextEncoder()
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                const text = event.delta.text
+                // Send as Server-Sent Event format
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
+              }
             }
+            // Signal completion
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+            controller.close()
+          } catch (error) {
+            logger.error({ error }, 'Streaming error')
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
+            )
+            controller.close()
           }
-          // Signal completion
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
-          controller.close()
-        } catch (error) {
-          logger.error({ error }, 'Streaming error')
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
-          )
-          controller.close()
-        }
-      },
-    })
+        },
+      })
 
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    })
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid messages format', details: error.issues }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-    }
-    logger.error({ error }, 'Chat stream error')
-    return new Response('Internal server error', { status: 500 })
-  }
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        },
+      })
+    },
+    { endpoint: 'POST /api/chat/stream' }
+  )
 }

@@ -15,6 +15,8 @@ export type NotificationChannel = 'EMAIL' | 'WHATSAPP' | 'IN_APP'
 
 export type FreelancerStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
 
+export type FreelancerProfileState = FreelancerStatus | 'NOT_FOUND' | null
+
 export interface TaskRequirements {
   projectType: TaskCategory
   description: string

@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import 'server-only'
+
 import { db } from '@/db'
 import { taskCategories } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { config } from '@/lib/config'
-import { logger } from '@/lib/logger'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 /**
  * GET /api/freelancer/earnings-guide
@@ -13,98 +13,92 @@ import { logger } from '@/lib/logger'
  * Used to show artists what they can earn per task type without revealing percentages
  */
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
+  return withErrorHandling(
+    async () => {
+      await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      // Fetch active task categories
+      const categories = await db
+        .select({
+          id: taskCategories.id,
+          name: taskCategories.name,
+          slug: taskCategories.slug,
+          description: taskCategories.description,
+          baseCredits: taskCategories.baseCredits,
+        })
+        .from(taskCategories)
+        .where(eq(taskCategories.isActive, true))
 
-    // Fetch active task categories
-    const categories = await db
-      .select({
-        id: taskCategories.id,
-        name: taskCategories.name,
-        slug: taskCategories.slug,
-        description: taskCategories.description,
-        baseCredits: taskCategories.baseCredits,
-      })
-      .from(taskCategories)
-      .where(eq(taskCategories.isActive, true))
-
-    // Complexity multipliers for showing ranges
-    const complexityMultipliers = {
-      simple: 1,
-      moderate: 1.5,
-      complex: 2,
-      premium: 3,
-    }
-
-    // Artist earnings per credit (from config, without revealing percentage)
-    const artistEarningsPerCredit = config.payouts.creditValueUSD
-
-    // Build earnings guide for each category
-    const earningsGuide = categories.map((category) => {
-      const baseCredits = category.baseCredits
-
-      // Calculate earnings range based on complexity
-      const simpleEarnings = Math.round(
-        baseCredits * complexityMultipliers.simple * artistEarningsPerCredit
-      )
-      const moderateEarnings = Math.round(
-        baseCredits * complexityMultipliers.moderate * artistEarningsPerCredit
-      )
-      const complexEarnings = Math.round(
-        baseCredits * complexityMultipliers.complex * artistEarningsPerCredit
-      )
-      const premiumEarnings = Math.round(
-        baseCredits * complexityMultipliers.premium * artistEarningsPerCredit
-      )
-
-      return {
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        description: category.description,
-        baseCredits: baseCredits,
-        earnings: {
-          simple: simpleEarnings,
-          moderate: moderateEarnings,
-          complex: complexEarnings,
-          premium: premiumEarnings,
-          range: {
-            min: simpleEarnings,
-            max: premiumEarnings,
-          },
-        },
-        // Examples for display
-        examples: getExamplesForCategory(category.slug, {
-          simple: simpleEarnings,
-          moderate: moderateEarnings,
-          complex: complexEarnings,
-          premium: premiumEarnings,
-        }),
+      // Complexity multipliers for showing ranges
+      const complexityMultipliers = {
+        simple: 1,
+        moderate: 1.5,
+        complex: 2,
+        premium: 3,
       }
-    })
 
-    // Sort by base credits (higher earning tasks first)
-    earningsGuide.sort((a, b) => b.baseCredits - a.baseCredits)
+      // Artist earnings per credit (from config, without revealing percentage)
+      const artistEarningsPerCredit = config.payouts.creditValueUSD
 
-    return NextResponse.json({
-      earningsGuide,
-      notes: [
-        'Earnings vary based on task complexity and requirements',
-        'More complex projects pay significantly more',
-        'Video and motion graphics projects typically have the highest earnings',
-        'Earnings are deposited after client approval and a brief processing period',
-      ],
-    })
-  } catch (error) {
-    logger.error({ error }, 'Earnings guide fetch error')
-    return NextResponse.json({ error: 'Failed to fetch earnings guide' }, { status: 500 })
-  }
+      // Build earnings guide for each category
+      const earningsGuide = categories.map((category) => {
+        const baseCredits = category.baseCredits
+
+        // Calculate earnings range based on complexity
+        const simpleEarnings = Math.round(
+          baseCredits * complexityMultipliers.simple * artistEarningsPerCredit
+        )
+        const moderateEarnings = Math.round(
+          baseCredits * complexityMultipliers.moderate * artistEarningsPerCredit
+        )
+        const complexEarnings = Math.round(
+          baseCredits * complexityMultipliers.complex * artistEarningsPerCredit
+        )
+        const premiumEarnings = Math.round(
+          baseCredits * complexityMultipliers.premium * artistEarningsPerCredit
+        )
+
+        return {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          baseCredits: baseCredits,
+          earnings: {
+            simple: simpleEarnings,
+            moderate: moderateEarnings,
+            complex: complexEarnings,
+            premium: premiumEarnings,
+            range: {
+              min: simpleEarnings,
+              max: premiumEarnings,
+            },
+          },
+          // Examples for display
+          examples: getExamplesForCategory(category.slug, {
+            simple: simpleEarnings,
+            moderate: moderateEarnings,
+            complex: complexEarnings,
+            premium: premiumEarnings,
+          }),
+        }
+      })
+
+      // Sort by base credits (higher earning tasks first)
+      earningsGuide.sort((a, b) => b.baseCredits - a.baseCredits)
+
+      return successResponse({
+        earningsGuide,
+        notes: [
+          'Earnings vary based on task complexity and requirements',
+          'More complex projects pay significantly more',
+          'Video and motion graphics projects typically have the highest earnings',
+          'Earnings are deposited after client approval and a brief processing period',
+        ],
+      })
+    },
+    { endpoint: 'GET /api/freelancer/earnings-guide' }
+  )
 }
 
 /**

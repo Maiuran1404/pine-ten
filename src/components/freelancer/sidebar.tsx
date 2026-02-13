@@ -7,7 +7,7 @@ import { Logo } from '@/components/shared/logo'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { LayoutDashboard, CheckCircle, Settings, X, Lock, Wallet } from 'lucide-react'
-import type { FreelancerProfileState } from '@/app/(freelancer)/layout'
+import type { FreelancerProfileState } from '@/types'
 
 const navigation = [
   {
