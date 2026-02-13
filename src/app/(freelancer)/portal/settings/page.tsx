@@ -225,7 +225,7 @@ export default function FreelancerSettingsPage() {
       ])
 
       if (userResponse.ok) {
-        const data = await userResponse.json()
+        const { data } = await userResponse.json()
         setUserSettings(data.user)
         setFormData((prev) => ({
           ...prev,
@@ -236,16 +236,16 @@ export default function FreelancerSettingsPage() {
 
       if (profileResponse.ok) {
         const profileData = await profileResponse.json()
-        setFreelancerProfile(profileData.profile)
+        setFreelancerProfile(profileData)
         setFormData((prev) => ({
           ...prev,
-          bio: profileData.profile?.bio || '',
-          whatsappNumber: profileData.profile?.whatsappNumber || '',
-          portfolioUrls: profileData.profile?.portfolioUrls?.join(', ') || '',
+          bio: profileData?.bio || '',
+          whatsappNumber: profileData?.whatsappNumber || '',
+          portfolioUrls: profileData?.portfolioUrls?.join(', ') || '',
         }))
-        setSkills(profileData.profile?.skills || [])
-        setSpecializations(profileData.profile?.specializations || [])
-        setAvailability(profileData.profile?.availability ?? true)
+        setSkills(profileData?.skills || [])
+        setSpecializations(profileData?.specializations || [])
+        setAvailability(profileData?.availability ?? true)
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error)

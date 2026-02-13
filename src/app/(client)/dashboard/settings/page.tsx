@@ -97,7 +97,7 @@ export default function SettingsPage() {
       ])
 
       if (settingsRes.ok) {
-        const data = await settingsRes.json()
+        const { data } = await settingsRes.json()
         setUserSettings(data.user)
         setFormData({
           name: data.user.name || '',
@@ -106,7 +106,7 @@ export default function SettingsPage() {
       }
 
       if (billingRes.ok) {
-        const data = await billingRes.json()
+        const { data } = await billingRes.json()
         setBillingData(data)
       }
     } catch (error) {
