@@ -2,9 +2,7 @@ import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 import { auditHelpers, actorFromUser } from '@/lib/audit'
-import { db } from '@/db'
-import { platformSettings } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { getAllSettings, getSetting, setSetting } from '@/lib/app-settings'
 import { adminSettingsSchema } from '@/lib/validations'
 
 export async function GET() {
@@ -12,15 +10,9 @@ export async function GET() {
     async () => {
       await requireAdmin()
 
-      const settings = await db.select().from(platformSettings)
+      const settings = await getAllSettings()
 
-      // Convert to key-value object
-      const settingsMap: Record<string, unknown> = {}
-      settings.forEach((s) => {
-        settingsMap[s.key] = s.value
-      })
-
-      return successResponse({ settings: settingsMap })
+      return successResponse({ settings })
     },
     { endpoint: 'GET /api/admin/settings' }
   )
@@ -32,29 +24,12 @@ export async function POST(request: NextRequest) {
       const session = await requireAdmin()
 
       const body = await request.json()
-      const { key, value, description } = adminSettingsSchema.parse(body)
+      const { key, value } = adminSettingsSchema.parse(body)
 
-      // Upsert the setting
-      const existing = await db
-        .select()
-        .from(platformSettings)
-        .where(eq(platformSettings.key, key))
-        .limit(1)
+      // Get previous value for audit logging
+      const previousValue = await getSetting(key)
 
-      const previousValue = existing.length > 0 ? existing[0].value : null
-
-      if (existing.length > 0) {
-        await db
-          .update(platformSettings)
-          .set({ value, description, updatedAt: new Date() })
-          .where(eq(platformSettings.key, key))
-      } else {
-        await db.insert(platformSettings).values({
-          key,
-          value,
-          description,
-        })
-      }
+      await setSetting(key, value, session.user.id)
 
       // Audit log: Track settings changes for compliance
       auditHelpers.settingsUpdate(

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -304,15 +305,13 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                   )}
                   onClick={() => toggleImageSelection(img.url)}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={img.url}
                     alt={img.alt || ''}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).src =
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' fill='%23999' font-size='12'%3EError%3C/text%3E%3C/svg%3E"
-                    }}
+                    fill
+                    sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
+                    className="object-cover"
+                    unoptimized
                   />
                   {selectedImages.has(img.url) && (
                     <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -383,9 +382,15 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                 >
                   <div className="flex gap-3">
                     {/* Thumbnail */}
-                    <div className="w-20 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    <div className="relative w-20 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      <Image
+                        src={img.url}
+                        alt=""
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                        unoptimized
+                      />
                     </div>
 
                     {/* Info */}

@@ -459,80 +459,45 @@ export function calculateMatchScore(
 // Artist Ranking
 // ============================================
 
+/** The maximum number of top candidates to return from ranking */
+const MAX_RANKED_CANDIDATES = 20
+
+/** The minimum number of candidates needed before skipping broader tiers */
+const MIN_CANDIDATES_PER_TIER = 5
+
+/** Common select fields for artist queries */
+const artistSelectFields = {
+  userId: freelancerProfiles.userId,
+  name: users.name,
+  email: users.email,
+  timezone: freelancerProfiles.timezone,
+  experienceLevel: freelancerProfiles.experienceLevel,
+  rating: freelancerProfiles.rating,
+  completedTasks: freelancerProfiles.completedTasks,
+  acceptanceRate: freelancerProfiles.acceptanceRate,
+  onTimeRate: freelancerProfiles.onTimeRate,
+  maxConcurrentTasks: freelancerProfiles.maxConcurrentTasks,
+  workingHoursStart: freelancerProfiles.workingHoursStart,
+  workingHoursEnd: freelancerProfiles.workingHoursEnd,
+  acceptsUrgentTasks: freelancerProfiles.acceptsUrgentTasks,
+  vacationMode: freelancerProfiles.vacationMode,
+  skills: freelancerProfiles.skills,
+  specializations: freelancerProfiles.specializations,
+  preferredCategories: freelancerProfiles.preferredCategories,
+} as const
+
 /**
- * Get all eligible artists and rank them for a task
+ * Get all eligible artists and rank them for a task using tiered fetching.
+ *
+ * Tier 1: Client's favorited artists + artists who previously worked with client
+ * Tier 2: Artists matching the task's required skills/category
+ * Tier 3: Remaining approved/available artists (only if earlier tiers insufficient)
  */
 export async function rankArtistsForTask(
   task: TaskData,
   escalationLevel: number = 1
 ): Promise<ArtistScore[]> {
   const config = await getActiveConfig()
-
-  // Get all approved, available artists
-  const activeArtists = await db
-    .select({
-      userId: freelancerProfiles.userId,
-      name: users.name,
-      email: users.email,
-      timezone: freelancerProfiles.timezone,
-      experienceLevel: freelancerProfiles.experienceLevel,
-      rating: freelancerProfiles.rating,
-      completedTasks: freelancerProfiles.completedTasks,
-      acceptanceRate: freelancerProfiles.acceptanceRate,
-      onTimeRate: freelancerProfiles.onTimeRate,
-      maxConcurrentTasks: freelancerProfiles.maxConcurrentTasks,
-      workingHoursStart: freelancerProfiles.workingHoursStart,
-      workingHoursEnd: freelancerProfiles.workingHoursEnd,
-      acceptsUrgentTasks: freelancerProfiles.acceptsUrgentTasks,
-      vacationMode: freelancerProfiles.vacationMode,
-      skills: freelancerProfiles.skills,
-      specializations: freelancerProfiles.specializations,
-      preferredCategories: freelancerProfiles.preferredCategories,
-    })
-    .from(freelancerProfiles)
-    .innerJoin(users, eq(freelancerProfiles.userId, users.id))
-    .where(
-      and(eq(freelancerProfiles.status, 'APPROVED'), eq(freelancerProfiles.availability, true))
-    )
-
-  if (activeArtists.length === 0) {
-    return []
-  }
-
-  // Get task counts per artist
-  const taskCounts = await db
-    .select({
-      freelancerId: tasks.freelancerId,
-      count: count(),
-    })
-    .from(tasks)
-    .where(
-      and(
-        sql`${tasks.freelancerId} IS NOT NULL`,
-        sql`${tasks.status} NOT IN ('COMPLETED', 'CANCELLED')`
-      )
-    )
-    .groupBy(tasks.freelancerId)
-
-  const countMap = new Map<string, number>()
-  taskCounts.forEach((tc) => {
-    if (tc.freelancerId) {
-      countMap.set(tc.freelancerId, Number(tc.count))
-    }
-  })
-
-  // Check for client favorites
-  const favorites = await db
-    .select({ artistId: clientArtistAffinity.artistId })
-    .from(clientArtistAffinity)
-    .where(
-      and(
-        eq(clientArtistAffinity.clientId, task.clientId),
-        eq(clientArtistAffinity.isFavorite, true)
-      )
-    )
-
-  const favoriteIds = new Set(favorites.map((f) => f.artistId))
 
   // Adjust thresholds based on escalation level
   let adjustedConfig = { ...config }
@@ -551,36 +516,166 @@ export async function rankArtistsForTask(
     }
   }
 
-  // Score all artists
-  const scores: ArtistScore[] = activeArtists.map((artist) => {
-    const artistData: ArtistData = {
-      userId: artist.userId,
-      name: artist.name,
-      email: artist.email,
-      timezone: artist.timezone,
-      experienceLevel: (artist.experienceLevel || 'JUNIOR') as ArtistData['experienceLevel'],
-      rating: Number(artist.rating) || 0,
-      completedTasks: artist.completedTasks,
-      acceptanceRate: artist.acceptanceRate ? Number(artist.acceptanceRate) : null,
-      onTimeRate: artist.onTimeRate ? Number(artist.onTimeRate) : null,
-      maxConcurrentTasks: artist.maxConcurrentTasks,
-      workingHoursStart: artist.workingHoursStart || '09:00',
-      workingHoursEnd: artist.workingHoursEnd || '18:00',
-      acceptsUrgentTasks: artist.acceptsUrgentTasks,
-      vacationMode: artist.vacationMode,
-      skills: (artist.skills as string[]) || [],
-      specializations: (artist.specializations as string[]) || [],
-      preferredCategories: (artist.preferredCategories as string[]) || [],
+  // Fetch task counts and favorites in parallel (needed for all tiers)
+  const [taskCounts, favorites, previousArtists] = await Promise.all([
+    db
+      .select({
+        freelancerId: tasks.freelancerId,
+        count: count(),
+      })
+      .from(tasks)
+      .where(
+        and(
+          sql`${tasks.freelancerId} IS NOT NULL`,
+          sql`${tasks.status} NOT IN ('COMPLETED', 'CANCELLED')`
+        )
+      )
+      .groupBy(tasks.freelancerId),
+    db
+      .select({ artistId: clientArtistAffinity.artistId })
+      .from(clientArtistAffinity)
+      .where(
+        and(
+          eq(clientArtistAffinity.clientId, task.clientId),
+          eq(clientArtistAffinity.isFavorite, true)
+        )
+      ),
+    // Artists who previously completed tasks for this client
+    db
+      .select({ freelancerId: tasks.freelancerId })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.clientId, task.clientId),
+          eq(tasks.status, 'COMPLETED'),
+          sql`${tasks.freelancerId} IS NOT NULL`
+        )
+      )
+      .groupBy(tasks.freelancerId),
+  ])
+
+  const countMap = new Map<string, number>()
+  taskCounts.forEach((tc) => {
+    if (tc.freelancerId) {
+      countMap.set(tc.freelancerId, Number(tc.count))
     }
-
-    const activeTasks = countMap.get(artist.userId) || 0
-    const isFavorite = favoriteIds.has(artist.userId)
-
-    return calculateMatchScore(artistData, task, activeTasks, adjustedConfig, isFavorite)
   })
 
-  // Sort by score (highest first), excluding invalid scores
-  return scores.filter((s) => !s.excluded).sort((a, b) => b.totalScore - a.totalScore)
+  const favoriteIds = new Set(favorites.map((f) => f.artistId))
+  const previousArtistIds = new Set(
+    previousArtists.map((a) => a.freelancerId).filter(Boolean) as string[]
+  )
+
+  // Helper to convert raw DB row to ArtistData
+  const toArtistData = (
+    artist: typeof artistSelectFields extends Record<string, infer _>
+      ? Record<string, unknown>
+      : never
+  ): ArtistData => ({
+    userId: artist.userId as string,
+    name: artist.name as string,
+    email: artist.email as string,
+    timezone: artist.timezone as string | null,
+    experienceLevel: ((artist.experienceLevel as string) ||
+      'JUNIOR') as ArtistData['experienceLevel'],
+    rating: Number(artist.rating) || 0,
+    completedTasks: artist.completedTasks as number,
+    acceptanceRate: artist.acceptanceRate ? Number(artist.acceptanceRate) : null,
+    onTimeRate: artist.onTimeRate ? Number(artist.onTimeRate) : null,
+    maxConcurrentTasks: artist.maxConcurrentTasks as number,
+    workingHoursStart: (artist.workingHoursStart as string) || '09:00',
+    workingHoursEnd: (artist.workingHoursEnd as string) || '18:00',
+    acceptsUrgentTasks: artist.acceptsUrgentTasks as boolean,
+    vacationMode: artist.vacationMode as boolean,
+    skills: (artist.skills as string[]) || [],
+    specializations: (artist.specializations as string[]) || [],
+    preferredCategories: (artist.preferredCategories as string[]) || [],
+  })
+
+  // Helper to score a list of artist rows
+  const scoreArtists = (
+    artists: Record<string, unknown>[],
+    seenIds: Set<string>
+  ): ArtistScore[] => {
+    const scores: ArtistScore[] = []
+    for (const artist of artists) {
+      const userId = artist.userId as string
+      if (seenIds.has(userId)) continue
+      seenIds.add(userId)
+
+      const artistData = toArtistData(artist)
+      const activeTasks = countMap.get(userId) || 0
+      const isFavorite = favoriteIds.has(userId)
+      scores.push(calculateMatchScore(artistData, task, activeTasks, adjustedConfig, isFavorite))
+    }
+    return scores
+  }
+
+  const seenIds = new Set<string>()
+  const allScores: ArtistScore[] = []
+
+  // --- Tier 1: Favorites + previous collaborators ---
+  const tier1Ids = [...new Set([...favoriteIds, ...previousArtistIds])]
+  if (tier1Ids.length > 0) {
+    const tier1Artists = await db
+      .select(artistSelectFields)
+      .from(freelancerProfiles)
+      .innerJoin(users, eq(freelancerProfiles.userId, users.id))
+      .where(
+        and(
+          eq(freelancerProfiles.status, 'APPROVED'),
+          eq(freelancerProfiles.availability, true),
+          inArray(freelancerProfiles.userId, tier1Ids)
+        )
+      )
+
+    allScores.push(...scoreArtists(tier1Artists as unknown as Record<string, unknown>[], seenIds))
+  }
+
+  // --- Tier 2: Artists matching category/skills ---
+  const validScores = allScores.filter((s) => !s.excluded)
+  if (validScores.length < MIN_CANDIDATES_PER_TIER) {
+    const tier2Conditions = [
+      eq(freelancerProfiles.status, 'APPROVED'),
+      eq(freelancerProfiles.availability, true),
+    ]
+
+    // Filter by preferred category if task has one
+    if (task.categorySlug) {
+      tier2Conditions.push(
+        sql`${freelancerProfiles.preferredCategories}::jsonb @> ${JSON.stringify([task.categorySlug])}::jsonb`
+      )
+    }
+
+    const tier2Artists = await db
+      .select(artistSelectFields)
+      .from(freelancerProfiles)
+      .innerJoin(users, eq(freelancerProfiles.userId, users.id))
+      .where(and(...tier2Conditions))
+      .limit(MAX_RANKED_CANDIDATES * 2)
+
+    allScores.push(...scoreArtists(tier2Artists as unknown as Record<string, unknown>[], seenIds))
+  }
+
+  // --- Tier 3: Remaining artists (broad search) ---
+  const validAfterTier2 = allScores.filter((s) => !s.excluded)
+  if (validAfterTier2.length < MIN_CANDIDATES_PER_TIER) {
+    const tier3Artists = await db
+      .select(artistSelectFields)
+      .from(freelancerProfiles)
+      .innerJoin(users, eq(freelancerProfiles.userId, users.id))
+      .where(
+        and(eq(freelancerProfiles.status, 'APPROVED'), eq(freelancerProfiles.availability, true))
+      )
+
+    allScores.push(...scoreArtists(tier3Artists as unknown as Record<string, unknown>[], seenIds))
+  }
+
+  // Sort by score (highest first), excluding invalid scores, limit to top candidates
+  return allScores
+    .filter((s) => !s.excluded)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .slice(0, MAX_RANKED_CANDIDATES)
 }
 
 /**

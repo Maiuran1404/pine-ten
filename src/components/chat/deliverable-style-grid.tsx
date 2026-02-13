@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { Check, Search, X, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -144,15 +145,13 @@ export function DeliverableStyleGrid({
               )}
             >
               {/* Image */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={style.imageUrl}
                 alt={style.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  ;(e.target as HTMLImageElement).src =
-                    'https://via.placeholder.com/400x500?text=Style'
-                }}
+                fill
+                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover"
+                unoptimized
               />
 
               {/* Hover overlay with name - only visible on THIS card's hover */}
@@ -225,16 +224,14 @@ export function DeliverableStyleGrid({
           </DialogHeader>
           {exampleModal && (
             <div className="space-y-4">
-              <div className="rounded-lg overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="relative rounded-lg overflow-hidden bg-muted aspect-[4/3]">
+                <Image
                   src={exampleModal.url}
                   alt={`Example output for ${exampleModal.style.name}`}
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    ;(e.target as HTMLImageElement).src =
-                      'https://via.placeholder.com/800x600?text=Example+Not+Available'
-                  }}
+                  fill
+                  sizes="(max-width: 672px) 100vw, 672px"
+                  className="object-contain"
+                  unoptimized
                 />
               </div>
               <div className="flex items-center justify-between">
