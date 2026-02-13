@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { db } from '@/db'
-import { tasks, payouts, stripeConnectAccounts } from '@/db/schema'
+import { tasks, payouts } from '@/db/schema'
 import { eq, and, gte, lt, desc, sum, count, sql } from 'drizzle-orm'
 import { getPayoutSettings } from '@/lib/platform-settings'
 import {
@@ -13,7 +13,7 @@ import {
 } from '@/lib/stripe-connect'
 import { logger } from '@/lib/logger'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),

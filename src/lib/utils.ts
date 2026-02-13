@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -13,16 +13,16 @@ export function calculateWorkingDeadline(
   assignedAt: string | Date | null,
   deadline: string | Date | null
 ): Date | null {
-  if (!assignedAt || !deadline) return null;
+  if (!assignedAt || !deadline) return null
 
-  const assignedDate = new Date(assignedAt);
-  const deadlineDate = new Date(deadline);
+  const assignedDate = new Date(assignedAt)
+  const deadlineDate = new Date(deadline)
 
   // Calculate 70% of the total time
-  const totalTimeMs = deadlineDate.getTime() - assignedDate.getTime();
-  const workingTimeMs = totalTimeMs * 0.7;
+  const totalTimeMs = deadlineDate.getTime() - assignedDate.getTime()
+  const workingTimeMs = totalTimeMs * 0.7
 
-  return new Date(assignedDate.getTime() + workingTimeMs);
+  return new Date(assignedDate.getTime() + workingTimeMs)
 }
 
 /**
@@ -37,8 +37,8 @@ export function getTaskProgressPercent(status: string): number {
     REVISION_REQUESTED: 55,
     COMPLETED: 100,
     CANCELLED: 0,
-  };
-  return progressMap[status] ?? 0;
+  }
+  return progressMap[status] ?? 0
 }
 
 /**
@@ -48,19 +48,19 @@ export function getTimeProgressPercent(
   assignedAt: string | Date | null,
   deadline: string | Date | null
 ): number {
-  if (!assignedAt || !deadline) return 0;
+  if (!assignedAt || !deadline) return 0
 
-  const assignedDate = new Date(assignedAt);
-  const deadlineDate = new Date(deadline);
-  const now = new Date();
+  const assignedDate = new Date(assignedAt)
+  const deadlineDate = new Date(deadline)
+  const now = new Date()
 
-  const totalTimeMs = deadlineDate.getTime() - assignedDate.getTime();
-  const elapsedTimeMs = now.getTime() - assignedDate.getTime();
+  const totalTimeMs = deadlineDate.getTime() - assignedDate.getTime()
+  const elapsedTimeMs = now.getTime() - assignedDate.getTime()
 
-  if (totalTimeMs <= 0) return 100;
+  if (totalTimeMs <= 0) return 100
 
-  const percent = (elapsedTimeMs / totalTimeMs) * 100;
-  return Math.min(Math.max(percent, 0), 100);
+  const percent = (elapsedTimeMs / totalTimeMs) * 100
+  return Math.min(Math.max(percent, 0), 100)
 }
 
 /**
@@ -69,49 +69,49 @@ export function getTimeProgressPercent(
 export function getDeadlineUrgency(
   deadline: string | Date | null,
   workingDeadline: Date | null
-): "overdue" | "urgent" | "warning" | "safe" | null {
-  if (!deadline) return null;
+): 'overdue' | 'urgent' | 'warning' | 'safe' | null {
+  if (!deadline) return null
 
-  const now = new Date();
-  const deadlineDate = new Date(deadline);
+  const now = new Date()
+  const deadlineDate = new Date(deadline)
 
-  if (now > deadlineDate) return "overdue";
+  if (now > deadlineDate) return 'overdue'
 
   // If past working deadline but before real deadline
-  if (workingDeadline && now > workingDeadline) return "urgent";
+  if (workingDeadline && now > workingDeadline) return 'urgent'
 
   // If within 24 hours of working deadline
   if (workingDeadline) {
-    const hoursToWorking = (workingDeadline.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (hoursToWorking <= 24) return "warning";
+    const hoursToWorking = (workingDeadline.getTime() - now.getTime()) / (1000 * 60 * 60)
+    if (hoursToWorking <= 24) return 'warning'
   }
 
-  return "safe";
+  return 'safe'
 }
 
 /**
  * Format relative time remaining
  */
 export function formatTimeRemaining(deadline: string | Date | null): string {
-  if (!deadline) return "";
+  if (!deadline) return ''
 
-  const now = new Date();
-  const deadlineDate = new Date(deadline);
-  const diffMs = deadlineDate.getTime() - now.getTime();
+  const now = new Date()
+  const deadlineDate = new Date(deadline)
+  const diffMs = deadlineDate.getTime() - now.getTime()
 
   if (diffMs < 0) {
-    const overdueDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
-    if (overdueDays === 0) return "Overdue today";
-    return `${overdueDays}d overdue`;
+    const overdueDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24))
+    if (overdueDays === 0) return 'Overdue today'
+    return `${overdueDays}d overdue`
   }
 
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
 
   if (diffDays === 0) {
-    if (diffHours === 0) return "Less than 1h";
-    return `${diffHours}h left`;
+    if (diffHours === 0) return 'Less than 1h'
+    return `${diffHours}h left`
   }
-  if (diffDays === 1) return `1d ${diffHours}h left`;
-  return `${diffDays}d left`;
+  if (diffDays === 1) return `1d ${diffHours}h left`
+  return `${diffDays}d left`
 }

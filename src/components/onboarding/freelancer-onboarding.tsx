@@ -1,16 +1,16 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { useSession, signOut } from "@/lib/auth-client";
-import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { cn } from "@/lib/utils";
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { useSession, signOut } from '@/lib/auth-client'
+import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { cn } from '@/lib/utils'
 import {
   ArrowRight,
   ArrowLeft,
@@ -28,86 +28,84 @@ import {
   Share2,
   CheckCircle2,
   Globe,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface FreelancerOnboardingProps {
-  onComplete: () => void;
+  onComplete: () => void
 }
 
 const skills = [
-  { id: "figma", label: "Figma", icon: Layers },
-  { id: "adobe_premiere_pro", label: "Adobe Premiere Pro", icon: Video },
-  { id: "davinci", label: "DaVinci Resolve", icon: Video },
-  { id: "illustrator", label: "Adobe Illustrator", icon: PenTool },
-  { id: "photoshop", label: "Adobe Photoshop", icon: Layers },
-  { id: "nanobana", label: "Nanobana", icon: Palette },
-  { id: "higgsfield", label: "Higgsfield", icon: Video },
-  { id: "framer", label: "Framer", icon: Layers },
-  { id: "webflow", label: "Webflow", icon: Code },
-  { id: "flora_ai", label: "Flora AI", icon: Sparkles },
-  { id: "adobe_indesign", label: "Adobe InDesign", icon: PenTool },
-  { id: "other", label: "Other", icon: Code },
-];
+  { id: 'figma', label: 'Figma', icon: Layers },
+  { id: 'adobe_premiere_pro', label: 'Adobe Premiere Pro', icon: Video },
+  { id: 'davinci', label: 'DaVinci Resolve', icon: Video },
+  { id: 'illustrator', label: 'Adobe Illustrator', icon: PenTool },
+  { id: 'photoshop', label: 'Adobe Photoshop', icon: Layers },
+  { id: 'nanobana', label: 'Nanobana', icon: Palette },
+  { id: 'higgsfield', label: 'Higgsfield', icon: Video },
+  { id: 'framer', label: 'Framer', icon: Layers },
+  { id: 'webflow', label: 'Webflow', icon: Code },
+  { id: 'flora_ai', label: 'Flora AI', icon: Sparkles },
+  { id: 'adobe_indesign', label: 'Adobe InDesign', icon: PenTool },
+  { id: 'other', label: 'Other', icon: Code },
+]
 
 const specializations = [
-  { id: "static_ads", label: "Static Ads" },
-  { id: "video_motion", label: "Video/Motion Graphics" },
-  { id: "social_media", label: "Social Media Content" },
-  { id: "branding", label: "Branding & Identity" },
-  { id: "ui_ux", label: "UI/UX Design" },
-];
+  { id: 'static_ads', label: 'Static Ads' },
+  { id: 'video_motion', label: 'Video/Motion Graphics' },
+  { id: 'social_media', label: 'Social Media Content' },
+  { id: 'branding', label: 'Branding & Identity' },
+  { id: 'ui_ux', label: 'UI/UX Design' },
+]
 
 // Step configuration for progress bar
 const FREELANCER_STEPS = [
-  { id: "welcome", label: "Welcome" },
-  { id: "about", label: "About" },
-  { id: "skills", label: "Skills" },
-  { id: "contact", label: "Contact" },
-];
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'about', label: 'About' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'contact', label: 'Contact' },
+]
 
 export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) {
-  const { refetch: refetchSession } = useSession();
-  const [step, setStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const { refetch: refetchSession } = useSession()
+  const [step, setStep] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    bio: "",
+    bio: '',
     skills: [] as string[],
     specializations: [] as string[],
-    portfolioUrls: "",
-    whatsappNumber: "",
-    profileImage: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-  });
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+    portfolioUrls: '',
+    whatsappNumber: '',
+    profileImage: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+  })
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   // Common timezones for easy selection
   const timezones = [
-    { value: "America/New_York", label: "Eastern Time (ET)", offset: "UTC-5" },
-    { value: "America/Chicago", label: "Central Time (CT)", offset: "UTC-6" },
-    { value: "America/Denver", label: "Mountain Time (MT)", offset: "UTC-7" },
-    { value: "America/Los_Angeles", label: "Pacific Time (PT)", offset: "UTC-8" },
-    { value: "America/Anchorage", label: "Alaska Time", offset: "UTC-9" },
-    { value: "Pacific/Honolulu", label: "Hawaii Time", offset: "UTC-10" },
-    { value: "Europe/London", label: "London (GMT)", offset: "UTC+0" },
-    { value: "Europe/Paris", label: "Central European Time", offset: "UTC+1" },
-    { value: "Europe/Helsinki", label: "Eastern European Time", offset: "UTC+2" },
-    { value: "Asia/Dubai", label: "Dubai", offset: "UTC+4" },
-    { value: "Asia/Kolkata", label: "India (IST)", offset: "UTC+5:30" },
-    { value: "Asia/Bangkok", label: "Bangkok", offset: "UTC+7" },
-    { value: "Asia/Singapore", label: "Singapore", offset: "UTC+8" },
-    { value: "Asia/Tokyo", label: "Tokyo (JST)", offset: "UTC+9" },
-    { value: "Australia/Sydney", label: "Sydney (AEST)", offset: "UTC+10" },
-    { value: "Pacific/Auckland", label: "Auckland (NZST)", offset: "UTC+12" },
-  ];
+    { value: 'America/New_York', label: 'Eastern Time (ET)', offset: 'UTC-5' },
+    { value: 'America/Chicago', label: 'Central Time (CT)', offset: 'UTC-6' },
+    { value: 'America/Denver', label: 'Mountain Time (MT)', offset: 'UTC-7' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (PT)', offset: 'UTC-8' },
+    { value: 'America/Anchorage', label: 'Alaska Time', offset: 'UTC-9' },
+    { value: 'Pacific/Honolulu', label: 'Hawaii Time', offset: 'UTC-10' },
+    { value: 'Europe/London', label: 'London (GMT)', offset: 'UTC+0' },
+    { value: 'Europe/Paris', label: 'Central European Time', offset: 'UTC+1' },
+    { value: 'Europe/Helsinki', label: 'Eastern European Time', offset: 'UTC+2' },
+    { value: 'Asia/Dubai', label: 'Dubai', offset: 'UTC+4' },
+    { value: 'Asia/Kolkata', label: 'India (IST)', offset: 'UTC+5:30' },
+    { value: 'Asia/Bangkok', label: 'Bangkok', offset: 'UTC+7' },
+    { value: 'Asia/Singapore', label: 'Singapore', offset: 'UTC+8' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)', offset: 'UTC+9' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEST)', offset: 'UTC+10' },
+    { value: 'Pacific/Auckland', label: 'Auckland (NZST)', offset: 'UTC+12' },
+  ]
 
   const handleSkillToggle = (id: string) => {
     setFormData((prev) => ({
       ...prev,
-      skills: prev.skills.includes(id)
-        ? prev.skills.filter((s) => s !== id)
-        : [...prev.skills, id],
-    }));
-  };
+      skills: prev.skills.includes(id) ? prev.skills.filter((s) => s !== id) : [...prev.skills, id],
+    }))
+  }
 
   const handleSpecializationToggle = (id: string) => {
     setFormData((prev) => ({
@@ -115,43 +113,43 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
       specializations: prev.specializations.includes(id)
         ? prev.specializations.filter((s) => s !== id)
         : [...prev.specializations, id],
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: "freelancer",
+          type: 'freelancer',
           data: {
             ...formData,
             portfolioUrls: formData.portfolioUrls
-              .split(",")
+              .split(',')
               .map((url) => url.trim())
               .filter(Boolean),
           },
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to complete onboarding");
+        throw new Error('Failed to complete onboarding')
       }
 
       // Await session refresh to ensure onboardingCompleted is updated before navigating
-      await refetchSession();
+      await refetchSession()
 
-      toast.success("Application submitted! We'll review it shortly.");
-      onComplete();
+      toast.success("Application submitted! We'll review it shortly.")
+      onComplete()
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.error('Something went wrong. Please try again.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
@@ -166,8 +164,8 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                 <div
                   key={stepConfig.id}
                   className={cn(
-                    "h-1 flex-1 rounded-full transition-all duration-300",
-                    index <= step ? "bg-foreground" : "bg-muted-foreground/20"
+                    'h-1 flex-1 rounded-full transition-all duration-300',
+                    index <= step ? 'bg-foreground' : 'bg-muted-foreground/20'
                   )}
                 />
               ))}
@@ -221,9 +219,21 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
 
                   <div className="space-y-3">
                     {[
-                      { icon: User, title: "Create your profile", desc: "Share your story and experience" },
-                      { icon: Palette, title: "Showcase your skills", desc: "Highlight your expertise and tools" },
-                      { icon: Phone, title: "Get connected", desc: "Start receiving tasks that match your skills" },
+                      {
+                        icon: User,
+                        title: 'Create your profile',
+                        desc: 'Share your story and experience',
+                      },
+                      {
+                        icon: Palette,
+                        title: 'Showcase your skills',
+                        desc: 'Highlight your expertise and tools',
+                      },
+                      {
+                        icon: Phone,
+                        title: 'Get connected',
+                        desc: 'Start receiving tasks that match your skills',
+                      },
                     ].map((item) => (
                       <div
                         key={item.title}
@@ -290,7 +300,9 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <Textarea
                       placeholder="Behance, Dribbble, or personal website URLs (comma-separated)"
                       value={formData.portfolioUrls}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, portfolioUrls: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, portfolioUrls: e.target.value }))
+                      }
                       className="min-h-[80px] text-base resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -302,7 +314,9 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <Label className="text-sm font-semibold">Your Timezone</Label>
                     <select
                       value={formData.timezone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, timezone: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, timezone: e.target.value }))
+                      }
                       className="w-full h-12 px-3 text-base rounded-md border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <option value="">Select your timezone</option>
@@ -318,11 +332,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   </div>
 
                   <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStep(0)}
-                      className="h-12"
-                    >
+                    <Button variant="outline" onClick={() => setStep(0)} className="h-12">
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Back
                     </Button>
@@ -366,25 +376,25 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <Label className="text-sm font-semibold">Tools & Software</Label>
                       <div className="grid grid-cols-2 gap-2">
                         {skills.map((skill) => {
-                          const isSelected = formData.skills.includes(skill.id);
+                          const isSelected = formData.skills.includes(skill.id)
                           return (
                             <button
                               key={skill.id}
                               onClick={() => handleSkillToggle(skill.id)}
                               className={cn(
-                                "flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200",
+                                'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200',
                                 isSelected
-                                  ? "border-foreground bg-foreground/5"
-                                  : "border-border hover:border-foreground/50 bg-background"
+                                  ? 'border-foreground bg-foreground/5'
+                                  : 'border-border hover:border-foreground/50 bg-background'
                               )}
                             >
                               {/* Visual checkbox indicator (not a button) */}
                               <div
                                 className={cn(
-                                  "h-4 w-4 shrink-0 rounded-sm border transition-colors",
+                                  'h-4 w-4 shrink-0 rounded-sm border transition-colors',
                                   isSelected
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-input"
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-input'
                                 )}
                               >
                                 {isSelected && (
@@ -395,13 +405,17 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                                     stroke="currentColor"
                                     strokeWidth={3}
                                   >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                 )}
                               </div>
                               <span className="text-sm font-medium">{skill.label}</span>
                             </button>
-                          );
+                          )
                         })}
                       </div>
                     </div>
@@ -411,25 +425,25 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <Label className="text-sm font-semibold">Specializations</Label>
                       <div className="grid grid-cols-2 gap-2">
                         {specializations.map((spec) => {
-                          const isSelected = formData.specializations.includes(spec.id);
+                          const isSelected = formData.specializations.includes(spec.id)
                           return (
                             <button
                               key={spec.id}
                               onClick={() => handleSpecializationToggle(spec.id)}
                               className={cn(
-                                "flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200",
+                                'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200',
                                 isSelected
-                                  ? "border-foreground bg-foreground/5"
-                                  : "border-border hover:border-foreground/50 bg-background"
+                                  ? 'border-foreground bg-foreground/5'
+                                  : 'border-border hover:border-foreground/50 bg-background'
                               )}
                             >
                               {/* Visual checkbox indicator (not a button) */}
                               <div
                                 className={cn(
-                                  "h-4 w-4 shrink-0 rounded-sm border transition-colors",
+                                  'h-4 w-4 shrink-0 rounded-sm border transition-colors',
                                   isSelected
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-input"
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-input'
                                 )}
                               >
                                 {isSelected && (
@@ -440,31 +454,28 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                                     stroke="currentColor"
                                     strokeWidth={3}
                                   >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                 )}
                               </div>
                               <span className="text-sm font-medium">{spec.label}</span>
                             </button>
-                          );
+                          )
                         })}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStep(1)}
-                      className="h-12"
-                    >
+                    <Button variant="outline" onClick={() => setStep(1)} className="h-12">
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Back
                     </Button>
-                    <Button
-                      onClick={() => setStep(3)}
-                      className="flex-1 h-12 font-semibold"
-                    >
+                    <Button onClick={() => setStep(3)} className="flex-1 h-12 font-semibold">
                       Continue
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -500,7 +511,9 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                         type="tel"
                         placeholder="+1 234 567 8900"
                         value={formData.whatsappNumber}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, whatsappNumber: e.target.value }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, whatsappNumber: e.target.value }))
+                        }
                         className="h-12 text-base"
                       />
                       <p className="text-xs text-muted-foreground">
@@ -530,28 +543,31 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                             className="hidden"
                             id="profile-image-upload"
                             onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
+                              const file = e.target.files?.[0]
+                              if (!file) return
 
-                              setIsUploadingImage(true);
+                              setIsUploadingImage(true)
                               try {
-                                const formDataUpload = new FormData();
-                                formDataUpload.append("file", file);
+                                const formDataUpload = new FormData()
+                                formDataUpload.append('file', file)
 
-                                const response = await fetch("/api/upload", {
-                                  method: "POST",
+                                const response = await fetch('/api/upload', {
+                                  method: 'POST',
                                   body: formDataUpload,
-                                });
+                                })
 
-                                if (!response.ok) throw new Error("Upload failed");
+                                if (!response.ok) throw new Error('Upload failed')
 
-                                const { data } = await response.json();
-                                setFormData((prev) => ({ ...prev, profileImage: data.file.fileUrl }));
-                                toast.success("Profile picture uploaded!");
+                                const { data } = await response.json()
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  profileImage: data.file.fileUrl,
+                                }))
+                                toast.success('Profile picture uploaded!')
                               } catch {
-                                toast.error("Failed to upload image. Please try again.");
+                                toast.error('Failed to upload image. Please try again.')
                               } finally {
-                                setIsUploadingImage(false);
+                                setIsUploadingImage(false)
                               }
                             }}
                           />
@@ -560,7 +576,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                             variant="outline"
                             size="sm"
                             disabled={isUploadingImage}
-                            onClick={() => document.getElementById("profile-image-upload")?.click()}
+                            onClick={() => document.getElementById('profile-image-upload')?.click()}
                           >
                             {isUploadingImage ? (
                               <>
@@ -568,9 +584,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                                 Uploading...
                               </>
                             ) : (
-                              <>
-                                {formData.profileImage ? "Change Photo" : "Upload Photo"}
-                              </>
+                              <>{formData.profileImage ? 'Change Photo' : 'Upload Photo'}</>
                             )}
                           </Button>
                           <p className="text-xs text-muted-foreground mt-2">
@@ -636,12 +650,23 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
               You can continue anytime. We&apos;ve saved your progress.
             </p>
             <div className="flex items-center gap-4 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-foreground underline underline-offset-4">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-foreground underline underline-offset-4"
+              >
                 Have questions? Contact us.
               </a>
             </div>
             <button
-              onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
+              onClick={() =>
+                signOut({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      window.location.href = '/login'
+                    },
+                  },
+                })
+              }
               className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             >
               Log out
@@ -669,7 +694,11 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   <motion.div
                     className="w-32 h-32 rounded-3xl bg-background border border-border shadow-lg flex items-center justify-center mx-auto"
                     animate={{
-                      boxShadow: ["0 4px 20px rgba(0,0,0,0.08)", "0 8px 30px rgba(0,0,0,0.12)", "0 4px 20px rgba(0,0,0,0.08)"]
+                      boxShadow: [
+                        '0 4px 20px rgba(0,0,0,0.08)',
+                        '0 8px 30px rgba(0,0,0,0.12)',
+                        '0 4px 20px rgba(0,0,0,0.08)',
+                      ],
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
@@ -706,7 +735,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   <div
                     className="h-20 relative"
                     style={{
-                      background: "linear-gradient(135deg, #14b8a6, #3b82f6)"
+                      background: 'linear-gradient(135deg, #14b8a6, #3b82f6)',
                     }}
                   >
                     <div className="absolute inset-0 bg-black/10" />
@@ -718,7 +747,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       className="w-20 h-20 rounded-2xl bg-background shadow-xl border border-border flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: "spring", delay: 0.2 }}
+                      transition={{ type: 'spring', delay: 0.2 }}
                     >
                       <User className="w-10 h-10 text-muted-foreground" />
                     </motion.div>
@@ -801,7 +830,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <p className="text-sm text-muted-foreground">
                       {formData.skills.length + formData.specializations.length > 0
                         ? `${formData.skills.length + formData.specializations.length} selected`
-                        : "Select your skills"}
+                        : 'Select your skills'}
                     </p>
                   </div>
 
@@ -810,7 +839,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     {formData.skills.length > 0 || formData.specializations.length > 0 ? (
                       <>
                         {formData.skills.map((skillId) => {
-                          const skill = skills.find((s) => s.id === skillId);
+                          const skill = skills.find((s) => s.id === skillId)
                           return (
                             <motion.div
                               key={skillId}
@@ -821,12 +850,14 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                               <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
                                 <Palette className="w-4 h-4 text-background" />
                               </div>
-                              <span className="text-sm font-medium text-foreground">{skill?.label}</span>
+                              <span className="text-sm font-medium text-foreground">
+                                {skill?.label}
+                              </span>
                             </motion.div>
-                          );
+                          )
                         })}
                         {formData.specializations.map((specId) => {
-                          const spec = specializations.find((s) => s.id === specId);
+                          const spec = specializations.find((s) => s.id === specId)
                           return (
                             <motion.div
                               key={specId}
@@ -837,9 +868,11 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                               <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
                                 <Briefcase className="w-4 h-4 text-background" />
                               </div>
-                              <span className="text-sm font-medium text-foreground">{spec?.label}</span>
+                              <span className="text-sm font-medium text-foreground">
+                                {spec?.label}
+                              </span>
                             </motion.div>
-                          );
+                          )
                         })}
                       </>
                     ) : (
@@ -875,10 +908,12 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   <div className="space-y-4">
                     {/* Bio status */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.bio ? "bg-green-500" : "bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center',
+                          formData.bio ? 'bg-green-500' : 'bg-muted'
+                        )}
+                      >
                         {formData.bio ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
@@ -888,17 +923,19 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="text-left">
                         <p className="text-sm font-medium text-foreground">Bio</p>
                         <p className="text-xs text-muted-foreground">
-                          {formData.bio ? "Added" : "Not added"}
+                          {formData.bio ? 'Added' : 'Not added'}
                         </p>
                       </div>
                     </div>
 
                     {/* Skills status */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.skills.length > 0 ? "bg-green-500" : "bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center',
+                          formData.skills.length > 0 ? 'bg-green-500' : 'bg-muted'
+                        )}
+                      >
                         {formData.skills.length > 0 ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
@@ -908,17 +945,21 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="text-left">
                         <p className="text-sm font-medium text-foreground">Skills</p>
                         <p className="text-xs text-muted-foreground">
-                          {formData.skills.length > 0 ? `${formData.skills.length} selected` : "None selected"}
+                          {formData.skills.length > 0
+                            ? `${formData.skills.length} selected`
+                            : 'None selected'}
                         </p>
                       </div>
                     </div>
 
                     {/* Contact status */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.whatsappNumber ? "bg-green-500" : "bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center',
+                          formData.whatsappNumber ? 'bg-green-500' : 'bg-muted'
+                        )}
+                      >
                         {formData.whatsappNumber ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
@@ -928,17 +969,19 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="text-left">
                         <p className="text-sm font-medium text-foreground">Contact</p>
                         <p className="text-xs text-muted-foreground">
-                          {formData.whatsappNumber ? "Added" : "Not added"}
+                          {formData.whatsappNumber ? 'Added' : 'Not added'}
                         </p>
                       </div>
                     </div>
 
                     {/* Portfolio status */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.portfolioUrls ? "bg-green-500" : "bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center',
+                          formData.portfolioUrls ? 'bg-green-500' : 'bg-muted'
+                        )}
+                      >
                         {formData.portfolioUrls ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
@@ -948,17 +991,19 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="text-left">
                         <p className="text-sm font-medium text-foreground">Portfolio</p>
                         <p className="text-xs text-muted-foreground">
-                          {formData.portfolioUrls ? "Added" : "Not added"}
+                          {formData.portfolioUrls ? 'Added' : 'Not added'}
                         </p>
                       </div>
                     </div>
 
                     {/* Timezone status */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        formData.timezone ? "bg-green-500" : "bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center',
+                          formData.timezone ? 'bg-green-500' : 'bg-muted'
+                        )}
+                      >
                         {formData.timezone ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
@@ -968,7 +1013,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="text-left">
                         <p className="text-sm font-medium text-foreground">Timezone</p>
                         <p className="text-xs text-muted-foreground">
-                          {formData.timezone ? timezones.find(tz => tz.value === formData.timezone)?.label || formData.timezone : "Not set"}
+                          {formData.timezone
+                            ? timezones.find((tz) => tz.value === formData.timezone)?.label ||
+                              formData.timezone
+                            : 'Not set'}
                         </p>
                       </div>
                     </div>
@@ -989,5 +1037,5 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
         </div>
       </div>
     </div>
-  );
+  )
 }

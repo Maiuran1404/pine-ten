@@ -1,22 +1,20 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from 'lucide-react'
 
 interface LoadingSpinnerProps {
-  size?: "sm" | "md" | "lg";
-  className?: string;
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
-export function LoadingSpinner({ size = "md", className = "" }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: "h-4 w-4",
-    md: "h-6 w-6",
-    lg: "h-8 w-8",
-  };
+    sm: 'h-4 w-4',
+    md: 'h-6 w-6',
+    lg: 'h-8 w-8',
+  }
 
   return (
-    <Loader2
-      className={`animate-spin text-muted-foreground ${sizeClasses[size]} ${className}`}
-    />
-  );
+    <Loader2 className={`animate-spin text-muted-foreground ${sizeClasses[size]} ${className}`} />
+  )
 }
 
 export function PageLoader() {
@@ -24,7 +22,7 @@ export function PageLoader() {
     <div className="flex h-full min-h-[400px] w-full items-center justify-center">
       <LoadingSpinner size="lg" />
     </div>
-  );
+  )
 }
 
 export function FullPageLoader() {
@@ -32,5 +30,5 @@ export function FullPageLoader() {
     <div className="flex h-screen w-full items-center justify-center">
       <LoadingSpinner size="lg" />
     </div>
-  );
+  )
 }

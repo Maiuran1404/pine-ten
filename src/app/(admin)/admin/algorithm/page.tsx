@@ -1,22 +1,16 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Slider } from '@/components/ui/slider'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -25,13 +19,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   AlertCircle,
   Check,
@@ -41,86 +30,84 @@ import {
   Globe,
   Briefcase,
   TrendingUp,
-  Settings,
   Save,
   Rocket,
   RefreshCw,
   Info,
   ChevronRight,
   Zap,
-  Users,
   Scale,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface AlgorithmConfig {
-  id: string | null;
-  version: number;
-  name: string;
-  description: string | null;
-  isActive: boolean;
+  id: string | null
+  version: number
+  name: string
+  description: string | null
+  isActive: boolean
   weights: {
-    skillMatch: number;
-    timezoneFit: number;
-    experienceMatch: number;
-    workloadBalance: number;
-    performanceHistory: number;
-  };
+    skillMatch: number
+    timezoneFit: number
+    experienceMatch: number
+    workloadBalance: number
+    performanceHistory: number
+  }
   acceptanceWindows: {
-    critical: number;
-    urgent: number;
-    standard: number;
-    flexible: number;
-  };
+    critical: number
+    urgent: number
+    standard: number
+    flexible: number
+  }
   escalationSettings: {
-    level1SkillThreshold: number;
-    level2SkillThreshold: number;
-    level1MaxOffers: number;
-    level2MaxOffers: number;
-    level3BroadcastMinutes: number;
-    maxWorkloadOverride: number;
-  };
+    level1SkillThreshold: number
+    level2SkillThreshold: number
+    level1MaxOffers: number
+    level2MaxOffers: number
+    level3BroadcastMinutes: number
+    maxWorkloadOverride: number
+  }
   timezoneSettings: {
-    peakHoursStart: string;
-    peakHoursEnd: string;
-    peakScore: number;
-    eveningScore: number;
-    earlyMorningScore: number;
-    lateEveningScore: number;
-    nightScore: number;
-  };
+    peakHoursStart: string
+    peakHoursEnd: string
+    peakScore: number
+    eveningScore: number
+    earlyMorningScore: number
+    lateEveningScore: number
+    nightScore: number
+  }
   experienceMatrix: {
-    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-  };
+    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+  }
   workloadSettings: {
-    maxActiveTasks: number;
-    scorePerTask: number;
-  };
+    maxActiveTasks: number
+    scorePerTask: number
+  }
   exclusionRules: {
-    minSkillScoreToInclude: number;
-    excludeOverloaded: boolean;
-    excludeNightHoursForUrgent: boolean;
-    excludeVacationMode: boolean;
-  };
+    minSkillScoreToInclude: number
+    excludeOverloaded: boolean
+    excludeNightHoursForUrgent: boolean
+    excludeVacationMode: boolean
+  }
   bonusModifiers: {
-    categorySpecializationBonus: number;
-    niceToHaveSkillBonus: number;
-    favoriteArtistBonus: number;
-  };
-  publishedAt: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+    categorySpecializationBonus: number
+    niceToHaveSkillBonus: number
+    favoriteArtistBonus: number
+  }
+  publishedAt: string | null
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 interface ConfigurationListItem {
-  id: string;
-  version: number;
-  name: string;
-  isActive: boolean;
-  publishedAt: string | null;
-  createdAt: string;
+  id: string
+  version: number
+  name: string
+  isActive: boolean
+  publishedAt: string | null
+  createdAt: string
 }
 
 const WEIGHT_ICONS = {
@@ -129,69 +116,69 @@ const WEIGHT_ICONS = {
   experienceMatch: Briefcase,
   workloadBalance: Scale,
   performanceHistory: TrendingUp,
-};
+}
 
 const WEIGHT_LABELS = {
-  skillMatch: "Skill Match",
-  timezoneFit: "Timezone Fit",
-  experienceMatch: "Experience Match",
-  workloadBalance: "Workload Balance",
-  performanceHistory: "Performance History",
-};
+  skillMatch: 'Skill Match',
+  timezoneFit: 'Timezone Fit',
+  experienceMatch: 'Experience Match',
+  workloadBalance: 'Workload Balance',
+  performanceHistory: 'Performance History',
+}
 
 const WEIGHT_DESCRIPTIONS = {
   skillMatch: "How well the artist's skills match the task requirements",
-  timezoneFit: "Whether the artist is in working hours when the task arrives",
-  experienceMatch: "Match between task complexity and artist experience level",
-  workloadBalance: "Current number of active tasks the artist has",
+  timezoneFit: 'Whether the artist is in working hours when the task arrives',
+  experienceMatch: 'Match between task complexity and artist experience level',
+  workloadBalance: 'Current number of active tasks the artist has',
   performanceHistory: "Artist's rating, on-time delivery, and acceptance rates",
-};
+}
 
 export default function AlgorithmPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [configurations, setConfigurations] = useState<ConfigurationListItem[]>([]);
-  const [activeConfig, setActiveConfig] = useState<AlgorithmConfig | null>(null);
-  const [editingConfig, setEditingConfig] = useState<AlgorithmConfig | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [newVersionDialogOpen, setNewVersionDialogOpen] = useState(false);
-  const [newVersionName, setNewVersionName] = useState("");
-  const [newVersionDescription, setNewVersionDescription] = useState("");
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [configurations, setConfigurations] = useState<ConfigurationListItem[]>([])
+  const [activeConfig, setActiveConfig] = useState<AlgorithmConfig | null>(null)
+  const [editingConfig, setEditingConfig] = useState<AlgorithmConfig | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false)
+  const [newVersionDialogOpen, setNewVersionDialogOpen] = useState(false)
+  const [newVersionName, setNewVersionName] = useState('')
+  const [newVersionDescription, setNewVersionDescription] = useState('')
 
   const fetchData = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const response = await fetch("/api/admin/algorithm");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
+      setIsLoading(true)
+      const response = await fetch('/api/admin/algorithm')
+      if (!response.ok) throw new Error('Failed to fetch')
+      const data = await response.json()
 
-      setConfigurations(data.configurations || []);
-      setActiveConfig(data.activeConfig);
-      setEditingConfig(JSON.parse(JSON.stringify(data.activeConfig))); // Deep clone
-    } catch (error) {
-      toast.error("Failed to load algorithm configuration");
+      setConfigurations(data.configurations || [])
+      setActiveConfig(data.activeConfig)
+      setEditingConfig(JSON.parse(JSON.stringify(data.activeConfig))) // Deep clone
+    } catch (_error) {
+      toast.error('Failed to load algorithm configuration')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData()
+  }, [fetchData])
 
-  const updateWeight = (key: keyof AlgorithmConfig["weights"], value: number) => {
-    if (!editingConfig) return;
+  const updateWeight = (key: keyof AlgorithmConfig['weights'], value: number) => {
+    if (!editingConfig) return
 
-    const currentTotal = Object.values(editingConfig.weights).reduce((a, b) => a + b, 0);
-    const currentValue = editingConfig.weights[key];
-    const diff = value - currentValue;
-    const newTotal = currentTotal + diff;
+    const currentTotal = Object.values(editingConfig.weights).reduce((a, b) => a + b, 0)
+    const currentValue = editingConfig.weights[key]
+    const diff = value - currentValue
+    const newTotal = currentTotal + diff
 
     // If going over 100, cap the value
     if (newTotal > 100) {
-      value = currentValue + (100 - currentTotal + diff);
+      value = currentValue + (100 - currentTotal + diff)
     }
 
     setEditingConfig({
@@ -200,61 +187,61 @@ export default function AlgorithmPage() {
         ...editingConfig.weights,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateAcceptanceWindow = (
-    key: keyof AlgorithmConfig["acceptanceWindows"],
+    key: keyof AlgorithmConfig['acceptanceWindows'],
     value: number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       acceptanceWindows: {
         ...editingConfig.acceptanceWindows,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateEscalationSetting = (
-    key: keyof AlgorithmConfig["escalationSettings"],
+    key: keyof AlgorithmConfig['escalationSettings'],
     value: number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       escalationSettings: {
         ...editingConfig.escalationSettings,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateTimezoneSettings = (
-    key: keyof AlgorithmConfig["timezoneSettings"],
+    key: keyof AlgorithmConfig['timezoneSettings'],
     value: string | number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       timezoneSettings: {
         ...editingConfig.timezoneSettings,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateExperienceMatrix = (
-    complexity: keyof AlgorithmConfig["experienceMatrix"],
-    level: "JUNIOR" | "MID" | "SENIOR" | "EXPERT",
+    complexity: keyof AlgorithmConfig['experienceMatrix'],
+    level: 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT',
     value: number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       experienceMatrix: {
@@ -264,129 +251,126 @@ export default function AlgorithmPage() {
           [level]: value,
         },
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateWorkloadSettings = (
-    key: keyof AlgorithmConfig["workloadSettings"],
+    key: keyof AlgorithmConfig['workloadSettings'],
     value: number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       workloadSettings: {
         ...editingConfig.workloadSettings,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const updateExclusionRule = (
-    key: keyof AlgorithmConfig["exclusionRules"],
+    key: keyof AlgorithmConfig['exclusionRules'],
     value: boolean | number
   ) => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       exclusionRules: {
         ...editingConfig.exclusionRules,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
-  const updateBonusModifier = (
-    key: keyof AlgorithmConfig["bonusModifiers"],
-    value: number
-  ) => {
-    if (!editingConfig) return;
+  const updateBonusModifier = (key: keyof AlgorithmConfig['bonusModifiers'], value: number) => {
+    if (!editingConfig) return
     setEditingConfig({
       ...editingConfig,
       bonusModifiers: {
         ...editingConfig.bonusModifiers,
         [key]: value,
       },
-    });
-    setHasUnsavedChanges(true);
-  };
+    })
+    setHasUnsavedChanges(true)
+  }
 
   const createNewVersion = async () => {
-    if (!editingConfig) return;
+    if (!editingConfig) return
 
     try {
-      setIsSaving(true);
-      const response = await fetch("/api/admin/algorithm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      setIsSaving(true)
+      const response = await fetch('/api/admin/algorithm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editingConfig,
           name: newVersionName || `Configuration v${configurations.length + 1}`,
           description: newVersionDescription,
         }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create new version");
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create new version')
       }
 
-      toast.success("New configuration version created");
-      setNewVersionDialogOpen(false);
-      setNewVersionName("");
-      setNewVersionDescription("");
-      setHasUnsavedChanges(false);
-      fetchData();
+      toast.success('New configuration version created')
+      setNewVersionDialogOpen(false)
+      setNewVersionName('')
+      setNewVersionDescription('')
+      setHasUnsavedChanges(false)
+      fetchData()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create new version");
+      toast.error(error instanceof Error ? error.message : 'Failed to create new version')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const publishConfiguration = async () => {
     if (!editingConfig?.id) {
       // Need to create first
-      await createNewVersion();
-      return;
+      await createNewVersion()
+      return
     }
 
     try {
-      setIsPublishing(true);
-      const response = await fetch("/api/admin/algorithm/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      setIsPublishing(true)
+      const response = await fetch('/api/admin/algorithm/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: editingConfig.id }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to publish");
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to publish')
       }
 
-      toast.success("Configuration published and now active!");
-      setPublishDialogOpen(false);
-      setHasUnsavedChanges(false);
-      fetchData();
+      toast.success('Configuration published and now active!')
+      setPublishDialogOpen(false)
+      setHasUnsavedChanges(false)
+      fetchData()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to publish");
+      toast.error(error instanceof Error ? error.message : 'Failed to publish')
     } finally {
-      setIsPublishing(false);
+      setIsPublishing(false)
     }
-  };
+  }
 
   const resetToDefault = () => {
-    if (!activeConfig) return;
-    setEditingConfig(JSON.parse(JSON.stringify(activeConfig)));
-    setHasUnsavedChanges(false);
-    toast.info("Reset to active configuration");
-  };
+    if (!activeConfig) return
+    setEditingConfig(JSON.parse(JSON.stringify(activeConfig)))
+    setHasUnsavedChanges(false)
+    toast.info('Reset to active configuration')
+  }
 
   const weightsTotal = editingConfig
     ? Object.values(editingConfig.weights).reduce((a, b) => a + b, 0)
-    : 0;
+    : 0
 
   if (isLoading) {
     return (
@@ -397,7 +381,7 @@ export default function AlgorithmPage() {
           <Skeleton className="h-96" />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -419,11 +403,7 @@ export default function AlgorithmPage() {
               Unsaved Changes
             </Badge>
           )}
-          <Button
-            variant="outline"
-            onClick={resetToDefault}
-            disabled={!hasUnsavedChanges}
-          >
+          <Button variant="outline" onClick={resetToDefault} disabled={!hasUnsavedChanges}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Reset
           </Button>
@@ -460,14 +440,11 @@ export default function AlgorithmPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setNewVersionDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setNewVersionDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button onClick={createNewVersion} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save Version"}
+                  {isSaving ? 'Saving...' : 'Save Version'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -483,8 +460,8 @@ export default function AlgorithmPage() {
               <DialogHeader>
                 <DialogTitle>Publish Configuration</DialogTitle>
                 <DialogDescription>
-                  This will make these settings active immediately. All new task
-                  assignments will use this configuration.
+                  This will make these settings active immediately. All new task assignments will
+                  use this configuration.
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
@@ -494,14 +471,11 @@ export default function AlgorithmPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setPublishDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setPublishDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button onClick={publishConfiguration} disabled={isPublishing}>
-                  {isPublishing ? "Publishing..." : "Publish Now"}
+                  {isPublishing ? 'Publishing...' : 'Publish Now'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -516,7 +490,7 @@ export default function AlgorithmPage() {
             <div className="flex items-center gap-3">
               <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
               <span className="font-medium">Active Configuration:</span>
-              <span>{activeConfig?.name || "Default"}</span>
+              <span>{activeConfig?.name || 'Default'}</span>
               {activeConfig?.publishedAt && (
                 <span className="text-muted-foreground text-sm">
                   Published {new Date(activeConfig.publishedAt).toLocaleDateString()}
@@ -548,8 +522,8 @@ export default function AlgorithmPage() {
                 Score All Artists
               </div>
               <p className="text-sm text-muted-foreground pl-10">
-                When a task is created, the algorithm calculates a match score
-                (0-100) for each available artist based on weighted factors.
+                When a task is created, the algorithm calculates a match score (0-100) for each
+                available artist based on weighted factors.
               </p>
             </div>
             <div className="space-y-3">
@@ -560,8 +534,8 @@ export default function AlgorithmPage() {
                 Offer to Best Match
               </div>
               <p className="text-sm text-muted-foreground pl-10">
-                The highest-scoring artist receives the task offer and has a
-                limited time to accept based on task urgency.
+                The highest-scoring artist receives the task offer and has a limited time to accept
+                based on task urgency.
               </p>
             </div>
             <div className="space-y-3">
@@ -572,8 +546,8 @@ export default function AlgorithmPage() {
                 Escalate if Needed
               </div>
               <p className="text-sm text-muted-foreground pl-10">
-                If declined or expired, the offer moves to the next best artist.
-                After multiple attempts, it escalates to admin.
+                If declined or expired, the offer moves to the next best artist. After multiple
+                attempts, it escalates to admin.
               </p>
             </div>
           </div>
@@ -597,19 +571,19 @@ export default function AlgorithmPage() {
               <CardHeader>
                 <CardTitle>Scoring Weights</CardTitle>
                 <CardDescription>
-                  Adjust the importance of each factor in the matching algorithm.
-                  Weights must sum to 100%.
+                  Adjust the importance of each factor in the matching algorithm. Weights must sum
+                  to 100%.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
                 <div
                   className={`text-center p-3 rounded-lg ${
                     weightsTotal === 100
-                      ? "bg-green-500/10 text-green-500"
-                      : "bg-red-500/10 text-red-500"
+                      ? 'bg-green-500/10 text-green-500'
+                      : 'bg-red-500/10 text-red-500'
                   }`}
                 >
-                  Total: {weightsTotal}%{" "}
+                  Total: {weightsTotal}%{' '}
                   {weightsTotal === 100 ? (
                     <Check className="inline h-4 w-4 ml-1" />
                   ) : (
@@ -619,11 +593,11 @@ export default function AlgorithmPage() {
 
                 {(
                   Object.entries(editingConfig.weights) as [
-                    keyof AlgorithmConfig["weights"],
-                    number
+                    keyof AlgorithmConfig['weights'],
+                    number,
                   ][]
                 ).map(([key, value]) => {
-                  const Icon = WEIGHT_ICONS[key];
+                  const Icon = WEIGHT_ICONS[key]
                   return (
                     <div key={key} className="space-y-3">
                       <div className="flex items-center justify-between">
@@ -647,9 +621,7 @@ export default function AlgorithmPage() {
                             min={0}
                             max={100}
                             value={value}
-                            onChange={(e) =>
-                              updateWeight(key, parseInt(e.target.value) || 0)
-                            }
+                            onChange={(e) => updateWeight(key, parseInt(e.target.value) || 0)}
                             className="w-20 text-right"
                           />
                           <span className="text-muted-foreground">%</span>
@@ -663,7 +635,7 @@ export default function AlgorithmPage() {
                         className="cursor-pointer"
                       />
                     </div>
-                  );
+                  )
                 })}
               </CardContent>
             </Card>
@@ -677,17 +649,17 @@ export default function AlgorithmPage() {
                 <div className="flex h-8 rounded-lg overflow-hidden">
                   {(
                     Object.entries(editingConfig.weights) as [
-                      keyof AlgorithmConfig["weights"],
-                      number
+                      keyof AlgorithmConfig['weights'],
+                      number,
                     ][]
                   ).map(([key, value], index) => {
                     const colors = [
-                      "bg-blue-500",
-                      "bg-green-500",
-                      "bg-purple-500",
-                      "bg-orange-500",
-                      "bg-pink-500",
-                    ];
+                      'bg-blue-500',
+                      'bg-green-500',
+                      'bg-purple-500',
+                      'bg-orange-500',
+                      'bg-pink-500',
+                    ]
                     return (
                       <TooltipProvider key={key}>
                         <Tooltip>
@@ -700,29 +672,29 @@ export default function AlgorithmPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    );
+                    )
                   })}
                 </div>
                 <div className="flex justify-between mt-4 text-xs text-muted-foreground">
                   {(
                     Object.entries(editingConfig.weights) as [
-                      keyof AlgorithmConfig["weights"],
-                      number
+                      keyof AlgorithmConfig['weights'],
+                      number,
                     ][]
-                  ).map(([key, value], index) => {
+                  ).map(([key, _value], index) => {
                     const colors = [
-                      "bg-blue-500",
-                      "bg-green-500",
-                      "bg-purple-500",
-                      "bg-orange-500",
-                      "bg-pink-500",
-                    ];
+                      'bg-blue-500',
+                      'bg-green-500',
+                      'bg-purple-500',
+                      'bg-orange-500',
+                      'bg-pink-500',
+                    ]
                     return (
                       <div key={key} className="flex items-center gap-1">
                         <div className={`h-2 w-2 rounded-full ${colors[index]}`} />
-                        <span>{WEIGHT_LABELS[key].split(" ")[0]}</span>
+                        <span>{WEIGHT_LABELS[key].split(' ')[0]}</span>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               </CardContent>
@@ -738,29 +710,29 @@ export default function AlgorithmPage() {
                   Acceptance Windows
                 </CardTitle>
                 <CardDescription>
-                  How long an artist has to accept a task offer before it moves to the
-                  next best match.
+                  How long an artist has to accept a task offer before it moves to the next best
+                  match.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {(
                   Object.entries(editingConfig.acceptanceWindows) as [
-                    keyof AlgorithmConfig["acceptanceWindows"],
-                    number
+                    keyof AlgorithmConfig['acceptanceWindows'],
+                    number,
                   ][]
                 ).map(([key, value]) => {
                   const urgencyColors = {
-                    critical: "text-red-500",
-                    urgent: "text-orange-500",
-                    standard: "text-blue-500",
-                    flexible: "text-green-500",
-                  };
+                    critical: 'text-red-500',
+                    urgent: 'text-orange-500',
+                    standard: 'text-blue-500',
+                    flexible: 'text-green-500',
+                  }
                   const urgencyDescriptions = {
-                    critical: "Deadline < 4 hours",
-                    urgent: "Deadline < 24 hours",
-                    standard: "Deadline < 72 hours",
-                    flexible: "Deadline > 72 hours or none",
-                  };
+                    critical: 'Deadline < 4 hours',
+                    urgent: 'Deadline < 24 hours',
+                    standard: 'Deadline < 72 hours',
+                    flexible: 'Deadline > 72 hours or none',
+                  }
                   return (
                     <div key={key} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -791,11 +763,11 @@ export default function AlgorithmPage() {
                         {value < 60
                           ? `${value} minutes`
                           : value === 60
-                          ? "1 hour"
-                          : `${Math.floor(value / 60)}h ${value % 60}m`}
+                            ? '1 hour'
+                            : `${Math.floor(value / 60)}h ${value % 60}m`}
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </CardContent>
             </Card>
@@ -810,8 +782,8 @@ export default function AlgorithmPage() {
                   Escalation Settings
                 </CardTitle>
                 <CardDescription>
-                  Configure how the algorithm escalates when artists decline or don't
-                  respond to offers.
+                  Configure how the algorithm escalates when artists decline or don&apos;t respond
+                  to offers.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
@@ -829,7 +801,7 @@ export default function AlgorithmPage() {
                             value={editingConfig.escalationSettings.level1SkillThreshold}
                             onChange={(e) =>
                               updateEscalationSetting(
-                                "level1SkillThreshold",
+                                'level1SkillThreshold',
                                 parseInt(e.target.value) || 0
                               )
                             }
@@ -850,7 +822,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.escalationSettings.level1MaxOffers}
                           onChange={(e) =>
                             updateEscalationSetting(
-                              "level1MaxOffers",
+                              'level1MaxOffers',
                               parseInt(e.target.value) || 1
                             )
                           }
@@ -876,7 +848,7 @@ export default function AlgorithmPage() {
                             value={editingConfig.escalationSettings.level2SkillThreshold}
                             onChange={(e) =>
                               updateEscalationSetting(
-                                "level2SkillThreshold",
+                                'level2SkillThreshold',
                                 parseInt(e.target.value) || 0
                               )
                             }
@@ -894,7 +866,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.escalationSettings.level2MaxOffers}
                           onChange={(e) =>
                             updateEscalationSetting(
-                              "level2MaxOffers",
+                              'level2MaxOffers',
                               parseInt(e.target.value) || 1
                             )
                           }
@@ -912,7 +884,7 @@ export default function AlgorithmPage() {
                             value={editingConfig.escalationSettings.maxWorkloadOverride}
                             onChange={(e) =>
                               updateEscalationSetting(
-                                "maxWorkloadOverride",
+                                'maxWorkloadOverride',
                                 parseInt(e.target.value) || 0
                               )
                             }
@@ -941,7 +913,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.escalationSettings.level3BroadcastMinutes}
                           onChange={(e) =>
                             updateEscalationSetting(
-                              "level3BroadcastMinutes",
+                              'level3BroadcastMinutes',
                               parseInt(e.target.value) || 30
                             )
                           }
@@ -950,8 +922,7 @@ export default function AlgorithmPage() {
                         <span className="text-muted-foreground">minutes</span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Task is posted to all artists for this duration before admin
-                        intervention
+                        Task is posted to all artists for this duration before admin intervention
                       </p>
                     </div>
                   </div>
@@ -979,9 +950,7 @@ export default function AlgorithmPage() {
                     <Input
                       type="time"
                       value={editingConfig.timezoneSettings.peakHoursStart}
-                      onChange={(e) =>
-                        updateTimezoneSettings("peakHoursStart", e.target.value)
-                      }
+                      onChange={(e) => updateTimezoneSettings('peakHoursStart', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -989,9 +958,7 @@ export default function AlgorithmPage() {
                     <Input
                       type="time"
                       value={editingConfig.timezoneSettings.peakHoursEnd}
-                      onChange={(e) =>
-                        updateTimezoneSettings("peakHoursEnd", e.target.value)
-                      }
+                      onChange={(e) => updateTimezoneSettings('peakHoursEnd', e.target.value)}
                     />
                   </div>
                 </div>
@@ -1001,29 +968,29 @@ export default function AlgorithmPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       {
-                        key: "peakScore" as const,
-                        label: "Peak Hours (9AM-6PM)",
-                        color: "text-green-500",
+                        key: 'peakScore' as const,
+                        label: 'Peak Hours (9AM-6PM)',
+                        color: 'text-green-500',
                       },
                       {
-                        key: "eveningScore" as const,
-                        label: "Evening (6PM-9PM)",
-                        color: "text-blue-500",
+                        key: 'eveningScore' as const,
+                        label: 'Evening (6PM-9PM)',
+                        color: 'text-blue-500',
                       },
                       {
-                        key: "earlyMorningScore" as const,
-                        label: "Early Morning (7AM-9AM)",
-                        color: "text-yellow-500",
+                        key: 'earlyMorningScore' as const,
+                        label: 'Early Morning (7AM-9AM)',
+                        color: 'text-yellow-500',
                       },
                       {
-                        key: "lateEveningScore" as const,
-                        label: "Late Evening (9PM-11PM)",
-                        color: "text-orange-500",
+                        key: 'lateEveningScore' as const,
+                        label: 'Late Evening (9PM-11PM)',
+                        color: 'text-orange-500',
                       },
                       {
-                        key: "nightScore" as const,
-                        label: "Night (11PM-7AM)",
-                        color: "text-red-500",
+                        key: 'nightScore' as const,
+                        label: 'Night (11PM-7AM)',
+                        color: 'text-red-500',
                       },
                     ].map(({ key, label, color }) => (
                       <div key={key} className="flex items-center justify-between">
@@ -1058,8 +1025,8 @@ export default function AlgorithmPage() {
                   Experience Matching Matrix
                 </CardTitle>
                 <CardDescription>
-                  Define how task complexity should match with artist experience level.
-                  Higher scores = better match.
+                  Define how task complexity should match with artist experience level. Higher
+                  scores = better match.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1075,23 +1042,20 @@ export default function AlgorithmPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(
-                        ["SIMPLE", "INTERMEDIATE", "ADVANCED", "EXPERT"] as const
-                      ).map((complexity) => (
-                        <tr key={complexity} className="border-b">
-                          <td className="py-3 px-4 font-medium capitalize">
-                            {complexity.toLowerCase()}
-                          </td>
-                          {(["JUNIOR", "MID", "SENIOR", "EXPERT"] as const).map(
-                            (level) => {
-                              const value =
-                                editingConfig.experienceMatrix[complexity][level];
+                      {(['SIMPLE', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'] as const).map(
+                        (complexity) => (
+                          <tr key={complexity} className="border-b">
+                            <td className="py-3 px-4 font-medium capitalize">
+                              {complexity.toLowerCase()}
+                            </td>
+                            {(['JUNIOR', 'MID', 'SENIOR', 'EXPERT'] as const).map((level) => {
+                              const value = editingConfig.experienceMatrix[complexity][level]
                               const colorClass =
                                 value >= 80
-                                  ? "bg-green-500/20"
+                                  ? 'bg-green-500/20'
                                   : value >= 50
-                                  ? "bg-yellow-500/20"
-                                  : "bg-red-500/20";
+                                    ? 'bg-yellow-500/20'
+                                    : 'bg-red-500/20'
                               return (
                                 <td key={level} className="py-3 px-4 text-center">
                                   <Input
@@ -1109,17 +1073,17 @@ export default function AlgorithmPage() {
                                     className={`w-16 text-center mx-auto ${colorClass}`}
                                   />
                                 </td>
-                              );
-                            }
-                          )}
-                        </tr>
-                      ))}
+                              )
+                            })}
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Tip: Use lower scores to prevent mismatches (e.g., 0 for Junior
-                  artists on Expert tasks).
+                  Tip: Use lower scores to prevent mismatches (e.g., 0 for Junior artists on Expert
+                  tasks).
                 </p>
               </CardContent>
             </Card>
@@ -1141,10 +1105,7 @@ export default function AlgorithmPage() {
                       max={20}
                       value={editingConfig.workloadSettings.maxActiveTasks}
                       onChange={(e) =>
-                        updateWorkloadSettings(
-                          "maxActiveTasks",
-                          parseInt(e.target.value) || 5
-                        )
+                        updateWorkloadSettings('maxActiveTasks', parseInt(e.target.value) || 5)
                       }
                       className="w-24"
                     />
@@ -1162,10 +1123,7 @@ export default function AlgorithmPage() {
                         max={50}
                         value={editingConfig.workloadSettings.scorePerTask}
                         onChange={(e) =>
-                          updateWorkloadSettings(
-                            "scorePerTask",
-                            parseInt(e.target.value) || 20
-                          )
+                          updateWorkloadSettings('scorePerTask', parseInt(e.target.value) || 20)
                         }
                         className="w-24"
                       />
@@ -1190,7 +1148,7 @@ export default function AlgorithmPage() {
                         value={editingConfig.exclusionRules.minSkillScoreToInclude}
                         onChange={(e) =>
                           updateExclusionRule(
-                            "minSkillScoreToInclude",
+                            'minSkillScoreToInclude',
                             parseInt(e.target.value) || 50
                           )
                         }
@@ -1202,22 +1160,19 @@ export default function AlgorithmPage() {
                   <div className="space-y-3">
                     {[
                       {
-                        key: "excludeOverloaded" as const,
-                        label: "Exclude overloaded artists",
+                        key: 'excludeOverloaded' as const,
+                        label: 'Exclude overloaded artists',
                       },
                       {
-                        key: "excludeNightHoursForUrgent" as const,
-                        label: "Exclude night hours for urgent tasks",
+                        key: 'excludeNightHoursForUrgent' as const,
+                        label: 'Exclude night hours for urgent tasks',
                       },
                       {
-                        key: "excludeVacationMode" as const,
-                        label: "Exclude artists on vacation",
+                        key: 'excludeVacationMode' as const,
+                        label: 'Exclude artists on vacation',
                       },
                     ].map(({ key, label }) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
+                      <label key={key} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={editingConfig.exclusionRules[key] as boolean}
@@ -1238,7 +1193,7 @@ export default function AlgorithmPage() {
                     Bonus Modifiers
                   </CardTitle>
                   <CardDescription>
-                    Extra points added to an artist's score for specific conditions
+                    Extra points added to an artist&apos;s score for specific conditions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1254,7 +1209,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.bonusModifiers.categorySpecializationBonus}
                           onChange={(e) =>
                             updateBonusModifier(
-                              "categorySpecializationBonus",
+                              'categorySpecializationBonus',
                               parseInt(e.target.value) || 0
                             )
                           }
@@ -1263,7 +1218,7 @@ export default function AlgorithmPage() {
                         <span className="text-muted-foreground">pts</span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        When artist's preferred category matches task
+                        When artist&apos;s preferred category matches task
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -1277,7 +1232,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.bonusModifiers.niceToHaveSkillBonus}
                           onChange={(e) =>
                             updateBonusModifier(
-                              "niceToHaveSkillBonus",
+                              'niceToHaveSkillBonus',
                               parseInt(e.target.value) || 0
                             )
                           }
@@ -1285,9 +1240,7 @@ export default function AlgorithmPage() {
                         />
                         <span className="text-muted-foreground">pts</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Per optional skill matched
-                      </p>
+                      <p className="text-xs text-muted-foreground">Per optional skill matched</p>
                     </div>
                     <div className="space-y-2">
                       <Label>Favorite Artist Bonus</Label>
@@ -1300,7 +1253,7 @@ export default function AlgorithmPage() {
                           value={editingConfig.bonusModifiers.favoriteArtistBonus}
                           onChange={(e) =>
                             updateBonusModifier(
-                              "favoriteArtistBonus",
+                              'favoriteArtistBonus',
                               parseInt(e.target.value) || 0
                             )
                           }
@@ -1332,19 +1285,15 @@ export default function AlgorithmPage() {
                 <div
                   key={config.id}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    config.isActive
-                      ? "bg-green-500/10 border-green-500/20"
-                      : "hover:bg-muted/50"
+                    config.isActive ? 'bg-green-500/10 border-green-500/20' : 'hover:bg-muted/50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Badge variant={config.isActive ? "default" : "outline"}>
+                    <Badge variant={config.isActive ? 'default' : 'outline'}>
                       v{config.version}
                     </Badge>
                     <span className="font-medium">{config.name}</span>
-                    {config.isActive && (
-                      <Badge className="bg-green-500">Active</Badge>
-                    )}
+                    {config.isActive && <Badge className="bg-green-500">Active</Badge>}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {config.publishedAt
@@ -1358,5 +1307,5 @@ export default function AlgorithmPage() {
         </Card>
       )}
     </div>
-  );
+  )
 }

@@ -1,38 +1,38 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
-import { logger } from "@/lib/logger";
+import Anthropic from '@anthropic-ai/sdk'
+import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libraries'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+})
 
 export interface DeliverableStyleClassification {
-  name: string;
-  description: string;
-  deliverableType: DeliverableType;
-  styleAxis: StyleAxis;
-  subStyle: string | null;
-  semanticTags: string[];
-  confidence: number;
+  name: string
+  description: string
+  deliverableType: DeliverableType
+  styleAxis: StyleAxis
+  subStyle: string | null
+  semanticTags: string[]
+  confidence: number
 
   // Content type filtering
-  isVideoThumbnail?: boolean; // True if this looks like a video thumbnail/UGC/TikTok/Reels content
-  contentType?: "designed_graphic" | "video_thumbnail" | "ugc_content" | "photo" | "screenshot";
+  isVideoThumbnail?: boolean // True if this looks like a video thumbnail/UGC/TikTok/Reels content
+  contentType?: 'designed_graphic' | 'video_thumbnail' | 'ugc_content' | 'photo' | 'screenshot'
 
   // Extended classification fields
-  colorTemperature?: "warm" | "cool" | "neutral";
-  energyLevel?: "calm" | "balanced" | "energetic";
-  densityLevel?: "minimal" | "balanced" | "rich";
-  formalityLevel?: "casual" | "balanced" | "formal";
-  colorSamples?: string[]; // hex colors
+  colorTemperature?: 'warm' | 'cool' | 'neutral'
+  energyLevel?: 'calm' | 'balanced' | 'energetic'
+  densityLevel?: 'minimal' | 'balanced' | 'rich'
+  formalityLevel?: 'casual' | 'balanced' | 'formal'
+  colorSamples?: string[] // hex colors
 
   // Industry & audience targeting
-  industries?: string[];
-  targetAudience?: "b2b" | "b2c" | "enterprise" | "startup" | "consumer";
+  industries?: string[]
+  targetAudience?: 'b2b' | 'b2c' | 'enterprise' | 'startup' | 'consumer'
 
   // Visual element tags
-  visualElements?: string[];
-  moodKeywords?: string[];
+  visualElements?: string[]
+  moodKeywords?: string[]
 }
 
 const CLASSIFICATION_PROMPT = `You are a design style expert. Analyze this design reference image and classify it comprehensively for use as a style suggestion in design conversations.
@@ -138,80 +138,80 @@ Respond in this exact JSON format (no markdown, no explanation):
   "moodKeywords": ["professional", "modern", "clean"]
 }
 
-IMPORTANT: If isVideoThumbnail is true or contentType is not "designed_graphic", set confidence to 0.`;
+IMPORTANT: If isVideoThumbnail is true or contentType is not "designed_graphic", set confidence to 0.`
 
 export async function classifyDeliverableStyle(
   imageBase64: string,
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/png"
+  mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
 ): Promise<DeliverableStyleClassification> {
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048, // Increased for comprehensive classification
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: [
             {
-              type: "image",
+              type: 'image',
               source: {
-                type: "base64",
+                type: 'base64',
                 media_type: mediaType,
                 data: imageBase64,
               },
             },
             {
-              type: "text",
+              type: 'text',
               text: CLASSIFICATION_PROMPT,
             },
           ],
         },
       ],
-    });
+    })
 
     // Extract text from response
-    const textContent = response.content.find((c) => c.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      throw new Error("No text response from Claude");
+    const textContent = response.content.find((c) => c.type === 'text')
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude')
     }
 
     // Parse JSON response
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      throw new Error("No JSON found in response");
+      throw new Error('No JSON found in response')
     }
 
-    const classification = JSON.parse(jsonMatch[0]) as DeliverableStyleClassification;
+    const classification = JSON.parse(jsonMatch[0]) as DeliverableStyleClassification
 
     // Validate required fields
     if (!classification.deliverableType || !classification.styleAxis) {
-      throw new Error("Missing required classification fields");
+      throw new Error('Missing required classification fields')
     }
 
-    return classification;
+    return classification
   } catch (error) {
-    logger.error({ err: error }, "Failed to classify deliverable style");
+    logger.error({ err: error }, 'Failed to classify deliverable style')
     // Return default classification on error
     return {
-      name: "Unknown Style",
-      description: "Design reference image",
-      deliverableType: "instagram_post",
-      styleAxis: "minimal",
+      name: 'Unknown Style',
+      description: 'Design reference image',
+      deliverableType: 'instagram_post',
+      styleAxis: 'minimal',
       subStyle: null,
       semanticTags: [],
       confidence: 0,
       isVideoThumbnail: false,
-      contentType: "designed_graphic",
-      colorTemperature: "neutral",
-      energyLevel: "balanced",
-      densityLevel: "balanced",
-      formalityLevel: "balanced",
+      contentType: 'designed_graphic',
+      colorTemperature: 'neutral',
+      energyLevel: 'balanced',
+      densityLevel: 'balanced',
+      formalityLevel: 'balanced',
       colorSamples: [],
       industries: [],
-      targetAudience: "b2c",
+      targetAudience: 'b2c',
       visualElements: [],
       moodKeywords: [],
-    };
+    }
   }
 }
 
@@ -220,28 +220,28 @@ export async function classifyDeliverableStyleFromUrl(
 ): Promise<DeliverableStyleClassification> {
   try {
     // Fetch image and convert to base64
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl)
     if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
+      throw new Error(`Failed to fetch image: ${response.statusText}`)
     }
 
-    const contentType = response.headers.get("content-type") || "image/png";
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const contentType = response.headers.get('content-type') || 'image/png'
+    const arrayBuffer = await response.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
 
     // Determine media type
-    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/png";
-    if (contentType.includes("jpeg") || contentType.includes("jpg")) {
-      mediaType = "image/jpeg";
-    } else if (contentType.includes("gif")) {
-      mediaType = "image/gif";
-    } else if (contentType.includes("webp")) {
-      mediaType = "image/webp";
+    let mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+      mediaType = 'image/jpeg'
+    } else if (contentType.includes('gif')) {
+      mediaType = 'image/gif'
+    } else if (contentType.includes('webp')) {
+      mediaType = 'image/webp'
     }
 
-    return classifyDeliverableStyle(base64, mediaType);
+    return classifyDeliverableStyle(base64, mediaType)
   } catch (error) {
-    logger.error({ err: error }, "Failed to classify deliverable style from URL");
-    throw error;
+    logger.error({ err: error }, 'Failed to classify deliverable style from URL')
+    throw error
   }
 }

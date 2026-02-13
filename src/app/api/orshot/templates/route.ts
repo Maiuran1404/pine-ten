@@ -1,24 +1,16 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { orshotTemplates } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { db } from '@/db'
+import { orshotTemplates } from '@/db/schema'
+import { eq, desc } from 'drizzle-orm'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 /**
  * GET /api/orshot/templates
  * List available Orshot templates for clients (only active ones)
  */
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    await requireAuth()
 
     const templates = await db
       .select({
@@ -31,14 +23,8 @@ export async function GET() {
       })
       .from(orshotTemplates)
       .where(eq(orshotTemplates.isActive, true))
-      .orderBy(desc(orshotTemplates.createdAt));
+      .orderBy(desc(orshotTemplates.createdAt))
 
-    return NextResponse.json({ templates });
-  } catch (error) {
-    logger.error({ error }, "Orshot templates error");
-    return NextResponse.json(
-      { error: "Failed to fetch templates" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ templates })
+  })
 }

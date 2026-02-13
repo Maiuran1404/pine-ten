@@ -1,10 +1,10 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useRef, startTransition } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ChatInterface } from "@/components/chat/chat-interface";
-import { getDrafts, generateDraftId, type ChatDraft } from "@/lib/chat-drafts";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef, startTransition } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { ChatInterface } from '@/components/chat/chat-interface'
+import { getDrafts, generateDraftId, type ChatDraft } from '@/lib/chat-drafts'
+import { Button } from '@/components/ui/button'
 import {
   Plus,
   Sparkles,
@@ -17,115 +17,114 @@ import {
   Moon,
   Sun,
   User,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/auth-client";
-import { useTheme } from "next-themes";
-import Link from "next/link";
-import Image from "next/image";
-import { useCredits } from "@/providers/credit-provider";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useSession } from '@/lib/auth-client'
+import { useTheme } from 'next-themes'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useCredits } from '@/providers/credit-provider'
 
 export default function ChatPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const initializedRef = useRef(false);
-  const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Collapsed by default in chat
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const initializedRef = useRef(false)
+  const { data: session } = useSession()
+  const { theme, setTheme } = useTheme()
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // Collapsed by default in chat
 
   // Get current URL params
-  const draftParam = searchParams.get("draft");
-  const messageParam = searchParams.get("message");
-  const paymentParam = searchParams.get("payment");
+  const draftParam = searchParams.get('draft')
+  const messageParam = searchParams.get('message')
+  const paymentParam = searchParams.get('payment')
 
   // If no params at all, redirect to dashboard
   // This prevents showing an empty chat page
   useEffect(() => {
     if (!draftParam && !messageParam && !paymentParam) {
-      router.replace("/dashboard");
+      router.replace('/dashboard')
     }
-  }, [draftParam, messageParam, paymentParam, router]);
+  }, [draftParam, messageParam, paymentParam, router])
 
   // Initialize drafts directly (only runs once on mount due to lazy initializer)
   const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
-    if (typeof window === "undefined") return [];
-    return getDrafts();
-  });
+    if (typeof window === 'undefined') return []
+    return getDrafts()
+  })
 
   // Initialize state based on URL - always generate a draftId to avoid regenerating on every render
   const [currentDraftId, setCurrentDraftId] = useState<string>(() => {
-    if (draftParam) return draftParam;
+    if (draftParam) return draftParam
     // Check for pending task state from payment return - restore draft ID
-    if (typeof window !== "undefined" && paymentParam === "success") {
+    if (typeof window !== 'undefined' && paymentParam === 'success') {
       try {
-        const savedState = sessionStorage.getItem("pending_task_state");
+        const savedState = sessionStorage.getItem('pending_task_state')
         if (savedState) {
-          const { draftId } = JSON.parse(savedState);
-          if (draftId) return draftId;
+          const { draftId } = JSON.parse(savedState)
+          if (draftId) return draftId
         }
       } catch {
         // Ignore parsing errors
       }
     }
     // Always generate a stable ID upfront
-    return generateDraftId();
-  });
+    return generateDraftId()
+  })
 
   // Always use seamless transition (full-width) layout when there are params
-  const hasUrlParams = !!draftParam || !!messageParam || !!paymentParam;
-  const [initialMessage, setInitialMessage] = useState<string | null>(
-    () => messageParam
-  );
+  const hasUrlParams = !!draftParam || !!messageParam || !!paymentParam
+  const [initialMessage, setInitialMessage] = useState<string | null>(() => messageParam)
 
   // Handle initial mount and URL changes
   useEffect(() => {
     if (!initializedRef.current) {
-      initializedRef.current = true;
+      initializedRef.current = true
       if (messageParam && !initialMessage) {
-        setInitialMessage(messageParam);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setInitialMessage(messageParam)
       }
-      return;
+      return
     }
 
     if (draftParam) {
       startTransition(() => {
-        setCurrentDraftId(draftParam);
-      });
+        setCurrentDraftId(draftParam)
+      })
     } else if (messageParam && messageParam !== initialMessage) {
       startTransition(() => {
-        setInitialMessage(messageParam);
-        const newId = generateDraftId();
-        setCurrentDraftId(newId);
-      });
+        setInitialMessage(messageParam)
+        const newId = generateDraftId()
+        setCurrentDraftId(newId)
+      })
     }
-  }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage]);
+  }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage])
 
   const handleStartNew = () => {
-    const newId = generateDraftId();
-    setCurrentDraftId(newId);
-    setInitialMessage(null);
-    router.push("/dashboard");
-  };
+    const newId = generateDraftId()
+    setCurrentDraftId(newId)
+    setInitialMessage(null)
+    router.push('/dashboard')
+  }
 
   const handleDraftUpdate = () => {
-    setDrafts(getDrafts());
-  };
+    setDrafts(getDrafts())
+  }
 
   // Get user credits from context
-  const { credits: userCredits } = useCredits();
+  const { credits: userCredits } = useCredits()
 
   // Features menu items - matching main sidebar
   const features = [
-    { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
-    { icon: FolderOpen, label: "Library", href: "/dashboard/designs" },
-    { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
-    { icon: Coins, label: "Credits", href: "/dashboard/credits" },
-  ];
+    { icon: CheckSquare, label: 'Tasks', href: '/dashboard/tasks' },
+    { icon: FolderOpen, label: 'Library', href: '/dashboard/designs' },
+    { icon: Building2, label: 'My Brand', href: '/dashboard/brand' },
+    { icon: Coins, label: 'Credits', href: '/dashboard/credits' },
+  ]
 
   // Don't render anything if we're about to redirect
   if (!draftParam && !messageParam && !paymentParam) {
-    return null;
+    return null
   }
 
   return (
@@ -133,8 +132,8 @@ export default function ChatPage() {
       {/* Left sidebar */}
       <div
         className={cn(
-          "shrink-0 border-r border-border bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300",
-          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+          'shrink-0 border-r border-border bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300',
+          sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-64'
         )}
       >
         {/* Logo and collapse toggle */}
@@ -154,9 +153,7 @@ export default function ChatPage() {
               height={28}
               className="hidden dark:block"
             />
-            <span className="font-semibold text-lg text-foreground">
-              Crafted
-            </span>
+            <span className="font-semibold text-lg text-foreground">Crafted</span>
           </Link>
           <button
             onClick={() => setSidebarCollapsed(true)}
@@ -190,10 +187,10 @@ export default function ChatPage() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  pathname === item.href || pathname.startsWith(item.href + "/")
-                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
-                    : "text-foreground hover:bg-muted"
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  pathname === item.href || pathname.startsWith(item.href + '/')
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    : 'text-foreground hover:bg-muted'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -228,8 +225,8 @@ export default function ChatPage() {
                 </Button>
               </Link>
               <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-3 text-center leading-relaxed">
-                Boost productivity with seamless tasks request and responsive
-                AI, built to assist you.
+                Boost productivity with seamless tasks request and responsive AI, built to assist
+                you.
               </p>
             </div>
           </div>
@@ -289,11 +286,11 @@ export default function ChatPage() {
               </Button>
             </Link>
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-xl border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card transition-colors"
               title="Toggle theme"
             >
-              {theme === "dark" ? (
+              {theme === 'dark' ? (
                 <Sun className="h-5 w-5 text-foreground" />
               ) : (
                 <Moon className="h-5 w-5 text-foreground" />
@@ -304,7 +301,7 @@ export default function ChatPage() {
               {session?.user?.image ? (
                 <img
                   src={session.user.image}
-                  alt={session.user.name || "User"}
+                  alt={session.user.name || 'User'}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -327,5 +324,5 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

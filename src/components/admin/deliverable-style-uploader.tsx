@@ -1,34 +1,34 @@
-"use client";
+'use client'
 
-import { AIUploader, PendingUpload } from "./ai-uploader";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { AIUploader, PendingUpload } from './ai-uploader'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   DELIVERABLE_TYPES,
   STYLE_AXES,
   type DeliverableType,
   type StyleAxis,
-} from "@/lib/constants/reference-libraries";
+} from '@/lib/constants/reference-libraries'
 
 interface DeliverableClassification {
-  name: string;
-  description: string;
-  deliverableType: DeliverableType;
-  styleAxis: StyleAxis;
-  subStyle: string | null;
-  semanticTags: string[];
-  confidence: number;
+  name: string
+  description: string
+  deliverableType: DeliverableType
+  styleAxis: StyleAxis
+  subStyle: string | null
+  semanticTags: string[]
+  confidence: number
 }
 
 interface DeliverableStyleUploaderProps {
-  onUploadComplete?: () => void;
+  onUploadComplete?: () => void
 }
 
 export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleUploaderProps) {
@@ -36,7 +36,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
     upload: PendingUpload<DeliverableClassification>,
     updateClassification: (id: string, field: string, value: unknown) => void
   ) => {
-    if (!upload.classification) return null;
+    if (!upload.classification) return null
 
     return (
       <>
@@ -45,9 +45,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
             <label className="text-xs text-muted-foreground">Style Name</label>
             <Input
               value={upload.classification.name}
-              onChange={(e) =>
-                updateClassification(upload.id, "name", e.target.value)
-              }
+              onChange={(e) => updateClassification(upload.id, 'name', e.target.value)}
               className="h-8 mt-1"
             />
           </div>
@@ -63,7 +61,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
             <label className="text-xs text-muted-foreground">Deliverable Type</label>
             <Select
               value={upload.classification.deliverableType}
-              onValueChange={(v) => updateClassification(upload.id, "deliverableType", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'deliverableType', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -81,7 +79,7 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
             <label className="text-xs text-muted-foreground">Style Axis</label>
             <Select
               value={upload.classification.styleAxis}
-              onValueChange={(v) => updateClassification(upload.id, "styleAxis", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'styleAxis', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -98,10 +96,8 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
           <div>
             <label className="text-xs text-muted-foreground">Sub-Style</label>
             <Input
-              value={upload.classification.subStyle || ""}
-              onChange={(e) =>
-                updateClassification(upload.id, "subStyle", e.target.value || "")
-              }
+              value={upload.classification.subStyle || ''}
+              onChange={(e) => updateClassification(upload.id, 'subStyle', e.target.value || '')}
               placeholder="e.g., dark-mode"
               className="h-8 mt-1"
             />
@@ -111,12 +107,15 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
         <div>
           <label className="text-xs text-muted-foreground">Semantic Tags (comma-separated)</label>
           <Input
-            value={upload.classification.semanticTags.join(", ")}
+            value={upload.classification.semanticTags.join(', ')}
             onChange={(e) =>
               updateClassification(
                 upload.id,
-                "semanticTags",
-                e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
+                'semanticTags',
+                e.target.value
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
               )
             }
             placeholder="gen-z, luxury, tech-forward"
@@ -135,8 +134,8 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
           </div>
         )}
       </>
-    );
-  };
+    )
+  }
 
   return (
     <AIUploader<DeliverableClassification>
@@ -146,5 +145,5 @@ export function DeliverableStyleUploader({ onUploadComplete }: DeliverableStyleU
       onUploadComplete={onUploadComplete}
       renderClassificationEditor={renderClassificationEditor}
     />
-  );
+  )
 }

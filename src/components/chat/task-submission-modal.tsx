@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles,
   Coins,
@@ -13,29 +13,24 @@ import {
   Palette,
   Tag,
   AlertCircle,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { cn } from "@/lib/utils";
-import { type TaskProposal, type MoodboardItem, getDeliveryDateString } from "./types";
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { cn } from '@/lib/utils'
+import { type TaskProposal, type MoodboardItem, getDeliveryDateString } from './types'
 
 interface TaskSubmissionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => Promise<void>;
-  onMakeChanges: () => void;
-  taskProposal: TaskProposal | null;
-  moodboardItems: MoodboardItem[];
-  userCredits: number;
-  isSubmitting?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => Promise<void>
+  onMakeChanges: () => void
+  taskProposal: TaskProposal | null
+  moodboardItems: MoodboardItem[]
+  userCredits: number
+  isSubmitting?: boolean
 }
 
 export function TaskSubmissionModal({
@@ -48,46 +43,46 @@ export function TaskSubmissionModal({
   userCredits,
   isSubmitting = false,
 }: TaskSubmissionModalProps) {
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
 
   // Normalize task values with sensible defaults
-  const normalizedTask = taskProposal ? {
-    ...taskProposal,
-    creditsRequired: taskProposal.creditsRequired ?? 15,
-    estimatedHours: taskProposal.estimatedHours ?? 24,
-    deliveryDays: taskProposal.deliveryDays ?? 3,
-  } : null;
+  const normalizedTask = taskProposal
+    ? {
+        ...taskProposal,
+        creditsRequired: taskProposal.creditsRequired ?? 15,
+        estimatedHours: taskProposal.estimatedHours ?? 24,
+        deliveryDays: taskProposal.deliveryDays ?? 3,
+      }
+    : null
 
-  const hasEnoughCredits = normalizedTask
-    ? userCredits >= normalizedTask.creditsRequired
-    : false;
+  const hasEnoughCredits = normalizedTask ? userCredits >= normalizedTask.creditsRequired : false
 
-  const displayMoodboardItems = moodboardItems.slice(0, 6);
-  const remainingCount = moodboardItems.length - 6;
+  const displayMoodboardItems = moodboardItems.slice(0, 6)
+  const remainingCount = moodboardItems.length - 6
 
   const handleConfirm = async () => {
-    setIsConfirming(true);
+    setIsConfirming(true)
     try {
-      await onConfirm();
-      setShowConfetti(true);
+      await onConfirm()
+      setShowConfetti(true)
       setTimeout(() => {
-        setShowConfetti(false);
-        onClose();
-      }, 2000);
+        setShowConfetti(false)
+        onClose()
+      }, 2000)
     } catch {
       // Error handled by parent
     } finally {
-      setIsConfirming(false);
+      setIsConfirming(false)
     }
-  };
+  }
 
   const handleMakeChanges = () => {
-    onMakeChanges();
-    onClose();
-  };
+    onMakeChanges()
+    onClose()
+  }
 
-  if (!normalizedTask) return null;
+  if (!normalizedTask) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -104,7 +99,7 @@ export function TaskSubmissionModal({
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 10 }}
                 className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-4"
               >
                 <CheckCircle2 className="h-10 w-10 text-green-500" />
@@ -136,9 +131,7 @@ export function TaskSubmissionModal({
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold">
-                Ready to Create Magic
-              </DialogTitle>
+              <DialogTitle className="text-lg font-semibold">Ready to Create Magic</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
                 Review your request before submitting
               </DialogDescription>
@@ -152,9 +145,7 @@ export function TaskSubmissionModal({
             <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-foreground truncate">
-                    {normalizedTask.title}
-                  </h4>
+                  <h4 className="font-medium text-foreground truncate">{normalizedTask.title}</h4>
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                     {normalizedTask.description}
                   </p>
@@ -171,9 +162,7 @@ export function TaskSubmissionModal({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-muted-foreground" />
-                  <h4 className="text-sm font-medium text-foreground">
-                    Your Moodboard
-                  </h4>
+                  <h4 className="text-sm font-medium text-foreground">Your Moodboard</h4>
                   <span className="text-xs text-muted-foreground">
                     ({moodboardItems.length} items)
                   </span>
@@ -184,12 +173,11 @@ export function TaskSubmissionModal({
                       key={item.id}
                       className="aspect-square rounded-lg overflow-hidden bg-muted"
                     >
-                      {item.type === "color" ? (
+                      {item.type === 'color' ? (
                         <div
                           className="w-full h-full"
                           style={{
-                            backgroundColor:
-                              item.metadata?.colorSamples?.[0] || "#888",
+                            backgroundColor: item.metadata?.colorSamples?.[0] || '#888',
                           }}
                         />
                       ) : (
@@ -204,9 +192,7 @@ export function TaskSubmissionModal({
                   ))}
                   {remainingCount > 0 && (
                     <div className="aspect-square rounded-lg bg-muted flex items-center justify-center">
-                      <span className="text-sm text-muted-foreground">
-                        +{remainingCount}
-                      </span>
+                      <span className="text-sm text-muted-foreground">+{remainingCount}</span>
                     </div>
                   )}
                 </div>
@@ -215,9 +201,7 @@ export function TaskSubmissionModal({
 
             {/* Delivery Info */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-foreground">
-                Delivery Details
-              </h4>
+              <h4 className="text-sm font-medium text-foreground">Delivery Details</h4>
               <div className="grid grid-cols-2 gap-3">
                 {/* Timeline */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -235,39 +219,29 @@ export function TaskSubmissionModal({
                   <RotateCcw className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Revisions</p>
-                    <p className="text-sm font-medium text-foreground">
-                      2 included
-                    </p>
+                    <p className="text-sm font-medium text-foreground">2 included</p>
                   </div>
                 </div>
 
                 {/* Credits */}
                 <div
                   className={cn(
-                    "col-span-2 flex items-center gap-3 p-3 rounded-lg",
-                    hasEnoughCredits
-                      ? "bg-green-500/10"
-                      : "bg-destructive/10"
+                    'col-span-2 flex items-center gap-3 p-3 rounded-lg',
+                    hasEnoughCredits ? 'bg-green-500/10' : 'bg-destructive/10'
                   )}
                 >
                   <Coins
                     className={cn(
-                      "h-5 w-5",
-                      hasEnoughCredits
-                        ? "text-green-500"
-                        : "text-destructive"
+                      'h-5 w-5',
+                      hasEnoughCredits ? 'text-green-500' : 'text-destructive'
                     )}
                   />
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">
-                      Credits Required
-                    </p>
+                    <p className="text-xs text-muted-foreground">Credits Required</p>
                     <p
                       className={cn(
-                        "text-sm font-medium",
-                        hasEnoughCredits
-                          ? "text-green-500"
-                          : "text-destructive"
+                        'text-sm font-medium',
+                        hasEnoughCredits ? 'text-green-500' : 'text-destructive'
                       )}
                     >
                       {normalizedTask.creditsRequired} credits
@@ -277,10 +251,8 @@ export function TaskSubmissionModal({
                     <p className="text-xs text-muted-foreground">Your balance</p>
                     <p
                       className={cn(
-                        "text-sm font-medium",
-                        hasEnoughCredits
-                          ? "text-foreground"
-                          : "text-destructive"
+                        'text-sm font-medium',
+                        hasEnoughCredits ? 'text-foreground' : 'text-destructive'
                       )}
                     >
                       {userCredits} credits
@@ -299,8 +271,8 @@ export function TaskSubmissionModal({
                     Insufficient credits
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    You need {normalizedTask.creditsRequired - userCredits} more
-                    credits to submit this request.
+                    You need {normalizedTask.creditsRequired - userCredits} more credits to submit
+                    this request.
                   </p>
                 </div>
               </div>
@@ -346,5 +318,5 @@ export function TaskSubmissionModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

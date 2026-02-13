@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { users, companies } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { requireAuth } from "@/lib/require-auth";
-import { logger } from "@/lib/logger";
+import { NextResponse } from 'next/server'
+import { db } from '@/db'
+import { users, companies } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { requireAuth } from '@/lib/require-auth'
+import { logger } from '@/lib/logger'
 
 export async function POST() {
   try {
-    const { user } = await requireAuth();
+    const { user } = await requireAuth()
 
     // Get user with company info
     const [currentUser] = await db
@@ -16,15 +16,15 @@ export async function POST() {
       })
       .from(users)
       .where(eq(users.id, user.id))
-      .limit(1);
+      .limit(1)
 
     if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Delete the company if it exists
     if (currentUser.companyId) {
-      await db.delete(companies).where(eq(companies.id, currentUser.companyId));
+      await db.delete(companies).where(eq(companies.id, currentUser.companyId))
     }
 
     // Reset user onboarding status and role to CLIENT
@@ -35,17 +35,14 @@ export async function POST() {
         companyId: null,
         onboardingCompleted: false,
         onboardingData: null,
-        role: "CLIENT",
+        role: 'CLIENT',
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, user.id))
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
-    logger.error({ error }, "Reset onboarding error");
-    return NextResponse.json(
-      { error: "Failed to reset onboarding" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Reset onboarding error')
+    return NextResponse.json({ error: 'Failed to reset onboarding' }, { status: 500 })
   }
 }

@@ -64,7 +64,7 @@ export async function GET() {
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         client: task.client,
-        freelancer: task.freelancer.name ? task.freelancer : null,
+        freelancer: task.freelancer?.name ? task.freelancer : null,
         deliverableCount: deliverableCountMap[task.id] ?? 0,
       }))
 

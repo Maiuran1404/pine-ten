@@ -1,27 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { createCheckoutSession } from "@/lib/stripe";
-import { logger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { createCheckoutSession } from '@/lib/stripe'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { packageId, returnUrl } = body;
+    const body = await request.json()
+    const { packageId, returnUrl } = body
 
     if (!packageId) {
-      return NextResponse.json(
-        { error: "Package ID is required" },
-        { status: 400 }
-      );
+      throw Errors.badRequest('Package ID is required')
     }
 
     const checkoutSession = await createCheckoutSession(
@@ -29,14 +19,8 @@ export async function POST(request: NextRequest) {
       session.user.email,
       packageId,
       returnUrl
-    );
+    )
 
-    return NextResponse.json({ url: checkoutSession.url });
-  } catch (error) {
-    logger.error({ error }, "Checkout error");
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ url: checkoutSession.url })
+  })
 }

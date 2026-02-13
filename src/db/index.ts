@@ -1,30 +1,30 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import * as schema from './schema'
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not set");
+  throw new Error('DATABASE_URL environment variable is not set')
 }
 
 // Create the postgres client
 const client = postgres(connectionString, {
   prepare: false,
-  ssl: "require",
+  ssl: 'require',
   max: 10, // Connection pool size
   idle_timeout: 20,
   connect_timeout: 10,
-});
+})
 
 // Create drizzle instance
-export const db = drizzle(client, { schema });
+export const db = drizzle(client, { schema })
 
 // Export the raw client for transactions
-export const sql = client;
+export const sql = client
 
 // Transaction type for use in functions
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 /**
  * Execute a function within a database transaction
@@ -37,14 +37,12 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
  *     return result;
  *   });
  */
-export async function withTransaction<T>(
-  fn: (tx: Transaction) => Promise<T>
-): Promise<T> {
+export async function withTransaction<T>(fn: (tx: Transaction) => Promise<T>): Promise<T> {
   return await db.transaction(async (tx) => {
-    return await fn(tx);
-  });
+    return await fn(tx)
+  })
 }
 
-export type { Transaction };
+export type { Transaction }
 
-export * from "./schema";
+export * from './schema'

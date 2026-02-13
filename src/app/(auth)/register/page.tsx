@@ -1,26 +1,26 @@
-"use client";
+'use client'
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { Eye, EyeOff } from 'lucide-react'
 
-import { LoadingSpinner, FullPageLoader } from "@/components/shared/loading";
-import { signUp, signIn, useSession } from "@/lib/auth-client";
-import { useSubdomain } from "@/hooks/use-subdomain";
+import { LoadingSpinner, FullPageLoader } from '@/components/shared/loading'
+import { signUp, signIn, useSession } from '@/lib/auth-client'
+import { useSubdomain } from '@/hooks/use-subdomain'
 
 const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+})
 
-type RegisterForm = z.infer<typeof registerSchema>;
+type RegisterForm = z.infer<typeof registerSchema>
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -43,7 +43,7 @@ function GoogleIcon({ className }: { className?: string }) {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
       />
     </svg>
-  );
+  )
 }
 
 // Floating organic blob shapes
@@ -52,26 +52,29 @@ function FloatingBlobs() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div
         className="absolute -top-32 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] rounded-full opacity-30 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)", transform: "rotate(-20deg)" }}
+        style={{
+          background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)',
+          transform: 'rotate(-20deg)',
+        }}
       />
       <div
         className="hidden sm:block absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #8bb58b 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #8bb58b 0%, transparent 70%)' }}
       />
       <div
         className="absolute bottom-20 left-10 w-[150px] sm:w-[200px] h-[150px] sm:h-[200px] rounded-full opacity-30 blur-2xl"
-        style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
-        style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)' }}
       />
     </div>
-  );
+  )
 }
 
 // Brand logo component
@@ -86,7 +89,7 @@ function BrandLogo() {
         className="object-contain"
       />
     </div>
-  );
+  )
 }
 
 // Logo component for inside the card
@@ -101,39 +104,38 @@ function CardLogo() {
         className="object-contain"
       />
     </div>
-  );
+  )
 }
 
 function RegisterContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const portal = useSubdomain();
-  const { data: session, isPending } = useSession();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const portal = useSubdomain()
+  const { data: session, isPending } = useSession()
+  const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Determine account type based on portal
-  const isArtistPortal = portal.type === "artist";
-  const accountType = isArtistPortal ? "freelancer" : "client";
-  const showSocialLogin = true; // Enable Google sign-in for all portals
+  const isArtistPortal = portal.type === 'artist'
+  const accountType = isArtistPortal ? 'freelancer' : 'client'
+  const showSocialLogin = true // Enable Google sign-in for all portals
 
   // Get redirect destination
   const getRedirectUrl = () => {
-    const redirect = searchParams.get("redirect");
-    if (redirect && redirect !== "/" && !redirect.includes("register")) {
-      return redirect;
+    const redirect = searchParams.get('redirect')
+    if (redirect && redirect !== '/' && !redirect.includes('register')) {
+      return redirect
     }
-    return portal.defaultRedirect;
-  };
+    return portal.defaultRedirect
+  }
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectUrl = getRedirectUrl();
-      router.replace(redirectUrl);
+      const redirectUrl = getRedirectUrl()
+      router.replace(redirectUrl)
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router])
 
   const {
     register,
@@ -142,72 +144,72 @@ function RegisterContent() {
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
+      name: '',
+      email: '',
+      password: '',
     },
-  });
+  })
 
   async function onSubmit(data: RegisterForm) {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
       const result = await signUp.email({
         email: data.email,
         password: data.password,
         name: data.name,
-      });
+      })
 
       if (result.error) {
-        toast.error(result.error.message || "Failed to create account");
-        setIsLoading(false);
-        return;
+        toast.error(result.error.message || 'Failed to create account')
+        setIsLoading(false)
+        return
       }
 
       // Note: Don't set role to FREELANCER here - let the onboarding API handle it
       // The onboarding API will update the role when the freelancer submits their application
       // Setting it here would cause the API to reject with 403 (only CLIENT role can onboard)
 
-      toast.success("Account created successfully!");
+      toast.success('Account created successfully!')
 
-      if (accountType === "freelancer") {
-        router.push("/onboarding?type=freelancer");
+      if (accountType === 'freelancer') {
+        router.push('/onboarding?type=freelancer')
       } else {
-        router.push("/onboarding");
+        router.push('/onboarding')
       }
     } catch {
-      toast.error("An error occurred. Please try again.");
-      setIsLoading(false);
+      toast.error('An error occurred. Please try again.')
+      setIsLoading(false)
     }
   }
 
   async function handleGoogleSignIn() {
     // Check for embedded browsers (Instagram, Facebook, TikTok, etc.)
     // Google blocks OAuth from these for security reasons
-    const ua = navigator.userAgent;
+    const ua = navigator.userAgent
     if (/FBAN|FBAV|Instagram|TikTok|Twitter|LinkedInApp|Snapchat|Pinterest/i.test(ua)) {
-      toast.error("Please open this page in Safari or Chrome to sign in with Google", {
+      toast.error('Please open this page in Safari or Chrome to sign in with Google', {
         duration: 5000,
-      });
-      return;
+      })
+      return
     }
 
-    setIsGoogleLoading(true);
+    setIsGoogleLoading(true)
     try {
       // For Google sign-up, we'll redirect to onboarding after auth
       // Artists go to freelancer onboarding
       const callbackURL = isArtistPortal
         ? `${window.location.origin}/onboarding?type=freelancer`
-        : `${window.location.origin}/onboarding`;
+        : `${window.location.origin}/onboarding`
 
       await signIn.social({
-        provider: "google",
+        provider: 'google',
         callbackURL,
-      });
+      })
     } catch (error) {
-      console.error("Google sign-in error:", error);
-      toast.error("Failed to sign up with Google. Please try again.");
-      setIsGoogleLoading(false);
+      console.error('Google sign-in error:', error)
+      toast.error('Failed to sign up with Google. Please try again.')
+      setIsGoogleLoading(false)
     }
   }
 
@@ -219,7 +221,7 @@ function RegisterContent() {
         <BrandLogo />
         <LoadingSpinner size="lg" />
       </div>
-    );
+    )
   }
 
   // If already logged in, show redirecting state
@@ -231,7 +233,7 @@ function RegisterContent() {
         <LoadingSpinner size="lg" />
         <p className="text-sm text-white/50">Redirecting...</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -243,9 +245,9 @@ function RegisterContent() {
         <div
           className="rounded-2xl p-6 sm:p-8 md:p-10"
           style={{
-            background: "rgba(20, 20, 20, 0.8)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: 'rgba(20, 20, 20, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           {/* Logo */}
@@ -253,12 +255,13 @@ function RegisterContent() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Satoshi', sans-serif" }}>
-              {isArtistPortal ? "Welcome to Crafted for Artists" : `Welcome to ${portal.name}`}
+            <h1
+              className="text-2xl font-semibold text-white mb-2"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
+            >
+              {isArtistPortal ? 'Welcome to Crafted for Artists' : `Welcome to ${portal.name}`}
             </h1>
-            <p className="text-white/50 text-sm">
-              Begin by creating an account
-            </p>
+            <p className="text-white/50 text-sm">Begin by creating an account</p>
           </div>
 
           {/* Google Sign Up */}
@@ -270,9 +273,9 @@ function RegisterContent() {
                 disabled={isGoogleLoading}
                 className="w-full py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-3 mb-6 disabled:opacity-70"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "rgba(255, 255, 255, 0.9)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'rgba(255, 255, 255, 0.9)',
                 }}
               >
                 {isGoogleLoading ? (
@@ -288,7 +291,10 @@ function RegisterContent() {
                   <div className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="px-4 text-white/40" style={{ background: "rgba(20, 20, 20, 0.8)" }}>
+                  <span
+                    className="px-4 text-white/40"
+                    style={{ background: 'rgba(20, 20, 20, 0.8)' }}
+                  >
                     or continue with email
                   </span>
                 </div>
@@ -303,23 +309,21 @@ function RegisterContent() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: errors.name ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: errors.name
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="absolute left-4 top-2.5 text-xs text-white/40">
-                  Full Name
-                </label>
+                <label className="absolute left-4 top-2.5 text-xs text-white/40">Full Name</label>
                 <input
                   type="text"
-                  {...register("name")}
+                  {...register('name')}
                   className="w-full bg-transparent pt-7 pb-3 px-4 text-white placeholder:text-white/30 focus:outline-none text-sm"
                   placeholder="John Doe"
                 />
               </div>
-              {errors.name && (
-                <p className="text-xs text-red-400 px-1">{errors.name.message}</p>
-              )}
+              {errors.name && <p className="text-xs text-red-400 px-1">{errors.name.message}</p>}
             </div>
 
             {/* Email Field */}
@@ -327,23 +331,21 @@ function RegisterContent() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: errors.email ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: errors.email
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="absolute left-4 top-2.5 text-xs text-white/40">
-                  Email
-                </label>
+                <label className="absolute left-4 top-2.5 text-xs text-white/40">Email</label>
                 <input
                   type="email"
-                  {...register("email")}
+                  {...register('email')}
                   className="w-full bg-transparent pt-7 pb-3 px-4 text-white placeholder:text-white/30 focus:outline-none text-sm"
                   placeholder="you@example.com"
                 />
               </div>
-              {errors.email && (
-                <p className="text-xs text-red-400 px-1">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-xs text-red-400 px-1">{errors.email.message}</p>}
             </div>
 
             {/* Password Field */}
@@ -351,16 +353,16 @@ function RegisterContent() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: errors.password ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: errors.password
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="absolute left-4 top-2.5 text-xs text-white/40">
-                  Password
-                </label>
+                <label className="absolute left-4 top-2.5 text-xs text-white/40">Password</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  {...register("password")}
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
                   className="w-full bg-transparent pt-7 pb-3 px-4 pr-12 text-white placeholder:text-white/30 focus:outline-none text-sm"
                   placeholder="Create a strong password"
                 />
@@ -368,7 +370,7 @@ function RegisterContent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" aria-hidden="true" />
@@ -386,12 +388,18 @@ function RegisterContent() {
 
             {/* Terms */}
             <p className="text-center text-xs text-white/40 py-2">
-              By continuing, you agree to our{" "}
-              <Link href="/terms" className="text-white/60 hover:text-white underline underline-offset-2">
+              By continuing, you agree to our{' '}
+              <Link
+                href="/terms"
+                className="text-white/60 hover:text-white underline underline-offset-2"
+              >
                 Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-white/60 hover:text-white underline underline-offset-2">
+              </Link>{' '}
+              and{' '}
+              <Link
+                href="/privacy"
+                className="text-white/60 hover:text-white underline underline-offset-2"
+              >
                 Privacy Policy
               </Link>
             </p>
@@ -405,8 +413,8 @@ function RegisterContent() {
               disabled={isLoading}
               className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-70"
               style={{
-                background: "#f5f5f0",
-                color: "#1a1a1a",
+                background: '#f5f5f0',
+                color: '#1a1a1a',
               }}
             >
               {isLoading ? (
@@ -415,17 +423,20 @@ function RegisterContent() {
                   Creating account...
                 </span>
               ) : (
-                "Continue"
+                'Continue'
               )}
             </button>
           </form>
 
           {/* Sign in link */}
-          <div className="text-center mt-6 pt-6" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <div
+            className="text-center mt-6 pt-6"
+            style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
+          >
             <p className="text-white/40 text-sm">
-              Already have an account?{" "}
+              Already have an account?{' '}
               <Link
-                href={isArtistPortal ? "/login?intent=signin" : "/login"}
+                href={isArtistPortal ? '/login?intent=signin' : '/login'}
                 className="text-[#8bb58b] hover:text-[#a8d4a8] transition-colors"
               >
                 Sign in
@@ -440,7 +451,7 @@ function RegisterContent() {
         <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </div>
-  );
+  )
 }
 
 export default function RegisterPage() {
@@ -448,5 +459,5 @@ export default function RegisterPage() {
     <Suspense fallback={<FullPageLoader />}>
       <RegisterContent />
     </Suspense>
-  );
+  )
 }

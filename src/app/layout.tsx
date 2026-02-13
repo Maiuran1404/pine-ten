@@ -1,41 +1,41 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { CsrfProvider } from "@/providers/csrf-provider";
-import { QueryProvider } from "@/providers/query-provider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { SkipLink } from "@/components/shared/skip-link";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from '@/components/theme-provider'
+import { CsrfProvider } from '@/providers/csrf-provider'
+import { QueryProvider } from '@/providers/query-provider'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { SkipLink } from '@/components/shared/skip-link'
+import './globals.css'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: {
-    default: "Crafted",
-    template: "%s | Crafted",
+    default: 'Crafted',
+    template: '%s | Crafted',
   },
   description:
-    "Professional design services on demand. Get static ads, video content, and social media graphics created by talented freelancers.",
+    'Professional design services on demand. Get static ads, video content, and social media graphics created by talented freelancers.',
   icons: {
-    icon: "/craftedfigurewhite.png",
-    apple: "/craftedfigurewhite.png",
+    icon: '/craftedfigurewhite.png',
+    apple: '/craftedfigurewhite.png',
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -58,9 +58,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             <CsrfProvider>
-              <main id="main-content">
-                {children}
-              </main>
+              <main id="main-content">{children}</main>
               <Toaster position="top-right" />
             </CsrfProvider>
           </QueryProvider>
@@ -69,5 +67,5 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

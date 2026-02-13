@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import dynamic from "next/dynamic";
-import "swagger-ui-react/swagger-ui.css";
-import { apiSpec } from "@/lib/api-spec";
+import dynamic from 'next/dynamic'
+import 'swagger-ui-react/swagger-ui.css'
+import { apiSpec } from '@/lib/api-spec'
 
 // Dynamically import SwaggerUI to avoid SSR issues
-const SwaggerUI = dynamic(() => import("swagger-ui-react"), {
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
     </div>
   ),
-});
+})
 
 export default function ApiDocsPage() {
   return (
@@ -20,7 +20,11 @@ export default function ApiDocsPage() {
       <style jsx global>{`
         /* Custom Swagger UI styling */
         .swagger-ui {
-          font-family: 'Satoshi', system-ui, -apple-system, sans-serif !important;
+          font-family:
+            'Satoshi',
+            system-ui,
+            -apple-system,
+            sans-serif !important;
         }
         .swagger-ui .topbar {
           display: none;
@@ -45,7 +49,7 @@ export default function ApiDocsPage() {
         .swagger-ui .opblock {
           border-radius: 8px;
           margin-bottom: 8px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         .swagger-ui .opblock .opblock-summary {
           border-radius: 8px;
@@ -71,7 +75,7 @@ export default function ApiDocsPage() {
         .swagger-ui select {
           border-radius: 6px;
         }
-        .swagger-ui input[type=text] {
+        .swagger-ui input[type='text'] {
           border-radius: 6px;
         }
         .swagger-ui textarea {
@@ -91,5 +95,5 @@ export default function ApiDocsPage() {
         <SwaggerUI spec={apiSpec} />
       </div>
     </div>
-  );
+  )
 }

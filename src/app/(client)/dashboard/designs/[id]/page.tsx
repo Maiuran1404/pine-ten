@@ -1,10 +1,10 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   Download,
@@ -22,159 +22,157 @@ import {
   Wand2,
   Building2,
   ExternalLink,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LoadingSpinner } from "@/components/shared/loading";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingSpinner } from '@/components/shared/loading'
 
 interface Design {
-  id: string;
-  clientId: string;
-  templateId: string | null;
-  templateName: string;
-  imageUrl: string;
-  imageFormat: string;
-  modificationsUsed: Record<string, unknown> | null;
-  savedToAssets: boolean;
-  createdAt: string;
-  templateCategory: string | null;
-  templateDescription: string | null;
+  id: string
+  clientId: string
+  templateId: string | null
+  templateName: string
+  imageUrl: string
+  imageFormat: string
+  modificationsUsed: Record<string, unknown> | null
+  savedToAssets: boolean
+  createdAt: string
+  templateCategory: string | null
+  templateDescription: string | null
 }
 
 const CATEGORY_CONFIG = {
   social_media: {
-    label: "Social Media",
+    label: 'Social Media',
     icon: Share2,
-    color: "blue",
-    bgColor: "bg-blue-500/10",
-    textColor: "text-blue-600 dark:text-blue-400",
+    color: 'blue',
+    bgColor: 'bg-blue-500/10',
+    textColor: 'text-blue-600 dark:text-blue-400',
   },
   marketing: {
-    label: "Marketing",
+    label: 'Marketing',
     icon: Megaphone,
-    color: "emerald",
-    bgColor: "bg-emerald-500/10",
-    textColor: "text-emerald-600 dark:text-emerald-400",
+    color: 'emerald',
+    bgColor: 'bg-emerald-500/10',
+    textColor: 'text-emerald-600 dark:text-emerald-400',
   },
   brand_assets: {
-    label: "Brand Assets",
+    label: 'Brand Assets',
     icon: PenTool,
-    color: "violet",
-    bgColor: "bg-violet-500/10",
-    textColor: "text-violet-600 dark:text-violet-400",
+    color: 'violet',
+    bgColor: 'bg-violet-500/10',
+    textColor: 'text-violet-600 dark:text-violet-400',
   },
-};
+}
 
 export default function DesignResultPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [design, setDesign] = useState<Design | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const params = useParams()
+  const router = useRouter()
+  const [design, setDesign] = useState<Design | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
-  const designId = params.id as string;
+  const designId = params.id as string
 
   useEffect(() => {
     if (designId) {
-      fetchDesign();
+      fetchDesign()
     }
-  }, [designId]);
+  }, [designId])
 
   const fetchDesign = async () => {
     try {
-      const response = await fetch(`/api/orshot/designs/${designId}`);
+      const response = await fetch(`/api/orshot/designs/${designId}`)
       if (!response.ok) {
         if (response.status === 404) {
-          toast.error("Design not found");
-          router.push("/dashboard/designs");
-          return;
+          toast.error('Design not found')
+          router.push('/dashboard/designs')
+          return
         }
-        throw new Error("Failed to fetch design");
+        throw new Error('Failed to fetch design')
       }
-      const data = await response.json();
-      setDesign(data.design);
+      const data = await response.json()
+      setDesign(data.design)
     } catch (error) {
-      console.error("Failed to fetch design:", error);
-      toast.error("Failed to load design");
+      console.error('Failed to fetch design:', error)
+      toast.error('Failed to load design')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleDownload = async () => {
-    if (!design) return;
+    if (!design) return
     try {
-      const response = await fetch(design.imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${design.templateName.toLowerCase().replace(/\s+/g, "-")}.${design.imageFormat}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      toast.success("Design downloaded!");
+      const response = await fetch(design.imageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${design.templateName.toLowerCase().replace(/\s+/g, '-')}.${design.imageFormat}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success('Design downloaded!')
     } catch {
       // Fallback: open in new tab
-      window.open(design.imageUrl, "_blank");
+      window.open(design.imageUrl, '_blank')
     }
-  };
+  }
 
   const handleSaveToAssets = async () => {
-    if (!design || design.savedToAssets) return;
-    setIsSaving(true);
+    if (!design || design.savedToAssets) return
+    setIsSaving(true)
     try {
       const response = await fetch(`/api/orshot/designs/${designId}`, {
-        method: "POST",
-      });
+        method: 'POST',
+      })
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save");
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save')
       }
-      setDesign({ ...design, savedToAssets: true });
-      toast.success("Design saved to brand assets!");
+      setDesign({ ...design, savedToAssets: true })
+      toast.success('Design saved to brand assets!')
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save design"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to save design')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const getCategoryConfig = (category: string | null) => {
     if (!category)
       return {
-        label: "Design",
+        label: 'Design',
         icon: Wand2,
-        color: "gray",
-        bgColor: "bg-gray-500/10",
-        textColor: "text-gray-600 dark:text-gray-400",
-      };
+        color: 'gray',
+        bgColor: 'bg-gray-500/10',
+        textColor: 'text-gray-600 dark:text-gray-400',
+      }
     return (
       CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || {
         label: category,
         icon: Wand2,
-        color: "gray",
-        bgColor: "bg-gray-500/10",
-        textColor: "text-gray-600 dark:text-gray-400",
+        color: 'gray',
+        bgColor: 'bg-gray-500/10',
+        textColor: 'text-gray-600 dark:text-gray-400',
       }
-    );
-  };
+    )
+  }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
 
   if (isLoading) {
     return (
@@ -190,22 +188,22 @@ export default function DesignResultPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!design) {
-    return null;
+    return null
   }
 
-  const categoryConfig = getCategoryConfig(design.templateCategory);
-  const CategoryIcon = categoryConfig.icon;
+  const categoryConfig = getCategoryConfig(design.templateCategory)
+  const CategoryIcon = categoryConfig.icon
 
   // Extract colors from modifications
   const brandColors = design.modificationsUsed
     ? Object.entries(design.modificationsUsed)
-        .filter(([key]) => key.toLowerCase().includes("color"))
+        .filter(([key]) => key.toLowerCase().includes('color'))
         .map(([key, value]) => ({ name: key, value: value as string }))
-    : [];
+    : []
 
   return (
     <div className="space-y-6">
@@ -233,12 +231,8 @@ export default function DesignResultPage() {
               <CategoryIcon className={`h-5 w-5 ${categoryConfig.textColor}`} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {design.templateName}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {categoryConfig.label}
-              </p>
+              <h1 className="text-2xl font-bold tracking-tight">{design.templateName}</h1>
+              <p className="text-sm text-muted-foreground">{categoryConfig.label}</p>
             </div>
           </div>
         </div>
@@ -284,8 +278,8 @@ export default function DesignResultPage() {
                 alt={design.templateName}
                 className="w-full h-auto"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://via.placeholder.com/800x800?text=Image+Not+Found";
+                  ;(e.target as HTMLImageElement).src =
+                    'https://via.placeholder.com/800x800?text=Image+Not+Found'
                 }}
               />
               {/* Open in new tab button */}
@@ -318,9 +312,7 @@ export default function DesignResultPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Format</p>
-                  <p className="text-sm font-medium">
-                    {design.imageFormat.toUpperCase()}
-                  </p>
+                  <p className="text-sm font-medium">{design.imageFormat.toUpperCase()}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -329,9 +321,7 @@ export default function DesignResultPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p className="text-sm font-medium">
-                    {formatDate(design.createdAt)}
-                  </p>
+                  <p className="text-sm font-medium">{formatDate(design.createdAt)}</p>
                 </div>
               </div>
               {design.savedToAssets && (
@@ -352,9 +342,7 @@ export default function DesignResultPage() {
 
           {/* Generation Process Card */}
           <div className="rounded-xl border border-border bg-card p-5">
-            <h3 className="font-semibold text-foreground mb-4">
-              Generation Process
-            </h3>
+            <h3 className="font-semibold text-foreground mb-4">Generation Process</h3>
             <div className="space-y-4">
               {/* Step 1: Template */}
               <div className="flex items-start gap-3">
@@ -363,9 +351,7 @@ export default function DesignResultPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Template Selected</p>
-                  <p className="text-xs text-muted-foreground">
-                    {design.templateName}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{design.templateName}</p>
                 </div>
               </div>
 
@@ -376,7 +362,7 @@ export default function DesignResultPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Brand Data Applied</p>
-                  {typeof design.modificationsUsed?.name === "string" && (
+                  {typeof design.modificationsUsed?.name === 'string' && (
                     <p className="text-xs text-muted-foreground">
                       Company: {design.modificationsUsed.name}
                     </p>
@@ -397,7 +383,7 @@ export default function DesignResultPage() {
                         <div
                           key={i}
                           className="w-5 h-5 rounded-full border border-border shadow-sm"
-                          style={{ backgroundColor: color.value || "#ccc" }}
+                          style={{ backgroundColor: color.value || '#ccc' }}
                           title={`${color.name}: ${color.value}`}
                         />
                       ))}
@@ -413,9 +399,7 @@ export default function DesignResultPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Design Generated</p>
-                  <p className="text-xs text-muted-foreground">
-                    Ready for download
-                  </p>
+                  <p className="text-xs text-muted-foreground">Ready for download</p>
                 </div>
               </div>
             </div>
@@ -425,11 +409,7 @@ export default function DesignResultPage() {
           <div className="rounded-xl border border-border bg-card p-5">
             <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleDownload}
-              >
+              <Button variant="outline" className="w-full justify-start" onClick={handleDownload}>
                 <Download className="h-4 w-4 mr-2" />
                 Download Design
               </Button>
@@ -450,5 +430,5 @@ export default function DesignResultPage() {
         </motion.div>
       </div>
     </div>
-  );
+  )
 }

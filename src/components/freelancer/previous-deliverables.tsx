@@ -1,15 +1,11 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Image from "next/image";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react'
+import Image from 'next/image'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   ChevronDown,
   ChevronRight,
@@ -18,68 +14,62 @@ import {
   Download,
   ExternalLink,
   Calendar,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface Deliverable {
-  id: string;
-  taskId: string;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  createdAt: string;
+  id: string
+  taskId: string
+  fileName: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
+  createdAt: string
 }
 
 interface PreviousTask {
-  taskId: string;
-  taskTitle: string;
-  taskStatus: string;
-  completedAt: string | null;
-  categoryName: string | null;
-  deliverables: Deliverable[];
+  taskId: string
+  taskTitle: string
+  taskStatus: string
+  completedAt: string | null
+  categoryName: string | null
+  deliverables: Deliverable[]
 }
 
 interface PreviousDeliverablesProps {
-  previousWork: PreviousTask[];
-  companyName: string;
+  previousWork: PreviousTask[]
+  companyName: string
 }
 
 function isImage(fileType: string) {
-  return fileType.startsWith("image/");
+  return fileType.startsWith('image/')
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function PreviousDeliverables({
-  previousWork,
-  companyName,
-}: PreviousDeliverablesProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+export function PreviousDeliverables({ previousWork, companyName }: PreviousDeliverablesProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set())
 
   const toggleTask = (taskId: string) => {
     setExpandedTasks((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(taskId)) {
-        next.delete(taskId);
+        next.delete(taskId)
       } else {
-        next.add(taskId);
+        next.add(taskId)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
-  const totalDeliverables = previousWork.reduce(
-    (acc, task) => acc + task.deliverables.length,
-    0
-  );
+  const totalDeliverables = previousWork.reduce((acc, task) => acc + task.deliverables.length, 0)
 
   if (previousWork.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -96,8 +86,7 @@ export function PreviousDeliverables({
                   <CardTitle className="text-lg flex items-center gap-2">
                     Previous Work for {companyName}
                     <Badge variant="secondary" className="font-normal">
-                      {previousWork.length}{" "}
-                      {previousWork.length === 1 ? "project" : "projects"}
+                      {previousWork.length} {previousWork.length === 1 ? 'project' : 'projects'}
                     </Badge>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -149,8 +138,8 @@ export function PreviousDeliverables({
                             </span>
                           )}
                           <span>
-                            {task.deliverables.length}{" "}
-                            {task.deliverables.length === 1 ? "file" : "files"}
+                            {task.deliverables.length}{' '}
+                            {task.deliverables.length === 1 ? 'file' : 'files'}
                           </span>
                         </div>
                       </div>
@@ -161,8 +150,7 @@ export function PreviousDeliverables({
                 <CollapsibleContent>
                   <div className="ml-9 mt-2 space-y-2">
                     {/* Image Grid */}
-                    {task.deliverables.filter((d) => isImage(d.fileType))
-                      .length > 0 && (
+                    {task.deliverables.filter((d) => isImage(d.fileType)).length > 0 && (
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {task.deliverables
                           .filter((d) => isImage(d.fileType))
@@ -189,8 +177,7 @@ export function PreviousDeliverables({
                     )}
 
                     {/* Non-image files */}
-                    {task.deliverables.filter((d) => !isImage(d.fileType))
-                      .length > 0 && (
+                    {task.deliverables.filter((d) => !isImage(d.fileType)).length > 0 && (
                       <div className="space-y-1">
                         {task.deliverables
                           .filter((d) => !isImage(d.fileType))
@@ -231,5 +218,5 @@ export function PreviousDeliverables({
         </CollapsibleContent>
       </Collapsible>
     </Card>
-  );
+  )
 }

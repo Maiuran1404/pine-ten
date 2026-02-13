@@ -1,22 +1,18 @@
-"use client";
+'use client'
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import {
   MessageSquarePlus,
   Coins,
@@ -36,101 +32,149 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import Image from "next/image";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface MoodboardItem {
-  id: string;
-  type: "style" | "color" | "image" | "upload";
-  imageUrl: string;
-  name: string;
+  id: string
+  type: 'style' | 'color' | 'image' | 'upload'
+  imageUrl: string
+  name: string
   metadata?: {
-    styleAxis?: string;
-    deliverableType?: string;
-    colorSamples?: string[];
-    styleId?: string;
-  };
+    styleAxis?: string
+    deliverableType?: string
+    colorSamples?: string[]
+    styleId?: string
+  }
 }
 
 interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  creditsUsed: number;
-  estimatedHours: string | null;
-  deadline?: string | null;
-  assignedAt?: string | null;
-  moodboardItems?: MoodboardItem[];
-  styleReferences?: string[];
-  thumbnailUrl?: string | null;
+  id: string
+  title: string
+  description: string
+  status: string
+  createdAt: string
+  creditsUsed: number
+  estimatedHours: string | null
+  deadline?: string | null
+  assignedAt?: string | null
+  moodboardItems?: MoodboardItem[]
+  styleReferences?: string[]
+  thumbnailUrl?: string | null
   freelancer?: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  } | null;
+    id: string
+    name: string | null
+    image: string | null
+  } | null
 }
 
-const statusConfig: Record<string, { color: string; bgColor: string; label: string; icon: React.ReactNode }> = {
-  PENDING: { color: "text-yellow-600", bgColor: "bg-yellow-50 border-yellow-200", label: "Queued", icon: <Clock className="h-3 w-3" /> },
-  OFFERED: { color: "text-cyan-600", bgColor: "bg-cyan-50 border-cyan-200", label: "Queued", icon: <Clock className="h-3 w-3" /> },
-  ASSIGNED: { color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200", label: "Assigned", icon: <User className="h-3 w-3" /> },
-  IN_PROGRESS: { color: "text-purple-600", bgColor: "bg-purple-50 border-purple-200", label: "In Progress", icon: <RefreshCw className="h-3 w-3" /> },
-  IN_REVIEW: { color: "text-orange-600", bgColor: "bg-orange-50 border-orange-200", label: "In Review", icon: <Eye className="h-3 w-3" /> },
-  PENDING_ADMIN_REVIEW: { color: "text-amber-600", bgColor: "bg-amber-50 border-amber-200", label: "Admin Review", icon: <Clock className="h-3 w-3" /> },
-  REVISION_REQUESTED: { color: "text-red-600", bgColor: "bg-red-50 border-red-200", label: "Revision", icon: <AlertCircle className="h-3 w-3" /> },
-  COMPLETED: { color: "text-green-600", bgColor: "bg-green-50 border-green-200", label: "Completed", icon: <CheckCircle2 className="h-3 w-3" /> },
-  CANCELLED: { color: "text-red-600", bgColor: "bg-red-50 border-red-200", label: "Cancelled", icon: <AlertCircle className="h-3 w-3" /> },
-};
+const statusConfig: Record<
+  string,
+  { color: string; bgColor: string; label: string; icon: React.ReactNode }
+> = {
+  PENDING: {
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-50 border-yellow-200',
+    label: 'Queued',
+    icon: <Clock className="h-3 w-3" />,
+  },
+  OFFERED: {
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-50 border-cyan-200',
+    label: 'Queued',
+    icon: <Clock className="h-3 w-3" />,
+  },
+  ASSIGNED: {
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50 border-blue-200',
+    label: 'Assigned',
+    icon: <User className="h-3 w-3" />,
+  },
+  IN_PROGRESS: {
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50 border-purple-200',
+    label: 'In Progress',
+    icon: <RefreshCw className="h-3 w-3" />,
+  },
+  IN_REVIEW: {
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50 border-orange-200',
+    label: 'In Review',
+    icon: <Eye className="h-3 w-3" />,
+  },
+  PENDING_ADMIN_REVIEW: {
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50 border-amber-200',
+    label: 'Admin Review',
+    icon: <Clock className="h-3 w-3" />,
+  },
+  REVISION_REQUESTED: {
+    color: 'text-red-600',
+    bgColor: 'bg-red-50 border-red-200',
+    label: 'Revision',
+    icon: <AlertCircle className="h-3 w-3" />,
+  },
+  COMPLETED: {
+    color: 'text-green-600',
+    bgColor: 'bg-green-50 border-green-200',
+    label: 'Completed',
+    icon: <CheckCircle2 className="h-3 w-3" />,
+  },
+  CANCELLED: {
+    color: 'text-red-600',
+    bgColor: 'bg-red-50 border-red-200',
+    label: 'Cancelled',
+    icon: <AlertCircle className="h-3 w-3" />,
+  },
+}
 
 const filterOptions = [
-  { value: "all", label: "All Tasks" },
-  { value: "active", label: "Active" },
-  { value: "in_review", label: "In Review" },
-  { value: "completed", label: "Completed" },
-];
+  { value: 'all', label: 'All Tasks' },
+  { value: 'active', label: 'Active' },
+  { value: 'in_review', label: 'In Review' },
+  { value: 'completed', label: 'Completed' },
+]
 
-type OrderingKey = "date_created" | "status" | "credits";
-type ViewMode = "rows" | "cards";
+type OrderingKey = 'date_created' | 'status' | 'credits'
+type ViewMode = 'rows' | 'cards'
 
 interface DisplayProperties {
-  thumbnail: boolean;
-  description: boolean;
-  designer: boolean;
-  status: boolean;
-  credits: boolean;
-  createdDate: boolean;
+  thumbnail: boolean
+  description: boolean
+  designer: boolean
+  status: boolean
+  credits: boolean
+  createdDate: boolean
 }
 
 const orderingOptions: { value: OrderingKey; label: string }[] = [
-  { value: "date_created", label: "Date created" },
-  { value: "status", label: "Status" },
-  { value: "credits", label: "Credits" },
-];
+  { value: 'date_created', label: 'Date created' },
+  { value: 'status', label: 'Status' },
+  { value: 'credits', label: 'Credits' },
+]
 
 const displayPropertyOptions: { key: keyof DisplayProperties; label: string }[] = [
-  { key: "thumbnail", label: "Thumbnail" },
-  { key: "description", label: "Description" },
-  { key: "designer", label: "Designer" },
-  { key: "status", label: "Status" },
-  { key: "credits", label: "Credits" },
-  { key: "createdDate", label: "Created Date" },
-];
+  { key: 'thumbnail', label: 'Thumbnail' },
+  { key: 'description', label: 'Description' },
+  { key: 'designer', label: 'Designer' },
+  { key: 'status', label: 'Status' },
+  { key: 'credits', label: 'Credits' },
+  { key: 'createdDate', label: 'Created Date' },
+]
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Display settings
-  const [viewMode, setViewMode] = useState<ViewMode>("rows");
-  const [ordering, setOrdering] = useState<OrderingKey>("date_created");
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('rows')
+  const [ordering, setOrdering] = useState<OrderingKey>('date_created')
+  const [showCancelled, setShowCancelled] = useState(false)
   const [displayProperties, setDisplayProperties] = useState<DisplayProperties>({
     thumbnail: true,
     description: true,
@@ -138,41 +182,41 @@ export default function TasksPage() {
     status: true,
     credits: true,
     createdDate: true,
-  });
+  })
 
   const toggleDisplayProperty = useCallback((key: keyof DisplayProperties) => {
-    setDisplayProperties((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+    setDisplayProperties((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   useEffect(() => {
-    fetchTasks();
+    fetchTasks()
 
     const interval = setInterval(() => {
-      fetchTasks();
-    }, 30000);
+      fetchTasks()
+    }, 30000)
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
-      searchInputRef.current.focus();
+      searchInputRef.current.focus()
     }
-  }, [showSearch]);
+  }, [showSearch])
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch("/api/tasks?limit=50&view=client");
+      const response = await fetch('/api/tasks?limit=50&view=client')
       if (response.ok) {
-        const result = await response.json();
-        setTasks(result.data?.tasks || result.tasks || []);
+        const result = await response.json()
+        setTasks(result.data?.tasks || result.tasks || [])
       }
     } catch (error) {
-      console.error("Failed to fetch tasks:", error);
+      console.error('Failed to fetch tasks:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const statusOrder: Record<string, number> = {
     IN_PROGRESS: 0,
@@ -184,68 +228,68 @@ export default function TasksPage() {
     OFFERED: 6,
     COMPLETED: 7,
     CANCELLED: 8,
-  };
+  }
 
   const filteredTasks = tasks
     .filter((task) => {
       // Hide cancelled unless toggled on
-      if (!showCancelled && task.status === "CANCELLED") return false;
+      if (!showCancelled && task.status === 'CANCELLED') return false
 
-      if (filter === "active" && ["COMPLETED", "CANCELLED"].includes(task.status)) return false;
-      if (filter === "in_review" && task.status !== "IN_REVIEW") return false;
-      if (filter === "completed" && task.status !== "COMPLETED") return false;
+      if (filter === 'active' && ['COMPLETED', 'CANCELLED'].includes(task.status)) return false
+      if (filter === 'in_review' && task.status !== 'IN_REVIEW') return false
+      if (filter === 'completed' && task.status !== 'COMPLETED') return false
 
       if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase()
         return (
-          task.title.toLowerCase().includes(query) ||
-          task.description.toLowerCase().includes(query)
-        );
+          task.title.toLowerCase().includes(query) || task.description.toLowerCase().includes(query)
+        )
       }
 
-      return true;
+      return true
     })
     .sort((a, b) => {
       switch (ordering) {
-        case "status":
-          return (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
-        case "credits":
-          return b.creditsUsed - a.creditsUsed;
-        case "date_created":
+        case 'status':
+          return (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99)
+        case 'credits':
+          return b.creditsUsed - a.creditsUsed
+        case 'date_created':
         default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       }
-    });
+    })
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
 
-    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  };
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
 
-  const currentFilter = filterOptions.find(f => f.value === filter) || filterOptions[0];
+  const currentFilter = filterOptions.find((f) => f.value === filter) || filterOptions[0]
 
   const TaskRow = ({ task }: { task: Task }) => {
-    const status = statusConfig[task.status] || statusConfig.PENDING;
+    const status = statusConfig[task.status] || statusConfig.PENDING
     // Thumbnail fallback chain: moodboardItems → styleReferences → thumbnailUrl (uploaded attachments)
-    const moodboardThumb = task.moodboardItems?.find(item => item.type === "style" || item.type === "image" || item.type === "upload");
-    const thumbnailUrl = moodboardThumb?.imageUrl
-      || task.styleReferences?.[0]
-      || task.thumbnailUrl
-      || null;
+    const moodboardThumb = task.moodboardItems?.find(
+      (item) => item.type === 'style' || item.type === 'image' || item.type === 'upload'
+    )
+    const thumbnailUrl =
+      moodboardThumb?.imageUrl || task.styleReferences?.[0] || task.thumbnailUrl || null
 
     // Build a more descriptive display — combine title with first line of description if title is short
-    const displayTitle = task.title.length < 25 && task.description
-      ? `${task.title} — ${task.description.split('.')[0]}`
-      : task.title;
-    const displayDescription = task.description;
+    const displayTitle =
+      task.title.length < 25 && task.description
+        ? `${task.title} — ${task.description.split('.')[0]}`
+        : task.title
+    const displayDescription = task.description
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
@@ -277,9 +321,7 @@ export default function TasksPage() {
               </h3>
             </div>
             {displayProperties.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
-                {displayDescription}
-              </p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{displayDescription}</p>
             )}
           </div>
 
@@ -291,7 +333,7 @@ export default function TasksPage() {
                   {task.freelancer.image ? (
                     <Image
                       src={task.freelancer.image}
-                      alt={task.freelancer.name || "Designer"}
+                      alt={task.freelancer.name || 'Designer'}
                       width={20}
                       height={20}
                       className="w-5 h-5 rounded-full object-cover"
@@ -302,7 +344,7 @@ export default function TasksPage() {
                     </div>
                   )}
                   <span className="text-xs text-muted-foreground truncate">
-                    {task.freelancer.name?.split(" ")[0]}
+                    {task.freelancer.name?.split(' ')[0]}
                   </span>
                 </>
               ) : (
@@ -321,11 +363,13 @@ export default function TasksPage() {
           {/* Status */}
           {displayProperties.status && (
             <div className="shrink-0">
-              <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
-                status.bgColor,
-                status.color
-              )}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                  status.bgColor,
+                  status.color
+                )}
+              >
                 {status.icon}
                 <span className="hidden sm:inline">{status.label}</span>
               </span>
@@ -360,28 +404,38 @@ export default function TasksPage() {
           </DropdownMenu>
         </div>
       </Link>
-    );
-  };
+    )
+  }
 
   const TaskCard = ({ task }: { task: Task }) => {
-    const status = statusConfig[task.status] || statusConfig.PENDING;
+    const status = statusConfig[task.status] || statusConfig.PENDING
 
     // Get inspiration images — fallback chain: moodboardItems → styleReferences → thumbnailUrl
-    const moodboardImages = task.moodboardItems?.filter(
-      (item) => item.type === "style" || item.type === "image" || item.type === "upload"
-    ) || [];
+    const moodboardImages =
+      task.moodboardItems?.filter(
+        (item) => item.type === 'style' || item.type === 'image' || item.type === 'upload'
+      ) || []
     const styleRefImages: { id: string; imageUrl: string; name: string }[] =
       moodboardImages.length === 0 && task.styleReferences?.length
-        ? task.styleReferences.map((url, i) => ({ id: `ref-${i}`, imageUrl: url, name: `Reference ${i + 1}` }))
-        : [];
+        ? task.styleReferences.map((url, i) => ({
+            id: `ref-${i}`,
+            imageUrl: url,
+            name: `Reference ${i + 1}`,
+          }))
+        : []
     const attachmentImages: { id: string; imageUrl: string; name: string }[] =
       moodboardImages.length === 0 && styleRefImages.length === 0 && task.thumbnailUrl
-        ? [{ id: "attachment-0", imageUrl: task.thumbnailUrl, name: "Attachment" }]
-        : [];
-    const allImages = moodboardImages.length > 0 ? moodboardImages : styleRefImages.length > 0 ? styleRefImages : attachmentImages;
-    const imageCount = allImages.length;
-    const extraCount = imageCount > 4 ? imageCount - 4 : 0;
-    const visibleImages = allImages.slice(0, 4);
+        ? [{ id: 'attachment-0', imageUrl: task.thumbnailUrl, name: 'Attachment' }]
+        : []
+    const allImages =
+      moodboardImages.length > 0
+        ? moodboardImages
+        : styleRefImages.length > 0
+          ? styleRefImages
+          : attachmentImages
+    const imageCount = allImages.length
+    const extraCount = imageCount > 4 ? imageCount - 4 : 0
+    const visibleImages = allImages.slice(0, 4)
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
@@ -464,11 +518,13 @@ export default function TasksPage() {
               {/* Status badge overlay */}
               {displayProperties.status && (
                 <div className="absolute top-2 right-2 z-10">
-                  <span className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border backdrop-blur-sm",
-                    status.bgColor,
-                    status.color
-                  )}>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border backdrop-blur-sm',
+                      status.bgColor,
+                      status.color
+                    )}
+                  >
                     {status.icon}
                     {status.label}
                   </span>
@@ -494,11 +550,13 @@ export default function TasksPage() {
             {/* Status (shown here if thumbnail is hidden) */}
             {displayProperties.status && !displayProperties.thumbnail && (
               <div>
-                <span className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
-                  status.bgColor,
-                  status.color
-                )}>
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                    status.bgColor,
+                    status.color
+                  )}
+                >
                   {status.icon}
                   {status.label}
                 </span>
@@ -515,7 +573,7 @@ export default function TasksPage() {
                       {task.freelancer.image ? (
                         <Image
                           src={task.freelancer.image}
-                          alt={task.freelancer.name || "Designer"}
+                          alt={task.freelancer.name || 'Designer'}
                           width={18}
                           height={18}
                           className="w-[18px] h-[18px] rounded-full object-cover"
@@ -526,7 +584,7 @@ export default function TasksPage() {
                         </div>
                       )}
                       <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                        {task.freelancer.name?.split(" ")[0]}
+                        {task.freelancer.name?.split(' ')[0]}
                       </span>
                     </>
                   ) : (
@@ -555,8 +613,8 @@ export default function TasksPage() {
           </div>
         </div>
       </Link>
-    );
-  };
+    )
+  }
 
   return (
     <div className="min-h-full bg-background">
@@ -617,24 +675,24 @@ export default function TasksPage() {
                   <div className="p-3 border-b border-border">
                     <div className="inline-flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
                       <button
-                        onClick={() => setViewMode("cards")}
+                        onClick={() => setViewMode('cards')}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                          viewMode === "cards"
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                          'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                          viewMode === 'cards'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" />
                         Cards
                       </button>
                       <button
-                        onClick={() => setViewMode("rows")}
+                        onClick={() => setViewMode('rows')}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                          viewMode === "rows"
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                          'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                          viewMode === 'rows'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
                       >
                         <List className="h-3.5 w-3.5" />
@@ -679,10 +737,7 @@ export default function TasksPage() {
                         <AlertCircle className="h-3.5 w-3.5" />
                         <span>Show cancelled tasks</span>
                       </div>
-                      <Switch
-                        checked={showCancelled}
-                        onCheckedChange={setShowCancelled}
-                      />
+                      <Switch checked={showCancelled} onCheckedChange={setShowCancelled} />
                     </div>
                   </div>
 
@@ -697,10 +752,10 @@ export default function TasksPage() {
                           key={prop.key}
                           onClick={() => toggleDisplayProperty(prop.key)}
                           className={cn(
-                            "px-2.5 py-1 rounded-md text-xs font-medium border transition-all",
+                            'px-2.5 py-1 rounded-md text-xs font-medium border transition-all',
                             displayProperties[prop.key]
-                              ? "bg-foreground text-background border-foreground"
-                              : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+                              ? 'bg-foreground text-background border-foreground'
+                              : 'bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground'
                           )}
                         >
                           {prop.label}
@@ -724,12 +779,12 @@ export default function TasksPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onBlur={() => {
-                      if (!searchQuery) setShowSearch(false);
+                      if (!searchQuery) setShowSearch(false)
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        setSearchQuery("");
-                        setShowSearch(false);
+                      if (e.key === 'Escape') {
+                        setSearchQuery('')
+                        setShowSearch(false)
                       }
                     }}
                     className="w-64 h-9 pl-9 pr-8 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
@@ -737,8 +792,8 @@ export default function TasksPage() {
                   {searchQuery && (
                     <button
                       onClick={() => {
-                        setSearchQuery("");
-                        searchInputRef.current?.focus();
+                        setSearchQuery('')
+                        searchInputRef.current?.focus()
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
                     >
@@ -766,9 +821,7 @@ export default function TasksPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => fetchTasks()}>
-                    Refresh
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fetchTasks()}>Refresh</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -780,8 +833,8 @@ export default function TasksPage() {
       <div className="max-w-6xl mx-auto px-6 py-4">
         {/* Tasks needing review banner */}
         {(() => {
-          const reviewTasks = filteredTasks.filter(t => t.status === "IN_REVIEW");
-          if (reviewTasks.length === 0) return null;
+          const reviewTasks = filteredTasks.filter((t) => t.status === 'IN_REVIEW')
+          if (reviewTasks.length === 0) return null
           return (
             <div className="mb-4 space-y-2">
               {reviewTasks.map((task) => (
@@ -791,7 +844,9 @@ export default function TasksPage() {
                       <Eye className="h-4 w-4 text-orange-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-orange-700 dark:text-orange-400">Ready for review: </span>
+                      <span className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+                        Ready for review:{' '}
+                      </span>
                       <span className="text-sm text-foreground">{task.title}</span>
                     </div>
                     <span className="text-sm font-medium text-orange-600 shrink-0">Review →</span>
@@ -799,10 +854,10 @@ export default function TasksPage() {
                 </Link>
               ))}
             </div>
-          );
+          )
         })()}
         {isLoading ? (
-          viewMode === "cards" ? (
+          viewMode === 'cards' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="rounded-lg border border-border bg-card overflow-hidden">
@@ -821,7 +876,10 @@ export default function TasksPage() {
           ) : (
             <div className="rounded-lg border border-border bg-card overflow-hidden">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0">
+                <div
+                  key={i}
+                  className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0"
+                >
                   <Skeleton className="w-10 h-10 rounded-lg" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-48" />
@@ -839,17 +897,17 @@ export default function TasksPage() {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">
               {searchQuery
-                ? "No tasks found"
-                : filter === "all"
-                ? "No tasks yet"
-                : `No ${currentFilter.label.toLowerCase()}`}
+                ? 'No tasks found'
+                : filter === 'all'
+                  ? 'No tasks yet'
+                  : `No ${currentFilter.label.toLowerCase()}`}
             </h3>
             <p className="text-muted-foreground mb-6">
               {searchQuery
-                ? "Try a different search term"
-                : "Create your first design request to get started"}
+                ? 'Try a different search term'
+                : 'Create your first design request to get started'}
             </p>
-            {!searchQuery && filter === "all" && (
+            {!searchQuery && filter === 'all' && (
               <Button asChild>
                 <Link href="/dashboard">
                   <MessageSquarePlus className="h-4 w-4 mr-2" />
@@ -860,7 +918,7 @@ export default function TasksPage() {
           </div>
         ) : (
           <>
-            {viewMode === "cards" ? (
+            {viewMode === 'cards' ? (
               /* Cards Grid */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTasks.map((task) => (
@@ -880,7 +938,8 @@ export default function TasksPage() {
             <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span>
-                  Viewing {filteredTasks.length} of {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                  Viewing {filteredTasks.length} of {tasks.length} task
+                  {tasks.length !== 1 ? 's' : ''}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button variant="outline" size="sm" disabled className="h-8 px-3">
@@ -896,5 +955,5 @@ export default function TasksPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -1,208 +1,202 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import Firecrawl from "@mendable/firecrawl-js";
-import Anthropic from "@anthropic-ai/sdk";
-import { logger } from "@/lib/logger";
-import { extractBrandRequestSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest } from 'next/server'
+import Firecrawl from '@mendable/firecrawl-js'
+import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/logger'
+import { extractBrandRequestSchema } from '@/lib/validations'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 // Lazy initialization to avoid errors during build
-let firecrawl: Firecrawl | null = null;
-let anthropic: Anthropic | null = null;
+let firecrawl: Firecrawl | null = null
+let anthropic: Anthropic | null = null
 
 function getFirecrawl() {
   if (!firecrawl) {
     firecrawl = new Firecrawl({
-      apiKey: process.env.FIRECRAWL_API_KEY || "",
-    });
+      apiKey: process.env.FIRECRAWL_API_KEY || '',
+    })
   }
-  return firecrawl;
+  return firecrawl
 }
 
 function getAnthropic(): Anthropic {
   if (!anthropic) {
     anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || "",
-    });
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+    })
   }
-  return anthropic;
+  return anthropic
 }
 
 // Visual Style options - must match types.ts VISUAL_STYLE_OPTIONS
 const VISUAL_STYLE_VALUES = [
-  "minimal-clean",
-  "bold-impactful",
-  "elegant-refined",
-  "modern-sleek",
-  "playful-vibrant",
-  "organic-natural",
-  "tech-futuristic",
-  "classic-timeless",
-  "artistic-expressive",
-  "corporate-professional",
-  "warm-inviting",
-  "edgy-disruptive",
-] as const;
+  'minimal-clean',
+  'bold-impactful',
+  'elegant-refined',
+  'modern-sleek',
+  'playful-vibrant',
+  'organic-natural',
+  'tech-futuristic',
+  'classic-timeless',
+  'artistic-expressive',
+  'corporate-professional',
+  'warm-inviting',
+  'edgy-disruptive',
+] as const
 
 // Brand Tone options - must match types.ts BRAND_TONE_OPTIONS
 const BRAND_TONE_VALUES = [
-  "friendly-approachable",
-  "professional-trustworthy",
-  "playful-witty",
-  "bold-confident",
-  "sophisticated-refined",
-  "innovative-visionary",
-  "empathetic-caring",
-  "authoritative-expert",
-  "casual-relaxed",
-  "inspiring-motivational",
-  "premium-exclusive",
-  "rebellious-edgy",
-] as const;
+  'friendly-approachable',
+  'professional-trustworthy',
+  'playful-witty',
+  'bold-confident',
+  'sophisticated-refined',
+  'innovative-visionary',
+  'empathetic-caring',
+  'authoritative-expert',
+  'casual-relaxed',
+  'inspiring-motivational',
+  'premium-exclusive',
+  'rebellious-edgy',
+] as const
 
 // Industry Archetype values
 const INDUSTRY_ARCHETYPE_VALUES = [
-  "hospitality",
-  "blue-collar",
-  "white-collar",
-  "e-commerce",
-  "tech",
-] as const;
+  'hospitality',
+  'blue-collar',
+  'white-collar',
+  'e-commerce',
+  'tech',
+] as const
 
 // Inferred audience segment
 interface InferredAudience {
-  name: string;
-  isPrimary: boolean;
+  name: string
+  isPrimary: boolean
   demographics?: {
-    ageRange?: { min: number; max: number };
-    gender?: "all" | "male" | "female" | "other";
-    income?: "low" | "middle" | "high" | "enterprise";
-  };
+    ageRange?: { min: number; max: number }
+    gender?: 'all' | 'male' | 'female' | 'other'
+    income?: 'low' | 'middle' | 'high' | 'enterprise'
+  }
   firmographics?: {
-    companySize?: string[];
-    industries?: string[];
-    jobTitles?: string[];
-    departments?: string[];
-    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
-  };
+    companySize?: string[]
+    industries?: string[]
+    jobTitles?: string[]
+    departments?: string[]
+    decisionMakingRole?: 'decision-maker' | 'influencer' | 'end-user'
+  }
   psychographics?: {
-    painPoints?: string[];
-    goals?: string[];
-    values?: string[];
-  };
+    painPoints?: string[]
+    goals?: string[]
+    values?: string[]
+  }
   behavioral?: {
-    contentPreferences?: string[];
-    platforms?: string[];
-    buyingProcess?: "impulse" | "considered" | "committee";
-  };
-  confidence: number;
+    contentPreferences?: string[]
+    platforms?: string[]
+    buyingProcess?: 'impulse' | 'considered' | 'committee'
+  }
+  confidence: number
 }
 
 interface BrandExtraction {
-  name: string;
-  description: string;
-  tagline: string | null;
-  industry: string | null;
-  industryArchetype: string | null; // hospitality, blue-collar, white-collar, e-commerce, tech
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  primaryColor: string;
-  secondaryColor: string | null;
-  accentColor: string | null;
-  backgroundColor: string;
-  textColor: string;
-  brandColors: string[];
-  primaryFont: string | null;
-  secondaryFont: string | null;
+  name: string
+  description: string
+  tagline: string | null
+  industry: string | null
+  industryArchetype: string | null // hospitality, blue-collar, white-collar, e-commerce, tech
+  logoUrl: string | null
+  faviconUrl: string | null
+  primaryColor: string
+  secondaryColor: string | null
+  accentColor: string | null
+  backgroundColor: string
+  textColor: string
+  brandColors: string[]
+  primaryFont: string | null
+  secondaryFont: string | null
   socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    facebook?: string;
-    instagram?: string;
-    youtube?: string;
-  };
-  contactEmail: string | null;
-  contactPhone: string | null;
-  keywords: string[];
+    twitter?: string
+    linkedin?: string
+    facebook?: string
+    instagram?: string
+    youtube?: string
+  }
+  contactEmail: string | null
+  contactPhone: string | null
+  keywords: string[]
   // Explicit style and tone selections
-  visualStyle: string;
-  brandTone: string;
+  visualStyle: string
+  brandTone: string
   // Brand personality/feel values (0-100 scale)
-  feelPlayfulSerious: number; // 0 = Playful, 100 = Serious
-  feelBoldMinimal: number; // 0 = Bold, 100 = Minimal
-  feelExperimentalClassic: number; // 0 = Experimental, 100 = Classic
-  feelFriendlyProfessional: number; // 0 = Friendly, 100 = Professional
-  feelPremiumAccessible: number; // 0 = Accessible, 100 = Premium
+  feelPlayfulSerious: number // 0 = Playful, 100 = Serious
+  feelBoldMinimal: number // 0 = Bold, 100 = Minimal
+  feelExperimentalClassic: number // 0 = Experimental, 100 = Classic
+  feelFriendlyProfessional: number // 0 = Friendly, 100 = Professional
+  feelPremiumAccessible: number // 0 = Accessible, 100 = Premium
   // Brand signal sliders
-  signalTone: number; // 0 = Serious, 100 = Playful
-  signalDensity: number; // 0 = Minimal, 100 = Rich
-  signalWarmth: number; // 0 = Cold, 100 = Warm
-  signalEnergy: number; // 0 = Calm, 100 = Energetic
+  signalTone: number // 0 = Serious, 100 = Playful
+  signalDensity: number // 0 = Minimal, 100 = Rich
+  signalWarmth: number // 0 = Cold, 100 = Warm
+  signalEnergy: number // 0 = Calm, 100 = Energetic
   // Inferred target audiences
-  audiences?: InferredAudience[];
+  audiences?: InferredAudience[]
 }
 
 // Extract social links from page links
-function extractSocialLinks(
-  links: string[] | undefined
-): BrandExtraction["socialLinks"] {
-  const socialLinks: BrandExtraction["socialLinks"] = {};
-  if (!links) return socialLinks;
+function extractSocialLinks(links: string[] | undefined): BrandExtraction['socialLinks'] {
+  const socialLinks: BrandExtraction['socialLinks'] = {}
+  if (!links) return socialLinks
 
-  const linkStr = links.join(" ");
+  const linkStr = links.join(' ')
 
-  if (linkStr.includes("twitter.com") || linkStr.includes("x.com")) {
-    const link = links.find(
-      (l) => l.includes("twitter.com") || l.includes("x.com")
-    );
-    if (link) socialLinks.twitter = link;
+  if (linkStr.includes('twitter.com') || linkStr.includes('x.com')) {
+    const link = links.find((l) => l.includes('twitter.com') || l.includes('x.com'))
+    if (link) socialLinks.twitter = link
   }
-  if (linkStr.includes("linkedin.com")) {
-    const link = links.find((l) => l.includes("linkedin.com"));
-    if (link) socialLinks.linkedin = link;
+  if (linkStr.includes('linkedin.com')) {
+    const link = links.find((l) => l.includes('linkedin.com'))
+    if (link) socialLinks.linkedin = link
   }
-  if (linkStr.includes("facebook.com")) {
-    const link = links.find((l) => l.includes("facebook.com"));
-    if (link) socialLinks.facebook = link;
+  if (linkStr.includes('facebook.com')) {
+    const link = links.find((l) => l.includes('facebook.com'))
+    if (link) socialLinks.facebook = link
   }
-  if (linkStr.includes("instagram.com")) {
-    const link = links.find((l) => l.includes("instagram.com"));
-    if (link) socialLinks.instagram = link;
+  if (linkStr.includes('instagram.com')) {
+    const link = links.find((l) => l.includes('instagram.com'))
+    if (link) socialLinks.instagram = link
   }
-  if (linkStr.includes("youtube.com")) {
-    const link = links.find((l) => l.includes("youtube.com"));
-    if (link) socialLinks.youtube = link;
+  if (linkStr.includes('youtube.com')) {
+    const link = links.find((l) => l.includes('youtube.com'))
+    if (link) socialLinks.youtube = link
   }
 
-  return socialLinks;
+  return socialLinks
 }
 
 // Create default brand data from metadata and Firecrawl branding
 function createDefaultBrandData(
   metadata:
     | {
-        title?: string;
-        description?: string;
-        ogImage?: string;
-        favicon?: string;
+        title?: string
+        description?: string
+        ogImage?: string
+        favicon?: string
       }
     | undefined,
   branding:
     | {
         colors?: {
-          primary?: string;
-          secondary?: string;
-          accent?: string;
-          background?: string;
-          textPrimary?: string;
-          link?: string;
-          [key: string]: string | undefined;
-        };
-        typography?: { fontFamilies?: { primary?: string } };
-        fonts?: Array<{ family: string }>;
-        images?: { logo?: string | null; favicon?: string | null };
+          primary?: string
+          secondary?: string
+          accent?: string
+          background?: string
+          textPrimary?: string
+          link?: string
+          [key: string]: string | undefined
+        }
+        typography?: { fontFamilies?: { primary?: string } }
+        fonts?: Array<{ family: string }>
+        images?: { logo?: string | null; favicon?: string | null }
       }
     | undefined,
   links: string[] | undefined
@@ -210,12 +204,12 @@ function createDefaultBrandData(
   // Get all hex colors from branding, excluding background and text colors
   const brandColors: string[] = branding?.colors
     ? Object.values(branding.colors).filter(
-        (c): c is string => typeof c === "string" && c.startsWith("#")
+        (c): c is string => typeof c === 'string' && c.startsWith('#')
       )
-    : [];
+    : []
 
   // Get primary color
-  const primaryColor = branding?.colors?.primary || "#6366f1";
+  const primaryColor = branding?.colors?.primary || '#6366f1'
 
   // Firecrawl returns: primary, accent, background, textPrimary, link
   // We need: primaryColor, secondaryColor, accentColor
@@ -223,16 +217,16 @@ function createDefaultBrandData(
 
   // Secondary color: use Firecrawl's accent as our secondary (it's typically the 2nd brand color)
   const secondaryColor: string | null =
-    branding?.colors?.accent || branding?.colors?.secondary || null;
+    branding?.colors?.accent || branding?.colors?.secondary || null
 
   // Accent color: use link if it's different from what we've already used, otherwise null
-  let accentColor: string | null = null;
+  let accentColor: string | null = null
   if (
     branding?.colors?.link &&
     branding?.colors?.link !== primaryColor &&
     branding?.colors?.link !== secondaryColor
   ) {
-    accentColor = branding.colors.link;
+    accentColor = branding.colors.link
   }
 
   // If we still don't have an accent but have textPrimary that's not too dark/light, consider it
@@ -243,19 +237,14 @@ function createDefaultBrandData(
     branding.colors.textPrimary !== secondaryColor
   ) {
     // Only use textPrimary as accent if it's not pure black/white
-    if (
-      branding.colors.textPrimary !== "#000000" &&
-      branding.colors.textPrimary !== "#ffffff"
-    ) {
-      accentColor = branding.colors.textPrimary;
+    if (branding.colors.textPrimary !== '#000000' && branding.colors.textPrimary !== '#ffffff') {
+      accentColor = branding.colors.textPrimary
     }
   }
 
   return {
-    name:
-      metadata?.title?.split("|")[0]?.split("-")[0]?.split("–")[0]?.trim() ||
-      "Unknown Company",
-    description: metadata?.description || "",
+    name: metadata?.title?.split('|')[0]?.split('-')[0]?.split('–')[0]?.trim() || 'Unknown Company',
+    description: metadata?.description || '',
     tagline: null,
     industry: null,
     industryArchetype: null,
@@ -264,21 +253,19 @@ function createDefaultBrandData(
     primaryColor,
     secondaryColor,
     accentColor,
-    backgroundColor: branding?.colors?.background || "#ffffff",
-    textColor: branding?.colors?.textPrimary || "#1f2937",
+    backgroundColor: branding?.colors?.background || '#ffffff',
+    textColor: branding?.colors?.textPrimary || '#1f2937',
     brandColors,
     primaryFont:
-      branding?.typography?.fontFamilies?.primary ||
-      branding?.fonts?.[0]?.family ||
-      null,
+      branding?.typography?.fontFamilies?.primary || branding?.fonts?.[0]?.family || null,
     secondaryFont: null,
     socialLinks: extractSocialLinks(links),
     contactEmail: null,
     contactPhone: null,
     keywords: [],
     // Default style and tone selections
-    visualStyle: "modern-sleek",
-    brandTone: "professional-trustworthy",
+    visualStyle: 'modern-sleek',
+    brandTone: 'professional-trustworthy',
     // Default feel values (neutral)
     feelPlayfulSerious: 50,
     feelBoldMinimal: 50,
@@ -292,107 +279,89 @@ function createDefaultBrandData(
     signalEnergy: 50,
     // Empty audiences array - will be populated by Claude analysis
     audiences: [],
-  };
+  }
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { websiteUrl } = extractBrandRequestSchema.parse(body);
+    const body = await request.json()
+    const { websiteUrl } = extractBrandRequestSchema.parse(body)
 
     // Normalize URL
-    let normalizedUrl = websiteUrl.trim();
-    if (
-      !normalizedUrl.startsWith("http://") &&
-      !normalizedUrl.startsWith("https://")
-    ) {
-      normalizedUrl = `https://${normalizedUrl}`;
+    let normalizedUrl = websiteUrl.trim()
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`
     }
 
     // Scrape the website with Firecrawl - use viewport-sized screenshot to avoid oversized images
-    let scrapeResult;
+    let scrapeResult
     try {
       scrapeResult = await getFirecrawl().scrape(normalizedUrl, {
         formats: [
-          "markdown",
-          { type: "screenshot", fullPage: false }, // Use viewport screenshot to stay within Claude's size limits
-          "links",
-          "branding",
+          'markdown',
+          { type: 'screenshot', fullPage: false }, // Use viewport screenshot to stay within Claude's size limits
+          'links',
+          'branding',
         ],
         onlyMainContent: false,
-      });
+      })
     } catch (scrapeError) {
-      logger.error({ error: scrapeError }, "Firecrawl scrape error");
-      return NextResponse.json(
-        {
-          error:
-            "Failed to scrape website. Please check the URL and try again.",
-        },
-        { status: 400 }
-      );
+      logger.error({ error: scrapeError }, 'Firecrawl scrape error')
+      throw Errors.badRequest('Failed to scrape website. Please check the URL and try again.')
     }
 
-    const { markdown, screenshot, links, metadata, branding } =
-      scrapeResult as {
-        markdown?: string;
-        screenshot?: string;
-        links?: string[];
-        metadata?: {
-          title?: string;
-          description?: string;
-          ogImage?: string;
-          favicon?: string;
-        };
-        branding?: {
-          colors?: {
-            primary?: string;
-            secondary?: string;
-            accent?: string;
-            background?: string;
-            textPrimary?: string;
-            link?: string;
-            [key: string]: string | undefined;
-          };
-          typography?: {
-            fontFamilies?: {
-              primary?: string;
-            };
-          };
-          fonts?: Array<{ family: string }>;
-          images?: {
-            logo?: string | null;
-            favicon?: string | null;
-          };
-          confidence?: {
-            colors?: number;
-            buttons?: number;
-            overall?: number;
-          };
-        };
-      };
+    const { markdown, screenshot, links, metadata, branding } = scrapeResult as {
+      markdown?: string
+      screenshot?: string
+      links?: string[]
+      metadata?: {
+        title?: string
+        description?: string
+        ogImage?: string
+        favicon?: string
+      }
+      branding?: {
+        colors?: {
+          primary?: string
+          secondary?: string
+          accent?: string
+          background?: string
+          textPrimary?: string
+          link?: string
+          [key: string]: string | undefined
+        }
+        typography?: {
+          fontFamilies?: {
+            primary?: string
+          }
+        }
+        fonts?: Array<{ family: string }>
+        images?: {
+          logo?: string | null
+          favicon?: string | null
+        }
+        confidence?: {
+          colors?: number
+          buttons?: number
+          overall?: number
+        }
+      }
+    }
 
     // Check if Firecrawl has good branding data with reasonable confidence
     // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
-    const colorConfidence = branding?.confidence?.colors ?? 0;
+    const colorConfidence = branding?.confidence?.colors ?? 0
     const hasColorsWithConfidence =
-      branding?.colors &&
-      Object.keys(branding.colors).length > 2 &&
-      colorConfidence >= 0.3;
+      branding?.colors && Object.keys(branding.colors).length > 2 && colorConfidence >= 0.3
 
     // If confidence is too low, use Claude for better color extraction
-    const hasBrandingColors = hasColorsWithConfidence;
+    const hasBrandingColors = hasColorsWithConfidence
     logger.info(
-      { url: normalizedUrl, source: hasBrandingColors ? "Firecrawl" : "Claude", colorConfidence },
-      "Brand extraction source selected"
-    );
+      { url: normalizedUrl, source: hasBrandingColors ? 'Firecrawl' : 'Claude', colorConfidence },
+      'Brand extraction source selected'
+    )
 
     // Even if Firecrawl has good branding colors, we still need Claude for:
     // 1. Target audience inference
@@ -401,32 +370,28 @@ export async function POST(request: NextRequest) {
     // So we always run Claude analysis, but may use Firecrawl colors as fallback
     const firecrawlBrandData = hasBrandingColors
       ? createDefaultBrandData(metadata, branding, links)
-      : null;
+      : null
 
     // Otherwise, use Claude for deeper analysis
-    const contentParts: Anthropic.Messages.ContentBlockParam[] = [];
+    const contentParts: Anthropic.Messages.ContentBlockParam[] = []
 
     // Add text content for context (always include this)
     const textPrompt = `Analyze this website and extract comprehensive brand information including visual personality.
 
 Website URL: ${normalizedUrl}
-Page Title: ${metadata?.title || "Unknown"}
-Page Description: ${metadata?.description || "Unknown"}
+Page Title: ${metadata?.title || 'Unknown'}
+Page Description: ${metadata?.description || 'Unknown'}
 
 Website Content (markdown):
-${markdown?.slice(0, 8000) || "No content available"}
+${markdown?.slice(0, 8000) || 'No content available'}
 
 Links found on page:
-${links?.slice(0, 20).join("\n") || "No links available"}
+${links?.slice(0, 20).join('\n') || 'No links available'}
 
-${
-  screenshot
-    ? "A screenshot of the website is also provided for visual analysis."
-    : ""
-}
+${screenshot ? 'A screenshot of the website is also provided for visual analysis.' : ''}
 
 Based on the content${
-      screenshot ? " and screenshot" : ""
+      screenshot ? ' and screenshot' : ''
     } above, extract the following brand information in JSON format:
 
 1. **Company Name**: The company/brand name
@@ -586,250 +551,220 @@ Return ONLY a valid JSON object with this exact structure:
       "confidence": 85
     }
   ]
-}`;
+}`
 
     // Try to include screenshot, but be prepared to retry without it if it fails
-    let useScreenshot = !!screenshot;
-    let brandData: BrandExtraction | null = null;
-    let lastError: Error | null = null;
+    let useScreenshot = !!screenshot
+    let brandData: BrandExtraction | null = null
+    let lastError: Error | null = null
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        contentParts.length = 0; // Clear array
+        contentParts.length = 0 // Clear array
 
         // Only add screenshot on first attempt
         if (useScreenshot && attempt === 0 && screenshot) {
           contentParts.push({
-            type: "image",
+            type: 'image',
             source: {
-              type: "url",
+              type: 'url',
               url: screenshot,
             },
-          });
+          })
         }
 
         contentParts.push({
-          type: "text",
+          type: 'text',
           text: textPrompt,
-        });
+        })
 
         const response = await getAnthropic().messages.create({
-          model: "claude-3-5-haiku-20241022", // Faster model for brand extraction
+          model: 'claude-3-5-haiku-20241022', // Faster model for brand extraction
           max_tokens: 2000,
           messages: [
             {
-              role: "user",
+              role: 'user',
               content: contentParts,
             },
           ],
-        });
+        })
 
         // Extract JSON from Claude's response
         const responseText = response.content
-          .filter(
-            (block): block is Anthropic.Messages.TextBlock =>
-              block.type === "text"
-          )
+          .filter((block): block is Anthropic.Messages.TextBlock => block.type === 'text')
           .map((block) => block.text)
-          .join("");
+          .join('')
 
         // Parse the JSON response
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/)
         if (!jsonMatch) {
-          throw new Error("No JSON found in response");
+          throw new Error('No JSON found in response')
         }
-        brandData = JSON.parse(jsonMatch[0]);
-        break; // Success, exit retry loop
+        brandData = JSON.parse(jsonMatch[0])
+        break // Success, exit retry loop
       } catch (error) {
-        lastError = error as Error;
-        logger.error({ error, attempt: attempt + 1 }, "Claude analysis attempt failed");
+        lastError = error as Error
+        logger.error({ error, attempt: attempt + 1 }, 'Claude analysis attempt failed')
 
         // Check if it's an image size error
-        const errorMessage = String(error);
+        const errorMessage = String(error)
         if (
-          errorMessage.includes("8000 pixels") ||
-          errorMessage.includes("image") ||
-          errorMessage.includes("dimension")
+          errorMessage.includes('8000 pixels') ||
+          errorMessage.includes('image') ||
+          errorMessage.includes('dimension')
         ) {
-          logger.info("Image too large, retrying without screenshot");
-          useScreenshot = false;
-          continue; // Retry without screenshot
+          logger.info('Image too large, retrying without screenshot')
+          useScreenshot = false
+          continue // Retry without screenshot
         }
 
         // For other errors, don't retry
-        break;
+        break
       }
     }
 
     // If Claude analysis failed entirely, use fallback data
     if (!brandData) {
-      logger.error(
-        { error: lastError },
-        "All Claude analysis attempts failed, using fallback data"
-      );
-      brandData = createDefaultBrandData(metadata, branding, links);
+      logger.error({ error: lastError }, 'All Claude analysis attempts failed, using fallback data')
+      brandData = createDefaultBrandData(metadata, branding, links)
     }
 
     // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
     // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
     if (firecrawlBrandData && hasBrandingColors) {
-      brandData.primaryColor = firecrawlBrandData.primaryColor;
-      brandData.secondaryColor = firecrawlBrandData.secondaryColor;
-      brandData.accentColor = firecrawlBrandData.accentColor;
-      brandData.backgroundColor = firecrawlBrandData.backgroundColor;
-      brandData.textColor = firecrawlBrandData.textColor;
+      brandData.primaryColor = firecrawlBrandData.primaryColor
+      brandData.secondaryColor = firecrawlBrandData.secondaryColor
+      brandData.accentColor = firecrawlBrandData.accentColor
+      brandData.backgroundColor = firecrawlBrandData.backgroundColor
+      brandData.textColor = firecrawlBrandData.textColor
       if (firecrawlBrandData.brandColors.length > 0) {
-        brandData.brandColors = firecrawlBrandData.brandColors;
+        brandData.brandColors = firecrawlBrandData.brandColors
       }
-      logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis");
+      logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis")
     } else {
       // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
       // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
-      const firecrawlColorConfidence = branding?.confidence?.colors ?? 0;
+      const firecrawlColorConfidence = branding?.confidence?.colors ?? 0
       if (branding?.colors && firecrawlColorConfidence >= 0.1) {
         // Only use Firecrawl colors as fallback when Claude returned defaults
-        if (branding.colors.primary && brandData.primaryColor === "#6366f1") {
-          brandData.primaryColor = branding.colors.primary;
+        if (branding.colors.primary && brandData.primaryColor === '#6366f1') {
+          brandData.primaryColor = branding.colors.primary
         }
         // Use Firecrawl accent as secondary since they don't have a 'secondary' key
         if (branding.colors.accent && !brandData.secondaryColor) {
-          brandData.secondaryColor = branding.colors.accent;
+          brandData.secondaryColor = branding.colors.accent
         }
         if (
           branding.colors.link &&
           !brandData.accentColor &&
           branding.colors.link !== brandData.secondaryColor
         ) {
-          brandData.accentColor = branding.colors.link;
+          brandData.accentColor = branding.colors.link
         }
-        if (
-          branding.colors.background &&
-          brandData.backgroundColor === "#ffffff"
-        ) {
-          brandData.backgroundColor = branding.colors.background;
+        if (branding.colors.background && brandData.backgroundColor === '#ffffff') {
+          brandData.backgroundColor = branding.colors.background
         }
-        if (branding.colors.textPrimary && brandData.textColor === "#1f2937") {
-          brandData.textColor = branding.colors.textPrimary;
+        if (branding.colors.textPrimary && brandData.textColor === '#1f2937') {
+          brandData.textColor = branding.colors.textPrimary
         }
         if (brandData.brandColors.length === 0) {
           brandData.brandColors = Object.values(branding.colors).filter(
-            (c): c is string => typeof c === "string" && c.startsWith("#")
-          );
+            (c): c is string => typeof c === 'string' && c.startsWith('#')
+          )
         }
       }
     }
 
     if (branding?.typography?.fontFamilies?.primary && !brandData.primaryFont) {
-      brandData.primaryFont = branding.typography.fontFamilies.primary;
+      brandData.primaryFont = branding.typography.fontFamilies.primary
     } else if (branding?.fonts?.[0]?.family && !brandData.primaryFont) {
-      brandData.primaryFont = branding.fonts[0].family;
+      brandData.primaryFont = branding.fonts[0].family
     }
 
     // Add favicon and logo from branding/metadata if not found
     if (!brandData.faviconUrl) {
-      brandData.faviconUrl =
-        branding?.images?.favicon || metadata?.favicon || null;
+      brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null
     }
     if (!brandData.logoUrl) {
-      brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null;
+      brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null
     }
 
     // Merge social links - ensure empty object if none found
-    const extractedSocial = extractSocialLinks(links);
-    const claudeSocial = brandData.socialLinks || {};
-    brandData.socialLinks = { ...extractedSocial, ...claudeSocial };
+    const extractedSocial = extractSocialLinks(links)
+    const claudeSocial = brandData.socialLinks || {}
+    brandData.socialLinks = { ...extractedSocial, ...claudeSocial }
 
     // Remove any undefined/null/empty string values from social links
     if (brandData.socialLinks) {
       Object.keys(brandData.socialLinks).forEach((key) => {
-        const value =
-          brandData.socialLinks[key as keyof typeof brandData.socialLinks];
-        if (!value || value.trim() === "") {
-          delete brandData.socialLinks[
-            key as keyof typeof brandData.socialLinks
-          ];
+        const value = brandData.socialLinks[key as keyof typeof brandData.socialLinks]
+        if (!value || value.trim() === '') {
+          delete brandData.socialLinks[key as keyof typeof brandData.socialLinks]
         }
-      });
+      })
     }
 
     // Ensure feel values have defaults if Claude didn't return them
     // Use type assertion since brandData may be a parsed JSON that doesn't have all fields
-    const brandDataWithFeels = brandData as BrandExtraction;
-    brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50;
-    brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50;
-    brandDataWithFeels.feelExperimentalClassic =
-      brandData.feelExperimentalClassic ?? 50;
-    brandDataWithFeels.feelFriendlyProfessional =
-      brandData.feelFriendlyProfessional ?? 50;
-    brandDataWithFeels.feelPremiumAccessible =
-      brandData.feelPremiumAccessible ?? 50;
-    brandDataWithFeels.signalTone = brandData.signalTone ?? 50;
-    brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50;
-    brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50;
-    brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50;
+    const brandDataWithFeels = brandData as BrandExtraction
+    brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50
+    brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50
+    brandDataWithFeels.feelExperimentalClassic = brandData.feelExperimentalClassic ?? 50
+    brandDataWithFeels.feelFriendlyProfessional = brandData.feelFriendlyProfessional ?? 50
+    brandDataWithFeels.feelPremiumAccessible = brandData.feelPremiumAccessible ?? 50
+    brandDataWithFeels.signalTone = brandData.signalTone ?? 50
+    brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50
+    brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50
+    brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50
 
     // Validate and set defaults for visualStyle, brandTone, and industryArchetype
     const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(
       brandData.visualStyle as (typeof VISUAL_STYLE_VALUES)[number]
-    );
+    )
     const isValidBrandTone = BRAND_TONE_VALUES.includes(
       brandData.brandTone as (typeof BRAND_TONE_VALUES)[number]
-    );
+    )
     const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(
       brandData.industryArchetype as (typeof INDUSTRY_ARCHETYPE_VALUES)[number]
-    );
+    )
 
-    brandDataWithFeels.visualStyle = isValidVisualStyle
-      ? brandData.visualStyle
-      : "modern-sleek";
+    brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : 'modern-sleek'
     brandDataWithFeels.brandTone = isValidBrandTone
       ? brandData.brandTone
-      : "professional-trustworthy";
+      : 'professional-trustworthy'
     brandDataWithFeels.industryArchetype = isValidIndustryArchetype
       ? brandData.industryArchetype
-      : null;
+      : null
 
     // Ensure audiences is an array and validate each audience
-    const rawAudiences = brandData.audiences || [];
+    const rawAudiences = brandData.audiences || []
     brandDataWithFeels.audiences = Array.isArray(rawAudiences)
       ? rawAudiences.map((audience: InferredAudience) => ({
-          name: audience.name || "Unknown Audience",
+          name: audience.name || 'Unknown Audience',
           isPrimary: !!audience.isPrimary,
           demographics: audience.demographics || {},
           firmographics: audience.firmographics || {},
           psychographics: audience.psychographics || {},
           behavioral: audience.behavioral || {},
           confidence:
-            typeof audience.confidence === "number"
+            typeof audience.confidence === 'number'
               ? Math.min(100, Math.max(0, audience.confidence))
               : 50,
         }))
-      : [];
+      : []
 
     // Ensure exactly one primary audience if audiences exist
     if (brandDataWithFeels.audiences.length > 0) {
-      const hasPrimary = brandDataWithFeels.audiences.some((a) => a.isPrimary);
+      const hasPrimary = brandDataWithFeels.audiences.some((a) => a.isPrimary)
       if (!hasPrimary) {
-        brandDataWithFeels.audiences[0].isPrimary = true;
+        brandDataWithFeels.audiences[0].isPrimary = true
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...brandDataWithFeels,
-        website: normalizedUrl,
-        screenshotUrl: screenshot || null,
-      },
-    });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error);
-    }
-    logger.error({ error }, "Brand extraction error");
-    return NextResponse.json(
-      { error: "Failed to extract brand information. Please try again." },
-      { status: 500 }
-    );
-  }
+    return successResponse({
+      ...brandDataWithFeels,
+      website: normalizedUrl,
+      screenshotUrl: screenshot || null,
+    })
+  })
 }

@@ -1,21 +1,21 @@
-"use client";
+'use client'
 
-import { motion } from "framer-motion";
-import { Check, Circle, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { type ChatStage } from "@/components/chat/types";
+import { motion } from 'framer-motion'
+import { Check, Circle, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { type ChatStage } from '@/components/chat/types'
 import {
   CHAT_STAGES,
   STAGE_DESCRIPTIONS,
   isStageCompleted,
   isCurrentStage,
-} from "@/lib/chat-progress";
+} from '@/lib/chat-progress'
 
 interface ProgressStepperProps {
-  currentStage: ChatStage;
-  completedStages: ChatStage[];
-  progressPercentage: number;
-  className?: string;
+  currentStage: ChatStage
+  completedStages: ChatStage[]
+  progressPercentage: number
+  className?: string
 }
 
 export function ProgressStepper({
@@ -25,7 +25,7 @@ export function ProgressStepper({
   className,
 }: ProgressStepperProps) {
   return (
-    <div className={cn("flex flex-col h-full", className)}>
+    <div className={cn('flex flex-col h-full', className)}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -34,9 +34,7 @@ export function ProgressStepper({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Progress</h3>
-            <p className="text-xs text-muted-foreground">
-              {progressPercentage}% complete
-            </p>
+            <p className="text-xs text-muted-foreground">{progressPercentage}% complete</p>
           </div>
         </div>
       </div>
@@ -48,7 +46,7 @@ export function ProgressStepper({
             className="h-full bg-primary rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>
       </div>
@@ -57,9 +55,9 @@ export function ProgressStepper({
       <div className="flex-1 px-4 py-2">
         <div className="space-y-0">
           {CHAT_STAGES.map((stage, index) => {
-            const isCompleted = isStageCompleted(stage, completedStages);
-            const isCurrent = isCurrentStage(stage, currentStage);
-            const isLast = index === CHAT_STAGES.length - 1;
+            const isCompleted = isStageCompleted(stage, completedStages)
+            const isCurrent = isCurrentStage(stage, currentStage)
+            const isLast = index === CHAT_STAGES.length - 1
 
             return (
               <div key={stage} className="flex items-start gap-3">
@@ -71,20 +69,19 @@ export function ProgressStepper({
                     animate={{
                       scale: isCurrent ? 1.1 : 1,
                       backgroundColor: isCompleted
-                        ? "var(--primary)"
+                        ? 'var(--primary)'
                         : isCurrent
-                        ? "var(--primary)"
-                        : "transparent",
-                      borderColor: isCompleted || isCurrent
-                        ? "var(--primary)"
-                        : "var(--muted-foreground)",
+                          ? 'var(--primary)'
+                          : 'transparent',
+                      borderColor:
+                        isCompleted || isCurrent ? 'var(--primary)' : 'var(--muted-foreground)',
                     }}
                     transition={{ duration: 0.2 }}
                     className={cn(
-                      "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0",
-                      isCompleted && "bg-primary border-primary",
-                      isCurrent && !isCompleted && "border-primary bg-primary/10",
-                      !isCompleted && !isCurrent && "border-muted-foreground/30"
+                      'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0',
+                      isCompleted && 'bg-primary border-primary',
+                      isCurrent && !isCompleted && 'border-primary bg-primary/10',
+                      !isCompleted && !isCurrent && 'border-muted-foreground/30'
                     )}
                   >
                     {isCompleted ? (
@@ -104,10 +101,8 @@ export function ProgressStepper({
                   {!isLast && (
                     <div
                       className={cn(
-                        "w-0.5 h-8",
-                        isCompleted
-                          ? "bg-primary"
-                          : "bg-muted-foreground/20"
+                        'w-0.5 h-8',
+                        isCompleted ? 'bg-primary' : 'bg-muted-foreground/20'
                       )}
                     />
                   )}
@@ -118,15 +113,14 @@ export function ProgressStepper({
                   <motion.p
                     initial={false}
                     animate={{
-                      color: isCurrent || isCompleted
-                        ? "var(--foreground)"
-                        : "var(--muted-foreground)",
+                      color:
+                        isCurrent || isCompleted ? 'var(--foreground)' : 'var(--muted-foreground)',
                     }}
                     className={cn(
-                      "text-sm font-medium",
-                      isCurrent && "text-foreground",
-                      isCompleted && "text-foreground",
-                      !isCurrent && !isCompleted && "text-muted-foreground"
+                      'text-sm font-medium',
+                      isCurrent && 'text-foreground',
+                      isCompleted && 'text-foreground',
+                      !isCurrent && !isCompleted && 'text-muted-foreground'
                     )}
                   >
                     {STAGE_DESCRIPTIONS[stage]}
@@ -142,7 +136,7 @@ export function ProgressStepper({
                   )}
                 </div>
               </div>
-            );
+            )
           })}
         </div>
       </div>
@@ -150,23 +144,21 @@ export function ProgressStepper({
       {/* Bottom section */}
       <div className="mt-auto px-4 py-3 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
-          {progressPercentage === 100
-            ? "Ready to create!"
-            : "Complete all steps to submit"}
+          {progressPercentage === 100 ? 'Ready to create!' : 'Complete all steps to submit'}
         </p>
       </div>
     </div>
-  );
+  )
 }
 
 /**
  * Compact horizontal progress indicator for mobile
  */
 interface CompactProgressProps {
-  currentStage: ChatStage;
-  completedStages: ChatStage[];
-  progressPercentage: number;
-  className?: string;
+  currentStage: ChatStage
+  completedStages: ChatStage[]
+  progressPercentage: number
+  className?: string
 }
 
 export function CompactProgress({
@@ -176,12 +168,12 @@ export function CompactProgress({
   className,
 }: CompactProgressProps) {
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn('flex items-center gap-3', className)}>
       {/* Progress dots */}
       <div className="flex items-center gap-1.5">
         {CHAT_STAGES.map((stage) => {
-          const isCompleted = isStageCompleted(stage, completedStages);
-          const isCurrent = isCurrentStage(stage, currentStage);
+          const isCompleted = isStageCompleted(stage, completedStages)
+          const isCurrent = isCurrentStage(stage, currentStage)
 
           return (
             <motion.div
@@ -191,33 +183,31 @@ export function CompactProgress({
                 scale: isCurrent ? 1.2 : 1,
               }}
               className={cn(
-                "w-2 h-2 rounded-full transition-colors",
-                isCompleted && "bg-primary",
-                isCurrent && !isCompleted && "bg-primary/50",
-                !isCompleted && !isCurrent && "bg-muted"
+                'w-2 h-2 rounded-full transition-colors',
+                isCompleted && 'bg-primary',
+                isCurrent && !isCompleted && 'bg-primary/50',
+                !isCompleted && !isCurrent && 'bg-muted'
               )}
               title={STAGE_DESCRIPTIONS[stage]}
             />
-          );
+          )
         })}
       </div>
 
       {/* Percentage */}
-      <span className="text-xs text-muted-foreground">
-        {progressPercentage}%
-      </span>
+      <span className="text-xs text-muted-foreground">{progressPercentage}%</span>
     </div>
-  );
+  )
 }
 
 /**
  * Subtle top progress bar - minimal design that doesn't take much space
  */
 interface TopProgressBarProps {
-  currentStage: ChatStage;
-  completedStages: ChatStage[];
-  progressPercentage: number;
-  className?: string;
+  currentStage: ChatStage
+  completedStages: ChatStage[]
+  progressPercentage: number
+  className?: string
 }
 
 export function TopProgressBar({
@@ -226,17 +216,17 @@ export function TopProgressBar({
   progressPercentage,
   className,
 }: TopProgressBarProps) {
-  const currentStageLabel = STAGE_DESCRIPTIONS[currentStage];
+  const currentStageLabel = STAGE_DESCRIPTIONS[currentStage]
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn('w-full', className)}>
       {/* Thin progress bar at very top */}
       <div className="h-1 bg-muted/50 w-full">
         <motion.div
           className="h-full bg-primary"
           initial={{ width: 0 }}
           animate={{ width: `${progressPercentage}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         />
       </div>
 
@@ -246,35 +236,31 @@ export function TopProgressBar({
           {/* Stage dots */}
           <div className="flex items-center gap-1">
             {CHAT_STAGES.map((stage) => {
-              const isCompleted = isStageCompleted(stage, completedStages);
-              const isCurrent = isCurrentStage(stage, currentStage);
+              const isCompleted = isStageCompleted(stage, completedStages)
+              const isCurrent = isCurrentStage(stage, currentStage)
 
               return (
                 <div
                   key={stage}
                   className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-colors",
-                    isCompleted && "bg-primary",
-                    isCurrent && !isCompleted && "bg-primary/60",
-                    !isCompleted && !isCurrent && "bg-muted-foreground/30"
+                    'w-1.5 h-1.5 rounded-full transition-colors',
+                    isCompleted && 'bg-primary',
+                    isCurrent && !isCompleted && 'bg-primary/60',
+                    !isCompleted && !isCurrent && 'bg-muted-foreground/30'
                   )}
                   title={STAGE_DESCRIPTIONS[stage]}
                 />
-              );
+              )
             })}
           </div>
 
           {/* Current step label */}
-          <span className="text-muted-foreground">
-            {currentStageLabel}
-          </span>
+          <span className="text-muted-foreground">{currentStageLabel}</span>
         </div>
 
         {/* Percentage */}
-        <span className="text-muted-foreground/70">
-          {progressPercentage}%
-        </span>
+        <span className="text-muted-foreground/70">{progressPercentage}%</span>
       </div>
     </div>
-  );
+  )
 }

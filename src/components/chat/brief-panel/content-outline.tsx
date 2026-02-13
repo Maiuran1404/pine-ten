@@ -1,25 +1,24 @@
-"use client";
+'use client'
 
-import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronDown,
   ChevronRight,
   Plus,
   Trash2,
-  GripVertical,
   Edit2,
   Check,
   X,
   Calendar,
   FileText,
   Layers,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import type {
   ContentOutline,
   OutlineItem,
@@ -27,52 +26,43 @@ import type {
   TaskType,
   Platform,
   ContentType,
-  Dimension,
-} from "./types";
-import { PLATFORM_DISPLAY_NAMES } from "./types";
+} from './types'
+import { PLATFORM_DISPLAY_NAMES } from './types'
 
 // =============================================================================
 // OUTLINE ITEM COMPONENT
 // =============================================================================
 
 interface OutlineItemRowProps {
-  item: OutlineItem;
-  onUpdate: (item: OutlineItem) => void;
-  onDelete: () => void;
-  isDragging?: boolean;
+  item: OutlineItem
+  onUpdate: (item: OutlineItem) => void
+  onDelete: () => void
+  isDragging?: boolean
 }
 
-function OutlineItemRow({
-  item,
-  onUpdate,
-  onDelete,
-  isDragging,
-}: OutlineItemRowProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(item.title);
-  const [editDescription, setEditDescription] = useState(item.description);
+function OutlineItemRow({ item, onUpdate, onDelete, isDragging }: OutlineItemRowProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(item.title)
+  const [editDescription, setEditDescription] = useState(item.description)
 
   const handleSave = () => {
     onUpdate({
       ...item,
       title: editTitle,
       description: editDescription,
-    });
-    setIsEditing(false);
-  };
+    })
+    setIsEditing(false)
+  }
 
   const handleCancel = () => {
-    setEditTitle(item.title);
-    setEditDescription(item.description);
-    setIsEditing(false);
-  };
+    setEditTitle(item.title)
+    setEditDescription(item.description)
+    setIsEditing(false)
+  }
 
   if (isEditing) {
     return (
-      <motion.div
-        layout
-        className="bg-muted/50 rounded-lg p-3 space-y-2"
-      >
+      <motion.div layout className="bg-muted/50 rounded-lg p-3 space-y-2">
         <Input
           value={editTitle}
           onChange={(e) => setEditTitle(e.target.value)}
@@ -98,15 +88,15 @@ function OutlineItemRow({
           </Button>
         </div>
       </motion.div>
-    );
+    )
   }
 
   return (
     <motion.div
       layout
       className={cn(
-        "group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all cursor-pointer",
-        isDragging && "opacity-50"
+        'group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all cursor-pointer',
+        isDragging && 'opacity-50'
       )}
       onClick={() => setIsEditing(true)}
     >
@@ -118,9 +108,7 @@ function OutlineItemRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium truncate">{item.title}</h4>
-        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-          {item.description}
-        </p>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
         {/* Metadata badges */}
         <div className="flex flex-wrap gap-1.5 mt-2">
           {item.scheduledDate && (
@@ -142,8 +130,8 @@ function OutlineItemRow({
           size="icon"
           className="h-6 w-6"
           onClick={(e) => {
-            e.stopPropagation();
-            setIsEditing(true);
+            e.stopPropagation()
+            setIsEditing(true)
           }}
         >
           <Edit2 className="h-3 w-3" />
@@ -153,15 +141,15 @@ function OutlineItemRow({
           size="icon"
           className="h-6 w-6 text-destructive"
           onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
+            e.stopPropagation()
+            onDelete()
           }}
         >
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
     </motion.div>
-  );
+  )
 }
 
 // =============================================================================
@@ -169,11 +157,11 @@ function OutlineItemRow({
 // =============================================================================
 
 interface WeekGroupSectionProps {
-  group: WeekGroup;
-  onToggle: () => void;
-  onUpdateItem: (itemId: string, item: OutlineItem) => void;
-  onDeleteItem: (itemId: string) => void;
-  onAddItem: () => void;
+  group: WeekGroup
+  onToggle: () => void
+  onUpdateItem: (itemId: string, item: OutlineItem) => void
+  onDeleteItem: (itemId: string) => void
+  onAddItem: () => void
 }
 
 function WeekGroupSection({
@@ -198,7 +186,7 @@ function WeekGroupSection({
           )}
           <span className="font-medium text-sm">{group.label}</span>
           <Badge variant="secondary" className="text-xs">
-            {group.items.length} {group.items.length === 1 ? "item" : "items"}
+            {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
           </Badge>
         </div>
       </button>
@@ -208,7 +196,7 @@ function WeekGroupSection({
         {group.isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+            animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
@@ -238,7 +226,7 @@ function WeekGroupSection({
         )}
       </AnimatePresence>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -246,8 +234,8 @@ function WeekGroupSection({
 // =============================================================================
 
 interface SingleAssetOutlineProps {
-  outline: ContentOutline | null;
-  onOutlineUpdate: (outline: ContentOutline) => void;
+  outline: ContentOutline | null
+  onOutlineUpdate: (outline: ContentOutline) => void
 }
 
 function SingleAssetOutline({ outline, onOutlineUpdate }: SingleAssetOutlineProps) {
@@ -259,23 +247,21 @@ function SingleAssetOutline({ outline, onOutlineUpdate }: SingleAssetOutlineProp
           Content outline will appear here once generated
         </p>
       </div>
-    );
+    )
   }
 
   // For single asset, just show the items directly without week grouping
-  const allItems = outline.weekGroups.flatMap((g) => g.items);
+  const allItems = outline.weekGroups.flatMap((g) => g.items)
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">{outline.title}</h4>
         <Badge variant="secondary" className="text-xs">
-          {allItems.length} {allItems.length === 1 ? "item" : "items"}
+          {allItems.length} {allItems.length === 1 ? 'item' : 'items'}
         </Badge>
       </div>
-      {outline.subtitle && (
-        <p className="text-xs text-muted-foreground">{outline.subtitle}</p>
-      )}
+      {outline.subtitle && <p className="text-xs text-muted-foreground">{outline.subtitle}</p>}
       <div className="space-y-2">
         {allItems.map((item, idx) => (
           <OutlineItemRow
@@ -284,28 +270,26 @@ function SingleAssetOutline({ outline, onOutlineUpdate }: SingleAssetOutlineProp
             onUpdate={(updatedItem) => {
               const newGroups = outline.weekGroups.map((g) => ({
                 ...g,
-                items: g.items.map((i) =>
-                  i.id === item.id ? updatedItem : i
-                ),
-              }));
-              onOutlineUpdate({ ...outline, weekGroups: newGroups });
+                items: g.items.map((i) => (i.id === item.id ? updatedItem : i)),
+              }))
+              onOutlineUpdate({ ...outline, weekGroups: newGroups })
             }}
             onDelete={() => {
               const newGroups = outline.weekGroups.map((g) => ({
                 ...g,
                 items: g.items.filter((i) => i.id !== item.id),
-              }));
+              }))
               onOutlineUpdate({
                 ...outline,
                 weekGroups: newGroups,
                 totalItems: outline.totalItems - 1,
-              });
+              })
             }}
           />
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -313,9 +297,9 @@ function SingleAssetOutline({ outline, onOutlineUpdate }: SingleAssetOutlineProp
 // =============================================================================
 
 interface ContentOutlinePanelProps {
-  outline: ContentOutline | null;
-  taskType: TaskType | null;
-  onOutlineUpdate: (outline: ContentOutline | null) => void;
+  outline: ContentOutline | null
+  taskType: TaskType | null
+  onOutlineUpdate: (outline: ContentOutline | null) => void
 }
 
 export function ContentOutlinePanel({
@@ -326,19 +310,19 @@ export function ContentOutlinePanel({
   // Toggle week group expansion
   const handleToggleWeek = useCallback(
     (weekNumber: number) => {
-      if (!outline) return;
+      if (!outline) return
       const newGroups = outline.weekGroups.map((g) =>
         g.weekNumber === weekNumber ? { ...g, isExpanded: !g.isExpanded } : g
-      );
-      onOutlineUpdate({ ...outline, weekGroups: newGroups });
+      )
+      onOutlineUpdate({ ...outline, weekGroups: newGroups })
     },
     [outline, onOutlineUpdate]
-  );
+  )
 
   // Update an item
   const handleUpdateItem = useCallback(
     (weekNumber: number, itemId: string, updatedItem: OutlineItem) => {
-      if (!outline) return;
+      if (!outline) return
       const newGroups = outline.weekGroups.map((g) =>
         g.weekNumber === weekNumber
           ? {
@@ -346,64 +330,60 @@ export function ContentOutlinePanel({
               items: g.items.map((i) => (i.id === itemId ? updatedItem : i)),
             }
           : g
-      );
-      onOutlineUpdate({ ...outline, weekGroups: newGroups });
+      )
+      onOutlineUpdate({ ...outline, weekGroups: newGroups })
     },
     [outline, onOutlineUpdate]
-  );
+  )
 
   // Delete an item
   const handleDeleteItem = useCallback(
     (weekNumber: number, itemId: string) => {
-      if (!outline) return;
+      if (!outline) return
       const newGroups = outline.weekGroups.map((g) =>
-        g.weekNumber === weekNumber
-          ? { ...g, items: g.items.filter((i) => i.id !== itemId) }
-          : g
-      );
+        g.weekNumber === weekNumber ? { ...g, items: g.items.filter((i) => i.id !== itemId) } : g
+      )
       onOutlineUpdate({
         ...outline,
         weekGroups: newGroups,
         totalItems: outline.totalItems - 1,
-      });
+      })
     },
     [outline, onOutlineUpdate]
-  );
+  )
 
   // Add an item to a week
   const handleAddItem = useCallback(
     (weekNumber: number) => {
-      if (!outline) return;
-      const group = outline.weekGroups.find((g) => g.weekNumber === weekNumber);
-      if (!group) return;
+      if (!outline) return
+      const group = outline.weekGroups.find((g) => g.weekNumber === weekNumber)
+      if (!group) return
 
       const newItem: OutlineItem = {
         id: `item-${Date.now()}`,
         number: outline.totalItems + 1,
-        title: "New Item",
-        description: "Add description...",
-        platform: "instagram",
-        contentType: "post",
-        dimensions: { width: 1080, height: 1080, label: "Square", aspectRatio: "1:1" },
+        title: 'New Item',
+        description: 'Add description...',
+        platform: 'instagram',
+        contentType: 'post',
+        dimensions: { width: 1080, height: 1080, label: 'Square', aspectRatio: '1:1' },
         week: weekNumber,
         day: (weekNumber - 1) * 7 + group.items.length + 1,
-        status: "draft",
-      };
+        status: 'draft',
+      }
 
       const newGroups = outline.weekGroups.map((g) =>
-        g.weekNumber === weekNumber
-          ? { ...g, items: [...g.items, newItem] }
-          : g
-      );
+        g.weekNumber === weekNumber ? { ...g, items: [...g.items, newItem] } : g
+      )
 
       onOutlineUpdate({
         ...outline,
         weekGroups: newGroups,
         totalItems: outline.totalItems + 1,
-      });
+      })
     },
     [outline, onOutlineUpdate]
-  );
+  )
 
   // Empty state
   if (!outline || outline.weekGroups.length === 0) {
@@ -411,27 +391,22 @@ export function ContentOutlinePanel({
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Layers className="h-8 w-8 text-muted-foreground/50 mb-3" />
         <p className="text-sm text-muted-foreground mb-1">
-          {taskType === "multi_asset_plan"
-            ? "Content outline will be generated"
-            : "No outline needed for single assets"}
+          {taskType === 'multi_asset_plan'
+            ? 'Content outline will be generated'
+            : 'No outline needed for single assets'}
         </p>
         <p className="text-xs text-muted-foreground/70">
-          {taskType === "multi_asset_plan"
-            ? "Continue the conversation to build your content plan"
+          {taskType === 'multi_asset_plan'
+            ? 'Continue the conversation to build your content plan'
             : "Single assets don't require an outline"}
         </p>
       </div>
-    );
+    )
   }
 
   // Single asset view
-  if (taskType === "single_asset") {
-    return (
-      <SingleAssetOutline
-        outline={outline}
-        onOutlineUpdate={onOutlineUpdate}
-      />
-    );
+  if (taskType === 'single_asset') {
+    return <SingleAssetOutline outline={outline} onOutlineUpdate={onOutlineUpdate} />
   }
 
   // Multi-asset plan with week grouping
@@ -441,9 +416,7 @@ export function ContentOutlinePanel({
       <div>
         <h4 className="text-sm font-semibold">{outline.title}</h4>
         {outline.subtitle && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {outline.subtitle}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{outline.subtitle}</p>
         )}
         <div className="flex items-center gap-2 mt-2">
           <Badge variant="secondary" className="text-xs">
@@ -462,12 +435,8 @@ export function ContentOutlinePanel({
             key={group.weekNumber}
             group={group}
             onToggle={() => handleToggleWeek(group.weekNumber)}
-            onUpdateItem={(itemId, item) =>
-              handleUpdateItem(group.weekNumber, itemId, item)
-            }
-            onDeleteItem={(itemId) =>
-              handleDeleteItem(group.weekNumber, itemId)
-            }
+            onUpdateItem={(itemId, item) => handleUpdateItem(group.weekNumber, itemId, item)}
+            onDeleteItem={(itemId) => handleDeleteItem(group.weekNumber, itemId)}
             onAddItem={() => handleAddItem(group.weekNumber)}
           />
         ))}
@@ -479,7 +448,7 @@ export function ContentOutlinePanel({
         size="sm"
         className="w-full"
         onClick={() => {
-          const newWeekNumber = outline.weekGroups.length + 1;
+          const newWeekNumber = outline.weekGroups.length + 1
           onOutlineUpdate({
             ...outline,
             weekGroups: [
@@ -491,14 +460,14 @@ export function ContentOutlinePanel({
                 isExpanded: true,
               },
             ],
-          });
+          })
         }}
       >
         <Plus className="h-3.5 w-3.5 mr-2" />
         Add Week
       </Button>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -507,18 +476,18 @@ export function ContentOutlinePanel({
 
 export function generateOutlineFromItems(
   items: Array<{ title: string; description: string }>,
-  platform: Platform = "instagram",
-  contentType: ContentType = "post",
+  platform: Platform = 'instagram',
+  contentType: ContentType = 'post',
   durationDays: number = 30
 ): ContentOutline {
-  const weeksCount = Math.ceil(durationDays / 7);
-  const itemsPerWeek = Math.ceil(items.length / weeksCount);
+  const weeksCount = Math.ceil(durationDays / 7)
+  const itemsPerWeek = Math.ceil(items.length / weeksCount)
 
-  const weekGroups: WeekGroup[] = [];
+  const weekGroups: WeekGroup[] = []
 
   for (let week = 1; week <= weeksCount; week++) {
-    const startIdx = (week - 1) * itemsPerWeek;
-    const weekItems = items.slice(startIdx, startIdx + itemsPerWeek);
+    const startIdx = (week - 1) * itemsPerWeek
+    const weekItems = items.slice(startIdx, startIdx + itemsPerWeek)
 
     const outlineItems: OutlineItem[] = weekItems.map((item, idx) => ({
       id: `item-${week}-${idx}`,
@@ -527,18 +496,18 @@ export function generateOutlineFromItems(
       description: item.description,
       platform,
       contentType,
-      dimensions: { width: 1080, height: 1080, label: "Square", aspectRatio: "1:1" },
+      dimensions: { width: 1080, height: 1080, label: 'Square', aspectRatio: '1:1' },
       week,
       day: (week - 1) * 7 + idx + 1,
-      status: "draft" as const,
-    }));
+      status: 'draft' as const,
+    }))
 
     weekGroups.push({
       weekNumber: week,
       label: `Week ${week}`,
       items: outlineItems,
       isExpanded: week === 1, // Only first week expanded by default
-    });
+    })
   }
 
   return {
@@ -546,7 +515,7 @@ export function generateOutlineFromItems(
     subtitle: `${items.length} pieces of content across ${weeksCount} weeks`,
     totalItems: items.length,
     weekGroups,
-  };
+  }
 }
 
-export default ContentOutlinePanel;
+export default ContentOutlinePanel

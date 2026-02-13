@@ -1,21 +1,15 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -27,110 +21,110 @@ import {
   Mail,
   Eye,
   Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react'
+import { toast } from 'sonner'
 
 interface TaskFile {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  isDeliverable: boolean;
-  createdAt: string;
+  id: string
+  fileName: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
+  isDeliverable: boolean
+  createdAt: string
 }
 
 interface TaskUser {
-  id: string;
-  name: string | null;
-  email: string;
-  image: string | null;
+  id: string
+  name: string | null
+  email: string
+  image: string | null
 }
 
 interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  client: TaskUser | null;
-  freelancer: TaskUser | null;
-  deliverables: TaskFile[];
-  attachments: TaskFile[];
+  id: string
+  title: string
+  description: string
+  status: string
+  createdAt: string
+  client: TaskUser | null
+  freelancer: TaskUser | null
+  deliverables: TaskFile[]
+  attachments: TaskFile[]
 }
 
 export default function AdminVerifyDeliverablePage() {
-  const params = useParams();
-  const router = useRouter();
-  const [task, setTask] = useState<Task | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const params = useParams()
+  const router = useRouter()
+  const [task, setTask] = useState<Task | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (params.taskId) {
-      fetchTask(params.taskId as string);
+      fetchTask(params.taskId as string)
     }
-  }, [params.taskId]);
+  }, [params.taskId])
 
   const fetchTask = async (id: string) => {
     try {
-      const response = await fetch(`/api/admin/verify/${id}`);
+      const response = await fetch(`/api/admin/verify/${id}`)
       if (response.ok) {
-        const data = await response.json();
-        setTask(data.data?.task || data.task);
+        const data = await response.json()
+        setTask(data.data?.task || data.task)
       } else if (response.status === 404) {
-        setError("Task not found");
+        setError('Task not found')
       } else {
-        setError("Failed to load task");
+        setError('Failed to load task')
       }
     } catch (err) {
-      console.error("Failed to fetch task:", err);
-      setError("Failed to load task");
+      console.error('Failed to fetch task:', err)
+      setError('Failed to load task')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const handleVerification = async (action: "approve" | "reject") => {
-    if (action === "reject" && !feedback.trim()) {
-      toast.error("Please provide feedback for the rejection");
-      return;
+  const handleVerification = async (action: 'approve' | 'reject') => {
+    if (action === 'reject' && !feedback.trim()) {
+      toast.error('Please provide feedback for the rejection')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      const taskId = params.taskId as string;
+      const taskId = params.taskId as string
       const response = await fetch(`/api/admin/verify/${taskId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, feedback: feedback.trim() }),
-      });
+      })
 
-      const contentType = response.headers.get("content-type");
+      const contentType = response.headers.get('content-type')
       if (response.ok) {
         toast.success(
-          action === "approve"
-            ? "Deliverable approved! Client has been notified."
-            : "Deliverable rejected. Freelancer has been notified."
-        );
-        router.push("/admin/verify");
-      } else if (contentType?.includes("application/json")) {
-        const data = await response.json();
-        toast.error(data.error?.message || data.error || "Failed to process verification");
+          action === 'approve'
+            ? 'Deliverable approved! Client has been notified.'
+            : 'Deliverable rejected. Freelancer has been notified.'
+        )
+        router.push('/admin/verify')
+      } else if (contentType?.includes('application/json')) {
+        const data = await response.json()
+        toast.error(data.error?.message || data.error || 'Failed to process verification')
       } else {
-        toast.error("Failed to process verification. Please try again.");
+        toast.error('Failed to process verification. Please try again.')
       }
     } catch (err) {
-      console.error("Verification error:", err);
-      toast.error("Failed to process verification");
+      console.error('Verification error:', err)
+      toast.error('Failed to process verification')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const isImage = (fileType: string) => fileType.startsWith("image/");
+  const isImage = (fileType: string) => fileType.startsWith('image/')
 
   if (isLoading) {
     return (
@@ -148,7 +142,7 @@ export default function AdminVerifyDeliverablePage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   if (error || !task) {
@@ -163,9 +157,7 @@ export default function AdminVerifyDeliverablePage() {
         <Card>
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {error || "Task not found"}
-            </h2>
+            <h2 className="text-xl font-semibold mb-2">{error || 'Task not found'}</h2>
             <p className="text-muted-foreground mb-4">
               The task you&apos;re looking for doesn&apos;t exist or has already been verified.
             </p>
@@ -175,10 +167,10 @@ export default function AdminVerifyDeliverablePage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
-  const isPendingReview = task.status === "PENDING_ADMIN_REVIEW";
+  const isPendingReview = task.status === 'PENDING_ADMIN_REVIEW'
 
   return (
     <div className="space-y-6">
@@ -195,11 +187,8 @@ export default function AdminVerifyDeliverablePage() {
             <p className="text-muted-foreground mt-1">{task.title}</p>
           </div>
         </div>
-        <Badge
-          variant={isPendingReview ? "destructive" : "secondary"}
-          className="text-sm"
-        >
-          {isPendingReview ? "Pending Review" : task.status.replace(/_/g, " ")}
+        <Badge variant={isPendingReview ? 'destructive' : 'secondary'} className="text-sm">
+          {isPendingReview ? 'Pending Review' : task.status.replace(/_/g, ' ')}
         </Badge>
       </div>
 
@@ -234,9 +223,7 @@ export default function AdminVerifyDeliverablePage() {
                 <Eye className="h-5 w-5" />
                 Deliverables to Review
               </CardTitle>
-              <CardDescription>
-                Review these files before approving for the client
-              </CardDescription>
+              <CardDescription>Review these files before approving for the client</CardDescription>
             </CardHeader>
             <CardContent>
               {task.deliverables.length === 0 ? (
@@ -246,10 +233,7 @@ export default function AdminVerifyDeliverablePage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {task.deliverables.map((file) => (
-                    <div
-                      key={file.id}
-                      className="border rounded-lg overflow-hidden"
-                    >
+                    <div key={file.id} className="border rounded-lg overflow-hidden">
                       {isImage(file.fileType) ? (
                         <a
                           href={file.fileUrl}
@@ -322,7 +306,7 @@ export default function AdminVerifyDeliverablePage() {
                 </div>
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => handleVerification("approve")}
+                    onClick={() => handleVerification('approve')}
                     disabled={isSubmitting}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                   >
@@ -335,7 +319,7 @@ export default function AdminVerifyDeliverablePage() {
                   </Button>
                   <Button
                     variant="destructive"
-                    onClick={() => handleVerification("reject")}
+                    onClick={() => handleVerification('reject')}
                     disabled={isSubmitting}
                     className="flex-1"
                   >
@@ -367,12 +351,10 @@ export default function AdminVerifyDeliverablePage() {
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={task.client.image || undefined} />
-                    <AvatarFallback>
-                      {task.client.name?.[0]?.toUpperCase() || "C"}
-                    </AvatarFallback>
+                    <AvatarFallback>{task.client.name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{task.client.name || "Unknown"}</p>
+                    <p className="font-medium">{task.client.name || 'Unknown'}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Mail className="h-3 w-3" />
                       {task.client.email}
@@ -397,11 +379,11 @@ export default function AdminVerifyDeliverablePage() {
                   <Avatar>
                     <AvatarImage src={task.freelancer.image || undefined} />
                     <AvatarFallback>
-                      {task.freelancer.name?.[0]?.toUpperCase() || "F"}
+                      {task.freelancer.name?.[0]?.toUpperCase() || 'F'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{task.freelancer.name || "Unknown"}</p>
+                    <p className="font-medium">{task.freelancer.name || 'Unknown'}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Mail className="h-3 w-3" />
                       {task.freelancer.email}
@@ -429,5 +411,5 @@ export default function AdminVerifyDeliverablePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,36 +1,40 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Playwright configuration for e2e testing
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:3000",
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
 
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 
-  // Run local dev server before starting tests (if not already running)
   webServer: process.env.CI
-    ? undefined
+    ? {
+        command: 'pnpm start',
+        url: 'http://localhost:3000',
+        reuseExistingServer: false,
+        timeout: 120 * 1000,
+      }
     : {
-        command: "npm run dev",
-        url: "http://localhost:3000",
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
         reuseExistingServer: true,
         timeout: 120 * 1000,
       },
-});
+})

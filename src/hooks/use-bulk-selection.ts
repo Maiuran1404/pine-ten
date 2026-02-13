@@ -1,21 +1,21 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from 'react'
 
 interface UseBulkSelectionOptions<T> {
-  items: T[];
-  getId: (item: T) => string;
+  items: T[]
+  getId: (item: T) => string
 }
 
 interface UseBulkSelectionReturn<T> {
-  selectedIds: Set<string>;
-  isSelected: (id: string) => boolean;
-  isAllSelected: boolean;
-  isPartiallySelected: boolean;
-  selectedCount: number;
-  toggle: (id: string) => void;
-  toggleAll: () => void;
-  selectAll: () => void;
-  clearSelection: () => void;
-  getSelectedItems: () => T[];
+  selectedIds: Set<string>
+  isSelected: (id: string) => boolean
+  isAllSelected: boolean
+  isPartiallySelected: boolean
+  selectedCount: number
+  toggle: (id: string) => void
+  toggleAll: () => void
+  selectAll: () => void
+  clearSelection: () => void
+  getSelectedItems: () => T[]
 }
 
 /**
@@ -27,57 +27,54 @@ export function useBulkSelection<T>({
   items,
   getId,
 }: UseBulkSelectionOptions<T>): UseBulkSelectionReturn<T> {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const isSelected = useCallback(
-    (id: string) => selectedIds.has(id),
-    [selectedIds]
-  );
+  const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds])
 
   const isAllSelected = useMemo(
     () => items.length > 0 && selectedIds.size === items.length,
     [items.length, selectedIds.size]
-  );
+  )
 
   const isPartiallySelected = useMemo(
     () => selectedIds.size > 0 && selectedIds.size < items.length,
     [items.length, selectedIds.size]
-  );
+  )
 
-  const selectedCount = selectedIds.size;
+  const selectedCount = selectedIds.size
 
   const toggle = useCallback((id: string) => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(id)) {
-        next.delete(id);
+        next.delete(id)
       } else {
-        next.add(id);
+        next.add(id)
       }
-      return next;
-    });
-  }, []);
+      return next
+    })
+  }, [])
 
   const toggleAll = useCallback(() => {
     if (isAllSelected) {
-      setSelectedIds(new Set());
+      setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(items.map(getId)));
+      setSelectedIds(new Set(items.map(getId)))
     }
-  }, [isAllSelected, items, getId]);
+  }, [isAllSelected, items, getId])
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(items.map(getId)));
-  }, [items, getId]);
+    setSelectedIds(new Set(items.map(getId)))
+  }, [items, getId])
 
   const clearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-  }, []);
+    setSelectedIds(new Set())
+  }, [])
 
   const getSelectedItems = useCallback(
     () => items.filter((item) => selectedIds.has(getId(item))),
     [items, selectedIds, getId]
-  );
+  )
 
   return {
     selectedIds,
@@ -90,5 +87,5 @@ export function useBulkSelection<T>({
     selectAll,
     clearSelection,
     getSelectedItems,
-  };
+  }
 }

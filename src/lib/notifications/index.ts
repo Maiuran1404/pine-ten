@@ -1,29 +1,29 @@
-import { db } from "@/db";
-import { notifications, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { sendEmail, emailTemplates } from "./email";
-import { sendWhatsApp, whatsappTemplates } from "./whatsapp";
-import type { NotificationPreferences } from "@/types";
-import { logger } from "@/lib/logger";
+import { db } from '@/db'
+import { notifications, users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { sendEmail, emailTemplates } from './email'
+import { sendWhatsApp, whatsappTemplates } from './whatsapp'
+import type { NotificationPreferences } from '@/types'
+import { logger } from '@/lib/logger'
 
 type NotificationType =
-  | "TASK_ASSIGNED"
-  | "TASK_OFFERED"
-  | "TASK_COMPLETED"
-  | "REVISION_REQUESTED"
-  | "LOW_CREDITS"
-  | "FREELANCER_APPROVED"
-  | "NEW_TASK_AVAILABLE"
-  | "NEW_MESSAGE";
+  | 'TASK_ASSIGNED'
+  | 'TASK_OFFERED'
+  | 'TASK_COMPLETED'
+  | 'REVISION_REQUESTED'
+  | 'LOW_CREDITS'
+  | 'FREELANCER_APPROVED'
+  | 'NEW_TASK_AVAILABLE'
+  | 'NEW_MESSAGE'
 
 interface NotifyParams {
-  userId: string;
-  type: NotificationType;
-  title: string;
-  content: string;
-  taskId?: string;
-  taskUrl?: string;
-  additionalData?: Record<string, string>;
+  userId: string
+  type: NotificationType
+  title: string
+  content: string
+  taskId?: string
+  taskUrl?: string
+  additionalData?: Record<string, string>
 }
 
 export async function notify({
@@ -36,39 +36,35 @@ export async function notify({
   additionalData,
 }: NotifyParams) {
   // Get user with preferences
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1)
 
   if (!user.length) {
-    logger.error({ userId }, "User not found for notification");
-    return;
+    logger.error({ userId }, 'User not found for notification')
+    return
   }
 
-  const userData = user[0];
+  const userData = user[0]
   const prefs = (userData.notificationPreferences as NotificationPreferences) || {
     email: true,
     whatsapp: true,
     inApp: true,
-  };
+  }
 
-  const results: { channel: string; success: boolean }[] = [];
+  const results: { channel: string; success: boolean }[] = []
 
   // Always create in-app notification
   if (prefs.inApp !== false) {
     await db.insert(notifications).values({
       userId,
       type,
-      channel: "IN_APP",
+      channel: 'IN_APP',
       title,
       content,
       relatedTaskId: taskId,
-      status: "SENT",
+      status: 'SENT',
       sentAt: new Date(),
-    });
-    results.push({ channel: "IN_APP", success: true });
+    })
+    results.push({ channel: 'IN_APP', success: true })
   }
 
   // Send email if enabled
@@ -76,30 +72,30 @@ export async function notify({
     const emailData = getEmailTemplate(type, {
       userName: userData.name,
       taskTitle: additionalData?.taskTitle || title,
-      taskUrl: taskUrl || "",
-      feedback: additionalData?.feedback || "",
-      remainingCredits: parseInt(additionalData?.remainingCredits || "0"),
-    });
+      taskUrl: taskUrl || '',
+      feedback: additionalData?.feedback || '',
+      remainingCredits: parseInt(additionalData?.remainingCredits || '0'),
+    })
 
     if (emailData) {
       const emailResult = await sendEmail({
         to: userData.email,
         subject: emailData.subject,
         html: emailData.html,
-      });
+      })
 
       await db.insert(notifications).values({
         userId,
         type,
-        channel: "EMAIL",
+        channel: 'EMAIL',
         title,
         content,
         relatedTaskId: taskId,
-        status: emailResult.success ? "SENT" : "FAILED",
+        status: emailResult.success ? 'SENT' : 'FAILED',
         sentAt: new Date(),
-      });
+      })
 
-      results.push({ channel: "EMAIL", success: emailResult.success });
+      results.push({ channel: 'EMAIL', success: emailResult.success })
     }
   }
 
@@ -107,94 +103,91 @@ export async function notify({
   if (prefs.whatsapp !== false && userData.phone) {
     const message = getWhatsAppMessage(type, {
       taskTitle: additionalData?.taskTitle || title,
-      taskUrl: taskUrl || "",
-      credits: parseInt(additionalData?.credits || "0"),
-    });
+      taskUrl: taskUrl || '',
+      credits: parseInt(additionalData?.credits || '0'),
+    })
 
     if (message) {
       const whatsappResult = await sendWhatsApp({
         to: userData.phone,
         message,
-      });
+      })
 
       await db.insert(notifications).values({
         userId,
         type,
-        channel: "WHATSAPP",
+        channel: 'WHATSAPP',
         title,
         content,
         relatedTaskId: taskId,
-        status: whatsappResult.success ? "SENT" : "FAILED",
+        status: whatsappResult.success ? 'SENT' : 'FAILED',
         sentAt: new Date(),
-      });
+      })
 
-      results.push({ channel: "WHATSAPP", success: whatsappResult.success });
+      results.push({ channel: 'WHATSAPP', success: whatsappResult.success })
     }
   }
 
-  return results;
+  return results
 }
 
 function getEmailTemplate(
   type: NotificationType,
   data: {
-    userName: string;
-    taskTitle: string;
-    taskUrl: string;
-    feedback?: string;
-    remainingCredits?: number;
+    userName: string
+    taskTitle: string
+    taskUrl: string
+    feedback?: string
+    remainingCredits?: number
   }
 ) {
   switch (type) {
-    case "TASK_ASSIGNED":
-      return emailTemplates.taskAssigned(data.userName, data.taskTitle, data.taskUrl);
-    case "TASK_COMPLETED":
-      return emailTemplates.taskCompleted(data.userName, data.taskTitle, data.taskUrl);
-    case "REVISION_REQUESTED":
+    case 'TASK_ASSIGNED':
+      return emailTemplates.taskAssigned(data.userName, data.taskTitle, data.taskUrl)
+    case 'TASK_COMPLETED':
+      return emailTemplates.taskCompleted(data.userName, data.taskTitle, data.taskUrl)
+    case 'REVISION_REQUESTED':
       return emailTemplates.revisionRequested(
         data.userName,
         data.taskTitle,
         data.taskUrl,
-        data.feedback || ""
-      );
-    case "LOW_CREDITS":
-      return emailTemplates.lowCredits(
-        data.userName,
-        data.remainingCredits || 0,
-        data.taskUrl
-      );
-    case "FREELANCER_APPROVED":
-      return emailTemplates.freelancerApproved(data.userName, data.taskUrl);
+        data.feedback || ''
+      )
+    case 'LOW_CREDITS':
+      return emailTemplates.lowCredits(data.userName, data.remainingCredits || 0, data.taskUrl)
+    case 'FREELANCER_APPROVED':
+      return emailTemplates.freelancerApproved(data.userName, data.taskUrl)
     default:
-      return null;
+      return null
   }
 }
 
 function getWhatsAppMessage(
   type: NotificationType,
   data: {
-    taskTitle: string;
-    taskUrl: string;
-    credits?: number;
+    taskTitle: string
+    taskUrl: string
+    credits?: number
   }
 ) {
   switch (type) {
-    case "TASK_ASSIGNED":
-      return whatsappTemplates.taskAssigned(data.taskTitle, data.taskUrl);
-    case "TASK_COMPLETED":
-      return whatsappTemplates.taskCompleted(data.taskTitle, data.taskUrl);
-    case "REVISION_REQUESTED":
-      return whatsappTemplates.revisionRequested(data.taskTitle, data.taskUrl);
-    case "NEW_TASK_AVAILABLE":
-      return whatsappTemplates.newTaskAvailable(
-        data.taskTitle,
-        data.credits || 0,
-        data.taskUrl
-      );
+    case 'TASK_ASSIGNED':
+      return whatsappTemplates.taskAssigned(data.taskTitle, data.taskUrl)
+    case 'TASK_COMPLETED':
+      return whatsappTemplates.taskCompleted(data.taskTitle, data.taskUrl)
+    case 'REVISION_REQUESTED':
+      return whatsappTemplates.revisionRequested(data.taskTitle, data.taskUrl)
+    case 'NEW_TASK_AVAILABLE':
+      return whatsappTemplates.newTaskAvailable(data.taskTitle, data.credits || 0, data.taskUrl)
     default:
-      return null;
+      return null
   }
 }
 
-export { sendEmail, emailTemplates, adminNotifications, notifyAdmin } from "./email";
-export { sendWhatsApp, whatsappTemplates, notifyAdminWhatsApp, adminWhatsAppTemplates } from "./whatsapp";
+export { sendEmail, emailTemplates, adminNotifications, notifyAdmin } from './email'
+export {
+  sendWhatsApp,
+  whatsappTemplates,
+  notifyAdminWhatsApp,
+  adminWhatsAppTemplates,
+} from './whatsapp'

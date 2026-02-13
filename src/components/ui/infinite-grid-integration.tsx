@@ -1,18 +1,23 @@
-"use client";
+'use client'
 
-import React, { useRef, useEffect, useId } from 'react';
-import {
-  motion,
-  useMotionValue,
-  useMotionTemplate,
-  useAnimationFrame
-} from "framer-motion";
-import { cn } from '@/lib/utils';
+import React, { useRef, useEffect, useId } from 'react'
+import { motion, useMotionValue, useMotionTemplate, useAnimationFrame } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 /**
  * Helper component for the SVG grid pattern.
  */
-const GridPattern = ({ offsetX, offsetY, size, patternId }: { offsetX: any; offsetY: any; size: number; patternId: string }) => {
+const GridPattern = ({
+  offsetX,
+  offsetY,
+  size,
+  patternId,
+}: {
+  offsetX: any
+  offsetY: any
+  size: number
+  patternId: string
+}) => {
   return (
     <svg className="w-full h-full">
       <defs>
@@ -35,55 +40,55 @@ const GridPattern = ({ offsetX, offsetY, size, patternId }: { offsetX: any; offs
       </defs>
       <rect width="100%" height="100%" fill={`url(#${patternId})`} />
     </svg>
-  );
-};
+  )
+}
 
 interface InfiniteGridProps {
   /** Grid cell size in pixels */
-  gridSize?: number;
+  gridSize?: number
   /** Animation speed for X axis */
-  speedX?: number;
+  speedX?: number
   /** Animation speed for Y axis */
-  speedY?: number;
+  speedY?: number
   /** Radius of the mouse spotlight effect */
-  spotlightRadius?: number;
+  spotlightRadius?: number
   /** Opacity of the background grid (0-1) */
-  backgroundOpacity?: number;
+  backgroundOpacity?: number
   /** Opacity of the highlighted grid (0-1) */
-  highlightOpacity?: number;
+  highlightOpacity?: number
   /** Whether to show decorative blur spheres */
-  showBlurSpheres?: boolean;
+  showBlurSpheres?: boolean
   /** Custom colors for the blur spheres (array of 3 hex colors) */
-  sphereColors?: [string, string, string];
+  sphereColors?: [string, string, string]
   /** Additional className for the container */
-  className?: string;
+  className?: string
   /** Children to render on top of the grid */
-  children?: React.ReactNode;
+  children?: React.ReactNode
   /** Duration of sphere color cycling animation in seconds (lower = faster/more playful) */
-  sphereAnimationDuration?: number;
+  sphereAnimationDuration?: number
   /** Movement range for spheres in pixels (higher = more playful) */
-  sphereMovementRange?: number;
+  sphereMovementRange?: number
   /** Base opacity for spheres (0-1, higher = richer/denser) */
-  sphereOpacity?: number;
+  sphereOpacity?: number
   /** Scale variation range for spheres (higher = more dynamic) */
-  sphereScaleRange?: number;
+  sphereScaleRange?: number
   /** Blur intensity for spheres in pixels */
-  sphereBlur?: number;
+  sphereBlur?: number
   /** Size multiplier for spheres (1 = normal) */
-  sphereSizeMultiplier?: number;
+  sphereSizeMultiplier?: number
 }
 
 /**
  * Helper to convert hex color to rgba with opacity
  */
 const hexToRgba = (hex: string, opacity: number): string => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return `rgba(154, 164, 140, ${opacity})`; // fallback to sage green
-  const r = parseInt(result[1], 16);
-  const g = parseInt(result[2], 16);
-  const b = parseInt(result[3], 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-};
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return `rgba(154, 164, 140, ${opacity})` // fallback to sage green
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
 
 /**
  * The Infinite Grid Component
@@ -108,60 +113,59 @@ export const InfiniteGrid = ({
   sphereSizeMultiplier = 1,
 }: InfiniteGridProps) => {
   // Default colors: Sahara, Green sage, Sea light
-  const defaultColors: [string, string, string] = ["#EDBA8D", "#9AA48C", "#D2ECF2"];
-  const colors = sphereColors || defaultColors;
-  const containerRef = useRef<HTMLDivElement>(null);
-  const patternId = useId();
-  const bgPatternId = `bg-${patternId}`;
-  const hlPatternId = `hl-${patternId}`;
+  const defaultColors: [string, string, string] = ['#EDBA8D', '#9AA48C', '#D2ECF2']
+  const colors = sphereColors || defaultColors
+  const containerRef = useRef<HTMLDivElement>(null)
+  const patternId = useId()
+  const bgPatternId = `bg-${patternId}`
+  const hlPatternId = `hl-${patternId}`
 
   // Track mouse position with Motion Values for performance (avoids React re-renders)
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
 
   // Use window-level mouse tracking since the grid has pointer-events-none
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        mouseX.set(e.clientX - rect.left);
-        mouseY.set(e.clientY - rect.top);
+        const rect = containerRef.current.getBoundingClientRect()
+        mouseX.set(e.clientX - rect.left)
+        mouseY.set(e.clientY - rect.top)
       }
-    };
+    }
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mouseX, mouseY]);
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [mouseX, mouseY])
 
   // Grid offsets for infinite scroll animation
-  const gridOffsetX = useMotionValue(0);
-  const gridOffsetY = useMotionValue(0);
+  const gridOffsetX = useMotionValue(0)
+  const gridOffsetY = useMotionValue(0)
 
   useAnimationFrame(() => {
-    const currentX = gridOffsetX.get();
-    const currentY = gridOffsetY.get();
+    const currentX = gridOffsetX.get()
+    const currentY = gridOffsetY.get()
     // Reset offset at pattern width to simulate infinity
-    gridOffsetX.set((currentX + speedX) % gridSize);
-    gridOffsetY.set((currentY + speedY) % gridSize);
-  });
+    gridOffsetX.set((currentX + speedX) % gridSize)
+    gridOffsetY.set((currentY + speedY) % gridSize)
+  })
 
   // Create a dynamic radial mask for the "flashlight" effect
-  const maskImage = useMotionTemplate`radial-gradient(${spotlightRadius}px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
+  const maskImage = useMotionTemplate`radial-gradient(${spotlightRadius}px circle at ${mouseX}px ${mouseY}px, black, transparent)`
 
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "absolute inset-0 overflow-hidden pointer-events-none z-0",
-        className
-      )}
+      className={cn('absolute inset-0 overflow-hidden pointer-events-none z-0', className)}
     >
       {/* Layer 1: Subtle background grid (always visible) */}
-      <div
-        className="absolute inset-0"
-        style={{ opacity: backgroundOpacity }}
-      >
-        <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} size={gridSize} patternId={bgPatternId} />
+      <div className="absolute inset-0" style={{ opacity: backgroundOpacity }}>
+        <GridPattern
+          offsetX={gridOffsetX}
+          offsetY={gridOffsetY}
+          size={gridSize}
+          patternId={bgPatternId}
+        />
       </div>
 
       {/* Layer 2: Highlighted grid (revealed by mouse mask) */}
@@ -170,10 +174,15 @@ export const InfiniteGrid = ({
         style={{
           maskImage,
           WebkitMaskImage: maskImage,
-          opacity: highlightOpacity
+          opacity: highlightOpacity,
         }}
       >
-        <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} size={gridSize} patternId={hlPatternId} />
+        <GridPattern
+          offsetX={gridOffsetX}
+          offsetY={gridOffsetY}
+          size={gridSize}
+          patternId={hlPatternId}
+        />
       </motion.div>
 
       {/* Decorative Animated Gradient Spheres - subtle and muted */}
@@ -196,7 +205,7 @@ export const InfiniteGrid = ({
             transition={{
               duration: 25,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
 
@@ -217,7 +226,7 @@ export const InfiniteGrid = ({
             transition={{
               duration: 25,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
 
@@ -238,20 +247,16 @@ export const InfiniteGrid = ({
             transition={{
               duration: 25,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
         </div>
       )}
 
       {/* Children content */}
-      {children && (
-        <div className="relative z-10 w-full h-full">
-          {children}
-        </div>
-      )}
+      {children && <div className="relative z-10 w-full h-full">{children}</div>}
     </div>
-  );
-};
+  )
+}
 
-export default InfiniteGrid;
+export default InfiniteGrid

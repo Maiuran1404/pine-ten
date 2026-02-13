@@ -2,17 +2,17 @@
 /**
  * Run migration for import_logs table
  */
-import { config } from "dotenv";
-config({ path: ".env.local" });
+import { config } from 'dotenv'
+config({ path: '.env.local' })
 
-import postgres from "postgres";
+import postgres from 'postgres'
 
 const sql = postgres(process.env.DATABASE_URL!, {
-  ssl: "require",
-});
+  ssl: 'require',
+})
 
 async function main() {
-  console.log("Running migration...");
+  console.log('Running migration...')
 
   try {
     // Create import_log_source enum
@@ -22,8 +22,8 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Created import_log_source enum");
+    `
+    console.log('✓ Created import_log_source enum')
 
     // Create import_log_target enum
     await sql`
@@ -32,8 +32,8 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Created import_log_target enum");
+    `
+    console.log('✓ Created import_log_target enum')
 
     // Create import_logs table
     await sql`
@@ -60,21 +60,21 @@ async function main() {
         "completed_at" timestamp,
         "created_at" timestamp DEFAULT now() NOT NULL
       );
-    `;
-    console.log("✓ Created import_logs table");
+    `
+    console.log('✓ Created import_logs table')
 
     // Add columns to deliverable_style_references
     await sql`
       ALTER TABLE "deliverable_style_references"
       ADD COLUMN IF NOT EXISTS "image_hash" text;
-    `;
-    console.log("✓ Added image_hash column");
+    `
+    console.log('✓ Added image_hash column')
 
     await sql`
       ALTER TABLE "deliverable_style_references"
       ADD COLUMN IF NOT EXISTS "source_url" text;
-    `;
-    console.log("✓ Added source_url column");
+    `
+    console.log('✓ Added source_url column')
 
     // Add foreign key
     await sql`
@@ -86,24 +86,24 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Added foreign key constraint");
+    `
+    console.log('✓ Added foreign key constraint')
 
     // Create indexes
-    await sql`CREATE INDEX IF NOT EXISTS "import_logs_source_idx" ON "import_logs" USING btree ("source");`;
-    await sql`CREATE INDEX IF NOT EXISTS "import_logs_target_idx" ON "import_logs" USING btree ("target");`;
-    await sql`CREATE INDEX IF NOT EXISTS "import_logs_triggered_by_idx" ON "import_logs" USING btree ("triggered_by");`;
-    await sql`CREATE INDEX IF NOT EXISTS "import_logs_created_at_idx" ON "import_logs" USING btree ("created_at");`;
-    await sql`CREATE INDEX IF NOT EXISTS "import_logs_source_target_idx" ON "import_logs" USING btree ("source","target");`;
-    console.log("✓ Created indexes");
+    await sql`CREATE INDEX IF NOT EXISTS "import_logs_source_idx" ON "import_logs" USING btree ("source");`
+    await sql`CREATE INDEX IF NOT EXISTS "import_logs_target_idx" ON "import_logs" USING btree ("target");`
+    await sql`CREATE INDEX IF NOT EXISTS "import_logs_triggered_by_idx" ON "import_logs" USING btree ("triggered_by");`
+    await sql`CREATE INDEX IF NOT EXISTS "import_logs_created_at_idx" ON "import_logs" USING btree ("created_at");`
+    await sql`CREATE INDEX IF NOT EXISTS "import_logs_source_target_idx" ON "import_logs" USING btree ("source","target");`
+    console.log('✓ Created indexes')
 
-    console.log("\n✅ Migration complete!");
+    console.log('\n✅ Migration complete!')
   } catch (error) {
-    console.error("Migration error:", error);
-    process.exit(1);
+    console.error('Migration error:', error)
+    process.exit(1)
   } finally {
-    await sql.end();
+    await sql.end()
   }
 }
 
-main();
+main()

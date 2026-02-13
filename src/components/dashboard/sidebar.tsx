@@ -1,16 +1,16 @@
-"use client";
+'use client'
 
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
 import {
   Plus,
   CheckSquare,
@@ -20,37 +20,37 @@ import {
   PanelLeft,
   Building2,
   User,
-} from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { cn } from "@/lib/utils";
-import { useCredits } from "@/providers/credit-provider";
+} from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { cn } from '@/lib/utils'
+import { useCredits } from '@/providers/credit-provider'
 
 export function AppSidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { credits } = useCredits();
-  const { state, setOpen } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const pathname = usePathname()
+  const router = useRouter()
+  const { credits } = useCredits()
+  const { state, setOpen } = useSidebar()
+  const isCollapsed = state === 'collapsed'
 
   const handleStartNewChat = () => {
-    router.push("/dashboard");
-  };
+    router.push('/dashboard')
+  }
 
   // Features menu items
   const features = [
-    { icon: CheckSquare, label: "Tasks", href: "/dashboard/tasks" },
-    { icon: FolderOpen, label: "Assets", href: "/dashboard/designs" },
-    { icon: Building2, label: "My Brand", href: "/dashboard/brand" },
-    { icon: Coins, label: "Credits", href: "/dashboard/credits" },
-    { icon: User, label: "Account", href: "/dashboard/settings" },
-  ];
+    { icon: CheckSquare, label: 'Tasks', href: '/dashboard/tasks' },
+    { icon: FolderOpen, label: 'Assets', href: '/dashboard/designs' },
+    { icon: Building2, label: 'My Brand', href: '/dashboard/brand' },
+    { icon: Coins, label: 'Credits', href: '/dashboard/credits' },
+    { icon: User, label: 'Account', href: '/dashboard/settings' },
+  ]
 
   const isActive = (href: string) => {
-    if (href === "/dashboard/tasks") {
-      return pathname === href || pathname?.startsWith("/dashboard/tasks/");
+    if (href === '/dashboard/tasks') {
+      return pathname === href || pathname?.startsWith('/dashboard/tasks/')
     }
-    return pathname === href;
-  };
+    return pathname === href
+  }
 
   // When collapsed, show minimal sidebar
   if (isCollapsed) {
@@ -89,10 +89,10 @@ export function AppSidebar() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex items-center justify-center p-2.5 rounded-lg transition-colors",
+                  'flex items-center justify-center p-2.5 rounded-lg transition-colors',
                   isActive(item.href)
-                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    : "text-foreground hover:bg-muted"
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'text-foreground hover:bg-muted'
                 )}
                 title={item.label}
               >
@@ -106,7 +106,7 @@ export function AppSidebar() {
           </div>
         </SidebarContent>
       </Sidebar>
-    );
+    )
   }
 
   return (
@@ -167,10 +167,10 @@ export function AppSidebar() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive(item.href)
-                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    : "text-foreground hover:bg-muted"
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'text-foreground hover:bg-muted'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -210,12 +210,11 @@ export function AppSidebar() {
               </Button>
             </Link>
             <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
-              Boost productivity with seamless tasks request and responsive AI,
-              built to assist you.
+              Boost productivity with seamless tasks request and responsive AI, built to assist you.
             </p>
           </div>
         </div>
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

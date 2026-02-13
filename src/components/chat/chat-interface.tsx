@@ -1,13 +1,12 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import { TypingText } from "./typing-text";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
+import { useState, useEffect } from 'react'
+import { TypingText } from './typing-text'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
 import {
   Check,
   Image as ImageIcon,
@@ -18,7 +17,6 @@ import {
   Sparkles,
   RotateCcw,
   Palette,
-  Timer,
   ArrowRight,
   Lightbulb,
   Pencil,
@@ -26,8 +24,8 @@ import {
   Megaphone,
   Bookmark,
   LayoutGrid,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,109 +35,103 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  type UploadedFile,
-} from "./types";
-import { TaskProposalCard } from "./task-proposal-card";
-import { FileAttachmentList } from "./file-attachment";
-import { VideoReferenceGrid, type VideoReferenceStyle } from "./video-reference-grid";
-import { ChatLayout } from "./chat-layout";
-import { StyleSelectionGrid } from "./style-selection-grid";
-import { StyleDetailModal } from "./style-detail-modal";
-import { InlineCollection } from "./inline-collection";
-import { TaskSubmissionModal } from "./task-submission-modal";
-import { useChatInterfaceData } from "./useChatInterfaceData";
+} from '@/components/ui/alert-dialog'
+import { type UploadedFile } from './types'
+import { TaskProposalCard } from './task-proposal-card'
+import { FileAttachmentList } from './file-attachment'
+import { VideoReferenceGrid } from './video-reference-grid'
+import { ChatLayout } from './chat-layout'
+import { StyleSelectionGrid } from './style-selection-grid'
+import { StyleDetailModal } from './style-detail-modal'
+import { InlineCollection } from './inline-collection'
+import { TaskSubmissionModal } from './task-submission-modal'
+import { useChatInterfaceData } from './useChatInterfaceData'
 
 // Task data types for when viewing an active task
 export interface TaskFile {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  isDeliverable: boolean;
-  createdAt: string;
-  uploadedBy: string;
+  id: string
+  fileName: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
+  isDeliverable: boolean
+  createdAt: string
+  uploadedBy: string
 }
 
 export interface AssignedArtist {
-  id: string;
-  name: string;
-  email: string;
-  image?: string | null;
+  id: string
+  name: string
+  email: string
+  image?: string | null
 }
 
 export interface TaskData {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  creditsUsed: number;
-  maxRevisions: number;
-  revisionsUsed: number;
-  estimatedHours?: number | null;
-  deadline?: string | null;
-  assignedAt?: string | null;
-  completedAt?: string | null;
-  createdAt: string;
-  freelancer?: AssignedArtist | null;
-  files?: TaskFile[];
+  id: string
+  title: string
+  description: string
+  status: string
+  creditsUsed: number
+  maxRevisions: number
+  revisionsUsed: number
+  estimatedHours?: number | null
+  deadline?: string | null
+  assignedAt?: string | null
+  completedAt?: string | null
+  createdAt: string
+  freelancer?: AssignedArtist | null
+  files?: TaskFile[]
   chatHistory?: Array<{
-    role: string;
-    content: string;
-    timestamp: string;
-    attachments?: UploadedFile[];
-  }>;
+    role: string
+    content: string
+    timestamp: string
+    attachments?: UploadedFile[]
+  }>
 }
 
 interface ChatInterfaceProps {
-  draftId: string;
-  onDraftUpdate?: () => void;
-  initialMessage?: string | null;
-  seamlessTransition?: boolean;
+  draftId: string
+  onDraftUpdate?: () => void
+  initialMessage?: string | null
+  seamlessTransition?: boolean
   // Task mode props - when viewing an active task
-  taskData?: TaskData | null;
-  onTaskUpdate?: () => void;
+  taskData?: TaskData | null
+  onTaskUpdate?: () => void
   // Callback when a task is created (to update sidebar)
-  onTaskCreated?: (taskId: string) => void;
+  onTaskCreated?: (taskId: string) => void
   // UI control props
-  showRightPanel?: boolean;
-  onChatStart?: () => void;
+  showRightPanel?: boolean
+  onChatStart?: () => void
 }
 
 // Progressive loading indicator component - minimal design
-function LoadingIndicator({
-  requestStartTime,
-}: {
-  requestStartTime: number | null;
-}) {
-  const [loadingStage, setLoadingStage] = useState(0);
-  const [elapsedTime, setElapsedTime] = useState(0);
+function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
+  const [loadingStage, setLoadingStage] = useState(0)
+  const [elapsedTime, setElapsedTime] = useState(0)
 
   const loadingMessages = [
-    "Reading between the lines...",
-    "Mapping out your moodboard...",
-    "Curating the perfect visuals...",
-    "Polishing the final touches...",
-  ];
+    'Reading between the lines...',
+    'Mapping out your moodboard...',
+    'Curating the perfect visuals...',
+    'Polishing the final touches...',
+  ]
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (requestStartTime) {
-        const elapsed = Math.floor((Date.now() - requestStartTime) / 1000);
-        setElapsedTime(elapsed);
+        const elapsed = Math.floor((Date.now() - requestStartTime) / 1000)
+        setElapsedTime(elapsed)
 
         // Progress through stages based on time
-        if (elapsed >= 8) setLoadingStage(3);
-        else if (elapsed >= 5) setLoadingStage(2);
-        else if (elapsed >= 2) setLoadingStage(1);
-        else setLoadingStage(0);
+        if (elapsed >= 8) setLoadingStage(3)
+        else if (elapsed >= 5) setLoadingStage(2)
+        else if (elapsed >= 2) setLoadingStage(1)
+        else setLoadingStage(0)
       }
-    }, 500);
+    }, 500)
 
-    return () => clearInterval(interval);
-  }, [requestStartTime]);
+    return () => clearInterval(interval)
+  }, [requestStartTime])
 
   return (
     <motion.div
@@ -152,7 +144,7 @@ function LoadingIndicator({
       <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 relative">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
           className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/30"
         />
         <div className="w-2.5 h-2.5 rounded-full bg-white" />
@@ -163,15 +155,15 @@ function LoadingIndicator({
           <div className="flex gap-1">
             <span
               className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
-              style={{ animationDelay: "0ms" }}
+              style={{ animationDelay: '0ms' }}
             />
             <span
               className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
-              style={{ animationDelay: "150ms" }}
+              style={{ animationDelay: '150ms' }}
             />
             <span
               className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"
-              style={{ animationDelay: "300ms" }}
+              style={{ animationDelay: '300ms' }}
             />
           </div>
           {/* Progressive message with shimmer effect */}
@@ -181,31 +173,27 @@ function LoadingIndicator({
             animate={{ opacity: 1, x: 0 }}
             className="text-sm relative overflow-hidden"
           >
-            <span className="text-muted-foreground">
-              {loadingMessages[loadingStage]}
-            </span>
+            <span className="text-muted-foreground">{loadingMessages[loadingStage]}</span>
             {/* Shimmer overlay */}
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/20 to-transparent -skew-x-12"
-              animate={{ x: ["-100%", "200%"] }}
+              animate={{ x: ['-100%', '200%'] }}
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
-                ease: "easeInOut",
+                ease: 'easeInOut',
                 repeatDelay: 0.5,
               }}
             />
           </motion.div>
           {/* Timer */}
           {elapsedTime > 0 && (
-            <span className="text-xs text-muted-foreground/60 tabular-nums">
-              {elapsedTime}s
-            </span>
+            <span className="text-xs text-muted-foreground/60 tabular-nums">{elapsedTime}s</span>
           )}
         </div>
       </div>
     </motion.div>
-  );
+  )
 }
 
 export function ChatInterface({
@@ -221,8 +209,8 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const {
     // Router/session
-    router,
-    session,
+    router: _router,
+    session: _session,
     userCredits,
 
     // Messages and chat
@@ -366,7 +354,7 @@ export function ChatInterface({
     onTaskUpdate,
     onTaskCreated,
     onChatStart,
-  });
+  })
 
   return (
     <ChatLayout
@@ -379,14 +367,11 @@ export function ChatInterface({
       brief={brief}
       onBriefUpdate={updateBrief}
       onExportBrief={exportBrief}
-      briefCompletion={Math.max(
-        briefCompletion,
-        progressState.progressPercentage
-      )}
+      briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
       showProgress={false}
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
-      className={cn(seamlessTransition ? "h-full" : "h-[calc(100vh-12rem)]")}
+      className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div
         className="flex flex-col h-full relative"
@@ -409,12 +394,8 @@ export function ChatInterface({
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                   <ImageIcon className="h-8 w-8 text-primary" />
                 </div>
-                <p className="text-lg font-medium text-foreground">
-                  Drop files here
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Images, videos, PDFs, and more
-                </p>
+                <p className="text-lg font-medium text-foreground">Drop files here</p>
+                <p className="text-sm text-muted-foreground mt-1">Images, videos, PDFs, and more</p>
               </div>
             </motion.div>
           )}
@@ -433,8 +414,8 @@ export function ChatInterface({
                 Delete this chat?
               </AlertDialogTitle>
               <AlertDialogDescription className="text-center text-muted-foreground">
-                This will permanently delete this conversation and all its
-                messages. This action cannot be undone.
+                This will permanently delete this conversation and all its messages. This action
+                cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
@@ -452,10 +433,7 @@ export function ChatInterface({
         </AlertDialog>
 
         {/* Start Over confirmation dialog */}
-        <AlertDialog
-          open={showStartOverDialog}
-          onOpenChange={setShowStartOverDialog}
-        >
+        <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
           <AlertDialogContent className="bg-card border-border max-w-md">
             <AlertDialogHeader>
               <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
@@ -465,8 +443,8 @@ export function ChatInterface({
                 Start fresh?
               </AlertDialogTitle>
               <AlertDialogDescription className="text-center text-muted-foreground">
-                This will clear the current conversation and start a new one.
-                Your moodboard and brief will also be reset.
+                This will clear the current conversation and start a new one. Your moodboard and
+                brief will also be reset.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
@@ -490,19 +468,12 @@ export function ChatInterface({
               {messages.map((message, index) => (
                 <motion.div
                   key={message.id}
-                  initial={
-                    seamlessTransition && index > 0
-                      ? { opacity: 0, y: 10 }
-                      : false
-                  }
+                  initial={seamlessTransition && index > 0 ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
+                  className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
                 >
-                  {message.role === "assistant" ? (
+                  {message.role === 'assistant' ? (
                     /* Assistant message - left aligned with sparkle avatar */
                     <div className="group max-w-[85%] flex items-start gap-3">
                       {/* Sparkle avatar */}
@@ -514,9 +485,7 @@ export function ChatInterface({
                         {message.thinkingTime && (
                           <div className="flex items-center gap-1.5 mb-2 text-muted-foreground">
                             <Lightbulb className="h-3.5 w-3.5" />
-                            <span className="text-xs">
-                              Thought for {message.thinkingTime}s
-                            </span>
+                            <span className="text-xs">Thought for {message.thinkingTime}s</span>
                           </div>
                         )}
                         {/* Message content - clean text without heavy borders */}
@@ -530,25 +499,20 @@ export function ChatInterface({
                             speed={25}
                             onComplete={() => {
                               if (animatingMessageId === message.id) {
-                                setAnimatingMessageId(null);
+                                setAnimatingMessageId(null)
                                 // Mark this message's typing as complete to show CTAs
-                                setCompletedTypingIds((prev) =>
-                                  new Set(prev).add(message.id)
-                                );
+                                setCompletedTypingIds((prev) => new Set(prev).add(message.id))
                               }
                             }}
                             className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
                           />
 
                           {/* Attachments */}
-                          {message.attachments &&
-                            message.attachments.length > 0 && (
-                              <div className="mt-3 ml-8">
-                                <FileAttachmentList
-                                  files={message.attachments}
-                                />
-                              </div>
-                            )}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-3 ml-8">
+                              <FileAttachmentList files={message.attachments} />
+                            </div>
+                          )}
 
                           {/* Style References - only show after typing completes */}
                           {message.styleReferences &&
@@ -565,94 +529,80 @@ export function ChatInterface({
                                   Which style direction resonates with you?
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl">
-                                  {message.styleReferences
-                                    .slice(0, 3)
-                                    .map((style, idx) => {
-                                      const isHovered =
-                                        hoveredStyleName === style.name;
-                                      const isSelected =
-                                        selectedStyles.includes(style.name);
-                                      return (
-                                        <div
-                                          key={`${style.name}-${idx}`}
-                                          role="button"
-                                          tabIndex={0}
-                                          aria-pressed={isSelected}
-                                          aria-label={`Select ${style.name} style`}
-                                          className={cn(
-                                            "relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200",
-                                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                                            isHovered &&
-                                              "scale-110 z-10 shadow-2xl",
-                                            isSelected
-                                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
-                                              : isHovered &&
-                                                  "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-                                          )}
-                                          onClick={() =>
+                                  {message.styleReferences.slice(0, 3).map((style, idx) => {
+                                    const isHovered = hoveredStyleName === style.name
+                                    const isSelected = selectedStyles.includes(style.name)
+                                    return (
+                                      <div
+                                        key={`${style.name}-${idx}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-pressed={isSelected}
+                                        aria-label={`Select ${style.name} style`}
+                                        className={cn(
+                                          'relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200',
+                                          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                                          isHovered && 'scale-110 z-10 shadow-2xl',
+                                          isSelected
+                                            ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl'
+                                            : isHovered &&
+                                                'ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
+                                        )}
+                                        onClick={() => handleStyleSelect(style.name)}
+                                        onMouseEnter={() => setHoveredStyleName(style.name)}
+                                        onMouseLeave={() => setHoveredStyleName(null)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault()
                                             handleStyleSelect(style.name)
                                           }
-                                          onMouseEnter={() =>
-                                            setHoveredStyleName(style.name)
-                                          }
-                                          onMouseLeave={() =>
-                                            setHoveredStyleName(null)
-                                          }
-                                          onKeyDown={(e) => {
-                                            if (
-                                              e.key === "Enter" ||
-                                              e.key === " "
-                                            ) {
-                                              e.preventDefault();
-                                              handleStyleSelect(style.name);
-                                            }
-                                          }}
-                                        >
-                                          {/* Selection indicator */}
-                                          {isSelected && (
-                                            <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                                              <Check className="h-4 w-4 text-primary-foreground" />
-                                            </div>
-                                          )}
-
-                                          {/* Image */}
-                                          <div className="aspect-[4/3] bg-muted overflow-hidden">
-                                            {style.imageUrl ? (
-                                              <img
-                                                src={style.imageUrl}
-                                                alt={style.name}
-                                                className="w-full h-full object-cover"
-                                              />
-                                            ) : (
-                                              <div className="w-full h-full flex items-center justify-center">
-                                                <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                                              </div>
-                                            )}
+                                        }}
+                                      >
+                                        {/* Selection indicator */}
+                                        {isSelected && (
+                                          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                                            <Check className="h-4 w-4 text-primary-foreground" />
                                           </div>
+                                        )}
 
-                                          {/* Hover overlay with name - only visible on THIS card */}
-                                          {(isHovered || isSelected) && (
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
-                                              <div className="absolute bottom-0 left-0 right-0 p-3">
-                                                <p className="text-white text-sm font-semibold">
-                                                  {style.name}
-                                                </p>
-                                                {style.description && (
-                                                  <p className="text-white/80 text-xs line-clamp-2 mt-1">
-                                                    {style.description}
-                                                  </p>
-                                                )}
-                                              </div>
+                                        {/* Image */}
+                                        <div className="aspect-[4/3] bg-muted overflow-hidden">
+                                          {style.imageUrl ? (
+                                            <img
+                                              src={style.imageUrl}
+                                              alt={style.name}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
                                             </div>
                                           )}
                                         </div>
-                                      );
-                                    })}
+
+                                        {/* Hover overlay with name - only visible on THIS card */}
+                                        {(isHovered || isSelected) && (
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
+                                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                                              <p className="text-white text-sm font-semibold">
+                                                {style.name}
+                                              </p>
+                                              {style.description && (
+                                                <p className="text-white/80 text-xs line-clamp-2 mt-1">
+                                                  {style.description}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
                                 </div>
                                 <div className="flex items-center justify-between mt-3">
                                   <p className="text-xs text-muted-foreground ml-1">
-                                    Click to select · You can pick multiple or
-                                    describe something else
+                                    Click to select · You can pick multiple or describe something
+                                    else
                                   </p>
                                   {selectedStyles.length > 0 && (
                                     <Button
@@ -661,9 +611,9 @@ export function ChatInterface({
                                       size="sm"
                                       className="gap-2"
                                     >
-                                      Continue with{" "}
+                                      Continue with{' '}
                                       {selectedStyles.length === 1
-                                        ? "style"
+                                        ? 'style'
                                         : `${selectedStyles.length} styles`}
                                       <ArrowRight className="h-3.5 w-3.5" />
                                     </Button>
@@ -690,26 +640,16 @@ export function ChatInterface({
                                       styles={message.deliverableStyles}
                                       collectionStyleIds={moodboardStyleIds}
                                       onAddToCollection={handleAddToCollection}
-                                      onRemoveFromCollection={
-                                        handleRemoveFromCollection
-                                      }
-                                      onConfirmSelection={
-                                        handleConfirmStyleSelection
-                                      }
+                                      onRemoveFromCollection={handleRemoveFromCollection}
+                                      onConfirmSelection={handleConfirmStyleSelection}
                                       onShowMore={handleShowMoreStyles}
-                                      onShowDifferent={
-                                        handleShowDifferentStyles
-                                      }
-                                      isLoading={
-                                        isLoading || index < messages.length - 1
-                                      }
+                                      onShowDifferent={handleShowDifferentStyles}
+                                      isLoading={isLoading || index < messages.length - 1}
                                     />
                                     {/* Inline collection - shows collected styles (hidden when using new flow) */}
                                     {false && moodboardStyleIds.length > 0 && (
                                       <InlineCollection
-                                        items={moodboardItems.filter(
-                                          (i) => i.type === "style"
-                                        )}
+                                        items={moodboardItems.filter((i) => i.type === 'style')}
                                         onRemoveItem={removeMoodboardItem}
                                         onClearAll={handleClearStyleCollection}
                                         onContinue={() =>
@@ -717,10 +657,7 @@ export function ChatInterface({
                                             message.deliverableStyles || []
                                           )
                                         }
-                                        isLoading={
-                                          isLoading ||
-                                          index < messages.length - 1
-                                        }
+                                        isLoading={isLoading || index < messages.length - 1}
                                       />
                                     )}
                                   </div>
@@ -729,22 +666,17 @@ export function ChatInterface({
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Palette className="h-4 w-4" />
                                     <span>
-                                      {Math.min(
-                                        3,
-                                        message.deliverableStyles.length
-                                      )}{" "}
-                                      style options shown
+                                      {Math.min(3, message.deliverableStyles.length)} style options
+                                      shown
                                     </span>
                                     {moodboardStyleIds.length > 0 && (
                                       <span className="text-primary">
-                                        •{" "}
+                                        •{' '}
                                         {
                                           moodboardStyleIds.filter((id) =>
-                                            message.deliverableStyles?.some(
-                                              (s) => s.id === id
-                                            )
+                                            message.deliverableStyles?.some((s) => s.id === id)
                                           ).length
-                                        }{" "}
+                                        }{' '}
                                         in collection
                                       </span>
                                     )}
@@ -778,10 +710,7 @@ export function ChatInterface({
                             <div className="mt-4 ml-8">
                               <TaskProposalCard
                                 proposal={message.taskProposal}
-                                showActions={
-                                  pendingTask?.title ===
-                                  message.taskProposal.title
-                                }
+                                showActions={pendingTask?.title === message.taskProposal.title}
                                 onSubmit={handleOpenSubmissionModal}
                                 onMakeChanges={handleRejectTask}
                                 isLoading={isLoading}
@@ -799,21 +728,19 @@ export function ChatInterface({
                     <div className="max-w-[75%] group">
                       <div className="flex flex-col items-end">
                         {/* Selected style image - shows above the text when style was selected */}
-                        {message.selectedStyle &&
-                          message.selectedStyle.imageUrl && (
-                            <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
-                              <img
-                                src={message.selectedStyle.imageUrl}
-                                alt={message.selectedStyle.name}
-                                className="w-full h-auto object-cover"
-                                onError={(e) => {
-                                  // Hide image if it fails to load
-                                  (e.target as HTMLImageElement).style.display =
-                                    "none";
-                                }}
-                              />
-                            </div>
-                          )}
+                        {message.selectedStyle && message.selectedStyle.imageUrl && (
+                          <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
+                            <img
+                              src={message.selectedStyle.imageUrl}
+                              alt={message.selectedStyle.name}
+                              className="w-full h-auto object-cover"
+                              onError={(e) => {
+                                // Hide image if it fails to load
+                                ;(e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
                         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30 w-fit">
                           <p className="text-sm text-foreground whitespace-pre-wrap">
                             {message.content}
@@ -833,12 +760,11 @@ export function ChatInterface({
                             )}
                         </div>
                         {/* User attachments */}
-                        {message.attachments &&
-                          message.attachments.length > 0 && (
-                            <div className="mt-2">
-                              <FileAttachmentList files={message.attachments} />
-                            </div>
-                          )}
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="mt-2">
+                            <FileAttachmentList files={message.attachments} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -847,11 +773,8 @@ export function ChatInterface({
             </AnimatePresence>
 
             {/* Enhanced loading indicator with progressive messages */}
-            {isLoading && (
-              <LoadingIndicator
-                requestStartTime={requestStartTimeRef.current}
-              />
-            )}
+            {/* eslint-disable-next-line react-hooks/refs */}
+            {isLoading && <LoadingIndicator requestStartTime={requestStartTimeRef.current} />}
 
             {/* Inline submit prompt - shown as an AI message when ready to submit */}
             {!isLoading &&
@@ -859,35 +782,30 @@ export function ChatInterface({
               !isTaskMode &&
               (() => {
                 // Check if the last assistant message asked a question (ends with ?)
-                const lastAssistantMsg = messages
-                  .filter((m) => m.role === "assistant")
-                  .pop();
-                const lastMsg = messages[messages.length - 1];
+                const lastAssistantMsg = messages.filter((m) => m.role === 'assistant').pop()
+                const lastMsg = messages[messages.length - 1]
                 const aiJustAskedQuestion =
-                  lastMsg?.role === "assistant" &&
-                  lastAssistantMsg?.content?.trim().endsWith("?");
+                  lastMsg?.role === 'assistant' && lastAssistantMsg?.content?.trim().endsWith('?')
 
                 // Don't show submit prompt if AI just asked a question
-                if (aiJustAskedQuestion) return null;
+                if (aiJustAskedQuestion) return null
 
                 // Don't show immediately after a style selection
-                const lastUserMessage = messages
-                  .filter((m) => m.role === "user")
-                  .slice(-1)[0];
+                const lastUserMessage = messages.filter((m) => m.role === 'user').slice(-1)[0]
                 const lastUserWasStyleSelection =
-                  lastUserMessage?.content?.includes("style selected") ||
-                  lastUserMessage?.content?.includes("Style selected") ||
-                  lastUserMessage?.selectedStyle != null;
+                  lastUserMessage?.content?.includes('style selected') ||
+                  lastUserMessage?.content?.includes('Style selected') ||
+                  lastUserMessage?.selectedStyle != null
 
                 // Show when AI indicates ready or user has enough context
                 // BUT not right after a style selection (let user respond first)
                 const shouldShow =
                   showManualSubmit ||
                   (moodboardItems.length > 0 &&
-                    messages.filter((m) => m.role === "user").length >= 3 &&
-                    !lastUserWasStyleSelection);
+                    messages.filter((m) => m.role === 'user').length >= 3 &&
+                    !lastUserWasStyleSelection)
 
-                if (!shouldShow) return null;
+                if (!shouldShow) return null
 
                 // Render as a subtle inline CTA, not a fake AI message
                 return (
@@ -908,12 +826,10 @@ export function ChatInterface({
                         <Sparkles className="h-3.5 w-3.5" />
                         Generate Summary
                       </Button>
-                      <span className="text-xs text-muted-foreground">
-                        or keep chatting
-                      </span>
+                      <span className="text-xs text-muted-foreground">or keep chatting</span>
                     </div>
                   </motion.div>
-                );
+                )
               })()}
           </div>
         </ScrollArea>
@@ -924,23 +840,23 @@ export function ChatInterface({
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {uploadedFiles.filter(Boolean).map((file) => {
-                if (!file || !file.fileUrl) return null;
+                if (!file || !file.fileUrl) return null
                 return (
                   <div
                     key={file.fileUrl}
                     className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
                   >
-                    {file.fileType?.startsWith("image/") ? (
+                    {file.fileType?.startsWith('image/') ? (
                       <img
                         src={file.fileUrl}
-                        alt={file.fileName || "Uploaded file"}
+                        alt={file.fileName || 'Uploaded file'}
                         className="h-10 w-10 rounded object-cover"
                       />
                     ) : (
                       <FileIcon className="h-5 w-5 text-muted-foreground" />
                     )}
                     <span className="text-sm max-w-[100px] truncate text-foreground">
-                      {file.fileName || "File"}
+                      {file.fileName || 'File'}
                     </span>
                     <button
                       onClick={() => removeFile(file.fileUrl)}
@@ -949,7 +865,7 @@ export function ChatInterface({
                       <XCircle className="h-4 w-4" />
                     </button>
                   </div>
-                );
+                )
               })}
             </div>
           )}
@@ -977,76 +893,65 @@ export function ChatInterface({
               {ghostText && (
                 <div className="absolute inset-0 px-4 py-4 pointer-events-none flex items-start">
                   <span className="text-sm text-transparent">{input}</span>
-                  <span className="text-sm text-muted-foreground/40">
-                    {ghostText}
-                  </span>
+                  <span className="text-sm text-muted-foreground/40">{ghostText}</span>
                 </div>
               )}
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => {
-                  setInput(e.target.value);
+                  setInput(e.target.value)
                   // Auto-resize textarea
-                  const target = e.target;
-                  target.style.height = "auto";
-                  target.style.height =
-                    Math.min(target.scrollHeight, 200) + "px";
+                  const target = e.target
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 200) + 'px'
                 }}
                 onKeyDown={(e) => {
                   // Tab to accept suggestion (smart completion or quick option)
-                  if (e.key === "Tab" && ghostText) {
-                    e.preventDefault();
+                  if (e.key === 'Tab' && ghostText) {
+                    e.preventDefault()
                     // For smart completions, append the completion
                     if (smartCompletion && input.trim().length >= 3) {
-                      setInput(input.trim() + " " + smartCompletion);
-                      setSmartCompletion(null); // Clear so new completions can generate
+                      setInput(input.trim() + ' ' + smartCompletion)
+                      setSmartCompletion(null) // Clear so new completions can generate
                     } else if (currentSuggestion) {
                       // For quick options, use the full suggestion
-                      setInput(currentSuggestion);
+                      setInput(currentSuggestion)
                     }
                   }
                   // Arrow down to cycle through quick options (only when empty)
-                  else if (
-                    e.key === "ArrowDown" &&
-                    quickOptionSuggestion &&
-                    !input.trim()
-                  ) {
-                    e.preventDefault();
-                    setSuggestionIndex((prev) => prev + 1);
+                  else if (e.key === 'ArrowDown' && quickOptionSuggestion && !input.trim()) {
+                    e.preventDefault()
+                    setSuggestionIndex((prev) => prev + 1)
                   }
                   // Arrow up to cycle back through quick options
-                  else if (
-                    e.key === "ArrowUp" &&
-                    quickOptionSuggestion &&
-                    !input.trim()
-                  ) {
-                    e.preventDefault();
-                    setSuggestionIndex((prev) => Math.max(0, prev - 1));
+                  else if (e.key === 'ArrowUp' && quickOptionSuggestion && !input.trim()) {
+                    e.preventDefault()
+                    setSuggestionIndex((prev) => Math.max(0, prev - 1))
                   }
                   // Escape to clear smart completion
-                  else if (e.key === "Escape" && smartCompletion) {
-                    setSmartCompletion(null);
+                  else if (e.key === 'Escape' && smartCompletion) {
+                    setSmartCompletion(null)
                   }
                   // Submit on Enter (without shift) or Cmd/Ctrl+Enter
-                  else if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    handleSend();
+                  else if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    handleSend()
                   }
                 }}
                 placeholder={
                   ghostText
-                    ? "" // Hide placeholder when showing ghost text
+                    ? '' // Hide placeholder when showing ghost text
                     : messages.length === 0
-                    ? "What would you like to create today?"
-                    : "Type your message..."
+                      ? 'What would you like to create today?'
+                      : 'Type your message...'
                 }
                 rows={1}
                 className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
-                style={{ height: "auto", overflow: "hidden" }}
+                style={{ height: 'auto', overflow: 'hidden' }}
               />
               {/* Tab hint - show different hints based on context */}
               {ghostText && (
@@ -1073,7 +978,7 @@ export function ChatInterface({
                       Tab
                     </kbd>
                     <span className="text-[11px]">
-                      {input.trim() ? "insert suggestion" : "use suggestion"}
+                      {input.trim() ? 'insert suggestion' : 'use suggestion'}
                     </span>
                   </div>
                 </div>
@@ -1099,11 +1004,7 @@ export function ChatInterface({
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                     title="Attach files"
                   >
-                    {isUploading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <Paperclip className="h-4 w-4" />
-                    )}
+                    {isUploading ? <LoadingSpinner size="sm" /> : <Paperclip className="h-4 w-4" />}
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
@@ -1120,33 +1021,25 @@ export function ChatInterface({
                 <div className="flex items-center gap-1.5 text-sm">
                   <span
                     className={cn(
-                      "w-2 h-2 rounded-full",
+                      'w-2 h-2 rounded-full',
                       userCredits === 0
-                        ? "bg-red-500"
+                        ? 'bg-red-500'
                         : userCredits < 15
-                        ? "bg-amber-500"
-                        : "bg-emerald-600"
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-600'
                     )}
                   />
-                  <span className="text-muted-foreground">
-                    {userCredits} credits available
-                  </span>
+                  <span className="text-muted-foreground">{userCredits} credits available</span>
                 </div>
                 {/* Word count hint - only show when user starts typing */}
                 {input.trim().length > 0 &&
                   (() => {
-                    const wordCount = input
-                      .trim()
-                      .split(/\s+/)
-                      .filter(Boolean).length;
-                    const solidPromptWords = 10;
-                    const greatPromptWords = 20;
+                    const wordCount = input.trim().split(/\s+/).filter(Boolean).length
+                    const solidPromptWords = 10
+                    const greatPromptWords = 20
 
                     // Calculate progress percentage for the gradient bar
-                    const progress = Math.min(
-                      (wordCount / greatPromptWords) * 100,
-                      100
-                    );
+                    const progress = Math.min((wordCount / greatPromptWords) * 100, 100)
 
                     if (wordCount >= greatPromptWords) {
                       return (
@@ -1158,9 +1051,9 @@ export function ChatInterface({
                             </span>
                           </div>
                         </div>
-                      );
+                      )
                     } else if (wordCount >= solidPromptWords) {
-                      const wordsNeeded = greatPromptWords - wordCount;
+                      const wordsNeeded = greatPromptWords - wordCount
                       return (
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
@@ -1173,9 +1066,9 @@ export function ChatInterface({
                             +{wordsNeeded} for best results
                           </span>
                         </div>
-                      );
+                      )
                     } else {
-                      const wordsNeeded = solidPromptWords - wordCount;
+                      const wordsNeeded = solidPromptWords - wordCount
                       return (
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
@@ -1188,7 +1081,7 @@ export function ChatInterface({
                             +{wordsNeeded} for a solid prompt
                           </span>
                         </div>
-                      );
+                      )
                     }
                   })()}
               </div>
@@ -1197,12 +1090,10 @@ export function ChatInterface({
               <div className="flex items-center gap-2">
                 <Button
                   onClick={handleSend}
-                  disabled={
-                    !input.trim() && uploadedFiles.length === 0
-                  }
+                  disabled={!input.trim() && uploadedFiles.length === 0}
                   className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
                 >
-                  {isLoading ? <LoadingSpinner size="sm" /> : "Submit"}
+                  {isLoading ? <LoadingSpinner size="sm" /> : 'Submit'}
                 </Button>
               </div>
             </div>
@@ -1220,53 +1111,49 @@ export function ChatInterface({
               <div className="grid grid-cols-2 gap-2">
                 {[
                   {
-                    label: "Instagram Carousel",
-                    prompt: "Create a 5-slide Instagram carousel about ",
+                    label: 'Instagram Carousel',
+                    prompt: 'Create a 5-slide Instagram carousel about ',
                     icon: LayoutGrid,
-                    hint: "5 slides",
+                    hint: '5 slides',
                   },
                   {
-                    label: "Story Series",
-                    prompt: "Design Instagram stories to promote ",
+                    label: 'Story Series',
+                    prompt: 'Design Instagram stories to promote ',
                     icon: Share2,
-                    hint: "3-5 stories",
+                    hint: '3-5 stories',
                   },
                   {
-                    label: "LinkedIn Post",
-                    prompt: "Create a professional LinkedIn post announcing ",
+                    label: 'LinkedIn Post',
+                    prompt: 'Create a professional LinkedIn post announcing ',
                     icon: Bookmark,
-                    hint: "1 image",
+                    hint: '1 image',
                   },
                   {
-                    label: "Ad Campaign",
-                    prompt: "Design ads for a campaign promoting ",
+                    label: 'Ad Campaign',
+                    prompt: 'Design ads for a campaign promoting ',
                     icon: Megaphone,
-                    hint: "multi-size",
+                    hint: 'multi-size',
                   },
                 ].map((item) => (
                   <button
                     key={item.label}
                     onClick={() => {
-                      setInput(item.prompt);
-                      inputRef.current?.focus();
+                      setInput(item.prompt)
+                      inputRef.current?.focus()
                     }}
                     className={cn(
-                      "flex items-start gap-3 p-3 rounded-xl border transition-all text-left group",
-                      "bg-white/60 dark:bg-card/60 backdrop-blur-sm",
-                      "hover:border-emerald-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md",
-                      "border-border/50"
+                      'flex items-start gap-3 p-3 rounded-xl border transition-all text-left group',
+                      'bg-white/60 dark:bg-card/60 backdrop-blur-sm',
+                      'hover:border-emerald-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md',
+                      'border-border/50'
                     )}
                   >
                     <div className="w-8 h-8 rounded-lg bg-emerald-600/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-600/20 transition-colors">
                       <item.icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">
-                        {item.label}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.hint}
-                      </p>
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.hint}</p>
                     </div>
                   </button>
                 ))}
@@ -1275,10 +1162,9 @@ export function ChatInterface({
               {/* Keyboard hint */}
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">
-                  {typeof navigator !== "undefined" &&
-                  /Mac/.test(navigator.userAgent)
-                    ? "⌘"
-                    : "Ctrl"}
+                  {typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent)
+                    ? '⌘'
+                    : 'Ctrl'}
                 </kbd>
                 <span>+</span>
                 <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">
@@ -1296,11 +1182,7 @@ export function ChatInterface({
         style={selectedStyleForModal}
         isOpen={!!selectedStyleForModal}
         onClose={() => setSelectedStyleForModal(null)}
-        isInCollection={
-          selectedStyleForModal
-            ? hasMoodboardItem(selectedStyleForModal.id)
-            : false
-        }
+        isInCollection={selectedStyleForModal ? hasMoodboardItem(selectedStyleForModal.id) : false}
         onAddToCollection={handleAddToCollection}
         onRemoveFromCollection={handleRemoveFromCollection}
       />
@@ -1323,10 +1205,8 @@ export function ChatInterface({
         onOpenChange={setShowCreditDialog}
         requiredCredits={pendingTask?.creditsRequired || 0}
         currentCredits={userCredits}
-        pendingTaskState={
-          pendingTask ? { taskProposal: pendingTask, draftId } : undefined
-        }
+        pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
       />
     </ChatLayout>
-  );
+  )
 }

@@ -2,17 +2,17 @@
 /**
  * Run migration for payouts and stripe_connect_accounts tables
  */
-import { config } from "dotenv";
-config({ path: ".env.local" });
+import { config } from 'dotenv'
+config({ path: '.env.local' })
 
-import postgres from "postgres";
+import postgres from 'postgres'
 
 const sql = postgres(process.env.DATABASE_URL!, {
-  ssl: "require",
-});
+  ssl: 'require',
+})
 
 async function main() {
-  console.log("Running payouts migration...");
+  console.log('Running payouts migration...')
 
   try {
     // Create payout_status enum
@@ -22,8 +22,8 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Created payout_status enum");
+    `
+    console.log('✓ Created payout_status enum')
 
     // Create payout_method enum
     await sql`
@@ -32,8 +32,8 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Created payout_method enum");
+    `
+    console.log('✓ Created payout_method enum')
 
     // Create payouts table
     await sql`
@@ -56,8 +56,8 @@ async function main() {
         "created_at" timestamp DEFAULT now() NOT NULL,
         "updated_at" timestamp DEFAULT now() NOT NULL
       );
-    `;
-    console.log("✓ Created payouts table");
+    `
+    console.log('✓ Created payouts table')
 
     // Create stripe_connect_accounts table
     await sql`
@@ -76,8 +76,8 @@ async function main() {
         "created_at" timestamp DEFAULT now() NOT NULL,
         "updated_at" timestamp DEFAULT now() NOT NULL
       );
-    `;
-    console.log("✓ Created stripe_connect_accounts table");
+    `
+    console.log('✓ Created stripe_connect_accounts table')
 
     // Add foreign keys
     await sql`
@@ -89,8 +89,8 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Added payouts foreign key");
+    `
+    console.log('✓ Added payouts foreign key')
 
     await sql`
       DO $$ BEGIN
@@ -101,24 +101,24 @@ async function main() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
-    console.log("✓ Added stripe_connect_accounts foreign key");
+    `
+    console.log('✓ Added stripe_connect_accounts foreign key')
 
     // Create indexes
-    await sql`CREATE INDEX IF NOT EXISTS "payouts_freelancer_id_idx" ON "payouts" USING btree ("freelancer_id");`;
-    await sql`CREATE INDEX IF NOT EXISTS "payouts_status_idx" ON "payouts" USING btree ("status");`;
-    await sql`CREATE INDEX IF NOT EXISTS "payouts_requested_at_idx" ON "payouts" USING btree ("requested_at");`;
-    await sql`CREATE INDEX IF NOT EXISTS "stripe_connect_accounts_freelancer_id_idx" ON "stripe_connect_accounts" USING btree ("freelancer_id");`;
-    await sql`CREATE INDEX IF NOT EXISTS "stripe_connect_accounts_stripe_account_id_idx" ON "stripe_connect_accounts" USING btree ("stripe_account_id");`;
-    console.log("✓ Created indexes");
+    await sql`CREATE INDEX IF NOT EXISTS "payouts_freelancer_id_idx" ON "payouts" USING btree ("freelancer_id");`
+    await sql`CREATE INDEX IF NOT EXISTS "payouts_status_idx" ON "payouts" USING btree ("status");`
+    await sql`CREATE INDEX IF NOT EXISTS "payouts_requested_at_idx" ON "payouts" USING btree ("requested_at");`
+    await sql`CREATE INDEX IF NOT EXISTS "stripe_connect_accounts_freelancer_id_idx" ON "stripe_connect_accounts" USING btree ("freelancer_id");`
+    await sql`CREATE INDEX IF NOT EXISTS "stripe_connect_accounts_stripe_account_id_idx" ON "stripe_connect_accounts" USING btree ("stripe_account_id");`
+    console.log('✓ Created indexes')
 
-    console.log("\n✅ Payouts migration complete!");
+    console.log('\n✅ Payouts migration complete!')
   } catch (error) {
-    console.error("Migration error:", error);
-    process.exit(1);
+    console.error('Migration error:', error)
+    process.exit(1)
   } finally {
-    await sql.end();
+    await sql.end()
   }
 }
 
-main();
+main()

@@ -8,14 +8,14 @@ This document proposes a comprehensive redesign of the task-to-artist assignment
 
 ## Current State vs Proposed State
 
-| Aspect | Current | Proposed |
-|--------|---------|----------|
-| Matching Logic | Least-loaded (workload only) | Multi-factor scoring (skills, timezone, experience, workload) |
-| Assignment Type | Immediate, automatic | Offer-based with acceptance window |
-| Skill Matching | None | Required skill validation + proficiency scoring |
-| Timezone Aware | No | Yes, with working hours calculation |
-| Complexity Matching | None | Task complexity matched to artist experience |
-| Fallback Strategy | Task stays PENDING | Cascading offers → Admin escalation |
+| Aspect              | Current                      | Proposed                                                      |
+| ------------------- | ---------------------------- | ------------------------------------------------------------- |
+| Matching Logic      | Least-loaded (workload only) | Multi-factor scoring (skills, timezone, experience, workload) |
+| Assignment Type     | Immediate, automatic         | Offer-based with acceptance window                            |
+| Skill Matching      | None                         | Required skill validation + proficiency scoring               |
+| Timezone Aware      | No                           | Yes, with working hours calculation                           |
+| Complexity Matching | None                         | Task complexity matched to artist experience                  |
+| Fallback Strategy   | Task stays PENDING           | Cascading offers → Admin escalation                           |
 
 ---
 
@@ -25,13 +25,13 @@ This document proposes a comprehensive redesign of the task-to-artist assignment
 
 Each eligible artist receives a **composite score** (0-100) based on weighted factors:
 
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| **Skill Match** | 35% | Required skills vs artist capabilities |
-| **Timezone Fit** | 20% | Working hours alignment |
-| **Experience Match** | 20% | Task complexity vs artist experience level |
-| **Workload Balance** | 15% | Current active tasks |
-| **Performance History** | 10% | Rating + completion rate |
+| Factor                  | Weight | Description                                |
+| ----------------------- | ------ | ------------------------------------------ |
+| **Skill Match**         | 35%    | Required skills vs artist capabilities     |
+| **Timezone Fit**        | 20%    | Working hours alignment                    |
+| **Experience Match**    | 20%    | Task complexity vs artist experience level |
+| **Workload Balance**    | 15%    | Current active tasks                       |
+| **Performance History** | 10%    | Rating + completion rate                   |
 
 ### 1.2 Skill Match Score (0-100)
 
@@ -45,6 +45,7 @@ Bonus modifiers:
 ```
 
 **Example:**
+
 - Task requires: [Figma, Motion Graphics, After Effects]
 - Artist has: [Figma, Motion Graphics, Premiere Pro]
 - Score: (2/3) × 100 = 66.6
@@ -53,15 +54,16 @@ Bonus modifiers:
 
 Based on artist's local time when task is created:
 
-| Local Time | Score | Reason |
-|------------|-------|--------|
-| 9:00 AM - 6:00 PM | 100 | Peak working hours |
-| 6:00 PM - 9:00 PM | 80 | Evening availability |
-| 7:00 AM - 9:00 AM | 70 | Early morning |
-| 9:00 PM - 11:00 PM | 50 | Late evening |
-| 11:00 PM - 7:00 AM | 20 | Night hours (sleeping) |
+| Local Time         | Score | Reason                 |
+| ------------------ | ----- | ---------------------- |
+| 9:00 AM - 6:00 PM  | 100   | Peak working hours     |
+| 6:00 PM - 9:00 PM  | 80    | Evening availability   |
+| 7:00 AM - 9:00 AM  | 70    | Early morning          |
+| 9:00 PM - 11:00 PM | 50    | Late evening           |
+| 11:00 PM - 7:00 AM | 20    | Night hours (sleeping) |
 
 **Deadline urgency modifier:**
+
 - If deadline < 4 hours AND artist is in night hours → Score = 0 (exclude)
 - If deadline < 24 hours → Double-weight timezone factor
 
@@ -70,12 +72,14 @@ Based on artist's local time when task is created:
 Match task complexity to artist experience:
 
 **Task Complexity Levels:**
+
 - `SIMPLE` - Basic tasks, templates, minor edits
 - `INTERMEDIATE` - Standard creative work
 - `ADVANCED` - Complex multi-asset projects
 - `EXPERT` - High-stakes, technically demanding
 
 **Artist Experience Tiers:**
+
 - `JUNIOR` - 0-10 completed tasks
 - `MID` - 11-50 completed tasks
 - `SENIOR` - 51-150 completed tasks
@@ -83,14 +87,14 @@ Match task complexity to artist experience:
 
 **Scoring Matrix:**
 
-|  | JUNIOR Artist | MID Artist | SENIOR Artist | EXPERT Artist |
-|--|---------------|------------|---------------|---------------|
-| SIMPLE Task | 100 | 90 | 70 | 50 |
-| INTERMEDIATE Task | 60 | 100 | 90 | 80 |
-| ADVANCED Task | 20 | 70 | 100 | 95 |
-| EXPERT Task | 0 | 40 | 80 | 100 |
+|                   | JUNIOR Artist | MID Artist | SENIOR Artist | EXPERT Artist |
+| ----------------- | ------------- | ---------- | ------------- | ------------- |
+| SIMPLE Task       | 100           | 90         | 70            | 50            |
+| INTERMEDIATE Task | 60            | 100        | 90            | 80            |
+| ADVANCED Task     | 20            | 70         | 100           | 95            |
+| EXPERT Task       | 0             | 40         | 80            | 100           |
 
-*Rationale: Don't give senior artists simple tasks (waste of talent), don't overwhelm juniors with expert work.*
+_Rationale: Don't give senior artists simple tasks (waste of talent), don't overwhelm juniors with expert work._
 
 ### 1.5 Workload Balance Score (0-100)
 
@@ -100,14 +104,14 @@ Workload Score = max(0, 100 - (active_tasks × 20))
 Where active_tasks = tasks in (ASSIGNED, IN_PROGRESS, REVISION_REQUESTED)
 ```
 
-| Active Tasks | Score |
-|--------------|-------|
-| 0 | 100 |
-| 1 | 80 |
-| 2 | 60 |
-| 3 | 40 |
-| 4 | 20 |
-| 5+ | 0 (exclude from assignment) |
+| Active Tasks | Score                       |
+| ------------ | --------------------------- |
+| 0            | 100                         |
+| 1            | 80                          |
+| 2            | 60                          |
+| 3            | 40                          |
+| 4            | 20                          |
+| 5+           | 0 (exclude from assignment) |
 
 ### 1.6 Performance History Score (0-100)
 
@@ -124,24 +128,24 @@ Where:
 
 ```typescript
 function calculateMatchScore(artist: Artist, task: Task): number {
-  const skillScore = calculateSkillScore(artist.skills, task.requiredSkills);
-  const timezoneScore = calculateTimezoneScore(artist.timezone, new Date());
-  const experienceScore = calculateExperienceScore(artist.experienceLevel, task.complexity);
-  const workloadScore = calculateWorkloadScore(artist.activeTasks);
-  const performanceScore = calculatePerformanceScore(artist);
+  const skillScore = calculateSkillScore(artist.skills, task.requiredSkills)
+  const timezoneScore = calculateTimezoneScore(artist.timezone, new Date())
+  const experienceScore = calculateExperienceScore(artist.experienceLevel, task.complexity)
+  const workloadScore = calculateWorkloadScore(artist.activeTasks)
+  const performanceScore = calculatePerformanceScore(artist)
 
   // Hard exclusions (return -1 to exclude)
-  if (skillScore < 50) return -1;  // Missing critical skills
-  if (workloadScore === 0) return -1;  // Overloaded
-  if (timezoneScore === 0 && task.isUrgent) return -1;  // Sleeping + urgent
+  if (skillScore < 50) return -1 // Missing critical skills
+  if (workloadScore === 0) return -1 // Overloaded
+  if (timezoneScore === 0 && task.isUrgent) return -1 // Sleeping + urgent
 
   return (
     skillScore * 0.35 +
-    timezoneScore * 0.20 +
-    experienceScore * 0.20 +
+    timezoneScore * 0.2 +
+    experienceScore * 0.2 +
     workloadScore * 0.15 +
-    performanceScore * 0.10
-  );
+    performanceScore * 0.1
+  )
 }
 ```
 
@@ -162,6 +166,7 @@ PENDING → OFFERED → ASSIGNED → IN_PROGRESS → ...
 ### 2.2 New Task Status: `OFFERED`
 
 When a task is offered to an artist:
+
 - Status becomes `OFFERED`
 - `offeredTo` field set to artist ID
 - `offerExpiresAt` timestamp set (current time + acceptance window)
@@ -169,12 +174,12 @@ When a task is offered to an artist:
 
 ### 2.3 Acceptance Windows (Tiered by Urgency)
 
-| Task Urgency | Acceptance Window | Reason |
-|--------------|-------------------|--------|
-| **Critical** (deadline < 4h) | 10 minutes | Immediate action needed |
-| **Urgent** (deadline < 24h) | 30 minutes | Same-day delivery |
-| **Standard** (deadline < 72h) | 2 hours | Normal workflow |
-| **Flexible** (deadline > 72h or none) | 4 hours | Relaxed timeline |
+| Task Urgency                          | Acceptance Window | Reason                  |
+| ------------------------------------- | ----------------- | ----------------------- |
+| **Critical** (deadline < 4h)          | 10 minutes        | Immediate action needed |
+| **Urgent** (deadline < 24h)           | 30 minutes        | Same-day delivery       |
+| **Standard** (deadline < 72h)         | 2 hours           | Normal workflow         |
+| **Flexible** (deadline > 72h or none) | 4 hours           | Relaxed timeline        |
 
 ### 2.4 Acceptance Flow
 
@@ -197,12 +202,14 @@ When a task is offered to an artist:
 ### 2.5 Artist Actions
 
 **Accept Task:**
+
 ```typescript
 POST /api/artist/tasks/{id}/accept
 Response: { success: true, task: {...} }
 ```
 
 **Decline Task:**
+
 ```typescript
 POST /api/artist/tasks/{id}/decline
 Body: { reason?: "too_busy" | "skill_mismatch" | "deadline_too_tight" | "other" }
@@ -228,24 +235,28 @@ Level 4: Admin intervention
 ### 3.2 Level Details
 
 **Level 1 - Best Matches (Default)**
+
 - Offer to top-scored artist
 - Wait for acceptance window
 - If declined/expired, offer to #2, then #3
 - Skill match threshold: 70%
 
 **Level 2 - Relaxed Matching**
+
 - Lower skill threshold to 50%
 - Include artists slightly over workload limit (4 tasks → 5)
 - Expand timezone tolerance (include night hours with bonus credits)
 - Offer to next 3 artists sequentially
 
 **Level 3 - Broadcast Mode**
+
 - Post task to "Available Tasks" pool
 - All eligible artists can claim (first-come-first-served)
 - Notify all available artists simultaneously
 - 30-minute window before Level 4
 
 **Level 4 - Admin Intervention**
+
 - Auto-notify admin (email + Slack + WhatsApp)
 - Admin dashboard shows "Unassigned Critical" section
 - Admin can:
@@ -256,15 +267,15 @@ Level 4: Admin intervention
 
 ### 3.3 Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| No artists with required skills | Immediately escalate to Level 4 with skill gap alert |
-| All artists at max workload | Notify admin + show client estimated wait time |
-| After-hours urgent task | Offer premium rate to night-shift artists + admin alert |
-| Artist accepts then goes offline | Auto-reassign after 2 hours of no activity |
-| Client cancels during offer period | Cancel offer, notify artist, refund credits |
-| Artist repeatedly declines | Track decline rate, flag for admin review |
-| System downtime during offer | Extend all offer windows by downtime duration |
+| Scenario                           | Handling                                                |
+| ---------------------------------- | ------------------------------------------------------- |
+| No artists with required skills    | Immediately escalate to Level 4 with skill gap alert    |
+| All artists at max workload        | Notify admin + show client estimated wait time          |
+| After-hours urgent task            | Offer premium rate to night-shift artists + admin alert |
+| Artist accepts then goes offline   | Auto-reassign after 2 hours of no activity              |
+| Client cancels during offer period | Cancel offer, notify artist, refund credits             |
+| Artist repeatedly declines         | Track decline rate, flag for admin review               |
+| System downtime during offer       | Extend all offer windows by downtime duration           |
 
 ### 3.4 Decline Tracking & Learning
 
@@ -285,6 +296,7 @@ CREATE TABLE task_offer_log (
 ```
 
 Use this data to:
+
 - Identify skill gaps in artist pool
 - Detect problematic artists (high decline rate)
 - Tune scoring weights based on acceptance patterns
@@ -383,16 +395,16 @@ ALTER TABLE freelancer_profiles ADD COLUMN on_time_rate DECIMAL(5,2); -- calcula
 ```typescript
 // Extended task status enum
 type TaskStatus =
-  | 'PENDING'           // Created, not yet offered
-  | 'OFFERED'           // Offered to an artist, awaiting response
-  | 'ASSIGNED'          // Artist accepted
-  | 'IN_PROGRESS'       // Work started
+  | 'PENDING' // Created, not yet offered
+  | 'OFFERED' // Offered to an artist, awaiting response
+  | 'ASSIGNED' // Artist accepted
+  | 'IN_PROGRESS' // Work started
   | 'PENDING_ADMIN_REVIEW'
   | 'IN_REVIEW'
   | 'REVISION_REQUESTED'
   | 'COMPLETED'
   | 'CANCELLED'
-  | 'UNASSIGNABLE';     // No artists available, needs admin
+  | 'UNASSIGNABLE' // No artists available, needs admin
 ```
 
 ---
@@ -455,26 +467,26 @@ CRON: checkEscalationAlerts()
 
 ### 6.1 Artist Notifications
 
-| Event | Channels | Content |
-|-------|----------|---------|
-| New offer | Push, Email, WhatsApp | Task title, deadline, credits, accept/decline links |
-| Offer expiring soon (5 min) | Push | Reminder with time remaining |
-| Offer expired | Push, Email | Notification that offer went to next artist |
+| Event                       | Channels              | Content                                             |
+| --------------------------- | --------------------- | --------------------------------------------------- |
+| New offer                   | Push, Email, WhatsApp | Task title, deadline, credits, accept/decline links |
+| Offer expiring soon (5 min) | Push                  | Reminder with time remaining                        |
+| Offer expired               | Push, Email           | Notification that offer went to next artist         |
 
 ### 6.2 Admin Notifications
 
-| Event | Channels | Content |
-|-------|----------|---------|
-| Task reached Level 3 | Slack, Email | Task details, why no takers |
-| Task reached Level 4 | Slack, WhatsApp, Email | Urgent: manual intervention needed |
-| High decline rate detected | Daily digest | Artists with >50% decline rate |
+| Event                      | Channels               | Content                            |
+| -------------------------- | ---------------------- | ---------------------------------- |
+| Task reached Level 3       | Slack, Email           | Task details, why no takers        |
+| Task reached Level 4       | Slack, WhatsApp, Email | Urgent: manual intervention needed |
+| High decline rate detected | Daily digest           | Artists with >50% decline rate     |
 
 ### 6.3 Client Notifications
 
-| Event | Channels | Content |
-|-------|----------|---------|
-| Task assigned | Email, In-app | Artist name, estimated start |
-| Assignment delayed | Email | Explanation, new timeline |
+| Event              | Channels      | Content                      |
+| ------------------ | ------------- | ---------------------------- |
+| Task assigned      | Email, In-app | Artist name, estimated start |
+| Assignment delayed | Email         | Explanation, new timeline    |
 
 ---
 
@@ -483,6 +495,7 @@ CRON: checkEscalationAlerts()
 ### 7.1 Artist Preferences
 
 Let artists set preferences:
+
 - Preferred task categories
 - Minimum credit value to accept
 - Maximum concurrent tasks
@@ -492,6 +505,7 @@ Let artists set preferences:
 ### 7.2 Client-Artist Affinity
 
 Track successful pairings:
+
 - Client can "favorite" an artist
 - Favorited artists get +10 score boost
 - Repeat pairings for brand consistency
@@ -505,6 +519,7 @@ Track successful pairings:
 ### 7.4 Smart Complexity Detection
 
 Auto-detect complexity from:
+
 - Estimated hours (>8h = advanced+)
 - Number of deliverables
 - Number of required skills
@@ -522,30 +537,35 @@ Auto-detect complexity from:
 ## Part 8: Implementation Phases
 
 ### Phase 1: Foundation (Week 1-2)
+
 - [ ] Create new database tables (skills, artist_skills, task_offers)
 - [ ] Add new columns to existing tables
 - [ ] Implement basic skill matching
 - [ ] Add complexity field to task creation
 
 ### Phase 2: Scoring Algorithm (Week 2-3)
+
 - [ ] Implement all scoring functions
 - [ ] Create composite score calculation
 - [ ] Add timezone handling with luxon/date-fns-tz
 - [ ] Build artist ranking system
 
 ### Phase 3: Offer Workflow (Week 3-4)
+
 - [ ] Implement OFFERED status and offer tracking
 - [ ] Build accept/decline endpoints
 - [ ] Create expiration background job
 - [ ] Add escalation chain logic
 
 ### Phase 4: Notifications & UI (Week 4-5)
+
 - [ ] Add offer notifications (push, email, WhatsApp)
 - [ ] Build artist offer acceptance UI
 - [ ] Create admin escalation dashboard
 - [ ] Add client visibility into assignment status
 
 ### Phase 5: Analytics & Tuning (Week 5-6)
+
 - [ ] Build matching analytics dashboard
 - [ ] Implement metric calculations (acceptance rate, etc.)
 - [ ] A/B test scoring weights
@@ -555,20 +575,21 @@ Auto-detect complexity from:
 
 ## Part 9: Success Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Avg time to assignment | Instant (wrong match) | < 15 min (right match) |
-| First-offer acceptance rate | N/A | > 70% |
-| Task reassignment rate | Unknown | < 10% |
-| Artist satisfaction (survey) | Unknown | > 4.0/5.0 |
-| Client satisfaction (survey) | Unknown | > 4.5/5.0 |
-| Skill match accuracy | 0% | > 85% |
+| Metric                       | Current               | Target                 |
+| ---------------------------- | --------------------- | ---------------------- |
+| Avg time to assignment       | Instant (wrong match) | < 15 min (right match) |
+| First-offer acceptance rate  | N/A                   | > 70%                  |
+| Task reassignment rate       | Unknown               | < 10%                  |
+| Artist satisfaction (survey) | Unknown               | > 4.0/5.0              |
+| Client satisfaction (survey) | Unknown               | > 4.5/5.0              |
+| Skill match accuracy         | 0%                    | > 85%                  |
 
 ---
 
 ## Appendix A: Example Scoring Scenario
 
 **Task:**
+
 - Category: Video/Motion
 - Required skills: After Effects, Motion Graphics
 - Complexity: Advanced
@@ -576,6 +597,7 @@ Auto-detect complexity from:
 - Time created: 2:00 PM UTC
 
 **Artist A:**
+
 - Skills: [After Effects (expert), Motion Graphics (advanced), Premiere (intermediate)]
 - Timezone: UTC (2:00 PM local)
 - Experience: Senior (75 completed tasks)
@@ -583,6 +605,7 @@ Auto-detect complexity from:
 - Rating: 4.8
 
 **Scores:**
+
 - Skill: 100 (has all required skills)
 - Timezone: 100 (peak hours)
 - Experience: 100 (Senior for Advanced task)
@@ -592,6 +615,7 @@ Auto-detect complexity from:
 **Composite:** (100×0.35) + (100×0.20) + (100×0.20) + (60×0.15) + (96×0.10) = **93.6**
 
 **Artist B:**
+
 - Skills: [After Effects (intermediate), Figma (expert)]
 - Timezone: UTC+8 (10:00 PM local)
 - Experience: Mid (30 completed tasks)
@@ -599,6 +623,7 @@ Auto-detect complexity from:
 - Rating: 4.5
 
 **Scores:**
+
 - Skill: 50 (missing Motion Graphics - but has After Effects)
 - Timezone: 50 (late evening)
 - Experience: 70 (Mid for Advanced task)
@@ -615,13 +640,13 @@ Auto-detect complexity from:
 
 ```typescript
 type DeclineReason =
-  | 'too_busy'           // Already have too much work
-  | 'skill_mismatch'     // Don't have the required skills
+  | 'too_busy' // Already have too much work
+  | 'skill_mismatch' // Don't have the required skills
   | 'deadline_too_tight' // Can't meet the deadline
-  | 'low_credits'        // Payment not worth the effort
-  | 'personal_conflict'  // Scheduling conflict
-  | 'client_history'     // Bad experience with client
-  | 'other';             // Free-text reason
+  | 'low_credits' // Payment not worth the effort
+  | 'personal_conflict' // Scheduling conflict
+  | 'client_history' // Bad experience with client
+  | 'other' // Free-text reason
 ```
 
 ---
@@ -639,6 +664,6 @@ type DeclineReason =
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: January 2025*
-*Author: Claude Code*
+_Document Version: 1.0_
+_Last Updated: January 2025_
+_Author: Claude Code_

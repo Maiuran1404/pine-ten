@@ -1,19 +1,19 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CreativeIntakeChat } from "@/components/creative-intake";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import type { IntakeData } from "@/lib/creative-intake/types";
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { CreativeIntakeChat } from '@/components/creative-intake'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import type { IntakeData } from '@/lib/creative-intake/types'
 
 export default function IntakePage() {
-  const router = useRouter();
-  const [isComplete, setIsComplete] = useState(false);
+  const router = useRouter()
+  const [isComplete, setIsComplete] = useState(false)
 
   const handleComplete = async (data: IntakeData) => {
-    setIsComplete(true);
+    setIsComplete(true)
 
     // TODO: Create task from intake data
     // This would call the tasks API to create a new task
@@ -21,13 +21,13 @@ export default function IntakePage() {
 
     // After a delay, redirect to tasks or dashboard
     setTimeout(() => {
-      router.push("/dashboard/tasks");
-    }, 2000);
-  };
+      router.push('/dashboard/tasks')
+    }, 2000)
+  }
 
   const handleCancel = () => {
-    router.push("/dashboard");
-  };
+    router.push('/dashboard')
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,21 +42,16 @@ export default function IntakePage() {
               </Button>
             </Link>
           </div>
-          <div className="text-sm text-muted-foreground">
-            New Project Brief
-          </div>
+          <div className="text-sm text-muted-foreground">New Project Brief</div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="container max-w-2xl mx-auto py-8">
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden min-h-[600px]">
-          <CreativeIntakeChat
-            onComplete={handleComplete}
-            onCancel={handleCancel}
-          />
+          <CreativeIntakeChat onComplete={handleComplete} onCancel={handleCancel} />
         </div>
       </main>
     </div>
-  );
+  )
 }

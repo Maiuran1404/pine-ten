@@ -1,31 +1,21 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Palette,
-  Type,
-  Image as ImageIcon,
-  Plus,
-  X,
-  Sparkles,
-  Eye,
-  EyeOff,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import type { VisualDirection } from "./types";
-import type { DeliverableStyle } from "../types";
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Palette, Type, Image as ImageIcon, Plus, X, Sparkles, EyeOff } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import type { VisualDirection } from './types'
+import type { DeliverableStyle } from '../types'
 
 // =============================================================================
 // SELECTED STYLES SECTION
 // =============================================================================
 
 interface SelectedStylesProps {
-  styles: DeliverableStyle[];
-  onRemoveStyle?: (styleId: string) => void;
+  styles: DeliverableStyle[]
+  onRemoveStyle?: (styleId: string) => void
 }
 
 function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
@@ -33,14 +23,10 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-center border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
         <ImageIcon className="h-6 w-6 text-muted-foreground/50 mb-2" />
-        <p className="text-xs text-muted-foreground">
-          No styles selected yet
-        </p>
-        <p className="text-[10px] text-muted-foreground/70 mt-1">
-          Add styles from the moodboard
-        </p>
+        <p className="text-xs text-muted-foreground">No styles selected yet</p>
+        <p className="text-[10px] text-muted-foreground/70 mt-1">Add styles from the moodboard</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -54,17 +40,11 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
           exit={{ opacity: 0, scale: 0.9 }}
           className="group relative aspect-square rounded-lg overflow-hidden border border-border"
         >
-          <img
-            src={style.imageUrl}
-            alt={style.name}
-            className="w-full h-full object-cover"
-          />
+          <img src={style.imageUrl} alt={style.name} className="w-full h-full object-cover" />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="absolute bottom-0 left-0 right-0 p-2">
-              <p className="text-xs text-white font-medium truncate">
-                {style.name}
-              </p>
+              <p className="text-xs text-white font-medium truncate">{style.name}</p>
               <Badge variant="secondary" className="text-[10px] mt-1">
                 {style.styleAxis}
               </Badge>
@@ -82,7 +62,7 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
         </motion.div>
       ))}
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -90,22 +70,22 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
 // =============================================================================
 
 interface ColorPaletteProps {
-  colors: string[];
-  onAddColor?: (color: string) => void;
-  onRemoveColor?: (color: string) => void;
+  colors: string[]
+  onAddColor?: (color: string) => void
+  onRemoveColor?: (color: string) => void
 }
 
 function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) {
-  const [newColor, setNewColor] = useState("#");
-  const [showInput, setShowInput] = useState(false);
+  const [newColor, setNewColor] = useState('#')
+  const [showInput, setShowInput] = useState(false)
 
   const handleAddColor = () => {
-    if (newColor && newColor !== "#" && onAddColor) {
-      onAddColor(newColor);
-      setNewColor("#");
-      setShowInput(false);
+    if (newColor && newColor !== '#' && onAddColor) {
+      onAddColor(newColor)
+      setNewColor('#')
+      setShowInput(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-2">
@@ -117,9 +97,7 @@ function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) 
       </div>
 
       {colors.length === 0 && !showInput ? (
-        <div className="text-xs text-muted-foreground/70 italic">
-          Colors from brand profile
-        </div>
+        <div className="text-xs text-muted-foreground/70 italic">Colors from brand profile</div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {colors.map((color, idx) => (
@@ -152,7 +130,7 @@ function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) 
             {showInput ? (
               <motion.div
                 initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
+                animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 className="flex items-center gap-1"
               >
@@ -163,8 +141,8 @@ function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) 
                   placeholder="#000000"
                   className="h-8 w-20 text-xs"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddColor();
-                    if (e.key === "Escape") setShowInput(false);
+                    if (e.key === 'Enter') handleAddColor()
+                    if (e.key === 'Escape') setShowInput(false)
                   }}
                 />
                 <Button size="icon" className="h-8 w-8" onClick={handleAddColor}>
@@ -187,7 +165,7 @@ function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) 
         </div>
       )}
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -195,8 +173,8 @@ function ColorPalette({ colors, onAddColor, onRemoveColor }: ColorPaletteProps) 
 // =============================================================================
 
 interface TypographyDisplayProps {
-  primary: string;
-  secondary: string;
+  primary: string
+  secondary: string
 }
 
 function TypographyDisplay({ primary, secondary }: TypographyDisplayProps) {
@@ -210,11 +188,9 @@ function TypographyDisplay({ primary, secondary }: TypographyDisplayProps) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="p-3 rounded-lg bg-muted/30 border border-border">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
-            Primary
-          </p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Primary</p>
           <p className="text-sm font-medium" style={{ fontFamily: primary }}>
-            {primary || "Not set"}
+            {primary || 'Not set'}
           </p>
         </div>
         <div className="p-3 rounded-lg bg-muted/30 border border-border">
@@ -222,12 +198,12 @@ function TypographyDisplay({ primary, secondary }: TypographyDisplayProps) {
             Secondary
           </p>
           <p className="text-sm" style={{ fontFamily: secondary }}>
-            {secondary || "Not set"}
+            {secondary || 'Not set'}
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -235,26 +211,22 @@ function TypographyDisplay({ primary, secondary }: TypographyDisplayProps) {
 // =============================================================================
 
 interface MoodKeywordsProps {
-  keywords: string[];
-  onAddKeyword?: (keyword: string) => void;
-  onRemoveKeyword?: (keyword: string) => void;
+  keywords: string[]
+  onAddKeyword?: (keyword: string) => void
+  onRemoveKeyword?: (keyword: string) => void
 }
 
-function MoodKeywords({
-  keywords,
-  onAddKeyword,
-  onRemoveKeyword,
-}: MoodKeywordsProps) {
-  const [newKeyword, setNewKeyword] = useState("");
-  const [showInput, setShowInput] = useState(false);
+function MoodKeywords({ keywords, onAddKeyword, onRemoveKeyword }: MoodKeywordsProps) {
+  const [newKeyword, setNewKeyword] = useState('')
+  const [showInput, setShowInput] = useState(false)
 
   const handleAdd = () => {
     if (newKeyword.trim() && onAddKeyword) {
-      onAddKeyword(newKeyword.trim());
-      setNewKeyword("");
-      setShowInput(false);
+      onAddKeyword(newKeyword.trim())
+      setNewKeyword('')
+      setShowInput(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-2">
@@ -267,11 +239,7 @@ function MoodKeywords({
 
       <div className="flex flex-wrap gap-1.5">
         {keywords.map((keyword, idx) => (
-          <Badge
-            key={`${keyword}-${idx}`}
-            variant="secondary"
-            className="text-xs gap-1 pr-1"
-          >
+          <Badge key={`${keyword}-${idx}`} variant="secondary" className="text-xs gap-1 pr-1">
             {keyword}
             {onRemoveKeyword && (
               <button
@@ -289,7 +257,7 @@ function MoodKeywords({
           {showInput ? (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
+              animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
               className="flex items-center gap-1"
             >
@@ -300,8 +268,8 @@ function MoodKeywords({
                 placeholder="keyword"
                 className="h-6 w-24 text-xs"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAdd();
-                  if (e.key === "Escape") setShowInput(false);
+                  if (e.key === 'Enter') handleAdd()
+                  if (e.key === 'Escape') setShowInput(false)
                 }}
                 autoFocus
               />
@@ -322,7 +290,7 @@ function MoodKeywords({
         </AnimatePresence>
       </div>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -330,29 +298,25 @@ function MoodKeywords({
 // =============================================================================
 
 interface AvoidElementsProps {
-  elements: string[];
-  onAddElement?: (element: string) => void;
-  onRemoveElement?: (element: string) => void;
+  elements: string[]
+  onAddElement?: (element: string) => void
+  onRemoveElement?: (element: string) => void
 }
 
-function AvoidElements({
-  elements,
-  onAddElement,
-  onRemoveElement,
-}: AvoidElementsProps) {
-  const [newElement, setNewElement] = useState("");
-  const [showInput, setShowInput] = useState(false);
+function AvoidElements({ elements, onAddElement, onRemoveElement }: AvoidElementsProps) {
+  const [newElement, setNewElement] = useState('')
+  const [showInput, setShowInput] = useState(false)
 
   const handleAdd = () => {
     if (newElement.trim() && onAddElement) {
-      onAddElement(newElement.trim());
-      setNewElement("");
-      setShowInput(false);
+      onAddElement(newElement.trim())
+      setNewElement('')
+      setShowInput(false)
     }
-  };
+  }
 
   if (elements.length === 0 && !showInput && !onAddElement) {
-    return null;
+    return null
   }
 
   return (
@@ -388,7 +352,7 @@ function AvoidElements({
           {showInput ? (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
+              animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
               className="flex items-center gap-1"
             >
@@ -399,8 +363,8 @@ function AvoidElements({
                 placeholder="element to avoid"
                 className="h-6 w-28 text-xs"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAdd();
-                  if (e.key === "Escape") setShowInput(false);
+                  if (e.key === 'Enter') handleAdd()
+                  if (e.key === 'Escape') setShowInput(false)
                 }}
                 autoFocus
               />
@@ -421,7 +385,7 @@ function AvoidElements({
         </AnimatePresence>
       </div>
     </div>
-  );
+  )
 }
 
 // =============================================================================
@@ -429,75 +393,72 @@ function AvoidElements({
 // =============================================================================
 
 interface VisualDirectionPanelProps {
-  visualDirection: VisualDirection | null;
-  onUpdate: (visualDirection: VisualDirection) => void;
+  visualDirection: VisualDirection | null
+  onUpdate: (visualDirection: VisualDirection) => void
 }
 
-export function VisualDirectionPanel({
-  visualDirection,
-  onUpdate,
-}: VisualDirectionPanelProps) {
+export function VisualDirectionPanel({ visualDirection, onUpdate }: VisualDirectionPanelProps) {
   // Create default visual direction if null
   const direction: VisualDirection = visualDirection || {
     selectedStyles: [],
     moodKeywords: [],
     colorPalette: [],
     typography: {
-      primary: "",
-      secondary: "",
+      primary: '',
+      secondary: '',
     },
     avoidElements: [],
-  };
+  }
 
   // Handlers
   const handleAddColor = (color: string) => {
     onUpdate({
       ...direction,
       colorPalette: [...direction.colorPalette, color],
-    });
-  };
+    })
+  }
 
   const handleRemoveColor = (color: string) => {
     onUpdate({
       ...direction,
       colorPalette: direction.colorPalette.filter((c) => c !== color),
-    });
-  };
+    })
+  }
 
   const handleAddKeyword = (keyword: string) => {
     onUpdate({
       ...direction,
       moodKeywords: [...direction.moodKeywords, keyword],
-    });
-  };
+    })
+  }
 
   const handleRemoveKeyword = (keyword: string) => {
     onUpdate({
       ...direction,
       moodKeywords: direction.moodKeywords.filter((k) => k !== keyword),
-    });
-  };
+    })
+  }
 
   const handleAddAvoidElement = (element: string) => {
     onUpdate({
       ...direction,
       avoidElements: [...(direction.avoidElements || []), element],
-    });
-  };
+    })
+  }
 
   const handleRemoveAvoidElement = (element: string) => {
     onUpdate({
       ...direction,
       avoidElements: (direction.avoidElements || []).filter((e) => e !== element),
-    });
-  };
+    })
+  }
 
   const handleRemoveStyle = (styleId: string) => {
     onUpdate({
       ...direction,
       selectedStyles: direction.selectedStyles.filter((s) => s.id !== styleId),
-    });
-  };
+    })
+  }
 
   // Empty state
   if (
@@ -529,7 +490,7 @@ export function VisualDirectionPanel({
           </p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -547,10 +508,7 @@ export function VisualDirectionPanel({
             </Badge>
           )}
         </div>
-        <SelectedStyles
-          styles={direction.selectedStyles}
-          onRemoveStyle={handleRemoveStyle}
-        />
+        <SelectedStyles styles={direction.selectedStyles} onRemoveStyle={handleRemoveStyle} />
       </div>
 
       {/* Color Palette */}
@@ -582,7 +540,7 @@ export function VisualDirectionPanel({
         onRemoveElement={handleRemoveAvoidElement}
       />
     </div>
-  );
+  )
 }
 
-export default VisualDirectionPanel;
+export default VisualDirectionPanel

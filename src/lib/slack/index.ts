@@ -21,7 +21,7 @@ export {
   setChannelTopic,
   openModal,
   verifySlackSignature,
-} from "./client";
+} from './client'
 
 // Channel management
 export {
@@ -30,16 +30,16 @@ export {
   removeArtistFromClientChannel,
   syncClientChannelMembers,
   getClientChannelId,
-} from "./channels";
+} from './channels'
 
 // Notifications
-export { notifySlack } from "./notifications";
+export { notifySlack } from './notifications'
 
 // Block builders
-export * as slackBlocks from "./blocks";
+export * as slackBlocks from './blocks'
 
 // Event type constants
-export { SlackEventType } from "./types";
+export { SlackEventType } from './types'
 
 // Types
 export type {
@@ -53,4 +53,4 @@ export type {
   SlackInteractionPayload,
   SlackChannelConfig,
   SlackNotificationResult,
-} from "./types";
+} from './types'

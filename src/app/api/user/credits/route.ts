@@ -1,20 +1,12 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
     const userResult = await db
       .select({
@@ -22,18 +14,12 @@ export async function GET() {
       })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!userResult.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw Errors.notFound('User')
     }
 
-    return NextResponse.json({ credits: userResult[0].credits });
-  } catch (error) {
-    logger.error({ error }, "Credits fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch credits" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ credits: userResult[0].credits })
+  })
 }

@@ -1,16 +1,10 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
   TableBody,
@@ -18,14 +12,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   DollarSign,
   TrendingUp,
@@ -44,161 +38,163 @@ import {
   RefreshCw,
   Package,
   BarChart3,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface RevenueData {
   overview: {
-    totalRevenue: number;
-    totalCreditsPurchased: number;
-    pricePerCredit: number;
-    currency: string;
-    uniquePayingCustomers: number;
-    averageOrderValue: number;
-  };
+    totalRevenue: number
+    totalCreditsPurchased: number
+    pricePerCredit: number
+    currency: string
+    uniquePayingCustomers: number
+    averageOrderValue: number
+  }
   periodRevenue: {
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-  };
+    today: number
+    thisWeek: number
+    thisMonth: number
+  }
   transactionSummary: {
-    purchases: { count: number; totalCredits: number; revenue: number };
-    usage: { count: number; totalCredits: number };
-    bonuses: { count: number; totalCredits: number };
-    refunds: { count: number; totalCredits: number };
-  };
+    purchases: { count: number; totalCredits: number; revenue: number }
+    usage: { count: number; totalCredits: number }
+    bonuses: { count: number; totalCredits: number }
+    refunds: { count: number; totalCredits: number }
+  }
   monthlyRevenue: Array<{
-    month: string;
-    credits: number;
-    revenue: number;
-    transactionCount: number;
-  }>;
+    month: string
+    credits: number
+    revenue: number
+    transactionCount: number
+  }>
   topCustomers: Array<{
-    userId: string;
-    name: string;
-    email: string;
-    totalCredits: number;
-    totalRevenue: number;
-    transactionCount: number;
-  }>;
+    userId: string
+    name: string
+    email: string
+    totalCredits: number
+    totalRevenue: number
+    transactionCount: number
+  }>
   packageDistribution: Array<{
-    credits: number;
-    packageName: string;
-    count: number;
-    revenue: number;
-  }>;
+    credits: number
+    packageName: string
+    count: number
+    revenue: number
+  }>
   recentTransactions: Array<{
-    id: string;
-    userId: string;
-    userName: string;
-    userEmail: string;
-    credits: number;
-    revenue: number;
-    type: string;
-    description: string;
-    stripePaymentId: string | null;
-    createdAt: string;
-  }>;
+    id: string
+    userId: string
+    userName: string
+    userEmail: string
+    credits: number
+    revenue: number
+    type: string
+    description: string
+    stripePaymentId: string | null
+    createdAt: string
+  }>
   stripe: {
     balance: {
-      available: Array<{ amount: number; currency: string }>;
-      pending: Array<{ amount: number; currency: string }>;
-    } | null;
+      available: Array<{ amount: number; currency: string }>
+      pending: Array<{ amount: number; currency: string }>
+    } | null
     recentCharges: Array<{
-      id: string;
-      amount: number;
-      currency: string;
-      status: string;
-      created: number;
-      customerEmail: string | null;
-      description: string | null;
-      receiptUrl: string | null;
-    }>;
+      id: string
+      amount: number
+      currency: string
+      status: string
+      created: number
+      customerEmail: string | null
+      description: string | null
+      receiptUrl: string | null
+    }>
     recentPayouts: Array<{
-      id: string;
-      amount: number;
-      currency: string;
-      status: string;
-      created: number;
-      arrivalDate: number;
-    }>;
-  };
+      id: string
+      amount: number
+      currency: string
+      status: string
+      created: number
+      arrivalDate: number
+    }>
+  }
   webhookEvents: Array<{
-    id: string;
-    eventId: string;
-    eventType: string;
-    status: string;
-    processedAt: string;
-    errorMessage: string | null;
-  }>;
+    id: string
+    eventId: string
+    eventType: string
+    status: string
+    processedAt: string
+    errorMessage: string | null
+  }>
 }
 
 export default function RevenuePage() {
-  const [data, setData] = useState<RevenueData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [period, setPeriod] = useState("all");
+  const [data, setData] = useState<RevenueData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [period, setPeriod] = useState('all')
 
   useEffect(() => {
-    fetchRevenue();
-  }, [period]);
+    fetchRevenue()
+  }, [period])
 
   const fetchRevenue = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch(`/api/admin/revenue?period=${period}`);
+      const response = await fetch(`/api/admin/revenue?period=${period}`)
       if (response.ok) {
-        const result = await response.json();
-        setData(result.data);
+        const result = await response.json()
+        setData(result.data)
       }
     } catch (error) {
-      console.error("Failed to fetch revenue:", error);
+      console.error('Failed to fetch revenue:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount)
+  }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
 
   const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "succeeded":
-      case "processed":
-      case "paid":
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Success</Badge>;
-      case "pending":
-      case "in_transit":
-        return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>;
-      case "failed":
-        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">Failed</Badge>;
+      case 'succeeded':
+      case 'processed':
+      case 'paid':
+        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Success</Badge>
+      case 'pending':
+      case 'in_transit':
+        return (
+          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>
+        )
+      case 'failed':
+        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">Failed</Badge>
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -225,7 +221,7 @@ export default function RevenuePage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   if (!data) {
@@ -233,7 +229,7 @@ export default function RevenuePage() {
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Failed to load revenue data</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -242,9 +238,7 @@ export default function RevenuePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Revenue</h1>
-          <p className="text-muted-foreground">
-            Comprehensive billing and payment analytics
-          </p>
+          <p className="text-muted-foreground">Comprehensive billing and payment analytics</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={period} onValueChange={setPeriod}>
@@ -332,7 +326,7 @@ export default function RevenuePage() {
                 {data.stripe.balance.available.map((b, i) => (
                   <span key={i}>
                     {formatCurrency(b.amount / 100)}
-                    {i < data.stripe.balance!.available.length - 1 && ", "}
+                    {i < data.stripe.balance!.available.length - 1 && ', '}
                   </span>
                 ))}
               </div>
@@ -350,7 +344,7 @@ export default function RevenuePage() {
                 {data.stripe.balance.pending.map((b, i) => (
                   <span key={i}>
                     {formatCurrency(b.amount / 100)}
-                    {i < data.stripe.balance!.pending.length - 1 && ", "}
+                    {i < data.stripe.balance!.pending.length - 1 && ', '}
                   </span>
                 ))}
               </div>
@@ -402,7 +396,7 @@ export default function RevenuePage() {
                       <TableRow key={tx.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{tx.userName || "Unknown"}</p>
+                            <p className="font-medium">{tx.userName || 'Unknown'}</p>
                             <p className="text-sm text-muted-foreground">{tx.userEmail}</p>
                           </div>
                         </TableCell>
@@ -522,13 +516,11 @@ export default function RevenuePage() {
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">
-                              {formatCurrency(charge.amount / 100)}
-                            </p>
+                            <p className="font-medium">{formatCurrency(charge.amount / 100)}</p>
                             {getStatusBadge(charge.status)}
                           </div>
                           <p className="text-sm text-muted-foreground truncate">
-                            {charge.customerEmail || "No email"}
+                            {charge.customerEmail || 'No email'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {formatTimestamp(charge.created)}
@@ -572,9 +564,7 @@ export default function RevenuePage() {
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">
-                              {formatCurrency(payout.amount / 100)}
-                            </p>
+                            <p className="font-medium">{formatCurrency(payout.amount / 100)}</p>
                             {getStatusBadge(payout.status)}
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -601,9 +591,7 @@ export default function RevenuePage() {
                 <Users className="h-5 w-5" />
                 Top Customers by Revenue
               </CardTitle>
-              <CardDescription>
-                Customers ranked by total credit purchases
-              </CardDescription>
+              <CardDescription>Customers ranked by total credit purchases</CardDescription>
             </CardHeader>
             <CardContent>
               {data.topCustomers.length === 0 ? (
@@ -623,13 +611,13 @@ export default function RevenuePage() {
                     {data.topCustomers.map((customer, index) => (
                       <TableRow key={customer.userId}>
                         <TableCell>
-                          <span className={`font-bold ${index < 3 ? "text-yellow-500" : ""}`}>
+                          <span className={`font-bold ${index < 3 ? 'text-yellow-500' : ''}`}>
                             #{index + 1}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{customer.name || "Unknown"}</p>
+                            <p className="font-medium">{customer.name || 'Unknown'}</p>
                             <p className="text-sm text-muted-foreground">{customer.email}</p>
                           </div>
                         </TableCell>
@@ -657,9 +645,7 @@ export default function RevenuePage() {
                 <Package className="h-5 w-5" />
                 Credit Package Distribution
               </CardTitle>
-              <CardDescription>
-                Breakdown of sales by credit package size
-              </CardDescription>
+              <CardDescription>Breakdown of sales by credit package size</CardDescription>
             </CardHeader>
             <CardContent>
               {data.packageDistribution.length === 0 ? (
@@ -667,17 +653,15 @@ export default function RevenuePage() {
               ) : (
                 <div className="space-y-4">
                   {data.packageDistribution.map((pkg) => {
-                    const totalSales = data.packageDistribution.reduce((sum, p) => sum + p.count, 0);
-                    const percentage = totalSales > 0 ? (pkg.count / totalSales) * 100 : 0;
+                    const totalSales = data.packageDistribution.reduce((sum, p) => sum + p.count, 0)
+                    const percentage = totalSales > 0 ? (pkg.count / totalSales) * 100 : 0
 
                     return (
                       <div key={pkg.credits} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Badge variant="outline">{pkg.packageName}</Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {pkg.count} sales
-                            </span>
+                            <span className="text-sm text-muted-foreground">{pkg.count} sales</span>
                           </div>
                           <span className="font-medium text-green-600">
                             {formatCurrency(pkg.revenue)}
@@ -693,7 +677,7 @@ export default function RevenuePage() {
                           {percentage.toFixed(1)}% of sales
                         </p>
                       </div>
-                    );
+                    )
                   })}
 
                   <div className="pt-4 border-t">
@@ -744,8 +728,8 @@ export default function RevenuePage() {
                   {/* Visual bars */}
                   <div className="space-y-3">
                     {data.monthlyRevenue.slice(0, 6).map((month) => {
-                      const maxRevenue = Math.max(...data.monthlyRevenue.map(m => m.revenue));
-                      const percentage = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0;
+                      const maxRevenue = Math.max(...data.monthlyRevenue.map((m) => m.revenue))
+                      const percentage = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0
 
                       return (
                         <div key={month.month} className="space-y-1">
@@ -763,7 +747,7 @@ export default function RevenuePage() {
                             {month.credits} credits from {month.transactionCount} transactions
                           </p>
                         </div>
-                      );
+                      )
                     })}
                   </div>
 
@@ -836,7 +820,7 @@ export default function RevenuePage() {
                           </code>
                         </TableCell>
                         <TableCell>
-                          {event.status === "processed" ? (
+                          {event.status === 'processed' ? (
                             <div className="flex items-center gap-1 text-green-500">
                               <CheckCircle className="h-4 w-4" />
                               <span className="text-sm">Processed</span>
@@ -868,5 +852,5 @@ export default function RevenuePage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

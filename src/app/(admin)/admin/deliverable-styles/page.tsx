@@ -1,20 +1,14 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -23,26 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { LoadingSpinner } from "@/components/shared/loading";
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { LoadingSpinner } from '@/components/shared/loading'
 import {
   Plus,
   Trash2,
@@ -54,77 +39,76 @@ import {
   ChevronDown,
   ChevronRight,
   ImageIcon,
-  TrendingUp,
   Layers,
   MessageSquare,
   Grid3X3,
   Upload,
   Palette,
   History,
-} from "lucide-react";
+} from 'lucide-react'
 import {
   DELIVERABLE_TYPES,
   STYLE_AXES,
   type DeliverableType,
   type StyleAxis,
-} from "@/lib/constants/reference-libraries";
-import { DeliverableStyleUploader } from "@/components/admin/deliverable-style-uploader";
-import { DeliverableStyleScraper } from "@/components/admin/deliverable-style-scraper";
-import { BiggedKeywordScraper } from "@/components/admin/bigged-keyword-scraper";
-import { ImportLogsViewer } from "@/components/admin/import-logs-viewer";
-import { StatCard } from "@/components/admin/stat-card";
-import { cn } from "@/lib/utils";
+} from '@/lib/constants/reference-libraries'
+import { DeliverableStyleUploader } from '@/components/admin/deliverable-style-uploader'
+import { DeliverableStyleScraper } from '@/components/admin/deliverable-style-scraper'
+import { BiggedKeywordScraper } from '@/components/admin/bigged-keyword-scraper'
+import { ImportLogsViewer } from '@/components/admin/import-logs-viewer'
+import { StatCard } from '@/components/admin/stat-card'
+import { cn } from '@/lib/utils'
 
 interface DeliverableStyleReference {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  deliverableType: DeliverableType;
-  styleAxis: StyleAxis;
-  subStyle: string | null;
-  semanticTags: string[];
-  featuredOrder: number;
-  displayOrder: number;
-  isActive: boolean;
-  usageCount: number;
-  createdAt: string;
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  deliverableType: DeliverableType
+  styleAxis: StyleAxis
+  subStyle: string | null
+  semanticTags: string[]
+  featuredOrder: number
+  displayOrder: number
+  isActive: boolean
+  usageCount: number
+  createdAt: string
   // Extended fields
-  colorTemperature?: string;
-  energyLevel?: string;
-  densityLevel?: string;
-  formalityLevel?: string;
-  colorSamples?: string[];
-  industries?: string[];
-  targetAudience?: string;
-  visualElements?: string[];
-  moodKeywords?: string[];
+  colorTemperature?: string
+  energyLevel?: string
+  densityLevel?: string
+  formalityLevel?: string
+  colorSamples?: string[]
+  industries?: string[]
+  targetAudience?: string
+  visualElements?: string[]
+  moodKeywords?: string[]
 }
 
 interface Stats {
-  total: number;
-  active: number;
-  typesCount: number;
-  axesCount: number;
-  totalUsage: number;
-  coverageScore: number;
-  matrix: Record<string, number>;
-  gaps: number;
-  missingColors: number;
-  missingColorsByType: Record<string, number>;
+  total: number
+  active: number
+  typesCount: number
+  axesCount: number
+  totalUsage: number
+  coverageScore: number
+  matrix: Record<string, number>
+  gaps: number
+  missingColors: number
+  missingColorsByType: Record<string, number>
 }
 
 const defaultFormState = {
-  name: "",
-  description: "",
-  imageUrl: "",
-  deliverableType: "instagram_post" as DeliverableType,
-  styleAxis: "minimal" as StyleAxis,
-  subStyle: "",
-  semanticTags: "",
+  name: '',
+  description: '',
+  imageUrl: '',
+  deliverableType: 'instagram_post' as DeliverableType,
+  styleAxis: 'minimal' as StyleAxis,
+  subStyle: '',
+  semanticTags: '',
   featuredOrder: 0,
   displayOrder: 0,
-};
+}
 
 // Matrix cell component
 function MatrixCell({
@@ -134,49 +118,52 @@ function MatrixCell({
   isSelected,
   onClick,
 }: {
-  count: number;
-  deliverableType: DeliverableType;
-  styleAxis: StyleAxis;
-  isSelected: boolean;
-  onClick: () => void;
+  count: number
+  deliverableType: DeliverableType
+  styleAxis: StyleAxis
+  isSelected: boolean
+  onClick: () => void
 }) {
   const getColor = (count: number) => {
-    if (count === 0) return "bg-red-500/20 border-red-500/30 hover:bg-red-500/30";
-    if (count <= 2) return "bg-yellow-500/20 border-yellow-500/30 hover:bg-yellow-500/30";
-    if (count <= 5) return "bg-green-500/20 border-green-500/30 hover:bg-green-500/30";
-    return "bg-green-500/40 border-green-500/50 hover:bg-green-500/50";
-  };
+    if (count === 0) return 'bg-red-500/20 border-red-500/30 hover:bg-red-500/30'
+    if (count <= 2) return 'bg-yellow-500/20 border-yellow-500/30 hover:bg-yellow-500/30'
+    if (count <= 5) return 'bg-green-500/20 border-green-500/30 hover:bg-green-500/30'
+    return 'bg-green-500/40 border-green-500/50 hover:bg-green-500/50'
+  }
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full h-10 rounded border text-sm font-medium transition-all",
+        'w-full h-10 rounded border text-sm font-medium transition-all',
         getColor(count),
-        isSelected && "ring-2 ring-primary ring-offset-2"
+        isSelected && 'ring-2 ring-primary ring-offset-2'
       )}
-      title={`${DELIVERABLE_TYPES.find(t => t.value === deliverableType)?.label} - ${STYLE_AXES.find(a => a.value === styleAxis)?.label}: ${count} styles`}
+      title={`${DELIVERABLE_TYPES.find((t) => t.value === deliverableType)?.label} - ${STYLE_AXES.find((a) => a.value === styleAxis)?.label}: ${count} styles`}
     >
       {count}
     </button>
-  );
+  )
 }
 
 export default function DeliverableStylesPage() {
-  const [styles, setStyles] = useState<DeliverableStyleReference[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [axisFilter, setAxisFilter] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingStyle, setEditingStyle] = useState<DeliverableStyleReference | null>(null);
-  const [formState, setFormState] = useState(defaultFormState);
-  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCell, setSelectedCell] = useState<{ deliverableType: DeliverableType; styleAxis: StyleAxis } | null>(null);
+  const [styles, setStyles] = useState<DeliverableStyleReference[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [axisFilter, setAxisFilter] = useState('all')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingStyle, setEditingStyle] = useState<DeliverableStyleReference | null>(null)
+  const [formState, setFormState] = useState(defaultFormState)
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState('overview')
+  const [selectedCell, setSelectedCell] = useState<{
+    deliverableType: DeliverableType
+    styleAxis: StyleAxis
+  } | null>(null)
   const [stats, setStats] = useState<Stats>({
     total: 0,
     active: 0,
@@ -188,53 +175,53 @@ export default function DeliverableStylesPage() {
     gaps: 0,
     missingColors: 0,
     missingColorsByType: {},
-  });
+  })
 
   useEffect(() => {
-    fetchStyles();
-  }, []);
+    fetchStyles()
+  }, [])
 
   useEffect(() => {
     if (styles.length > 0) {
-      calculateStats();
+      calculateStats()
     }
-  }, [styles]);
+  }, [styles])
 
   const calculateStats = () => {
-    const active = styles.filter(s => s.isActive);
-    const typesUsed = new Set(styles.map(s => s.deliverableType));
-    const axesUsed = new Set(styles.map(s => s.styleAxis));
-    const totalUsage = styles.reduce((sum, s) => sum + s.usageCount, 0);
+    const active = styles.filter((s) => s.isActive)
+    const typesUsed = new Set(styles.map((s) => s.deliverableType))
+    const axesUsed = new Set(styles.map((s) => s.styleAxis))
+    const totalUsage = styles.reduce((sum, s) => sum + s.usageCount, 0)
 
     // Build coverage matrix
-    const matrix: Record<string, number> = {};
+    const matrix: Record<string, number> = {}
     for (const type of DELIVERABLE_TYPES) {
       for (const axis of STYLE_AXES) {
-        const key = `${type.value}-${axis.value}`;
+        const key = `${type.value}-${axis.value}`
         matrix[key] = active.filter(
-          s => s.deliverableType === type.value && s.styleAxis === axis.value
-        ).length;
+          (s) => s.deliverableType === type.value && s.styleAxis === axis.value
+        ).length
       }
     }
 
-    const totalCells = DELIVERABLE_TYPES.length * STYLE_AXES.length;
-    const gaps = Object.values(matrix).filter(count => count < 2).length;
-    const coverageScore = Math.round(((totalCells - gaps) / totalCells) * 100);
+    const totalCells = DELIVERABLE_TYPES.length * STYLE_AXES.length
+    const gaps = Object.values(matrix).filter((count) => count < 2).length
+    const coverageScore = Math.round(((totalCells - gaps) / totalCells) * 100)
 
     // Calculate missing colors - styles without colorSamples data
     const missingColors = active.filter(
-      s => !s.colorSamples || s.colorSamples.length === 0
-    ).length;
+      (s) => !s.colorSamples || s.colorSamples.length === 0
+    ).length
 
     // Group missing colors by deliverable type
-    const missingColorsByType: Record<string, number> = {};
+    const missingColorsByType: Record<string, number> = {}
     for (const type of DELIVERABLE_TYPES) {
-      const typeStyles = active.filter(s => s.deliverableType === type.value);
+      const typeStyles = active.filter((s) => s.deliverableType === type.value)
       const missingCount = typeStyles.filter(
-        s => !s.colorSamples || s.colorSamples.length === 0
-      ).length;
+        (s) => !s.colorSamples || s.colorSamples.length === 0
+      ).length
       if (missingCount > 0) {
-        missingColorsByType[type.value] = missingCount;
+        missingColorsByType[type.value] = missingCount
       }
     }
 
@@ -249,56 +236,58 @@ export default function DeliverableStylesPage() {
       gaps,
       missingColors,
       missingColorsByType,
-    });
-  };
+    })
+  }
 
   const fetchStyles = async () => {
     try {
-      const response = await fetch("/api/admin/deliverable-styles");
+      const response = await fetch('/api/admin/deliverable-styles')
       if (response.ok) {
-        const result = await response.json();
-        const styles = result.data?.styles || [];
-        setStyles(styles);
-        const types = new Set<string>(styles.map((s: DeliverableStyleReference) => s.deliverableType));
-        setExpandedTypes(types);
+        const result = await response.json()
+        const styles = result.data?.styles || []
+        setStyles(styles)
+        const types = new Set<string>(
+          styles.map((s: DeliverableStyleReference) => s.deliverableType)
+        )
+        setExpandedTypes(types)
       }
     } catch (error) {
-      console.error("Failed to fetch deliverable styles:", error);
-      toast.error("Failed to load deliverable styles");
+      console.error('Failed to fetch deliverable styles:', error)
+      toast.error('Failed to load deliverable styles')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const openCreateDialog = () => {
-    setEditingStyle(null);
-    setFormState(defaultFormState);
-    setDialogOpen(true);
-  };
+    setEditingStyle(null)
+    setFormState(defaultFormState)
+    setDialogOpen(true)
+  }
 
   const openEditDialog = (style: DeliverableStyleReference) => {
-    setEditingStyle(style);
+    setEditingStyle(style)
     setFormState({
       name: style.name,
-      description: style.description || "",
+      description: style.description || '',
       imageUrl: style.imageUrl,
       deliverableType: style.deliverableType,
       styleAxis: style.styleAxis,
-      subStyle: style.subStyle || "",
-      semanticTags: style.semanticTags.join(", "),
+      subStyle: style.subStyle || '',
+      semanticTags: style.semanticTags.join(', '),
       featuredOrder: style.featuredOrder,
       displayOrder: style.displayOrder,
-    });
-    setDialogOpen(true);
-  };
+    })
+    setDialogOpen(true)
+  }
 
   const handleSave = async () => {
     if (!formState.name || !formState.imageUrl) {
-      toast.error("Please fill in name and image URL");
-      return;
+      toast.error('Please fill in name and image URL')
+      return
     }
 
-    setIsSaving(true);
+    setIsSaving(true)
     try {
       const payload = {
         name: formState.name,
@@ -307,136 +296,139 @@ export default function DeliverableStylesPage() {
         deliverableType: formState.deliverableType,
         styleAxis: formState.styleAxis,
         subStyle: formState.subStyle || null,
-        semanticTags: formState.semanticTags.split(",").map((s) => s.trim()).filter(Boolean),
+        semanticTags: formState.semanticTags
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
         featuredOrder: formState.featuredOrder,
         displayOrder: formState.displayOrder,
-      };
+      }
 
       if (editingStyle) {
         const response = await fetch(`/api/admin/deliverable-styles/${editingStyle.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        });
+        })
 
-        if (!response.ok) throw new Error("Failed to update");
+        if (!response.ok) throw new Error('Failed to update')
 
-        const result = await response.json();
-        setStyles((prev) =>
-          prev.map((s) => (s.id === editingStyle.id ? result.data.style : s))
-        );
-        toast.success("Deliverable style updated!");
+        const result = await response.json()
+        setStyles((prev) => prev.map((s) => (s.id === editingStyle.id ? result.data.style : s)))
+        toast.success('Deliverable style updated!')
       } else {
-        const response = await fetch("/api/admin/deliverable-styles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/admin/deliverable-styles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        });
+        })
 
-        if (!response.ok) throw new Error("Failed to create");
+        if (!response.ok) throw new Error('Failed to create')
 
-        const result = await response.json();
-        setStyles((prev) => [result.data.style, ...prev]);
-        setExpandedTypes((prev) => new Set([...prev, result.data.style.deliverableType]));
-        toast.success("Deliverable style created!");
+        const result = await response.json()
+        setStyles((prev) => [result.data.style, ...prev])
+        setExpandedTypes((prev) => new Set([...prev, result.data.style.deliverableType]))
+        toast.success('Deliverable style created!')
       }
 
-      setDialogOpen(false);
-      setFormState(defaultFormState);
-      setEditingStyle(null);
+      setDialogOpen(false)
+      setFormState(defaultFormState)
+      setEditingStyle(null)
     } catch {
-      toast.error(editingStyle ? "Failed to update style" : "Failed to create style");
+      toast.error(editingStyle ? 'Failed to update style' : 'Failed to create style')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id);
+    setDeletingId(id)
     try {
       const response = await fetch(`/api/admin/deliverable-styles?id=${id}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
 
-      if (!response.ok) throw new Error("Failed to delete");
+      if (!response.ok) throw new Error('Failed to delete')
 
-      setStyles((prev) => prev.filter((s) => s.id !== id));
-      toast.success("Deliverable style deleted");
+      setStyles((prev) => prev.filter((s) => s.id !== id))
+      toast.success('Deliverable style deleted')
     } catch {
-      toast.error("Failed to delete style");
+      toast.error('Failed to delete style')
     } finally {
-      setDeletingId(null);
+      setDeletingId(null)
     }
-  };
+  }
 
   const handleToggleActive = async (style: DeliverableStyleReference) => {
-    setTogglingId(style.id);
+    setTogglingId(style.id)
     try {
       const response = await fetch(`/api/admin/deliverable-styles/${style.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !style.isActive }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to toggle");
+      if (!response.ok) throw new Error('Failed to toggle')
 
-      const result = await response.json();
-      setStyles((prev) =>
-        prev.map((s) => (s.id === style.id ? result.data.style : s))
-      );
-      toast.success(result.data.style.isActive ? "Style activated" : "Style deactivated");
+      const result = await response.json()
+      setStyles((prev) => prev.map((s) => (s.id === style.id ? result.data.style : s)))
+      toast.success(result.data.style.isActive ? 'Style activated' : 'Style deactivated')
     } catch {
-      toast.error("Failed to toggle status");
+      toast.error('Failed to toggle status')
     } finally {
-      setTogglingId(null);
+      setTogglingId(null)
     }
-  };
+  }
 
   const toggleTypeExpanded = (type: string) => {
     setExpandedTypes((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(type)) {
-        next.delete(type);
+        next.delete(type)
       } else {
-        next.add(type);
+        next.add(type)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   const filteredStyles = styles.filter((style) => {
     const matchesSearch =
-      searchTerm === "" ||
+      searchTerm === '' ||
       style.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      style.semanticTags.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase()));
+      style.semanticTags.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase()))
 
-    const matchesType = typeFilter === "all" || style.deliverableType === typeFilter;
-    const matchesAxis = axisFilter === "all" || style.styleAxis === axisFilter;
+    const matchesType = typeFilter === 'all' || style.deliverableType === typeFilter
+    const matchesAxis = axisFilter === 'all' || style.styleAxis === axisFilter
 
     // Filter by selected cell if any
-    const matchesCell = !selectedCell ||
+    const matchesCell =
+      !selectedCell ||
       (style.deliverableType === selectedCell.deliverableType &&
-       style.styleAxis === selectedCell.styleAxis);
+        style.styleAxis === selectedCell.styleAxis)
 
-    return matchesSearch && matchesType && matchesAxis && matchesCell;
-  });
+    return matchesSearch && matchesType && matchesAxis && matchesCell
+  })
 
   // Group styles by deliverable type
-  const groupedStyles = filteredStyles.reduce((acc, style) => {
-    if (!acc[style.deliverableType]) {
-      acc[style.deliverableType] = [];
-    }
-    acc[style.deliverableType].push(style);
-    return acc;
-  }, {} as Record<string, DeliverableStyleReference[]>);
+  const groupedStyles = filteredStyles.reduce(
+    (acc, style) => {
+      if (!acc[style.deliverableType]) {
+        acc[style.deliverableType] = []
+      }
+      acc[style.deliverableType].push(style)
+      return acc
+    },
+    {} as Record<string, DeliverableStyleReference[]>
+  )
 
   const getDeliverableTypeLabel = (value: string) => {
-    return DELIVERABLE_TYPES.find((t) => t.value === value)?.label || value;
-  };
+    return DELIVERABLE_TYPES.find((t) => t.value === value)?.label || value
+  }
 
   const getStyleAxisLabel = (value: string) => {
-    return STYLE_AXES.find((a) => a.value === value)?.label || value;
-  };
+    return STYLE_AXES.find((a) => a.value === value)?.label || value
+  }
 
   return (
     <div className="space-y-6">
@@ -457,12 +449,12 @@ export default function DeliverableStylesPage() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingStyle ? "Edit Deliverable Style" : "Add Deliverable Style"}
+                {editingStyle ? 'Edit Deliverable Style' : 'Add Deliverable Style'}
               </DialogTitle>
               <DialogDescription>
                 {editingStyle
-                  ? "Update the deliverable style details"
-                  : "Add a new style reference for chat suggestions"}
+                  ? 'Update the deliverable style details'
+                  : 'Add a new style reference for chat suggestions'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -503,7 +495,7 @@ export default function DeliverableStylesPage() {
                       alt="Preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
+                        ;(e.target as HTMLImageElement).style.display = 'none'
                       }}
                     />
                   </div>
@@ -526,7 +518,9 @@ export default function DeliverableStylesPage() {
                   <Label>Deliverable Type *</Label>
                   <Select
                     value={formState.deliverableType}
-                    onValueChange={(value) => setFormState({ ...formState, deliverableType: value as DeliverableType })}
+                    onValueChange={(value) =>
+                      setFormState({ ...formState, deliverableType: value as DeliverableType })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -544,7 +538,9 @@ export default function DeliverableStylesPage() {
                   <Label>Style Axis *</Label>
                   <Select
                     value={formState.styleAxis}
-                    onValueChange={(value) => setFormState({ ...formState, styleAxis: value as StyleAxis })}
+                    onValueChange={(value) =>
+                      setFormState({ ...formState, styleAxis: value as StyleAxis })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -567,9 +563,13 @@ export default function DeliverableStylesPage() {
                     id="featuredOrder"
                     type="number"
                     value={formState.featuredOrder}
-                    onChange={(e) => setFormState({ ...formState, featuredOrder: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormState({ ...formState, featuredOrder: parseInt(e.target.value) || 0 })
+                    }
                   />
-                  <p className="text-xs text-muted-foreground">Lower = shown first when style is featured</p>
+                  <p className="text-xs text-muted-foreground">
+                    Lower = shown first when style is featured
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="displayOrder">Display Order</Label>
@@ -577,7 +577,9 @@ export default function DeliverableStylesPage() {
                     id="displayOrder"
                     type="number"
                     value={formState.displayOrder}
-                    onChange={(e) => setFormState({ ...formState, displayOrder: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormState({ ...formState, displayOrder: parseInt(e.target.value) || 0 })
+                    }
                   />
                   <p className="text-xs text-muted-foreground">Order within same style axis</p>
                 </div>
@@ -591,7 +593,9 @@ export default function DeliverableStylesPage() {
                   onChange={(e) => setFormState({ ...formState, semanticTags: e.target.value })}
                   placeholder="gen-z, luxury, tech-forward, startup"
                 />
-                <p className="text-xs text-muted-foreground">Tags help AI match styles to brand context</p>
+                <p className="text-xs text-muted-foreground">
+                  Tags help AI match styles to brand context
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -599,7 +603,7 @@ export default function DeliverableStylesPage() {
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <LoadingSpinner size="sm" /> : editingStyle ? "Update" : "Create"}
+                {isSaving ? <LoadingSpinner size="sm" /> : editingStyle ? 'Update' : 'Create'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -643,7 +647,9 @@ export default function DeliverableStylesPage() {
                 value={`${stats.coverageScore}%`}
                 subtext={`${stats.gaps} gaps remaining`}
                 icon={Grid3X3}
-                trend={stats.coverageScore >= 80 ? "up" : stats.coverageScore >= 50 ? "neutral" : "down"}
+                trend={
+                  stats.coverageScore >= 80 ? 'up' : stats.coverageScore >= 50 ? 'neutral' : 'down'
+                }
               />
               <StatCard
                 label="Types Covered"
@@ -661,9 +667,19 @@ export default function DeliverableStylesPage() {
               <StatCard
                 label="Missing Colors"
                 value={stats.missingColors}
-                subtext={stats.missingColors === 0 ? "All styles have colors" : `of ${stats.active} active styles`}
+                subtext={
+                  stats.missingColors === 0
+                    ? 'All styles have colors'
+                    : `of ${stats.active} active styles`
+                }
                 icon={Palette}
-                trend={stats.missingColors === 0 ? "up" : stats.missingColors > stats.active / 2 ? "down" : "neutral"}
+                trend={
+                  stats.missingColors === 0
+                    ? 'up'
+                    : stats.missingColors > stats.active / 2
+                      ? 'down'
+                      : 'neutral'
+                }
               />
             </div>
           )}
@@ -677,7 +693,8 @@ export default function DeliverableStylesPage() {
                   Color Data Missing
                 </CardTitle>
                 <CardDescription>
-                  These deliverable types have styles without color information. Add colorSamples to improve matching accuracy.
+                  These deliverable types have styles without color information. Add colorSamples to
+                  improve matching accuracy.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -720,10 +737,18 @@ export default function DeliverableStylesPage() {
               ) : (
                 <div className="overflow-x-auto">
                   {/* Header row */}
-                  <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `120px repeat(${STYLE_AXES.length}, minmax(60px, 1fr))` }}>
+                  <div
+                    className="grid gap-2 mb-2"
+                    style={{
+                      gridTemplateColumns: `120px repeat(${STYLE_AXES.length}, minmax(60px, 1fr))`,
+                    }}
+                  >
                     <div />
                     {STYLE_AXES.map((axis) => (
-                      <div key={axis.value} className="text-xs font-medium text-center text-muted-foreground truncate px-1">
+                      <div
+                        key={axis.value}
+                        className="text-xs font-medium text-center text-muted-foreground truncate px-1"
+                      >
                         {axis.label}
                       </div>
                     ))}
@@ -731,7 +756,13 @@ export default function DeliverableStylesPage() {
 
                   {/* Matrix rows */}
                   {DELIVERABLE_TYPES.map((type) => (
-                    <div key={type.value} className="grid gap-2 mb-2" style={{ gridTemplateColumns: `120px repeat(${STYLE_AXES.length}, minmax(60px, 1fr))` }}>
+                    <div
+                      key={type.value}
+                      className="grid gap-2 mb-2"
+                      style={{
+                        gridTemplateColumns: `120px repeat(${STYLE_AXES.length}, minmax(60px, 1fr))`,
+                      }}
+                    >
                       <div className="flex items-center text-xs font-medium text-muted-foreground truncate pr-2">
                         {type.label}
                       </div>
@@ -746,8 +777,11 @@ export default function DeliverableStylesPage() {
                             selectedCell?.styleAxis === axis.value
                           }
                           onClick={() => {
-                            setSelectedCell({ deliverableType: type.value as DeliverableType, styleAxis: axis.value as StyleAxis });
-                            setActiveTab("browse");
+                            setSelectedCell({
+                              deliverableType: type.value as DeliverableType,
+                              styleAxis: axis.value as StyleAxis,
+                            })
+                            setActiveTab('browse')
                           }}
                         />
                       ))}
@@ -792,14 +826,17 @@ export default function DeliverableStylesPage() {
                     for (const type of DELIVERABLE_TYPES) {
                       for (const axis of STYLE_AXES) {
                         if ((stats.matrix[`${type.value}-${axis.value}`] || 0) === 0) {
-                          setSelectedCell({ deliverableType: type.value as DeliverableType, styleAxis: axis.value as StyleAxis });
-                          setActiveTab("upload");
-                          toast.info(`Upload styles for ${type.label} - ${axis.label}`);
-                          return;
+                          setSelectedCell({
+                            deliverableType: type.value as DeliverableType,
+                            styleAxis: axis.value as StyleAxis,
+                          })
+                          setActiveTab('upload')
+                          toast.info(`Upload styles for ${type.label} - ${axis.label}`)
+                          return
                         }
                       }
                     }
-                    toast.info("All combinations have at least one style!");
+                    toast.info('All combinations have at least one style!')
                   }}
                 >
                   Fill Empty Gaps
@@ -807,8 +844,8 @@ export default function DeliverableStylesPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setSelectedCell(null);
-                    setActiveTab("browse");
+                    setSelectedCell(null)
+                    setActiveTab('browse')
                   }}
                 >
                   View All Styles
@@ -825,9 +862,14 @@ export default function DeliverableStylesPage() {
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Uploading for: {getDeliverableTypeLabel(selectedCell.deliverableType)} - {getStyleAxisLabel(selectedCell.styleAxis)}</p>
+                    <p className="font-medium">
+                      Uploading for: {getDeliverableTypeLabel(selectedCell.deliverableType)} -{' '}
+                      {getStyleAxisLabel(selectedCell.styleAxis)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Current count: {stats.matrix[`${selectedCell.deliverableType}-${selectedCell.styleAxis}`] || 0}
+                      Current count:{' '}
+                      {stats.matrix[`${selectedCell.deliverableType}-${selectedCell.styleAxis}`] ||
+                        0}
                     </p>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setSelectedCell(null)}>
@@ -896,8 +938,13 @@ export default function DeliverableStylesPage() {
               </SelectContent>
             </Select>
             {selectedCell && (
-              <Badge variant="secondary" className="cursor-pointer" onClick={() => setSelectedCell(null)}>
-                {getDeliverableTypeLabel(selectedCell.deliverableType)} - {getStyleAxisLabel(selectedCell.styleAxis)}
+              <Badge
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setSelectedCell(null)}
+              >
+                {getDeliverableTypeLabel(selectedCell.deliverableType)} -{' '}
+                {getStyleAxisLabel(selectedCell.styleAxis)}
                 <span className="ml-1">×</span>
               </Badge>
             )}
@@ -922,9 +969,9 @@ export default function DeliverableStylesPage() {
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">No Styles Found</h2>
                 <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                  {searchTerm || typeFilter !== "all" || axisFilter !== "all" || selectedCell
-                    ? "Try adjusting your filters to see more results."
-                    : "Add style references that will be shown to clients during chat conversations."}
+                  {searchTerm || typeFilter !== 'all' || axisFilter !== 'all' || selectedCell
+                    ? 'Try adjusting your filters to see more results.'
+                    : 'Add style references that will be shown to clients during chat conversations.'}
                 </p>
                 <Button onClick={openCreateDialog}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -950,10 +997,12 @@ export default function DeliverableStylesPage() {
                             ) : (
                               <ChevronRight className="h-5 w-5" />
                             )}
-                            <CardTitle className="text-lg">{getDeliverableTypeLabel(type)}</CardTitle>
+                            <CardTitle className="text-lg">
+                              {getDeliverableTypeLabel(type)}
+                            </CardTitle>
                           </div>
                           <CardDescription>
-                            {typeStyles.length} style{typeStyles.length !== 1 ? "s" : ""}
+                            {typeStyles.length} style{typeStyles.length !== 1 ? 's' : ''}
                           </CardDescription>
                         </div>
                       </CardHeader>
@@ -962,7 +1011,10 @@ export default function DeliverableStylesPage() {
                       <CardContent>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                           {typeStyles.map((style) => (
-                            <Card key={style.id} className={`overflow-hidden ${!style.isActive ? "opacity-60" : ""}`}>
+                            <Card
+                              key={style.id}
+                              className={`overflow-hidden ${!style.isActive ? 'opacity-60' : ''}`}
+                            >
                               <div className="aspect-square relative bg-muted">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -970,8 +1022,8 @@ export default function DeliverableStylesPage() {
                                   alt={style.name}
                                   className="object-cover w-full h-full"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src =
-                                      "https://via.placeholder.com/400x400?text=Image+Not+Found";
+                                    ;(e.target as HTMLImageElement).src =
+                                      'https://via.placeholder.com/400x400?text=Image+Not+Found'
                                   }}
                                 />
                                 {!style.isActive && (
@@ -979,13 +1031,17 @@ export default function DeliverableStylesPage() {
                                     <Badge variant="secondary">Inactive</Badge>
                                   </div>
                                 )}
-                                {style.isActive && (!style.colorSamples || style.colorSamples.length === 0) && (
-                                  <div className="absolute top-2 left-2">
-                                    <Badge variant="outline" className="bg-amber-500/90 text-white border-0 text-[10px]">
-                                      No colors
-                                    </Badge>
-                                  </div>
-                                )}
+                                {style.isActive &&
+                                  (!style.colorSamples || style.colorSamples.length === 0) && (
+                                    <div className="absolute top-2 left-2">
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-amber-500/90 text-white border-0 text-[10px]"
+                                      >
+                                        No colors
+                                      </Badge>
+                                    </div>
+                                  )}
                                 <div className="absolute top-2 right-2">
                                   <Badge variant="default" className="text-xs">
                                     {getStyleAxisLabel(style.styleAxis)}
@@ -1010,7 +1066,9 @@ export default function DeliverableStylesPage() {
                                   <div className="min-w-0 flex-1">
                                     <h3 className="font-medium text-sm truncate">{style.name}</h3>
                                     {style.subStyle && (
-                                      <p className="text-xs text-muted-foreground">{style.subStyle}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {style.subStyle}
+                                      </p>
                                     )}
                                   </div>
                                   <div className="flex gap-0.5 ml-2">
@@ -1054,13 +1112,22 @@ export default function DeliverableStylesPage() {
                                 </div>
                                 {/* Extended metadata */}
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                  {style.industries && style.industries.slice(0, 2).map((ind) => (
-                                    <Badge key={ind} variant="outline" className="text-[10px] px-1.5 py-0">
-                                      {ind}
-                                    </Badge>
-                                  ))}
+                                  {style.industries &&
+                                    style.industries.slice(0, 2).map((ind) => (
+                                      <Badge
+                                        key={ind}
+                                        variant="outline"
+                                        className="text-[10px] px-1.5 py-0"
+                                      >
+                                        {ind}
+                                      </Badge>
+                                    ))}
                                   {style.semanticTags.slice(0, 2).map((tag) => (
-                                    <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                    <Badge
+                                      key={tag}
+                                      variant="secondary"
+                                      className="text-[10px] px-1.5 py-0"
+                                    >
                                       {tag}
                                     </Badge>
                                   ))}
@@ -1079,5 +1146,5 @@ export default function DeliverableStylesPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

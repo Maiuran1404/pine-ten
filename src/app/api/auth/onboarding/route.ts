@@ -109,7 +109,7 @@ async function handler(request: NextRequest) {
             industry: brand.industry,
             industryArchetype: brand.industryArchetype,
             description: brand.description,
-            creativeFocus: brand.creativeFocus,
+            creativeFocus: brand.creativeFocus ? [brand.creativeFocus] : undefined,
           })
           audienceSource = 'inferred'
           logger.info({ count: audiencesToSave.length }, 'Inferred audiences from brand data')
@@ -221,7 +221,7 @@ async function handler(request: NextRequest) {
         portfolioUrls: data.portfolioUrls,
         bio: data.bio,
         timezone: data.timezone || null,
-        hourlyRate: data.hourlyRate || null,
+        hourlyRate: data.hourlyRate != null ? String(data.hourlyRate) : null,
         whatsappNumber: data.whatsappNumber || null,
       })
 
@@ -239,7 +239,7 @@ async function handler(request: NextRequest) {
             skills: freelancerSkills,
             portfolioUrls: freelancerPortfolio,
             userId: session.user.id,
-            hourlyRate: freelancerHourlyRate,
+            hourlyRate: freelancerHourlyRate ?? undefined,
           })
 
           // Send WhatsApp notification to admin

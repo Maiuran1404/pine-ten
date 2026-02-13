@@ -1,61 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, freelancerProfiles, users } from "@/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
-import { notify, adminNotifications } from "@/lib/notifications";
-import { config } from "@/lib/config";
-import { logger } from "@/lib/logger";
-import { claimTaskSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { tasks, freelancerProfiles, users } from '@/db/schema'
+import { eq, and, isNull } from 'drizzle-orm'
+import { notify, adminNotifications } from '@/lib/notifications'
+import { config } from '@/lib/config'
+import { logger } from '@/lib/logger'
+import { claimTaskSchema } from '@/lib/validations'
+import { handleZodError } from '@/lib/errors'
+import { ZodError } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
-    const { taskId } = claimTaskSchema.parse(body);
+    const body = await request.json()
+    const { taskId } = claimTaskSchema.parse(body)
 
     // Check if user is an approved freelancer
     const profile = await db
       .select()
       .from(freelancerProfiles)
       .where(eq(freelancerProfiles.userId, session.user.id))
-      .limit(1);
+      .limit(1)
 
-    if (!profile.length || profile[0].status !== "APPROVED") {
-      return NextResponse.json(
-        { error: "Freelancer not approved" },
-        { status: 403 }
-      );
+    if (!profile.length || profile[0].status !== 'APPROVED') {
+      return NextResponse.json({ error: 'Freelancer not approved' }, { status: 403 })
     }
 
     // Check if task is still available
     const task = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, taskId),
-          eq(tasks.status, "PENDING"),
-          isNull(tasks.freelancerId)
-        )
-      )
-      .limit(1);
+      .where(and(eq(tasks.id, taskId), eq(tasks.status, 'PENDING'), isNull(tasks.freelancerId)))
+      .limit(1)
 
     if (!task.length) {
-      return NextResponse.json(
-        { error: "Task is no longer available" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Task is no longer available' }, { status: 400 })
     }
 
     // Assign task to freelancer
@@ -63,58 +51,51 @@ export async function POST(request: NextRequest) {
       .update(tasks)
       .set({
         freelancerId: session.user.id,
-        status: "ASSIGNED",
+        status: 'ASSIGNED',
         assignedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, taskId));
+      .where(eq(tasks.id, taskId))
 
     // Notify the client that their task has been assigned
-    const client = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, task[0].clientId))
-      .limit(1);
+    const client = await db.select().from(users).where(eq(users.id, task[0].clientId)).limit(1)
 
     if (client.length) {
       await notify({
         userId: client[0].id,
-        type: "TASK_ASSIGNED",
-        title: "Task Assigned",
+        type: 'TASK_ASSIGNED',
+        title: 'Task Assigned',
         content: `Your task "${task[0].title}" has been assigned to a freelancer.`,
         taskId: task[0].id,
         taskUrl: `${config.app.url}/dashboard/tasks/${task[0].id}`,
         additionalData: {
           taskTitle: task[0].title,
         },
-      });
+      })
 
       // Send admin notification
       try {
         await adminNotifications.taskAssigned({
           taskId: task[0].id,
           taskTitle: task[0].title,
-          freelancerName: session.user.name || "Unknown",
-          freelancerEmail: session.user.email || "",
+          freelancerName: session.user.name || 'Unknown',
+          freelancerEmail: session.user.email || '',
           freelancerUserId: session.user.id,
           clientName: client[0].name,
           companyId: client[0].companyId || undefined,
           credits: task[0].creditsUsed,
-        });
+        })
       } catch (emailError) {
-        logger.error({ error: emailError }, "Failed to send task assigned notification");
+        logger.error({ error: emailError }, 'Failed to send task assigned notification')
       }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof ZodError) {
-      return handleZodError(error);
+      return handleZodError(error)
     }
-    logger.error({ error }, "Claim task error");
-    return NextResponse.json(
-      { error: "Failed to claim task" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Claim task error')
+    return NextResponse.json({ error: 'Failed to claim task' }, { status: 500 })
   }
 }

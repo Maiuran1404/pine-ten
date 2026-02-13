@@ -1,46 +1,41 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Check, Play, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { useState } from 'react'
+import { Check, Play, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export interface VideoReferenceStyle {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  videoUrl: string;
-  videoThumbnailUrl?: string | null;
-  videoDuration?: string | null;
-  videoTags?: string[];
-  deliverableType: string;
-  styleAxis: string;
-  subStyle?: string | null;
-  semanticTags?: string[];
-  brandMatchScore?: number;
-  matchReason?: string;
-  isVideoReference?: boolean;
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  videoUrl: string
+  videoThumbnailUrl?: string | null
+  videoDuration?: string | null
+  videoTags?: string[]
+  deliverableType: string
+  styleAxis: string
+  subStyle?: string | null
+  semanticTags?: string[]
+  brandMatchScore?: number
+  matchReason?: string
+  isVideoReference?: boolean
 }
 
 interface VideoReferenceGridProps {
-  videos: VideoReferenceStyle[];
-  onSelectVideo?: (video: VideoReferenceStyle) => void; // Called when user selects a video from modal
-  onShowMore?: () => void;
-  isLoading?: boolean;
-  title?: string;
+  videos: VideoReferenceStyle[]
+  onSelectVideo?: (video: VideoReferenceStyle) => void // Called when user selects a video from modal
+  onShowMore?: () => void
+  isLoading?: boolean
+  title?: string
 }
 
 // Extract YouTube video ID from various URL formats
 function extractYouTubeId(url: string | null | undefined): string | null {
-  if (!url) return null;
+  if (!url) return null
 
   // Try multiple patterns - order matters, try most specific first
   const patterns = [
@@ -49,16 +44,16 @@ function extractYouTubeId(url: string | null | undefined): string | null {
     /embed\/([a-zA-Z0-9_-]{11})/, // /embed/ URLs
     /\/v\/([a-zA-Z0-9_-]{11})/, // /v/ URLs
     /^([a-zA-Z0-9_-]{11})$/, // Just the ID itself
-  ];
+  ]
 
   for (const pattern of patterns) {
-    const match = url.match(pattern);
+    const match = url.match(pattern)
     if (match && match[1]) {
-      return match[1];
+      return match[1]
     }
   }
 
-  return null;
+  return null
 }
 
 // Video preview modal with YouTube embed and selection
@@ -68,24 +63,20 @@ function VideoPreviewModal({
   onSelect,
   isLoading,
 }: {
-  video: VideoReferenceStyle;
-  onClose: () => void;
-  onSelect?: (video: VideoReferenceStyle) => void;
-  isLoading?: boolean;
+  video: VideoReferenceStyle
+  onClose: () => void
+  onSelect?: (video: VideoReferenceStyle) => void
+  isLoading?: boolean
 }) {
-  const videoId = extractYouTubeId(video.videoUrl);
+  const videoId = extractYouTubeId(video.videoUrl)
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-0">
-          <DialogTitle className="text-lg font-medium">
-            {video.name}
-          </DialogTitle>
+          <DialogTitle className="text-lg font-medium">{video.name}</DialogTitle>
           {video.description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {video.description}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{video.description}</p>
           )}
         </DialogHeader>
         <div className="aspect-video w-full bg-black relative">
@@ -124,7 +115,7 @@ function VideoPreviewModal({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(video.videoUrl, "_blank")}
+                onClick={() => window.open(video.videoUrl, '_blank')}
                 className="gap-1.5"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -135,8 +126,8 @@ function VideoPreviewModal({
               <Button
                 size="sm"
                 onClick={() => {
-                  onSelect(video);
-                  onClose();
+                  onSelect(video)
+                  onClose()
                 }}
                 disabled={isLoading}
                 className="gap-1.5"
@@ -149,7 +140,7 @@ function VideoPreviewModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export function VideoReferenceGrid({
@@ -157,15 +148,13 @@ export function VideoReferenceGrid({
   onSelectVideo,
   onShowMore,
   isLoading,
-  title = "Video Style References",
+  title = 'Video Style References',
 }: VideoReferenceGridProps) {
-  const [previewVideo, setPreviewVideo] = useState<VideoReferenceStyle | null>(
-    null
-  );
-  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<VideoReferenceStyle | null>(null)
+  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null)
 
   if (!videos || videos.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -187,22 +176,20 @@ export function VideoReferenceGrid({
       {/* Video grid */}
       <div className="grid grid-cols-3 gap-4">
         {videos.map((video) => {
-          const isHovered = hoveredVideoId === video.id;
-          const videoId = extractYouTubeId(video.videoUrl);
+          const isHovered = hoveredVideoId === video.id
+          const videoId = extractYouTubeId(video.videoUrl)
           const thumbnailUrl =
             video.videoThumbnailUrl ||
             video.imageUrl ||
-            (videoId
-              ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-              : "");
+            (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '')
 
           return (
             <div
               key={video.id}
               className={cn(
-                "relative aspect-video rounded-xl overflow-hidden cursor-pointer transition-all duration-200 group",
-                isHovered && "scale-105 z-10 shadow-2xl",
-                isHovered && "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+                'relative aspect-video rounded-xl overflow-hidden cursor-pointer transition-all duration-200 group',
+                isHovered && 'scale-105 z-10 shadow-2xl',
+                isHovered && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
               )}
               onMouseEnter={() => setHoveredVideoId(video.id)}
               onMouseLeave={() => setHoveredVideoId(null)}
@@ -216,9 +203,9 @@ export function VideoReferenceGrid({
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback to hqdefault if maxres fails
-                  const img = e.target as HTMLImageElement;
-                  if (videoId && !img.src.includes("hqdefault")) {
-                    img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                  const img = e.target as HTMLImageElement
+                  if (videoId && !img.src.includes('hqdefault')) {
+                    img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
                   }
                 }}
               />
@@ -226,10 +213,8 @@ export function VideoReferenceGrid({
               {/* Play button overlay */}
               <div
                 className={cn(
-                  "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity",
-                  isHovered
-                    ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-100"
+                  'absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity',
+                  isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 )}
               >
                 <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
@@ -247,13 +232,9 @@ export function VideoReferenceGrid({
               {/* Name overlay on hover */}
               {isHovered && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
-                  <p className="text-white text-sm font-medium truncate">
-                    {video.name}
-                  </p>
+                  <p className="text-white text-sm font-medium truncate">{video.name}</p>
                   {video.matchReason && (
-                    <p className="text-white/70 text-xs truncate">
-                      {video.matchReason}
-                    </p>
+                    <p className="text-white/70 text-xs truncate">{video.matchReason}</p>
                   )}
                 </div>
               )}
@@ -273,7 +254,7 @@ export function VideoReferenceGrid({
                 </div>
               )}
             </div>
-          );
+          )
         })}
       </div>
 
@@ -292,5 +273,5 @@ export function VideoReferenceGrid({
         />
       )}
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Image with skeleton loading - shows skeleton until image loads
 export function ImageWithSkeleton({
@@ -14,21 +14,18 @@ export function ImageWithSkeleton({
   aspectRatio,
   loading,
 }: {
-  src: string;
-  alt: string;
-  className?: string;
-  skeletonClassName?: string;
-  aspectRatio?: string;
-  loading?: "lazy" | "eager";
+  src: string
+  alt: string
+  className?: string
+  skeletonClassName?: string
+  aspectRatio?: string
+  loading?: 'lazy' | 'eager'
 }) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   return (
-    <div
-      className={cn("relative overflow-hidden", className)}
-      style={{ aspectRatio }}
-    >
+    <div className={cn('relative overflow-hidden', className)} style={{ aspectRatio }}>
       <AnimatePresence>
         {!isLoaded && !hasError && (
           <motion.div
@@ -37,7 +34,7 @@ export function ImageWithSkeleton({
             transition={{ duration: 0.3 }}
             className="absolute inset-0"
           >
-            <Skeleton className={cn("w-full h-full", skeletonClassName)} />
+            <Skeleton className={cn('w-full h-full', skeletonClassName)} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -45,33 +42,29 @@ export function ImageWithSkeleton({
       <img
         src={src}
         alt={alt}
-        loading={loading || "lazy"}
+        loading={loading || 'lazy'}
         decoding="async"
         className={cn(
-          "w-full h-full object-cover transition-opacity duration-300",
-          isLoaded ? "opacity-100" : "opacity-0"
+          'w-full h-full object-cover transition-opacity duration-300',
+          isLoaded ? 'opacity-100' : 'opacity-0'
         )}
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
       />
     </div>
-  );
+  )
 }
 
 // Scrolling column skeleton for onboarding brand references
-export function BrandReferenceColumnSkeleton({
-  index = 0,
-}: {
-  index?: number;
-}) {
+export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) {
   return (
     <div
       className="relative flex-shrink-0 rounded-2xl overflow-hidden"
       style={{
-        width: "140px",
-        height: "420px",
-        background: "rgba(15, 15, 15, 0.4)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        width: '140px',
+        height: '420px',
+        background: 'rgba(15, 15, 15, 0.4)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
       }}
     >
       {/* Top fade gradient */}
@@ -79,7 +72,7 @@ export function BrandReferenceColumnSkeleton({
         className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+            'linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
         }}
       />
       {/* Bottom fade gradient */}
@@ -87,7 +80,7 @@ export function BrandReferenceColumnSkeleton({
         className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
           background:
-            "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+            'linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
         }}
       />
       {/* Scrolling skeleton cards */}
@@ -100,7 +93,7 @@ export function BrandReferenceColumnSkeleton({
           y: {
             duration: 20 + index * 5,
             repeat: Infinity,
-            ease: "linear",
+            ease: 'linear',
           },
         }}
       >
@@ -108,20 +101,16 @@ export function BrandReferenceColumnSkeleton({
           <Skeleton
             key={i}
             className="flex-shrink-0 rounded-xl bg-white/5"
-            style={{ width: "100%", height: "200px" }}
+            style={{ width: '100%', height: '200px' }}
           />
         ))}
       </motion.div>
     </div>
-  );
+  )
 }
 
 // Grid of scrolling columns skeleton for onboarding
-export function BrandReferenceGridSkeleton({
-  columns = 4,
-}: {
-  columns?: number;
-}) {
+export function BrandReferenceGridSkeleton({ columns = 4 }: { columns?: number }) {
   return (
     <div className="flex gap-4 justify-center">
       {[...Array(columns)].map((_, index) => (
@@ -135,7 +124,7 @@ export function BrandReferenceGridSkeleton({
         </motion.div>
       ))}
     </div>
-  );
+  )
 }
 
 // Masonry grid skeleton for dashboard explore section
@@ -144,14 +133,12 @@ export function MasonryGridSkeleton({
   columns = 5,
   showHeader = true,
 }: {
-  count?: number;
-  columns?: number;
-  showHeader?: boolean;
+  count?: number
+  columns?: number
+  showHeader?: boolean
 }) {
   // Generate varied heights for masonry effect
-  const heights = [
-    150, 180, 200, 220, 170, 190, 160, 210, 185, 175, 195, 165, 205, 155, 225,
-  ];
+  const heights = [150, 180, 200, 220, 170, 190, 160, 210, 185, 175, 195, 165, 205, 155, 225]
 
   return (
     <div className="space-y-4">
@@ -167,7 +154,7 @@ export function MasonryGridSkeleton({
         className="gap-3 space-y-3"
         style={{
           columns: columns,
-          columnGap: "12px",
+          columnGap: '12px',
         }}
       >
         {[...Array(count)].map((_, i) => (
@@ -186,13 +173,13 @@ export function MasonryGridSkeleton({
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 // Card skeleton for dashboard cards
 export function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-lg border bg-card p-6 space-y-4", className)}>
+    <div className={cn('rounded-lg border bg-card p-6 space-y-4', className)}>
       <div className="flex items-center justify-between">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-8 w-8 rounded-full" />
@@ -200,7 +187,7 @@ export function CardSkeleton({ className }: { className?: string }) {
       <Skeleton className="h-8 w-20" />
       <Skeleton className="h-3 w-32" />
     </div>
-  );
+  )
 }
 
 // Stats card skeleton for admin dashboard
@@ -211,13 +198,13 @@ export function StatsCardSkeleton() {
         <CardSkeleton key={i} />
       ))}
     </div>
-  );
+  )
 }
 
 // Task card skeleton
 export function TaskCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-lg border bg-card p-4 space-y-3", className)}>
+    <div className={cn('rounded-lg border bg-card p-4 space-y-3', className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1">
           <Skeleton className="h-5 w-3/4" />
@@ -231,7 +218,7 @@ export function TaskCardSkeleton({ className }: { className?: string }) {
         <Skeleton className="h-3 w-24" />
       </div>
     </div>
-  );
+  )
 }
 
 // Task list skeleton
@@ -242,7 +229,7 @@ export function TaskListSkeleton({ count = 3 }: { count?: number }) {
         <TaskCardSkeleton key={i} />
       ))}
     </div>
-  );
+  )
 }
 
 // Table row skeleton
@@ -255,17 +242,11 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
         </td>
       ))}
     </tr>
-  );
+  )
 }
 
 // Table skeleton
-export function TableSkeleton({
-  rows = 5,
-  columns = 4,
-}: {
-  rows?: number;
-  columns?: number;
-}) {
+export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
     <div className="rounded-lg border overflow-hidden">
       <table className="w-full">
@@ -285,7 +266,7 @@ export function TableSkeleton({
         </tbody>
       </table>
     </div>
-  );
+  )
 }
 
 // Profile card skeleton
@@ -314,20 +295,20 @@ export function ProfileSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Message skeleton for chat
 export function MessageSkeleton({ isOwn = false }: { isOwn?: boolean }) {
   return (
-    <div className={cn("flex gap-3", isOwn && "flex-row-reverse")}>
+    <div className={cn('flex gap-3', isOwn && 'flex-row-reverse')}>
       <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-      <div className={cn("space-y-2", isOwn && "items-end")}>
+      <div className={cn('space-y-2', isOwn && 'items-end')}>
         <Skeleton className="h-4 w-24" />
-        <Skeleton className={cn("h-16 rounded-lg", isOwn ? "w-48" : "w-64")} />
+        <Skeleton className={cn('h-16 rounded-lg', isOwn ? 'w-48' : 'w-64')} />
       </div>
     </div>
-  );
+  )
 }
 
 // Chat skeleton
@@ -338,7 +319,7 @@ export function ChatSkeleton({ messageCount = 4 }: { messageCount?: number }) {
         <MessageSkeleton key={i} isOwn={i % 2 === 1} />
       ))}
     </div>
-  );
+  )
 }
 
 // Sidebar skeleton
@@ -356,7 +337,7 @@ export function SidebarSkeleton() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 // Form skeleton
@@ -371,7 +352,7 @@ export function FormSkeleton({ fields = 4 }: { fields?: number }) {
       ))}
       <Skeleton className="h-10 w-32" />
     </div>
-  );
+  )
 }
 
 // Page header skeleton
@@ -381,7 +362,7 @@ export function PageHeaderSkeleton() {
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-4 w-96" />
     </div>
-  );
+  )
 }
 
 // Dashboard skeleton (combines multiple elements)
@@ -403,5 +384,5 @@ export function DashboardSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }

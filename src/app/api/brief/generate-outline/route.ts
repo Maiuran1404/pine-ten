@@ -1,10 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import Anthropic from "@anthropic-ai/sdk";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { NextRequest } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import type {
   ContentOutline,
   OutlineItem,
@@ -12,40 +10,40 @@ import type {
   Platform,
   ContentType,
   Intent,
-} from "@/components/chat/brief-panel/types";
-import { PLATFORM_DISPLAY_NAMES, INTENT_DESCRIPTIONS } from "@/components/chat/brief-panel/types";
-import { getDefaultDimension } from "@/lib/constants/platform-dimensions";
-import { logger } from "@/lib/logger";
-import { generateOutlineSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+} from '@/components/chat/brief-panel/types'
+import { PLATFORM_DISPLAY_NAMES, INTENT_DESCRIPTIONS } from '@/components/chat/brief-panel/types'
+import { getDefaultDimension } from '@/lib/constants/platform-dimensions'
+import { logger } from '@/lib/logger'
+import { generateOutlineSchema } from '@/lib/validations'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+})
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 interface OutlineRequest {
-  topic: string;
-  platform: Platform;
-  contentType?: ContentType;
-  intent: Intent;
-  durationDays: number;
-  audienceName?: string;
-  audienceDescription?: string;
-  brandName?: string;
-  brandIndustry?: string;
-  brandTone?: string;
+  topic: string
+  platform: Platform
+  contentType?: ContentType
+  intent: Intent
+  durationDays: number
+  audienceName?: string
+  audienceDescription?: string
+  brandName?: string
+  brandIndustry?: string
+  brandTone?: string
 }
 
 interface AIOutlineItem {
-  title: string;
-  description: string;
-  contentType?: string;
-  theme?: string;
+  title: string
+  description: string
+  contentType?: string
+  theme?: string
 }
 
 // =============================================================================
@@ -53,23 +51,16 @@ interface AIOutlineItem {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
-  try {
-    // Authenticate
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
     // Parse and validate request
-    const body = await request.json();
-    const validated = generateOutlineSchema.parse(body);
+    const body = await request.json()
+    const validated = generateOutlineSchema.parse(body)
     const {
       topic,
       platform,
-      contentType = "post",
+      contentType = 'post',
       intent,
       durationDays,
       audienceName,
@@ -77,32 +68,35 @@ export async function POST(request: NextRequest) {
       brandName,
       brandIndustry,
       brandTone,
-    } = validated as OutlineRequest;
+    } = validated as OutlineRequest
 
     // Fetch user's company for additional context
-    let companyContext = "";
+    let companyContext = ''
     try {
       const user = await db.query.users.findFirst({
         where: eq(users.id, session.user.id),
         with: { company: true },
-      });
+      })
       if (user?.company) {
         companyContext = `
 Brand Context:
-- Company: ${user.company.name || brandName || "Unknown"}
-- Industry: ${user.company.industry || brandIndustry || "General"}
-- Description: ${user.company.description || ""}
-`;
+- Company: ${user.company.name || brandName || 'Unknown'}
+- Industry: ${user.company.industry || brandIndustry || 'General'}
+- Description: ${user.company.description || ''}
+`
       }
     } catch (error) {
-      logger.warn({ err: error, userId: session.user.id }, "Failed to fetch company context for outline generation");
+      logger.warn(
+        { err: error, userId: session.user.id },
+        'Failed to fetch company context for outline generation'
+      )
       // Continue without company context
     }
 
     // Calculate content distribution
-    const weeksCount = Math.ceil(durationDays / 7);
-    const postsPerWeek = Math.ceil(durationDays / weeksCount / 2); // Roughly every other day
-    const totalPosts = Math.min(durationDays, weeksCount * postsPerWeek);
+    const weeksCount = Math.ceil(durationDays / 7)
+    const postsPerWeek = Math.ceil(durationDays / weeksCount / 2) // Roughly every other day
+    const totalPosts = Math.min(durationDays, weeksCount * postsPerWeek)
 
     // Build AI prompt
     const systemPrompt = `You are an expert content strategist specializing in ${PLATFORM_DISPLAY_NAMES[platform]} content.
@@ -127,14 +121,14 @@ Respond ONLY with valid JSON in this exact format:
       "theme": "The content theme category (e.g., 'educational', 'social proof', 'promotional')"
     }
   ]
-}`;
+}`
 
     const userPrompt = `Create a ${durationDays}-day ${PLATFORM_DISPLAY_NAMES[platform]} content plan.
 
 Topic/Subject: ${topic}
 Primary Goal: ${intent} - ${INTENT_DESCRIPTIONS[intent]}
-Target Audience: ${audienceName || "General audience"}${audienceDescription ? ` - ${audienceDescription}` : ""}
-Brand Tone: ${brandTone || "Professional"}
+Target Audience: ${audienceName || 'General audience'}${audienceDescription ? ` - ${audienceDescription}` : ''}
+Brand Tone: ${brandTone || 'Professional'}
 Content Type: ${contentType}
 Number of Posts Needed: ${totalPosts}
 
@@ -145,44 +139,44 @@ Requirements:
 4. Include specific visual direction hints in descriptions
 5. Make each title unique and compelling
 
-Generate the content outline now:`;
+Generate the content outline now:`
 
     // Call Claude API
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: userPrompt,
         },
       ],
       system: systemPrompt,
-    });
+    })
 
     // Extract response text
     const responseText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
       .map((block) => block.text)
-      .join("");
+      .join('')
 
     // Parse AI response
-    let aiItems: AIOutlineItem[] = [];
+    let aiItems: AIOutlineItem[] = []
     try {
       // Extract JSON from response (handle markdown code blocks)
-      let jsonStr = responseText;
-      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      let jsonStr = responseText
+      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/)
       if (jsonMatch) {
-        jsonStr = jsonMatch[1].trim();
+        jsonStr = jsonMatch[1].trim()
       }
 
-      const parsed = JSON.parse(jsonStr);
-      aiItems = parsed.items || [];
+      const parsed = JSON.parse(jsonStr)
+      aiItems = parsed.items || []
     } catch (parseError) {
-      logger.error({ error: parseError, responseText }, "Failed to parse AI response");
+      logger.error({ error: parseError, responseText }, 'Failed to parse AI response')
 
       // Fallback: generate basic outline
-      aiItems = generateFallbackItems(topic, intent, totalPosts);
+      aiItems = generateFallbackItems(topic, intent, totalPosts)
     }
 
     // Convert AI items to outline structure with week grouping
@@ -192,19 +186,10 @@ Generate the content outline now:`;
       contentType,
       durationDays,
       audienceName
-    );
+    )
 
-    return NextResponse.json({ outline });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error);
-    }
-    logger.error({ error }, "Outline generation error");
-    return NextResponse.json(
-      { error: "Failed to generate outline" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ outline })
+  })
 }
 
 // =============================================================================
@@ -218,20 +203,20 @@ function buildOutlineFromAIItems(
   durationDays: number,
   audienceName?: string
 ): ContentOutline {
-  const weeksCount = Math.ceil(durationDays / 7);
-  const itemsPerWeek = Math.ceil(items.length / weeksCount);
+  const weeksCount = Math.ceil(durationDays / 7)
+  const itemsPerWeek = Math.ceil(items.length / weeksCount)
 
-  const weekGroups: WeekGroup[] = [];
-  let itemNumber = 1;
-  let dayCounter = 1;
+  const weekGroups: WeekGroup[] = []
+  let itemNumber = 1
+  let dayCounter = 1
 
   for (let week = 1; week <= weeksCount; week++) {
-    const startIdx = (week - 1) * itemsPerWeek;
-    const weekItems = items.slice(startIdx, startIdx + itemsPerWeek);
+    const startIdx = (week - 1) * itemsPerWeek
+    const weekItems = items.slice(startIdx, startIdx + itemsPerWeek)
 
     const outlineItems: OutlineItem[] = weekItems.map((item, idx) => {
-      const day = dayCounter;
-      dayCounter += Math.ceil(7 / itemsPerWeek); // Distribute across week
+      const day = dayCounter
+      dayCounter += Math.ceil(7 / itemsPerWeek) // Distribute across week
 
       return {
         id: `ai-item-${week}-${idx}`,
@@ -240,59 +225,84 @@ function buildOutlineFromAIItems(
         description: item.description,
         platform,
         contentType: (item.contentType as ContentType) || contentType,
-        dimensions: getDefaultDimension(platform, contentType) || { width: 1080, height: 1080, label: "Square", aspectRatio: "1:1" },
+        dimensions: getDefaultDimension(platform, contentType) || {
+          width: 1080,
+          height: 1080,
+          label: 'Square',
+          aspectRatio: '1:1',
+        },
         week,
         day: Math.min(day, durationDays),
-        status: "draft" as const,
-      };
-    });
+        status: 'draft' as const,
+      }
+    })
 
     weekGroups.push({
       weekNumber: week,
       label: `Week ${week}`,
       items: outlineItems,
       isExpanded: week === 1,
-    });
+    })
   }
 
   return {
     title: `${durationDays}-Day ${PLATFORM_DISPLAY_NAMES[platform]} Plan`,
-    subtitle: `AI-generated content strategy for ${audienceName || "your audience"}`,
+    subtitle: `AI-generated content strategy for ${audienceName || 'your audience'}`,
     totalItems: items.length,
     weekGroups,
-  };
+  }
 }
 
-function generateFallbackItems(
-  topic: string,
-  intent: Intent,
-  count: number
-): AIOutlineItem[] {
-  const themes = getThemesForIntent(intent);
-  const items: AIOutlineItem[] = [];
+function generateFallbackItems(topic: string, intent: Intent, count: number): AIOutlineItem[] {
+  const themes = getThemesForIntent(intent)
+  const items: AIOutlineItem[] = []
 
   for (let i = 0; i < count; i++) {
-    const theme = themes[i % themes.length];
+    const theme = themes[i % themes.length]
     items.push({
       title: `${theme}: ${topic} - Part ${i + 1}`,
       description: `Create ${theme.toLowerCase()} content about ${topic}. Focus on engaging visuals and clear messaging.`,
       theme,
-    });
+    })
   }
 
-  return items;
+  return items
 }
 
 function getThemesForIntent(intent: Intent): string[] {
   const themes: Record<Intent, string[]> = {
-    signups: ["Problem Awareness", "Solution Introduction", "Social Proof", "Feature Highlight", "Call to Action"],
-    authority: ["Industry Insights", "Expert Tips", "Behind the Scenes", "Case Studies", "Thought Leadership"],
-    awareness: ["Brand Story", "Value Proposition", "Team & Culture", "Customer Success", "Industry News"],
-    sales: ["Product Benefits", "Limited Offers", "Testimonials", "Comparison", "Urgency & CTA"],
-    engagement: ["Questions & Polls", "User-Generated Content", "Contests", "Behind the Scenes", "Community Spotlight"],
-    education: ["How-To Guides", "Tips & Tricks", "Common Mistakes", "Deep Dives", "Q&A Sessions"],
-    announcement: ["Teaser", "Launch Details", "Features Overview", "Early Access", "Celebration"],
-  };
+    signups: [
+      'Problem Awareness',
+      'Solution Introduction',
+      'Social Proof',
+      'Feature Highlight',
+      'Call to Action',
+    ],
+    authority: [
+      'Industry Insights',
+      'Expert Tips',
+      'Behind the Scenes',
+      'Case Studies',
+      'Thought Leadership',
+    ],
+    awareness: [
+      'Brand Story',
+      'Value Proposition',
+      'Team & Culture',
+      'Customer Success',
+      'Industry News',
+    ],
+    sales: ['Product Benefits', 'Limited Offers', 'Testimonials', 'Comparison', 'Urgency & CTA'],
+    engagement: [
+      'Questions & Polls',
+      'User-Generated Content',
+      'Contests',
+      'Behind the Scenes',
+      'Community Spotlight',
+    ],
+    education: ['How-To Guides', 'Tips & Tricks', 'Common Mistakes', 'Deep Dives', 'Q&A Sessions'],
+    announcement: ['Teaser', 'Launch Details', 'Features Overview', 'Early Access', 'Celebration'],
+  }
 
-  return themes[intent] || themes.awareness;
+  return themes[intent] || themes.awareness
 }

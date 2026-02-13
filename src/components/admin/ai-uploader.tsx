@@ -1,229 +1,208 @@
-"use client";
+'use client'
 
-import { useState, useCallback, ReactNode } from "react";
-import { useDropzone } from "react-dropzone";
-import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { LoadingSpinner } from "@/components/shared/loading";
-import {
-  Upload,
-  X,
-  Check,
-  AlertCircle,
-  ImageIcon,
-  Sparkles,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, ReactNode } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { Upload, X, Check, AlertCircle, ImageIcon, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-export type UploadStatus = "pending" | "classifying" | "classified" | "uploading" | "done" | "error";
+export type UploadStatus = 'pending' | 'classifying' | 'classified' | 'uploading' | 'done' | 'error'
 
 export interface PendingUpload<TClassification = object> {
-  id: string;
-  file: File;
-  preview: string;
-  status: UploadStatus;
-  classification?: TClassification;
-  error?: string;
+  id: string
+  file: File
+  preview: string
+  status: UploadStatus
+  classification?: TClassification
+  error?: string
 }
 
 interface AIUploaderProps<TClassification> {
   /** Base API endpoint for classify (PUT) and upload (POST) */
-  apiEndpoint: string;
+  apiEndpoint: string
   /** Resource name for toast messages (e.g., "brand references", "deliverable styles") */
-  resourceName: string;
+  resourceName: string
   /** Title for the card */
-  title?: string;
+  title?: string
   /** Text to show in dropzone when empty */
-  dropzoneText?: string;
+  dropzoneText?: string
   /** Callback when upload completes */
-  onUploadComplete?: () => void;
+  onUploadComplete?: () => void
   /** Render function for the classification editor */
   renderClassificationEditor?: (
     upload: PendingUpload<TClassification>,
     updateClassification: (id: string, field: string, value: unknown) => void
-  ) => ReactNode;
+  ) => ReactNode
   /** Accepted file types */
-  acceptedTypes?: Record<string, string[]>;
+  acceptedTypes?: Record<string, string[]>
 }
 
 export function AIUploader<TClassification extends object>({
   apiEndpoint,
   resourceName,
-  title = "Bulk Upload with AI Classification",
-  dropzoneText = "Drag & drop images here",
+  title = 'Bulk Upload with AI Classification',
+  dropzoneText = 'Drag & drop images here',
   onUploadComplete,
   renderClassificationEditor,
-  acceptedTypes = { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
+  acceptedTypes = { 'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'] },
 }: AIUploaderProps<TClassification>) {
-  const [pendingUploads, setPendingUploads] = useState<PendingUpload<TClassification>[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload<TClassification>[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newUploads: PendingUpload<TClassification>[] = acceptedFiles.map((file) => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       file,
       preview: URL.createObjectURL(file),
-      status: "pending" as const,
-    }));
-    setPendingUploads((prev) => [...prev, ...newUploads]);
-  }, []);
+      status: 'pending' as const,
+    }))
+    setPendingUploads((prev) => [...prev, ...newUploads])
+  }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: acceptedTypes,
     multiple: true,
-  });
+  })
 
   const classifyAll = async () => {
-    setIsProcessing(true);
-    const pendingIds = pendingUploads
-      .filter((u) => u.status === "pending")
-      .map((u) => u.id);
+    setIsProcessing(true)
+    const pendingIds = pendingUploads.filter((u) => u.status === 'pending').map((u) => u.id)
 
     for (let i = 0; i < pendingIds.length; i++) {
-      const id = pendingIds[i];
-      const upload = pendingUploads.find((u) => u.id === id);
-      if (!upload) continue;
+      const id = pendingIds[i]
+      const upload = pendingUploads.find((u) => u.id === id)
+      if (!upload) continue
 
       setPendingUploads((prev) =>
-        prev.map((u) =>
-          u.id === id ? { ...u, status: "classifying" as const } : u
-        )
-      );
+        prev.map((u) => (u.id === id ? { ...u, status: 'classifying' as const } : u))
+      )
 
       try {
-        const formData = new FormData();
-        formData.append("file", upload.file);
+        const formData = new FormData()
+        formData.append('file', upload.file)
 
         const response = await fetch(apiEndpoint, {
-          method: "PUT", // PUT is for preview/classify only
+          method: 'PUT', // PUT is for preview/classify only
           body: formData,
-        });
+        })
 
         if (!response.ok) {
-          throw new Error("Classification failed");
+          throw new Error('Classification failed')
         }
 
-        const result = await response.json();
+        const result = await response.json()
 
         setPendingUploads((prev) =>
           prev.map((u) =>
             u.id === id
               ? {
                   ...u,
-                  status: "classified" as const,
+                  status: 'classified' as const,
                   classification: result.data?.classification,
                 }
               : u
           )
-        );
+        )
       } catch (error) {
         setPendingUploads((prev) =>
           prev.map((u) =>
             u.id === id
               ? {
                   ...u,
-                  status: "error" as const,
-                  error: error instanceof Error ? error.message : "Classification failed",
+                  status: 'error' as const,
+                  error: error instanceof Error ? error.message : 'Classification failed',
                 }
               : u
           )
-        );
+        )
       }
 
-      setUploadProgress(((i + 1) / pendingIds.length) * 100);
+      setUploadProgress(((i + 1) / pendingIds.length) * 100)
     }
 
-    setIsProcessing(false);
-    setUploadProgress(0);
-  };
+    setIsProcessing(false)
+    setUploadProgress(0)
+  }
 
   const uploadAll = async () => {
-    setIsProcessing(true);
-    const classifiedIds = pendingUploads
-      .filter((u) => u.status === "classified")
-      .map((u) => u.id);
+    setIsProcessing(true)
+    const classifiedIds = pendingUploads.filter((u) => u.status === 'classified').map((u) => u.id)
 
-    let successCount = 0;
-    let errorCount = 0;
+    let successCount = 0
+    let errorCount = 0
 
     for (let i = 0; i < classifiedIds.length; i++) {
-      const id = classifiedIds[i];
-      const upload = pendingUploads.find((u) => u.id === id);
-      if (!upload || !upload.classification) continue;
+      const id = classifiedIds[i]
+      const upload = pendingUploads.find((u) => u.id === id)
+      if (!upload || !upload.classification) continue
 
       setPendingUploads((prev) =>
-        prev.map((u) =>
-          u.id === id ? { ...u, status: "uploading" as const } : u
-        )
-      );
+        prev.map((u) => (u.id === id ? { ...u, status: 'uploading' as const } : u))
+      )
 
       try {
-        const formData = new FormData();
-        formData.append("files", upload.file);
+        const formData = new FormData()
+        formData.append('files', upload.file)
 
         const response = await fetch(apiEndpoint, {
-          method: "POST",
+          method: 'POST',
           body: formData,
-        });
+        })
 
         if (!response.ok) {
-          throw new Error("Upload failed");
+          throw new Error('Upload failed')
         }
 
         setPendingUploads((prev) =>
-          prev.map((u) =>
-            u.id === id ? { ...u, status: "done" as const } : u
-          )
-        );
-        successCount++;
+          prev.map((u) => (u.id === id ? { ...u, status: 'done' as const } : u))
+        )
+        successCount++
       } catch (error) {
         setPendingUploads((prev) =>
           prev.map((u) =>
             u.id === id
               ? {
                   ...u,
-                  status: "error" as const,
-                  error: error instanceof Error ? error.message : "Upload failed",
+                  status: 'error' as const,
+                  error: error instanceof Error ? error.message : 'Upload failed',
                 }
               : u
           )
-        );
-        errorCount++;
+        )
+        errorCount++
       }
 
-      setUploadProgress(((i + 1) / classifiedIds.length) * 100);
+      setUploadProgress(((i + 1) / classifiedIds.length) * 100)
     }
 
-    setIsProcessing(false);
-    setUploadProgress(0);
+    setIsProcessing(false)
+    setUploadProgress(0)
 
     if (successCount > 0) {
-      toast.success(`Successfully uploaded ${successCount} ${resourceName}`);
-      onUploadComplete?.();
+      toast.success(`Successfully uploaded ${successCount} ${resourceName}`)
+      onUploadComplete?.()
     }
     if (errorCount > 0) {
-      toast.error(`Failed to upload ${errorCount} ${resourceName}`);
+      toast.error(`Failed to upload ${errorCount} ${resourceName}`)
     }
-  };
+  }
 
   const removeUpload = (id: string) => {
-    const upload = pendingUploads.find((u) => u.id === id);
+    const upload = pendingUploads.find((u) => u.id === id)
     if (upload) {
-      URL.revokeObjectURL(upload.preview);
+      URL.revokeObjectURL(upload.preview)
     }
-    setPendingUploads((prev) => prev.filter((u) => u.id !== id));
-  };
+    setPendingUploads((prev) => prev.filter((u) => u.id !== id))
+  }
 
-  const updateClassification = (
-    id: string,
-    field: string,
-    value: unknown
-  ) => {
+  const updateClassification = (id: string, field: string, value: unknown) => {
     setPendingUploads((prev) =>
       prev.map((u) =>
         u.id === id && u.classification
@@ -236,17 +215,17 @@ export function AIUploader<TClassification extends object>({
             }
           : u
       )
-    );
-  };
+    )
+  }
 
   const clearAll = () => {
-    pendingUploads.forEach((u) => URL.revokeObjectURL(u.preview));
-    setPendingUploads([]);
-  };
+    pendingUploads.forEach((u) => URL.revokeObjectURL(u.preview))
+    setPendingUploads([])
+  }
 
-  const pendingCount = pendingUploads.filter((u) => u.status === "pending").length;
-  const classifiedCount = pendingUploads.filter((u) => u.status === "classified").length;
-  const doneCount = pendingUploads.filter((u) => u.status === "done").length;
+  const pendingCount = pendingUploads.filter((u) => u.status === 'pending').length
+  const classifiedCount = pendingUploads.filter((u) => u.status === 'classified').length
+  const doneCount = pendingUploads.filter((u) => u.status === 'done').length
 
   return (
     <Card>
@@ -261,10 +240,10 @@ export function AIUploader<TClassification extends object>({
         <div
           {...getRootProps()}
           className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+            'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
             isDragActive
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-primary/50"
+              ? 'border-primary bg-primary/5'
+              : 'border-muted-foreground/25 hover:border-primary/50'
           )}
         >
           <input {...getInputProps()} />
@@ -302,27 +281,17 @@ export function AIUploader<TClassification extends object>({
               {doneCount > 0 && ` · ${doneCount} uploaded`}
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={clearAll}
-                disabled={isProcessing}
-              >
+              <Button variant="outline" onClick={clearAll} disabled={isProcessing}>
                 Clear All
               </Button>
               {pendingCount > 0 && (
-                <Button
-                  onClick={classifyAll}
-                  disabled={isProcessing}
-                >
+                <Button onClick={classifyAll} disabled={isProcessing}>
                   <Sparkles className="h-4 w-4 mr-2" />
                   Classify with AI ({pendingCount})
                 </Button>
               )}
               {classifiedCount > 0 && (
-                <Button
-                  onClick={uploadAll}
-                  disabled={isProcessing}
-                >
+                <Button onClick={uploadAll} disabled={isProcessing}>
                   <Upload className="h-4 w-4 mr-2" />
                   Upload All ({classifiedCount})
                 </Button>
@@ -337,9 +306,9 @@ export function AIUploader<TClassification extends object>({
             <div
               key={upload.id}
               className={cn(
-                "border rounded-lg p-4 space-y-4",
-                upload.status === "done" && "bg-green-500/5 border-green-500/20",
-                upload.status === "error" && "bg-red-500/5 border-red-500/20"
+                'border rounded-lg p-4 space-y-4',
+                upload.status === 'done' && 'bg-green-500/5 border-green-500/20',
+                upload.status === 'error' && 'bg-red-500/5 border-red-500/20'
               )}
             >
               <div className="flex gap-4">
@@ -375,14 +344,12 @@ export function AIUploader<TClassification extends object>({
                     </div>
                   </div>
 
-                  {upload.error && (
-                    <p className="text-sm text-red-500 mt-1">{upload.error}</p>
-                  )}
+                  {upload.error && <p className="text-sm text-red-500 mt-1">{upload.error}</p>}
                 </div>
               </div>
 
               {/* Classification results (editable) */}
-              {upload.classification && upload.status !== "done" && renderClassificationEditor && (
+              {upload.classification && upload.status !== 'done' && renderClassificationEditor && (
                 <div className="space-y-3 pt-3 border-t">
                   {renderClassificationEditor(upload, updateClassification)}
                 </div>
@@ -392,47 +359,47 @@ export function AIUploader<TClassification extends object>({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
 
 function UploadStatusBadge({ status }: { status: UploadStatus }) {
   switch (status) {
-    case "pending":
-      return <Badge variant="outline">Pending</Badge>;
-    case "classifying":
+    case 'pending':
+      return <Badge variant="outline">Pending</Badge>
+    case 'classifying':
       return (
         <Badge variant="secondary">
           <LoadingSpinner size="sm" className="mr-1" />
           Classifying...
         </Badge>
-      );
-    case "classified":
+      )
+    case 'classified':
       return (
         <Badge className="bg-blue-500">
           <Check className="h-3 w-3 mr-1" />
           Classified
         </Badge>
-      );
-    case "uploading":
+      )
+    case 'uploading':
       return (
         <Badge variant="secondary">
           <LoadingSpinner size="sm" className="mr-1" />
           Uploading...
         </Badge>
-      );
-    case "done":
+      )
+    case 'done':
       return (
         <Badge className="bg-green-500">
           <Check className="h-3 w-3 mr-1" />
           Done
         </Badge>
-      );
-    case "error":
+      )
+    case 'error':
       return (
         <Badge variant="destructive">
           <AlertCircle className="h-3 w-3 mr-1" />
           Error
         </Badge>
-      );
+      )
   }
 }

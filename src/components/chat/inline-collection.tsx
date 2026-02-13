@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, ArrowRight, ChevronDown, ChevronUp, Palette } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { type MoodboardItem } from "./types";
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Trash2, ArrowRight, ChevronDown, ChevronUp, Palette } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { type MoodboardItem } from './types'
 
 interface InlineCollectionProps {
-  items: MoodboardItem[];
-  onRemoveItem: (id: string) => void;
-  onClearAll: () => void;
-  onContinue: () => void;
-  isLoading?: boolean;
+  items: MoodboardItem[]
+  onRemoveItem: (id: string) => void
+  onClearAll: () => void
+  onContinue: () => void
+  isLoading?: boolean
 }
 
 export function InlineCollection({
@@ -22,10 +22,10 @@ export function InlineCollection({
   onContinue,
   isLoading = false,
 }: InlineCollectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true)
 
   if (items.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -43,11 +43,7 @@ export function InlineCollection({
         >
           <Palette className="w-4 h-4" />
           <span>Your collection ({items.length})</span>
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
         <Button
@@ -66,7 +62,7 @@ export function InlineCollection({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+            animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
@@ -91,8 +87,8 @@ export function InlineCollection({
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://via.placeholder.com/64x64?text=?";
+                          ;(e.target as HTMLImageElement).src =
+                            'https://via.placeholder.com/64x64?text=?'
                         }}
                       />
                     </div>
@@ -101,11 +97,11 @@ export function InlineCollection({
                     <button
                       onClick={() => onRemoveItem(item.id)}
                       className={cn(
-                        "absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full",
-                        "bg-background border border-border shadow-sm",
-                        "flex items-center justify-center",
-                        "opacity-0 group-hover:opacity-100 transition-opacity",
-                        "hover:bg-destructive hover:border-destructive hover:text-destructive-foreground"
+                        'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full',
+                        'bg-background border border-border shadow-sm',
+                        'flex items-center justify-center',
+                        'opacity-0 group-hover:opacity-100 transition-opacity',
+                        'hover:bg-destructive hover:border-destructive hover:text-destructive-foreground'
                       )}
                     >
                       <X className="w-3 h-3" />
@@ -129,7 +125,7 @@ export function InlineCollection({
               className="w-full gap-2"
               size="sm"
             >
-              Continue with {items.length === 1 ? "this style" : `these ${items.length} styles`}
+              Continue with {items.length === 1 ? 'this style' : `these ${items.length} styles`}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </motion.div>
@@ -144,10 +140,10 @@ export function InlineCollection({
           className="w-full gap-2"
           size="sm"
         >
-          Continue with {items.length === 1 ? "this style" : `these ${items.length} styles`}
+          Continue with {items.length === 1 ? 'this style' : `these ${items.length} styles`}
           <ArrowRight className="w-4 h-4" />
         </Button>
       )}
     </motion.div>
-  );
+  )
 }

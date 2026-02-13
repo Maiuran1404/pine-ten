@@ -10,12 +10,12 @@ export function parseUrls(input: string): string[] {
     .map((url) => url.trim())
     .filter((url) => {
       try {
-        new URL(url);
-        return url.startsWith("http");
+        new URL(url)
+        return url.startsWith('http')
       } catch {
-        return false;
+        return false
       }
-    });
+    })
 }
 
 /** Parse Dribbble shot URLs from a newline/comma-separated string. */
@@ -25,13 +25,10 @@ export function parseDribbbleUrls(input: string): string[] {
     .map((url) => url.trim())
     .filter((url) => {
       try {
-        const parsed = new URL(url);
-        return (
-          parsed.hostname === "dribbble.com" &&
-          parsed.pathname.startsWith("/shots/")
-        );
+        const parsed = new URL(url)
+        return parsed.hostname === 'dribbble.com' && parsed.pathname.startsWith('/shots/')
       } catch {
-        return false;
+        return false
       }
-    });
+    })
 }

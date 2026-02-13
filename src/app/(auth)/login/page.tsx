@@ -1,25 +1,25 @@
-"use client";
+'use client'
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { Eye, EyeOff } from 'lucide-react'
 
-import { LoadingSpinner } from "@/components/shared/loading";
-import { signIn, useSession } from "@/lib/auth-client";
-import { useSubdomain } from "@/hooks/use-subdomain";
+import { LoadingSpinner } from '@/components/shared/loading'
+import { signIn, useSession } from '@/lib/auth-client'
+import { useSubdomain } from '@/hooks/use-subdomain'
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
-});
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
+})
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<typeof loginSchema>
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -42,7 +42,7 @@ function GoogleIcon({ className }: { className?: string }) {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
       />
     </svg>
-  );
+  )
 }
 
 // Floating organic blob shapes
@@ -51,26 +51,29 @@ function FloatingBlobs() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div
         className="absolute -top-32 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] rounded-full opacity-30 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)", transform: "rotate(-20deg)" }}
+        style={{
+          background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)',
+          transform: 'rotate(-20deg)',
+        }}
       />
       <div
         className="hidden sm:block absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(ellipse, #8bb58b 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #8bb58b 0%, transparent 70%)' }}
       />
       <div
         className="absolute bottom-20 left-10 w-[150px] sm:w-[200px] h-[150px] sm:h-[200px] rounded-full opacity-30 blur-2xl"
-        style={{ background: "radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
-        style={{ background: "radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)" }}
+        style={{ background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)' }}
       />
     </div>
-  );
+  )
 }
 
 // Brand logo component
@@ -85,7 +88,7 @@ function BrandLogo() {
         className="object-contain"
       />
     </div>
-  );
+  )
 }
 
 // Logo component for inside the card
@@ -100,50 +103,49 @@ function CardLogo() {
         className="object-contain"
       />
     </div>
-  );
+  )
 }
 
 function LoginContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const portal = useSubdomain();
-  const { data: session, isPending } = useSession();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const portal = useSubdomain()
+  const { data: session, isPending } = useSession()
+  const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
-  const isSuperadmin = portal.type === "superadmin";
-  const isArtist = portal.type === "artist";
-  const showSocialLogin = !isSuperadmin; // Enable Google sign-in for artists too
+  const isSuperadmin = portal.type === 'superadmin'
+  const isArtist = portal.type === 'artist'
+  const showSocialLogin = !isSuperadmin // Enable Google sign-in for artists too
 
   // Get redirect destination based on SUBDOMAIN (not user role)
   // Users should be redirected to the appropriate page for the subdomain they're on
   const getRedirectUrl = () => {
-    const redirect = searchParams.get("redirect");
-    if (redirect && redirect !== "/" && !redirect.includes("login")) {
-      return redirect;
+    const redirect = searchParams.get('redirect')
+    if (redirect && redirect !== '/' && !redirect.includes('login')) {
+      return redirect
     }
 
     // Always use subdomain's default redirect, not role-based routing
     // This ensures users on app.getcrafted.ai go to /dashboard, not /admin
-    return portal.defaultRedirect;
-  };
+    return portal.defaultRedirect
+  }
 
   // Redirect artists to signup by default (unless they explicitly chose to sign in)
   useEffect(() => {
-    const intentToSignIn = searchParams.get("intent") === "signin";
+    const intentToSignIn = searchParams.get('intent') === 'signin'
     if (isArtist && !intentToSignIn && !session?.user) {
-      router.replace("/register");
+      router.replace('/register')
     }
-  }, [isArtist, searchParams, router, session]);
+  }, [isArtist, searchParams, router, session])
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      const redirectUrl = getRedirectUrl();
-      router.replace(redirectUrl);
+      const redirectUrl = getRedirectUrl()
+      router.replace(redirectUrl)
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router])
 
   const {
     register,
@@ -152,56 +154,56 @@ function LoginContent() {
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
-  });
+  })
 
   async function onSubmit(data: LoginForm) {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
       const result = await signIn.email({
         email: data.email,
         password: data.password,
-      });
+      })
 
       if (result.error) {
-        toast.error(result.error.message || "Invalid credentials");
-        setIsLoading(false);
-        return;
+        toast.error(result.error.message || 'Invalid credentials')
+        setIsLoading(false)
+        return
       }
 
-      toast.success("Welcome back!");
+      toast.success('Welcome back!')
     } catch {
-      toast.error("An error occurred. Please try again.");
-      setIsLoading(false);
+      toast.error('An error occurred. Please try again.')
+      setIsLoading(false)
     }
   }
 
   async function handleGoogleSignIn() {
     // Check for embedded browsers (Instagram, Facebook, TikTok, etc.)
     // Google blocks OAuth from these for security reasons
-    const ua = navigator.userAgent;
+    const ua = navigator.userAgent
     if (/FBAN|FBAV|Instagram|TikTok|Twitter|LinkedInApp|Snapchat|Pinterest/i.test(ua)) {
-      toast.error("Please open this page in Safari or Chrome to sign in with Google", {
+      toast.error('Please open this page in Safari or Chrome to sign in with Google', {
         duration: 5000,
-      });
-      return;
+      })
+      return
     }
 
-    setIsGoogleLoading(true);
+    setIsGoogleLoading(true)
     try {
-      const callbackURL = `${window.location.origin}${getRedirectUrl()}`;
+      const callbackURL = `${window.location.origin}${getRedirectUrl()}`
 
       await signIn.social({
-        provider: "google",
+        provider: 'google',
         callbackURL,
-      });
+      })
     } catch (error) {
-      console.error("Google sign-in error:", error);
-      toast.error("Failed to sign in with Google. Please try again.");
-      setIsGoogleLoading(false);
+      console.error('Google sign-in error:', error)
+      toast.error('Failed to sign in with Google. Please try again.')
+      setIsGoogleLoading(false)
     }
   }
 
@@ -213,7 +215,7 @@ function LoginContent() {
         <BrandLogo />
         <LoadingSpinner size="lg" />
       </div>
-    );
+    )
   }
 
   // If already logged in, show redirecting state
@@ -225,7 +227,7 @@ function LoginContent() {
         <LoadingSpinner size="lg" />
         <p className="text-sm text-white/50">Redirecting...</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -237,9 +239,9 @@ function LoginContent() {
         <div
           className="rounded-2xl p-6 sm:p-8 md:p-10"
           style={{
-            background: "rgba(20, 20, 20, 0.8)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: 'rgba(20, 20, 20, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           {/* Logo */}
@@ -247,14 +249,18 @@ function LoginContent() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: "'Satoshi', sans-serif" }}>
-              {isSuperadmin ? "Admin Access" : isArtist ? "Welcome to Crafted for Artists" : `Welcome to ${portal.name}`}
+            <h1
+              className="text-2xl font-semibold text-white mb-2"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
+            >
+              {isSuperadmin
+                ? 'Admin Access'
+                : isArtist
+                  ? 'Welcome to Crafted for Artists'
+                  : `Welcome to ${portal.name}`}
             </h1>
             <p className="text-white/50 text-sm">
-              {isSuperadmin
-                ? "Enter your admin credentials"
-                : "Sign in to your account"
-              }
+              {isSuperadmin ? 'Enter your admin credentials' : 'Sign in to your account'}
             </p>
           </div>
 
@@ -267,9 +273,9 @@ function LoginContent() {
                 disabled={isGoogleLoading}
                 className="w-full py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-3 mb-6 disabled:opacity-70"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "rgba(255, 255, 255, 0.9)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'rgba(255, 255, 255, 0.9)',
                 }}
               >
                 {isGoogleLoading ? (
@@ -285,7 +291,10 @@ function LoginContent() {
                   <div className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="px-4 text-white/40" style={{ background: "rgba(20, 20, 20, 0.8)" }}>
+                  <span
+                    className="px-4 text-white/40"
+                    style={{ background: 'rgba(20, 20, 20, 0.8)' }}
+                  >
                     or continue with email
                   </span>
                 </div>
@@ -300,23 +309,21 @@ function LoginContent() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: errors.email ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: errors.email
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="absolute left-4 top-2.5 text-xs text-white/40">
-                  Email
-                </label>
+                <label className="absolute left-4 top-2.5 text-xs text-white/40">Email</label>
                 <input
                   type="email"
-                  {...register("email")}
+                  {...register('email')}
                   className="w-full bg-transparent pt-7 pb-3 px-4 text-white placeholder:text-white/30 focus:outline-none text-sm"
                   placeholder="you@example.com"
                 />
               </div>
-              {errors.email && (
-                <p className="text-xs text-red-400 px-1">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-xs text-red-400 px-1">{errors.email.message}</p>}
             </div>
 
             {/* Password Field */}
@@ -324,16 +331,16 @@ function LoginContent() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: "rgba(40, 40, 40, 0.6)",
-                  border: errors.password ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(40, 40, 40, 0.6)',
+                  border: errors.password
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="absolute left-4 top-2.5 text-xs text-white/40">
-                  Password
-                </label>
+                <label className="absolute left-4 top-2.5 text-xs text-white/40">Password</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  {...register("password")}
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
                   className="w-full bg-transparent pt-7 pb-3 px-4 pr-12 text-white placeholder:text-white/30 focus:outline-none text-sm"
                   placeholder="Enter your password"
                 />
@@ -341,7 +348,7 @@ function LoginContent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" aria-hidden="true" />
@@ -357,12 +364,18 @@ function LoginContent() {
 
             {/* Terms */}
             <p className="text-center text-xs text-white/40 py-2">
-              By continuing, you agree to our{" "}
-              <Link href="/terms" className="text-white/60 hover:text-white underline underline-offset-2">
+              By continuing, you agree to our{' '}
+              <Link
+                href="/terms"
+                className="text-white/60 hover:text-white underline underline-offset-2"
+              >
                 Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-white/60 hover:text-white underline underline-offset-2">
+              </Link>{' '}
+              and{' '}
+              <Link
+                href="/privacy"
+                className="text-white/60 hover:text-white underline underline-offset-2"
+              >
                 Privacy Policy
               </Link>
             </p>
@@ -376,8 +389,8 @@ function LoginContent() {
               disabled={isLoading}
               className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-70"
               style={{
-                background: "#f5f5f0",
-                color: "#1a1a1a",
+                background: '#f5f5f0',
+                color: '#1a1a1a',
               }}
             >
               {isLoading ? (
@@ -386,16 +399,19 @@ function LoginContent() {
                   Signing in...
                 </span>
               ) : (
-                "Continue"
+                'Continue'
               )}
             </button>
           </form>
 
           {/* Sign up link */}
           {!isSuperadmin && (
-            <div className="text-center mt-6 pt-6" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+            <div
+              className="text-center mt-6 pt-6"
+              style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
+            >
               <p className="text-white/40 text-sm">
-                Don&apos;t have an account?{" "}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/register"
                   className="text-[#8bb58b] hover:text-[#a8d4a8] transition-colors"
@@ -413,13 +429,19 @@ function LoginContent() {
         <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </div>
-  );
+  )
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-12"><LoadingSpinner size="lg" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
-  );
+  )
 }

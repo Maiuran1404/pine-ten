@@ -1,29 +1,29 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { type DeliverableStyle } from "./types";
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Check, ArrowRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { type DeliverableStyle } from './types'
 
 interface StyleSelectionGridProps {
-  styles: DeliverableStyle[];
-  collectionStyleIds: string[];
-  onCardClick?: (style: DeliverableStyle) => void;
-  onAddToCollection: (style: DeliverableStyle) => void;
-  onRemoveFromCollection: (styleId: string) => void;
-  onConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void;
-  onShowMore?: (styleAxis: string) => void;
-  onShowDifferent?: () => void;
-  isLoading?: boolean;
-  className?: string;
+  styles: DeliverableStyle[]
+  collectionStyleIds: string[]
+  onCardClick?: (style: DeliverableStyle) => void
+  onAddToCollection: (style: DeliverableStyle) => void
+  onRemoveFromCollection: (styleId: string) => void
+  onConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
+  onShowMore?: (styleAxis: string) => void
+  onShowDifferent?: () => void
+  isLoading?: boolean
+  className?: string
 }
 
 export function StyleSelectionGrid({
   styles,
-  collectionStyleIds,
-  onAddToCollection,
+  collectionStyleIds: _collectionStyleIds,
+  onAddToCollection: _onAddToCollection,
   onRemoveFromCollection,
   onConfirmSelection,
   onShowMore,
@@ -31,41 +31,39 @@ export function StyleSelectionGrid({
   isLoading,
   className,
 }: StyleSelectionGridProps) {
-  const [selectedStyle, setSelectedStyle] = useState<DeliverableStyle | null>(
-    null
-  );
-  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<DeliverableStyle | null>(null)
+  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null)
 
   if (!styles || styles.length === 0) {
-    return null;
+    return null
   }
 
   const handleCardClick = (style: DeliverableStyle) => {
     // Single selection - clicking selects/deselects
     if (selectedStyle?.id === style.id) {
-      setSelectedStyle(null);
+      setSelectedStyle(null)
     } else {
-      setSelectedStyle(style);
+      setSelectedStyle(style)
     }
-  };
+  }
 
   const handleConfirm = () => {
     if (selectedStyle && onConfirmSelection) {
-      onConfirmSelection([selectedStyle]);
-      setSelectedStyle(null);
+      onConfirmSelection([selectedStyle])
+      setSelectedStyle(null)
     }
-  };
+  }
 
   // Limit to showing only 3 styles
-  const displayedStyles = styles.slice(0, 3);
+  const displayedStyles = styles.slice(0, 3)
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Clean style grid */}
       <div className="grid grid-cols-3 gap-6 max-w-2xl">
         {displayedStyles.map((style, index) => {
-          const isSelected = selectedStyle?.id === style.id;
-          const isHovered = hoveredStyleId === style.id;
+          const isSelected = selectedStyle?.id === style.id
+          const isHovered = hoveredStyleId === style.id
 
           return (
             <motion.button
@@ -78,10 +76,10 @@ export function StyleSelectionGrid({
               onMouseEnter={() => setHoveredStyleId(style.id)}
               onMouseLeave={() => setHoveredStyleId(null)}
               className={cn(
-                "relative aspect-[4/5] rounded-xl overflow-hidden transition-shadow duration-200",
+                'relative aspect-[4/5] rounded-xl overflow-hidden transition-shadow duration-200',
                 isSelected
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
-                  : "hover:shadow-2xl hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background"
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl'
+                  : 'hover:shadow-2xl hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background'
               )}
             >
               {/* Image */}
@@ -91,8 +89,8 @@ export function StyleSelectionGrid({
                 alt={style.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://via.placeholder.com/400x500?text=Style";
+                  ;(e.target as HTMLImageElement).src =
+                    'https://via.placeholder.com/400x500?text=Style'
                 }}
               />
 
@@ -100,9 +98,7 @@ export function StyleSelectionGrid({
               {(isHovered || isSelected) && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-sm font-medium truncate">
-                      {style.name}
-                    </p>
+                    <p className="text-white text-sm font-medium truncate">{style.name}</p>
                   </div>
                 </div>
               )}
@@ -116,7 +112,7 @@ export function StyleSelectionGrid({
                 </div>
               )}
             </motion.button>
-          );
+          )
         })}
       </div>
 
@@ -129,11 +125,7 @@ export function StyleSelectionGrid({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <Button
-              onClick={handleConfirm}
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={handleConfirm} disabled={isLoading} className="w-full sm:w-auto">
               Continue with {selectedStyle.name}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -165,5 +157,5 @@ export function StyleSelectionGrid({
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -11,45 +11,44 @@ import type {
   GroupedQuestion,
   QuickOption,
   GenericIntakeData,
-} from "./types";
+} from './types'
 import {
   VIDEO_PLATFORMS,
   VIDEO_TYPE_LABELS,
   VIDEO_GOAL_LABELS,
-  AD_GOAL_LABELS,
   CONTENT_GOAL_LABELS,
   PLATFORM_LABELS,
   LAUNCH_ASSET_LABELS,
   VIDEO_STYLE_LABELS,
   SMART_DEFAULTS,
-} from "./types";
+} from './types'
 
 // =============================================================================
 // FLOW STEP DEFINITIONS
 // =============================================================================
 
 export interface FlowStep {
-  id: string;
-  stage: IntakeStage;
-  questionType: "open" | "grouped" | "quick" | "confirmation";
+  id: string
+  stage: IntakeStage
+  questionType: 'open' | 'grouped' | 'quick' | 'confirmation'
   // For open questions
-  openQuestion?: string;
+  openQuestion?: string
   // For grouped questions
-  groupedQuestions?: GroupedQuestion[];
+  groupedQuestions?: GroupedQuestion[]
   // For quick options
-  quickOptions?: QuickOption[];
-  quickPrompt?: string;
+  quickOptions?: QuickOption[]
+  quickPrompt?: string
   // Validation
-  requiredFields?: string[];
+  requiredFields?: string[]
   // Navigation
-  nextStep?: string | ((data: GenericIntakeData) => string);
-  isTerminal?: boolean;
+  nextStep?: string | ((data: GenericIntakeData) => string)
+  isTerminal?: boolean
 }
 
 export interface FlowConfig {
-  serviceType: ServiceType;
-  steps: FlowStep[];
-  initialStep: string;
+  serviceType: ServiceType
+  steps: FlowStep[]
+  initialStep: string
 }
 
 // =============================================================================
@@ -57,39 +56,39 @@ export interface FlowConfig {
 // =============================================================================
 
 export const LAUNCH_VIDEO_FLOW: FlowConfig = {
-  serviceType: "launch_video",
-  initialStep: "context",
+  serviceType: 'launch_video',
+  initialStep: 'context',
   steps: [
     {
-      id: "context",
-      stage: "context",
-      questionType: "open",
+      id: 'context',
+      stage: 'context',
+      questionType: 'open',
       openQuestion:
         "Tell me about your launch - what are you launching, and what's the ONE thing you want viewers to walk away understanding?",
-      requiredFields: ["productDescription", "keyMessage"],
-      nextStep: "details",
+      requiredFields: ['productDescription', 'keyMessage'],
+      nextStep: 'details',
     },
     {
-      id: "details",
-      stage: "details",
-      questionType: "grouped",
+      id: 'details',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "platforms",
-          label: "Platform(s)",
-          type: "multi_select",
+          id: 'platforms',
+          label: 'Platform(s)',
+          type: 'multi_select',
           options: VIDEO_PLATFORMS.map((p) => ({
             value: p,
             label: PLATFORM_LABELS[p] || p,
-            recommended: ["tiktok", "reels"].includes(p),
+            recommended: ['tiktok', 'reels'].includes(p),
           })),
-          recommendation: "We recommend TikTok + Reels for maximum reach",
+          recommendation: 'We recommend TikTok + Reels for maximum reach',
           required: true,
         },
         {
-          id: "assetsAvailable",
-          label: "What do you have ready?",
-          type: "multi_select",
+          id: 'assetsAvailable',
+          label: 'What do you have ready?',
+          type: 'multi_select',
           options: Object.entries(LAUNCH_ASSET_LABELS).map(([value, label]) => ({
             value,
             label,
@@ -97,47 +96,47 @@ export const LAUNCH_VIDEO_FLOW: FlowConfig = {
           required: true,
         },
       ],
-      requiredFields: ["platforms", "assetsAvailable"],
-      nextStep: "storyline",
+      requiredFields: ['platforms', 'assetsAvailable'],
+      nextStep: 'storyline',
     },
     {
-      id: "storyline",
-      stage: "details",
-      questionType: "quick",
-      quickPrompt: "For the storyline:",
+      id: 'storyline',
+      stage: 'details',
+      questionType: 'quick',
+      quickPrompt: 'For the storyline:',
       quickOptions: [
-        { label: "I have ideas", value: "have_ideas" },
-        { label: "Create one for me", value: "create_for_me", variant: "recommended" },
+        { label: 'I have ideas', value: 'have_ideas' },
+        { label: 'Create one for me', value: 'create_for_me', variant: 'recommended' },
       ],
-      requiredFields: ["storylinePreference"],
-      nextStep: "review",
+      requiredFields: ['storylinePreference'],
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // VIDEO EDIT FLOW
 // =============================================================================
 
 export const VIDEO_EDIT_FLOW: FlowConfig = {
-  serviceType: "video_edit",
-  initialStep: "video_type",
+  serviceType: 'video_edit',
+  initialStep: 'video_type',
   steps: [
     {
-      id: "video_type",
-      stage: "context",
-      questionType: "grouped",
+      id: 'video_type',
+      stage: 'context',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "videoType",
-          label: "What type of video?",
-          type: "single_select",
+          id: 'videoType',
+          label: 'What type of video?',
+          type: 'single_select',
           options: Object.entries(VIDEO_TYPE_LABELS).map(([value, label]) => ({
             value,
             label,
@@ -145,18 +144,18 @@ export const VIDEO_EDIT_FLOW: FlowConfig = {
           required: true,
         },
       ],
-      requiredFields: ["videoType"],
-      nextStep: "platform_goal",
+      requiredFields: ['videoType'],
+      nextStep: 'platform_goal',
     },
     {
-      id: "platform_goal",
-      stage: "details",
-      questionType: "grouped",
+      id: 'platform_goal',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "platforms",
-          label: "Platform(s)",
-          type: "multi_select",
+          id: 'platforms',
+          label: 'Platform(s)',
+          type: 'multi_select',
           options: VIDEO_PLATFORMS.map((p) => ({
             value: p,
             label: PLATFORM_LABELS[p] || p,
@@ -164,9 +163,9 @@ export const VIDEO_EDIT_FLOW: FlowConfig = {
           required: true,
         },
         {
-          id: "goal",
-          label: "Goal",
-          type: "single_select",
+          id: 'goal',
+          label: 'Goal',
+          type: 'single_select',
           options: Object.entries(VIDEO_GOAL_LABELS).map(([value, label]) => ({
             value,
             label,
@@ -174,25 +173,25 @@ export const VIDEO_EDIT_FLOW: FlowConfig = {
           required: true,
         },
         {
-          id: "footageLink",
-          label: "Raw footage link",
-          type: "link",
-          placeholder: "Drive, Dropbox, or WeTransfer link",
+          id: 'footageLink',
+          label: 'Raw footage link',
+          type: 'link',
+          placeholder: 'Drive, Dropbox, or WeTransfer link',
           required: true,
         },
       ],
-      requiredFields: ["platforms", "goal", "footageLink"],
-      nextStep: "style",
+      requiredFields: ['platforms', 'goal', 'footageLink'],
+      nextStep: 'style',
     },
     {
-      id: "style",
-      stage: "details",
-      questionType: "grouped",
+      id: 'style',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "stylePreference",
-          label: "Style preference (optional)",
-          type: "single_select",
+          id: 'stylePreference',
+          label: 'Style preference (optional)',
+          type: 'single_select',
           options: Object.entries(VIDEO_STYLE_LABELS).map(([value, label]) => ({
             value,
             label,
@@ -200,247 +199,247 @@ export const VIDEO_EDIT_FLOW: FlowConfig = {
           required: false,
         },
         {
-          id: "brandAssetsLink",
-          label: "Brand assets (optional)",
-          type: "link",
-          placeholder: "Logo, fonts, brand guidelines",
+          id: 'brandAssetsLink',
+          label: 'Brand assets (optional)',
+          type: 'link',
+          placeholder: 'Logo, fonts, brand guidelines',
           required: false,
         },
       ],
-      nextStep: "review",
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // PITCH DECK FLOW
 // =============================================================================
 
 export const PITCH_DECK_FLOW: FlowConfig = {
-  serviceType: "pitch_deck",
-  initialStep: "deck_upload",
+  serviceType: 'pitch_deck',
+  initialStep: 'deck_upload',
   steps: [
     {
-      id: "deck_upload",
-      stage: "context",
-      questionType: "grouped",
+      id: 'deck_upload',
+      stage: 'context',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "currentDeckLink",
-          label: "Current deck",
-          type: "link",
-          placeholder: "Google Slides, Figma, PDF, or PPT link",
+          id: 'currentDeckLink',
+          label: 'Current deck',
+          type: 'link',
+          placeholder: 'Google Slides, Figma, PDF, or PPT link',
           required: true,
         },
         {
-          id: "additionalNotes",
-          label: "Any context? (upcoming pitch, specific issues)",
-          type: "text",
-          placeholder: "Optional - investor meeting next week, slide 5 needs work, etc.",
+          id: 'additionalNotes',
+          label: 'Any context? (upcoming pitch, specific issues)',
+          type: 'text',
+          placeholder: 'Optional - investor meeting next week, slide 5 needs work, etc.',
           required: false,
         },
       ],
-      requiredFields: ["currentDeckLink"],
-      nextStep: "review",
+      requiredFields: ['currentDeckLink'],
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // BRAND PACKAGE FLOW
 // =============================================================================
 
 export const BRAND_PACKAGE_FLOW: FlowConfig = {
-  serviceType: "brand_package",
-  initialStep: "logo_check",
+  serviceType: 'brand_package',
+  initialStep: 'logo_check',
   steps: [
     {
-      id: "logo_check",
-      stage: "context",
-      questionType: "quick",
-      quickPrompt: "Do you already have a logo?",
+      id: 'logo_check',
+      stage: 'context',
+      questionType: 'quick',
+      quickPrompt: 'Do you already have a logo?',
       quickOptions: [
-        { label: "Yes, I have a logo", value: "yes" },
-        { label: "No, I need one created", value: "no" },
+        { label: 'Yes, I have a logo', value: 'yes' },
+        { label: 'No, I need one created', value: 'no' },
       ],
-      requiredFields: ["hasLogo"],
+      requiredFields: ['hasLogo'],
       nextStep: (data) => {
-        return data.hasLogo ? "logo_upload" : "package_options";
+        return data.hasLogo ? 'logo_upload' : 'package_options'
       },
     },
     {
-      id: "logo_upload",
-      stage: "context",
-      questionType: "grouped",
+      id: 'logo_upload',
+      stage: 'context',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "logoLink",
-          label: "Logo file",
-          type: "link",
-          placeholder: "Drive or Dropbox link to logo files",
+          id: 'logoLink',
+          label: 'Logo file',
+          type: 'link',
+          placeholder: 'Drive or Dropbox link to logo files',
           required: true,
         },
       ],
-      requiredFields: ["logoLink"],
-      nextStep: "package_options",
+      requiredFields: ['logoLink'],
+      nextStep: 'package_options',
     },
     {
-      id: "package_options",
-      stage: "details",
-      questionType: "grouped",
+      id: 'package_options',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "includesItems",
-          label: "What should be included?",
-          type: "multi_select",
+          id: 'includesItems',
+          label: 'What should be included?',
+          type: 'multi_select',
           options: [
-            { value: "logo", label: "Logo Design", recommended: true },
-            { value: "brand_guidelines", label: "Brand Guidelines", recommended: true },
-            { value: "social_templates", label: "Social Media Templates", recommended: true },
-            { value: "business_cards", label: "Business Cards" },
-            { value: "presentations", label: "Presentation Templates" },
+            { value: 'logo', label: 'Logo Design', recommended: true },
+            { value: 'brand_guidelines', label: 'Brand Guidelines', recommended: true },
+            { value: 'social_templates', label: 'Social Media Templates', recommended: true },
+            { value: 'business_cards', label: 'Business Cards' },
+            { value: 'presentations', label: 'Presentation Templates' },
           ],
-          recommendation: "We recommend: Logo, Brand Guidelines, Social Templates",
+          recommendation: 'We recommend: Logo, Brand Guidelines, Social Templates',
           required: true,
         },
         {
-          id: "stylePreferences",
-          label: "Style direction (optional)",
-          type: "text",
-          placeholder: "Modern, classic, bold, minimal, etc.",
+          id: 'stylePreferences',
+          label: 'Style direction (optional)',
+          type: 'text',
+          placeholder: 'Modern, classic, bold, minimal, etc.',
           required: false,
         },
       ],
-      requiredFields: ["includesItems"],
-      nextStep: "review",
+      requiredFields: ['includesItems'],
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // SOCIAL ADS FLOW
 // =============================================================================
 
 export const SOCIAL_ADS_FLOW: FlowConfig = {
-  serviceType: "social_ads",
-  initialStep: "product_goal",
+  serviceType: 'social_ads',
+  initialStep: 'product_goal',
   steps: [
     {
-      id: "product_goal",
-      stage: "context",
-      questionType: "open",
+      id: 'product_goal',
+      stage: 'context',
+      questionType: 'open',
       openQuestion:
         "What are you promoting with these ads, and what's your main goal - driving sales, getting sign-ups, building awareness, or capturing leads?",
-      requiredFields: ["productOrOffer", "goal"],
-      nextStep: "platform_content",
+      requiredFields: ['productOrOffer', 'goal'],
+      nextStep: 'platform_content',
     },
     {
-      id: "platform_content",
-      stage: "details",
-      questionType: "grouped",
+      id: 'platform_content',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "platforms",
-          label: "Platform(s)",
-          type: "multi_select",
+          id: 'platforms',
+          label: 'Platform(s)',
+          type: 'multi_select',
           options: [
-            { value: "instagram", label: "Instagram", recommended: true },
-            { value: "facebook", label: "Facebook", recommended: true },
-            { value: "linkedin", label: "LinkedIn" },
-            { value: "tiktok", label: "TikTok" },
-            { value: "snapchat", label: "Snapchat" },
+            { value: 'instagram', label: 'Instagram', recommended: true },
+            { value: 'facebook', label: 'Facebook', recommended: true },
+            { value: 'linkedin', label: 'LinkedIn' },
+            { value: 'tiktok', label: 'TikTok' },
+            { value: 'snapchat', label: 'Snapchat' },
           ],
           required: true,
         },
         {
-          id: "hasContent",
-          label: "Do you have content ready?",
-          type: "single_select",
+          id: 'hasContent',
+          label: 'Do you have content ready?',
+          type: 'single_select',
           options: [
-            { value: "yes", label: "Yes, I have photos/videos" },
-            { value: "no", label: "No, I need content created" },
+            { value: 'yes', label: 'Yes, I have photos/videos' },
+            { value: 'no', label: 'No, I need content created' },
           ],
           required: true,
         },
       ],
-      requiredFields: ["platforms", "hasContent"],
+      requiredFields: ['platforms', 'hasContent'],
       nextStep: (data) => {
-        return data.hasContent ? "content_link" : "review";
+        return data.hasContent ? 'content_link' : 'review'
       },
     },
     {
-      id: "content_link",
-      stage: "details",
-      questionType: "grouped",
+      id: 'content_link',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "contentLink",
-          label: "Content link",
-          type: "link",
-          placeholder: "Drive or Dropbox link to your photos/videos",
+          id: 'contentLink',
+          label: 'Content link',
+          type: 'link',
+          placeholder: 'Drive or Dropbox link to your photos/videos',
           required: true,
         },
       ],
-      requiredFields: ["contentLink"],
-      nextStep: "review",
+      requiredFields: ['contentLink'],
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // SOCIAL CONTENT FLOW
 // =============================================================================
 
 export const SOCIAL_CONTENT_FLOW: FlowConfig = {
-  serviceType: "social_content",
-  initialStep: "platform_goal",
+  serviceType: 'social_content',
+  initialStep: 'platform_goal',
   steps: [
     {
-      id: "platform_goal",
-      stage: "context",
-      questionType: "grouped",
+      id: 'platform_goal',
+      stage: 'context',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "platforms",
-          label: "Platform(s)",
-          type: "multi_select",
+          id: 'platforms',
+          label: 'Platform(s)',
+          type: 'multi_select',
           options: [
-            { value: "instagram", label: "Instagram", recommended: true },
-            { value: "linkedin", label: "LinkedIn", recommended: true },
-            { value: "tiktok", label: "TikTok" },
-            { value: "facebook", label: "Facebook" },
-            { value: "twitter", label: "Twitter/X" },
+            { value: 'instagram', label: 'Instagram', recommended: true },
+            { value: 'linkedin', label: 'LinkedIn', recommended: true },
+            { value: 'tiktok', label: 'TikTok' },
+            { value: 'facebook', label: 'Facebook' },
+            { value: 'twitter', label: 'Twitter/X' },
           ],
           required: true,
         },
         {
-          id: "goal",
-          label: "Main goal",
-          type: "single_select",
+          id: 'goal',
+          label: 'Main goal',
+          type: 'single_select',
           options: Object.entries(CONTENT_GOAL_LABELS).map(([value, label]) => ({
             value,
             label,
@@ -448,40 +447,41 @@ export const SOCIAL_CONTENT_FLOW: FlowConfig = {
           required: true,
         },
       ],
-      requiredFields: ["platforms", "goal"],
-      nextStep: "topics",
+      requiredFields: ['platforms', 'goal'],
+      nextStep: 'topics',
     },
     {
-      id: "topics",
-      stage: "details",
-      questionType: "grouped",
+      id: 'topics',
+      stage: 'details',
+      questionType: 'grouped',
       groupedQuestions: [
         {
-          id: "topics",
-          label: "Topics/themes to cover",
-          type: "text",
-          placeholder: "What topics matter to your audience? (e.g., industry tips, behind the scenes, product features)",
+          id: 'topics',
+          label: 'Topics/themes to cover',
+          type: 'text',
+          placeholder:
+            'What topics matter to your audience? (e.g., industry tips, behind the scenes, product features)',
           required: true,
         },
         {
-          id: "styleExamples",
-          label: "Any accounts you love? (optional)",
-          type: "text",
-          placeholder: "@ handles or links to content you admire",
+          id: 'styleExamples',
+          label: 'Any accounts you love? (optional)',
+          type: 'text',
+          placeholder: '@ handles or links to content you admire',
           required: false,
         },
       ],
-      requiredFields: ["topics"],
-      nextStep: "review",
+      requiredFields: ['topics'],
+      nextStep: 'review',
     },
     {
-      id: "review",
-      stage: "review",
-      questionType: "confirmation",
+      id: 'review',
+      stage: 'review',
+      questionType: 'confirmation',
       isTerminal: true,
     },
   ],
-};
+}
 
 // =============================================================================
 // FLOW REGISTRY
@@ -494,19 +494,19 @@ export const FLOW_CONFIGS: Record<ServiceType, FlowConfig> = {
   brand_package: BRAND_PACKAGE_FLOW,
   social_ads: SOCIAL_ADS_FLOW,
   social_content: SOCIAL_CONTENT_FLOW,
-};
+}
 
 // =============================================================================
 // FLOW NAVIGATION HELPERS
 // =============================================================================
 
 export function getFlowConfig(serviceType: ServiceType): FlowConfig {
-  return FLOW_CONFIGS[serviceType];
+  return FLOW_CONFIGS[serviceType]
 }
 
 export function getFlowStep(serviceType: ServiceType, stepId: string): FlowStep | undefined {
-  const config = FLOW_CONFIGS[serviceType];
-  return config.steps.find((s) => s.id === stepId);
+  const config = FLOW_CONFIGS[serviceType]
+  return config.steps.find((s) => s.id === stepId)
 }
 
 export function getNextStep(
@@ -514,13 +514,13 @@ export function getNextStep(
   currentStepId: string,
   data: GenericIntakeData
 ): string | null {
-  const step = getFlowStep(serviceType, currentStepId);
-  if (!step || step.isTerminal) return null;
+  const step = getFlowStep(serviceType, currentStepId)
+  if (!step || step.isTerminal) return null
 
-  if (typeof step.nextStep === "function") {
-    return step.nextStep(data);
+  if (typeof step.nextStep === 'function') {
+    return step.nextStep(data)
   }
-  return step.nextStep || null;
+  return step.nextStep || null
 }
 
 export function validateStep(
@@ -528,33 +528,30 @@ export function validateStep(
   stepId: string,
   data: GenericIntakeData
 ): { valid: boolean; missingFields: string[] } {
-  const step = getFlowStep(serviceType, stepId);
+  const step = getFlowStep(serviceType, stepId)
   if (!step?.requiredFields) {
-    return { valid: true, missingFields: [] };
+    return { valid: true, missingFields: [] }
   }
 
   const missingFields = step.requiredFields.filter((field) => {
-    const value = data[field];
-    if (value === undefined || value === null) return true;
-    if (typeof value === "string" && value.trim() === "") return true;
-    if (Array.isArray(value) && value.length === 0) return true;
-    return false;
-  });
+    const value = data[field]
+    if (value === undefined || value === null) return true
+    if (typeof value === 'string' && value.trim() === '') return true
+    if (Array.isArray(value) && value.length === 0) return true
+    return false
+  })
 
   return {
     valid: missingFields.length === 0,
     missingFields,
-  };
+  }
 }
 
-export function calculateFlowProgress(
-  serviceType: ServiceType,
-  currentStepId: string
-): number {
-  const config = FLOW_CONFIGS[serviceType];
-  const currentIndex = config.steps.findIndex((s) => s.id === currentStepId);
-  if (currentIndex === -1) return 0;
-  return Math.round(((currentIndex + 1) / config.steps.length) * 100);
+export function calculateFlowProgress(serviceType: ServiceType, currentStepId: string): number {
+  const config = FLOW_CONFIGS[serviceType]
+  const currentIndex = config.steps.findIndex((s) => s.id === currentStepId)
+  if (currentIndex === -1) return 0
+  return Math.round(((currentIndex + 1) / config.steps.length) * 100)
 }
 
 // =============================================================================
@@ -565,70 +562,76 @@ export function applySmartDefaults(
   serviceType: ServiceType,
   data: GenericIntakeData
 ): GenericIntakeData {
-  const enhanced = { ...data };
+  const enhanced = { ...data }
 
   switch (serviceType) {
-    case "launch_video": {
+    case 'launch_video': {
       if (enhanced.platforms?.length) {
         // Apply recommended length based on platforms
         const hasShortForm = enhanced.platforms.some((p: string) =>
-          ["tiktok", "reels", "snapchat"].includes(p)
-        );
-        enhanced.recommendedLength = hasShortForm ? "30-45s" : "60-90s";
+          ['tiktok', 'reels', 'snapchat'].includes(p)
+        )
+        enhanced.recommendedLength = hasShortForm ? '30-45s' : '60-90s'
       }
       // Default storyline preference
       if (!enhanced.storylinePreference) {
-        enhanced.storylinePreference = "create_for_me";
+        enhanced.storylinePreference = 'create_for_me'
       }
-      break;
+      break
     }
 
-    case "video_edit": {
+    case 'video_edit': {
       // Apply length based on platform
       if (enhanced.platforms?.length) {
         const hasShortForm = enhanced.platforms.some((p: string) =>
-          ["tiktok", "reels", "snapchat"].includes(p)
-        );
-        enhanced.recommendedLength = hasShortForm ? "15-30s" : "60-90s";
+          ['tiktok', 'reels', 'snapchat'].includes(p)
+        )
+        enhanced.recommendedLength = hasShortForm ? '15-30s' : '60-90s'
       }
       // Default subtitles and overlays for social
-      enhanced.subtitles = true;
-      enhanced.textOverlays = true;
+      enhanced.subtitles = true
+      enhanced.textOverlays = true
       // Apply style based on video type
       if (enhanced.videoType) {
         enhanced.stylePreference =
-          enhanced.stylePreference || SMART_DEFAULTS.videoStyle[enhanced.videoType as keyof typeof SMART_DEFAULTS.videoStyle];
+          enhanced.stylePreference ||
+          SMART_DEFAULTS.videoStyle[enhanced.videoType as keyof typeof SMART_DEFAULTS.videoStyle]
       }
-      break;
+      break
     }
 
-    case "social_ads": {
+    case 'social_ads': {
       // Apply format recommendation based on goal
       if (enhanced.goal) {
-        enhanced.recommendedFormat = SMART_DEFAULTS.adFormat[enhanced.goal as keyof typeof SMART_DEFAULTS.adFormat];
+        enhanced.recommendedFormat =
+          SMART_DEFAULTS.adFormat[enhanced.goal as keyof typeof SMART_DEFAULTS.adFormat]
       }
       // Apply CTA based on goal
       const ctaMap: Record<string, string> = {
-        sales: "Shop now",
-        signups: "Sign up free",
-        awareness: "Learn more",
-        leads: "Get quote",
-      };
-      if (enhanced.goal && !enhanced.recommendedCta) {
-        enhanced.recommendedCta = ctaMap[enhanced.goal] || "Learn more";
+        sales: 'Shop now',
+        signups: 'Sign up free',
+        awareness: 'Learn more',
+        leads: 'Get quote',
       }
-      break;
+      if (enhanced.goal && !enhanced.recommendedCta) {
+        enhanced.recommendedCta = ctaMap[enhanced.goal] || 'Learn more'
+      }
+      break
     }
 
-    case "social_content": {
+    case 'social_content': {
       // Apply frequency and content types based on goal
       if (enhanced.goal) {
-        enhanced.recommendedFrequency = SMART_DEFAULTS.postingFrequency[enhanced.goal as keyof typeof SMART_DEFAULTS.postingFrequency];
-        enhanced.recommendedContentTypes = SMART_DEFAULTS.contentTypes[enhanced.goal as keyof typeof SMART_DEFAULTS.contentTypes];
+        enhanced.recommendedFrequency =
+          SMART_DEFAULTS.postingFrequency[
+            enhanced.goal as keyof typeof SMART_DEFAULTS.postingFrequency
+          ]
+        enhanced.recommendedContentTypes =
+          SMART_DEFAULTS.contentTypes[enhanced.goal as keyof typeof SMART_DEFAULTS.contentTypes]
       }
-      break;
+      break
     }
   }
 
-  return enhanced;
+  return enhanced
 }

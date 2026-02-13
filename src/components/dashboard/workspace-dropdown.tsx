@@ -1,20 +1,16 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState } from 'react'
+import Link from 'next/link'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import {
   ChevronDown,
   Settings,
@@ -24,17 +20,17 @@ import {
   Plus,
   Globe,
   ChevronRight,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface WorkspaceDropdownProps {
-  companyName: string | null;
-  primaryColor: string;
-  credits?: number;
-  maxCredits?: number;
-  memberCount?: number;
-  plan?: string;
-  isCollapsed?: boolean;
+  companyName: string | null
+  primaryColor: string
+  credits?: number
+  maxCredits?: number
+  memberCount?: number
+  plan?: string
+  isCollapsed?: boolean
 }
 
 export function WorkspaceDropdown({
@@ -43,20 +39,20 @@ export function WorkspaceDropdown({
   credits = 0,
   maxCredits = 10,
   memberCount = 1,
-  plan = "Free Plan",
+  plan = 'Free Plan',
   isCollapsed = false,
 }: WorkspaceDropdownProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
-  const displayName = companyName || "My Company";
-  const initial = displayName.charAt(0).toUpperCase();
-  const creditPercentage = Math.min((credits / maxCredits) * 100, 100);
+  const displayName = companyName || 'My Company'
+  const initial = displayName.charAt(0).toUpperCase()
+  const creditPercentage = Math.min((credits / maxCredits) * 100, 100)
 
   const trigger = (
     <button
       className={cn(
-        "flex items-center gap-2 rounded-lg border border-border/30 bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-colors w-full",
-        isCollapsed ? "p-2 justify-center" : "p-2 pr-3"
+        'flex items-center gap-2 rounded-lg border border-border/30 bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-colors w-full',
+        isCollapsed ? 'p-2 justify-center' : 'p-2 pr-3'
       )}
     >
       {/* Avatar */}
@@ -70,41 +66,30 @@ export function WorkspaceDropdown({
       {!isCollapsed && (
         <>
           {/* Company Name */}
-          <span className="flex-1 text-left font-medium text-sm truncate">
-            {displayName}
-          </span>
+          <span className="flex-1 text-left font-medium text-sm truncate">{displayName}</span>
           {/* Chevron */}
           <ChevronDown className="size-4 text-muted-foreground flex-shrink-0" />
         </>
       )}
     </button>
-  );
+  )
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       {isCollapsed ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              {trigger}
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent side="right" align="center">
             {displayName}
           </TooltipContent>
         </Tooltip>
       ) : (
-        <DropdownMenuTrigger asChild>
-          {trigger}
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       )}
 
-      <DropdownMenuContent
-        side="bottom"
-        align="start"
-        className="w-[280px] p-0"
-        sideOffset={8}
-      >
+      <DropdownMenuContent side="bottom" align="start" className="w-[280px] p-0" sideOffset={8}>
         {/* Workspace Header */}
         <div className="p-3">
           <div className="flex items-center gap-3">
@@ -117,30 +102,20 @@ export function WorkspaceDropdown({
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-foreground truncate">{displayName}</p>
               <p className="text-xs text-muted-foreground">
-                {plan} &bull; {memberCount} {memberCount === 1 ? "member" : "members"}
+                {plan} &bull; {memberCount} {memberCount === 1 ? 'member' : 'members'}
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-2 mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 h-8 text-xs gap-1.5"
-              asChild
-            >
+            <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" asChild>
               <Link href="/dashboard/settings">
                 <Settings className="size-3.5" />
                 Settings
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 h-8 text-xs gap-1.5"
-              disabled
-            >
+            <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5" disabled>
               <UserPlus className="size-3.5" />
               Invite members
             </Button>
@@ -204,11 +179,9 @@ export function WorkspaceDropdown({
             >
               {initial}
             </div>
-            <span className="flex-1 text-left text-sm font-medium truncate">
-              {displayName}
-            </span>
+            <span className="flex-1 text-left text-sm font-medium truncate">{displayName}</span>
             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-              {plan.split(" ")[0]}
+              {plan.split(' ')[0]}
             </span>
             <Check className="size-4 text-foreground" />
           </button>
@@ -239,5 +212,5 @@ export function WorkspaceDropdown({
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }

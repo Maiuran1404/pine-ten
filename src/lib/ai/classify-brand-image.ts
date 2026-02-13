@@ -1,25 +1,25 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic from '@anthropic-ai/sdk'
 import type {
   ToneBucket,
   EnergyBucket,
   DensityBucket,
   ColorBucket,
-} from "@/lib/constants/reference-libraries";
-import { logger } from "@/lib/logger";
+} from '@/lib/constants/reference-libraries'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+})
 
 export interface BrandClassification {
-  name: string;
-  description: string;
-  toneBucket: ToneBucket;
-  energyBucket: EnergyBucket;
-  densityBucket: DensityBucket;
-  colorBucket: ColorBucket;
-  colorSamples: string[]; // hex colors
-  confidence: number; // 0-1
+  name: string
+  description: string
+  toneBucket: ToneBucket
+  energyBucket: EnergyBucket
+  densityBucket: DensityBucket
+  colorBucket: ColorBucket
+  colorSamples: string[] // hex colors
+  confidence: number // 0-1
 }
 
 const CLASSIFICATION_PROMPT = `You are a brand design expert. Analyze this brand reference image and classify it across 4 visual personality axes.
@@ -61,50 +61,50 @@ Respond in this exact JSON format (no markdown, no explanation):
   "colorBucket": "cool" | "neutral" | "warm",
   "colorSamples": ["#hex1", "#hex2", "#hex3"],
   "confidence": 0.85
-}`;
+}`
 
 export async function classifyBrandImage(
   imageBase64: string,
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/png"
+  mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
 ): Promise<BrandClassification> {
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: [
             {
-              type: "image",
+              type: 'image',
               source: {
-                type: "base64",
+                type: 'base64',
                 media_type: mediaType,
                 data: imageBase64,
               },
             },
             {
-              type: "text",
+              type: 'text',
               text: CLASSIFICATION_PROMPT,
             },
           ],
         },
       ],
-    });
+    })
 
     // Extract text from response
-    const textContent = response.content.find((c) => c.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      throw new Error("No text response from Claude");
+    const textContent = response.content.find((c) => c.type === 'text')
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude')
     }
 
     // Parse JSON response
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      throw new Error("No JSON found in response");
+      throw new Error('No JSON found in response')
     }
 
-    const classification = JSON.parse(jsonMatch[0]) as BrandClassification;
+    const classification = JSON.parse(jsonMatch[0]) as BrandClassification
 
     // Validate required fields
     if (
@@ -113,53 +113,51 @@ export async function classifyBrandImage(
       !classification.densityBucket ||
       !classification.colorBucket
     ) {
-      throw new Error("Missing required classification fields");
+      throw new Error('Missing required classification fields')
     }
 
-    return classification;
+    return classification
   } catch (error) {
-    logger.error({ err: error }, "Failed to classify brand image");
+    logger.error({ err: error }, 'Failed to classify brand image')
     // Return default classification on error
     return {
-      name: "Unknown Brand",
-      description: "Brand reference image",
-      toneBucket: "balanced",
-      energyBucket: "balanced",
-      densityBucket: "balanced",
-      colorBucket: "neutral",
+      name: 'Unknown Brand',
+      description: 'Brand reference image',
+      toneBucket: 'balanced',
+      energyBucket: 'balanced',
+      densityBucket: 'balanced',
+      colorBucket: 'neutral',
       colorSamples: [],
       confidence: 0,
-    };
+    }
   }
 }
 
-export async function classifyBrandImageFromUrl(
-  imageUrl: string
-): Promise<BrandClassification> {
+export async function classifyBrandImageFromUrl(imageUrl: string): Promise<BrandClassification> {
   try {
     // Fetch image and convert to base64
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl)
     if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
+      throw new Error(`Failed to fetch image: ${response.statusText}`)
     }
 
-    const contentType = response.headers.get("content-type") || "image/png";
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const contentType = response.headers.get('content-type') || 'image/png'
+    const arrayBuffer = await response.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
 
     // Determine media type
-    let mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/png";
-    if (contentType.includes("jpeg") || contentType.includes("jpg")) {
-      mediaType = "image/jpeg";
-    } else if (contentType.includes("gif")) {
-      mediaType = "image/gif";
-    } else if (contentType.includes("webp")) {
-      mediaType = "image/webp";
+    let mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+      mediaType = 'image/jpeg'
+    } else if (contentType.includes('gif')) {
+      mediaType = 'image/gif'
+    } else if (contentType.includes('webp')) {
+      mediaType = 'image/webp'
     }
 
-    return classifyBrandImage(base64, mediaType);
+    return classifyBrandImage(base64, mediaType)
   } catch (error) {
-    logger.error({ err: error }, "Failed to classify brand image from URL");
-    throw error;
+    logger.error({ err: error }, 'Failed to classify brand image from URL')
+    throw error
   }
 }

@@ -1,20 +1,20 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { type MoodboardItem } from "../types";
-import { MoodboardCard } from "./moodboard-card";
-import { MoodboardHeader, MoodboardSectionHeader } from "./moodboard-header";
-import { ColorSwatches } from "./color-swatches";
-import { Palette, Sparkles } from "lucide-react";
+import { useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
+import { type MoodboardItem } from '../types'
+import { MoodboardCard } from './moodboard-card'
+import { MoodboardHeader, MoodboardSectionHeader } from './moodboard-header'
+import { ColorSwatches } from './color-swatches'
+import { Palette, Sparkles } from 'lucide-react'
 
 interface MoodboardPanelProps {
-  items: MoodboardItem[];
-  onRemoveItem: (id: string) => void;
-  onClearAll?: () => void;
-  className?: string;
+  items: MoodboardItem[]
+  onRemoveItem: (id: string) => void
+  onClearAll?: () => void
+  className?: string
 }
 
 export function MoodboardPanel({
@@ -23,31 +23,31 @@ export function MoodboardPanel({
   onClearAll,
   className,
 }: MoodboardPanelProps) {
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
 
   // Group items by type
   const groupedItems = useMemo(() => {
-    const styles = items.filter((item) => item.type === "style");
-    const uploads = items.filter((item) => item.type === "upload");
-    const colors = items.filter((item) => item.type === "color");
-    const images = items.filter((item) => item.type === "image");
+    const styles = items.filter((item) => item.type === 'style')
+    const uploads = items.filter((item) => item.type === 'upload')
+    const colors = items.filter((item) => item.type === 'color')
+    const images = items.filter((item) => item.type === 'image')
 
-    return { styles, uploads, colors, images };
-  }, [items]);
+    return { styles, uploads, colors, images }
+  }, [items])
 
   const toggleSection = (section: string) => {
     setCollapsedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }));
-  };
+    }))
+  }
 
-  const hasStyles = groupedItems.styles.length > 0;
-  const hasUploads = groupedItems.uploads.length > 0;
-  const hasColors = groupedItems.colors.length > 0;
+  const hasStyles = groupedItems.styles.length > 0
+  const hasUploads = groupedItems.uploads.length > 0
+  const hasColors = groupedItems.colors.length > 0
 
   return (
-    <div className={cn("flex flex-col h-full bg-card/50 backdrop-blur-sm", className)}>
+    <div className={cn('flex flex-col h-full bg-card/50 backdrop-blur-sm', className)}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <MoodboardHeader
@@ -69,9 +69,7 @@ export function MoodboardPanel({
               <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                 <Palette className="h-7 w-7 text-primary" />
               </div>
-              <p className="text-sm font-medium text-foreground mb-1">
-                Build your moodboard
-              </p>
+              <p className="text-sm font-medium text-foreground mb-1">Build your moodboard</p>
               <p className="text-xs text-muted-foreground mb-4">
                 Collect styles that match your vision
               </p>
@@ -105,24 +103,20 @@ export function MoodboardPanel({
                     title="Selected Styles"
                     itemCount={groupedItems.styles.length}
                     isCollapsed={collapsedSections.styles}
-                    onToggleCollapse={() => toggleSection("styles")}
+                    onToggleCollapse={() => toggleSection('styles')}
                   />
                   <AnimatePresence>
                     {!collapsedSections.styles && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
+                        animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
                         <div className="grid grid-cols-3 gap-2 pt-2">
                           {groupedItems.styles.map((item) => (
-                            <MoodboardCard
-                              key={item.id}
-                              item={item}
-                              onRemove={onRemoveItem}
-                            />
+                            <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
                           ))}
                         </div>
                       </motion.div>
@@ -138,13 +132,13 @@ export function MoodboardPanel({
                     title="Color Palette"
                     itemCount={groupedItems.colors.length}
                     isCollapsed={collapsedSections.colors}
-                    onToggleCollapse={() => toggleSection("colors")}
+                    onToggleCollapse={() => toggleSection('colors')}
                   />
                   <AnimatePresence>
                     {!collapsedSections.colors && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
+                        animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
@@ -153,7 +147,7 @@ export function MoodboardPanel({
                           <ColorSwatches
                             colors={groupedItems.colors.map((item) => ({
                               id: item.id,
-                              color: item.metadata?.colorSamples?.[0] || "#888",
+                              color: item.metadata?.colorSamples?.[0] || '#888',
                               name: item.name,
                             }))}
                             onRemove={onRemoveItem}
@@ -172,24 +166,20 @@ export function MoodboardPanel({
                     title="Your Uploads"
                     itemCount={groupedItems.uploads.length}
                     isCollapsed={collapsedSections.uploads}
-                    onToggleCollapse={() => toggleSection("uploads")}
+                    onToggleCollapse={() => toggleSection('uploads')}
                   />
                   <AnimatePresence>
                     {!collapsedSections.uploads && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
+                        animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
                         <div className="grid grid-cols-2 gap-2 pt-2">
                           {groupedItems.uploads.map((item) => (
-                            <MoodboardCard
-                              key={item.id}
-                              item={item}
-                              onRemove={onRemoveItem}
-                            />
+                            <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
                           ))}
                         </div>
                       </motion.div>
@@ -212,10 +202,10 @@ export function MoodboardPanel({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 // Export individual components for flexibility
-export { MoodboardCard } from "./moodboard-card";
-export { MoodboardHeader, MoodboardSectionHeader } from "./moodboard-header";
-export { ColorSwatches, ColorSwatch, ExtractedColors } from "./color-swatches";
+export { MoodboardCard } from './moodboard-card'
+export { MoodboardHeader, MoodboardSectionHeader } from './moodboard-header'
+export { ColorSwatches, ColorSwatch, ExtractedColors } from './color-swatches'

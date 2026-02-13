@@ -1,43 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { importLogs, users } from "@/db/schema";
-import { desc, eq, and, gte, lte, sql } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { importLogs, users } from '@/db/schema'
+import { desc, eq, and, gte, lte, sql } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const target = searchParams.get("target"); // 'deliverable_style' or 'brand_reference'
-    const source = searchParams.get("source"); // 'bigged', 'dribbble', etc.
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const searchParams = request.nextUrl.searchParams
+    const target = searchParams.get('target') // 'deliverable_style' or 'brand_reference'
+    const source = searchParams.get('source') // 'bigged', 'dribbble', etc.
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     // Build conditions
-    const conditions = [];
+    const conditions = []
     if (target) {
-      conditions.push(eq(importLogs.target, target as "deliverable_style" | "brand_reference"));
+      conditions.push(eq(importLogs.target, target as 'deliverable_style' | 'brand_reference'))
     }
     if (source) {
-      conditions.push(eq(importLogs.source, source as "bigged" | "dribbble" | "manual_url" | "file_upload" | "page_scrape"));
+      conditions.push(
+        eq(
+          importLogs.source,
+          source as 'bigged' | 'dribbble' | 'manual_url' | 'file_upload' | 'page_scrape'
+        )
+      )
     }
     if (startDate) {
-      conditions.push(gte(importLogs.createdAt, new Date(startDate)));
+      conditions.push(gte(importLogs.createdAt, new Date(startDate)))
     }
     if (endDate) {
-      conditions.push(lte(importLogs.createdAt, new Date(endDate)));
+      conditions.push(lte(importLogs.createdAt, new Date(endDate)))
     }
 
     // Fetch logs with user info
@@ -71,13 +76,13 @@ export async function GET(request: NextRequest) {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(importLogs.createdAt))
       .limit(limit)
-      .offset(offset);
+      .offset(offset)
 
     // Get total count
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)` })
       .from(importLogs)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
 
     // Get summary stats
     const [stats] = await db
@@ -88,7 +93,7 @@ export async function GET(request: NextRequest) {
         totalSkipped: sql<number>`coalesce(sum(${importLogs.totalSkipped}), 0)`,
       })
       .from(importLogs)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
 
     return NextResponse.json({
       success: true,
@@ -107,13 +112,13 @@ export async function GET(request: NextRequest) {
           totalSkipped: Number(stats.totalSkipped),
         },
       },
-    });
+    })
   } catch (error) {
-    logger.error({ error }, "Failed to fetch import logs");
+    logger.error({ error }, 'Failed to fetch import logs')
     return NextResponse.json(
-      { success: false, error: "Failed to fetch import logs" },
+      { success: false, error: 'Failed to fetch import logs' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -123,27 +128,27 @@ export async function DELETE(request: NextRequest) {
     // Check authentication
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get("id");
+    const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
-    await db.delete(importLogs).where(eq(importLogs.id, id));
+    await db.delete(importLogs).where(eq(importLogs.id, id))
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
-    logger.error({ error }, "Failed to delete import log");
+    logger.error({ error }, 'Failed to delete import log')
     return NextResponse.json(
-      { success: false, error: "Failed to delete import log" },
+      { success: false, error: 'Failed to delete import log' },
       { status: 500 }
-    );
+    )
   }
 }

@@ -1,40 +1,40 @@
-"use client";
+'use client'
 
-import { useState, ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Palette, FileText, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { type ChatStage, type MoodboardItem } from "./types";
-import { type LiveBrief } from "./brief-panel/types";
-import { TopProgressBar } from "./progress-stepper";
-import { MoodboardPanel } from "./moodboard/moodboard-panel";
-import { BriefPanel } from "./brief-panel";
+import { useState, ReactNode } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Palette, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
+import { type ChatStage, type MoodboardItem } from './types'
+import { type LiveBrief } from './brief-panel/types'
+import { TopProgressBar } from './progress-stepper'
+import { MoodboardPanel } from './moodboard/moodboard-panel'
+import { BriefPanel } from './brief-panel'
 
-type RightPanelTab = "brief" | "moodboard";
+type RightPanelTab = 'brief' | 'moodboard'
 
 interface ChatLayoutProps {
-  children: ReactNode;
+  children: ReactNode
   // Progress stepper props
-  currentStage: ChatStage;
-  completedStages: ChatStage[];
-  progressPercentage: number;
+  currentStage: ChatStage
+  completedStages: ChatStage[]
+  progressPercentage: number
   // Moodboard props
-  moodboardItems: MoodboardItem[];
-  onRemoveMoodboardItem: (id: string) => void;
-  onClearMoodboard?: () => void;
+  moodboardItems: MoodboardItem[]
+  onRemoveMoodboardItem: (id: string) => void
+  onClearMoodboard?: () => void
   // Brief props
-  brief?: LiveBrief | null;
-  onBriefUpdate?: (brief: LiveBrief) => void;
-  onExportBrief?: () => void;
-  briefCompletion?: number;
+  brief?: LiveBrief | null
+  onBriefUpdate?: (brief: LiveBrief) => void
+  onExportBrief?: () => void
+  briefCompletion?: number
   // Optional customization
-  showProgress?: boolean;
-  showMoodboard?: boolean;
-  showBrief?: boolean;
-  className?: string;
+  showProgress?: boolean
+  showMoodboard?: boolean
+  showBrief?: boolean
+  className?: string
 }
 
 export function ChatLayout({
@@ -54,14 +54,14 @@ export function ChatLayout({
   showBrief = true,
   className,
 }: ChatLayoutProps) {
-  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<RightPanelTab>("brief");
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<RightPanelTab>('brief')
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
 
-  const showRightPanel = showMoodboard || showBrief;
+  const showRightPanel = showMoodboard || showBrief
 
   return (
-    <div className={cn("flex flex-col h-full relative", className)}>
+    <div className={cn('flex flex-col h-full relative', className)}>
       {/* Top Progress Bar - Subtle, takes minimal space */}
       {showProgress && (
         <TopProgressBar
@@ -78,13 +78,10 @@ export function ChatLayout({
           {/* Mobile Header with Panel Toggle */}
           <div className="lg:hidden shrink-0 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-end gap-2">
             {showRightPanel && (
-              <Sheet
-                open={isMobileSheetOpen}
-                onOpenChange={setIsMobileSheetOpen}
-              >
+              <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
-                    {activeTab === "brief" ? (
+                    {activeTab === 'brief' ? (
                       <>
                         <FileText className="h-4 w-4" />
                         <span className="text-xs">{briefCompletion}%</span>
@@ -93,9 +90,7 @@ export function ChatLayout({
                       <>
                         <Palette className="h-4 w-4" />
                         <span className="text-xs">
-                          {moodboardItems.length > 0
-                            ? moodboardItems.length
-                            : ""}
+                          {moodboardItems.length > 0 ? moodboardItems.length : ''}
                         </span>
                       </>
                     )}
@@ -112,10 +107,7 @@ export function ChatLayout({
                         <FileText className="h-3.5 w-3.5" />
                         Brief
                       </TabsTrigger>
-                      <TabsTrigger
-                        value="moodboard"
-                        className="text-xs gap-1.5"
-                      >
+                      <TabsTrigger value="moodboard" className="text-xs gap-1.5">
                         <Palette className="h-3.5 w-3.5" />
                         Moodboard
                         {moodboardItems.length > 0 && (
@@ -181,14 +173,14 @@ export function ChatLayout({
                   {showBrief && (
                     <button
                       onClick={() => {
-                        setActiveTab("brief");
-                        setIsRightPanelCollapsed(false);
+                        setActiveTab('brief')
+                        setIsRightPanelCollapsed(false)
                       }}
                       className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                        activeTab === "brief"
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted"
+                        'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+                        activeTab === 'brief'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-muted'
                       )}
                     >
                       <FileText className="h-4 w-4" />
@@ -197,14 +189,14 @@ export function ChatLayout({
                   {showMoodboard && (
                     <button
                       onClick={() => {
-                        setActiveTab("moodboard");
-                        setIsRightPanelCollapsed(false);
+                        setActiveTab('moodboard')
+                        setIsRightPanelCollapsed(false)
                       }}
                       className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative",
-                        activeTab === "moodboard"
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted"
+                        'w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative',
+                        activeTab === 'moodboard'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-muted'
                       )}
                     >
                       <Palette className="h-4 w-4" />
@@ -248,9 +240,7 @@ export function ChatLayout({
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                      <p className="text-xs text-muted-foreground/50">
-                        Brief builds as you chat
-                      </p>
+                      <p className="text-xs text-muted-foreground/50">Brief builds as you chat</p>
                     </div>
                   )}
                 </div>
@@ -265,7 +255,7 @@ export function ChatLayout({
             <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
               <SheetTrigger asChild>
                 <Button size="lg" className="rounded-full shadow-lg gap-2">
-                  {activeTab === "brief" ? (
+                  {activeTab === 'brief' ? (
                     <>
                       <FileText className="h-5 w-5" />
                       Brief
@@ -337,19 +327,19 @@ export function ChatLayout({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 /**
  * Simple two-column layout variant (no progress stepper)
  */
 interface SimpleChatLayoutProps {
-  children: ReactNode;
-  moodboardItems: MoodboardItem[];
-  onRemoveMoodboardItem: (id: string) => void;
-  onClearMoodboard?: () => void;
-  showMoodboard?: boolean;
-  className?: string;
+  children: ReactNode
+  moodboardItems: MoodboardItem[]
+  onRemoveMoodboardItem: (id: string) => void
+  onClearMoodboard?: () => void
+  showMoodboard?: boolean
+  className?: string
 }
 
 export function SimpleChatLayout({
@@ -360,10 +350,10 @@ export function SimpleChatLayout({
   showMoodboard = true,
   className,
 }: SimpleChatLayoutProps) {
-  const [isMoodboardOpen, setIsMoodboardOpen] = useState(false);
+  const [isMoodboardOpen, setIsMoodboardOpen] = useState(false)
 
   return (
-    <div className={cn("flex h-full relative", className)}>
+    <div className={cn('flex h-full relative', className)}>
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">{children}</div>
 
@@ -409,5 +399,5 @@ export function SimpleChatLayout({
         </div>
       )}
     </div>
-  );
+  )
 }

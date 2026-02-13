@@ -1,22 +1,22 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { LoadingSpinner } from "@/components/shared/loading";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
+import { LoadingSpinner } from '@/components/shared/loading'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   Link,
   Globe,
@@ -24,11 +24,10 @@ import {
   X,
   Check,
   AlertCircle,
-  ImageIcon,
   Sparkles,
   Upload,
   Download,
-} from "lucide-react";
+} from 'lucide-react'
 import {
   TONE_BUCKETS,
   ENERGY_BUCKETS,
@@ -38,13 +37,13 @@ import {
   ENERGY_BUCKET_LABELS,
   DENSITY_BUCKET_LABELS,
   COLOR_BUCKET_LABELS,
-} from "@/lib/constants/reference-libraries";
-import { cn } from "@/lib/utils";
-import { parseUrls, parsePageUrls } from "./brand-reference-scraper.utils";
-import { useBrandReferenceScraperData } from "./useBrandReferenceScraperData";
+} from '@/lib/constants/reference-libraries'
+import { cn } from '@/lib/utils'
+import { parseUrls, parsePageUrls } from './brand-reference-scraper.utils'
+import { useBrandReferenceScraperData } from './useBrandReferenceScraperData'
 
 interface BrandReferenceScraperProps {
-  onUploadComplete?: () => void;
+  onUploadComplete?: () => void
 }
 
 export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScraperProps) {
@@ -82,7 +81,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
     handleUploadAll,
     removeImage,
     handleReset,
-  } = useBrandReferenceScraperData({ onUploadComplete });
+  } = useBrandReferenceScraperData({ onUploadComplete })
 
   return (
     <Card>
@@ -97,18 +96,14 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step indicator */}
-        {step !== "input" && (
+        {step !== 'input' && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
-              <Badge variant={step === "select" ? "default" : "secondary"}>
-                1. Select
-              </Badge>
+              <Badge variant={step === 'select' ? 'default' : 'secondary'}>1. Select</Badge>
               <span className="text-muted-foreground">→</span>
-              <Badge variant={step === "classify" ? "default" : "secondary"}>
-                2. Classify
-              </Badge>
+              <Badge variant={step === 'classify' ? 'default' : 'secondary'}>2. Classify</Badge>
               <span className="text-muted-foreground">→</span>
-              <Badge variant={step === "review" ? "default" : "secondary"}>
+              <Badge variant={step === 'review' ? 'default' : 'secondary'}>
                 3. Review & Upload
               </Badge>
             </div>
@@ -119,8 +114,8 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
         )}
 
         {/* Input Step */}
-        {step === "input" && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "urls" | "scrape")}>
+        {step === 'input' && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'urls' | 'scrape')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="urls" className="flex items-center gap-2">
                 <Link className="h-4 w-4" />
@@ -169,10 +164,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                       className="flex-1"
                       disabled={isScrapingPage}
                     />
-                    <Button
-                      onClick={handleScrapePage}
-                      disabled={!pageUrl || isScrapingPage}
-                    >
+                    <Button onClick={handleScrapePage} disabled={!pageUrl || isScrapingPage}>
                       {isScrapingPage && scrapeProgress.total === 1 ? (
                         <LoadingSpinner size="sm" />
                       ) : (
@@ -281,7 +273,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
         )}
 
         {/* Selection Step (for scraped images) */}
-        {step === "select" && scrapedImages.length > 0 && (
+        {step === 'select' && scrapedImages.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -305,21 +297,21 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                 <div
                   key={img.url}
                   className={cn(
-                    "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                    'relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all',
                     selectedImages.has(img.url)
-                      ? "border-primary ring-2 ring-primary/20"
-                      : "border-transparent hover:border-muted-foreground/30"
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-transparent hover:border-muted-foreground/30'
                   )}
                   onClick={() => toggleImageSelection(img.url)}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img.url}
-                    alt={img.alt || ""}
+                    alt={img.alt || ''}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' fill='%23999' font-size='12'%3EError%3C/text%3E%3C/svg%3E";
+                      ;(e.target as HTMLImageElement).src =
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' fill='%23999' font-size='12'%3EError%3C/text%3E%3C/svg%3E"
                     }}
                   />
                   {selectedImages.has(img.url) && (
@@ -327,8 +319,11 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                       <Check className="h-3 w-3 text-primary-foreground" />
                     </div>
                   )}
-                  {img.source === "og" && (
-                    <Badge className="absolute bottom-1 left-1 text-[10px] py-0" variant="secondary">
+                  {img.source === 'og' && (
+                    <Badge
+                      className="absolute bottom-1 left-1 text-[10px] py-0"
+                      variant="secondary"
+                    >
                       OG
                     </Badge>
                   )}
@@ -348,7 +343,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
         )}
 
         {/* Classification/Review Step */}
-        {(step === "classify" || step === "review") && classifiedImages.length > 0 && (
+        {(step === 'classify' || step === 'review') && classifiedImages.length > 0 && (
           <div className="space-y-4">
             {/* Progress */}
             {isProcessing && (
@@ -367,7 +362,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                 {doneCount > 0 && ` • ${doneCount} uploaded`}
                 {errorCount > 0 && ` • ${errorCount} failed`}
               </div>
-              {step === "review" && classifiedCount > 0 && (
+              {step === 'review' && classifiedCount > 0 && (
                 <Button onClick={handleUploadAll} disabled={isProcessing}>
                   <Upload className="h-4 w-4 mr-2" />
                   Upload All ({classifiedCount})
@@ -381,57 +376,51 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                 <div
                   key={img.url}
                   className={cn(
-                    "border rounded-lg p-3 space-y-3",
-                    img.status === "done" && "bg-green-500/5 border-green-500/20",
-                    img.status === "error" && "bg-red-500/5 border-red-500/20"
+                    'border rounded-lg p-3 space-y-3',
+                    img.status === 'done' && 'bg-green-500/5 border-green-500/20',
+                    img.status === 'error' && 'bg-red-500/5 border-red-500/20'
                   )}
                 >
                   <div className="flex gap-3">
                     {/* Thumbnail */}
                     <div className="w-20 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={img.url} alt="" className="w-full h-full object-cover" />
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm truncate text-muted-foreground max-w-xs">
-                          {img.url.split("/").pop()}
+                          {img.url.split('/').pop()}
                         </p>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {img.status === "pending" && (
-                            <Badge variant="outline">Pending</Badge>
-                          )}
-                          {img.status === "classifying" && (
+                          {img.status === 'pending' && <Badge variant="outline">Pending</Badge>}
+                          {img.status === 'classifying' && (
                             <Badge variant="secondary">
                               <LoadingSpinner size="sm" className="mr-1" />
                               Classifying
                             </Badge>
                           )}
-                          {img.status === "classified" && (
+                          {img.status === 'classified' && (
                             <Badge className="bg-blue-500">
                               <Check className="h-3 w-3 mr-1" />
                               Ready
                             </Badge>
                           )}
-                          {img.status === "uploading" && (
+                          {img.status === 'uploading' && (
                             <Badge variant="secondary">
                               <LoadingSpinner size="sm" className="mr-1" />
                               Uploading
                             </Badge>
                           )}
-                          {img.status === "done" && (
+                          {img.status === 'done' && (
                             <Badge className="bg-green-500">
                               <Check className="h-3 w-3 mr-1" />
                               Done
                             </Badge>
                           )}
-                          {img.status === "error" && (
+                          {img.status === 'error' && (
                             <Badge variant="destructive">
                               <AlertCircle className="h-3 w-3 mr-1" />
                               Error
@@ -449,23 +438,19 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                         </div>
                       </div>
 
-                      {img.error && (
-                        <p className="text-xs text-red-500 mt-1">{img.error}</p>
-                      )}
+                      {img.error && <p className="text-xs text-red-500 mt-1">{img.error}</p>}
                     </div>
                   </div>
 
                   {/* Classification details (editable) */}
-                  {img.classification && img.status !== "done" && (
+                  {img.classification && img.status !== 'done' && (
                     <div className="space-y-2 pt-2 border-t">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">Name</Label>
                           <Input
                             value={img.classification.name}
-                            onChange={(e) =>
-                              updateClassification(img.url, "name", e.target.value)
-                            }
+                            onChange={(e) => updateClassification(img.url, 'name', e.target.value)}
                             className="h-7 text-sm mt-1"
                           />
                         </div>
@@ -481,9 +466,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                           <Label className="text-xs">Tone</Label>
                           <Select
                             value={img.classification.toneBucket}
-                            onValueChange={(v) =>
-                              updateClassification(img.url, "toneBucket", v)
-                            }
+                            onValueChange={(v) => updateClassification(img.url, 'toneBucket', v)}
                           >
                             <SelectTrigger className="h-7 text-xs mt-1">
                               <SelectValue />
@@ -501,9 +484,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                           <Label className="text-xs">Energy</Label>
                           <Select
                             value={img.classification.energyBucket}
-                            onValueChange={(v) =>
-                              updateClassification(img.url, "energyBucket", v)
-                            }
+                            onValueChange={(v) => updateClassification(img.url, 'energyBucket', v)}
                           >
                             <SelectTrigger className="h-7 text-xs mt-1">
                               <SelectValue />
@@ -521,9 +502,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                           <Label className="text-xs">Density</Label>
                           <Select
                             value={img.classification.densityBucket}
-                            onValueChange={(v) =>
-                              updateClassification(img.url, "densityBucket", v)
-                            }
+                            onValueChange={(v) => updateClassification(img.url, 'densityBucket', v)}
                           >
                             <SelectTrigger className="h-7 text-xs mt-1">
                               <SelectValue />
@@ -541,9 +520,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                           <Label className="text-xs">Color</Label>
                           <Select
                             value={img.classification.colorBucket}
-                            onValueChange={(v) =>
-                              updateClassification(img.url, "colorBucket", v)
-                            }
+                            onValueChange={(v) => updateClassification(img.url, 'colorBucket', v)}
                           >
                             <SelectTrigger className="h-7 text-xs mt-1">
                               <SelectValue />
@@ -582,5 +559,5 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

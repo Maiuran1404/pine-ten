@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { users, companies } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { logger } from "@/lib/logger";
-import { updateBrandSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { users, companies } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
+import { updateBrandSchema } from '@/lib/validations'
+import { handleZodError } from '@/lib/errors'
+import { ZodError } from 'zod'
 
 // GET - Fetch the user's company/brand
 export async function GET() {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get user with company
@@ -26,19 +26,16 @@ export async function GET() {
       with: {
         company: true,
       },
-    });
+    })
 
     if (!user?.company) {
-      return NextResponse.json({ error: "No brand found" }, { status: 404 });
+      return NextResponse.json({ error: 'No brand found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: user.company });
+    return NextResponse.json({ success: true, data: user.company })
   } catch (error) {
-    logger.error({ error }, "Fetch brand error");
-    return NextResponse.json(
-      { error: "Failed to fetch brand" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Fetch brand error')
+    return NextResponse.json({ error: 'Failed to fetch brand' }, { status: 500 })
   }
 }
 
@@ -47,23 +44,23 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get user to check company
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id),
-    });
+    })
 
     if (!user?.companyId) {
-      return NextResponse.json({ error: "No brand found" }, { status: 404 });
+      return NextResponse.json({ error: 'No brand found' }, { status: 404 })
     }
 
-    const body = await request.json();
-    const validated = updateBrandSchema.parse(body);
+    const body = await request.json()
+    const validated = updateBrandSchema.parse(body)
     const {
       name,
       website,
@@ -85,7 +82,7 @@ export async function PUT(request: NextRequest) {
       contactPhone,
       tagline,
       keywords,
-    } = validated;
+    } = validated
 
     // Update company
     const [updated] = await db
@@ -114,17 +111,14 @@ export async function PUT(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(companies.id, user.companyId))
-      .returning();
+      .returning()
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({ success: true, data: updated })
   } catch (error) {
     if (error instanceof ZodError) {
-      return handleZodError(error);
+      return handleZodError(error)
     }
-    logger.error({ error }, "Update brand error");
-    return NextResponse.json(
-      { error: "Failed to update brand" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Update brand error')
+    return NextResponse.json({ error: 'Failed to update brand' }, { status: 500 })
   }
 }

@@ -1,19 +1,15 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog'
 import {
   Save,
   Building2,
@@ -43,285 +39,285 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Audience {
-  id: string;
-  name: string;
-  isPrimary: boolean;
+  id: string
+  name: string
+  isPrimary: boolean
   demographics?: {
-    ageRange?: { min: number; max: number };
-    gender?: "all" | "male" | "female" | "other";
-    income?: "low" | "middle" | "high" | "enterprise";
-  };
+    ageRange?: { min: number; max: number }
+    gender?: 'all' | 'male' | 'female' | 'other'
+    income?: 'low' | 'middle' | 'high' | 'enterprise'
+  }
   firmographics?: {
-    companySize?: string[];
-    industries?: string[];
-    jobTitles?: string[];
-    departments?: string[];
-    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
-  };
+    companySize?: string[]
+    industries?: string[]
+    jobTitles?: string[]
+    departments?: string[]
+    decisionMakingRole?: 'decision-maker' | 'influencer' | 'end-user'
+  }
   psychographics?: {
-    painPoints?: string[];
-    goals?: string[];
-    values?: string[];
-  };
+    painPoints?: string[]
+    goals?: string[]
+    values?: string[]
+  }
   behavioral?: {
-    contentPreferences?: string[];
-    platforms?: string[];
-    buyingProcess?: "impulse" | "considered" | "committee";
-  };
-  confidence: number;
-  sources?: string[];
+    contentPreferences?: string[]
+    platforms?: string[]
+    buyingProcess?: 'impulse' | 'considered' | 'committee'
+  }
+  confidence: number
+  sources?: string[]
 }
 
 interface BrandData {
-  id: string;
-  name: string;
-  website: string | null;
-  description: string | null;
-  tagline: string | null;
-  industry: string | null;
-  industryArchetype: string | null;
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
-  accentColor: string | null;
-  backgroundColor: string | null;
-  textColor: string | null;
-  brandColors: string[];
-  primaryFont: string | null;
-  secondaryFont: string | null;
+  id: string
+  name: string
+  website: string | null
+  description: string | null
+  tagline: string | null
+  industry: string | null
+  industryArchetype: string | null
+  logoUrl: string | null
+  faviconUrl: string | null
+  primaryColor: string | null
+  secondaryColor: string | null
+  accentColor: string | null
+  backgroundColor: string | null
+  textColor: string | null
+  brandColors: string[]
+  primaryFont: string | null
+  secondaryFont: string | null
   socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    facebook?: string;
-    instagram?: string;
-    youtube?: string;
-  } | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  keywords: string[];
+    twitter?: string
+    linkedin?: string
+    facebook?: string
+    instagram?: string
+    youtube?: string
+  } | null
+  contactEmail: string | null
+  contactPhone: string | null
+  keywords: string[]
 }
 
 const industries = [
-  "Technology",
-  "E-commerce",
-  "SaaS",
-  "Marketing & Advertising",
-  "Finance",
-  "Healthcare",
-  "Education",
-  "Real Estate",
-  "Food & Beverage",
-  "Fashion & Apparel",
-  "Entertainment",
-  "Professional Services",
-  "Manufacturing",
-  "Non-profit",
-  "Recruitment",
-  "Banking",
-  "Venture Capital",
-  "Construction",
-  "Electrical Services",
-  "Plumbing",
-  "HVAC",
-  "Restaurants",
-  "Cafes",
-  "Hotels",
-  "Other",
-];
+  'Technology',
+  'E-commerce',
+  'SaaS',
+  'Marketing & Advertising',
+  'Finance',
+  'Healthcare',
+  'Education',
+  'Real Estate',
+  'Food & Beverage',
+  'Fashion & Apparel',
+  'Entertainment',
+  'Professional Services',
+  'Manufacturing',
+  'Non-profit',
+  'Recruitment',
+  'Banking',
+  'Venture Capital',
+  'Construction',
+  'Electrical Services',
+  'Plumbing',
+  'HVAC',
+  'Restaurants',
+  'Cafes',
+  'Hotels',
+  'Other',
+]
 
 const industryArchetypes = [
   {
-    value: "hospitality",
-    label: "Hospitality",
-    description: "Restaurants, Cafes, Hotels",
+    value: 'hospitality',
+    label: 'Hospitality',
+    description: 'Restaurants, Cafes, Hotels',
   },
   {
-    value: "blue-collar",
-    label: "Blue-collar",
-    description: "Trade services, Construction, Manufacturing",
+    value: 'blue-collar',
+    label: 'Blue-collar',
+    description: 'Trade services, Construction, Manufacturing',
   },
   {
-    value: "white-collar",
-    label: "White-collar",
-    description: "Professional services, Finance, Recruitment",
+    value: 'white-collar',
+    label: 'White-collar',
+    description: 'Professional services, Finance, Recruitment',
   },
   {
-    value: "e-commerce",
-    label: "E-commerce",
-    description: "Product-based online businesses",
+    value: 'e-commerce',
+    label: 'E-commerce',
+    description: 'Product-based online businesses',
   },
   {
-    value: "tech",
-    label: "Tech",
-    description: "Technology startups, Software, SaaS",
+    value: 'tech',
+    label: 'Tech',
+    description: 'Technology startups, Software, SaaS',
   },
-];
+]
 
 const COLOR_PRESETS = {
   primary: [
-    "#10b981",
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#f97316",
-    "#eab308",
-    "#22c55e",
-    "#06b6d4",
-    "#6366f1",
-    "#000000",
+    '#10b981',
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+    '#f97316',
+    '#eab308',
+    '#22c55e',
+    '#06b6d4',
+    '#6366f1',
+    '#000000',
   ],
   secondary: [
-    "#3b82f6",
-    "#1e3a8a",
-    "#4338ca",
-    "#7c3aed",
-    "#be185d",
-    "#9a3412",
-    "#166534",
-    "#155e75",
-    "#334155",
-    "#18181b",
+    '#3b82f6',
+    '#1e3a8a',
+    '#4338ca',
+    '#7c3aed',
+    '#be185d',
+    '#9a3412',
+    '#166534',
+    '#155e75',
+    '#334155',
+    '#18181b',
   ],
-};
+}
 
 export default function BrandPage() {
-  const router = useRouter();
-  const [brand, setBrand] = useState<BrandData | null>(null);
-  const [audiences, setAudiences] = useState<Audience[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRescanning, setIsRescanning] = useState(false);
-  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
-  const [copiedColor, setCopiedColor] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("company");
-  const [expandedAudience, setExpandedAudience] = useState<string | null>(null);
+  const router = useRouter()
+  const [brand, setBrand] = useState<BrandData | null>(null)
+  const [audiences, setAudiences] = useState<Audience[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isRescanning, setIsRescanning] = useState(false)
+  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false)
+  const [copiedColor, setCopiedColor] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('company')
+  const [expandedAudience, setExpandedAudience] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchBrand();
-    fetchAudiences();
-  }, []);
+    fetchBrand()
+    fetchAudiences()
+  }, [])
 
   const fetchBrand = async () => {
     try {
-      const response = await fetch("/api/brand");
+      const response = await fetch('/api/brand')
 
       // Handle case where user hasn't completed onboarding yet
       if (response.status === 404) {
-        setBrand(null);
-        setIsLoading(false);
-        return;
+        setBrand(null)
+        setIsLoading(false)
+        return
       }
 
       if (!response.ok) {
-        throw new Error("Failed to fetch brand");
+        throw new Error('Failed to fetch brand')
       }
-      const result = await response.json();
-      setBrand(result.data);
+      const result = await response.json()
+      setBrand(result.data)
     } catch (error) {
-      console.error("Fetch error:", error);
-      toast.error("Failed to load brand information");
+      console.error('Fetch error:', error)
+      toast.error('Failed to load brand information')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const fetchAudiences = async () => {
     try {
-      const response = await fetch("/api/audiences");
+      const response = await fetch('/api/audiences')
       if (response.ok) {
-        const result = await response.json();
-        setAudiences(result.data || []);
+        const result = await response.json()
+        setAudiences(result.data || [])
       }
     } catch (error) {
-      console.error("Failed to fetch audiences:", error);
+      console.error('Failed to fetch audiences:', error)
       // Silently fail - audiences are optional
     }
-  };
+  }
 
   const handleDeleteAudience = async (audienceId: string) => {
     try {
       const response = await fetch(`/api/audiences/${audienceId}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
       if (response.ok) {
-        setAudiences(audiences.filter((a) => a.id !== audienceId));
-        toast.success("Audience removed");
+        setAudiences(audiences.filter((a) => a.id !== audienceId))
+        toast.success('Audience removed')
       } else {
-        throw new Error("Failed to delete");
+        throw new Error('Failed to delete')
       }
     } catch {
-      toast.error("Failed to remove audience");
+      toast.error('Failed to remove audience')
     }
-  };
+  }
 
   const handleSetPrimaryAudience = async (audienceId: string) => {
     try {
       const response = await fetch(`/api/audiences/${audienceId}/primary`, {
-        method: "PUT",
-      });
+        method: 'PUT',
+      })
       if (response.ok) {
         setAudiences(
           audiences.map((a) => ({
             ...a,
             isPrimary: a.id === audienceId,
           }))
-        );
-        toast.success("Primary audience updated");
+        )
+        toast.success('Primary audience updated')
       } else {
-        throw new Error("Failed to update");
+        throw new Error('Failed to update')
       }
     } catch {
-      toast.error("Failed to update primary audience");
+      toast.error('Failed to update primary audience')
     }
-  };
+  }
 
   const handleSave = async () => {
-    if (!brand) return;
+    if (!brand) return
 
-    setIsSaving(true);
+    setIsSaving(true)
     try {
-      const response = await fetch("/api/brand", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/brand', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(brand),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to save");
+        throw new Error('Failed to save')
       }
 
-      toast.success("Brand updated successfully!");
+      toast.success('Brand updated successfully!')
     } catch {
-      toast.error("Failed to save changes");
+      toast.error('Failed to save changes')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleRescan = async () => {
     if (!brand?.website) {
-      toast.error("No website to scan");
-      return;
+      toast.error('No website to scan')
+      return
     }
 
-    setIsRescanning(true);
+    setIsRescanning(true)
     try {
-      const response = await fetch("/api/brand/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/brand/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ websiteUrl: brand.website }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Scan failed");
+        throw new Error('Scan failed')
       }
 
-      const result = await response.json();
+      const result = await response.json()
       setBrand((prev) =>
         prev
           ? {
@@ -330,54 +326,54 @@ export default function BrandPage() {
               id: prev.id,
             }
           : null
-      );
-      toast.success("Brand information refreshed from website!");
+      )
+      toast.success('Brand information refreshed from website!')
     } catch {
-      toast.error("Failed to scan website");
+      toast.error('Failed to scan website')
     } finally {
-      setIsRescanning(false);
+      setIsRescanning(false)
     }
-  };
+  }
 
   const copyColor = (color: string) => {
-    navigator.clipboard.writeText(color);
-    setCopiedColor(color);
-    setTimeout(() => setCopiedColor(null), 2000);
-    toast.success("Color copied to clipboard");
-  };
+    navigator.clipboard.writeText(color)
+    setCopiedColor(color)
+    setTimeout(() => setCopiedColor(null), 2000)
+    toast.success('Color copied to clipboard')
+  }
 
   const handleRedoOnboarding = () => {
-    setIsResettingOnboarding(true);
+    setIsResettingOnboarding(true)
 
     // Start the API call but don't wait for it - redirect immediately
-    fetch("/api/brand/reset-onboarding", {
-      method: "POST",
+    fetch('/api/brand/reset-onboarding', {
+      method: 'POST',
     }).catch(() => {
       // Silently ignore errors - onboarding page will handle any issues
-    });
+    })
 
     // Redirect immediately using window.location for faster navigation
-    window.location.href = "/onboarding";
-  };
+    window.location.href = '/onboarding'
+  }
 
   const updateField = (field: keyof BrandData, value: unknown) => {
-    setBrand((prev) => (prev ? { ...prev, [field]: value } : null));
-  };
+    setBrand((prev) => (prev ? { ...prev, [field]: value } : null))
+  }
 
   const addBrandColor = (color: string) => {
     if (brand && color && !brand.brandColors.includes(color)) {
-      updateField("brandColors", [...brand.brandColors, color]);
+      updateField('brandColors', [...brand.brandColors, color])
     }
-  };
+  }
 
   const removeBrandColor = (index: number) => {
     if (brand) {
       updateField(
-        "brandColors",
+        'brandColors',
         brand.brandColors.filter((_, i) => i !== index)
-      );
+      )
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -391,7 +387,7 @@ export default function BrandPage() {
           <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>
       </div>
-    );
+    )
   }
 
   if (!brand) {
@@ -403,41 +399,35 @@ export default function BrandPage() {
           </div>
         </div>
         <div className="flex items-center justify-center py-20">
-        <div className="text-center space-y-4">
-          <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="text-lg font-medium text-foreground">
-            No Brand Set Up
-          </h3>
-          <p className="text-muted-foreground">
-            Complete onboarding to set up your brand.
-          </p>
-          <Button
-            onClick={() => {
-              // Reset onboarding status in background - don't wait
-              fetch("/api/brand/reset-onboarding", { method: "POST" }).catch(
-                () => {}
-              );
-              // Redirect immediately
-              window.location.href = "/onboarding";
-            }}
-            className="mt-2"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Set Up Brand
-          </Button>
-        </div>
+          <div className="text-center space-y-4">
+            <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h3 className="text-lg font-medium text-foreground">No Brand Set Up</h3>
+            <p className="text-muted-foreground">Complete onboarding to set up your brand.</p>
+            <Button
+              onClick={() => {
+                // Reset onboarding status in background - don't wait
+                fetch('/api/brand/reset-onboarding', { method: 'POST' }).catch(() => {})
+                // Redirect immediately
+                window.location.href = '/onboarding'
+              }}
+              className="mt-2"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Set Up Brand
+            </Button>
+          </div>
         </div>
       </div>
-    );
+    )
   }
 
   const tabs = [
-    { id: "company", label: "Company", icon: Building2 },
-    { id: "colors", label: "Colors", icon: Palette },
-    { id: "typography", label: "Typography", icon: Type },
-    { id: "social", label: "Social", icon: Globe },
-    { id: "audiences", label: "Audiences", icon: Users },
-  ];
+    { id: 'company', label: 'Company', icon: Building2 },
+    { id: 'colors', label: 'Colors', icon: Palette },
+    { id: 'typography', label: 'Typography', icon: Type },
+    { id: 'social', label: 'Social', icon: Globe },
+    { id: 'audiences', label: 'Audiences', icon: Users },
+  ]
 
   return (
     <div className="min-h-full bg-background relative overflow-hidden">
@@ -452,7 +442,7 @@ export default function BrandPage() {
             rgba(13, 148, 136, 0.01) 60%,
             transparent 80%
           )`,
-          filter: "blur(40px)",
+          filter: 'blur(40px)',
         }}
       />
 
@@ -464,11 +454,7 @@ export default function BrandPage() {
             <div className="flex gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isResettingOnboarding}
-                  >
+                  <Button variant="outline" size="sm" disabled={isResettingOnboarding}>
                     {isResettingOnboarding ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
                     ) : (
@@ -483,27 +469,19 @@ export default function BrandPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Redo brand onboarding?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will reset your current brand settings and take you
-                      through the onboarding process again. Your existing brand
-                      data will be replaced with the new information you
-                      provide.
+                      This will reset your current brand settings and take you through the
+                      onboarding process again. Your existing brand data will be replaced with the
+                      new information you provide.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRedoOnboarding}>
-                      Continue
-                    </AlertDialogAction>
+                    <AlertDialogAction onClick={handleRedoOnboarding}>Continue</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
               {brand.website && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRescan}
-                  disabled={isRescanning}
-                >
+                <Button variant="outline" size="sm" onClick={handleRescan} disabled={isRescanning}>
                   {isRescanning ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
@@ -536,10 +514,10 @@ export default function BrandPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex-1 justify-center whitespace-nowrap min-w-0",
+                  'flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex-1 justify-center whitespace-nowrap min-w-0',
                   activeTab === tab.id
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -550,7 +528,7 @@ export default function BrandPage() {
 
           {/* Tab Content */}
           <AnimatePresence mode="wait">
-            {activeTab === "company" && (
+            {activeTab === 'company' && (
               <motion.div
                 key="company"
                 initial={{ opacity: 0, y: 10 }}
@@ -561,22 +539,18 @@ export default function BrandPage() {
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Company Name
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Company Name</Label>
                     <Input
                       value={brand.name}
-                      onChange={(e) => updateField("name", e.target.value)}
+                      onChange={(e) => updateField('name', e.target.value)}
                       className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Industry
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Industry</Label>
                     <select
-                      value={brand.industry || ""}
-                      onChange={(e) => updateField("industry", e.target.value)}
+                      value={brand.industry || ''}
+                      onChange={(e) => updateField('industry', e.target.value)}
                       className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">Select industry</option>
@@ -590,14 +564,10 @@ export default function BrandPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">
-                    Industry Archetype
-                  </Label>
+                  <Label className="text-muted-foreground text-sm">Industry Archetype</Label>
                   <select
-                    value={brand.industryArchetype || ""}
-                    onChange={(e) =>
-                      updateField("industryArchetype", e.target.value)
-                    }
+                    value={brand.industryArchetype || ''}
+                    onChange={(e) => updateField('industryArchetype', e.target.value)}
                     className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">Select archetype</option>
@@ -608,18 +578,15 @@ export default function BrandPage() {
                     ))}
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    High-level business category that helps us tailor creative
-                    recommendations
+                    High-level business category that helps us tailor creative recommendations
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">
-                    Description
-                  </Label>
+                  <Label className="text-muted-foreground text-sm">Description</Label>
                   <Textarea
-                    value={brand.description || ""}
-                    onChange={(e) => updateField("description", e.target.value)}
+                    value={brand.description || ''}
+                    onChange={(e) => updateField('description', e.target.value)}
                     rows={3}
                     className="resize-none"
                   />
@@ -627,23 +594,19 @@ export default function BrandPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Tagline
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Tagline</Label>
                     <Input
-                      value={brand.tagline || ""}
-                      onChange={(e) => updateField("tagline", e.target.value)}
+                      value={brand.tagline || ''}
+                      onChange={(e) => updateField('tagline', e.target.value)}
                       placeholder="Your company tagline"
                       className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Website
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Website</Label>
                     <Input
-                      value={brand.website || ""}
-                      onChange={(e) => updateField("website", e.target.value)}
+                      value={brand.website || ''}
+                      onChange={(e) => updateField('website', e.target.value)}
                       placeholder="yourcompany.com"
                       className="h-11"
                     />
@@ -652,25 +615,19 @@ export default function BrandPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Logo URL
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Logo URL</Label>
                     <Input
-                      value={brand.logoUrl || ""}
-                      onChange={(e) => updateField("logoUrl", e.target.value)}
+                      value={brand.logoUrl || ''}
+                      onChange={(e) => updateField('logoUrl', e.target.value)}
                       placeholder="https://..."
                       className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Favicon URL
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Favicon URL</Label>
                     <Input
-                      value={brand.faviconUrl || ""}
-                      onChange={(e) =>
-                        updateField("faviconUrl", e.target.value)
-                      }
+                      value={brand.faviconUrl || ''}
+                      onChange={(e) => updateField('faviconUrl', e.target.value)}
                       placeholder="https://..."
                       className="h-11"
                     />
@@ -679,7 +636,7 @@ export default function BrandPage() {
               </motion.div>
             )}
 
-            {activeTab === "colors" && (
+            {activeTab === 'colors' && (
               <motion.div
                 key="colors"
                 initial={{ opacity: 0, y: 10 }}
@@ -692,25 +649,23 @@ export default function BrandPage() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   {[
                     {
-                      key: "primaryColor",
-                      label: "Primary",
+                      key: 'primaryColor',
+                      label: 'Primary',
                       presets: COLOR_PRESETS.primary,
                     },
                     {
-                      key: "secondaryColor",
-                      label: "Secondary",
+                      key: 'secondaryColor',
+                      label: 'Secondary',
                       presets: COLOR_PRESETS.secondary,
                     },
                     {
-                      key: "accentColor",
-                      label: "Accent",
+                      key: 'accentColor',
+                      label: 'Accent',
                       presets: COLOR_PRESETS.primary,
                     },
                   ].map(({ key, label, presets }) => (
                     <div key={key} className="space-y-2">
-                      <Label className="text-muted-foreground text-sm">
-                        {label}
-                      </Label>
+                      <Label className="text-muted-foreground text-sm">{label}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:border-ring transition-colors">
@@ -718,65 +673,44 @@ export default function BrandPage() {
                               className="w-10 h-10 rounded-lg border border-border"
                               style={{
                                 backgroundColor:
-                                  (brand[key as keyof BrandData] as string) ||
-                                  "#6366f1",
+                                  (brand[key as keyof BrandData] as string) || '#6366f1',
                               }}
                             />
                             <span className="text-sm font-mono text-muted-foreground">
-                              {(brand[key as keyof BrandData] as string) ||
-                                "#6366f1"}
+                              {(brand[key as keyof BrandData] as string) || '#6366f1'}
                             </span>
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent
-                          className="w-64 p-4 bg-popover border-border"
-                          align="start"
-                        >
+                        <PopoverContent className="w-64 p-4 bg-popover border-border" align="start">
                           <div className="space-y-4">
                             <div className="grid grid-cols-5 gap-2">
                               {presets.map((color) => (
                                 <button
                                   key={color}
                                   className={cn(
-                                    "w-10 h-10 rounded-lg transition-all hover:scale-110",
-                                    (brand[
-                                      key as keyof BrandData
-                                    ] as string) === color
-                                      ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                      : "ring-1 ring-border"
+                                    'w-10 h-10 rounded-lg transition-all hover:scale-110',
+                                    (brand[key as keyof BrandData] as string) === color
+                                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                                      : 'ring-1 ring-border'
                                   )}
                                   style={{ backgroundColor: color }}
-                                  onClick={() =>
-                                    updateField(key as keyof BrandData, color)
-                                  }
+                                  onClick={() => updateField(key as keyof BrandData, color)}
                                 />
                               ))}
                             </div>
                             <div className="flex gap-2 items-center">
                               <input
                                 type="color"
-                                value={
-                                  (brand[key as keyof BrandData] as string) ||
-                                  "#ffffff"
-                                }
+                                value={(brand[key as keyof BrandData] as string) || '#ffffff'}
                                 onChange={(e) =>
-                                  updateField(
-                                    key as keyof BrandData,
-                                    e.target.value
-                                  )
+                                  updateField(key as keyof BrandData, e.target.value)
                                 }
                                 className="w-10 h-10 rounded cursor-pointer bg-transparent"
                               />
                               <Input
-                                value={
-                                  (brand[key as keyof BrandData] as string) ||
-                                  ""
-                                }
+                                value={(brand[key as keyof BrandData] as string) || ''}
                                 onChange={(e) =>
-                                  updateField(
-                                    key as keyof BrandData,
-                                    e.target.value
-                                  )
+                                  updateField(key as keyof BrandData, e.target.value)
                                 }
                                 placeholder="#000000"
                                 className="flex-1 h-10 font-mono text-sm"
@@ -792,48 +726,35 @@ export default function BrandPage() {
                 {/* Background & Text Colors */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   {[
-                    { key: "backgroundColor", label: "Background" },
-                    { key: "textColor", label: "Text" },
+                    { key: 'backgroundColor', label: 'Background' },
+                    { key: 'textColor', label: 'Text' },
                   ].map(({ key, label }) => (
                     <div key={key} className="space-y-2">
-                      <Label className="text-muted-foreground text-sm">
-                        {label}
-                      </Label>
+                      <Label className="text-muted-foreground text-sm">{label}</Label>
                       <div className="flex gap-2">
                         <div
                           className="w-12 h-12 rounded-lg border border-input cursor-pointer"
                           style={{
-                            backgroundColor:
-                              (brand[key as keyof BrandData] as string) ||
-                              "#1a1a1f",
+                            backgroundColor: (brand[key as keyof BrandData] as string) || '#1a1a1f',
                           }}
                           onClick={() => {
                             const input = document.getElementById(
                               `${key}-picker`
-                            ) as HTMLInputElement;
-                            input?.click();
+                            ) as HTMLInputElement
+                            input?.click()
                           }}
                         />
                         <Input
-                          value={
-                            (brand[key as keyof BrandData] as string) || ""
-                          }
-                          onChange={(e) =>
-                            updateField(key as keyof BrandData, e.target.value)
-                          }
+                          value={(brand[key as keyof BrandData] as string) || ''}
+                          onChange={(e) => updateField(key as keyof BrandData, e.target.value)}
                           placeholder="#000000"
                           className="flex-1 h-12"
                         />
                         <input
                           id={`${key}-picker`}
                           type="color"
-                          value={
-                            (brand[key as keyof BrandData] as string) ||
-                            "#ffffff"
-                          }
-                          onChange={(e) =>
-                            updateField(key as keyof BrandData, e.target.value)
-                          }
+                          value={(brand[key as keyof BrandData] as string) || '#ffffff'}
+                          onChange={(e) => updateField(key as keyof BrandData, e.target.value)}
                           className="sr-only"
                         />
                       </div>
@@ -843,9 +764,7 @@ export default function BrandPage() {
 
                 {/* Additional Colors */}
                 <div className="space-y-3">
-                  <Label className="text-muted-foreground text-sm">
-                    Additional Brand Colors
-                  </Label>
+                  <Label className="text-muted-foreground text-sm">Additional Brand Colors</Label>
                   <div className="flex flex-wrap gap-2">
                     {brand.brandColors.map((color, index) => (
                       <div
@@ -856,9 +775,7 @@ export default function BrandPage() {
                           className="w-6 h-6 rounded border border-border"
                           style={{ backgroundColor: color }}
                         />
-                        <span className="text-sm font-mono text-muted-foreground">
-                          {color}
-                        </span>
+                        <span className="text-sm font-mono text-muted-foreground">{color}</span>
                         <button
                           onClick={() => copyColor(color)}
                           className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
@@ -883,16 +800,14 @@ export default function BrandPage() {
                         onChange={(e) => addBrandColor(e.target.value)}
                         className="w-6 h-6 rounded cursor-pointer bg-transparent"
                       />
-                      <span className="text-sm text-muted-foreground">
-                        Add color
-                      </span>
+                      <span className="text-sm text-muted-foreground">Add color</span>
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {activeTab === "typography" && (
+            {activeTab === 'typography' && (
               <motion.div
                 key="typography"
                 initial={{ opacity: 0, y: 10 }}
@@ -903,14 +818,10 @@ export default function BrandPage() {
               >
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Primary Font (Headings)
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Primary Font (Headings)</Label>
                     <Input
-                      value={brand.primaryFont || ""}
-                      onChange={(e) =>
-                        updateField("primaryFont", e.target.value)
-                      }
+                      value={brand.primaryFont || ''}
+                      onChange={(e) => updateField('primaryFont', e.target.value)}
                       placeholder="e.g., Inter, Roboto"
                       className="h-11"
                     />
@@ -924,14 +835,10 @@ export default function BrandPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Secondary Font (Body)
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Secondary Font (Body)</Label>
                     <Input
-                      value={brand.secondaryFont || ""}
-                      onChange={(e) =>
-                        updateField("secondaryFont", e.target.value)
-                      }
+                      value={brand.secondaryFont || ''}
+                      onChange={(e) => updateField('secondaryFont', e.target.value)}
                       placeholder="e.g., Open Sans, Lato"
                       className="h-11"
                     />
@@ -948,9 +855,7 @@ export default function BrandPage() {
 
                 {/* Keywords */}
                 <div className="space-y-3">
-                  <Label className="text-muted-foreground text-sm">
-                    Brand Keywords
-                  </Label>
+                  <Label className="text-muted-foreground text-sm">Brand Keywords</Label>
                   <div className="flex flex-wrap gap-2">
                     {brand.keywords.map((keyword, index) => (
                       <span
@@ -961,7 +866,7 @@ export default function BrandPage() {
                         <button
                           onClick={() =>
                             updateField(
-                              "keywords",
+                              'keywords',
                               brand.keywords.filter((_, i) => i !== index)
                             )
                           }
@@ -975,12 +880,9 @@ export default function BrandPage() {
                       placeholder="Add keyword..."
                       className="w-32 h-8"
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                          updateField("keywords", [
-                            ...brand.keywords,
-                            e.currentTarget.value.trim(),
-                          ]);
-                          e.currentTarget.value = "";
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          updateField('keywords', [...brand.keywords, e.currentTarget.value.trim()])
+                          e.currentTarget.value = ''
                         }
                       }}
                     />
@@ -989,7 +891,7 @@ export default function BrandPage() {
               </motion.div>
             )}
 
-            {activeTab === "social" && (
+            {activeTab === 'social' && (
               <motion.div
                 key="social"
                 initial={{ opacity: 0, y: 10 }}
@@ -1000,28 +902,20 @@ export default function BrandPage() {
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Contact Email
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Contact Email</Label>
                     <Input
                       type="email"
-                      value={brand.contactEmail || ""}
-                      onChange={(e) =>
-                        updateField("contactEmail", e.target.value)
-                      }
+                      value={brand.contactEmail || ''}
+                      onChange={(e) => updateField('contactEmail', e.target.value)}
                       placeholder="hello@company.com"
                       className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">
-                      Contact Phone
-                    </Label>
+                    <Label className="text-muted-foreground text-sm">Contact Phone</Label>
                     <Input
-                      value={brand.contactPhone || ""}
-                      onChange={(e) =>
-                        updateField("contactPhone", e.target.value)
-                      }
+                      value={brand.contactPhone || ''}
+                      onChange={(e) => updateField('contactPhone', e.target.value)}
                       placeholder="+1 (555) 000-0000"
                       className="h-11"
                     />
@@ -1029,24 +923,22 @@ export default function BrandPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-muted-foreground text-sm">
-                    Social Media Links
-                  </Label>
+                  <Label className="text-muted-foreground text-sm">Social Media Links</Label>
                   {[
                     {
-                      key: "twitter",
-                      label: "Twitter / X",
-                      placeholder: "https://twitter.com/...",
+                      key: 'twitter',
+                      label: 'Twitter / X',
+                      placeholder: 'https://twitter.com/...',
                     },
                     {
-                      key: "linkedin",
-                      label: "LinkedIn",
-                      placeholder: "https://linkedin.com/company/...",
+                      key: 'linkedin',
+                      label: 'LinkedIn',
+                      placeholder: 'https://linkedin.com/company/...',
                     },
                     {
-                      key: "instagram",
-                      label: "Instagram",
-                      placeholder: "https://instagram.com/...",
+                      key: 'instagram',
+                      label: 'Instagram',
+                      placeholder: 'https://instagram.com/...',
                     },
                   ].map(({ key, label, placeholder }) => (
                     <div key={key} className="flex gap-3 items-center">
@@ -1054,13 +946,9 @@ export default function BrandPage() {
                         {label}
                       </Label>
                       <Input
-                        value={
-                          brand.socialLinks?.[
-                            key as keyof typeof brand.socialLinks
-                          ] || ""
-                        }
+                        value={brand.socialLinks?.[key as keyof typeof brand.socialLinks] || ''}
                         onChange={(e) =>
-                          updateField("socialLinks", {
+                          updateField('socialLinks', {
                             ...brand.socialLinks,
                             [key]: e.target.value,
                           })
@@ -1074,7 +962,7 @@ export default function BrandPage() {
               </motion.div>
             )}
 
-            {activeTab === "audiences" && (
+            {activeTab === 'audiences' && (
               <motion.div
                 key="audiences"
                 initial={{ opacity: 0, y: 10 }}
@@ -1086,13 +974,10 @@ export default function BrandPage() {
                 {audiences.length === 0 ? (
                   <div className="text-center py-12 px-6 rounded-xl border border-dashed border-border">
                     <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      No audiences yet
-                    </h3>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No audiences yet</h3>
                     <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                      Target audiences are automatically inferred when you scan
-                      a website during onboarding. Click &quot;Redo
-                      onboarding&quot; to scan your website again.
+                      Target audiences are automatically inferred when you scan a website during
+                      onboarding. Click &quot;Redo onboarding&quot; to scan your website again.
                     </p>
                   </div>
                 ) : (
@@ -1100,8 +985,7 @@ export default function BrandPage() {
                     <div className="flex items-center justify-between">
                       <p className="text-muted-foreground text-sm">
                         {audiences.length} audience
-                        {audiences.length !== 1 ? "s" : ""} identified from your
-                        website
+                        {audiences.length !== 1 ? 's' : ''} identified from your website
                       </p>
                     </div>
 
@@ -1110,10 +994,10 @@ export default function BrandPage() {
                         <div
                           key={audience.id}
                           className={cn(
-                            "rounded-xl border transition-all",
+                            'rounded-xl border transition-all',
                             audience.isPrimary
-                              ? "border-primary/30 bg-primary/5"
-                              : "border-border bg-card hover:border-border/80"
+                              ? 'border-primary/30 bg-primary/5'
+                              : 'border-border bg-card hover:border-border/80'
                           )}
                         >
                           {/* Audience Header */}
@@ -1121,9 +1005,7 @@ export default function BrandPage() {
                             className="p-4 cursor-pointer"
                             onClick={() =>
                               setExpandedAudience(
-                                expandedAudience === audience.id
-                                  ? null
-                                  : audience.id
+                                expandedAudience === audience.id ? null : audience.id
                               )
                             }
                           >
@@ -1131,10 +1013,10 @@ export default function BrandPage() {
                               <div className="flex items-start gap-3 min-w-0">
                                 <div
                                   className={cn(
-                                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                    'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
                                     audience.isPrimary
-                                      ? "bg-primary/20 text-primary"
-                                      : "bg-muted text-muted-foreground"
+                                      ? 'bg-primary/20 text-primary'
+                                      : 'bg-muted text-muted-foreground'
                                   )}
                                 >
                                   {audience.firmographics?.jobTitles?.length ? (
@@ -1155,29 +1037,20 @@ export default function BrandPage() {
                                     )}
                                   </div>
                                   <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                                    <span>
-                                      {audience.confidence}% confidence
-                                    </span>
+                                    <span>{audience.confidence}% confidence</span>
                                     {audience.firmographics?.jobTitles &&
-                                      audience.firmographics.jobTitles.length >
-                                        0 && (
-                                        <span className="text-muted-foreground/50">
-                                          •
-                                        </span>
+                                      audience.firmographics.jobTitles.length > 0 && (
+                                        <span className="text-muted-foreground/50">•</span>
                                       )}
                                     {audience.firmographics?.jobTitles
                                       ?.slice(0, 2)
                                       .map((title, i) => (
-                                        <span
-                                          key={i}
-                                          className="text-muted-foreground"
-                                        >
+                                        <span key={i} className="text-muted-foreground">
                                           {title}
                                           {i === 0 &&
                                             audience.firmographics?.jobTitles &&
-                                            audience.firmographics.jobTitles
-                                              .length > 1 &&
-                                            ","}
+                                            audience.firmographics.jobTitles.length > 1 &&
+                                            ','}
                                         </span>
                                       ))}
                                   </div>
@@ -1203,33 +1076,25 @@ export default function BrandPage() {
                                     Firmographics
                                   </h4>
                                   <div className="flex flex-wrap gap-1.5">
-                                    {audience.firmographics.companySize?.map(
-                                      (size, i) => (
-                                        <span
-                                          key={i}
-                                          className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
-                                        >
-                                          {size} employees
-                                        </span>
-                                      )
-                                    )}
-                                    {audience.firmographics.industries?.map(
-                                      (ind, i) => (
-                                        <span
-                                          key={i}
-                                          className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
-                                        >
-                                          {ind}
-                                        </span>
-                                      )
-                                    )}
-                                    {audience.firmographics
-                                      .decisionMakingRole && (
+                                    {audience.firmographics.companySize?.map((size, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {size} employees
+                                      </span>
+                                    ))}
+                                    {audience.firmographics.industries?.map((ind, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {ind}
+                                      </span>
+                                    ))}
+                                    {audience.firmographics.decisionMakingRole && (
                                       <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground capitalize">
-                                        {
-                                          audience.firmographics
-                                            .decisionMakingRole
-                                        }
+                                        {audience.firmographics.decisionMakingRole}
                                       </span>
                                     )}
                                   </div>
@@ -1238,26 +1103,21 @@ export default function BrandPage() {
 
                               {/* Psychographics */}
                               {audience.psychographics?.painPoints &&
-                                audience.psychographics.painPoints.length >
-                                  0 && (
+                                audience.psychographics.painPoints.length > 0 && (
                                   <div>
                                     <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                                       Pain Points
                                     </h4>
                                     <ul className="space-y-1">
-                                      {audience.psychographics.painPoints.map(
-                                        (pain, i) => (
-                                          <li
-                                            key={i}
-                                            className="text-sm text-muted-foreground flex items-start gap-2"
-                                          >
-                                            <span className="text-muted-foreground/50 mt-1">
-                                              •
-                                            </span>
-                                            {pain}
-                                          </li>
-                                        )
-                                      )}
+                                      {audience.psychographics.painPoints.map((pain, i) => (
+                                        <li
+                                          key={i}
+                                          className="text-sm text-muted-foreground flex items-start gap-2"
+                                        >
+                                          <span className="text-muted-foreground/50 mt-1">•</span>
+                                          {pain}
+                                        </li>
+                                      ))}
                                     </ul>
                                   </div>
                                 )}
@@ -1269,19 +1129,15 @@ export default function BrandPage() {
                                       Goals
                                     </h4>
                                     <ul className="space-y-1">
-                                      {audience.psychographics.goals.map(
-                                        (goal, i) => (
-                                          <li
-                                            key={i}
-                                            className="text-sm text-muted-foreground flex items-start gap-2"
-                                          >
-                                            <span className="text-muted-foreground/50 mt-1">
-                                              •
-                                            </span>
-                                            {goal}
-                                          </li>
-                                        )
-                                      )}
+                                      {audience.psychographics.goals.map((goal, i) => (
+                                        <li
+                                          key={i}
+                                          className="text-sm text-muted-foreground flex items-start gap-2"
+                                        >
+                                          <span className="text-muted-foreground/50 mt-1">•</span>
+                                          {goal}
+                                        </li>
+                                      ))}
                                     </ul>
                                   </div>
                                 )}
@@ -1293,20 +1149,17 @@ export default function BrandPage() {
                                     Behavioral
                                   </h4>
                                   <div className="flex flex-wrap gap-1.5">
-                                    {audience.behavioral.platforms?.map(
-                                      (platform, i) => (
-                                        <span
-                                          key={i}
-                                          className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
-                                        >
-                                          {platform}
-                                        </span>
-                                      )
-                                    )}
+                                    {audience.behavioral.platforms?.map((platform, i) => (
+                                      <span
+                                        key={i}
+                                        className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground"
+                                      >
+                                        {platform}
+                                      </span>
+                                    ))}
                                     {audience.behavioral.buyingProcess && (
                                       <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground capitalize">
-                                        {audience.behavioral.buyingProcess}{" "}
-                                        purchase
+                                        {audience.behavioral.buyingProcess} purchase
                                       </span>
                                     )}
                                   </div>
@@ -1320,8 +1173,8 @@ export default function BrandPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetPrimaryAudience(audience.id);
+                                      e.stopPropagation()
+                                      handleSetPrimaryAudience(audience.id)
                                     }}
                                   >
                                     Set as Primary
@@ -1332,8 +1185,8 @@ export default function BrandPage() {
                                   size="sm"
                                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteAudience(audience.id);
+                                    e.stopPropagation()
+                                    handleDeleteAudience(audience.id)
                                   }}
                                 >
                                   <X className="w-4 h-4 mr-1" />
@@ -1359,7 +1212,7 @@ export default function BrandPage() {
             className="absolute inset-0 pointer-events-none"
             style={{
               background: `radial-gradient(circle at 50% 30%, ${
-                brand.primaryColor || "#10b981"
+                brand.primaryColor || '#10b981'
               }15 0%, transparent 50%)`,
             }}
           />
@@ -1379,8 +1232,8 @@ export default function BrandPage() {
                 {/* App Header */}
                 <motion.div
                   className="h-14 flex items-center justify-between px-4"
-                  style={{ backgroundColor: brand.primaryColor || "#10b981" }}
-                  animate={{ backgroundColor: brand.primaryColor || "#10b981" }}
+                  style={{ backgroundColor: brand.primaryColor || '#10b981' }}
+                  animate={{ backgroundColor: brand.primaryColor || '#10b981' }}
                   transition={{ duration: 0.3 }}
                 >
                   <div className="flex items-center gap-3">
@@ -1393,7 +1246,7 @@ export default function BrandPage() {
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                         <span className="text-white font-bold text-sm">
-                          {brand.name?.charAt(0)?.toUpperCase() || "C"}
+                          {brand.name?.charAt(0)?.toUpperCase() || 'C'}
                         </span>
                       </div>
                     )}
@@ -1403,7 +1256,7 @@ export default function BrandPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
-                      {brand.name || "Your Company"}
+                      {brand.name || 'Your Company'}
                     </motion.span>
                   </div>
                   <div className="flex gap-1">
@@ -1420,10 +1273,10 @@ export default function BrandPage() {
                     <motion.div
                       className="h-3 rounded-full w-3/4"
                       style={{
-                        backgroundColor: brand.textColor || "currentColor",
+                        backgroundColor: brand.textColor || 'currentColor',
                       }}
                       animate={{
-                        backgroundColor: brand.textColor || "currentColor",
+                        backgroundColor: brand.textColor || 'currentColor',
                       }}
                     />
                     <div className="h-2 bg-muted-foreground/30 rounded-full w-1/2" />
@@ -1434,25 +1287,23 @@ export default function BrandPage() {
                     <motion.div
                       className="h-9 px-4 rounded-lg flex items-center justify-center flex-1"
                       style={{
-                        backgroundColor: brand.primaryColor || "#10b981",
+                        backgroundColor: brand.primaryColor || '#10b981',
                       }}
                       animate={{
-                        backgroundColor: brand.primaryColor || "#10b981",
+                        backgroundColor: brand.primaryColor || '#10b981',
                       }}
                     >
-                      <span className="text-white text-xs font-medium">
-                        Get Started
-                      </span>
+                      <span className="text-white text-xs font-medium">Get Started</span>
                     </motion.div>
                     <motion.div
                       className="h-9 px-4 rounded-lg flex items-center justify-center border-2"
-                      style={{ borderColor: brand.primaryColor || "#10b981" }}
-                      animate={{ borderColor: brand.primaryColor || "#10b981" }}
+                      style={{ borderColor: brand.primaryColor || '#10b981' }}
+                      animate={{ borderColor: brand.primaryColor || '#10b981' }}
                     >
                       <motion.span
                         className="text-xs font-medium"
-                        style={{ color: brand.primaryColor || "#10b981" }}
-                        animate={{ color: brand.primaryColor || "#10b981" }}
+                        style={{ color: brand.primaryColor || '#10b981' }}
+                        animate={{ color: brand.primaryColor || '#10b981' }}
                       >
                         Learn More
                       </motion.span>
@@ -1461,25 +1312,23 @@ export default function BrandPage() {
 
                   {/* Cards */}
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    {[brand.primaryColor, brand.secondaryColor].map(
-                      (color, i) => (
+                    {[brand.primaryColor, brand.secondaryColor].map((color, i) => (
+                      <motion.div
+                        key={i}
+                        className="h-20 rounded-xl p-3"
+                        style={{ backgroundColor: `${color || '#10b981'}20` }}
+                        animate={{
+                          backgroundColor: `${color || '#10b981'}20`,
+                        }}
+                      >
                         <motion.div
-                          key={i}
-                          className="h-20 rounded-xl p-3"
-                          style={{ backgroundColor: `${color || "#10b981"}20` }}
-                          animate={{
-                            backgroundColor: `${color || "#10b981"}20`,
-                          }}
-                        >
-                          <motion.div
-                            className="w-6 h-6 rounded-lg mb-2"
-                            style={{ backgroundColor: color || "#10b981" }}
-                            animate={{ backgroundColor: color || "#10b981" }}
-                          />
-                          <div className="h-2 bg-muted-foreground/30 rounded w-3/4" />
-                        </motion.div>
-                      )
-                    )}
+                          className="w-6 h-6 rounded-lg mb-2"
+                          style={{ backgroundColor: color || '#10b981' }}
+                          animate={{ backgroundColor: color || '#10b981' }}
+                        />
+                        <div className="h-2 bg-muted-foreground/30 rounded w-3/4" />
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
 
@@ -1500,7 +1349,7 @@ export default function BrandPage() {
                   {brand.website && (
                     <span className="text-muted-foreground text-xs flex items-center gap-1">
                       <Globe className="w-3 h-3" />
-                      {brand.website.replace(/^https?:\/\//, "")}
+                      {brand.website.replace(/^https?:\/\//, '')}
                     </span>
                   )}
                 </div>
@@ -1521,5 +1370,5 @@ export default function BrandPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

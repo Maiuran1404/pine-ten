@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { logger } from "@/lib/logger";
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { logger } from '@/lib/logger'
 import type {
   LiveBrief,
   InferenceResult,
@@ -12,12 +12,12 @@ import type {
   TaskType,
   AudienceBrief,
   ClarifyingQuestion,
-} from "@/components/chat/brief-panel/types";
+} from '@/components/chat/brief-panel/types'
 import {
   createEmptyBrief,
   calculateBriefCompletion,
   isBriefReadyForDesigner,
-} from "@/components/chat/brief-panel/types";
+} from '@/components/chat/brief-panel/types'
 import {
   inferFromMessage,
   applyInferenceToBrief,
@@ -25,29 +25,29 @@ import {
   shouldAskClarifyingQuestion,
   generateTaskSummary,
   type InferenceInput,
-} from "@/lib/ai/inference-engine";
+} from '@/lib/ai/inference-engine'
 import {
   generateContentOutline,
   generateDesignerBrief,
   exportBriefAsMarkdown,
-} from "@/lib/ai/brief-generator";
-import { getDimensionsForPlatform } from "@/lib/constants/platform-dimensions";
-import type { InferredAudience } from "@/components/onboarding/types";
-import type { DeliverableStyle, MoodboardItem } from "@/components/chat/types";
+} from '@/lib/ai/brief-generator'
+import { getDimensionsForPlatform } from '@/lib/constants/platform-dimensions'
+import type { InferredAudience } from '@/components/onboarding/types'
+import type { DeliverableStyle, MoodboardItem } from '@/components/chat/types'
 
 // Debounce helper
 function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = useState(value)
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+      setDebouncedValue(value)
+    }, delay)
 
-    return () => clearTimeout(handler);
-  }, [value, delay]);
+    return () => clearTimeout(handler)
+  }, [value, delay])
 
-  return debouncedValue;
+  return debouncedValue
 }
 
 // =============================================================================
@@ -55,66 +55,63 @@ function useDebounce<T>(value: T, delay: number): T {
 // =============================================================================
 
 interface UseBriefOptions {
-  draftId: string;
-  brandAudiences?: InferredAudience[];
-  brandColors?: string[];
+  draftId: string
+  brandAudiences?: InferredAudience[]
+  brandColors?: string[]
   brandTypography?: {
-    primary: string;
-    secondary: string;
-  };
-  brandName?: string;
-  brandIndustry?: string;
-  brandToneOfVoice?: string;
-  brandDescription?: string;
+    primary: string
+    secondary: string
+  }
+  brandName?: string
+  brandIndustry?: string
+  brandToneOfVoice?: string
+  brandDescription?: string
 }
 
 interface UseBriefReturn {
   // State
-  brief: LiveBrief;
-  completion: number;
-  isReady: boolean;
-  pendingQuestion: ClarifyingQuestion | null;
-  isGeneratingOutline: boolean;
-  isSaving: boolean;
-  isLoading: boolean;
-  briefId: string | null;
+  brief: LiveBrief
+  completion: number
+  isReady: boolean
+  pendingQuestion: ClarifyingQuestion | null
+  isGeneratingOutline: boolean
+  isSaving: boolean
+  isLoading: boolean
+  briefId: string | null
 
   // Actions
-  processMessage: (message: string) => void;
-  confirmField: (field: keyof LiveBrief) => void;
-  updateField: <K extends keyof LiveBrief>(
-    field: K,
-    value: LiveBrief[K]
-  ) => void;
-  updateBrief: (brief: LiveBrief) => void;
-  setIntent: (intent: Intent) => void;
-  setPlatform: (platform: Platform) => void;
-  setTaskType: (taskType: TaskType) => void;
-  setAudience: (audience: AudienceBrief) => void;
-  setContentOutline: (outline: ContentOutline | null) => void;
-  setVisualDirection: (direction: VisualDirection | null) => void;
-  addStyleToVisualDirection: (style: DeliverableStyle) => void;
-  syncMoodboardToVisualDirection: (items: MoodboardItem[]) => void;
-  answerClarifyingQuestion: (questionId: string, answer: string) => void;
-  generateOutline: (durationDays?: number) => Promise<void>;
-  resetBrief: () => void;
-  exportBrief: () => string;
-  saveBrief: () => Promise<void>;
+  processMessage: (message: string) => void
+  confirmField: (field: keyof LiveBrief) => void
+  updateField: <K extends keyof LiveBrief>(field: K, value: LiveBrief[K]) => void
+  updateBrief: (brief: LiveBrief) => void
+  setIntent: (intent: Intent) => void
+  setPlatform: (platform: Platform) => void
+  setTaskType: (taskType: TaskType) => void
+  setAudience: (audience: AudienceBrief) => void
+  setContentOutline: (outline: ContentOutline | null) => void
+  setVisualDirection: (direction: VisualDirection | null) => void
+  addStyleToVisualDirection: (style: DeliverableStyle) => void
+  syncMoodboardToVisualDirection: (items: MoodboardItem[]) => void
+  answerClarifyingQuestion: (questionId: string, answer: string) => void
+  generateOutline: (durationDays?: number) => Promise<void>
+  resetBrief: () => void
+  exportBrief: () => string
+  saveBrief: () => Promise<void>
 }
 
 export function useBrief({
   draftId,
   brandAudiences = [],
   brandColors = [],
-  brandTypography = { primary: "", secondary: "" },
-  brandName = "",
-  brandIndustry = "",
-  brandToneOfVoice = "",
-  brandDescription = "",
+  brandTypography = { primary: '', secondary: '' },
+  brandName = '',
+  brandIndustry = '',
+  brandToneOfVoice = '',
+  brandDescription = '',
 }: UseBriefOptions): UseBriefReturn {
   // Initialize brief
   const [brief, setBrief] = useState<LiveBrief>(() => {
-    const newBrief = createEmptyBrief(draftId);
+    const newBrief = createEmptyBrief(draftId)
 
     // Pre-populate with brand data
     if (brandColors.length > 0) {
@@ -124,44 +121,42 @@ export function useBrief({
         colorPalette: brandColors,
         typography: brandTypography,
         avoidElements: [],
-      };
+      }
     }
 
     // Set default audience if available
     if (brandAudiences.length > 0) {
-      const primaryAudience =
-        brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+      const primaryAudience = brandAudiences.find((a) => a.isPrimary) || brandAudiences[0]
       newBrief.audience = {
         value: {
           name: primaryAudience.name,
           demographics: primaryAudience.demographics
             ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
             : undefined,
-          psychographics: primaryAudience.psychographics?.values?.join(", "),
+          psychographics: primaryAudience.psychographics?.values?.join(', '),
           painPoints: primaryAudience.psychographics?.painPoints,
           goals: primaryAudience.psychographics?.goals,
-          source: "inferred",
+          source: 'inferred',
         },
         confidence: 0.75, // Higher confidence since it's from brand data
-        source: "inferred",
-      };
+        source: 'inferred',
+      }
     }
 
-    return newBrief;
-  });
+    return newBrief
+  })
 
-  const [pendingQuestion, setPendingQuestion] =
-    useState<ClarifyingQuestion | null>(null);
-  const [conversationHistory, setConversationHistory] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [briefId, setBriefId] = useState<string | null>(null);
-  const hasLoadedRef = useRef(false);
-  const lastSavedRef = useRef<string>("");
+  const [pendingQuestion, setPendingQuestion] = useState<ClarifyingQuestion | null>(null)
+  const [conversationHistory, setConversationHistory] = useState<string[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [briefId, setBriefId] = useState<string | null>(null)
+  const hasLoadedRef = useRef(false)
+  const lastSavedRef = useRef<string>('')
 
   // Computed values
-  const completion = useMemo(() => calculateBriefCompletion(brief), [brief]);
-  const isReady = useMemo(() => isBriefReadyForDesigner(brief), [brief]);
+  const completion = useMemo(() => calculateBriefCompletion(brief), [brief])
+  const isReady = useMemo(() => isBriefReadyForDesigner(brief), [brief])
 
   // Apply brand data when it becomes available (after async load)
   // This ensures brand colors and audiences show up immediately
@@ -171,13 +166,10 @@ export function useBrief({
       setBrief((current) => {
         // Don't overwrite if visual direction already has the colors
         if (
-          current.visualDirection?.colorPalette?.length ===
-            brandColors.length &&
-          current.visualDirection.colorPalette.every(
-            (c, i) => c === brandColors[i]
-          )
+          current.visualDirection?.colorPalette?.length === brandColors.length &&
+          current.visualDirection.colorPalette.every((c, i) => c === brandColors[i])
         ) {
-          return current;
+          return current
         }
         return {
           ...current,
@@ -190,31 +182,27 @@ export function useBrief({
             avoidElements: current.visualDirection?.avoidElements || [],
           },
           updatedAt: new Date(),
-        };
-      });
+        }
+      })
     }
-  }, [brandColors, brandTypography]);
+  }, [brandColors, brandTypography])
 
   // Apply brand audiences when they become available
   useEffect(() => {
     if (brandAudiences.length > 0 && !isLoading) {
       setBrief((current) => {
         // Don't overwrite if audience is already set (user might have confirmed it)
-        if (current.audience.source === "confirmed") {
-          return current;
+        if (current.audience.source === 'confirmed') {
+          return current
         }
         // Don't overwrite if audience is already populated with same name
-        const primaryAudience =
-          brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+        const primaryAudience = brandAudiences.find((a) => a.isPrimary) || brandAudiences[0]
         if (current.audience.value?.name === primaryAudience.name) {
-          return current;
+          return current
         }
         // Only apply if current audience is empty or pending
-        if (
-          current.audience.value?.name &&
-          current.audience.source !== "pending"
-        ) {
-          return current;
+        if (current.audience.value?.name && current.audience.source !== 'pending') {
+          return current
         }
         return {
           ...current,
@@ -224,50 +212,47 @@ export function useBrief({
               demographics: primaryAudience.demographics
                 ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
                 : undefined,
-              psychographics:
-                primaryAudience.psychographics?.values?.join(", "),
+              psychographics: primaryAudience.psychographics?.values?.join(', '),
               painPoints: primaryAudience.psychographics?.painPoints,
               goals: primaryAudience.psychographics?.goals,
-              source: "inferred",
+              source: 'inferred',
             },
             confidence: 0.75, // Higher confidence since it's from brand data
-            source: "inferred",
+            source: 'inferred',
           },
           updatedAt: new Date(),
-        };
-      });
+        }
+      })
     }
-  }, [brandAudiences, isLoading]);
+  }, [brandAudiences, isLoading])
 
   // Debounce brief changes for auto-save (500ms delay - fast enough to save before refresh)
-  const debouncedBrief = useDebounce(brief, 500);
+  const debouncedBrief = useDebounce(brief, 500)
 
   // Load brief from database on mount
   useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
 
     const loadBrief = async () => {
       try {
-        const response = await fetch(`/api/briefs?draftId=${draftId}`);
+        const response = await fetch(`/api/briefs?draftId=${draftId}`)
         if (!response.ok) {
-          setIsLoading(false);
-          return;
+          setIsLoading(false)
+          return
         }
 
-        const data = await response.json();
+        const data = await response.json()
         if (data.brief) {
           // Merge loaded brief with brand data - ensure brand audience is populated if not set
-          let loadedBrief = data.brief;
+          let loadedBrief = data.brief
 
           // If loaded brief has no audience but we have brand audiences, apply them
           if (
-            (!loadedBrief.audience?.value ||
-              !loadedBrief.audience.value.name) &&
+            (!loadedBrief.audience?.value || !loadedBrief.audience.value.name) &&
             brandAudiences.length > 0
           ) {
-            const primaryAudience =
-              brandAudiences.find((a) => a.isPrimary) || brandAudiences[0];
+            const primaryAudience = brandAudiences.find((a) => a.isPrimary) || brandAudiences[0]
             loadedBrief = {
               ...loadedBrief,
               audience: {
@@ -276,16 +261,15 @@ export function useBrief({
                   demographics: primaryAudience.demographics
                     ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
                     : undefined,
-                  psychographics:
-                    primaryAudience.psychographics?.values?.join(", "),
+                  psychographics: primaryAudience.psychographics?.values?.join(', '),
                   painPoints: primaryAudience.psychographics?.painPoints,
                   goals: primaryAudience.psychographics?.goals,
-                  source: "inferred",
+                  source: 'inferred',
                 },
                 confidence: 0.7,
-                source: "inferred",
+                source: 'inferred',
               },
-            };
+            }
           }
 
           // If loaded brief has no colors but we have brand colors, apply them
@@ -298,198 +282,187 @@ export function useBrief({
               ...loadedBrief,
               visualDirection: {
                 ...loadedBrief.visualDirection,
-                selectedStyles:
-                  loadedBrief.visualDirection?.selectedStyles || [],
+                selectedStyles: loadedBrief.visualDirection?.selectedStyles || [],
                 moodKeywords: loadedBrief.visualDirection?.moodKeywords || [],
                 colorPalette: brandColors,
                 typography: brandTypography,
                 avoidElements: loadedBrief.visualDirection?.avoidElements || [],
               },
-            };
+            }
           }
 
-          setBrief(loadedBrief);
-          setBriefId(data.brief.id);
-          lastSavedRef.current = JSON.stringify(loadedBrief);
+          setBrief(loadedBrief)
+          setBriefId(data.brief.id)
+          lastSavedRef.current = JSON.stringify(loadedBrief)
         }
       } catch (error) {
-        logger.error({ err: error }, "Failed to load brief");
+        logger.error({ err: error }, 'Failed to load brief')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    loadBrief();
-  }, [draftId]);
+    loadBrief()
+  }, [draftId])
 
   // Auto-save brief when it changes (debounced)
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) return
 
-    const briefJson = JSON.stringify(debouncedBrief);
-    if (briefJson === lastSavedRef.current) return;
+    const briefJson = JSON.stringify(debouncedBrief)
+    if (briefJson === lastSavedRef.current) return
 
     const saveBrief = async () => {
-      setIsSaving(true);
+      setIsSaving(true)
       try {
-        const response = await fetch("/api/briefs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/briefs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             brief: debouncedBrief,
             draftId,
           }),
-        });
+        })
 
         if (response.ok) {
-          const data = await response.json();
-          setBriefId(data.id);
-          lastSavedRef.current = briefJson;
+          const data = await response.json()
+          setBriefId(data.id)
+          lastSavedRef.current = briefJson
         }
       } catch (error) {
-        logger.error({ err: error }, "Failed to auto-save brief");
+        logger.error({ err: error }, 'Failed to auto-save brief')
       } finally {
-        setIsSaving(false);
+        setIsSaving(false)
       }
-    };
+    }
 
-    saveBrief();
-  }, [debouncedBrief, draftId, isLoading]);
+    saveBrief()
+  }, [debouncedBrief, draftId, isLoading])
 
   // Manual save function
   const saveBrief = useCallback(async () => {
-    setIsSaving(true);
+    setIsSaving(true)
     try {
-      const response = await fetch("/api/briefs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/briefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           brief,
           draftId,
         }),
-      });
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        setBriefId(data.id);
-        lastSavedRef.current = JSON.stringify(brief);
+        const data = await response.json()
+        setBriefId(data.id)
+        lastSavedRef.current = JSON.stringify(brief)
       }
     } catch (error) {
-      logger.error({ err: error }, "Failed to save brief");
+      logger.error({ err: error }, 'Failed to save brief')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  }, [brief, draftId]);
+  }, [brief, draftId])
 
   // Process a user message and update brief via inference
   const processMessage = useCallback(
     (message: string) => {
       // Add to conversation history
-      setConversationHistory((prev) => [...prev.slice(-5), message]);
+      setConversationHistory((prev) => [...prev.slice(-5), message])
 
       // Run inference
       const inferenceInput: InferenceInput = {
         message,
         conversationHistory,
         brandAudiences,
-      };
+      }
 
-      const inference = inferFromMessage(inferenceInput);
+      const inference = inferFromMessage(inferenceInput)
 
       // Apply inference to brief, passing the original message for audience matching
       setBrief((currentBrief) =>
         applyInferenceToBrief(currentBrief, inference, brandAudiences, message)
-      );
+      )
 
       // Check if we need to ask a clarifying question
       if (shouldAskClarifyingQuestion(inference)) {
-        const questions = generateClarifyingQuestions(
-          inference,
-          brief.clarifyingQuestionsAsked
-        );
+        const questions = generateClarifyingQuestions(inference, brief.clarifyingQuestionsAsked)
         if (questions.length > 0) {
-          setPendingQuestion(questions[0]);
+          setPendingQuestion(questions[0])
         }
       } else {
-        setPendingQuestion(null);
+        setPendingQuestion(null)
       }
     },
     [conversationHistory, brandAudiences, brief.clarifyingQuestionsAsked]
-  );
+  )
 
   // Confirm an inferred field
   const confirmField = useCallback((field: keyof LiveBrief) => {
     setBrief((current) => {
-      const fieldValue = current[field];
-      if (
-        fieldValue &&
-        typeof fieldValue === "object" &&
-        "source" in fieldValue
-      ) {
+      const fieldValue = current[field]
+      if (fieldValue && typeof fieldValue === 'object' && 'source' in fieldValue) {
         return {
           ...current,
-          [field]: { ...fieldValue, source: "confirmed" as const },
+          [field]: { ...fieldValue, source: 'confirmed' as const },
           updatedAt: new Date(),
-        };
+        }
       }
-      return current;
-    });
-  }, []);
+      return current
+    })
+  }, [])
 
   // Update a specific field
-  const updateField = useCallback(
-    <K extends keyof LiveBrief>(field: K, value: LiveBrief[K]) => {
-      setBrief((current) => ({
-        ...current,
-        [field]: value,
-        updatedAt: new Date(),
-      }));
-    },
-    []
-  );
+  const updateField = useCallback(<K extends keyof LiveBrief>(field: K, value: LiveBrief[K]) => {
+    setBrief((current) => ({
+      ...current,
+      [field]: value,
+      updatedAt: new Date(),
+    }))
+  }, [])
 
   // Update entire brief
   const updateBrief = useCallback((newBrief: LiveBrief) => {
-    setBrief(newBrief);
-  }, []);
+    setBrief(newBrief)
+  }, [])
 
   // Set intent
   const setIntent = useCallback((intent: Intent) => {
     setBrief((current) => ({
       ...current,
-      intent: { value: intent, confidence: 1, source: "confirmed" },
+      intent: { value: intent, confidence: 1, source: 'confirmed' },
       updatedAt: new Date(),
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Set platform (and auto-populate dimensions)
   const setPlatform = useCallback((platform: Platform) => {
-    const dimensions = getDimensionsForPlatform(platform);
+    const dimensions = getDimensionsForPlatform(platform)
     setBrief((current) => ({
       ...current,
-      platform: { value: platform, confidence: 1, source: "confirmed" },
+      platform: { value: platform, confidence: 1, source: 'confirmed' },
       dimensions,
       updatedAt: new Date(),
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Set task type
   const setTaskType = useCallback((taskType: TaskType) => {
     setBrief((current) => ({
       ...current,
-      taskType: { value: taskType, confidence: 1, source: "confirmed" },
+      taskType: { value: taskType, confidence: 1, source: 'confirmed' },
       updatedAt: new Date(),
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Set audience
   const setAudience = useCallback((audience: AudienceBrief) => {
     setBrief((current) => ({
       ...current,
-      audience: { value: audience, confidence: 1, source: "confirmed" },
+      audience: { value: audience, confidence: 1, source: 'confirmed' },
       updatedAt: new Date(),
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Set content outline
   const setContentOutline = useCallback((outline: ContentOutline | null) => {
@@ -497,20 +470,17 @@ export function useBrief({
       ...current,
       contentOutline: outline,
       updatedAt: new Date(),
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Set visual direction
-  const setVisualDirection = useCallback(
-    (direction: VisualDirection | null) => {
-      setBrief((current) => ({
-        ...current,
-        visualDirection: direction,
-        updatedAt: new Date(),
-      }));
-    },
-    []
-  );
+  const setVisualDirection = useCallback((direction: VisualDirection | null) => {
+    setBrief((current) => ({
+      ...current,
+      visualDirection: direction,
+      updatedAt: new Date(),
+    }))
+  }, [])
 
   // Add a style to visual direction
   const addStyleToVisualDirection = useCallback(
@@ -522,11 +492,11 @@ export function useBrief({
           colorPalette: brandColors,
           typography: brandTypography,
           avoidElements: [],
-        };
+        }
 
         // Don't add if already exists
         if (currentDirection.selectedStyles.some((s) => s.id === style.id)) {
-          return current;
+          return current
         }
 
         return {
@@ -536,35 +506,35 @@ export function useBrief({
             selectedStyles: [...currentDirection.selectedStyles, style],
           },
           updatedAt: new Date(),
-        };
-      });
+        }
+      })
     },
     [brandColors, brandTypography]
-  );
+  )
 
   // Sync moodboard items to visual direction
   const syncMoodboardToVisualDirection = useCallback(
     (items: MoodboardItem[]) => {
       setBrief((current) => {
         const styles: DeliverableStyle[] = items
-          .filter((item) => item.type === "style" && item.metadata?.styleId)
+          .filter((item) => item.type === 'style' && item.metadata?.styleId)
           .map((item) => ({
             id: item.metadata!.styleId!,
             name: item.name,
             description: null,
             imageUrl: item.imageUrl,
-            deliverableType: item.metadata?.deliverableType || "",
-            styleAxis: item.metadata?.styleAxis || "",
+            deliverableType: item.metadata?.deliverableType || '',
+            styleAxis: item.metadata?.styleAxis || '',
             subStyle: null,
             semanticTags: [],
-          }));
+          }))
 
         const colors: string[] = [
           ...brandColors,
           ...items
-            .filter((item) => item.type === "color")
+            .filter((item) => item.type === 'color')
             .flatMap((item) => item.metadata?.colorSamples || []),
-        ];
+        ]
 
         return {
           ...current,
@@ -576,75 +546,69 @@ export function useBrief({
             avoidElements: current.visualDirection?.avoidElements || [],
           },
           updatedAt: new Date(),
-        };
-      });
+        }
+      })
     },
     [brandColors, brandTypography]
-  );
+  )
 
   // Answer a clarifying question
-  const answerClarifyingQuestion = useCallback(
-    (questionId: string, answer: string) => {
-      setBrief((current) => {
-        let updated = { ...current, updatedAt: new Date() };
+  const answerClarifyingQuestion = useCallback((questionId: string, answer: string) => {
+    setBrief((current) => {
+      let updated = { ...current, updatedAt: new Date() }
 
-        // Apply the answer based on question type
-        if (questionId === "platform") {
-          const dimensions = getDimensionsForPlatform(answer as Platform);
-          updated = {
-            ...updated,
-            platform: {
-              value: answer as Platform,
-              confidence: 1,
-              source: "confirmed",
-            },
-            dimensions,
-          };
-        } else if (questionId === "intent") {
-          updated = {
-            ...updated,
-            intent: {
-              value: answer as Intent,
-              confidence: 1,
-              source: "confirmed",
-            },
-          };
+      // Apply the answer based on question type
+      if (questionId === 'platform') {
+        const dimensions = getDimensionsForPlatform(answer as Platform)
+        updated = {
+          ...updated,
+          platform: {
+            value: answer as Platform,
+            confidence: 1,
+            source: 'confirmed',
+          },
+          dimensions,
         }
+      } else if (questionId === 'intent') {
+        updated = {
+          ...updated,
+          intent: {
+            value: answer as Intent,
+            confidence: 1,
+            source: 'confirmed',
+          },
+        }
+      }
 
-        // Mark question as asked
-        updated.clarifyingQuestionsAsked = [
-          ...current.clarifyingQuestionsAsked,
-          questionId,
-        ];
+      // Mark question as asked
+      updated.clarifyingQuestionsAsked = [...current.clarifyingQuestionsAsked, questionId]
 
-        return updated;
-      });
+      return updated
+    })
 
-      setPendingQuestion(null);
-    },
-    []
-  );
+    setPendingQuestion(null)
+  }, [])
 
   // Generate content outline for multi-asset plans (AI-powered)
-  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false)
 
   const generateOutline = useCallback(
     async (durationDays: number = 30) => {
       if (!brief.platform.value || !brief.intent.value) {
-        return; // Need platform and intent to generate outline
+        return // Need platform and intent to generate outline
       }
 
-      setIsGeneratingOutline(true);
+      setIsGeneratingOutline(true)
 
       try {
         // Call AI-powered outline generation API
-        const response = await fetch("/api/brief/generate-outline", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/brief/generate-outline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            topic: brief.topic.value || "content",
+            topic: brief.topic.value || 'content',
             platform: brief.platform.value,
-            contentType: "post",
+            contentType: 'post',
             intent: brief.intent.value,
             durationDays,
             audienceName: brief.audience.value?.name,
@@ -653,42 +617,39 @@ export function useBrief({
             brandIndustry,
             brandTone: brandToneOfVoice,
           }),
-        });
+        })
 
         if (!response.ok) {
-          throw new Error("Failed to generate outline");
+          throw new Error('Failed to generate outline')
         }
 
-        const data = await response.json();
+        const data = await response.json()
 
         setBrief((current) => ({
           ...current,
           contentOutline: data.outline,
           updatedAt: new Date(),
-        }));
+        }))
       } catch (error) {
-        logger.error(
-          { err: error },
-          "Failed to generate AI outline, falling back to template"
-        );
+        logger.error({ err: error }, 'Failed to generate AI outline, falling back to template')
 
         // Fallback to local template-based generation
         const outline = generateContentOutline({
-          topic: brief.topic.value || "content",
+          topic: brief.topic.value || 'content',
           platform: brief.platform.value,
-          contentType: "post",
+          contentType: 'post',
           intent: brief.intent.value,
           durationDays,
           audienceName: brief.audience.value?.name,
-        });
+        })
 
         setBrief((current) => ({
           ...current,
           contentOutline: outline,
           updatedAt: new Date(),
-        }));
+        }))
       } finally {
-        setIsGeneratingOutline(false);
+        setIsGeneratingOutline(false)
       }
     },
     [
@@ -701,11 +662,11 @@ export function useBrief({
       brandIndustry,
       brandToneOfVoice,
     ]
-  );
+  )
 
   // Reset brief
   const resetBrief = useCallback(() => {
-    const newBrief = createEmptyBrief(draftId);
+    const newBrief = createEmptyBrief(draftId)
 
     if (brandColors.length > 0) {
       newBrief.visualDirection = {
@@ -714,36 +675,29 @@ export function useBrief({
         colorPalette: brandColors,
         typography: brandTypography,
         avoidElements: [],
-      };
+      }
     }
 
-    setBrief(newBrief);
-    setPendingQuestion(null);
-    setConversationHistory([]);
-  }, [draftId, brandColors, brandTypography]);
+    setBrief(newBrief)
+    setPendingQuestion(null)
+    setConversationHistory([])
+  }, [draftId, brandColors, brandTypography])
 
   // Export brief as formatted markdown
   const exportBrief = useCallback(() => {
     const designerBrief = generateDesignerBrief(
       brief,
       {
-        name: brandName || "Brand",
-        industry: brandIndustry || "General",
-        toneOfVoice: brandToneOfVoice || "Professional",
-        brandDescription: brandDescription || "",
+        name: brandName || 'Brand',
+        industry: brandIndustry || 'General',
+        toneOfVoice: brandToneOfVoice || 'Professional',
+        brandDescription: brandDescription || '',
       },
       draftId
-    );
+    )
 
-    return exportBriefAsMarkdown(designerBrief);
-  }, [
-    brief,
-    brandName,
-    brandIndustry,
-    brandToneOfVoice,
-    brandDescription,
-    draftId,
-  ]);
+    return exportBriefAsMarkdown(designerBrief)
+  }, [brief, brandName, brandIndustry, brandToneOfVoice, brandDescription, draftId])
 
   return {
     brief,
@@ -771,7 +725,7 @@ export function useBrief({
     resetBrief,
     exportBrief,
     saveBrief,
-  };
+  }
 }
 
-export default useBrief;
+export default useBrief

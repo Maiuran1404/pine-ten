@@ -1,35 +1,28 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from '@/components/ui/accordion'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
   Save,
   RotateCcw,
@@ -42,25 +35,17 @@ import {
   Share2,
   Info,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   Code,
   MessageSquare,
   Settings2,
   Zap,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // Import the default prompts and types
-import {
-  SERVICE_DEFINITIONS,
-  SMART_DEFAULTS,
-  type ServiceType,
-} from "@/lib/creative-intake/types";
-import {
-  BASE_INTAKE_PROMPT,
-  SERVICE_PROMPTS,
-} from "@/lib/creative-intake/prompts";
+import { SERVICE_DEFINITIONS, SMART_DEFAULTS, type ServiceType } from '@/lib/creative-intake/types'
+import { BASE_INTAKE_PROMPT, SERVICE_PROMPTS } from '@/lib/creative-intake/prompts'
 
 // Icons mapping
 const SERVICE_ICONS: Record<ServiceType, React.ElementType> = {
@@ -70,18 +55,18 @@ const SERVICE_ICONS: Record<ServiceType, React.ElementType> = {
   brand_package: Palette,
   social_ads: Target,
   social_content: Share2,
-};
+}
 
 interface PromptConfig {
-  basePrompt: string;
-  servicePrompts: Record<ServiceType, string>;
-  smartDefaults: typeof SMART_DEFAULTS;
+  basePrompt: string
+  servicePrompts: Record<ServiceType, string>
+  smartDefaults: typeof SMART_DEFAULTS
   settings: {
-    maxExchanges: number;
-    enableInference: boolean;
-    enableSmartDefaults: boolean;
-    enableRecommendations: boolean;
-  };
+    maxExchanges: number
+    enableInference: boolean
+    enableSmartDefaults: boolean
+    enableRecommendations: boolean
+  }
 }
 
 const DEFAULT_CONFIG: PromptConfig = {
@@ -94,79 +79,79 @@ const DEFAULT_CONFIG: PromptConfig = {
     enableSmartDefaults: true,
     enableRecommendations: true,
   },
-};
+}
 
 export default function CreativeIntakePromptsPage() {
-  const [config, setConfig] = useState<PromptConfig>(DEFAULT_CONFIG);
-  const [savedConfig, setSavedConfig] = useState<PromptConfig>(DEFAULT_CONFIG);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("overview");
-  const [activeService, setActiveService] = useState<ServiceType>("launch_video");
+  const [config, setConfig] = useState<PromptConfig>(DEFAULT_CONFIG)
+  const [savedConfig, setSavedConfig] = useState<PromptConfig>(DEFAULT_CONFIG)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>('overview')
+  const [activeService, setActiveService] = useState<ServiceType>('launch_video')
 
   // Check for unsaved changes
-  const hasUnsavedChanges = JSON.stringify(config) !== JSON.stringify(savedConfig);
+  const hasUnsavedChanges = JSON.stringify(config) !== JSON.stringify(savedConfig)
 
   // Load saved config on mount
   useEffect(() => {
-    loadConfig();
-  }, []);
+    loadConfig()
+  }, [])
 
   const loadConfig = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch("/api/admin/creative-intake-prompts");
+      const response = await fetch('/api/admin/creative-intake-prompts')
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         if (data.config) {
-          setConfig(data.config);
-          setSavedConfig(data.config);
+          setConfig(data.config)
+          setSavedConfig(data.config)
         }
       }
     } catch (error) {
-      console.error("Failed to load config:", error);
+      console.error('Failed to load config:', error)
       // Use defaults if fetch fails
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleSave = async () => {
-    setIsSaving(true);
+    setIsSaving(true)
     try {
-      const response = await fetch("/api/admin/creative-intake-prompts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/creative-intake-prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to save");
+        throw new Error('Failed to save')
       }
 
-      setSavedConfig(config);
-      toast.success("Prompts saved successfully");
+      setSavedConfig(config)
+      toast.success('Prompts saved successfully')
     } catch (error) {
-      console.error("Failed to save:", error);
-      toast.error("Failed to save prompts");
+      console.error('Failed to save:', error)
+      toast.error('Failed to save prompts')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleReset = () => {
-    setConfig(DEFAULT_CONFIG);
-    toast.info("Reset to defaults (not saved yet)");
-  };
+    setConfig(DEFAULT_CONFIG)
+    toast.info('Reset to defaults (not saved yet)')
+  }
 
   const handleRevert = () => {
-    setConfig(savedConfig);
-    toast.info("Reverted to last saved state");
-  };
+    setConfig(savedConfig)
+    toast.info('Reverted to last saved state')
+  }
 
   const updateBasePrompt = (value: string) => {
-    setConfig((prev) => ({ ...prev, basePrompt: value }));
-  };
+    setConfig((prev) => ({ ...prev, basePrompt: value }))
+  }
 
   const updateServicePrompt = (service: ServiceType, value: string) => {
     setConfig((prev) => ({
@@ -175,18 +160,18 @@ export default function CreativeIntakePromptsPage() {
         ...prev.servicePrompts,
         [service]: value,
       },
-    }));
-  };
+    }))
+  }
 
-  const updateSettings = (key: keyof PromptConfig["settings"], value: number | boolean) => {
+  const updateSettings = (key: keyof PromptConfig['settings'], value: number | boolean) => {
     setConfig((prev) => ({
       ...prev,
       settings: {
         ...prev.settings,
         [key]: value,
       },
-    }));
-  };
+    }))
+  }
 
   const updateSmartDefault = (
     category: keyof typeof SMART_DEFAULTS,
@@ -202,15 +187,15 @@ export default function CreativeIntakePromptsPage() {
           [key]: value,
         },
       },
-    }));
-  };
+    }))
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    );
+    )
   }
 
   return (
@@ -218,9 +203,7 @@ export default function CreativeIntakePromptsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Creative Intake Prompts
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Creative Intake Prompts</h1>
           <p className="text-muted-foreground">
             Configure the AI prompts and smart defaults for the creative intake chat
           </p>
@@ -266,9 +249,7 @@ export default function CreativeIntakePromptsPage() {
               </div>
               <div>
                 <h4 className="font-medium">Service Selection</h4>
-                <p className="text-sm text-muted-foreground">
-                  User picks from 6 service types
-                </p>
+                <p className="text-sm text-muted-foreground">User picks from 6 service types</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -299,9 +280,7 @@ export default function CreativeIntakePromptsPage() {
               </div>
               <div>
                 <h4 className="font-medium">Review & Confirm</h4>
-                <p className="text-sm text-muted-foreground">
-                  Summary with smart defaults applied
-                </p>
+                <p className="text-sm text-muted-foreground">Summary with smart defaults applied</p>
               </div>
             </div>
           </div>
@@ -334,9 +313,7 @@ export default function CreativeIntakePromptsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Intake Behavior Settings</CardTitle>
-              <CardDescription>
-                Configure how the intake chat behaves
-              </CardDescription>
+              <CardDescription>Configure how the intake chat behaves</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
@@ -351,9 +328,7 @@ export default function CreativeIntakePromptsPage() {
                     min={2}
                     max={10}
                     value={config.settings.maxExchanges}
-                    onChange={(e) =>
-                      updateSettings("maxExchanges", parseInt(e.target.value) || 4)
-                    }
+                    onChange={(e) => updateSettings('maxExchanges', parseInt(e.target.value) || 4)}
                   />
                 </div>
 
@@ -367,7 +342,7 @@ export default function CreativeIntakePromptsPage() {
                     </div>
                     <Switch
                       checked={config.settings.enableInference}
-                      onCheckedChange={(v) => updateSettings("enableInference", v)}
+                      onCheckedChange={(v) => updateSettings('enableInference', v)}
                     />
                   </div>
 
@@ -380,7 +355,7 @@ export default function CreativeIntakePromptsPage() {
                     </div>
                     <Switch
                       checked={config.settings.enableSmartDefaults}
-                      onCheckedChange={(v) => updateSettings("enableSmartDefaults", v)}
+                      onCheckedChange={(v) => updateSettings('enableSmartDefaults', v)}
                     />
                   </div>
 
@@ -393,7 +368,7 @@ export default function CreativeIntakePromptsPage() {
                     </div>
                     <Switch
                       checked={config.settings.enableRecommendations}
-                      onCheckedChange={(v) => updateSettings("enableRecommendations", v)}
+                      onCheckedChange={(v) => updateSettings('enableRecommendations', v)}
                     />
                   </div>
                 </div>
@@ -405,33 +380,26 @@ export default function CreativeIntakePromptsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Service Types Overview</CardTitle>
-              <CardDescription>
-                The 6 creative services available in intake
-              </CardDescription>
+              <CardDescription>The 6 creative services available in intake</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(SERVICE_DEFINITIONS).map(([key, service]) => {
-                  const Icon = SERVICE_ICONS[key as ServiceType];
+                  const Icon = SERVICE_ICONS[key as ServiceType]
                   return (
-                    <div
-                      key={key}
-                      className="flex items-start gap-3 p-4 rounded-lg border bg-card"
-                    >
+                    <div key={key} className="flex items-start gap-3 p-4 rounded-lg border bg-card">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-medium">{service.label}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {service.description}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
                         <Badge variant="secondary" className="mt-2">
                           ~{service.estimatedQuestions} questions
                         </Badge>
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </div>
             </CardContent>
@@ -444,7 +412,7 @@ export default function CreativeIntakePromptsPage() {
             <CardHeader>
               <CardTitle>Base System Prompt</CardTitle>
               <CardDescription>
-                This prompt is included for ALL service types. It defines the AI's personality,
+                This prompt is included for ALL service types. It defines the AI&apos;s personality,
                 communication style, and response format rules.
               </CardDescription>
             </CardHeader>
@@ -453,7 +421,8 @@ export default function CreativeIntakePromptsPage() {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Info className="h-4 w-4" />
                   <span>
-                    The base prompt sets the foundation. Service-specific prompts are appended to it.
+                    The base prompt sets the foundation. Service-specific prompts are appended to
+                    it.
                   </span>
                 </div>
                 <Textarea
@@ -477,8 +446,8 @@ export default function CreativeIntakePromptsPage() {
             <CardHeader>
               <CardTitle>Service-Specific Prompts</CardTitle>
               <CardDescription>
-                Each service has its own prompt that defines the question flow,
-                required fields, and smart defaults to apply.
+                Each service has its own prompt that defines the question flow, required fields, and
+                smart defaults to apply.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -486,23 +455,23 @@ export default function CreativeIntakePromptsPage() {
                 {/* Service Selector */}
                 <div className="w-64 shrink-0 space-y-2">
                   {Object.entries(SERVICE_DEFINITIONS).map(([key, service]) => {
-                    const Icon = SERVICE_ICONS[key as ServiceType];
-                    const isActive = activeService === key;
+                    const Icon = SERVICE_ICONS[key as ServiceType]
+                    const isActive = activeService === key
                     return (
                       <button
                         key={key}
                         onClick={() => setActiveService(key as ServiceType)}
                         className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
+                          'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
                           isActive
-                            ? "bg-primary/10 border border-primary/30"
-                            : "hover:bg-muted border border-transparent"
+                            ? 'bg-primary/10 border border-primary/30'
+                            : 'hover:bg-muted border border-transparent'
                         )}
                       >
                         <Icon
                           className={cn(
-                            "h-5 w-5",
-                            isActive ? "text-primary" : "text-muted-foreground"
+                            'h-5 w-5',
+                            isActive ? 'text-primary' : 'text-muted-foreground'
                           )}
                         />
                         <div>
@@ -512,7 +481,7 @@ export default function CreativeIntakePromptsPage() {
                           </div>
                         </div>
                       </button>
-                    );
+                    )
                   })}
                 </div>
 
@@ -527,9 +496,7 @@ export default function CreativeIntakePromptsPage() {
                         {SERVICE_DEFINITIONS[activeService].description}
                       </p>
                     </div>
-                    <Badge variant="outline">
-                      {activeService}
-                    </Badge>
+                    <Badge variant="outline">{activeService}</Badge>
                   </div>
                   <Textarea
                     value={config.servicePrompts[activeService]}
@@ -542,10 +509,8 @@ export default function CreativeIntakePromptsPage() {
                     <span>
                       Total with base: ~
                       {Math.ceil(
-                        (config.basePrompt.length +
-                          config.servicePrompts[activeService].length) /
-                          4
-                      )}{" "}
+                        (config.basePrompt.length + config.servicePrompts[activeService].length) / 4
+                      )}{' '}
                       tokens
                     </span>
                   </div>
@@ -561,8 +526,8 @@ export default function CreativeIntakePromptsPage() {
             <CardHeader>
               <CardTitle>Smart Defaults Configuration</CardTitle>
               <CardDescription>
-                These defaults are automatically applied based on user selections.
-                They reduce the number of questions needed.
+                These defaults are automatically applied based on user selections. They reduce the
+                number of questions needed.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -584,7 +549,7 @@ export default function CreativeIntakePromptsPage() {
                             <Input
                               value={length}
                               onChange={(e) =>
-                                updateSmartDefault("videoLength", platform, e.target.value)
+                                updateSmartDefault('videoLength', platform, e.target.value)
                               }
                               placeholder="e.g., 15-30s"
                             />
@@ -605,28 +570,24 @@ export default function CreativeIntakePromptsPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-4 md:grid-cols-2 pt-4">
-                      {Object.entries(config.smartDefaults.adFormat).map(
-                        ([goal, format]) => (
-                          <div key={goal} className="space-y-2">
-                            <Label className="capitalize">{goal}</Label>
-                            <Select
-                              value={format}
-                              onValueChange={(v) =>
-                                updateSmartDefault("adFormat", goal, v)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="static">Static</SelectItem>
-                                <SelectItem value="video">Video</SelectItem>
-                                <SelectItem value="carousel">Carousel</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )
-                      )}
+                      {Object.entries(config.smartDefaults.adFormat).map(([goal, format]) => (
+                        <div key={goal} className="space-y-2">
+                          <Label className="capitalize">{goal}</Label>
+                          <Select
+                            value={format}
+                            onValueChange={(v) => updateSmartDefault('adFormat', goal, v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="static">Static</SelectItem>
+                              <SelectItem value="video">Video</SelectItem>
+                              <SelectItem value="carousel">Carousel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -641,28 +602,24 @@ export default function CreativeIntakePromptsPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-4 md:grid-cols-2 pt-4">
-                      {Object.entries(config.smartDefaults.postingFrequency).map(
-                        ([goal, freq]) => (
-                          <div key={goal} className="space-y-2">
-                            <Label className="capitalize">{goal}</Label>
-                            <Select
-                              value={freq}
-                              onValueChange={(v) =>
-                                updateSmartDefault("postingFrequency", goal, v)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="3x_week">3x per week</SelectItem>
-                                <SelectItem value="5x_week">5x per week</SelectItem>
-                                <SelectItem value="daily">Daily</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )
-                      )}
+                      {Object.entries(config.smartDefaults.postingFrequency).map(([goal, freq]) => (
+                        <div key={goal} className="space-y-2">
+                          <Label className="capitalize">{goal}</Label>
+                          <Select
+                            value={freq}
+                            onValueChange={(v) => updateSmartDefault('postingFrequency', goal, v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3x_week">3x per week</SelectItem>
+                              <SelectItem value="5x_week">5x per week</SelectItem>
+                              <SelectItem value="daily">Daily</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -677,27 +634,23 @@ export default function CreativeIntakePromptsPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-4 md:grid-cols-2 pt-4">
-                      {Object.entries(config.smartDefaults.contentTypes).map(
-                        ([goal, types]) => (
-                          <div key={goal} className="space-y-2">
-                            <Label className="capitalize">{goal}</Label>
-                            <Input
-                              value={Array.isArray(types) ? types.join(", ") : types}
-                              onChange={(e) =>
-                                updateSmartDefault(
-                                  "contentTypes",
-                                  goal,
-                                  e.target.value.split(",").map((t) => t.trim())
-                                )
-                              }
-                              placeholder="educational, storytelling"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Comma-separated list
-                            </p>
-                          </div>
-                        )
-                      )}
+                      {Object.entries(config.smartDefaults.contentTypes).map(([goal, types]) => (
+                        <div key={goal} className="space-y-2">
+                          <Label className="capitalize">{goal}</Label>
+                          <Input
+                            value={Array.isArray(types) ? types.join(', ') : types}
+                            onChange={(e) =>
+                              updateSmartDefault(
+                                'contentTypes',
+                                goal,
+                                e.target.value.split(',').map((t) => t.trim())
+                              )
+                            }
+                            placeholder="educational, storytelling"
+                          />
+                          <p className="text-xs text-muted-foreground">Comma-separated list</p>
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -712,30 +665,26 @@ export default function CreativeIntakePromptsPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-4 md:grid-cols-3 pt-4">
-                      {Object.entries(config.smartDefaults.videoStyle).map(
-                        ([type, style]) => (
-                          <div key={type} className="space-y-2">
-                            <Label className="capitalize">{type.replace(/_/g, " ")}</Label>
-                            <Select
-                              value={style}
-                              onValueChange={(v) =>
-                                updateSmartDefault("videoStyle", type, v)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="clean">Clean</SelectItem>
-                                <SelectItem value="energetic">Energetic</SelectItem>
-                                <SelectItem value="cinematic">Cinematic</SelectItem>
-                                <SelectItem value="meme">Meme</SelectItem>
-                                <SelectItem value="corporate">Corporate</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )
-                      )}
+                      {Object.entries(config.smartDefaults.videoStyle).map(([type, style]) => (
+                        <div key={type} className="space-y-2">
+                          <Label className="capitalize">{type.replace(/_/g, ' ')}</Label>
+                          <Select
+                            value={style}
+                            onValueChange={(v) => updateSmartDefault('videoStyle', type, v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="clean">Clean</SelectItem>
+                              <SelectItem value="energetic">Energetic</SelectItem>
+                              <SelectItem value="cinematic">Cinematic</SelectItem>
+                              <SelectItem value="meme">Meme</SelectItem>
+                              <SelectItem value="corporate">Corporate</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -745,5 +694,5 @@ export default function CreativeIntakePromptsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

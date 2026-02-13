@@ -3,150 +3,150 @@
  */
 
 export interface UploadedFile {
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
+  fileName: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
 }
 
 /**
  * Moodboard item for the visual moodboard panel
  */
 export interface MoodboardItem {
-  id: string;
-  type: "style" | "color" | "image" | "upload";
-  imageUrl: string;
-  name: string;
+  id: string
+  type: 'style' | 'color' | 'image' | 'upload'
+  imageUrl: string
+  name: string
   metadata?: {
-    styleAxis?: string;
-    deliverableType?: string;
-    colorSamples?: string[];
-    styleId?: string;
-  };
-  order: number;
-  addedAt: Date;
+    styleAxis?: string
+    deliverableType?: string
+    colorSamples?: string[]
+    styleId?: string
+  }
+  order: number
+  addedAt: Date
 }
 
 /**
  * Chat stages for progress tracking
  */
-export type ChatStage = "brief" | "style" | "details" | "review" | "submit";
+export type ChatStage = 'brief' | 'style' | 'details' | 'review' | 'submit'
 
 export interface QuickOptions {
-  question: string;
-  options: string[];
-  multiSelect?: boolean;
+  question: string
+  options: string[]
+  multiSelect?: boolean
 }
 
 export interface StyleReference {
-  category: string;
-  name: string;
-  description?: string | null;
-  imageUrl: string;
+  category: string
+  name: string
+  description?: string | null
+  imageUrl: string
 }
 
 export interface DeliverableStyle {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  deliverableType: string;
-  styleAxis: string;
-  subStyle: string | null;
-  semanticTags: string[];
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  deliverableType: string
+  styleAxis: string
+  subStyle: string | null
+  semanticTags: string[]
   // Brand-aware scoring fields
-  brandMatchScore?: number;
-  matchReason?: string;
+  brandMatchScore?: number
+  matchReason?: string
 }
 
 export interface VideoReference {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  videoUrl: string;
-  videoThumbnailUrl?: string | null;
-  videoDuration?: string | null;
-  videoTags?: string[];
-  deliverableType: string;
-  styleAxis: string;
-  subStyle?: string | null;
-  semanticTags?: string[];
-  brandMatchScore?: number;
-  matchReason?: string;
-  isVideoReference?: boolean;
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  videoUrl: string
+  videoThumbnailUrl?: string | null
+  videoDuration?: string | null
+  videoTags?: string[]
+  deliverableType: string
+  styleAxis: string
+  subStyle?: string | null
+  semanticTags?: string[]
+  brandMatchScore?: number
+  matchReason?: string
+  isVideoReference?: boolean
 }
 
 export interface DeliverableStyleMarker {
-  type: "initial" | "more" | "different";
-  deliverableType: string;
-  styleAxis?: string;
+  type: 'initial' | 'more' | 'different'
+  deliverableType: string
+  styleAxis?: string
 }
 
 export interface TaskProposal {
-  title: string;
-  description: string;
-  category: string;
-  estimatedHours: number;
-  deliveryDays?: number;
-  creditsRequired: number;
-  deadline?: string;
+  title: string
+  description: string
+  category: string
+  estimatedHours: number
+  deliveryDays?: number
+  creditsRequired: number
+  deadline?: string
 }
 
 export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  thinkingTime?: number; // Time in seconds the AI took to respond
-  styleReferences?: StyleReference[];
-  deliverableStyles?: DeliverableStyle[];
-  deliverableStyleMarker?: DeliverableStyleMarker;
-  videoReferences?: VideoReference[]; // Video style references for launch videos, video ads, etc.
-  taskProposal?: TaskProposal;
-  attachments?: UploadedFile[];
-  quickOptions?: QuickOptions;
-  selectedStyle?: DeliverableStyle; // Style selected by user from style grid
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+  thinkingTime?: number // Time in seconds the AI took to respond
+  styleReferences?: StyleReference[]
+  deliverableStyles?: DeliverableStyle[]
+  deliverableStyleMarker?: DeliverableStyleMarker
+  videoReferences?: VideoReference[] // Video style references for launch videos, video ads, etc.
+  taskProposal?: TaskProposal
+  attachments?: UploadedFile[]
+  quickOptions?: QuickOptions
+  selectedStyle?: DeliverableStyle // Style selected by user from style grid
 }
 
 /**
  * Calculate delivery date from business days
  */
 export function getDeliveryDateString(businessDays: number): string {
-  const date = new Date();
-  let daysAdded = 0;
+  const date = new Date()
+  let daysAdded = 0
   while (daysAdded < businessDays) {
-    date.setDate(date.getDate() + 1);
-    const dayOfWeek = date.getDay();
+    date.setDate(date.getDate() + 1)
+    const dayOfWeek = date.getDay()
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      daysAdded++;
+      daysAdded++
     }
   }
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const dayName = days[date.getDay()];
-  const dayNum = date.getDate();
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ]
+  const dayName = days[date.getDay()]
+  const dayNum = date.getDate()
   const suffix =
     dayNum === 1 || dayNum === 21 || dayNum === 31
-      ? "st"
+      ? 'st'
       : dayNum === 2 || dayNum === 22
-      ? "nd"
-      : dayNum === 3 || dayNum === 23
-      ? "rd"
-      : "th";
-  const monthName = months[date.getMonth()];
-  return `${dayName} ${dayNum}${suffix} ${monthName}`;
+        ? 'nd'
+        : dayNum === 3 || dayNum === 23
+          ? 'rd'
+          : 'th'
+  const monthName = months[date.getMonth()]
+  return `${dayName} ${dayNum}${suffix} ${monthName}`
 }

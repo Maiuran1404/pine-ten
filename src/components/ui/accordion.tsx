@@ -1,23 +1,23 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { useState, createContext, useContext } from "react"
-import { ChevronDown } from "lucide-react"
+import * as React from 'react'
+import { useState, createContext, useContext } from 'react'
+import { ChevronDown } from 'lucide-react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 // Context for accordion state
 interface AccordionContextValue {
   value: string | string[] | undefined
   onValueChange: (value: string) => void
-  type: "single" | "multiple"
+  type: 'single' | 'multiple'
 }
 
 const AccordionContext = createContext<AccordionContextValue | null>(null)
 
 // Accordion Root
 interface AccordionProps {
-  type?: "single" | "multiple"
+  type?: 'single' | 'multiple'
   value?: string | string[]
   defaultValue?: string | string[]
   onValueChange?: (value: string | string[]) => void
@@ -27,7 +27,7 @@ interface AccordionProps {
 }
 
 const Accordion = ({
-  type = "single",
+  type = 'single',
   value: controlledValue,
   defaultValue,
   onValueChange,
@@ -35,13 +35,11 @@ const Accordion = ({
   className,
   children,
 }: AccordionProps) => {
-  const [internalValue, setInternalValue] = useState<string | string[] | undefined>(
-    defaultValue
-  )
+  const [internalValue, setInternalValue] = useState<string | string[] | undefined>(defaultValue)
   const value = controlledValue ?? internalValue
 
   const handleValueChange = (itemValue: string) => {
-    if (type === "single") {
+    if (type === 'single') {
       const newValue = value === itemValue ? undefined : itemValue
       setInternalValue(newValue)
       onValueChange?.(newValue as string)
@@ -80,24 +78,27 @@ interface AccordionItemProps {
 const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
   ({ value, className, children }, ref) => {
     const accordionContext = useContext(AccordionContext)
-    if (!accordionContext) throw new Error("AccordionItem must be used within Accordion")
+    if (!accordionContext) throw new Error('AccordionItem must be used within Accordion')
 
     const isOpen =
-      accordionContext.type === "single"
+      accordionContext.type === 'single'
         ? accordionContext.value === value
-        : Array.isArray(accordionContext.value) &&
-          accordionContext.value.includes(value)
+        : Array.isArray(accordionContext.value) && accordionContext.value.includes(value)
 
     return (
       <AccordionItemContext.Provider value={{ value, isOpen }}>
-        <div ref={ref} className={cn("border-b", className)} data-state={isOpen ? "open" : "closed"}>
+        <div
+          ref={ref}
+          className={cn('border-b', className)}
+          data-state={isOpen ? 'open' : 'closed'}
+        >
           {children}
         </div>
       </AccordionItemContext.Provider>
     )
   }
 )
-AccordionItem.displayName = "AccordionItem"
+AccordionItem.displayName = 'AccordionItem'
 
 // Accordion Trigger
 interface AccordionTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -109,7 +110,7 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
     const accordionContext = useContext(AccordionContext)
     const itemContext = useContext(AccordionItemContext)
     if (!accordionContext || !itemContext)
-      throw new Error("AccordionTrigger must be used within AccordionItem")
+      throw new Error('AccordionTrigger must be used within AccordionItem')
 
     return (
       <div className="flex">
@@ -117,19 +118,19 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
           ref={ref}
           type="button"
           className={cn(
-            "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline",
+            'flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline',
             className
           )}
           onClick={() => accordionContext.onValueChange(itemContext.value)}
           aria-expanded={itemContext.isOpen}
-          data-state={itemContext.isOpen ? "open" : "closed"}
+          data-state={itemContext.isOpen ? 'open' : 'closed'}
           {...props}
         >
           {children}
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 transition-transform duration-200",
-              itemContext.isOpen && "rotate-180"
+              'h-4 w-4 shrink-0 transition-transform duration-200',
+              itemContext.isOpen && 'rotate-180'
             )}
           />
         </button>
@@ -137,7 +138,7 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
     )
   }
 )
-AccordionTrigger.displayName = "AccordionTrigger"
+AccordionTrigger.displayName = 'AccordionTrigger'
 
 // Accordion Content
 interface AccordionContentProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -147,24 +148,23 @@ interface AccordionContentProps extends React.HTMLAttributes<HTMLDivElement> {
 const AccordionContent = React.forwardRef<HTMLDivElement, AccordionContentProps>(
   ({ className, children, ...props }, ref) => {
     const itemContext = useContext(AccordionItemContext)
-    if (!itemContext)
-      throw new Error("AccordionContent must be used within AccordionItem")
+    if (!itemContext) throw new Error('AccordionContent must be used within AccordionItem')
 
     return (
       <div
         ref={ref}
         className={cn(
-          "overflow-hidden text-sm transition-all",
-          itemContext.isOpen ? "animate-accordion-down" : "animate-accordion-up hidden"
+          'overflow-hidden text-sm transition-all',
+          itemContext.isOpen ? 'animate-accordion-down' : 'animate-accordion-up hidden'
         )}
-        data-state={itemContext.isOpen ? "open" : "closed"}
+        data-state={itemContext.isOpen ? 'open' : 'closed'}
         {...props}
       >
-        <div className={cn("pb-4 pt-0", className)}>{children}</div>
+        <div className={cn('pb-4 pt-0', className)}>{children}</div>
       </div>
     )
   }
 )
-AccordionContent.displayName = "AccordionContent"
+AccordionContent.displayName = 'AccordionContent'
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }

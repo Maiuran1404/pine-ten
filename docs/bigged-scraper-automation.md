@@ -5,6 +5,7 @@ This document outlines the recommended approaches for automating the Bigged Ad S
 ## Current Capabilities
 
 The scraper currently supports:
+
 - **Manual triggering** via CLI script (`scripts/scrape-bigged-to-library.ts`)
 - **Admin UI triggering** via the Reference Library page (Upload tab)
 - **Import logging** with full history visible in the Import History tab
@@ -23,32 +24,32 @@ Vercel supports cron jobs that can trigger API endpoints on a schedule.
 
 ```typescript
 // src/app/api/cron/scrape-bigged/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { scrapeBigged } from "@/lib/scrapers/bigged-scraper";
+import { NextRequest, NextResponse } from 'next/server'
+import { scrapeBigged } from '@/lib/scrapers/bigged-scraper'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
-  const authHeader = request.headers.get("authorization");
+  const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Get search queries from env or database
-  const queries = process.env.BIGGED_AUTO_QUERIES?.split(",") || ["marketing", "startup"];
+  const queries = process.env.BIGGED_AUTO_QUERIES?.split(',') || ['marketing', 'startup']
 
-  const results = [];
+  const results = []
   for (const query of queries) {
     const result = await scrapeBigged({
       query: query.trim(),
       limit: 20,
       confidenceThreshold: 0.6,
       triggeredBy: null,
-      triggeredByEmail: "cron@system",
-    });
-    results.push({ query, ...result.summary });
+      triggeredByEmail: 'cron@system',
+    })
+    results.push({ query, ...result.summary })
   }
 
-  return NextResponse.json({ success: true, results });
+  return NextResponse.json({ success: true, results })
 }
 ```
 
@@ -59,19 +60,21 @@ export async function GET(request: NextRequest) {
   "crons": [
     {
       "path": "/api/cron/scrape-bigged",
-      "schedule": "0 6 * * 1"  // Every Monday at 6 AM
+      "schedule": "0 6 * * 1" // Every Monday at 6 AM
     }
   ]
 }
 ```
 
 **Pros:**
+
 - Zero infrastructure management
 - Integrated with deployment platform
 - Automatic scaling
 - Built-in monitoring via Vercel dashboard
 
 **Cons:**
+
 - Limited to Vercel Pro/Enterprise plans for cron jobs
 - Max 1 minute execution time for hobby, 5 mins for Pro
 
@@ -91,8 +94,8 @@ name: Scrape Bigged Ad Spy
 
 on:
   schedule:
-    - cron: '0 6 * * 1'  # Every Monday at 6 AM UTC
-  workflow_dispatch:  # Allow manual triggering
+    - cron: '0 6 * * 1' # Every Monday at 6 AM UTC
+  workflow_dispatch: # Allow manual triggering
     inputs:
       query:
         description: 'Search query'
@@ -138,12 +141,14 @@ jobs:
 ```
 
 **Pros:**
+
 - Free for public repos, generous limits for private
 - Full control over execution environment
 - Easy manual triggering via workflow_dispatch
 - Access to full GitHub Actions ecosystem (notifications, etc.)
 
 **Cons:**
+
 - Requires managing secrets in GitHub
 - Separate from main deployment platform
 - Playwright browser installation adds to execution time
@@ -178,12 +183,14 @@ CREATE TABLE scheduled_scrape_jobs (
 3. Use an external cron service (like cron-job.org) or Vercel cron to check for due jobs every hour.
 
 **Pros:**
+
 - Full admin control without code changes
 - Multiple queries with different schedules
 - Easy pause/resume functionality
 - Audit trail in database
 
 **Cons:**
+
 - More complex implementation
 - Still requires external trigger mechanism
 
@@ -197,17 +204,17 @@ CREATE TABLE scheduled_scrape_jobs (
 
 ```typescript
 // src/inngest/functions.ts
-import { inngest } from "./client";
-import { scrapeBigged } from "@/lib/scrapers/bigged-scraper";
+import { inngest } from './client'
+import { scrapeBigged } from '@/lib/scrapers/bigged-scraper'
 
 export const scheduledBiggedScrape = inngest.createFunction(
   {
-    id: "scheduled-bigged-scrape",
+    id: 'scheduled-bigged-scrape',
     retries: 3,
   },
-  { cron: "0 6 * * 1" },  // Every Monday at 6 AM
+  { cron: '0 6 * * 1' }, // Every Monday at 6 AM
   async ({ event, step }) => {
-    const queries = ["marketing", "fitness", "tech startup"];
+    const queries = ['marketing', 'fitness', 'tech startup']
 
     for (const query of queries) {
       await step.run(`scrape-${query}`, async () => {
@@ -215,20 +222,22 @@ export const scheduledBiggedScrape = inngest.createFunction(
           query,
           limit: 20,
           confidenceThreshold: 0.6,
-        });
-      });
+        })
+      })
     }
   }
-);
+)
 ```
 
 **Pros:**
+
 - Built-in retries and error handling
 - Excellent monitoring dashboard
 - Step-based execution (can pause/resume)
 - Long-running job support
 
 **Cons:**
+
 - Additional service to manage
 - Costs at scale
 
@@ -236,12 +245,12 @@ export const scheduledBiggedScrape = inngest.createFunction(
 
 ## Recommendation Summary
 
-| Use Case | Recommended Approach |
-|----------|---------------------|
-| Simple, production Vercel deployment | **Vercel Cron Jobs** |
-| Need flexibility + free automation | **GitHub Actions** |
-| Want admin-configurable schedules | **Database + External Cron** |
-| Complex workflows with monitoring | **Inngest/Trigger.dev** |
+| Use Case                             | Recommended Approach         |
+| ------------------------------------ | ---------------------------- |
+| Simple, production Vercel deployment | **Vercel Cron Jobs**         |
+| Need flexibility + free automation   | **GitHub Actions**           |
+| Want admin-configurable schedules    | **Database + External Cron** |
+| Complex workflows with monitoring    | **Inngest/Trigger.dev**      |
 
 ## Quick Start: GitHub Actions
 

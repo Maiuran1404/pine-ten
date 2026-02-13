@@ -1,58 +1,52 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Progress } from '@/components/ui/progress'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { ArrowRight, ArrowLeft, Check } from 'lucide-react'
 
 interface ClientOnboardingProps {
-  onComplete: () => void;
+  onComplete: () => void
 }
 
 const useCases = [
-  { id: "social_ads", label: "Social Media Ads" },
-  { id: "display_ads", label: "Display Advertising" },
-  { id: "video_content", label: "Video Content" },
-  { id: "brand_assets", label: "Brand Assets" },
-  { id: "presentations", label: "Presentations" },
-  { id: "other", label: "Other" },
-];
+  { id: 'social_ads', label: 'Social Media Ads' },
+  { id: 'display_ads', label: 'Display Advertising' },
+  { id: 'video_content', label: 'Video Content' },
+  { id: 'brand_assets', label: 'Brand Assets' },
+  { id: 'presentations', label: 'Presentations' },
+  { id: 'other', label: 'Other' },
+]
 
 const stylePreferences = [
-  { id: "minimalist", label: "Minimalist", image: "/styles/minimalist.jpg" },
-  { id: "bold", label: "Bold & Colorful", image: "/styles/bold.jpg" },
-  { id: "corporate", label: "Corporate", image: "/styles/corporate.jpg" },
-  { id: "playful", label: "Playful & Fun", image: "/styles/playful.jpg" },
-  { id: "elegant", label: "Elegant & Luxury", image: "/styles/elegant.jpg" },
-  { id: "modern", label: "Modern & Clean", image: "/styles/modern.jpg" },
-];
+  { id: 'minimalist', label: 'Minimalist', image: '/styles/minimalist.jpg' },
+  { id: 'bold', label: 'Bold & Colorful', image: '/styles/bold.jpg' },
+  { id: 'corporate', label: 'Corporate', image: '/styles/corporate.jpg' },
+  { id: 'playful', label: 'Playful & Fun', image: '/styles/playful.jpg' },
+  { id: 'elegant', label: 'Elegant & Luxury', image: '/styles/elegant.jpg' },
+  { id: 'modern', label: 'Modern & Clean', image: '/styles/modern.jpg' },
+]
 
 export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
-  const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    companyName: "",
-    industry: "",
-    teamSize: "",
+    companyName: '',
+    industry: '',
+    teamSize: '',
     useCases: [] as string[],
     stylePreferences: [] as string[],
-    brandColors: "",
-  });
+    brandColors: '',
+  })
 
-  const totalSteps = 3;
-  const progress = (step / totalSteps) * 100;
+  const totalSteps = 3
+  const progress = (step / totalSteps) * 100
 
   const handleUseCaseToggle = (id: string) => {
     setFormData((prev) => ({
@@ -60,8 +54,8 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
       useCases: prev.useCases.includes(id)
         ? prev.useCases.filter((u) => u !== id)
         : [...prev.useCases, id],
-    }));
-  };
+    }))
+  }
 
   const handleStyleToggle = (id: string) => {
     setFormData((prev) => ({
@@ -69,47 +63,47 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
       stylePreferences: prev.stylePreferences.includes(id)
         ? prev.stylePreferences.filter((s) => s !== id)
         : [...prev.stylePreferences, id],
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: "client",
+          type: 'client',
           data: formData,
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to complete onboarding");
+        throw new Error('Failed to complete onboarding')
       }
 
-      toast.success("Welcome aboard! Let's get started.");
-      onComplete();
+      toast.success("Welcome aboard! Let's get started.")
+      onComplete()
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.error('Something went wrong. Please try again.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl">
-          {step === 1 && "Tell us about yourself"}
-          {step === 2 && "What do you need?"}
-          {step === 3 && "Your style preferences"}
+          {step === 1 && 'Tell us about yourself'}
+          {step === 2 && 'What do you need?'}
+          {step === 3 && 'Your style preferences'}
         </CardTitle>
         <CardDescription>
-          {step === 1 && "Help us personalize your experience"}
-          {step === 2 && "Select all that apply"}
-          {step === 3 && "Select styles you prefer (you can choose multiple)"}
+          {step === 1 && 'Help us personalize your experience'}
+          {step === 2 && 'Select all that apply'}
+          {step === 3 && 'Select styles you prefer (you can choose multiple)'}
         </CardDescription>
         <Progress value={progress} className="mt-4" />
       </CardHeader>
@@ -122,9 +116,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                 id="companyName"
                 placeholder="Acme Inc."
                 value={formData.companyName}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, companyName: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -133,9 +125,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                 id="industry"
                 placeholder="e.g., E-commerce, SaaS, Marketing"
                 value={formData.industry}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, industry: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -144,9 +134,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                 id="teamSize"
                 placeholder="e.g., 1-10, 11-50, 51-200"
                 value={formData.teamSize}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, teamSize: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, teamSize: e.target.value }))}
               />
             </div>
           </div>
@@ -159,8 +147,8 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                 key={useCase.id}
                 className={`flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${
                   formData.useCases.includes(useCase.id)
-                    ? "border-primary bg-primary/5"
-                    : "hover:border-muted-foreground/50"
+                    ? 'border-primary bg-primary/5'
+                    : 'hover:border-muted-foreground/50'
                 }`}
                 onClick={() => handleUseCaseToggle(useCase.id)}
               >
@@ -182,8 +170,8 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                   key={style.id}
                   className={`relative rounded-lg border-2 p-3 cursor-pointer transition-all ${
                     formData.stylePreferences.includes(style.id)
-                      ? "border-primary ring-2 ring-primary/20"
-                      : "border-muted hover:border-muted-foreground/50"
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-muted hover:border-muted-foreground/50'
                   }`}
                   onClick={() => handleStyleToggle(style.id)}
                 >
@@ -205,9 +193,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
                 id="brandColors"
                 placeholder="e.g., #000000, #FFFFFF, Blue"
                 value={formData.brandColors}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, brandColors: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, brandColors: e.target.value }))}
               />
             </div>
           </div>
@@ -215,11 +201,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
 
         <div className="flex justify-between mt-6">
           {step > 1 ? (
-            <Button
-              variant="outline"
-              onClick={() => setStep((s) => s - 1)}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={isLoading}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -250,5 +232,5 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

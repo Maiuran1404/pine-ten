@@ -1,23 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { logger } from "@/lib/logger";
-import { updateUserSettingsSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { updateUserSettingsSchema } from '@/lib/validations'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
     const userResult = await db
       .select({
@@ -31,63 +22,39 @@ export async function GET() {
       })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!userResult.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw Errors.notFound('User')
     }
 
-    return NextResponse.json({ user: userResult[0] });
-  } catch (error) {
-    logger.error({ error }, "Settings fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ user: userResult[0] })
+  })
 }
 
 export async function PUT(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const validated = updateUserSettingsSchema.parse(body);
+    const body = await request.json()
+    const validated = updateUserSettingsSchema.parse(body)
 
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
-    };
+    }
 
     if (validated.name !== undefined) {
-      updateData.name = validated.name;
+      updateData.name = validated.name
     }
     if (validated.phone !== undefined) {
-      updateData.phone = validated.phone;
+      updateData.phone = validated.phone
     }
     if (validated.notificationPreferences !== undefined) {
-      updateData.notificationPreferences = validated.notificationPreferences;
+      updateData.notificationPreferences = validated.notificationPreferences
     }
 
-    await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, session.user.id));
+    await db.update(users).set(updateData).where(eq(users.id, session.user.id))
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error);
-    }
-    logger.error({ error }, "Settings update error");
-    return NextResponse.json(
-      { error: "Failed to update settings" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true })
+  })
 }

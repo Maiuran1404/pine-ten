@@ -251,48 +251,21 @@ export async function POST(request: NextRequest) {
           const timestamp = Date.now()
           const folderPath = `${timestamp}-${cleanFilename}`
 
-          // Helper to upload a variant
-          const supabase = getAdminStorageClient()
-          const uploadVariant = async (variantName: string, variantBuffer: Buffer) => {
-            const path = `${folderPath}/${variantName}.webp`
-            const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, variantBuffer, {
+          // Upload all variants in parallel using shared utility
+          const [imageUrl] = await Promise.all([
+            uploadToStorage(BUCKET_NAME, `${folderPath}/full.webp`, variants.full.buffer, {
               contentType: 'image/webp',
-              upsert: false,
-            })
-
-            if (error) {
-              // If bucket doesn't exist, create it and retry
-              if (error.message.includes('not found')) {
-                await supabase.storage.createBucket(BUCKET_NAME, {
-                  public: true,
-                })
-                const { error: retryError } = await supabase.storage
-                  .from(BUCKET_NAME)
-                  .upload(path, variantBuffer, {
-                    contentType: 'image/webp',
-                    upsert: false,
-                  })
-                if (retryError) throw retryError
-              } else {
-                throw error
-              }
-            }
-            return path
-          }
-
-          // Upload all variants in parallel
-          await Promise.all([
-            uploadVariant('full', variants.full.buffer),
-            uploadVariant('preview', variants.preview.buffer),
-            uploadVariant('thumbnail', variants.thumbnail.buffer),
+            }),
+            uploadToStorage(BUCKET_NAME, `${folderPath}/preview.webp`, variants.preview.buffer, {
+              contentType: 'image/webp',
+            }),
+            uploadToStorage(
+              BUCKET_NAME,
+              `${folderPath}/thumbnail.webp`,
+              variants.thumbnail.buffer,
+              { contentType: 'image/webp' }
+            ),
           ])
-
-          // Get public URL for full image (main imageUrl)
-          const { data: urlData } = supabase.storage
-            .from(BUCKET_NAME)
-            .getPublicUrl(`${folderPath}/full.webp`)
-
-          const imageUrl = urlData.publicUrl
 
           // Log size savings
           const originalSize = buffer.length

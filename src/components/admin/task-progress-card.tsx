@@ -1,41 +1,35 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import {
-  Calendar,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  Target,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
+import { Calendar, Clock, CheckCircle2, Target } from 'lucide-react'
 import {
   calculateWorkingDeadline,
   getTaskProgressPercent,
   getTimeProgressPercent,
   getDeadlineUrgency,
   formatTimeRemaining,
-} from "@/lib/utils";
+} from '@/lib/utils'
 
 interface TaskProgressCardProps {
-  status: string;
-  assignedAt: string | null;
-  deadline: string | null;
-  createdAt: string;
-  completedAt?: string | null;
+  status: string
+  assignedAt: string | null
+  deadline: string | null
+  createdAt: string
+  completedAt?: string | null
 }
 
 const statusLabels: Record<string, string> = {
-  PENDING: "Pending",
-  ASSIGNED: "Assigned",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  REVISION_REQUESTED: "Revision Requested",
-  COMPLETED: "Completed",
-  CANCELLED: "Cancelled",
-};
+  PENDING: 'Pending',
+  ASSIGNED: 'Assigned',
+  IN_PROGRESS: 'In Progress',
+  IN_REVIEW: 'In Review',
+  REVISION_REQUESTED: 'Revision Requested',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+}
 
 export function TaskProgressCard({
   status,
@@ -44,35 +38,37 @@ export function TaskProgressCard({
   createdAt,
   completedAt,
 }: TaskProgressCardProps) {
-  const workingDeadline = calculateWorkingDeadline(assignedAt, deadline);
-  const taskProgress = getTaskProgressPercent(status);
-  const timeProgress = getTimeProgressPercent(assignedAt, deadline);
-  const urgency = getDeadlineUrgency(deadline, workingDeadline);
+  const workingDeadline = calculateWorkingDeadline(assignedAt, deadline)
+  const taskProgress = getTaskProgressPercent(status)
+  const timeProgress = getTimeProgressPercent(assignedAt, deadline)
+  const urgency = getDeadlineUrgency(deadline, workingDeadline)
 
   const urgencyConfig = {
     overdue: {
-      color: "text-destructive",
-      bgColor: "bg-destructive",
-      label: "Overdue",
+      color: 'text-destructive',
+      bgColor: 'bg-destructive',
+      label: 'Overdue',
     },
     urgent: {
-      color: "text-orange-500",
-      bgColor: "bg-orange-500",
-      label: "Past Artist Deadline",
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500',
+      label: 'Past Artist Deadline',
     },
     warning: {
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-500",
-      label: "Due Soon",
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-500',
+      label: 'Due Soon',
     },
     safe: {
-      color: "text-green-600",
-      bgColor: "bg-green-500",
-      label: "On Track",
+      color: 'text-green-600',
+      bgColor: 'bg-green-500',
+      label: 'On Track',
     },
-  };
+  }
 
-  const isActiveTask = ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED", "IN_REVIEW"].includes(status);
+  const isActiveTask = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED', 'IN_REVIEW'].includes(
+    status
+  )
 
   return (
     <Card>
@@ -84,8 +80,8 @@ export function TaskProgressCard({
           </span>
           {urgency && isActiveTask && (
             <Badge
-              variant={urgency === "safe" ? "outline" : "destructive"}
-              className={urgency === "safe" ? "border-green-500 text-green-600" : ""}
+              variant={urgency === 'safe' ? 'outline' : 'destructive'}
+              className={urgency === 'safe' ? 'border-green-500 text-green-600' : ''}
             >
               {urgencyConfig[urgency].label}
             </Badge>
@@ -115,19 +111,19 @@ export function TaskProgressCard({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Time Elapsed</span>
-                <span className={`font-medium ${urgency ? urgencyConfig[urgency].color : ""}`}>
+                <span className={`font-medium ${urgency ? urgencyConfig[urgency].color : ''}`}>
                   {Math.round(timeProgress)}%
                 </span>
               </div>
               <div className="relative">
                 <Progress
                   value={timeProgress}
-                  className={`h-3 ${timeProgress > 100 ? "[&>div]:bg-destructive" : ""}`}
+                  className={`h-3 ${timeProgress > 100 ? '[&>div]:bg-destructive' : ''}`}
                 />
                 {/* Working deadline marker at 70% */}
                 <div
                   className="absolute top-0 h-3 w-0.5 bg-orange-500"
-                  style={{ left: "70%" }}
+                  style={{ left: '70%' }}
                   title="Artist Deadline (70%)"
                 />
               </div>
@@ -152,7 +148,9 @@ export function TaskProgressCard({
             </div>
             {workingDeadline ? (
               <div>
-                <p className={`font-medium ${urgency === "urgent" || urgency === "overdue" ? "text-orange-500" : ""}`}>
+                <p
+                  className={`font-medium ${urgency === 'urgent' || urgency === 'overdue' ? 'text-orange-500' : ''}`}
+                >
                   {workingDeadline.toLocaleDateString()}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -172,12 +170,10 @@ export function TaskProgressCard({
             </div>
             {deadline ? (
               <div>
-                <p className={`font-medium ${urgency === "overdue" ? "text-destructive" : ""}`}>
+                <p className={`font-medium ${urgency === 'overdue' ? 'text-destructive' : ''}`}>
                   {new Date(deadline).toLocaleDateString()}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatTimeRemaining(deadline)}
-                </p>
+                <p className="text-xs text-muted-foreground">{formatTimeRemaining(deadline)}</p>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Not set</p>
@@ -212,5 +208,5 @@ export function TaskProgressCard({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

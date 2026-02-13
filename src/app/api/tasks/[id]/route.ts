@@ -1,28 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, users, taskCategories, taskFiles, taskMessages, companies, taskActivityLog } from "@/db/schema";
-import { eq, desc, and, ne } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import {
+  tasks,
+  users,
+  taskCategories,
+  taskFiles,
+  taskMessages,
+  companies,
+  taskActivityLog,
+} from '@/db/schema'
+import { eq, desc, and, ne } from 'drizzle-orm'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 // Type alias for better readability
-const freelancerUsers = users;
+const freelancerUsers = users
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await params
 
     // Get task with category and freelancer in a single query using LEFT JOINs (fixes N+1)
     const taskResult = await db
@@ -61,22 +59,22 @@ export async function GET(
       .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
       .leftJoin(freelancerUsers, eq(tasks.freelancerId, freelancerUsers.id))
       .where(eq(tasks.id, id))
-      .limit(1);
+      .limit(1)
 
     if (!taskResult.length) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound('Task')
     }
 
-    const taskRow = taskResult[0];
+    const taskRow = taskResult[0]
 
     // Check if user has permission to view this task
-    const user = session.user as { role?: string };
+    const user = session.user as { role?: string }
     if (
-      user.role !== "ADMIN" &&
+      user.role !== 'ADMIN' &&
       taskRow.clientId !== session.user.id &&
       taskRow.freelancerId !== session.user.id
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      throw Errors.forbidden()
     }
 
     // First, get the client info to find their company
@@ -86,9 +84,9 @@ export async function GET(
       })
       .from(users)
       .where(eq(users.id, taskRow.clientId))
-      .limit(1);
+      .limit(1)
 
-    const companyId = clientInfo[0]?.companyId;
+    const companyId = clientInfo[0]?.companyId
 
     // Fetch files, messages, activity log, and optionally brand info in parallel
     const [files, messages, activityLog, brandResult, previousWorkResult] = await Promise.all([
@@ -128,11 +126,7 @@ export async function GET(
         .orderBy(taskActivityLog.createdAt),
       // Fetch company/brand info if companyId exists
       companyId
-        ? db
-            .select()
-            .from(companies)
-            .where(eq(companies.id, companyId))
-            .limit(1)
+        ? db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
         : Promise.resolve([]),
       // Fetch previous completed work for this company (tasks with deliverables)
       companyId
@@ -150,17 +144,17 @@ export async function GET(
             .where(
               and(
                 eq(users.companyId, companyId),
-                eq(tasks.status, "COMPLETED"),
+                eq(tasks.status, 'COMPLETED'),
                 ne(tasks.id, id) // Exclude current task
               )
             )
             .orderBy(desc(tasks.completedAt))
             .limit(20)
         : Promise.resolve([]),
-    ]);
+    ])
 
     // Get deliverable files for previous work
-    const previousTaskIds = previousWorkResult.map((t) => t.taskId);
+    const previousTaskIds = previousWorkResult.map((t) => t.taskId)
     const previousDeliverables =
       previousTaskIds.length > 0
         ? await db
@@ -174,24 +168,20 @@ export async function GET(
               createdAt: taskFiles.createdAt,
             })
             .from(taskFiles)
-            .where(
-              and(
-                eq(taskFiles.isDeliverable, true)
-              )
-            )
+            .where(and(eq(taskFiles.isDeliverable, true)))
             .orderBy(desc(taskFiles.createdAt))
-        : [];
+        : []
 
     // Filter deliverables to only those belonging to previous tasks
     const filteredDeliverables = previousDeliverables.filter((d) =>
       previousTaskIds.includes(d.taskId)
-    );
+    )
 
     // Group deliverables by task
     const previousWork = previousWorkResult.map((task) => ({
       ...task,
       deliverables: filteredDeliverables.filter((d) => d.taskId === task.taskId),
-    }));
+    }))
 
     // Build brand DNA object
     const brandDNA = brandResult[0]
@@ -219,7 +209,7 @@ export async function GET(
           tagline: brandResult[0].tagline,
           keywords: brandResult[0].keywords,
         }
-      : null;
+      : null
 
     // Construct category object if it exists
     const category = taskRow.categoryDbId
@@ -228,7 +218,7 @@ export async function GET(
           name: taskRow.categoryName,
           slug: taskRow.categorySlug,
         }
-      : null;
+      : null
 
     // Construct freelancer object if it exists
     const freelancer = taskRow.freelancerDbId
@@ -237,9 +227,9 @@ export async function GET(
           name: taskRow.freelancerName,
           image: taskRow.freelancerImage,
         }
-      : null;
+      : null
 
-    return NextResponse.json({
+    return successResponse({
       task: {
         id: taskRow.id,
         title: taskRow.title,
@@ -269,12 +259,6 @@ export async function GET(
         previousWork,
         activityLog,
       },
-    });
-  } catch (error) {
-    logger.error({ error }, "Task fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch task" },
-      { status: 500 }
-    );
-  }
+    })
+  })
 }

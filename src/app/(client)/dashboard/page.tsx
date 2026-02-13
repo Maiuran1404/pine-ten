@@ -1,15 +1,12 @@
-"use client";
+'use client'
 
-import { Suspense, useEffect, useState, useRef } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ImageWithSkeleton,
-  MasonryGridSkeleton,
-} from "@/components/ui/skeletons";
-import { motion, AnimatePresence } from "framer-motion";
+import { Suspense, useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ImageWithSkeleton, MasonryGridSkeleton } from '@/components/ui/skeletons'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Paperclip,
   Image as ImageIcon,
@@ -25,397 +22,387 @@ import {
   Presentation,
   Palette,
   Eye,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { useSession } from "@/lib/auth-client";
-import { getImageVariantUrls } from "@/lib/image/utils";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { useSession } from '@/lib/auth-client'
+import { getImageVariantUrls } from '@/lib/image/utils'
 
 interface UploadedFile {
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
+  fileName: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
 }
 
 interface StyleReference {
-  id: string;
-  name: string;
-  imageUrl: string;
-  deliverableType: string | null;
-  styleAxis: string | null;
-  contentCategory?: string;
-  colorTemperature?: string;
+  id: string
+  name: string
+  imageUrl: string
+  deliverableType: string | null
+  styleAxis: string | null
+  contentCategory?: string
+  colorTemperature?: string
 }
 
 // Template categories and sub-options based on service offerings
 const TEMPLATE_CATEGORIES = {
-  "Launch Videos": {
+  'Launch Videos': {
     icon: Megaphone,
-    description: "Product videos that convert",
+    description: 'Product videos that convert',
     modalDescription:
       "Select the video type that fits my launch goals. Add details about my product and we'll craft the perfect brief.",
     options: [
       {
-        title: "Product Launch Video",
+        title: 'Product Launch Video',
         description:
-          "A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.",
-        prompt: "Create a product launch video",
+          'A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.',
+        prompt: 'Create a product launch video',
         image:
-          "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Feature Highlight",
+        title: 'Feature Highlight',
         description:
-          "A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.",
-        prompt: "Create a feature highlight video",
+          'A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.',
+        prompt: 'Create a feature highlight video',
         image:
-          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "App Walkthrough",
+        title: 'App Walkthrough',
         description:
-          "A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.",
-        prompt: "Create an app walkthrough video",
+          'A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.',
+        prompt: 'Create an app walkthrough video',
         image:
-          "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&q=80',
       },
     ],
   },
-  "Pitch Deck": {
+  'Pitch Deck': {
     icon: Presentation,
-    description: "Investor-ready presentations",
+    description: 'Investor-ready presentations',
     modalDescription:
       "Choose the presentation style that matches my audience. Share my existing deck or key points and we'll design something compelling.",
     options: [
       {
-        title: "Investor Pitch Deck",
+        title: 'Investor Pitch Deck',
         description:
-          "A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.",
-        prompt: "Redesign my investor pitch deck",
+          'A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.',
+        prompt: 'Redesign my investor pitch deck',
         image:
-          "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Sales Deck",
+        title: 'Sales Deck',
         description:
-          "A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.",
-        prompt: "Create a sales presentation deck",
+          'A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.',
+        prompt: 'Create a sales presentation deck',
         image:
-          "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Company Overview",
+        title: 'Company Overview',
         description:
-          "A versatile introduction to my company that works for partners, clients, and new team members.",
-        prompt: "Design a company overview presentation",
+          'A versatile introduction to my company that works for partners, clients, and new team members.',
+        prompt: 'Design a company overview presentation',
         image:
-          "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1497215842964-222b430dc094?w=400&h=300&fit=crop&q=80',
       },
     ],
   },
   Branding: {
     icon: Palette,
-    description: "Complete visual identity",
+    description: 'Complete visual identity',
     modalDescription:
       "Tell us about my brand personality and goals. We'll create a visual identity that sets me apart.",
     options: [
       {
-        title: "Full Brand Package",
+        title: 'Full Brand Package',
         description:
-          "A complete visual identity system including logo design, color palette, typography, and brand guidelines.",
-        prompt: "Create a full brand package with logo and visual identity",
+          'A complete visual identity system including logo design, color palette, typography, and brand guidelines.',
+        prompt: 'Create a full brand package with logo and visual identity',
         image:
-          "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Logo Design",
+        title: 'Logo Design',
         description:
-          "A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.",
-        prompt: "Design a logo for my brand",
+          'A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.',
+        prompt: 'Design a logo for my brand',
         image:
-          "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Brand Refresh",
+        title: 'Brand Refresh',
         description:
-          "Modernize and elevate my existing brand while maintaining recognition with updated visual elements.",
-        prompt: "Refresh and modernize my existing brand",
+          'Modernize and elevate my existing brand while maintaining recognition with updated visual elements.',
+        prompt: 'Refresh and modernize my existing brand',
         image:
-          "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop&q=80',
       },
     ],
   },
-  "Social Media": {
+  'Social Media': {
     icon: Share2,
-    description: "Ads, content & video edits",
+    description: 'Ads, content & video edits',
     modalDescription:
       "Select the content type and platform. Share my goals and any assets, and we'll create scroll-stopping content.",
     options: [
       {
-        title: "Instagram Post",
+        title: 'Instagram Post',
         description:
-          "Eye-catching static posts designed for maximum engagement in the 4:5 feed format.",
-        prompt: "Create Instagram post designs",
+          'Eye-catching static posts designed for maximum engagement in the 4:5 feed format.',
+        prompt: 'Create Instagram post designs',
         image:
-          "https://images.unsplash.com/photo-1611262588024-d12430b98920?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1611262588024-d12430b98920?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Instagram Story",
+        title: 'Instagram Story',
         description:
-          "Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.",
-        prompt: "Create Instagram story designs",
+          'Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.',
+        prompt: 'Create Instagram story designs',
         image:
-          "https://images.unsplash.com/photo-1585247226801-bc613c441316?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1585247226801-bc613c441316?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Instagram Reels",
+        title: 'Instagram Reels',
         description:
-          "Short-form vertical video content designed to capture attention in the first second.",
-        prompt: "Create an Instagram Reels video",
+          'Short-form vertical video content designed to capture attention in the first second.',
+        prompt: 'Create an Instagram Reels video',
         image:
-          "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "LinkedIn Content",
+        title: 'LinkedIn Content',
         description:
-          "Professional content designed for B2B engagement including carousels and thought leadership.",
-        prompt: "Create LinkedIn content",
+          'Professional content designed for B2B engagement including carousels and thought leadership.',
+        prompt: 'Create LinkedIn content',
         image:
-          "https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Video Edit",
+        title: 'Video Edit',
         description:
-          "Transform raw footage into polished, platform-ready content with professional editing.",
-        prompt: "Edit my video footage for social media",
+          'Transform raw footage into polished, platform-ready content with professional editing.',
+        prompt: 'Edit my video footage for social media',
         image:
-          "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=300&fit=crop&q=80',
       },
       {
-        title: "Ad Creatives",
+        title: 'Ad Creatives',
         description:
-          "Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.",
-        prompt: "Create social media ad creatives",
+          'Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.',
+        prompt: 'Create social media ad creatives',
         image:
-          "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=400&h=300&fit=crop&q=80",
+          'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=400&h=300&fit=crop&q=80',
       },
     ],
   },
-};
+}
 
 function DashboardContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { data: session } = useSession();
-  const [chatInput, setChatInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [showCreditDialog, setShowCreditDialog] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [styleReferences, setStyleReferences] = useState<StyleReference[]>([]);
-  const [isLoadingStyles, setIsLoadingStyles] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [modalNotes, setModalNotes] = useState("");
-  const [tasksForReview, setTasksForReview] = useState<{ id: string; title: string; description: string }[]>([]);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounterRef = useRef(0);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const [chatInput, setChatInput] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [credits, setCredits] = useState<number | null>(null)
+  const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [styleReferences, setStyleReferences] = useState<StyleReference[]>([])
+  const [isLoadingStyles, setIsLoadingStyles] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedOption, setSelectedOption] = useState<string | null>(null)
+  const [modalNotes, setModalNotes] = useState('')
+  const [tasksForReview, setTasksForReview] = useState<
+    { id: string; title: string; description: string }[]
+  >([])
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragCounterRef = useRef(0)
 
-  const userName = session?.user?.name?.split(" ")[0] || "there";
+  const userName = session?.user?.name?.split(' ')[0] || 'there'
 
   useEffect(() => {
-    const payment = searchParams.get("payment");
-    const creditsParam = searchParams.get("credits");
+    const payment = searchParams.get('payment')
+    const creditsParam = searchParams.get('credits')
 
-    if (payment === "success" && creditsParam) {
-      toast.success(`Successfully purchased ${creditsParam} credits!`);
-    } else if (payment === "cancelled") {
-      toast.info("Payment was cancelled");
+    if (payment === 'success' && creditsParam) {
+      toast.success(`Successfully purchased ${creditsParam} credits!`)
+    } else if (payment === 'cancelled') {
+      toast.info('Payment was cancelled')
     }
 
     // Fetch credits
-    fetch("/api/user/credits")
+    fetch('/api/user/credits')
       .then((res) => res.json())
       .then((data) => setCredits(data.credits))
-      .catch(console.error);
+      .catch(console.error)
 
     // Fetch tasks needing client review
-    fetch("/api/tasks?limit=10&view=client")
+    fetch('/api/tasks?limit=10&view=client')
       .then((res) => res.json())
       .then((data) => {
-        const allTasks = data.data?.tasks || data.tasks || [];
-        setTasksForReview(allTasks.filter((t: { status: string }) => t.status === "IN_REVIEW"));
+        const allTasks = data.data?.tasks || data.tasks || []
+        setTasksForReview(allTasks.filter((t: { status: string }) => t.status === 'IN_REVIEW'))
       })
-      .catch(console.error);
+      .catch(console.error)
 
     // Fetch brand-matched style references (increased limit for all categories)
-    setIsLoadingStyles(true);
-    fetch("/api/style-references/match?limit=150")
+    setIsLoadingStyles(true)
+    fetch('/api/style-references/match?limit=150')
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && data?.data) {
-          setStyleReferences(data.data);
+          setStyleReferences(data.data)
         }
       })
       .catch(console.error)
-      .finally(() => setIsLoadingStyles(false));
-  }, [searchParams]);
+      .finally(() => setIsLoadingStyles(false))
+  }, [searchParams])
 
   // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current && chatInput) {
-      inputRef.current.style.height = "auto";
-      inputRef.current.style.height =
-        Math.min(inputRef.current.scrollHeight, 150) + "px";
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 150) + 'px'
     }
-  }, [chatInput]);
+  }, [chatInput])
 
   // File upload logic
   const uploadFiles = async (files: FileList | File[]) => {
-    const fileArray = Array.from(files);
-    if (fileArray.length === 0) return;
+    const fileArray = Array.from(files)
+    if (fileArray.length === 0) return
 
-    setIsUploading(true);
+    setIsUploading(true)
 
     try {
       const uploadPromises = fileArray.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", "attachments");
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'attachments')
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
+        const response = await fetch('/api/upload', {
+          method: 'POST',
           body: formData,
-        });
+        })
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.error?.message || errorData.message || "Upload failed"
-          );
+          const errorData = await response.json()
+          throw new Error(errorData.error?.message || errorData.message || 'Upload failed')
         }
 
-        const data = await response.json();
+        const data = await response.json()
         // API returns { success: true, data: { file: {...} } }
-        return (data.data?.file || data.file) as UploadedFile;
-      });
+        return (data.data?.file || data.file) as UploadedFile
+      })
 
-      const newFiles = await Promise.all(uploadPromises);
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-      toast.success(`${newFiles.length} file(s) uploaded successfully`);
+      const newFiles = await Promise.all(uploadPromises)
+      setUploadedFiles((prev) => [...prev, ...newFiles])
+      toast.success(`${newFiles.length} file(s) uploaded successfully`)
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload files"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to upload files')
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    await uploadFiles(files);
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    await uploadFiles(files)
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = ''
     }
-  };
+  }
 
   // Drag and drop handlers
   const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current++;
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current++
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true);
+      setIsDragging(true)
     }
-  };
+  }
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current--;
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current--
     if (dragCounterRef.current === 0) {
-      setIsDragging(false);
+      setIsDragging(false)
     }
-  };
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+    e.preventDefault()
+    e.stopPropagation()
+  }
 
   const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    dragCounterRef.current = 0;
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    dragCounterRef.current = 0
 
-    const files = e.dataTransfer.files;
+    const files = e.dataTransfer.files
     if (files && files.length > 0) {
-      await uploadFiles(files);
+      await uploadFiles(files)
     }
-  };
+  }
 
   const removeFile = (fileUrl: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl));
-  };
+    setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl))
+  }
 
   const handleSubmit = async (message?: string) => {
-    const finalMessage = message || chatInput.trim();
-    if ((!finalMessage && uploadedFiles.length === 0) || isSending) return;
+    const finalMessage = message || chatInput.trim()
+    if ((!finalMessage && uploadedFiles.length === 0) || isSending) return
 
     // Don't check credits here - let users start chatting freely
     // Payment is only required when confirming/submitting the actual task
 
-    setIsSending(true);
+    setIsSending(true)
 
     // Store files in sessionStorage for the chat page to pick up
     if (uploadedFiles.length > 0) {
-      sessionStorage.setItem(
-        "pending_chat_files",
-        JSON.stringify(uploadedFiles)
-      );
+      sessionStorage.setItem('pending_chat_files', JSON.stringify(uploadedFiles))
     }
-    setUploadedFiles([]);
-    setChatInput("");
+    setUploadedFiles([])
+    setChatInput('')
 
     router.push(
       `/dashboard/chat?message=${encodeURIComponent(
         finalMessage || `Attached ${uploadedFiles.length} file(s)`
       )}`
-    );
-  };
+    )
+  }
 
   const handleTemplateClick = (prompt: string) => {
-    setChatInput(prompt);
-    inputRef.current?.focus();
+    setChatInput(prompt)
+    inputRef.current?.focus()
     // Place cursor at the end of the prompt
     setTimeout(() => {
       if (inputRef.current) {
-        inputRef.current.selectionStart = inputRef.current.selectionEnd =
-          prompt.length;
+        inputRef.current.selectionStart = inputRef.current.selectionEnd = prompt.length
       }
-    }, 0);
-  };
+    }, 0)
+  }
 
   const getFileIcon = (fileType: string) => {
-    if (fileType?.startsWith("image/"))
-      return <ImageIcon className="h-5 w-5 text-foreground" />;
-    if (fileType?.startsWith("video/"))
-      return <FileVideo className="h-5 w-5 text-foreground" />;
-    if (fileType === "application/pdf")
-      return <FileText className="h-5 w-5 text-foreground" />;
-    if (fileType?.includes("zip") || fileType?.includes("archive"))
-      return <FileArchive className="h-5 w-5 text-foreground" />;
-    return <File className="h-5 w-5 text-foreground" />;
-  };
+    if (fileType?.startsWith('image/')) return <ImageIcon className="h-5 w-5 text-foreground" />
+    if (fileType?.startsWith('video/')) return <FileVideo className="h-5 w-5 text-foreground" />
+    if (fileType === 'application/pdf') return <FileText className="h-5 w-5 text-foreground" />
+    if (fileType?.includes('zip') || fileType?.includes('archive'))
+      return <FileArchive className="h-5 w-5 text-foreground" />
+    return <File className="h-5 w-5 text-foreground" />
+  }
 
   return (
     <div
@@ -449,12 +436,8 @@ function DashboardContent() {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                 <Upload className="h-10 w-10 text-primary" />
               </div>
-              <p className="text-xl font-medium text-foreground">
-                Drop files here
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Images, videos, PDFs, and more
-              </p>
+              <p className="text-xl font-medium text-foreground">Drop files here</p>
+              <p className="text-sm text-muted-foreground mt-2">Images, videos, PDFs, and more</p>
             </div>
           </motion.div>
         )}
@@ -476,18 +459,14 @@ function DashboardContent() {
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-500/25"
                 >
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                   >
-                    <svg
-                      className="w-10 h-10 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24">
                       <circle
                         className="opacity-25"
                         cx="12"
@@ -509,7 +488,7 @@ function DashboardContent() {
                 <motion.div
                   initial={{ scale: 1, opacity: 0.5 }}
                   animate={{ scale: 1.5, opacity: 0 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
                   className="absolute inset-0 w-20 h-20 mx-auto rounded-2xl bg-emerald-500"
                 />
               </div>
@@ -523,9 +502,7 @@ function DashboardContent() {
                 <h2 className="text-xl font-semibold text-foreground mb-2">
                   Creating your request
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  Setting things up for you...
-                </p>
+                <p className="text-sm text-muted-foreground">Setting things up for you...</p>
               </motion.div>
 
               {/* Animated dots */}
@@ -582,13 +559,14 @@ function DashboardContent() {
         {/* Welcome Header */}
         <div className="text-center mb-8 sm:mb-10">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
-            Welcome back,{" "}
+            Welcome back,{' '}
             <span className="bg-gradient-to-r from-emerald-600 to-green-500 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
               {userName}
-            </span>!
+            </span>
+            !
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground">
-            What would you like to create{" "}
+            What would you like to create{' '}
             <span className="italic font-medium text-foreground">today</span>?
           </p>
         </div>
@@ -605,7 +583,7 @@ function DashboardContent() {
                       key={file.fileUrl}
                       className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/50"
                     >
-                      {file.fileType?.startsWith("image/") ? (
+                      {file.fileType?.startsWith('image/') ? (
                         <img
                           src={file.fileUrl}
                           alt={file.fileName}
@@ -638,21 +616,20 @@ function DashboardContent() {
                 ref={inputRef}
                 value={chatInput}
                 onChange={(e) => {
-                  setChatInput(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height =
-                    Math.min(e.target.scrollHeight, 150) + "px";
+                  setChatInput(e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit()
                   }
                 }}
                 placeholder={
                   uploadedFiles.length > 0
-                    ? "Add a message or just send..."
-                    : "Describe what you want to create..."
+                    ? 'Add a message or just send...'
+                    : 'Describe what you want to create...'
                 }
                 className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base resize-none min-h-[32px] max-h-[150px]"
                 rows={1}
@@ -669,11 +646,7 @@ function DashboardContent() {
                   className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Attach file"
                 >
-                  {isUploading ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <Paperclip className="h-5 w-5" />
-                  )}
+                  {isUploading ? <LoadingSpinner size="sm" /> : <Paperclip className="h-5 w-5" />}
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -695,10 +668,10 @@ function DashboardContent() {
                       <span
                         className={`w-2 h-2 rounded-full ${
                           credits === 0
-                            ? "bg-red-500"
+                            ? 'bg-red-500'
                             : credits <= 2
-                            ? "bg-yellow-500"
-                            : "bg-emerald-500"
+                              ? 'bg-yellow-500'
+                              : 'bg-emerald-500'
                         }`}
                       />
                       <span>{credits} credits available</span>
@@ -711,9 +684,7 @@ function DashboardContent() {
               <button
                 onClick={() => handleSubmit()}
                 disabled={
-                  isSending ||
-                  isUploading ||
-                  (!chatInput.trim() && uploadedFiles.length === 0)
+                  isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
                 }
                 className="flex items-center justify-center px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
               >
@@ -726,32 +697,30 @@ function DashboardContent() {
         {/* Template System - Category Cards */}
         <div className="w-full max-w-4xl mb-8 px-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {Object.entries(TEMPLATE_CATEGORIES).map(
-              ([category, { icon: Icon, description }]) => (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    setSelectedOption(null);
-                    setModalNotes("");
-                  }}
-                  className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border-2 border-border/60 bg-white dark:bg-card/60 backdrop-blur-xl shadow-sm hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 hover:border-emerald-500 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <span className="font-semibold text-sm text-foreground mb-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                    {category}
-                  </span>
-                  <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
-                    {description}
-                  </span>
-                  <span className="mt-2 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wide">
-                    Select →
-                  </span>
-                </button>
-              )
-            )}
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, description }]) => (
+              <button
+                key={category}
+                onClick={() => {
+                  setSelectedCategory(category)
+                  setSelectedOption(null)
+                  setModalNotes('')
+                }}
+                className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border-2 border-border/60 bg-white dark:bg-card/60 backdrop-blur-xl shadow-sm hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 hover:border-emerald-500 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
+                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span className="font-semibold text-sm text-foreground mb-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                  {category}
+                </span>
+                <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
+                  {description}
+                </span>
+                <span className="mt-2 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wide">
+                  Select →
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -761,9 +730,9 @@ function DashboardContent() {
         open={!!selectedCategory}
         onOpenChange={(open) => {
           if (!open) {
-            setSelectedCategory(null);
-            setSelectedOption(null);
-            setModalNotes("");
+            setSelectedCategory(null)
+            setSelectedOption(null)
+            setModalNotes('')
           }
         }}
       >
@@ -771,17 +740,13 @@ function DashboardContent() {
           {selectedCategory &&
             (() => {
               const category =
-                TEMPLATE_CATEGORIES[
-                  selectedCategory as keyof typeof TEMPLATE_CATEGORIES
-                ];
-              const Icon = category?.icon;
-              const optionCount = category?.options.length || 0;
+                TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]
+              const Icon = category?.icon
+              const optionCount = category?.options.length || 0
               // Responsive grid: 1 col on mobile, 2-3 cols on larger screens
               // 6 options = 3 cols (2 rows), 3 options = 3 cols (1 row), 2 options = 2 cols
               const gridCols =
-                optionCount >= 3
-                  ? "grid-cols-1 sm:grid-cols-3"
-                  : "grid-cols-1 sm:grid-cols-2";
+                optionCount >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
               return (
                 <>
                   {/* Header */}
@@ -802,17 +767,15 @@ function DashboardContent() {
                   {/* Options Grid */}
                   <div className={`px-5 py-4 grid ${gridCols} gap-3`}>
                     {category?.options.map((option, index) => {
-                      const isSelected = selectedOption === option.title;
+                      const isSelected = selectedOption === option.title
                       return (
                         <button
                           key={index}
-                          onClick={() =>
-                            setSelectedOption(isSelected ? null : option.title)
-                          }
+                          onClick={() => setSelectedOption(isSelected ? null : option.title)}
                           className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left border-2 h-full overflow-hidden ${
                             isSelected
-                              ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 shadow-md shadow-emerald-500/10"
-                              : "border-border/50 hover:border-emerald-500/40 hover:bg-muted/20"
+                              ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 shadow-md shadow-emerald-500/10'
+                              : 'border-border/50 hover:border-emerald-500/40 hover:bg-muted/20'
                           }`}
                         >
                           {/* Image */}
@@ -821,9 +784,7 @@ function DashboardContent() {
                               src={option.image}
                               alt={option.title}
                               className={`w-full h-full object-cover transition-transform duration-300 ${
-                                isSelected
-                                  ? "scale-105"
-                                  : "group-hover:scale-105"
+                                isSelected ? 'scale-105' : 'group-hover:scale-105'
                               }`}
                             />
                             {/* Gradient overlay for better text contrast */}
@@ -832,8 +793,8 @@ function DashboardContent() {
                             <div
                               className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 backdrop-blur-sm ${
                                 isSelected
-                                  ? "border-emerald-500 bg-emerald-500"
-                                  : "border-white/60 bg-white/20"
+                                  ? 'border-emerald-500 bg-emerald-500'
+                                  : 'border-white/60 bg-white/20'
                               }`}
                             >
                               {isSelected && (
@@ -858,8 +819,8 @@ function DashboardContent() {
                             <h3
                               className={`font-semibold text-sm mb-1.5 transition-colors ${
                                 isSelected
-                                  ? "text-emerald-700 dark:text-emerald-400"
-                                  : "text-foreground"
+                                  ? 'text-emerald-700 dark:text-emerald-400'
+                                  : 'text-foreground'
                               }`}
                             >
                               {option.title}
@@ -869,7 +830,7 @@ function DashboardContent() {
                             </p>
                           </div>
                         </button>
-                      );
+                      )
                     })}
                   </div>
 
@@ -881,18 +842,16 @@ function DashboardContent() {
                         value={modalNotes}
                         onChange={(e) => setModalNotes(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && selectedOption) {
-                            const option = category?.options.find(
-                              (o) => o.title === selectedOption
-                            );
+                          if (e.key === 'Enter' && selectedOption) {
+                            const option = category?.options.find((o) => o.title === selectedOption)
                             if (option) {
                               const fullPrompt = modalNotes
                                 ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                : `${option.prompt}. ${option.description}`;
-                              handleSubmit(fullPrompt);
-                              setSelectedCategory(null);
-                              setSelectedOption(null);
-                              setModalNotes("");
+                                : `${option.prompt}. ${option.description}`
+                              handleSubmit(fullPrompt)
+                              setSelectedCategory(null)
+                              setSelectedOption(null)
+                              setModalNotes('')
                             }
                           }
                         }}
@@ -902,17 +861,15 @@ function DashboardContent() {
                       <button
                         onClick={() => {
                           if (selectedOption) {
-                            const option = category?.options.find(
-                              (o) => o.title === selectedOption
-                            );
+                            const option = category?.options.find((o) => o.title === selectedOption)
                             if (option) {
                               const fullPrompt = modalNotes
                                 ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                : `${option.prompt}. ${option.description}`;
-                              handleSubmit(fullPrompt);
-                              setSelectedCategory(null);
-                              setSelectedOption(null);
-                              setModalNotes("");
+                                : `${option.prompt}. ${option.description}`
+                              handleSubmit(fullPrompt)
+                              setSelectedCategory(null)
+                              setSelectedOption(null)
+                              setModalNotes('')
                             }
                           }
                         }}
@@ -924,7 +881,7 @@ function DashboardContent() {
                     </div>
                   </div>
                 </>
-              );
+              )
             })()}
         </DialogContent>
       </Dialog>
@@ -949,111 +906,106 @@ function DashboardContent() {
               ) : (
                 /* Group references by contentCategory */
                 (() => {
-                  const groups = styleReferences.reduce((acc, ref) => {
-                    const group = ref.contentCategory || "other";
-                    if (!acc[group]) acc[group] = [];
-                    acc[group].push(ref);
-                    return acc;
-                  }, {} as Record<string, StyleReference[]>);
+                  const groups = styleReferences.reduce(
+                    (acc, ref) => {
+                      const group = ref.contentCategory || 'other'
+                      if (!acc[group]) acc[group] = []
+                      acc[group].push(ref)
+                      return acc
+                    },
+                    {} as Record<string, StyleReference[]>
+                  )
 
-                  const groupLabels: Record<
-                    string,
-                    { label: string; icon: string }
-                  > = {
+                  const groupLabels: Record<string, { label: string; icon: string }> = {
                     instagram_post: {
-                      label: "Popular Instagram posts",
-                      icon: "📱",
+                      label: 'Popular Instagram posts',
+                      icon: '📱',
                     },
                     instagram_story: {
-                      label: "Popular Instagram stories",
-                      icon: "📲",
+                      label: 'Popular Instagram stories',
+                      icon: '📲',
                     },
                     instagram_reel: {
-                      label: "Popular Instagram reels",
-                      icon: "🎬",
+                      label: 'Popular Instagram reels',
+                      icon: '🎬',
                     },
                     linkedin_post: {
-                      label: "Popular LinkedIn posts",
-                      icon: "💼",
+                      label: 'Popular LinkedIn posts',
+                      icon: '💼',
                     },
                     linkedin_banner: {
-                      label: "Popular LinkedIn banners",
-                      icon: "🖼️",
+                      label: 'Popular LinkedIn banners',
+                      icon: '🖼️',
                     },
-                    static_ad: { label: "Popular static ads", icon: "🎯" },
-                    facebook_ad: { label: "Popular Facebook ads", icon: "👥" },
+                    static_ad: { label: 'Popular static ads', icon: '🎯' },
+                    facebook_ad: { label: 'Popular Facebook ads', icon: '👥' },
                     twitter_post: {
-                      label: "Popular Twitter posts",
-                      icon: "🐦",
+                      label: 'Popular Twitter posts',
+                      icon: '🐦',
                     },
                     youtube_thumbnail: {
-                      label: "Popular YouTube thumbnails",
-                      icon: "▶️",
+                      label: 'Popular YouTube thumbnails',
+                      icon: '▶️',
                     },
                     email_header: {
-                      label: "Popular email headers",
-                      icon: "📧",
+                      label: 'Popular email headers',
+                      icon: '📧',
                     },
-                    web_banner: { label: "Popular web banners", icon: "🌐" },
+                    web_banner: { label: 'Popular web banners', icon: '🌐' },
                     presentation_slide: {
-                      label: "Popular presentation slides",
-                      icon: "📊",
+                      label: 'Popular presentation slides',
+                      icon: '📊',
                     },
-                    video_ad: { label: "Popular video ads", icon: "🎥" },
-                    other: { label: "More inspiration", icon: "💡" },
-                  };
+                    video_ad: { label: 'Popular video ads', icon: '🎥' },
+                    other: { label: 'More inspiration', icon: '💡' },
+                  }
 
                   const orderedGroups = [
-                    "instagram_post",
-                    "instagram_story",
-                    "linkedin_post",
-                    "static_ad",
-                    "facebook_ad",
-                    "instagram_reel",
-                    "twitter_post",
-                    "youtube_thumbnail",
-                    "linkedin_banner",
-                    "email_header",
-                    "web_banner",
-                    "presentation_slide",
-                    "video_ad",
-                    "other",
-                  ];
+                    'instagram_post',
+                    'instagram_story',
+                    'linkedin_post',
+                    'static_ad',
+                    'facebook_ad',
+                    'instagram_reel',
+                    'twitter_post',
+                    'youtube_thumbnail',
+                    'linkedin_banner',
+                    'email_header',
+                    'web_banner',
+                    'presentation_slide',
+                    'video_ad',
+                    'other',
+                  ]
 
                   return orderedGroups.map((groupKey, groupIndex) => {
-                    const allRefs = groups[groupKey];
-                    if (!allRefs || allRefs.length === 0) return null;
+                    const allRefs = groups[groupKey]
+                    if (!allRefs || allRefs.length === 0) return null
 
                     // Limit to 15 items per category for cleaner display
-                    const refs = allRefs.slice(0, 15);
+                    const refs = allRefs.slice(0, 15)
                     const { label, icon } = groupLabels[groupKey] || {
                       label: groupKey,
-                      icon: "📌",
-                    };
+                      icon: '📌',
+                    }
 
                     return (
                       <div key={groupKey} className="mb-12">
                         {/* Group Header */}
                         <div
                           className={`flex items-center gap-3 mb-5 ${
-                            groupIndex > 0 ? "mt-10" : ""
+                            groupIndex > 0 ? 'mt-10' : ''
                           }`}
                         >
                           <span className="text-base">{icon}</span>
-                          <h3 className="text-sm font-medium text-foreground">
-                            {label}
-                          </h3>
+                          <h3 className="text-sm font-medium text-foreground">{label}</h3>
                           <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
                           <span className="text-xs text-muted-foreground">
-                            {allRefs.length}{" "}
-                            {allRefs.length === 1 ? "style" : "styles"}
+                            {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
                           </span>
                         </div>
                         <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
                           {refs.map((ref) => {
-                            const variantUrls = getImageVariantUrls(
-                              ref.imageUrl
-                            );
+                            const variantUrls = getImageVariantUrls(ref.imageUrl)
                             return (
                               <div
                                 key={ref.id}
@@ -1067,12 +1019,12 @@ function DashboardContent() {
                                   loading="lazy"
                                 />
                               </div>
-                            );
+                            )
                           })}
                         </div>
                       </div>
-                    );
-                  });
+                    )
+                  })
                 })()
               )}
             </div>
@@ -1091,7 +1043,7 @@ function DashboardContent() {
         requiredCredits={1}
       />
     </div>
-  );
+  )
 }
 
 function DashboardSkeleton() {
@@ -1114,12 +1066,12 @@ function DashboardSkeleton() {
           <Skeleton
             key={i}
             className="break-inside-avoid rounded-xl"
-            style={{ height: `${150 + Math.random() * 100}px` }}
+            style={{ height: `${150 + ((i * 37) % 100)}px` }}
           />
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 export default function DashboardPage() {
@@ -1127,5 +1079,5 @@ export default function DashboardPage() {
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </Suspense>
-  );
+  )
 }

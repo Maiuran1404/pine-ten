@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
 /**
  * Cache duration presets in seconds
@@ -14,7 +14,7 @@ export const CacheDurations = {
   LONG: 3600,
   /** Extended cache for static data (24 hours) */
   EXTENDED: 86400,
-} as const;
+} as const
 
 /**
  * Add cache headers to a NextResponse
@@ -30,21 +30,18 @@ export function withCacheHeaders<T>(
   isPrivate = false
 ): NextResponse<T> {
   if (maxAge <= 0) {
-    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
-    return response;
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return response
   }
 
-  const directives = [
-    isPrivate ? "private" : "public",
-    `max-age=${maxAge}`,
-  ];
+  const directives = [isPrivate ? 'private' : 'public', `max-age=${maxAge}`]
 
   if (staleWhileRevalidate) {
-    directives.push(`stale-while-revalidate=${staleWhileRevalidate}`);
+    directives.push(`stale-while-revalidate=${staleWhileRevalidate}`)
   }
 
-  response.headers.set("Cache-Control", directives.join(", "));
-  return response;
+  response.headers.set('Cache-Control', directives.join(', '))
+  return response
 }
 
 /**
@@ -57,18 +54,13 @@ export function cachedJsonResponse<T>(
   data: T,
   maxAge: number = CacheDurations.SHORT,
   options?: {
-    status?: number;
-    staleWhileRevalidate?: number;
-    isPrivate?: boolean;
+    status?: number
+    staleWhileRevalidate?: number
+    isPrivate?: boolean
   }
 ): NextResponse<T> {
-  const response = NextResponse.json(data, { status: options?.status ?? 200 });
-  return withCacheHeaders(
-    response,
-    maxAge,
-    options?.staleWhileRevalidate,
-    options?.isPrivate
-  );
+  const response = NextResponse.json(data, { status: options?.status ?? 200 })
+  return withCacheHeaders(response, maxAge, options?.staleWhileRevalidate, options?.isPrivate)
 }
 
 /**
@@ -78,18 +70,13 @@ export function cachedSuccessResponse<T>(
   data: T,
   maxAge: number = CacheDurations.SHORT,
   options?: {
-    staleWhileRevalidate?: number;
-    isPrivate?: boolean;
+    staleWhileRevalidate?: number
+    isPrivate?: boolean
   }
 ): NextResponse<{ success: true; data: T }> {
   const response = NextResponse.json<{ success: true; data: T }>(
     { success: true, data },
     { status: 200 }
-  );
-  return withCacheHeaders(
-    response,
-    maxAge,
-    options?.staleWhileRevalidate,
-    options?.isPrivate
-  );
+  )
+  return withCacheHeaders(response, maxAge, options?.staleWhileRevalidate, options?.isPrivate)
 }

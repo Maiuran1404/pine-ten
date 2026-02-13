@@ -1,19 +1,19 @@
-"use client";
+'use client'
 
-import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Check, ChevronRight, Sparkles, Link2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import type { GroupedQuestion, SelectOption } from "@/lib/creative-intake/types";
+import { useState, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { Check, ChevronRight, Sparkles, Link2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import type { GroupedQuestion, SelectOption } from '@/lib/creative-intake/types'
 
 interface GroupedQuestionCardProps {
-  questions: GroupedQuestion[];
-  onSubmit: (answers: Record<string, string | string[]>) => void;
-  disabled?: boolean;
-  className?: string;
+  questions: GroupedQuestion[]
+  onSubmit: (answers: Record<string, string | string[]>) => void
+  disabled?: boolean
+  className?: string
 }
 
 export function GroupedQuestionCard({
@@ -23,63 +23,54 @@ export function GroupedQuestionCard({
   className,
 }: GroupedQuestionCardProps) {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>(() => {
-    const initial: Record<string, string | string[]> = {};
+    const initial: Record<string, string | string[]> = {}
     questions.forEach((q) => {
       if (q.value) {
-        initial[q.id] = q.value;
-      } else if (q.type === "multi_select") {
-        initial[q.id] = [];
+        initial[q.id] = q.value
+      } else if (q.type === 'multi_select') {
+        initial[q.id] = []
       } else {
-        initial[q.id] = "";
+        initial[q.id] = ''
       }
-    });
-    return initial;
-  });
+    })
+    return initial
+  })
 
-  const updateAnswer = useCallback(
-    (questionId: string, value: string | string[]) => {
-      setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    },
-    []
-  );
+  const updateAnswer = useCallback((questionId: string, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }))
+  }, [])
 
-  const toggleMultiSelect = useCallback(
-    (questionId: string, optionValue: string) => {
-      setAnswers((prev) => {
-        const current = (prev[questionId] as string[]) || [];
-        const updated = current.includes(optionValue)
-          ? current.filter((v) => v !== optionValue)
-          : [...current, optionValue];
-        return { ...prev, [questionId]: updated };
-      });
-    },
-    []
-  );
+  const toggleMultiSelect = useCallback((questionId: string, optionValue: string) => {
+    setAnswers((prev) => {
+      const current = (prev[questionId] as string[]) || []
+      const updated = current.includes(optionValue)
+        ? current.filter((v) => v !== optionValue)
+        : [...current, optionValue]
+      return { ...prev, [questionId]: updated }
+    })
+  }, [])
 
   const isComplete = useCallback(() => {
     return questions.every((q) => {
-      if (!q.required) return true;
-      const answer = answers[q.id];
-      if (Array.isArray(answer)) return answer.length > 0;
-      return answer && answer.trim() !== "";
-    });
-  }, [questions, answers]);
+      if (!q.required) return true
+      const answer = answers[q.id]
+      if (Array.isArray(answer)) return answer.length > 0
+      return answer && answer.trim() !== ''
+    })
+  }, [questions, answers])
 
   const handleSubmit = () => {
     if (isComplete() && !disabled) {
-      onSubmit(answers);
+      onSubmit(answers)
     }
-  };
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={cn(
-        "bg-card border border-border rounded-xl p-4 space-y-4",
-        className
-      )}
+      className={cn('bg-card border border-border rounded-xl p-4 space-y-4', className)}
     >
       {questions.map((question, index) => (
         <QuestionField
@@ -99,26 +90,22 @@ export function GroupedQuestionCard({
         transition={{ delay: 0.2 }}
         className="flex justify-end pt-2"
       >
-        <Button
-          onClick={handleSubmit}
-          disabled={disabled || !isComplete()}
-          className="gap-2"
-        >
+        <Button onClick={handleSubmit} disabled={disabled || !isComplete()} className="gap-2">
           Continue
           <ChevronRight className="h-4 w-4" />
         </Button>
       </motion.div>
     </motion.div>
-  );
+  )
 }
 
 interface QuestionFieldProps {
-  question: GroupedQuestion;
-  value: string | string[];
-  onChange: (value: string | string[]) => void;
-  onToggle: (optionValue: string) => void;
-  disabled: boolean;
-  index: number;
+  question: GroupedQuestion
+  value: string | string[]
+  onChange: (value: string | string[]) => void
+  onToggle: (optionValue: string) => void
+  disabled: boolean
+  index: number
 }
 
 function QuestionField({
@@ -152,7 +139,7 @@ function QuestionField({
       )}
 
       {/* Render based on question type */}
-      {question.type === "multi_select" && question.options && (
+      {question.type === 'multi_select' && question.options && (
         <MultiSelectOptions
           options={question.options}
           selected={(value as string[]) || []}
@@ -161,7 +148,7 @@ function QuestionField({
         />
       )}
 
-      {question.type === "single_select" && question.options && (
+      {question.type === 'single_select' && question.options && (
         <SingleSelectOptions
           options={question.options}
           selected={value as string}
@@ -170,23 +157,23 @@ function QuestionField({
         />
       )}
 
-      {question.type === "text" && (
+      {question.type === 'text' && (
         <Textarea
           placeholder={question.placeholder}
-          value={(value as string) || ""}
+          value={(value as string) || ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className="min-h-[80px] resize-none"
         />
       )}
 
-      {question.type === "link" && (
+      {question.type === 'link' && (
         <div className="relative">
           <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="url"
-            placeholder={question.placeholder || "Paste link here..."}
-            value={(value as string) || ""}
+            placeholder={question.placeholder || 'Paste link here...'}
+            value={(value as string) || ''}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             className="pl-10"
@@ -194,26 +181,21 @@ function QuestionField({
         </div>
       )}
     </motion.div>
-  );
+  )
 }
 
 interface MultiSelectOptionsProps {
-  options: SelectOption[];
-  selected: string[];
-  onToggle: (value: string) => void;
-  disabled: boolean;
+  options: SelectOption[]
+  selected: string[]
+  onToggle: (value: string) => void
+  disabled: boolean
 }
 
-function MultiSelectOptions({
-  options,
-  selected,
-  onToggle,
-  disabled,
-}: MultiSelectOptionsProps) {
+function MultiSelectOptions({ options, selected, onToggle, disabled }: MultiSelectOptionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => {
-        const isSelected = selected.includes(option.value);
+        const isSelected = selected.includes(option.value)
 
         return (
           <button
@@ -221,55 +203,46 @@ function MultiSelectOptions({
             onClick={() => onToggle(option.value)}
             disabled={disabled}
             className={cn(
-              "relative flex items-center gap-2 px-3 py-2 rounded-lg border text-sm",
-              "transition-all duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+              'relative flex items-center gap-2 px-3 py-2 rounded-lg border text-sm',
+              'transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
               isSelected
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-background hover:border-primary/50",
-              disabled && "opacity-50 cursor-not-allowed"
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background hover:border-primary/50',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
             <div
               className={cn(
-                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
-                isSelected
-                  ? "border-primary bg-primary"
-                  : "border-muted-foreground/30"
+                'w-4 h-4 rounded border flex items-center justify-center shrink-0',
+                isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
               )}
             >
               {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
             </div>
             <span>{option.label}</span>
             {option.recommended && !isSelected && (
-              <span className="text-[10px] text-primary font-medium uppercase">
-                rec
-              </span>
+              <span className="text-[10px] text-primary font-medium uppercase">rec</span>
             )}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
 interface SingleSelectOptionsProps {
-  options: SelectOption[];
-  selected: string;
-  onChange: (value: string) => void;
-  disabled: boolean;
+  options: SelectOption[]
+  selected: string
+  onChange: (value: string) => void
+  disabled: boolean
 }
 
-function SingleSelectOptions({
-  options,
-  selected,
-  onChange,
-  disabled,
-}: SingleSelectOptionsProps) {
+function SingleSelectOptions({ options, selected, onChange, disabled }: SingleSelectOptionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => {
-        const isSelected = selected === option.value;
+        const isSelected = selected === option.value
 
         return (
           <button
@@ -277,49 +250,43 @@ function SingleSelectOptions({
             onClick={() => onChange(option.value)}
             disabled={disabled}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm",
-              "transition-all duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+              'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm',
+              'transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
               isSelected
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-background hover:border-primary/50",
-              disabled && "opacity-50 cursor-not-allowed"
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background hover:border-primary/50',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
             <div
               className={cn(
-                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
-                isSelected
-                  ? "border-primary bg-primary"
-                  : "border-muted-foreground/30"
+                'w-4 h-4 rounded-full border flex items-center justify-center shrink-0',
+                isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
               )}
             >
-              {isSelected && (
-                <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-              )}
+              {isSelected && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
             </div>
             <span>{option.label}</span>
             {option.recommended && !isSelected && (
-              <span className="text-[10px] text-primary font-medium uppercase">
-                rec
-              </span>
+              <span className="text-[10px] text-primary font-medium uppercase">rec</span>
             )}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
 /**
  * Quick options component (for binary choices)
  */
 interface QuickOptionsProps {
-  prompt?: string;
-  options: Array<{ label: string; value: string; recommended?: boolean }>;
-  onSelect: (value: string) => void;
-  disabled?: boolean;
-  className?: string;
+  prompt?: string
+  options: Array<{ label: string; value: string; recommended?: boolean }>
+  onSelect: (value: string) => void
+  disabled?: boolean
+  className?: string
 }
 
 export function QuickOptions({
@@ -334,11 +301,9 @@ export function QuickOptions({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={cn("space-y-2", className)}
+      className={cn('space-y-2', className)}
     >
-      {prompt && (
-        <p className="text-sm text-muted-foreground">{prompt}</p>
-      )}
+      {prompt && <p className="text-sm text-muted-foreground">{prompt}</p>}
       <div className="flex flex-wrap gap-2">
         {options.map((option, index) => (
           <motion.button
@@ -349,22 +314,20 @@ export function QuickOptions({
             onClick={() => onSelect(option.value)}
             disabled={disabled}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium",
-              "transition-all duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+              'flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium',
+              'transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
               option.recommended
-                ? "border-primary bg-primary/10 text-primary hover:bg-primary/20"
-                : "border-border bg-card hover:border-primary/50 hover:bg-muted/30",
-              disabled && "opacity-50 cursor-not-allowed"
+                ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20'
+                : 'border-border bg-card hover:border-primary/50 hover:bg-muted/30',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
             {option.label}
-            {option.recommended && (
-              <Sparkles className="h-3 w-3" />
-            )}
+            {option.recommended && <Sparkles className="h-3 w-3" />}
           </motion.button>
         ))}
       </div>
     </motion.div>
-  );
+  )
 }

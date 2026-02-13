@@ -279,7 +279,7 @@ describe('Freelancer & User Schemas', () => {
     it('should accept valid client request', () => {
       const result = onboardingRequestSchema.safeParse({
         type: 'client',
-        data: { companyName: 'Acme' },
+        data: { brand: { name: 'Acme' } },
       })
       expect(result.success).toBe(true)
     })

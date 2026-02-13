@@ -1,20 +1,14 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -23,16 +17,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoadingSpinner } from "@/components/shared/loading";
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { LoadingSpinner } from '@/components/shared/loading'
 import {
   Plus,
   Trash2,
@@ -47,69 +41,69 @@ import {
   ExternalLink,
   Youtube,
   X,
-} from "lucide-react";
+} from 'lucide-react'
 import {
   STYLE_AXES,
   VIDEO_STYLE_TAGS,
   VIDEO_DELIVERABLE_TYPES,
   type StyleAxis,
-} from "@/lib/constants/reference-libraries";
-import { StatCard } from "@/components/admin/stat-card";
-import { cn } from "@/lib/utils";
+} from '@/lib/constants/reference-libraries'
+import { StatCard } from '@/components/admin/stat-card'
+import { cn } from '@/lib/utils'
 
 interface VideoReference {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  videoUrl: string;
-  videoThumbnailUrl: string | null;
-  videoDuration: string | null;
-  videoTags: string[];
-  deliverableType: string;
-  styleAxis: string;
-  featuredOrder: number;
-  isActive: boolean;
-  usageCount: number;
-  createdAt: string;
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  videoUrl: string
+  videoThumbnailUrl: string | null
+  videoDuration: string | null
+  videoTags: string[]
+  deliverableType: string
+  styleAxis: string
+  featuredOrder: number
+  isActive: boolean
+  usageCount: number
+  createdAt: string
 }
 
 const defaultFormState = {
-  videoUrl: "",
-  name: "",
-  description: "",
-  styleAxis: "bold" as StyleAxis,
-  deliverableType: "launch_video",
+  videoUrl: '',
+  name: '',
+  description: '',
+  styleAxis: 'bold' as StyleAxis,
+  deliverableType: 'launch_video',
   videoTags: [] as string[],
-  videoDuration: "",
+  videoDuration: '',
   featuredOrder: 0,
-};
+}
 
 // Tag selector component
 function TagSelector({
   selected,
   onChange,
 }: {
-  selected: string[];
-  onChange: (tags: string[]) => void;
+  selected: string[]
+  onChange: (tags: string[]) => void
 }) {
-  const [customTag, setCustomTag] = useState("");
+  const [customTag, setCustomTag] = useState('')
 
   const toggleTag = (tag: string) => {
     if (selected.includes(tag)) {
-      onChange(selected.filter((t) => t !== tag));
+      onChange(selected.filter((t) => t !== tag))
     } else {
-      onChange([...selected, tag]);
+      onChange([...selected, tag])
     }
-  };
+  }
 
   const addCustomTag = () => {
-    const tag = customTag.trim().toLowerCase().replace(/\s+/g, "-");
+    const tag = customTag.trim().toLowerCase().replace(/\s+/g, '-')
     if (tag && !selected.includes(tag)) {
-      onChange([...selected, tag]);
-      setCustomTag("");
+      onChange([...selected, tag])
+      setCustomTag('')
     }
-  };
+  }
 
   return (
     <div className="space-y-3">
@@ -117,7 +111,7 @@ function TagSelector({
         {VIDEO_STYLE_TAGS.map((tag) => (
           <Badge
             key={tag}
-            variant={selected.includes(tag) ? "default" : "outline"}
+            variant={selected.includes(tag) ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => toggleTag(tag)}
           >
@@ -126,8 +120,7 @@ function TagSelector({
         ))}
       </div>
       {/* Custom tags */}
-      {selected.filter((t) => !(VIDEO_STYLE_TAGS as readonly string[]).includes(t)).length >
-        0 && (
+      {selected.filter((t) => !(VIDEO_STYLE_TAGS as readonly string[]).includes(t)).length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selected
             .filter((t) => !(VIDEO_STYLE_TAGS as readonly string[]).includes(t))
@@ -149,58 +142,45 @@ function TagSelector({
           value={customTag}
           onChange={(e) => setCustomTag(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addCustomTag();
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              addCustomTag()
             }
           }}
           className="flex-1"
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addCustomTag}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={addCustomTag}>
           Add
         </Button>
       </div>
     </div>
-  );
+  )
 }
 
 // Extract YouTube video ID from various URL formats
 function extractVideoId(url: string | null | undefined): string | null {
-  if (!url) return null;
+  if (!url) return null
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
     /^([a-zA-Z0-9_-]{11})$/, // Just the ID
-  ];
+  ]
   for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+    const match = url.match(pattern)
+    if (match) return match[1]
   }
-  return null;
+  return null
 }
 
 // YouTube embed modal
-function VideoPreviewModal({
-  video,
-  onClose,
-}: {
-  video: VideoReference;
-  onClose: () => void;
-}) {
-  const videoId = extractVideoId(video.videoUrl);
+function VideoPreviewModal({ video, onClose }: { video: VideoReference; onClose: () => void }) {
+  const videoId = extractVideoId(video.videoUrl)
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>{video.name}</DialogTitle>
-          {video.description && (
-            <DialogDescription>{video.description}</DialogDescription>
-          )}
+          {video.description && <DialogDescription>{video.description}</DialogDescription>}
         </DialogHeader>
         <div className="aspect-video w-full bg-black">
           {videoId ? (
@@ -238,7 +218,7 @@ function VideoPreviewModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(video.videoUrl, "_blank")}
+              onClick={() => window.open(video.videoUrl, '_blank')}
               className="gap-1.5"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -248,252 +228,235 @@ function VideoPreviewModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export default function VideoReferencesPage() {
-  const [videos, setVideos] = useState<VideoReference[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [tagFilter, setTagFilter] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
-  const [editingVideo, setEditingVideo] = useState<VideoReference | null>(null);
-  const [formState, setFormState] = useState(defaultFormState);
-  const [previewVideo, setPreviewVideo] = useState<VideoReference | null>(null);
-  const [activeTab, setActiveTab] = useState("browse");
+  const [videos, setVideos] = useState<VideoReference[]>([])
+  const [allTags, setAllTags] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [tagFilter, setTagFilter] = useState('all')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false)
+  const [editingVideo, setEditingVideo] = useState<VideoReference | null>(null)
+  const [formState, setFormState] = useState(defaultFormState)
+  const [previewVideo, setPreviewVideo] = useState<VideoReference | null>(null)
+  const [activeTab, setActiveTab] = useState('browse')
 
   // Bulk import state
-  const [bulkUrls, setBulkUrls] = useState("");
-  const [bulkTags, setBulkTags] = useState<string[]>([]);
-  const [bulkStyleAxis, setBulkStyleAxis] = useState<StyleAxis>("bold");
-  const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [bulkUrls, setBulkUrls] = useState('')
+  const [bulkTags, setBulkTags] = useState<string[]>([])
+  const [bulkStyleAxis, setBulkStyleAxis] = useState<StyleAxis>('bold')
+  const [isBulkImporting, setIsBulkImporting] = useState(false)
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
+    fetchVideos()
+  }, [])
 
   const fetchVideos = async () => {
     try {
-      const response = await fetch("/api/admin/video-references");
+      const response = await fetch('/api/admin/video-references')
       if (response.ok) {
-        const result = await response.json();
-        setVideos(result.data?.videos || []);
-        setAllTags(result.data?.tags || []);
+        const result = await response.json()
+        setVideos(result.data?.videos || [])
+        setAllTags(result.data?.tags || [])
       }
     } catch (error) {
-      console.error("Failed to fetch video references:", error);
-      toast.error("Failed to load video references");
+      console.error('Failed to fetch video references:', error)
+      toast.error('Failed to load video references')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const openCreateDialog = () => {
-    setEditingVideo(null);
-    setFormState(defaultFormState);
-    setDialogOpen(true);
-  };
+    setEditingVideo(null)
+    setFormState(defaultFormState)
+    setDialogOpen(true)
+  }
 
   const openEditDialog = (video: VideoReference) => {
-    setEditingVideo(video);
+    setEditingVideo(video)
     setFormState({
       videoUrl: video.videoUrl,
       name: video.name,
-      description: video.description || "",
+      description: video.description || '',
       styleAxis: video.styleAxis as StyleAxis,
       deliverableType: video.deliverableType,
       videoTags: video.videoTags || [],
-      videoDuration: video.videoDuration || "",
+      videoDuration: video.videoDuration || '',
       featuredOrder: video.featuredOrder,
-    });
-    setDialogOpen(true);
-  };
+    })
+    setDialogOpen(true)
+  }
 
   const handleSave = async () => {
     if (!formState.videoUrl) {
-      toast.error("Please provide a YouTube URL");
-      return;
+      toast.error('Please provide a YouTube URL')
+      return
     }
 
-    setIsSaving(true);
+    setIsSaving(true)
     try {
       if (editingVideo) {
-        const response = await fetch("/api/admin/video-references", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/admin/video-references', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: editingVideo.id,
             ...formState,
           }),
-        });
+        })
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error?.message || "Failed to update");
+          const error = await response.json()
+          throw new Error(error.error?.message || 'Failed to update')
         }
 
-        const result = await response.json();
-        setVideos((prev) =>
-          prev.map((v) => (v.id === editingVideo.id ? result.data.video : v))
-        );
-        toast.success("Video reference updated!");
+        const result = await response.json()
+        setVideos((prev) => prev.map((v) => (v.id === editingVideo.id ? result.data.video : v)))
+        toast.success('Video reference updated!')
       } else {
-        const response = await fetch("/api/admin/video-references", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/admin/video-references', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formState),
-        });
+        })
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error?.message || "Failed to create");
+          const error = await response.json()
+          throw new Error(error.error?.message || 'Failed to create')
         }
 
-        const result = await response.json();
-        setVideos((prev) => [result.data.video, ...prev]);
-        toast.success("Video reference added!");
+        const result = await response.json()
+        setVideos((prev) => [result.data.video, ...prev])
+        toast.success('Video reference added!')
       }
 
-      setDialogOpen(false);
-      setFormState(defaultFormState);
-      setEditingVideo(null);
+      setDialogOpen(false)
+      setFormState(defaultFormState)
+      setEditingVideo(null)
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to save video reference"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to save video reference')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id);
+    setDeletingId(id)
     try {
       const response = await fetch(`/api/admin/video-references?id=${id}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
 
-      if (!response.ok) throw new Error("Failed to delete");
+      if (!response.ok) throw new Error('Failed to delete')
 
-      setVideos((prev) => prev.filter((v) => v.id !== id));
-      toast.success("Video reference deleted");
+      setVideos((prev) => prev.filter((v) => v.id !== id))
+      toast.success('Video reference deleted')
     } catch {
-      toast.error("Failed to delete video reference");
+      toast.error('Failed to delete video reference')
     } finally {
-      setDeletingId(null);
+      setDeletingId(null)
     }
-  };
+  }
 
   const handleToggleActive = async (video: VideoReference) => {
-    setTogglingId(video.id);
+    setTogglingId(video.id)
     try {
-      const response = await fetch("/api/admin/video-references", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/video-references', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: video.id, isActive: !video.isActive }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to toggle");
+      if (!response.ok) throw new Error('Failed to toggle')
 
-      const result = await response.json();
-      setVideos((prev) =>
-        prev.map((v) => (v.id === video.id ? result.data.video : v))
-      );
-      toast.success(
-        result.data.video.isActive ? "Video activated" : "Video deactivated"
-      );
+      const result = await response.json()
+      setVideos((prev) => prev.map((v) => (v.id === video.id ? result.data.video : v)))
+      toast.success(result.data.video.isActive ? 'Video activated' : 'Video deactivated')
     } catch {
-      toast.error("Failed to toggle status");
+      toast.error('Failed to toggle status')
     } finally {
-      setTogglingId(null);
+      setTogglingId(null)
     }
-  };
+  }
 
   const handleBulkImport = async () => {
     const urls = bulkUrls
-      .split("\n")
+      .split('\n')
       .map((url) => url.trim())
-      .filter((url) => url.length > 0);
+      .filter((url) => url.length > 0)
 
     if (urls.length === 0) {
-      toast.error("Please enter at least one YouTube URL");
-      return;
+      toast.error('Please enter at least one YouTube URL')
+      return
     }
 
-    setIsBulkImporting(true);
+    setIsBulkImporting(true)
     try {
-      const response = await fetch("/api/admin/video-references/bulk-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/video-references/bulk-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           videos: urls.map((url) => ({ url })),
           defaultTags: bulkTags,
           defaultStyleAxis: bulkStyleAxis,
-          defaultDeliverableType: "launch_video",
+          defaultDeliverableType: 'launch_video',
         }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || "Failed to import");
+        const error = await response.json()
+        throw new Error(error.error?.message || 'Failed to import')
       }
 
-      const result = await response.json();
-      const { summary } = result.data;
+      const result = await response.json()
+      const { summary } = result.data
 
       toast.success(
         `Imported ${summary.imported} videos. ${summary.skipped} skipped, ${summary.failed} failed.`
-      );
+      )
 
       // Refresh the list
-      fetchVideos();
-      setBulkDialogOpen(false);
-      setBulkUrls("");
-      setBulkTags([]);
+      fetchVideos()
+      setBulkDialogOpen(false)
+      setBulkUrls('')
+      setBulkTags([])
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to import videos"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to import videos')
     } finally {
-      setIsBulkImporting(false);
+      setIsBulkImporting(false)
     }
-  };
+  }
 
   const filteredVideos = videos.filter((video) => {
     const matchesSearch =
-      searchTerm === "" ||
+      searchTerm === '' ||
       video.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.videoTags?.some((t) =>
-        t.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      video.videoTags?.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase()))
 
-    const matchesTag =
-      tagFilter === "all" || video.videoTags?.includes(tagFilter);
+    const matchesTag = tagFilter === 'all' || video.videoTags?.includes(tagFilter)
 
-    return matchesSearch && matchesTag;
-  });
+    return matchesSearch && matchesTag
+  })
 
   const stats = {
     total: videos.length,
     active: videos.filter((v) => v.isActive).length,
     tagsCount: allTags.length,
     totalUsage: videos.reduce((sum, v) => sum + v.usageCount, 0),
-  };
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Video References
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Video References</h1>
           <p className="text-muted-foreground">
             Manage video style references for launch videos and video ads
           </p>
@@ -510,8 +473,7 @@ export default function VideoReferencesPage() {
               <DialogHeader>
                 <DialogTitle>Bulk Import YouTube Videos</DialogTitle>
                 <DialogDescription>
-                  Paste YouTube URLs (one per line) to import multiple videos at
-                  once.
+                  Paste YouTube URLs (one per line) to import multiple videos at once.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -527,8 +489,7 @@ https://youtu.be/xyz789
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {bulkUrls.split("\n").filter((u) => u.trim()).length} URLs
-                    entered
+                    {bulkUrls.split('\n').filter((u) => u.trim()).length} URLs entered
                   </p>
                 </div>
 
@@ -557,10 +518,7 @@ https://youtu.be/xyz789
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setBulkDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button onClick={handleBulkImport} disabled={isBulkImporting}>
@@ -590,14 +548,12 @@ https://youtu.be/xyz789
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingVideo
-                    ? "Edit Video Reference"
-                    : "Add Video Reference"}
+                  {editingVideo ? 'Edit Video Reference' : 'Add Video Reference'}
                 </DialogTitle>
                 <DialogDescription>
                   {editingVideo
-                    ? "Update the video reference details"
-                    : "Add a YouTube video as a style reference for launch videos"}
+                    ? 'Update the video reference details'
+                    : 'Add a YouTube video as a style reference for launch videos'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -607,9 +563,7 @@ https://youtu.be/xyz789
                     <Input
                       id="videoUrl"
                       value={formState.videoUrl}
-                      onChange={(e) =>
-                        setFormState({ ...formState, videoUrl: e.target.value })
-                      }
+                      onChange={(e) => setFormState({ ...formState, videoUrl: e.target.value })}
                       placeholder="https://www.youtube.com/watch?v=..."
                       className="flex-1"
                     />
@@ -618,9 +572,7 @@ https://youtu.be/xyz789
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() =>
-                          window.open(formState.videoUrl, "_blank")
-                        }
+                        onClick={() => window.open(formState.videoUrl, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -631,7 +583,7 @@ https://youtu.be/xyz789
                       {(() => {
                         const videoId = formState.videoUrl.match(
                           /(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-                        )?.[1];
+                        )?.[1]
                         return videoId ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -641,11 +593,9 @@ https://youtu.be/xyz789
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-muted-foreground text-sm">
-                              Invalid URL
-                            </p>
+                            <p className="text-muted-foreground text-sm">Invalid URL</p>
                           </div>
-                        );
+                        )
                       })()}
                     </div>
                   )}
@@ -657,9 +607,7 @@ https://youtu.be/xyz789
                     <Input
                       id="name"
                       value={formState.name}
-                      onChange={(e) =>
-                        setFormState({ ...formState, name: e.target.value })
-                      }
+                      onChange={(e) => setFormState({ ...formState, name: e.target.value })}
                       placeholder="e.g., Cinematic Product Launch"
                     />
                   </div>
@@ -710,9 +658,7 @@ https://youtu.be/xyz789
                       <SelectContent>
                         {VIDEO_DELIVERABLE_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type
-                              .replace(/_/g, " ")
-                              .replace(/\b\w/g, (c) => c.toUpperCase())}
+                            {type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -747,9 +693,7 @@ https://youtu.be/xyz789
                   <Label>Tags</Label>
                   <TagSelector
                     selected={formState.videoTags}
-                    onChange={(tags) =>
-                      setFormState({ ...formState, videoTags: tags })
-                    }
+                    onChange={(tags) => setFormState({ ...formState, videoTags: tags })}
                   />
                 </div>
 
@@ -766,9 +710,7 @@ https://youtu.be/xyz789
                       })
                     }
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Lower = shown first when featured
-                  </p>
+                  <p className="text-xs text-muted-foreground">Lower = shown first when featured</p>
                 </div>
               </div>
               <DialogFooter>
@@ -776,13 +718,7 @@ https://youtu.be/xyz789
                   Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? (
-                    <LoadingSpinner size="sm" />
-                  ) : editingVideo ? (
-                    "Update"
-                  ) : (
-                    "Add"
-                  )}
+                  {isSaving ? <LoadingSpinner size="sm" /> : editingVideo ? 'Update' : 'Add'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -866,9 +802,9 @@ https://youtu.be/xyz789
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">No Videos Found</h2>
                 <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                  {searchTerm || tagFilter !== "all"
-                    ? "Try adjusting your filters to see more results."
-                    : "Add video references that will be shown to clients for launch videos and video ads."}
+                  {searchTerm || tagFilter !== 'all'
+                    ? 'Try adjusting your filters to see more results.'
+                    : 'Add video references that will be shown to clients for launch videos and video ads.'}
                 </p>
                 <Button onClick={openCreateDialog}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -881,10 +817,7 @@ https://youtu.be/xyz789
               {filteredVideos.map((video) => (
                 <Card
                   key={video.id}
-                  className={cn(
-                    "overflow-hidden group",
-                    !video.isActive && "opacity-60"
-                  )}
+                  className={cn('overflow-hidden group', !video.isActive && 'opacity-60')}
                 >
                   <div
                     className="aspect-video relative bg-muted cursor-pointer"
@@ -897,12 +830,10 @@ https://youtu.be/xyz789
                       className="object-cover w-full h-full"
                       onError={(e) => {
                         // Try fallback thumbnail
-                        const img = e.target as HTMLImageElement;
-                        const videoId = video.videoUrl.match(
-                          /v=([a-zA-Z0-9_-]{11})/
-                        )?.[1];
-                        if (videoId && !img.src.includes("hqdefault")) {
-                          img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                        const img = e.target as HTMLImageElement
+                        const videoId = video.videoUrl.match(/v=([a-zA-Z0-9_-]{11})/)?.[1]
+                        if (videoId && !img.src.includes('hqdefault')) {
+                          img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
                         }
                       }}
                     />
@@ -928,12 +859,9 @@ https://youtu.be/xyz789
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-sm truncate">
-                          {video.name}
-                        </h3>
+                        <h3 className="font-medium text-sm truncate">{video.name}</h3>
                         <p className="text-xs text-muted-foreground capitalize">
-                          {video.styleAxis} •{" "}
-                          {video.deliverableType.replace(/_/g, " ")}
+                          {video.styleAxis} • {video.deliverableType.replace(/_/g, ' ')}
                         </p>
                       </div>
                       <div className="flex gap-0.5 ml-2">
@@ -979,19 +907,12 @@ https://youtu.be/xyz789
                     {video.videoTags && video.videoTags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {video.videoTags.slice(0, 3).map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="text-[10px] px-1.5 py-0"
-                          >
+                          <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
                             {tag}
                           </Badge>
                         ))}
                         {video.videoTags.length > 3 && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1.5 py-0"
-                          >
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             +{video.videoTags.length - 3}
                           </Badge>
                         )}
@@ -1010,8 +931,7 @@ https://youtu.be/xyz789
             <CardHeader>
               <CardTitle>Videos by Tag</CardTitle>
               <CardDescription>
-                Click a tag to filter videos. Tags help match videos to user
-                requests.
+                Click a tag to filter videos. Tags help match videos to user requests.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1022,17 +942,15 @@ https://youtu.be/xyz789
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {allTags.map((tag) => {
-                    const count = videos.filter((v) =>
-                      v.videoTags?.includes(tag)
-                    ).length;
+                    const count = videos.filter((v) => v.videoTags?.includes(tag)).length
                     return (
                       <Button
                         key={tag}
-                        variant={tagFilter === tag ? "default" : "outline"}
+                        variant={tagFilter === tag ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => {
-                          setTagFilter(tagFilter === tag ? "all" : tag);
-                          setActiveTab("browse");
+                          setTagFilter(tagFilter === tag ? 'all' : tag)
+                          setActiveTab('browse')
                         }}
                       >
                         {tag}
@@ -1040,7 +958,7 @@ https://youtu.be/xyz789
                           {count}
                         </Badge>
                       </Button>
-                    );
+                    )
                   })}
                 </div>
               )}
@@ -1051,11 +969,8 @@ https://youtu.be/xyz789
 
       {/* Video Preview Modal */}
       {previewVideo && (
-        <VideoPreviewModal
-          video={previewVideo}
-          onClose={() => setPreviewVideo(null)}
-        />
+        <VideoPreviewModal video={previewVideo} onClose={() => setPreviewVideo(null)} />
       )}
     </div>
-  );
+  )
 }

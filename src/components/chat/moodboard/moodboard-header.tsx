@@ -1,16 +1,16 @@
-"use client";
+'use client'
 
-import { motion } from "framer-motion";
-import { Trash2, ChevronDown, ChevronUp, Palette } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { motion } from 'framer-motion'
+import { Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface MoodboardHeaderProps {
-  itemCount: number;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-  onClearAll?: () => void;
-  className?: string;
+  itemCount: number
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
+  onClearAll?: () => void
+  className?: string
 }
 
 export function MoodboardHeader({
@@ -21,7 +21,7 @@ export function MoodboardHeader({
   className,
 }: MoodboardHeaderProps) {
   return (
-    <div className={cn("flex items-center justify-between", className)}>
+    <div className={cn('flex items-center justify-between', className)}>
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
           <Palette className="h-4 w-4 text-primary" />
@@ -29,9 +29,7 @@ export function MoodboardHeader({
         <div>
           <h3 className="text-sm font-semibold text-foreground">Moodboard</h3>
           <p className="text-xs text-muted-foreground">
-            {itemCount === 0
-              ? "No items yet"
-              : `${itemCount} item${itemCount !== 1 ? "s" : ""}`}
+            {itemCount === 0 ? 'No items yet' : `${itemCount} item${itemCount !== 1 ? 's' : ''}`}
           </p>
         </div>
       </div>
@@ -54,7 +52,7 @@ export function MoodboardHeader({
             size="icon"
             className="h-7 w-7 text-muted-foreground"
             onClick={onToggleCollapse}
-            aria-label={isCollapsed ? "Expand moodboard" : "Collapse moodboard"}
+            aria-label={isCollapsed ? 'Expand moodboard' : 'Collapse moodboard'}
           >
             {isCollapsed ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -65,15 +63,15 @@ export function MoodboardHeader({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 interface MoodboardSectionHeaderProps {
-  title: string;
-  itemCount: number;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-  className?: string;
+  title: string
+  itemCount: number
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
+  className?: string
 }
 
 export function MoodboardSectionHeader({
@@ -87,8 +85,8 @@ export function MoodboardSectionHeader({
     <button
       onClick={onToggleCollapse}
       className={cn(
-        "flex items-center justify-between w-full py-2",
-        "text-left hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors",
+        'flex items-center justify-between w-full py-2',
+        'text-left hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors',
         className
       )}
     >
@@ -110,5 +108,5 @@ export function MoodboardSectionHeader({
         <ChevronUp className="h-3 w-3 text-muted-foreground" />
       )}
     </button>
-  );
+  )
 }

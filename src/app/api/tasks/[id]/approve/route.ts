@@ -1,125 +1,107 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
-import { config } from "@/lib/config";
-import { logger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { tasks, users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { notify } from '@/lib/notifications'
+import { config } from '@/lib/config'
+import { logger } from '@/lib/logger'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await params
 
     // Get the task
-    const taskResult = await db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
+    const taskResult = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
 
     if (!taskResult.length) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound('Task')
     }
 
-    const task = taskResult[0];
+    const task = taskResult[0]
 
     // Only the client who owns the task can approve it
     if (task.clientId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      throw Errors.forbidden()
     }
 
     // Task must be in IN_REVIEW status to be approved
-    if (task.status !== "IN_REVIEW") {
-      return NextResponse.json(
-        { error: "Task must be in review to approve" },
-        { status: 400 }
-      );
+    if (task.status !== 'IN_REVIEW') {
+      throw Errors.badRequest('Task must be in review to approve')
     }
 
     // Update task status to COMPLETED
     await db
       .update(tasks)
       .set({
-        status: "COMPLETED",
+        status: 'COMPLETED',
         completedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, id));
+      .where(eq(tasks.id, id))
 
     // Send email notifications
     try {
-      const { sendEmail, emailTemplates } = await import("@/lib/notifications/email");
+      const { sendEmail, emailTemplates } = await import('@/lib/notifications/email')
 
       // Get client details
       const [clientUser] = await db
         .select({ name: users.name, email: users.email })
         .from(users)
         .where(eq(users.id, session.user.id))
-        .limit(1);
+        .limit(1)
 
       // Email client: task complete confirmation
       if (clientUser?.email) {
         const emailData = emailTemplates.taskApprovedForClient(
-          clientUser.name || "there",
+          clientUser.name || 'there',
           task.title,
           `${config.app.url}/dashboard/designs`
-        );
-        await sendEmail({ to: clientUser.email, subject: emailData.subject, html: emailData.html });
+        )
+        await sendEmail({ to: clientUser.email, subject: emailData.subject, html: emailData.html })
       }
 
       // Notify + email freelancer: work approved
       if (task.freelancerId) {
         await notify({
           userId: task.freelancerId,
-          type: "TASK_COMPLETED",
-          title: "Task Approved",
+          type: 'TASK_COMPLETED',
+          title: 'Task Approved',
           content: `Your work on "${task.title}" has been approved by the client!`,
           taskId: task.id,
           taskUrl: `${config.app.url}/portal/tasks/${task.id}`,
           additionalData: { taskTitle: task.title },
-        });
+        })
 
         const [freelancerUser] = await db
           .select({ name: users.name, email: users.email })
           .from(users)
           .where(eq(users.id, task.freelancerId))
-          .limit(1);
+          .limit(1)
 
         if (freelancerUser?.email) {
           const emailData = emailTemplates.taskApprovedForFreelancer(
-            freelancerUser.name || "there",
+            freelancerUser.name || 'there',
             task.title,
             task.creditsUsed
-          );
-          await sendEmail({ to: freelancerUser.email, subject: emailData.subject, html: emailData.html });
+          )
+          await sendEmail({
+            to: freelancerUser.email,
+            subject: emailData.subject,
+            html: emailData.html,
+          })
         }
       }
     } catch (error) {
-      logger.error({ error }, "Failed to send approval notifications");
+      logger.error({ error }, 'Failed to send approval notifications')
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
-      message: "Task approved and marked as completed",
-    });
-  } catch (error) {
-    logger.error({ error }, "Task approval error");
-    return NextResponse.json(
-      { error: "Failed to approve task" },
-      { status: 500 }
-    );
-  }
+      message: 'Task approved and marked as completed',
+    })
+  })
 }

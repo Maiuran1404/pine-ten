@@ -1,14 +1,14 @@
-import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
-import { afterEach, vi } from "vitest";
+import '@testing-library/jest-dom/vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
 
 // Cleanup after each test
 afterEach(() => {
-  cleanup();
-});
+  cleanup()
+})
 
 // Mock Next.js router
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -17,20 +17,20 @@ vi.mock("next/navigation", () => ({
     refresh: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => "/",
+  usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
   useParams: () => ({}),
-}));
+}))
 
 // Mock Next.js Image component
-vi.mock("next/image", () => ({
+vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }: { src: string; alt: string }) => (
     <img src={src} alt={alt} {...props} />
   ),
-}));
+}))
 
 // Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
@@ -42,30 +42,30 @@ Object.defineProperty(window, "matchMedia", {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-});
+})
 
 // Mock IntersectionObserver
 class MockIntersectionObserver {
-  observe = vi.fn();
-  disconnect = vi.fn();
-  unobserve = vi.fn();
+  observe = vi.fn()
+  disconnect = vi.fn()
+  unobserve = vi.fn()
 }
 
-Object.defineProperty(window, "IntersectionObserver", {
+Object.defineProperty(window, 'IntersectionObserver', {
   writable: true,
   configurable: true,
   value: MockIntersectionObserver,
-});
+})
 
 // Mock ResizeObserver
 class MockResizeObserver {
-  observe = vi.fn();
-  disconnect = vi.fn();
-  unobserve = vi.fn();
+  observe = vi.fn()
+  disconnect = vi.fn()
+  unobserve = vi.fn()
 }
 
-Object.defineProperty(window, "ResizeObserver", {
+Object.defineProperty(window, 'ResizeObserver', {
   writable: true,
   configurable: true,
   value: MockResizeObserver,
-});
+})

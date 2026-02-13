@@ -1,31 +1,17 @@
-"use client";
+'use client'
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from '@/components/ui/accordion'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -37,203 +23,203 @@ import {
   ExternalLink,
   Copy,
   Terminal,
-  Image,
+  Image as ImageIcon,
   AlertTriangle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface TestResult {
-  id: string;
-  status: string;
-  errorMessage: string | null;
-  stackTrace: string | null;
+  id: string
+  status: string
+  errorMessage: string | null
+  stackTrace: string | null
   findings: Array<{
-    type: string;
-    severity: string;
-    message: string;
-    location?: string;
-  }> | null;
-  screenshots: string[];
-  consoleErrors: string[];
+    type: string
+    severity: string
+    message: string
+    location?: string
+  }> | null
+  screenshots: string[]
+  consoleErrors: string[]
   networkErrors: Array<{
-    url: string;
-    status: number;
-    message: string;
-  }> | null;
-  startedAt: string | null;
-  completedAt: string | null;
-  durationMs: number | null;
+    url: string
+    status: number
+    message: string
+  }> | null
+  startedAt: string | null
+  completedAt: string | null
+  durationMs: number | null
   test: {
-    id: string;
-    name: string;
-    description: string | null;
-    category: string;
-    testType: string;
-    severity: string;
-  } | null;
+    id: string
+    name: string
+    description: string | null
+    category: string
+    testType: string
+    severity: string
+  } | null
 }
 
 interface TestRun {
-  id: string;
-  status: string;
-  targetUrl: string;
-  environment: string;
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  errorTests: number;
-  skippedTests: number;
-  score: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-  durationMs: number | null;
-  createdAt: string;
+  id: string
+  status: string
+  targetUrl: string
+  environment: string
+  totalTests: number
+  passedTests: number
+  failedTests: number
+  errorTests: number
+  skippedTests: number
+  score: string | null
+  startedAt: string | null
+  completedAt: string | null
+  durationMs: number | null
+  createdAt: string
   metadata: {
-    browserInfo?: string;
-    viewport?: { width: number; height: number };
-    notes?: string;
-  } | null;
+    browserInfo?: string
+    viewport?: { width: number; height: number }
+    notes?: string
+  } | null
 }
 
 export default function RunDetailsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const runId = params.runId as string;
+  const params = useParams()
+  const router = useRouter()
+  const runId = params.runId as string
 
-  const [run, setRun] = useState<TestRun | null>(null);
-  const [results, setResults] = useState<TestResult[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionPlan, setExecutionPlan] = useState<unknown[] | null>(null);
+  const [run, setRun] = useState<TestRun | null>(null)
+  const [results, setResults] = useState<TestResult[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isExecuting, setIsExecuting] = useState(false)
+  const [executionPlan, setExecutionPlan] = useState<unknown[] | null>(null)
 
   const fetchRunDetails = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/security/runs?id=${runId}`);
+      const res = await fetch(`/api/admin/security/runs?id=${runId}`)
       if (res.ok) {
-        const data = await res.json();
-        setRun(data.run);
-        setResults(data.results || []);
+        const data = await res.json()
+        setRun(data.run)
+        setResults(data.results || [])
       }
     } catch (error) {
-      console.error("Failed to fetch run details:", error);
+      console.error('Failed to fetch run details:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [runId]);
+  }, [runId])
 
   useEffect(() => {
-    fetchRunDetails();
-  }, [fetchRunDetails]);
+    fetchRunDetails()
+  }, [fetchRunDetails])
 
   // Auto-refresh if running
   useEffect(() => {
-    if (run?.status === "RUNNING") {
-      const interval = setInterval(fetchRunDetails, 5000);
-      return () => clearInterval(interval);
+    if (run?.status === 'RUNNING') {
+      const interval = setInterval(fetchRunDetails, 5000)
+      return () => clearInterval(interval)
     }
-  }, [run?.status, fetchRunDetails]);
+  }, [run?.status, fetchRunDetails])
 
   const handleStartExecution = async () => {
-    setIsExecuting(true);
+    setIsExecuting(true)
     try {
-      const res = await fetch("/api/admin/security/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/security/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ runId }),
-      });
+      })
       if (res.ok) {
-        const data = await res.json();
-        setExecutionPlan(data.executionPlan);
-        await fetchRunDetails();
+        const data = await res.json()
+        setExecutionPlan(data.executionPlan)
+        await fetchRunDetails()
       }
     } catch (error) {
-      console.error("Failed to start execution:", error);
+      console.error('Failed to start execution:', error)
     }
-    setIsExecuting(false);
-  };
+    setIsExecuting(false)
+  }
 
   const handleCompleteRun = async () => {
     try {
-      const res = await fetch("/api/admin/security/execute/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/security/execute/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ runId }),
-      });
+      })
       if (res.ok) {
-        await fetchRunDetails();
+        await fetchRunDetails()
       }
     } catch (error) {
-      console.error("Failed to complete run:", error);
+      console.error('Failed to complete run:', error)
     }
-  };
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "PASSED":
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-      case "FAILED":
-        return <XCircle className="h-5 w-5 text-red-600" />;
-      case "ERROR":
-        return <AlertCircle className="h-5 w-5 text-orange-600" />;
-      case "RUNNING":
-        return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />;
-      case "PENDING":
-        return <Clock className="h-5 w-5 text-gray-400" />;
+      case 'PASSED':
+        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+      case 'FAILED':
+        return <XCircle className="h-5 w-5 text-red-600" />
+      case 'ERROR':
+        return <AlertCircle className="h-5 w-5 text-orange-600" />
+      case 'RUNNING':
+        return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />
+      case 'PENDING':
+        return <Clock className="h-5 w-5 text-gray-400" />
       default:
-        return <AlertTriangle className="h-5 w-5 text-gray-400" />;
+        return <AlertTriangle className="h-5 w-5 text-gray-400" />
     }
-  };
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "COMPLETED":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case "RUNNING":
-        return <Badge className="bg-blue-100 text-blue-800">Running</Badge>;
-      case "PENDING":
-        return <Badge className="bg-gray-100 text-gray-800">Pending</Badge>;
-      case "FAILED":
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      case "CANCELLED":
-        return <Badge className="bg-gray-100 text-gray-600">Cancelled</Badge>;
+      case 'COMPLETED':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>
+      case 'RUNNING':
+        return <Badge className="bg-blue-100 text-blue-800">Running</Badge>
+      case 'PENDING':
+        return <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
+      case 'FAILED':
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>
+      case 'CANCELLED':
+        return <Badge className="bg-gray-100 text-gray-600">Cancelled</Badge>
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge>{status}</Badge>
     }
-  };
+  }
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
-      case "critical":
-        return <Badge className="bg-red-100 text-red-800">Critical</Badge>;
-      case "high":
-        return <Badge className="bg-orange-100 text-orange-800">High</Badge>;
-      case "medium":
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
-      case "low":
-        return <Badge className="bg-gray-100 text-gray-800">Low</Badge>;
+      case 'critical':
+        return <Badge className="bg-red-100 text-red-800">Critical</Badge>
+      case 'high':
+        return <Badge className="bg-orange-100 text-orange-800">High</Badge>
+      case 'medium':
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
+      case 'low':
+        return <Badge className="bg-gray-100 text-gray-800">Low</Badge>
       default:
-        return <Badge>{severity}</Badge>;
+        return <Badge>{severity}</Badge>
     }
-  };
+  }
 
   const formatDuration = (ms: number | null) => {
-    if (!ms) return "-";
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
-  };
+    if (!ms) return '-'
+    if (ms < 1000) return `${ms}ms`
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
+    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`
+  }
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString();
-  };
+    if (!dateStr) return '-'
+    return new Date(dateStr).toLocaleString()
+  }
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-600";
-    if (score >= 70) return "text-yellow-600";
-    if (score >= 50) return "text-orange-600";
-    return "text-red-600";
-  };
+    if (score >= 90) return 'text-green-600'
+    if (score >= 70) return 'text-yellow-600'
+    if (score >= 50) return 'text-orange-600'
+    return 'text-red-600'
+  }
 
   if (isLoading) {
     return (
@@ -246,7 +232,7 @@ export default function RunDetailsPage() {
         </div>
         <Skeleton className="h-96" />
       </div>
-    );
+    )
   }
 
   if (!run) {
@@ -262,13 +248,11 @@ export default function RunDetailsPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
-  const score = run.score ? parseFloat(run.score) : 0;
-  const passRate = run.totalTests > 0
-    ? (run.passedTests / run.totalTests) * 100
-    : 0;
+  const score = run.score ? parseFloat(run.score) : 0
+  const passRate = run.totalTests > 0 ? (run.passedTests / run.totalTests) * 100 : 0
 
   return (
     <div className="space-y-6">
@@ -284,13 +268,13 @@ export default function RunDetailsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {run.status === "PENDING" && (
+          {run.status === 'PENDING' && (
             <Button onClick={handleStartExecution} disabled={isExecuting}>
               <Play className="h-4 w-4 mr-2" />
-              {isExecuting ? "Starting..." : "Start Execution"}
+              {isExecuting ? 'Starting...' : 'Start Execution'}
             </Button>
           )}
-          {run.status === "RUNNING" && (
+          {run.status === 'RUNNING' && (
             <Button onClick={handleCompleteRun}>
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Complete Run
@@ -317,7 +301,7 @@ export default function RunDetailsPage() {
             <CardTitle className="text-sm font-medium">Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-2xl font-bold", getScoreColor(score))}>
+            <div className={cn('text-2xl font-bold', getScoreColor(score))}>
               {score.toFixed(0)}%
             </div>
           </CardContent>
@@ -331,9 +315,7 @@ export default function RunDetailsPage() {
             <div className="text-2xl font-bold">
               {run.passedTests}/{run.totalTests}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {passRate.toFixed(0)}% passed
-            </p>
+            <p className="text-xs text-muted-foreground">{passRate.toFixed(0)}% passed</p>
           </CardContent>
         </Card>
 
@@ -342,9 +324,7 @@ export default function RunDetailsPage() {
             <CardTitle className="text-sm font-medium">Duration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatDuration(run.durationMs)}
-            </div>
+            <div className="text-2xl font-bold">{formatDuration(run.durationMs)}</div>
           </CardContent>
         </Card>
 
@@ -402,9 +382,7 @@ export default function RunDetailsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-800">Passed</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {run.passedTests}
-                </p>
+                <p className="text-2xl font-bold text-green-600">{run.passedTests}</p>
               </div>
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
@@ -416,9 +394,7 @@ export default function RunDetailsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-red-800">Failed</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {run.failedTests}
-                </p>
+                <p className="text-2xl font-bold text-red-600">{run.failedTests}</p>
               </div>
               <XCircle className="h-8 w-8 text-red-600" />
             </div>
@@ -430,9 +406,7 @@ export default function RunDetailsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-orange-800">Errors</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {run.errorTests}
-                </p>
+                <p className="text-2xl font-bold text-orange-600">{run.errorTests}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-orange-600" />
             </div>
@@ -444,9 +418,7 @@ export default function RunDetailsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-800">Skipped</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {run.skippedTests}
-                </p>
+                <p className="text-2xl font-bold text-gray-600">{run.skippedTests}</p>
               </div>
               <Clock className="h-8 w-8 text-gray-600" />
             </div>
@@ -455,28 +427,22 @@ export default function RunDetailsPage() {
       </div>
 
       {/* Execution Plan (if available) */}
-      {executionPlan && run.status === "RUNNING" && (
+      {executionPlan && run.status === 'RUNNING' && (
         <Card>
           <CardHeader>
             <CardTitle>Execution Plan</CardTitle>
-            <CardDescription>
-              Use the Playwright MCP to execute these tests
-            </CardDescription>
+            <CardDescription>Use the Playwright MCP to execute these tests</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-              <pre className="text-sm">
-                {JSON.stringify(executionPlan, null, 2)}
-              </pre>
+              <pre className="text-sm">{JSON.stringify(executionPlan, null, 2)}</pre>
             </div>
             <Button
               variant="outline"
               size="sm"
               className="mt-2"
               onClick={() => {
-                navigator.clipboard.writeText(
-                  JSON.stringify(executionPlan, null, 2)
-                );
+                navigator.clipboard.writeText(JSON.stringify(executionPlan, null, 2))
               }}
             >
               <Copy className="h-4 w-4 mr-2" />
@@ -499,22 +465,18 @@ export default function RunDetailsPage() {
             </p>
           ) : (
             <Accordion type="single" collapsible className="w-full">
-              {results.map((result, index) => (
+              {results.map((result, _index) => (
                 <AccordionItem key={result.id} value={result.id}>
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-3 w-full pr-4">
                       {getStatusIcon(result.status)}
                       <div className="flex-1 text-left">
-                        <div className="font-medium">
-                          {result.test?.name || "Unknown Test"}
-                        </div>
+                        <div className="font-medium">{result.test?.name || 'Unknown Test'}</div>
                         <div className="text-xs text-muted-foreground">
                           {result.test?.category} | {result.test?.testType}
                         </div>
                       </div>
-                      {result.test?.severity && (
-                        getSeverityBadge(result.test.severity)
-                      )}
+                      {result.test?.severity && getSeverityBadge(result.test.severity)}
                       <div className="text-sm text-muted-foreground">
                         {formatDuration(result.durationMs)}
                       </div>
@@ -525,21 +487,15 @@ export default function RunDetailsPage() {
                       {result.test?.description && (
                         <div>
                           <p className="text-sm font-medium">Description</p>
-                          <p className="text-sm text-muted-foreground">
-                            {result.test.description}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{result.test.description}</p>
                         </div>
                       )}
 
                       {result.errorMessage && (
                         <div>
-                          <p className="text-sm font-medium text-red-600">
-                            Error Message
-                          </p>
+                          <p className="text-sm font-medium text-red-600">Error Message</p>
                           <div className="bg-red-50 p-3 rounded-lg mt-1">
-                            <p className="text-sm text-red-800">
-                              {result.errorMessage}
-                            </p>
+                            <p className="text-sm text-red-800">{result.errorMessage}</p>
                           </div>
                         </div>
                       )}
@@ -567,9 +523,7 @@ export default function RunDetailsPage() {
                                   <Badge className="bg-yellow-100 text-yellow-800">
                                     {finding.severity}
                                   </Badge>
-                                  <span className="text-sm font-medium">
-                                    {finding.type}
-                                  </span>
+                                  <span className="text-sm font-medium">{finding.type}</span>
                                 </div>
                                 <p className="text-sm mt-1">{finding.message}</p>
                                 {finding.location && (
@@ -606,13 +560,8 @@ export default function RunDetailsPage() {
                           </p>
                           <div className="space-y-1 mt-1">
                             {result.networkErrors.map((error, i) => (
-                              <div
-                                key={i}
-                                className="text-xs p-2 bg-red-50 rounded"
-                              >
-                                <span className="font-mono text-red-600">
-                                  {error.status}
-                                </span>{" "}
+                              <div key={i} className="text-xs p-2 bg-red-50 rounded">
+                                <span className="font-mono text-red-600">{error.status}</span>{' '}
                                 {error.url}
                               </div>
                             ))}
@@ -623,7 +572,7 @@ export default function RunDetailsPage() {
                       {result.screenshots && result.screenshots.length > 0 && (
                         <div>
                           <p className="text-sm font-medium flex items-center gap-2">
-                            <Image className="h-4 w-4" />
+                            <ImageIcon className="h-4 w-4" />
                             Screenshots ({result.screenshots.length})
                           </p>
                           <div className="flex gap-2 mt-1 overflow-x-auto">
@@ -635,6 +584,7 @@ export default function RunDetailsPage() {
                                 rel="noopener noreferrer"
                                 className="flex-shrink-0"
                               >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={url}
                                   alt={`Screenshot ${i + 1}`}
@@ -659,5 +609,5 @@ export default function RunDetailsPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

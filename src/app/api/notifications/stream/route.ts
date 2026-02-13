@@ -1,13 +1,12 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, taskMessages } from "@/db/schema";
-import { eq, and, gt, desc } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { tasks, taskMessages } from '@/db/schema'
+import { eq, and, gt, desc } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
+import { requireAuth } from '@/lib/require-auth'
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 /**
  * Server-Sent Events endpoint for real-time notifications
@@ -18,75 +17,73 @@ export const dynamic = "force-dynamic";
  * - New messages received
  * - Task assignments
  */
-export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
+export async function GET(_request: NextRequest) {
+  const session = await requireAuth()
 
-  if (!session?.user?.id) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  const userId = session.user.id;
-  const userRole = session.user.role;
+  const userId = session.user.id
+  const userRole = session.user.role
 
   // Create readable stream for SSE
-  const encoder = new TextEncoder();
-  let lastCheckTime = new Date();
-  let intervalId: ReturnType<typeof setInterval>;
+  const encoder = new TextEncoder()
+  let lastCheckTime = new Date()
+  let intervalId: ReturnType<typeof setInterval>
 
   const stream = new ReadableStream({
     start(controller) {
       // Send initial connection message
       controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`)
-      );
+        encoder.encode(
+          `data: ${JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() })}\n\n`
+        )
+      )
 
       // Poll for updates every 5 seconds
       intervalId = setInterval(async () => {
         try {
-          const notifications = await getNotifications(userId, userRole!, lastCheckTime);
+          const notifications = await getNotifications(userId, userRole!, lastCheckTime)
 
           if (notifications.length > 0) {
             for (const notification of notifications) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(notification)}\n\n`)
-              );
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(notification)}\n\n`))
             }
           }
 
           // Send heartbeat to keep connection alive
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: "heartbeat", timestamp: new Date().toISOString() })}\n\n`)
-          );
+            encoder.encode(
+              `data: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`
+            )
+          )
 
-          lastCheckTime = new Date();
+          lastCheckTime = new Date()
         } catch (error) {
-          logger.error({ error }, "SSE polling error");
+          logger.error({ error }, 'SSE polling error')
         }
-      }, 5000);
+      }, 5000)
     },
     cancel() {
       if (intervalId) {
-        clearInterval(intervalId);
+        clearInterval(intervalId)
       }
     },
-  });
+  })
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
-      "X-Accel-Buffering": "no", // Disable nginx buffering
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no', // Disable nginx buffering
     },
-  });
+  })
 }
 
 interface Notification {
-  type: "task_update" | "new_message" | "task_assigned" | "task_completed";
-  taskId: string;
-  title: string;
-  message: string;
-  timestamp: string;
+  type: 'task_update' | 'new_message' | 'task_assigned' | 'task_completed'
+  taskId: string
+  title: string
+  message: string
+  timestamp: string
 }
 
 async function getNotifications(
@@ -94,10 +91,10 @@ async function getNotifications(
   role: string,
   since: Date
 ): Promise<Notification[]> {
-  const notifications: Notification[] = [];
+  const notifications: Notification[] = []
 
   try {
-    if (role === "CLIENT") {
+    if (role === 'CLIENT') {
       // Check for task status updates for client's tasks
       const updatedTasks = await db
         .select({
@@ -107,23 +104,18 @@ async function getNotifications(
           updatedAt: tasks.updatedAt,
         })
         .from(tasks)
-        .where(
-          and(
-            eq(tasks.clientId, userId),
-            gt(tasks.updatedAt, since)
-          )
-        )
+        .where(and(eq(tasks.clientId, userId), gt(tasks.updatedAt, since)))
         .orderBy(desc(tasks.updatedAt))
-        .limit(10);
+        .limit(10)
 
       for (const task of updatedTasks) {
         notifications.push({
-          type: task.status === "COMPLETED" ? "task_completed" : "task_update",
+          type: task.status === 'COMPLETED' ? 'task_completed' : 'task_update',
           taskId: task.id,
           title: task.title,
           message: `Task "${task.title}" status updated to ${task.status}`,
           timestamp: task.updatedAt.toISOString(),
-        });
+        })
       }
 
       // Check for new messages on client's tasks
@@ -136,25 +128,20 @@ async function getNotifications(
         })
         .from(taskMessages)
         .innerJoin(tasks, eq(taskMessages.taskId, tasks.id))
-        .where(
-          and(
-            eq(tasks.clientId, userId),
-            gt(taskMessages.createdAt, since)
-          )
-        )
+        .where(and(eq(tasks.clientId, userId), gt(taskMessages.createdAt, since)))
         .orderBy(desc(taskMessages.createdAt))
-        .limit(10);
+        .limit(10)
 
       for (const msg of newMessages) {
         notifications.push({
-          type: "new_message",
+          type: 'new_message',
           taskId: msg.taskId,
           title: msg.taskTitle,
           message: `New message on "${msg.taskTitle}"`,
           timestamp: msg.createdAt.toISOString(),
-        });
+        })
       }
-    } else if (role === "FREELANCER") {
+    } else if (role === 'FREELANCER') {
       // Check for new task assignments
       const assignedTasks = await db
         .select({
@@ -163,23 +150,18 @@ async function getNotifications(
           updatedAt: tasks.updatedAt,
         })
         .from(tasks)
-        .where(
-          and(
-            eq(tasks.freelancerId, userId),
-            gt(tasks.updatedAt, since)
-          )
-        )
+        .where(and(eq(tasks.freelancerId, userId), gt(tasks.updatedAt, since)))
         .orderBy(desc(tasks.updatedAt))
-        .limit(10);
+        .limit(10)
 
       for (const task of assignedTasks) {
         notifications.push({
-          type: "task_assigned",
+          type: 'task_assigned',
           taskId: task.id,
           title: task.title,
           message: `Task "${task.title}" has been assigned to you`,
           timestamp: task.updatedAt.toISOString(),
-        });
+        })
       }
 
       // Check for new messages on assigned tasks
@@ -192,28 +174,23 @@ async function getNotifications(
         })
         .from(taskMessages)
         .innerJoin(tasks, eq(taskMessages.taskId, tasks.id))
-        .where(
-          and(
-            eq(tasks.freelancerId, userId),
-            gt(taskMessages.createdAt, since)
-          )
-        )
+        .where(and(eq(tasks.freelancerId, userId), gt(taskMessages.createdAt, since)))
         .orderBy(desc(taskMessages.createdAt))
-        .limit(10);
+        .limit(10)
 
       for (const msg of newMessages) {
         notifications.push({
-          type: "new_message",
+          type: 'new_message',
           taskId: msg.taskId,
           title: msg.taskTitle,
           message: `New message on "${msg.taskTitle}"`,
           timestamp: msg.createdAt.toISOString(),
-        });
+        })
       }
     }
   } catch (error) {
-    logger.error({ error }, "Error fetching notifications");
+    logger.error({ error }, 'Error fetching notifications')
   }
 
-  return notifications;
+  return notifications
 }

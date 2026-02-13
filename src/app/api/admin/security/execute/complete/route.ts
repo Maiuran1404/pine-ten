@@ -1,199 +1,194 @@
-import { NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/require-auth";
-import { withErrorHandling, successResponse, Errors } from "@/lib/errors";
-import { db } from "@/db";
+import { NextRequest } from 'next/server'
+import { requireAdmin } from '@/lib/require-auth'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { db } from '@/db'
 import {
   securityTestRuns,
   securityTestResults,
   securityTests,
   securitySnapshots,
-} from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+} from '@/db/schema'
+import { eq, count } from 'drizzle-orm'
 
 // POST - Complete a test run and calculate final scores
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async () => {
-    await requireAdmin();
+  return withErrorHandling(
+    async () => {
+      await requireAdmin()
 
-    const body = await request.json();
-    const { runId } = body;
+      const body = await request.json()
+      const { runId } = body
 
-    if (!runId) {
-      throw Errors.badRequest("Run ID is required");
-    }
-
-    // Get the run
-    const [run] = await db
-      .select()
-      .from(securityTestRuns)
-      .where(eq(securityTestRuns.id, runId));
-
-    if (!run) {
-      throw Errors.notFound("Run");
-    }
-
-    // Get result counts by status
-    const resultCounts = await db
-      .select({
-        status: securityTestResults.status,
-        count: count(),
-      })
-      .from(securityTestResults)
-      .where(eq(securityTestResults.runId, runId))
-      .groupBy(securityTestResults.status);
-
-    const counts = {
-      passed: 0,
-      failed: 0,
-      error: 0,
-      skipped: 0,
-      pending: 0,
-      running: 0,
-    };
-
-    resultCounts.forEach((r) => {
-      const status = r.status.toLowerCase() as keyof typeof counts;
-      counts[status] = Number(r.count);
-    });
-
-    const totalTests = Object.values(counts).reduce((a, b) => a + b, 0);
-    const completedTests = counts.passed + counts.failed + counts.error + counts.skipped;
-
-    // Calculate score (passed / total * 100, weighted by severity)
-    // Get results with severity for weighted scoring
-    const resultsWithSeverity = await db
-      .select({
-        status: securityTestResults.status,
-        severity: securityTests.severity,
-      })
-      .from(securityTestResults)
-      .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
-      .where(eq(securityTestResults.runId, runId));
-
-    // Severity weights
-    const severityWeights: Record<string, number> = {
-      critical: 4,
-      high: 3,
-      medium: 2,
-      low: 1,
-    };
-
-    let totalWeight = 0;
-    let passedWeight = 0;
-
-    resultsWithSeverity.forEach((r) => {
-      const weight = severityWeights[r.severity || "medium"] || 2;
-      totalWeight += weight;
-      if (r.status === "PASSED") {
-        passedWeight += weight;
+      if (!runId) {
+        throw Errors.badRequest('Run ID is required')
       }
-    });
 
-    const score = totalWeight > 0 ? (passedWeight / totalWeight) * 100 : 0;
+      // Get the run
+      const [run] = await db.select().from(securityTestRuns).where(eq(securityTestRuns.id, runId))
 
-    // Calculate duration
-    const now = new Date();
-    const startedAt = run.startedAt || run.createdAt;
-    const durationMs = now.getTime() - startedAt.getTime();
-
-    // Update the run
-    const [updatedRun] = await db
-      .update(securityTestRuns)
-      .set({
-        status: "COMPLETED",
-        completedAt: now,
-        durationMs,
-        totalTests,
-        passedTests: counts.passed,
-        failedTests: counts.failed,
-        errorTests: counts.error,
-        skippedTests: counts.skipped,
-        score: score.toFixed(2),
-      })
-      .where(eq(securityTestRuns.id, runId))
-      .returning();
-
-    // Get category scores for snapshot
-    const categoryResults = await db
-      .select({
-        category: securityTests.category,
-        status: securityTestResults.status,
-      })
-      .from(securityTestResults)
-      .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
-      .where(eq(securityTestResults.runId, runId));
-
-    const categoryScores: Record<
-      string,
-      { score: number; passed: number; failed: number }
-    > = {};
-
-    categoryResults.forEach((r) => {
-      const category = r.category || "uncategorized";
-      if (!categoryScores[category]) {
-        categoryScores[category] = { score: 0, passed: 0, failed: 0 };
+      if (!run) {
+        throw Errors.notFound('Run')
       }
-      if (r.status === "PASSED") {
-        categoryScores[category].passed++;
-      } else if (r.status === "FAILED" || r.status === "ERROR") {
-        categoryScores[category].failed++;
+
+      // Get result counts by status
+      const resultCounts = await db
+        .select({
+          status: securityTestResults.status,
+          count: count(),
+        })
+        .from(securityTestResults)
+        .where(eq(securityTestResults.runId, runId))
+        .groupBy(securityTestResults.status)
+
+      const counts = {
+        passed: 0,
+        failed: 0,
+        error: 0,
+        skipped: 0,
+        pending: 0,
+        running: 0,
       }
-    });
 
-    // Calculate category scores
-    Object.keys(categoryScores).forEach((cat) => {
-      const { passed, failed } = categoryScores[cat];
-      const total = passed + failed;
-      categoryScores[cat].score = total > 0 ? (passed / total) * 100 : 0;
-    });
-
-    // Count issues by severity from failed tests
-    const failedResults = await db
-      .select({
-        severity: securityTests.severity,
+      resultCounts.forEach((r) => {
+        const status = r.status.toLowerCase() as keyof typeof counts
+        counts[status] = Number(r.count)
       })
-      .from(securityTestResults)
-      .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
-      .where(
-        eq(securityTestResults.runId, runId)
-      );
 
-    const issueCounts = {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0,
-    };
+      const totalTests = Object.values(counts).reduce((a, b) => a + b, 0)
+      const _completedTests = counts.passed + counts.failed + counts.error + counts.skipped
 
-    failedResults.forEach((r) => {
-      if (r.severity && r.severity in issueCounts) {
-        issueCounts[r.severity as keyof typeof issueCounts]++;
+      // Calculate score (passed / total * 100, weighted by severity)
+      // Get results with severity for weighted scoring
+      const resultsWithSeverity = await db
+        .select({
+          status: securityTestResults.status,
+          severity: securityTests.severity,
+        })
+        .from(securityTestResults)
+        .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
+        .where(eq(securityTestResults.runId, runId))
+
+      // Severity weights
+      const severityWeights: Record<string, number> = {
+        critical: 4,
+        high: 3,
+        medium: 2,
+        low: 1,
       }
-    });
 
-    // Create security snapshot
-    await db.insert(securitySnapshots).values({
-      overallScore: score.toFixed(2),
-      categoryScores,
-      criticalIssues: issueCounts.critical,
-      highIssues: issueCounts.high,
-      mediumIssues: issueCounts.medium,
-      lowIssues: issueCounts.low,
-      lastTestRunId: runId,
-    });
+      let totalWeight = 0
+      let passedWeight = 0
 
-    return successResponse({
-      run: updatedRun,
-      summary: {
-        totalTests,
-        passed: counts.passed,
-        failed: counts.failed,
-        error: counts.error,
-        skipped: counts.skipped,
-        score: Math.round(score * 10) / 10,
-        durationMs,
+      resultsWithSeverity.forEach((r) => {
+        const weight = severityWeights[r.severity || 'medium'] || 2
+        totalWeight += weight
+        if (r.status === 'PASSED') {
+          passedWeight += weight
+        }
+      })
+
+      const score = totalWeight > 0 ? (passedWeight / totalWeight) * 100 : 0
+
+      // Calculate duration
+      const now = new Date()
+      const startedAt = run.startedAt || run.createdAt
+      const durationMs = now.getTime() - startedAt.getTime()
+
+      // Update the run
+      const [updatedRun] = await db
+        .update(securityTestRuns)
+        .set({
+          status: 'COMPLETED',
+          completedAt: now,
+          durationMs,
+          totalTests,
+          passedTests: counts.passed,
+          failedTests: counts.failed,
+          errorTests: counts.error,
+          skippedTests: counts.skipped,
+          score: score.toFixed(2),
+        })
+        .where(eq(securityTestRuns.id, runId))
+        .returning()
+
+      // Get category scores for snapshot
+      const categoryResults = await db
+        .select({
+          category: securityTests.category,
+          status: securityTestResults.status,
+        })
+        .from(securityTestResults)
+        .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
+        .where(eq(securityTestResults.runId, runId))
+
+      const categoryScores: Record<string, { score: number; passed: number; failed: number }> = {}
+
+      categoryResults.forEach((r) => {
+        const category = r.category || 'uncategorized'
+        if (!categoryScores[category]) {
+          categoryScores[category] = { score: 0, passed: 0, failed: 0 }
+        }
+        if (r.status === 'PASSED') {
+          categoryScores[category].passed++
+        } else if (r.status === 'FAILED' || r.status === 'ERROR') {
+          categoryScores[category].failed++
+        }
+      })
+
+      // Calculate category scores
+      Object.keys(categoryScores).forEach((cat) => {
+        const { passed, failed } = categoryScores[cat]
+        const total = passed + failed
+        categoryScores[cat].score = total > 0 ? (passed / total) * 100 : 0
+      })
+
+      // Count issues by severity from failed tests
+      const failedResults = await db
+        .select({
+          severity: securityTests.severity,
+        })
+        .from(securityTestResults)
+        .leftJoin(securityTests, eq(securityTestResults.testId, securityTests.id))
+        .where(eq(securityTestResults.runId, runId))
+
+      const issueCounts = {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      }
+
+      failedResults.forEach((r) => {
+        if (r.severity && r.severity in issueCounts) {
+          issueCounts[r.severity as keyof typeof issueCounts]++
+        }
+      })
+
+      // Create security snapshot
+      await db.insert(securitySnapshots).values({
+        overallScore: score.toFixed(2),
         categoryScores,
-      },
-    });
-  }, { endpoint: "POST /api/admin/security/execute/complete" });
+        criticalIssues: issueCounts.critical,
+        highIssues: issueCounts.high,
+        mediumIssues: issueCounts.medium,
+        lowIssues: issueCounts.low,
+        lastTestRunId: runId,
+      })
+
+      return successResponse({
+        run: updatedRun,
+        summary: {
+          totalTests,
+          passed: counts.passed,
+          failed: counts.failed,
+          error: counts.error,
+          skipped: counts.skipped,
+          score: Math.round(score * 10) / 10,
+          durationMs,
+          categoryScores,
+        },
+      })
+    },
+    { endpoint: 'POST /api/admin/security/execute/complete' }
+  )
 }

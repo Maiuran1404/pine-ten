@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   Sidebar,
@@ -8,7 +8,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar'
 import {
   LayoutDashboard,
   Users,
@@ -21,155 +21,153 @@ import {
   MessageSquare,
   DollarSign,
   Bell,
-  ShieldCheck,
   Wand2,
   Palette,
   LayoutTemplate,
   Shield,
-  BarChart3,
   ClipboardCheck,
   Image,
   Sparkles,
   Brain,
   Video,
-} from "lucide-react";
-import { Logo } from "@/components/shared/logo";
+} from 'lucide-react'
+import { Logo } from '@/components/shared/logo'
 import {
   SidebarGroupedNavigation,
   SidebarRecents,
   type NavigationGroup,
-} from "@/components/shared/sidebar";
+} from '@/components/shared/sidebar'
 
 const navigationGroups: NavigationGroup[] = [
   {
-    label: "Overview",
+    label: 'Overview',
     items: [
       {
-        name: "Dashboard",
-        href: "/admin",
+        name: 'Dashboard',
+        href: '/admin',
         icon: LayoutDashboard,
       },
       {
-        name: "Revenue",
-        href: "/admin/revenue",
+        name: 'Revenue',
+        href: '/admin/revenue',
         icon: DollarSign,
       },
     ],
   },
   {
-    label: "Operations",
+    label: 'Operations',
     items: [
       {
-        name: "All Tasks",
-        href: "/admin/tasks",
+        name: 'All Tasks',
+        href: '/admin/tasks',
         icon: FolderOpen,
       },
       {
-        name: "Verify",
-        href: "/admin/verify",
+        name: 'Verify',
+        href: '/admin/verify',
         icon: ClipboardCheck,
       },
       {
-        name: "Assignment Algorithm",
-        href: "/admin/algorithm",
+        name: 'Assignment Algorithm',
+        href: '/admin/algorithm',
         icon: Brain,
       },
     ],
   },
   {
-    label: "People",
+    label: 'People',
     items: [
       {
-        name: "Clients",
-        href: "/admin/clients",
+        name: 'Clients',
+        href: '/admin/clients',
         icon: Users,
       },
       {
-        name: "Artists",
-        href: "/admin/freelancers",
+        name: 'Artists',
+        href: '/admin/freelancers',
         icon: UserCheck,
       },
     ],
   },
   {
-    label: "Libraries",
+    label: 'Libraries',
     items: [
       {
-        name: "Categories",
-        href: "/admin/categories",
+        name: 'Categories',
+        href: '/admin/categories',
         icon: Tags,
       },
       {
-        name: "Brand Library",
-        href: "/admin/brand-references",
+        name: 'Brand Library',
+        href: '/admin/brand-references',
         icon: Palette,
       },
       {
-        name: "Reference Library",
-        href: "/admin/deliverable-styles",
+        name: 'Reference Library',
+        href: '/admin/deliverable-styles',
         icon: LayoutTemplate,
       },
       {
-        name: "Video Library",
-        href: "/admin/video-references",
+        name: 'Video Library',
+        href: '/admin/video-references',
         icon: Video,
       },
     ],
   },
   {
-    label: "Tools",
+    label: 'Tools',
     items: [
       {
-        name: "Chat Logs",
-        href: "/admin/chat-logs",
+        name: 'Chat Logs',
+        href: '/admin/chat-logs',
         icon: MessageSquare,
       },
       {
-        name: "Quick Design",
-        href: "/admin/orshot-templates",
+        name: 'Quick Design',
+        href: '/admin/orshot-templates',
         icon: Wand2,
       },
       {
-        name: "Intake Prompts",
-        href: "/admin/creative-intake-prompts",
+        name: 'Intake Prompts',
+        href: '/admin/creative-intake-prompts',
         icon: Sparkles,
       },
       {
-        name: "Coupons",
-        href: "/admin/coupons",
+        name: 'Coupons',
+        href: '/admin/coupons',
         icon: Ticket,
       },
     ],
   },
   {
-    label: "System",
+    label: 'System',
     items: [
       {
-        name: "Notifications",
-        href: "/admin/notifications",
+        name: 'Notifications',
+        href: '/admin/notifications',
         icon: Bell,
       },
       {
-        name: "Security",
-        href: "/admin/security",
+        name: 'Security',
+        href: '/admin/security',
         icon: Shield,
       },
       {
-        name: "Database",
-        href: "/admin/database",
+        name: 'Database',
+        href: '/admin/database',
         icon: Database,
       },
       {
-        name: "Settings",
-        href: "/admin/settings",
+        name: 'Settings',
+        href: '/admin/settings',
         icon: Settings,
       },
     ],
   },
-];
+]
 
 interface AdminSidebarProps {
-  recentTasks?: Array<{ id: string; title: string }>;
+  recentTasks?: Array<{ id: string; title: string }>
 }
 
 export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
@@ -178,7 +176,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
     id: task.id,
     title: task.title,
     href: `/admin/tasks/${task.id}`,
-  }));
+  }))
 
   return (
     <Sidebar
@@ -189,11 +187,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
       <SidebarHeader className="h-16 justify-center">
         <div className="flex items-center gap-2">
           <SidebarTrigger />
-          <Logo
-            href="/admin"
-            name="Superadmin"
-            className="group-data-[collapsible=icon]:hidden"
-          />
+          <Logo href="/admin" name="Superadmin" className="group-data-[collapsible=icon]:hidden" />
         </div>
       </SidebarHeader>
 
@@ -218,5 +212,5 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
         </div>
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

@@ -1,34 +1,23 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { LoadingSpinner } from "@/components/shared/loading";
+} from '@/components/ui/select'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { LoadingSpinner } from '@/components/shared/loading'
 import {
   Search,
   Zap,
@@ -38,65 +27,64 @@ import {
   XCircle,
   AlertTriangle,
   Sparkles,
-  ImageIcon,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ImportResult {
-  url: string;
-  success: boolean;
-  id?: string;
-  name?: string;
-  deliverableType?: string;
-  styleAxis?: string;
-  confidence?: number;
-  error?: string;
-  skipped?: boolean;
-  skipReason?: string;
+  url: string
+  success: boolean
+  id?: string
+  name?: string
+  deliverableType?: string
+  styleAxis?: string
+  confidence?: number
+  error?: string
+  skipped?: boolean
+  skipReason?: string
 }
 
 interface ScraperSummary {
-  totalScraped: number;
-  totalAttempted: number;
-  successful: number;
-  failed: number;
-  skipped: number;
+  totalScraped: number
+  totalAttempted: number
+  successful: number
+  failed: number
+  skipped: number
 }
 
 interface BiggedKeywordScraperProps {
-  onUploadComplete?: () => void;
+  onUploadComplete?: () => void
 }
 
 export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperProps) {
-  const [keyword, setKeyword] = useState("");
-  const [limit, setLimit] = useState(20);
-  const [confidenceThreshold, setConfidenceThreshold] = useState(50);
-  const [parallelBatchSize, setParallelBatchSize] = useState(3);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [keyword, setKeyword] = useState('')
+  const [limit, setLimit] = useState(20)
+  const [confidenceThreshold, setConfidenceThreshold] = useState(50)
+  const [parallelBatchSize, setParallelBatchSize] = useState(3)
+  const [previewMode, setPreviewMode] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState<string>("");
-  const [results, setResults] = useState<ImportResult[]>([]);
-  const [summary, setSummary] = useState<ScraperSummary | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [status, setStatus] = useState<string>('')
+  const [results, setResults] = useState<ImportResult[]>([])
+  const [summary, setSummary] = useState<ScraperSummary | null>(null)
 
   const handleScrape = async () => {
     if (!keyword.trim()) {
-      toast.error("Please enter a keyword to search");
-      return;
+      toast.error('Please enter a keyword to search')
+      return
     }
 
-    setIsProcessing(true);
-    setProgress(0);
-    setStatus("Starting scraper...");
-    setResults([]);
-    setSummary(null);
+    setIsProcessing(true)
+    setProgress(0)
+    setStatus('Starting scraper...')
+    setResults([])
+    setSummary(null)
 
     try {
-      const response = await fetch("/api/admin/deliverable-styles/scrape-bigged", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/deliverable-styles/scrape-bigged', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: keyword.trim(),
           limit,
@@ -104,43 +92,45 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
           parallelBatchSize,
           preview: previewMode,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.success) {
-        setResults(data.data.results || []);
-        setSummary(data.data.summary || null);
-        setProgress(100);
-        setStatus("Complete!");
+        setResults(data.data.results || [])
+        setSummary(data.data.summary || null)
+        setProgress(100)
+        setStatus('Complete!')
 
         if (!previewMode && data.data.summary?.successful > 0) {
-          toast.success(`Successfully imported ${data.data.summary.successful} design reference(s)`);
-          onUploadComplete?.();
+          toast.success(`Successfully imported ${data.data.summary.successful} design reference(s)`)
+          onUploadComplete?.()
         } else if (previewMode) {
-          toast.success(`Preview complete. Found ${data.data.summary?.successful || 0} items ready for import.`);
+          toast.success(
+            `Preview complete. Found ${data.data.summary?.successful || 0} items ready for import.`
+          )
         }
       } else {
-        throw new Error(data.error || "Scraping failed");
+        throw new Error(data.error || 'Scraping failed')
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to scrape");
-      setStatus("Failed");
+      toast.error(error instanceof Error ? error.message : 'Failed to scrape')
+      setStatus('Failed')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleReset = () => {
-    setResults([]);
-    setSummary(null);
-    setProgress(0);
-    setStatus("");
-  };
+    setResults([])
+    setSummary(null)
+    setProgress(0)
+    setStatus('')
+  }
 
-  const successfulResults = results.filter((r) => r.success && !r.skipped);
-  const skippedResults = results.filter((r) => r.skipped);
-  const failedResults = results.filter((r) => !r.success && !r.skipped);
+  const successfulResults = results.filter((r) => r.success && !r.skipped)
+  const skippedResults = results.filter((r) => r.skipped)
+  const failedResults = results.filter((r) => !r.success && !r.skipped)
 
   return (
     <Card>
@@ -169,8 +159,8 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                   className="pl-9"
                   disabled={isProcessing}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isProcessing) {
-                      handleScrape();
+                    if (e.key === 'Enter' && !isProcessing) {
+                      handleScrape()
                     }
                   }}
                 />
@@ -188,7 +178,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    {previewMode ? "Preview" : "Scrape & Import"}
+                    {previewMode ? 'Preview' : 'Scrape & Import'}
                   </>
                 )}
               </Button>
@@ -239,10 +229,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                   Advanced Settings
                 </span>
                 <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    showAdvanced && "rotate-180"
-                  )}
+                  className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')}
                 />
               </Button>
             </CollapsibleTrigger>
@@ -306,7 +293,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
               <div className="text-center">
                 <div className="text-lg font-bold text-green-600">{summary.successful}</div>
                 <div className="text-xs text-muted-foreground">
-                  {previewMode ? "Ready" : "Imported"}
+                  {previewMode ? 'Ready' : 'Imported'}
                 </div>
               </div>
               <div className="text-center">
@@ -324,7 +311,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-green-600">
                   <CheckCircle2 className="h-4 w-4" />
-                  {previewMode ? "Ready for Import" : "Imported"} ({successfulResults.length})
+                  {previewMode ? 'Ready for Import' : 'Imported'} ({successfulResults.length})
                 </h4>
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[200px] overflow-y-auto">
                   {successfulResults.map((result, idx) => (
@@ -333,11 +320,11 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={result.url}
-                          alt={result.name || ""}
+                          alt={result.name || ''}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).parentElement!.innerHTML =
-                              '<div class="w-full h-full flex items-center justify-center"><svg class="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
+                            ;(e.target as HTMLImageElement).parentElement!.innerHTML =
+                              '<div class="w-full h-full flex items-center justify-center"><svg class="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>'
                           }}
                         />
                         {result.confidence !== undefined && (
@@ -415,7 +402,10 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
           <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
             <p className="font-medium mb-2">Tips:</p>
             <ul className="space-y-1 list-disc list-inside">
-              <li>Try specific keywords like &quot;skincare ads&quot;, &quot;fitness marketing&quot;, &quot;tech startup&quot;</li>
+              <li>
+                Try specific keywords like &quot;skincare ads&quot;, &quot;fitness marketing&quot;,
+                &quot;tech startup&quot;
+              </li>
               <li>Preview mode lets you see what will be imported without saving</li>
               <li>Duplicates are automatically detected and skipped</li>
               <li>Low confidence images are filtered based on your threshold setting</li>
@@ -424,5 +414,5 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -1,27 +1,27 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
-import { Check, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { Check, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface TypingTextProps {
-  content: string;
+  content: string
   /** Speed in milliseconds per chunk */
-  speed?: number;
+  speed?: number
   /** Whether to animate or show instantly */
-  animate?: boolean;
+  animate?: boolean
   /** Callback when typing animation completes */
-  onComplete?: () => void;
+  onComplete?: () => void
   /** Callback when a list item option is clicked (single option) */
-  onOptionClick?: (option: string) => void;
+  onOptionClick?: (option: string) => void
   /** Callback when multiple options are confirmed */
-  onOptionsConfirm?: (options: string[]) => void;
+  onOptionsConfirm?: (options: string[]) => void
   /** Enable multi-select mode for list options */
-  multiSelect?: boolean;
+  multiSelect?: boolean
   /** Custom className for the container */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -30,79 +30,76 @@ interface TypingTextProps {
  * Groups multiple words together for smoother animation.
  */
 function splitIntoSafeChunks(text: string): string[] {
-  const chunks: string[] = [];
-  let currentChunk = "";
-  let i = 0;
-  const wordsPerChunk = 3; // Group words together for smoother animation
-  let wordCount = 0;
+  const chunks: string[] = []
+  let currentChunk = ''
+  let i = 0
+  const wordsPerChunk = 3 // Group words together for smoother animation
+  let wordCount = 0
 
   while (i < text.length) {
-    const char = text[i];
+    const char = text[i]
 
     // Handle markdown bold/italic markers - keep them together with the word
-    if (char === "*" || char === "_") {
+    if (char === '*' || char === '_') {
       // Find the complete markdown segment
-      let markerEnd = i + 1;
-      while (
-        markerEnd < text.length &&
-        (text[markerEnd] === "*" || text[markerEnd] === "_")
-      ) {
-        markerEnd++;
+      let markerEnd = i + 1
+      while (markerEnd < text.length && (text[markerEnd] === '*' || text[markerEnd] === '_')) {
+        markerEnd++
       }
-      const marker = text.slice(i, markerEnd);
+      const marker = text.slice(i, markerEnd)
 
       // Look for closing marker
-      const closeIndex = text.indexOf(marker, markerEnd);
+      const closeIndex = text.indexOf(marker, markerEnd)
       if (closeIndex !== -1) {
         // Include the entire marked section in current chunk
-        const fullSection = text.slice(i, closeIndex + marker.length);
-        currentChunk += fullSection;
-        i = closeIndex + marker.length;
-        wordCount++;
-        continue;
+        const fullSection = text.slice(i, closeIndex + marker.length)
+        currentChunk += fullSection
+        i = closeIndex + marker.length
+        wordCount++
+        continue
       }
     }
 
     // Handle backticks for code - keep code blocks together
-    if (char === "`") {
-      let backtickEnd = i + 1;
-      while (backtickEnd < text.length && text[backtickEnd] === "`") {
-        backtickEnd++;
+    if (char === '`') {
+      let backtickEnd = i + 1
+      while (backtickEnd < text.length && text[backtickEnd] === '`') {
+        backtickEnd++
       }
-      const backticks = text.slice(i, backtickEnd);
-      const closeIndex = text.indexOf(backticks, backtickEnd);
+      const backticks = text.slice(i, backtickEnd)
+      const closeIndex = text.indexOf(backticks, backtickEnd)
       if (closeIndex !== -1) {
-        const fullCode = text.slice(i, closeIndex + backticks.length);
-        currentChunk += fullCode;
-        i = closeIndex + backticks.length;
-        wordCount++;
-        continue;
+        const fullCode = text.slice(i, closeIndex + backticks.length)
+        currentChunk += fullCode
+        i = closeIndex + backticks.length
+        wordCount++
+        continue
       }
     }
 
     // Regular character handling
-    currentChunk += char;
+    currentChunk += char
 
     // Check if we hit a word boundary (space or newline)
-    if (char === " " || char === "\n") {
-      wordCount++;
+    if (char === ' ' || char === '\n') {
+      wordCount++
       // Flush chunk after collecting enough words
       if (wordCount >= wordsPerChunk) {
-        chunks.push(currentChunk);
-        currentChunk = "";
-        wordCount = 0;
+        chunks.push(currentChunk)
+        currentChunk = ''
+        wordCount = 0
       }
     }
 
-    i++;
+    i++
   }
 
   // Push remaining content
   if (currentChunk) {
-    chunks.push(currentChunk);
+    chunks.push(currentChunk)
   }
 
-  return chunks;
+  return chunks
 }
 
 /**
@@ -121,101 +118,99 @@ export function TypingText({
   className,
 }: TypingTextProps) {
   // Use content directly - capitalization should be done server-side
-  const textContent = content.trim();
+  const textContent = content.trim()
 
-  const [displayedContent, setDisplayedContent] = useState(
-    animate ? "" : textContent
-  );
-  const [isComplete, setIsComplete] = useState(!animate);
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const animationRef = useRef<number | null>(null);
-  const chunkIndexRef = useRef(0);
-  const contentRef = useRef(textContent);
-  const chunksRef = useRef<string[]>([]);
+  const [displayedContent, setDisplayedContent] = useState(animate ? '' : textContent)
+  const [isComplete, setIsComplete] = useState(!animate)
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([])
+  const animationRef = useRef<number | null>(null)
+  const chunkIndexRef = useRef(0)
+  const contentRef = useRef(textContent)
+  const chunksRef = useRef<string[]>([])
 
   useEffect(() => {
     // Clear any existing animation
     if (animationRef.current) {
-      clearTimeout(animationRef.current);
+      clearTimeout(animationRef.current)
     }
 
     // If content changed, reset
     if (contentRef.current !== textContent) {
-      contentRef.current = textContent;
-      chunkIndexRef.current = 0;
+      contentRef.current = textContent
+      chunkIndexRef.current = 0
     }
 
     // If not animating or no content, show full content immediately
     if (!animate || !textContent) {
-      setDisplayedContent(textContent);
-      setIsComplete(true);
-      return;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayedContent(textContent)
+
+      setIsComplete(true)
+      return
     }
 
     // Reset state
-    setDisplayedContent("");
-    setIsComplete(false);
-    chunkIndexRef.current = 0;
+
+    setDisplayedContent('')
+
+    setIsComplete(false)
+    chunkIndexRef.current = 0
 
     // Split content into safe chunks that won't break markdown
-    chunksRef.current = splitIntoSafeChunks(textContent);
+    chunksRef.current = splitIntoSafeChunks(textContent)
 
     const animateChunks = () => {
       if (chunkIndexRef.current < chunksRef.current.length) {
-        setDisplayedContent(
-          (prev) => prev + chunksRef.current[chunkIndexRef.current]
-        );
-        chunkIndexRef.current++;
-        animationRef.current = window.setTimeout(animateChunks, speed);
+        setDisplayedContent((prev) => prev + chunksRef.current[chunkIndexRef.current])
+        chunkIndexRef.current++
+        animationRef.current = window.setTimeout(animateChunks, speed)
       } else {
-        setIsComplete(true);
-        onComplete?.();
+        setIsComplete(true)
+        onComplete?.()
       }
-    };
+    }
 
     // Start animation
-    animationRef.current = window.setTimeout(animateChunks, 50);
+    animationRef.current = window.setTimeout(animateChunks, 50)
 
     return () => {
       if (animationRef.current) {
-        clearTimeout(animationRef.current);
+        clearTimeout(animationRef.current)
       }
-    };
-  }, [textContent, animate, speed, onComplete]);
+    }
+  }, [textContent, animate, speed, onComplete])
 
   // Handle option click for list items
   const handleListItemClick = useCallback(
     (text: string) => {
-      if (!isComplete) return;
+      if (!isComplete) return
 
       if (multiSelect) {
         // Toggle selection
         setSelectedOptions((prev) =>
           prev.includes(text) ? prev.filter((o) => o !== text) : [...prev, text]
-        );
+        )
       } else if (onOptionClick) {
-        onOptionClick(text);
+        onOptionClick(text)
       }
     },
     [onOptionClick, isComplete, multiSelect]
-  );
+  )
 
   // Handle confirm for multi-select
   const handleConfirm = useCallback(() => {
     if (selectedOptions.length > 0) {
       if (onOptionsConfirm) {
-        onOptionsConfirm(selectedOptions);
+        onOptionsConfirm(selectedOptions)
       } else if (onOptionClick) {
         // Fallback: send as comma-separated string
         const combinedResponse =
-          selectedOptions.length === 1
-            ? selectedOptions[0]
-            : selectedOptions.join(", ");
-        onOptionClick(combinedResponse);
+          selectedOptions.length === 1 ? selectedOptions[0] : selectedOptions.join(', ')
+        onOptionClick(combinedResponse)
       }
-      setSelectedOptions([]);
+      setSelectedOptions([])
     }
-  }, [selectedOptions, onOptionClick, onOptionsConfirm]);
+  }, [selectedOptions, onOptionClick, onOptionsConfirm])
 
   return (
     <div className={className}>
@@ -225,8 +220,8 @@ export function TypingText({
           ul: ({ children }) => (
             <ul
               className={cn(
-                "space-y-2 my-3 list-none pl-0",
-                onOptionClick && isComplete && "list-none pl-0"
+                'space-y-2 my-3 list-none pl-0',
+                onOptionClick && isComplete && 'list-none pl-0'
               )}
             >
               {children}
@@ -234,8 +229,8 @@ export function TypingText({
           ),
           li: ({ children }) => {
             // Extract text content from children
-            const textContent = extractTextFromChildren(children);
-            const isSelected = selectedOptions.includes(textContent);
+            const textContent = extractTextFromChildren(children)
+            const isSelected = selectedOptions.includes(textContent)
 
             if (onOptionClick && isComplete) {
               return (
@@ -243,28 +238,24 @@ export function TypingText({
                   <button
                     onClick={() => handleListItemClick(textContent)}
                     className={cn(
-                      "w-full text-left px-4 py-2.5 rounded-xl",
-                      "border transition-all duration-200",
-                      "text-sm",
-                      "flex items-center gap-2",
-                      "cursor-pointer",
+                      'w-full text-left px-4 py-2.5 rounded-xl',
+                      'border transition-all duration-200',
+                      'text-sm',
+                      'flex items-center gap-2',
+                      'cursor-pointer',
                       multiSelect && isSelected
-                        ? "bg-primary/10 border-primary text-foreground"
-                        : "bg-muted/50 hover:bg-muted border-border/50 hover:border-primary/30 text-foreground hover:shadow-sm"
+                        ? 'bg-primary/10 border-primary text-foreground'
+                        : 'bg-muted/50 hover:bg-muted border-border/50 hover:border-primary/30 text-foreground hover:shadow-sm'
                     )}
                   >
                     {multiSelect ? (
                       <span
                         className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                          isSelected
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground/30"
+                          'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
+                          isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
                         )}
                       >
-                        {isSelected && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        )}
+                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                       </span>
                     ) : (
                       <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
@@ -272,12 +263,10 @@ export function TypingText({
                     <span>{textContent}</span>
                   </button>
                 </li>
-              );
+              )
             }
 
-            return (
-              <li className="text-sm text-foreground list-none">{children}</li>
-            );
+            return <li className="text-sm text-foreground list-none">{children}</li>
           },
         }}
       >
@@ -299,26 +288,26 @@ export function TypingText({
         <span className="inline-block w-0.5 h-4 bg-foreground/70 ml-0.5 animate-pulse" />
       )}
     </div>
-  );
+  )
 }
 
 // Helper function to extract text from React children
 function extractTextFromChildren(children: React.ReactNode): string {
-  if (typeof children === "string") {
-    return children;
+  if (typeof children === 'string') {
+    return children
   }
-  if (typeof children === "number") {
-    return String(children);
+  if (typeof children === 'number') {
+    return String(children)
   }
   if (Array.isArray(children)) {
-    return children.map(extractTextFromChildren).join("");
+    return children.map(extractTextFromChildren).join('')
   }
-  if (children && typeof children === "object") {
+  if (children && typeof children === 'object') {
     // Check if it's a React element with props
-    const element = children as { props?: { children?: React.ReactNode } };
-    if (element.props && "children" in element.props) {
-      return extractTextFromChildren(element.props.children);
+    const element = children as { props?: { children?: React.ReactNode } }
+    if (element.props && 'children' in element.props) {
+      return extractTextFromChildren(element.props.children)
     }
   }
-  return "";
+  return ''
 }

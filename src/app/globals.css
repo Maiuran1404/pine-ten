@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -54,8 +54,19 @@
   --crafted-mint: #a8d4a8;
   --crafted-forest: #2d5a2d;
   --crafted-gradient: linear-gradient(135deg, #4a7c4a 0%, #6b9b6b 50%, #8bb58b 100%);
-  --crafted-gradient-vertical: linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
-  --crafted-gradient-radial: radial-gradient(ellipse at 0% 0%, #6b9b6b 0%, transparent 50%), radial-gradient(ellipse at 100% 30%, #8bb58b 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, #2d5a2d 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, #4a7c4a 0%, transparent 50%), linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
+  --crafted-gradient-vertical: linear-gradient(
+    180deg,
+    #4a7c4a 0%,
+    #6b9b6b 35%,
+    #8bb58b 65%,
+    #a8d4a8 100%
+  );
+  --crafted-gradient-radial:
+    radial-gradient(ellipse at 0% 0%, #6b9b6b 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 30%, #8bb58b 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, #2d5a2d 0%, transparent 60%),
+    radial-gradient(ellipse at 30% 70%, #4a7c4a 0%, transparent 50%),
+    linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
 
   /* Crafted Font */
   --font-satoshi: 'Satoshi', sans-serif;
@@ -202,19 +213,19 @@
 
   /* Global cursor pointer for all clickable elements */
   button,
-  [role="button"],
+  [role='button'],
   a,
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"],
-  input[type="checkbox"],
-  input[type="radio"],
-  input[type="file"],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='file'],
   select,
   label[for],
   summary,
   [onclick],
-  [tabindex]:not([tabindex="-1"]),
+  [tabindex]:not([tabindex='-1']),
   .cursor-pointer {
     cursor: pointer;
   }
@@ -276,7 +287,8 @@
 
 /* Soft pastel gradient background for light mode */
 .light-gradient-bg {
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     #f0f7f0 0%,
     #e8f5e8 25%,
     #f5f8f5 50%,

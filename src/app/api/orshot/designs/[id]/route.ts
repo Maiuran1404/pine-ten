@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { generatedDesigns, orshotTemplates, companies, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { generatedDesigns, orshotTemplates, companies, users } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 interface RouteParams {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }
 
 /**
@@ -15,16 +14,10 @@ interface RouteParams {
  * Get a specific generated design
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await params
 
     const [design] = await db
       .select({
@@ -41,30 +34,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         templateDescription: orshotTemplates.description,
       })
       .from(generatedDesigns)
-      .leftJoin(
-        orshotTemplates,
-        eq(generatedDesigns.templateId, orshotTemplates.id)
-      )
-      .where(
-        and(
-          eq(generatedDesigns.id, id),
-          eq(generatedDesigns.clientId, session.user.id)
-        )
-      )
-      .limit(1);
+      .leftJoin(orshotTemplates, eq(generatedDesigns.templateId, orshotTemplates.id))
+      .where(and(eq(generatedDesigns.id, id), eq(generatedDesigns.clientId, session.user.id)))
+      .limit(1)
 
     if (!design) {
-      return NextResponse.json({ error: "Design not found" }, { status: 404 });
+      throw Errors.notFound('Design')
     }
 
-    return NextResponse.json({ design });
-  } catch (error) {
-    logger.error({ error }, "Design fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch design" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ design })
+  })
 }
 
 /**
@@ -72,38 +51,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Save design to brand assets
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await params
 
     // Check if design exists and belongs to user
     const [design] = await db
       .select()
       .from(generatedDesigns)
-      .where(
-        and(
-          eq(generatedDesigns.id, id),
-          eq(generatedDesigns.clientId, session.user.id)
-        )
-      )
-      .limit(1);
+      .where(and(eq(generatedDesigns.id, id), eq(generatedDesigns.clientId, session.user.id)))
+      .limit(1)
 
     if (!design) {
-      return NextResponse.json({ error: "Design not found" }, { status: 404 });
+      throw Errors.notFound('Design')
     }
 
     if (design.savedToAssets) {
-      return NextResponse.json(
-        { error: "Design already saved to assets" },
-        { status: 400 }
-      );
+      throw Errors.badRequest('Design already saved to assets')
     }
 
     // Get user's company
@@ -111,13 +76,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .select({ companyId: users.companyId })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!user?.companyId) {
-      return NextResponse.json(
-        { error: "No brand profile found" },
-        { status: 400 }
-      );
+      throw Errors.badRequest('No brand profile found')
     }
 
     // Get current brand assets
@@ -125,14 +87,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .select({ brandAssets: companies.brandAssets })
       .from(companies)
       .where(eq(companies.id, user.companyId))
-      .limit(1);
+      .limit(1)
 
     // Add image to brand assets
-    const currentAssets = company?.brandAssets || { images: [], documents: [] };
+    const currentAssets = company?.brandAssets || { images: [], documents: [] }
     const updatedAssets = {
       ...currentAssets,
       images: [...(currentAssets.images || []), design.imageUrl],
-    };
+    }
 
     // Update company brand assets
     await db
@@ -141,23 +103,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         brandAssets: updatedAssets,
         updatedAt: new Date(),
       })
-      .where(eq(companies.id, user.companyId));
+      .where(eq(companies.id, user.companyId))
 
     // Mark design as saved
     await db
       .update(generatedDesigns)
       .set({ savedToAssets: true })
-      .where(eq(generatedDesigns.id, id));
+      .where(eq(generatedDesigns.id, id))
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
-      message: "Design saved to brand assets",
-    });
-  } catch (error) {
-    logger.error({ error }, "Save to assets error");
-    return NextResponse.json(
-      { error: "Failed to save design to assets" },
-      { status: 500 }
-    );
-  }
+      message: 'Design saved to brand assets',
+    })
+  })
 }

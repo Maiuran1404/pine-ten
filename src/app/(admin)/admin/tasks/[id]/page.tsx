@@ -1,21 +1,15 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
@@ -23,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 import {
   ArrowLeft,
   Clock,
@@ -41,196 +35,206 @@ import {
   UserPlus,
   Loader2,
   Star,
-} from "lucide-react";
-import { TaskProgressCard } from "@/components/admin/task-progress-card";
-import { toast } from "sonner";
+} from 'lucide-react'
+import { TaskProgressCard } from '@/components/admin/task-progress-card'
+import { toast } from 'sonner'
 
 interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  requirements: Record<string, unknown> | null;
-  styleReferences: string[];
-  chatHistory: { role: string; content: string; timestamp: string; attachments?: { fileName: string; fileUrl: string; fileType: string }[] }[];
-  estimatedHours: string | null;
-  creditsUsed: number;
-  maxRevisions: number;
-  revisionsUsed: number;
-  priority: number;
-  deadline: string | null;
-  assignedAt: string | null;
-  completedAt: string | null;
-  createdAt: string;
-  clientId: string;
+  id: string
+  title: string
+  description: string
+  status: string
+  requirements: Record<string, unknown> | null
+  styleReferences: string[]
+  chatHistory: {
+    role: string
+    content: string
+    timestamp: string
+    attachments?: { fileName: string; fileUrl: string; fileType: string }[]
+  }[]
+  estimatedHours: string | null
+  creditsUsed: number
+  maxRevisions: number
+  revisionsUsed: number
+  priority: number
+  deadline: string | null
+  assignedAt: string | null
+  completedAt: string | null
+  createdAt: string
+  clientId: string
   category: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
+    id: string
+    name: string
+    slug: string
+  } | null
   freelancer: {
-    id: string;
-    name: string;
-    image: string | null;
-  } | null;
+    id: string
+    name: string
+    image: string | null
+  } | null
   files: {
-    id: string;
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize: number;
-    isDeliverable: boolean;
-    createdAt: string;
-  }[];
+    id: string
+    fileName: string
+    fileUrl: string
+    fileType: string
+    fileSize: number
+    isDeliverable: boolean
+    createdAt: string
+  }[]
   messages: {
-    id: string;
-    content: string;
-    attachments: string[];
-    createdAt: string;
-    senderId: string;
-    senderName: string;
-    senderImage: string | null;
-  }[];
+    id: string
+    content: string
+    attachments: string[]
+    createdAt: string
+    senderId: string
+    senderName: string
+    senderImage: string | null
+  }[]
 }
 
 const statusConfig: Record<
   string,
-  { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: React.ReactNode }
+  {
+    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+    label: string
+    icon: React.ReactNode
+  }
 > = {
   PENDING: {
-    variant: "secondary",
-    label: "Pending",
+    variant: 'secondary',
+    label: 'Pending',
     icon: <Clock className="h-4 w-4" />,
   },
   ASSIGNED: {
-    variant: "outline",
-    label: "Assigned",
+    variant: 'outline',
+    label: 'Assigned',
     icon: <User className="h-4 w-4" />,
   },
   IN_PROGRESS: {
-    variant: "default",
-    label: "In Progress",
+    variant: 'default',
+    label: 'In Progress',
     icon: <RefreshCw className="h-4 w-4" />,
   },
   PENDING_ADMIN_REVIEW: {
-    variant: "destructive",
-    label: "Pending Admin Review",
+    variant: 'destructive',
+    label: 'Pending Admin Review',
     icon: <AlertCircle className="h-4 w-4" />,
   },
   IN_REVIEW: {
-    variant: "outline",
-    label: "In Review",
+    variant: 'outline',
+    label: 'In Review',
     icon: <FileText className="h-4 w-4" />,
   },
   REVISION_REQUESTED: {
-    variant: "destructive",
-    label: "Revision Requested",
+    variant: 'destructive',
+    label: 'Revision Requested',
     icon: <AlertCircle className="h-4 w-4" />,
   },
   COMPLETED: {
-    variant: "secondary",
-    label: "Completed",
+    variant: 'secondary',
+    label: 'Completed',
     icon: <CheckCircle2 className="h-4 w-4" />,
   },
   CANCELLED: {
-    variant: "destructive",
-    label: "Cancelled",
+    variant: 'destructive',
+    label: 'Cancelled',
     icon: <AlertCircle className="h-4 w-4" />,
   },
-};
+}
 
 interface Freelancer {
-  userId: string;
-  name: string;
-  email: string;
-  image: string | null;
-  completedTasks: number;
-  rating: string | null;
-  availability: boolean;
+  userId: string
+  name: string
+  email: string
+  image: string | null
+  completedTasks: number
+  rating: string | null
+  availability: boolean
 }
 
 export default function AdminTaskDetailPage() {
-  const params = useParams();
-  const [task, setTask] = useState<Task | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
-  const [isLoadingFreelancers, setIsLoadingFreelancers] = useState(false);
-  const [isReassigning, setIsReassigning] = useState(false);
-  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const params = useParams()
+  const [task, setTask] = useState<Task | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([])
+  const [isLoadingFreelancers, setIsLoadingFreelancers] = useState(false)
+  const [isReassigning, setIsReassigning] = useState(false)
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false)
 
   useEffect(() => {
     if (params.id) {
-      fetchTask(params.id as string);
+      fetchTask(params.id as string)
     }
-  }, [params.id]);
+  }, [params.id])
 
   const fetchTask = async (id: string) => {
     try {
-      const response = await fetch(`/api/tasks/${id}`);
+      const response = await fetch(`/api/tasks/${id}`)
       if (response.ok) {
-        const data = await response.json();
-        setTask(data.task);
+        const data = await response.json()
+        setTask(data.task)
       } else if (response.status === 404) {
-        setError("Task not found");
+        setError('Task not found')
       } else {
-        setError("Failed to load task");
+        setError('Failed to load task')
       }
     } catch (err) {
-      console.error("Failed to fetch task:", err);
-      setError("Failed to load task");
+      console.error('Failed to fetch task:', err)
+      setError('Failed to load task')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const fetchFreelancers = async () => {
-    if (freelancers.length > 0) return; // Already loaded
-    setIsLoadingFreelancers(true);
+    if (freelancers.length > 0) return // Already loaded
+    setIsLoadingFreelancers(true)
     try {
-      const response = await fetch(`/api/admin/tasks/${params.id}/reassign`);
+      const response = await fetch(`/api/admin/tasks/${params.id}/reassign`)
       if (response.ok) {
-        const data = await response.json();
-        setFreelancers(data.data.freelancers);
+        const data = await response.json()
+        setFreelancers(data.data.freelancers)
       }
     } catch (err) {
-      console.error("Failed to fetch freelancers:", err);
-      toast.error("Failed to load freelancers");
+      console.error('Failed to fetch freelancers:', err)
+      toast.error('Failed to load freelancers')
     } finally {
-      setIsLoadingFreelancers(false);
+      setIsLoadingFreelancers(false)
     }
-  };
+  }
 
   const handleReassign = async (freelancerId: string) => {
-    setIsReassigning(true);
+    setIsReassigning(true)
     try {
       const response = await fetch(`/api/admin/tasks/${params.id}/reassign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerId }),
-      });
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        toast.success(`Task reassigned to ${data.data.assignedTo}`);
-        setReassignDialogOpen(false);
+        const data = await response.json()
+        toast.success(`Task reassigned to ${data.data.assignedTo}`)
+        setReassignDialogOpen(false)
         // Refresh task data
-        fetchTask(params.id as string);
+        fetchTask(params.id as string)
       } else {
-        const error = await response.json();
-        toast.error(error.error?.message || "Failed to reassign task");
+        const error = await response.json()
+        toast.error(error.error?.message || 'Failed to reassign task')
       }
     } catch (err) {
-      console.error("Failed to reassign task:", err);
-      toast.error("Failed to reassign task");
+      console.error('Failed to reassign task:', err)
+      toast.error('Failed to reassign task')
     } finally {
-      setIsReassigning(false);
+      setIsReassigning(false)
     }
-  };
+  }
 
-  const canReassign = task && ["PENDING", "ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(task.status);
+  const canReassign =
+    task && ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(task.status)
 
-  const isImage = (fileType: string) => fileType.startsWith("image/");
+  const isImage = (fileType: string) => fileType.startsWith('image/')
 
   if (isLoading) {
     return (
@@ -265,7 +269,7 @@ export default function AdminTaskDetailPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !task) {
@@ -280,12 +284,10 @@ export default function AdminTaskDetailPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {error || "Task not found"}
-            </h2>
+            <h2 className="text-xl font-semibold mb-2">{error || 'Task not found'}</h2>
             <p className="text-muted-foreground mb-4">
-              The task you&apos;re looking for doesn&apos;t exist or you
-              don&apos;t have permission to view it.
+              The task you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission
+              to view it.
             </p>
             <Button asChild>
               <Link href="/admin/tasks">View All Tasks</Link>
@@ -293,14 +295,14 @@ export default function AdminTaskDetailPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
-  const status = statusConfig[task.status] || statusConfig.PENDING;
+  const status = statusConfig[task.status] || statusConfig.PENDING
 
   // Separate client attachments from deliverables
-  const clientAttachments = task.files.filter((f) => !f.isDeliverable);
-  const deliverables = task.files.filter((f) => f.isDeliverable);
+  const clientAttachments = task.files.filter((f) => !f.isDeliverable)
+  const deliverables = task.files.filter((f) => f.isDeliverable)
 
   return (
     <div className="space-y-6">
@@ -319,9 +321,7 @@ export default function AdminTaskDetailPage() {
                 {status.icon}
                 {status.label}
               </Badge>
-              {task.category && (
-                <Badge variant="outline">{task.category.name}</Badge>
-              )}
+              {task.category && <Badge variant="outline">{task.category.name}</Badge>}
             </div>
           </div>
         </div>
@@ -348,17 +348,12 @@ export default function AdminTaskDetailPage() {
                   <ImageIcon className="h-5 w-5" />
                   Client Attachments
                 </CardTitle>
-                <CardDescription>
-                  Reference files provided by the client
-                </CardDescription>
+                <CardDescription>Reference files provided by the client</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {clientAttachments.map((file) => (
-                    <div
-                      key={file.id}
-                      className="group relative border rounded-lg overflow-hidden"
-                    >
+                    <div key={file.id} className="group relative border rounded-lg overflow-hidden">
                       {isImage(file.fileType) ? (
                         <a
                           href={file.fileUrl}
@@ -384,9 +379,7 @@ export default function AdminTaskDetailPage() {
                           className="flex flex-col items-center justify-center p-4 aspect-video bg-muted hover:bg-muted/80 transition-colors"
                         >
                           <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-xs text-center truncate w-full">
-                            {file.fileName}
-                          </p>
+                          <p className="text-xs text-center truncate w-full">{file.fileName}</p>
                         </a>
                       )}
                       <div className="p-2 bg-background">
@@ -410,22 +403,18 @@ export default function AdminTaskDetailPage() {
                   <MessageSquare className="h-5 w-5" />
                   Chat History
                 </CardTitle>
-                <CardDescription>
-                  Original conversation with the client
-                </CardDescription>
+                <CardDescription>Original conversation with the client</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-[400px] overflow-y-auto">
                   {task.chatHistory.map((msg, idx) => (
                     <div
                       key={idx}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -464,9 +453,7 @@ export default function AdminTaskDetailPage() {
                   <FileText className="h-5 w-5" />
                   Deliverables
                 </CardTitle>
-                <CardDescription>
-                  Final files delivered by the freelancer
-                </CardDescription>
+                <CardDescription>Final files delivered by the freelancer</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -523,14 +510,12 @@ export default function AdminTaskDetailPage() {
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={message.senderImage || undefined} />
                         <AvatarFallback>
-                          {message.senderName?.[0]?.toUpperCase() || "U"}
+                          {message.senderName?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            {message.senderName}
-                          </span>
+                          <span className="font-medium text-sm">{message.senderName}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(message.createdAt).toLocaleString()}
                           </span>
@@ -588,9 +573,7 @@ export default function AdminTaskDetailPage() {
                   <div className="flex items-center gap-3">
                     <RefreshCw className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">
-                        Estimated Time
-                      </p>
+                      <p className="text-sm text-muted-foreground">Estimated Time</p>
                       <p className="font-medium">{task.estimatedHours} hours</p>
                     </div>
                   </div>
@@ -613,7 +596,7 @@ export default function AdminTaskDetailPage() {
                   <Avatar>
                     <AvatarImage src={task.freelancer.image || undefined} />
                     <AvatarFallback>
-                      {task.freelancer.name?.[0]?.toUpperCase() || "F"}
+                      {task.freelancer.name?.[0]?.toUpperCase() || 'F'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -626,10 +609,13 @@ export default function AdminTaskDetailPage() {
                   </div>
                 </div>
                 {canReassign && (
-                  <Dialog open={reassignDialogOpen} onOpenChange={(open) => {
-                    setReassignDialogOpen(open);
-                    if (open) fetchFreelancers();
-                  }}>
+                  <Dialog
+                    open={reassignDialogOpen}
+                    onOpenChange={(open) => {
+                      setReassignDialogOpen(open)
+                      if (open) fetchFreelancers()
+                    }}
+                  >
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="w-full">
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -663,12 +649,14 @@ export default function AdminTaskDetailPage() {
                               <Avatar>
                                 <AvatarImage src={freelancer.image || undefined} />
                                 <AvatarFallback>
-                                  {freelancer.name?.[0]?.toUpperCase() || "F"}
+                                  {freelancer.name?.[0]?.toUpperCase() || 'F'}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{freelancer.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{freelancer.email}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {freelancer.email}
+                                </p>
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-xs text-muted-foreground">
                                     {freelancer.completedTasks} tasks
@@ -680,16 +668,18 @@ export default function AdminTaskDetailPage() {
                                     </span>
                                   )}
                                   {!freelancer.availability && (
-                                    <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                                    <Badge variant="secondary" className="text-xs">
+                                      Unavailable
+                                    </Badge>
                                   )}
                                 </div>
                               </div>
                               {freelancer.userId === task.freelancer?.id && (
-                                <Badge variant="outline" className="text-xs">Current</Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  Current
+                                </Badge>
                               )}
-                              {isReassigning && (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              )}
+                              {isReassigning && <Loader2 className="h-4 w-4 animate-spin" />}
                             </button>
                           ))
                         )}
@@ -702,7 +692,7 @@ export default function AdminTaskDetailPage() {
           )}
 
           {/* Waiting for Assignment */}
-          {!task.freelancer && task.status === "PENDING" && (
+          {!task.freelancer && task.status === 'PENDING' && (
             <Card>
               <CardContent className="py-6 text-center">
                 <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -710,10 +700,13 @@ export default function AdminTaskDetailPage() {
                 <p className="text-sm text-muted-foreground mt-1">
                   No artist has claimed this task yet
                 </p>
-                <Dialog open={reassignDialogOpen} onOpenChange={(open) => {
-                  setReassignDialogOpen(open);
-                  if (open) fetchFreelancers();
-                }}>
+                <Dialog
+                  open={reassignDialogOpen}
+                  onOpenChange={(open) => {
+                    setReassignDialogOpen(open)
+                    if (open) fetchFreelancers()
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button variant="default" size="sm" className="mt-4">
                       <UserPlus className="h-4 w-4 mr-2" />
@@ -747,12 +740,14 @@ export default function AdminTaskDetailPage() {
                             <Avatar>
                               <AvatarImage src={freelancer.image || undefined} />
                               <AvatarFallback>
-                                {freelancer.name?.[0]?.toUpperCase() || "F"}
+                                {freelancer.name?.[0]?.toUpperCase() || 'F'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium truncate">{freelancer.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{freelancer.email}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {freelancer.email}
+                              </p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-muted-foreground">
                                   {freelancer.completedTasks} tasks
@@ -764,13 +759,13 @@ export default function AdminTaskDetailPage() {
                                   </span>
                                 )}
                                 {!freelancer.availability && (
-                                  <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Unavailable
+                                  </Badge>
                                 )}
                               </div>
                             </div>
-                            {isReassigning && (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            )}
+                            {isReassigning && <Loader2 className="h-4 w-4 animate-spin" />}
                           </button>
                         ))
                       )}
@@ -783,5 +778,5 @@ export default function AdminTaskDetailPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

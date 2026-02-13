@@ -1,36 +1,30 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { Save } from "lucide-react";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { Save } from 'lucide-react'
 
 interface Settings {
-  creditPrice?: number;
-  maxRevisions?: number;
-  platformFeePercent?: number;
-  maintenanceMode?: boolean;
-  newUserCredits?: number;
-  minWithdrawal?: number;
+  creditPrice?: number
+  maxRevisions?: number
+  platformFeePercent?: number
+  maintenanceMode?: boolean
+  newUserCredits?: number
+  minWithdrawal?: number
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [, setSettings] = useState<Settings>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const [localSettings, setLocalSettings] = useState<Settings>({
     creditPrice: 49,
     maxRevisions: 2,
@@ -38,17 +32,17 @@ export default function SettingsPage() {
     maintenanceMode: false,
     newUserCredits: 0,
     minWithdrawal: 100,
-  });
+  })
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    fetchSettings()
+  }, [])
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch("/api/admin/settings");
+      const response = await fetch('/api/admin/settings')
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         const merged = {
           creditPrice: data.settings.creditPrice ?? 49,
           maxRevisions: data.settings.maxRevisions ?? 2,
@@ -56,57 +50,57 @@ export default function SettingsPage() {
           maintenanceMode: data.settings.maintenanceMode ?? false,
           newUserCredits: data.settings.newUserCredits ?? 0,
           minWithdrawal: data.settings.minWithdrawal ?? 100,
-        };
-        setSettings(data.settings);
-        setLocalSettings(merged);
+        }
+        setSettings(data.settings)
+        setLocalSettings(merged)
       }
     } catch (error) {
-      console.error("Failed to fetch settings:", error);
+      console.error('Failed to fetch settings:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const saveSetting = async (key: string, value: unknown) => {
-    setIsSaving(true);
+  const _saveSetting = async (key: string, value: unknown) => {
+    setIsSaving(true)
     try {
-      const response = await fetch("/api/admin/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to save");
+      if (!response.ok) throw new Error('Failed to save')
 
-      toast.success("Setting saved successfully");
-      setSettings((prev) => ({ ...prev, [key]: value }));
+      toast.success('Setting saved successfully')
+      setSettings((prev) => ({ ...prev, [key]: value }))
     } catch {
-      toast.error("Failed to save setting");
+      toast.error('Failed to save setting')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleSaveAll = async () => {
-    setIsSaving(true);
+    setIsSaving(true)
     try {
       const promises = Object.entries(localSettings).map(([key, value]) =>
-        fetch("/api/admin/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key, value }),
         })
-      );
+      )
 
-      await Promise.all(promises);
-      toast.success("All settings saved successfully");
-      setSettings(localSettings);
+      await Promise.all(promises)
+      toast.success('All settings saved successfully')
+      setSettings(localSettings)
     } catch {
-      toast.error("Failed to save settings");
+      toast.error('Failed to save settings')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -121,7 +115,7 @@ export default function SettingsPage() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -159,9 +153,7 @@ export default function SettingsPage() {
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Price per credit in USD
-                </p>
+                <p className="text-xs text-muted-foreground">Price per credit in USD</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="platformFee">Platform Fee (%)</Label>
@@ -205,9 +197,7 @@ export default function SettingsPage() {
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Default maximum revisions per task
-                </p>
+                <p className="text-xs text-muted-foreground">Default maximum revisions per task</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newUserCredits">New User Credits</Label>
@@ -222,9 +212,7 @@ export default function SettingsPage() {
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Free credits given to new users
-                </p>
+                <p className="text-xs text-muted-foreground">Free credits given to new users</p>
               </div>
             </div>
           </CardContent>
@@ -282,13 +270,13 @@ export default function SettingsPage() {
             <Separator />
             <div className="pt-2">
               <p className="text-sm text-muted-foreground">
-                When maintenance mode is enabled, users will see a maintenance page
-                and won&apos;t be able to access the platform.
+                When maintenance mode is enabled, users will see a maintenance page and won&apos;t
+                be able to access the platform.
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+  )
 }

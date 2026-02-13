@@ -1,65 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { chatDrafts } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { logger } from "@/lib/logger";
-import { saveDraftSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { chatDrafts } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { saveDraftSchema } from '@/lib/validations'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 // GET - Fetch all drafts for current user
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
     const drafts = await db.query.chatDrafts.findMany({
       where: eq(chatDrafts.clientId, session.user.id),
       orderBy: (chatDrafts, { desc }) => [desc(chatDrafts.updatedAt)],
-    });
+    })
 
-    return NextResponse.json({ drafts });
-  } catch (error) {
-    logger.error({ error }, "Fetch drafts error");
-    return NextResponse.json(
-      { error: "Failed to fetch drafts" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ drafts })
+  })
 }
 
 // POST - Create or update a draft
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { id, title, messages, selectedStyles, pendingTask } = saveDraftSchema.parse(body);
+    const body = await request.json()
+    const { id, title, messages, selectedStyles, pendingTask } = saveDraftSchema.parse(body)
 
     // Check if ID is a valid UUID (not a local draft ID like "draft_xxx")
-    const isValidUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isValidUUID =
+      id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
     if (isValidUUID) {
       // Update existing draft with valid UUID
       const existing = await db.query.chatDrafts.findFirst({
-        where: and(
-          eq(chatDrafts.id, id),
-          eq(chatDrafts.clientId, session.user.id)
-        ),
-      });
+        where: and(eq(chatDrafts.id, id), eq(chatDrafts.clientId, session.user.id)),
+      })
 
       if (existing) {
         const [updated] = await db
@@ -72,9 +49,9 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(chatDrafts.id, id))
-          .returning();
+          .returning()
 
-        return NextResponse.json({ draft: updated });
+        return successResponse({ draft: updated })
       }
     }
 
@@ -83,65 +60,39 @@ export async function POST(request: NextRequest) {
       .insert(chatDrafts)
       .values({
         clientId: session.user.id,
-        title: title || "New Request",
+        title: title || 'New Request',
         messages: messages || [],
         selectedStyles: selectedStyles || [],
         pendingTask: pendingTask || null,
       })
-      .returning();
+      .returning()
 
-    return NextResponse.json({ draft, localId: id });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error);
-    }
-    logger.error({ error }, "Save draft error");
-    return NextResponse.json(
-      { error: "Failed to save draft" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ draft, localId: id })
+  })
 }
 
 // DELETE - Delete a draft
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: "Draft ID required" }, { status: 400 });
+      throw Errors.badRequest('Draft ID required')
     }
 
     // Check if ID is a valid UUID before attempting delete
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
     if (isValidUUID) {
       await db
         .delete(chatDrafts)
-        .where(
-          and(
-            eq(chatDrafts.id, id),
-            eq(chatDrafts.clientId, session.user.id)
-          )
-        );
+        .where(and(eq(chatDrafts.id, id), eq(chatDrafts.clientId, session.user.id)))
     }
     // If not a valid UUID, it's a local-only draft - just return success
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    logger.error({ error }, "Delete draft error");
-    return NextResponse.json(
-      { error: "Failed to delete draft" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ success: true })
+  })
 }

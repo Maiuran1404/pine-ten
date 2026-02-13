@@ -1,36 +1,26 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '@/components/ui/dialog'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   History,
   ChevronDown,
@@ -44,177 +34,180 @@ import {
   RefreshCw,
   Trash2,
   ExternalLink,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatDistanceToNow, format } from "date-fns";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { formatDistanceToNow, format } from 'date-fns'
 
 interface ImportedItem {
-  id: string;
-  name: string;
-  imageUrl: string;
-  deliverableType?: string;
-  styleAxis?: string;
-  toneBucket?: string;
-  energyBucket?: string;
-  confidence?: number;
+  id: string
+  name: string
+  imageUrl: string
+  deliverableType?: string
+  styleAxis?: string
+  toneBucket?: string
+  energyBucket?: string
+  confidence?: number
 }
 
 interface FailedItem {
-  url: string;
-  error: string;
+  url: string
+  error: string
 }
 
 interface SkippedItem {
-  url: string;
-  reason: string;
+  url: string
+  reason: string
 }
 
 interface ImportLog {
-  id: string;
-  source: "bigged" | "dribbble" | "manual_url" | "file_upload" | "page_scrape";
-  target: "deliverable_style" | "brand_reference";
-  triggeredBy: string | null;
-  triggeredByEmail: string | null;
-  searchQuery: string | null;
-  sourceUrl: string | null;
-  totalAttempted: number;
-  totalSuccessful: number;
-  totalFailed: number;
-  totalSkipped: number;
-  importedItems: ImportedItem[];
-  failedItems: FailedItem[];
-  skippedItems: SkippedItem[];
-  processingTimeMs: number | null;
-  confidenceThreshold: string | null;
-  status: string;
-  errorMessage: string | null;
-  startedAt: string;
-  completedAt: string | null;
-  createdAt: string;
-  userName: string | null;
+  id: string
+  source: 'bigged' | 'dribbble' | 'manual_url' | 'file_upload' | 'page_scrape'
+  target: 'deliverable_style' | 'brand_reference'
+  triggeredBy: string | null
+  triggeredByEmail: string | null
+  searchQuery: string | null
+  sourceUrl: string | null
+  totalAttempted: number
+  totalSuccessful: number
+  totalFailed: number
+  totalSkipped: number
+  importedItems: ImportedItem[]
+  failedItems: FailedItem[]
+  skippedItems: SkippedItem[]
+  processingTimeMs: number | null
+  confidenceThreshold: string | null
+  status: string
+  errorMessage: string | null
+  startedAt: string
+  completedAt: string | null
+  createdAt: string
+  userName: string | null
 }
 
 interface ImportLogsViewerProps {
-  target: "deliverable_style" | "brand_reference";
-  title?: string;
-  description?: string;
+  target: 'deliverable_style' | 'brand_reference'
+  title?: string
+  description?: string
 }
 
 const SOURCE_LABELS: Record<string, string> = {
-  bigged: "Bigged Ad Spy",
-  dribbble: "Dribbble",
-  manual_url: "Manual URL",
-  file_upload: "File Upload",
-  page_scrape: "Page Scrape",
-};
+  bigged: 'Bigged Ad Spy',
+  dribbble: 'Dribbble',
+  manual_url: 'Manual URL',
+  file_upload: 'File Upload',
+  page_scrape: 'Page Scrape',
+}
 
 const SOURCE_COLORS: Record<string, string> = {
-  bigged: "bg-purple-500",
-  dribbble: "bg-pink-500",
-  manual_url: "bg-blue-500",
-  file_upload: "bg-green-500",
-  page_scrape: "bg-orange-500",
-};
+  bigged: 'bg-purple-500',
+  dribbble: 'bg-pink-500',
+  manual_url: 'bg-blue-500',
+  file_upload: 'bg-green-500',
+  page_scrape: 'bg-orange-500',
+}
 
 export function ImportLogsViewer({
   target,
-  title = "Import History",
-  description = "View import logs and history",
+  title = 'Import History',
+  description = 'View import logs and history',
 }: ImportLogsViewerProps) {
-  const [logs, setLogs] = useState<ImportLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
-  const [selectedLog, setSelectedLog] = useState<ImportLog | null>(null);
+  const [logs, setLogs] = useState<ImportLog[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const [selectedLog, setSelectedLog] = useState<ImportLog | null>(null)
   const [stats, setStats] = useState({
     totalLogs: 0,
     totalImported: 0,
     totalFailed: 0,
     totalSkipped: 0,
-  });
+  })
 
   useEffect(() => {
-    fetchLogs();
-  }, [target, sourceFilter]);
+    fetchLogs()
+  }, [target, sourceFilter])
 
   const fetchLogs = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const params = new URLSearchParams({ target, limit: "100" });
-      if (sourceFilter !== "all") {
-        params.set("source", sourceFilter);
+      const params = new URLSearchParams({ target, limit: '100' })
+      if (sourceFilter !== 'all') {
+        params.set('source', sourceFilter)
       }
 
-      const response = await fetch(`/api/admin/import-logs?${params}`);
-      const data = await response.json();
+      const response = await fetch(`/api/admin/import-logs?${params}`)
+      const data = await response.json()
 
       if (data.success) {
-        setLogs(data.data.logs);
-        setStats(data.data.stats);
+        setLogs(data.data.logs)
+        setStats(data.data.stats)
       } else {
-        toast.error("Failed to fetch import logs");
+        toast.error('Failed to fetch import logs')
       }
     } catch (error) {
-      console.error("Failed to fetch import logs:", error);
-      toast.error("Failed to fetch import logs");
+      console.error('Failed to fetch import logs:', error)
+      toast.error('Failed to fetch import logs')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/import-logs?id=${id}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
 
       if (response.ok) {
-        setLogs((prev) => prev.filter((log) => log.id !== id));
-        toast.success("Log deleted");
+        setLogs((prev) => prev.filter((log) => log.id !== id))
+        toast.success('Log deleted')
       } else {
-        toast.error("Failed to delete log");
+        toast.error('Failed to delete log')
       }
     } catch {
-      toast.error("Failed to delete log");
+      toast.error('Failed to delete log')
     }
-  };
+  }
 
   const toggleLogExpanded = (id: string) => {
     setExpandedLogs((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new Set(prev)
       if (newSet.has(id)) {
-        newSet.delete(id);
+        newSet.delete(id)
       } else {
-        newSet.add(id);
+        newSet.add(id)
       }
-      return newSet;
-    });
-  };
+      return newSet
+    })
+  }
 
   const getStatusBadge = (status: string, totalFailed: number, totalSuccessful: number) => {
-    if (status === "failed" || totalSuccessful === 0) {
+    if (status === 'failed' || totalSuccessful === 0) {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="h-3 w-3" />
           Failed
         </Badge>
-      );
+      )
     }
-    if (status === "partial" || totalFailed > 0) {
+    if (status === 'partial' || totalFailed > 0) {
       return (
-        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 flex items-center gap-1">
+        <Badge
+          variant="outline"
+          className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 flex items-center gap-1"
+        >
           <AlertCircle className="h-3 w-3" />
           Partial
         </Badge>
-      );
+      )
     }
     return (
       <Badge className="bg-green-500 flex items-center gap-1">
         <CheckCircle2 className="h-3 w-3" />
         Success
       </Badge>
-    );
-  };
+    )
+  }
 
   return (
     <Card>
@@ -242,7 +235,7 @@ export function ImportLogsViewer({
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" onClick={fetchLogs}>
-              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
             </Button>
           </div>
         </div>
@@ -297,7 +290,7 @@ export function ImportLogsViewer({
                         ) : (
                           <ChevronRight className="h-4 w-4" />
                         )}
-                        <Badge className={cn("text-white", SOURCE_COLORS[log.source])}>
+                        <Badge className={cn('text-white', SOURCE_COLORS[log.source])}>
                           {SOURCE_LABELS[log.source]}
                         </Badge>
                         {log.searchQuery && (
@@ -332,15 +325,15 @@ export function ImportLogsViewer({
                       <div className="flex flex-wrap gap-4 text-sm">
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          <span>{log.userName || log.triggeredByEmail || "System"}</span>
+                          <span>{log.userName || log.triggeredByEmail || 'System'}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Started:</span>{" "}
-                          {format(new Date(log.startedAt), "MMM d, yyyy h:mm a")}
+                          <span className="text-muted-foreground">Started:</span>{' '}
+                          {format(new Date(log.startedAt), 'MMM d, yyyy h:mm a')}
                         </div>
                         {log.processingTimeMs && (
                           <div>
-                            <span className="text-muted-foreground">Duration:</span>{" "}
+                            <span className="text-muted-foreground">Duration:</span>{' '}
                             {log.processingTimeMs < 1000
                               ? `${log.processingTimeMs}ms`
                               : `${(log.processingTimeMs / 1000).toFixed(1)}s`}
@@ -348,7 +341,7 @@ export function ImportLogsViewer({
                         )}
                         {log.confidenceThreshold && (
                           <div>
-                            <span className="text-muted-foreground">Confidence threshold:</span>{" "}
+                            <span className="text-muted-foreground">Confidence threshold:</span>{' '}
                             {Math.round(parseFloat(log.confidenceThreshold) * 100)}%
                           </div>
                         )}
@@ -400,7 +393,10 @@ export function ImportLogsViewer({
                           </h4>
                           <div className="space-y-1">
                             {log.failedItems.slice(0, 3).map((item, idx) => (
-                              <div key={idx} className="text-xs flex items-start gap-2 text-red-600">
+                              <div
+                                key={idx}
+                                className="text-xs flex items-start gap-2 text-red-600"
+                              >
                                 <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                 <span className="truncate">{item.error}</span>
                               </div>
@@ -431,11 +427,7 @@ export function ImportLogsViewer({
 
                       {/* Actions */}
                       <div className="flex justify-end gap-2 pt-2 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedLog(log)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
                           <ExternalLink className="h-3 w-3 mr-1" />
                           View Details
                         </Button>
@@ -465,15 +457,15 @@ export function ImportLogsViewer({
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Badge className={cn("text-white", SOURCE_COLORS[selectedLog.source])}>
+                  <Badge className={cn('text-white', SOURCE_COLORS[selectedLog.source])}>
                     {SOURCE_LABELS[selectedLog.source]}
                   </Badge>
                   {selectedLog.searchQuery && `"${selectedLog.searchQuery}"`}
                 </DialogTitle>
                 <DialogDescription>
                   {format(new Date(selectedLog.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-                  {" • "}
-                  {selectedLog.userName || selectedLog.triggeredByEmail || "System"}
+                  {' • '}
+                  {selectedLog.userName || selectedLog.triggeredByEmail || 'System'}
                 </DialogDescription>
               </DialogHeader>
 
@@ -485,7 +477,9 @@ export function ImportLogsViewer({
                     <div className="text-xs text-muted-foreground">Attempted</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-green-600">{selectedLog.totalSuccessful}</div>
+                    <div className="text-xl font-bold text-green-600">
+                      {selectedLog.totalSuccessful}
+                    </div>
                     <div className="text-xs text-muted-foreground">Successful</div>
                   </div>
                   <div className="text-center">
@@ -493,7 +487,9 @@ export function ImportLogsViewer({
                     <div className="text-xs text-muted-foreground">Failed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-yellow-600">{selectedLog.totalSkipped}</div>
+                    <div className="text-xl font-bold text-yellow-600">
+                      {selectedLog.totalSkipped}
+                    </div>
                     <div className="text-xs text-muted-foreground">Skipped</div>
                   </div>
                 </div>
@@ -587,5 +583,5 @@ export function ImportLogsViewer({
         </DialogContent>
       </Dialog>
     </Card>
-  );
+  )
 }

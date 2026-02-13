@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   Check,
   Edit2,
@@ -10,24 +10,28 @@ import {
   FileText,
   Lightbulb,
   AlertCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import type { IntakeSummary as IntakeSummaryType, SummaryItem, ParsedSummary } from "@/lib/creative-intake/types";
-import type { ServiceType } from "@/lib/creative-intake/types";
-import { SERVICE_DEFINITIONS } from "@/lib/creative-intake/types";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
+import type {
+  IntakeSummary as IntakeSummaryType,
+  SummaryItem,
+  ParsedSummary,
+} from '@/lib/creative-intake/types'
+import type { ServiceType } from '@/lib/creative-intake/types'
+import { SERVICE_DEFINITIONS } from '@/lib/creative-intake/types'
 
 // Union type that accepts both full IntakeSummary and parsed summaries
-type SummaryInput = IntakeSummaryType | ParsedSummary;
+type SummaryInput = IntakeSummaryType | ParsedSummary
 
 interface IntakeSummaryCardProps {
-  summary: SummaryInput;
-  onEdit?: (field: string, newValue: string | string[]) => void;
-  onConfirm: () => void;
-  onAddMore?: () => void;
-  disabled?: boolean;
-  className?: string;
+  summary: SummaryInput
+  onEdit?: (field: string, newValue: string | string[]) => void
+  onConfirm: () => void
+  onAddMore?: () => void
+  disabled?: boolean
+  className?: string
 }
 
 export function IntakeSummaryCard({
@@ -38,42 +42,39 @@ export function IntakeSummaryCard({
   disabled = false,
   className,
 }: IntakeSummaryCardProps) {
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>("");
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState<string>('')
 
   // Handle both full IntakeSummary and ParsedSummary
-  const serviceType = "serviceType" in summary ? summary.serviceType : undefined;
-  const serviceDefinition = serviceType ? SERVICE_DEFINITIONS[serviceType] : undefined;
-  const readyToSubmit = "readyToSubmit" in summary ? summary.readyToSubmit : true;
+  const serviceType = 'serviceType' in summary ? summary.serviceType : undefined
+  const serviceDefinition = serviceType ? SERVICE_DEFINITIONS[serviceType] : undefined
+  const readyToSubmit = 'readyToSubmit' in summary ? summary.readyToSubmit : true
 
   const handleStartEdit = (item: SummaryItem) => {
-    if (!item.editable || !onEdit) return;
-    setEditingField(item.label);
-    setEditValue(Array.isArray(item.value) ? item.value.join(", ") : item.value);
-  };
+    if (!item.editable || !onEdit) return
+    setEditingField(item.label)
+    setEditValue(Array.isArray(item.value) ? item.value.join(', ') : item.value)
+  }
 
   const handleSaveEdit = () => {
     if (editingField && onEdit) {
-      onEdit(editingField, editValue);
+      onEdit(editingField, editValue)
     }
-    setEditingField(null);
-    setEditValue("");
-  };
+    setEditingField(null)
+    setEditValue('')
+  }
 
   const handleCancelEdit = () => {
-    setEditingField(null);
-    setEditValue("");
-  };
+    setEditingField(null)
+    setEditValue('')
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={cn(
-        "bg-card border border-border rounded-xl overflow-hidden",
-        className
-      )}
+      className={cn('bg-card border border-border rounded-xl overflow-hidden', className)}
     >
       {/* Header */}
       <div className="bg-muted/30 px-4 py-3 border-b border-border">
@@ -81,9 +82,7 @@ export function IntakeSummaryCard({
           <FileText className="h-4 w-4 text-primary" />
           <h3 className="font-medium text-foreground">{summary.title}</h3>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {serviceDefinition?.label} brief
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{serviceDefinition?.label} brief</p>
       </div>
 
       {/* Summary Items */}
@@ -101,12 +100,12 @@ export function IntakeSummaryCard({
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {item.label}
                 </span>
-                {item.source === "default" && (
+                {item.source === 'default' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
                     recommended
                   </span>
                 )}
-                {item.source === "inferred" && (
+                {item.source === 'inferred' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                     inferred
                   </span>
@@ -140,12 +139,12 @@ export function IntakeSummaryCard({
                 </div>
               ) : (
                 <p className="text-sm text-foreground mt-0.5">
-                  {Array.isArray(item.value) ? item.value.join(", ") : item.value}
+                  {Array.isArray(item.value) ? item.value.join(', ') : item.value}
                 </p>
               )}
             </div>
 
-            {("editable" in item) && item.editable && onEdit && editingField !== item.label && (
+            {'editable' in item && item.editable && onEdit && editingField !== item.label && (
               <button
                 onClick={() => handleStartEdit(item as SummaryItem)}
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -164,16 +163,11 @@ export function IntakeSummaryCard({
           <div className="bg-primary/5 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2 text-primary">
               <Lightbulb className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">
-                Recommendations
-              </span>
+              <span className="text-xs font-medium uppercase tracking-wide">Recommendations</span>
             </div>
             <ul className="space-y-1.5">
               {summary.recommendations.map((rec, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                >
+                <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-3 w-3 mt-1 text-primary shrink-0" />
                   <span>{rec}</span>
                 </li>
@@ -196,11 +190,7 @@ export function IntakeSummaryCard({
             Add more details
           </Button>
         )}
-        <Button
-          onClick={onConfirm}
-          disabled={disabled || !readyToSubmit}
-          className="gap-2 ml-auto"
-        >
+        <Button onClick={onConfirm} disabled={disabled || !readyToSubmit} className="gap-2 ml-auto">
           {readyToSubmit ? (
             <>
               Looks good
@@ -215,16 +205,16 @@ export function IntakeSummaryCard({
         </Button>
       </div>
     </motion.div>
-  );
+  )
 }
 
 /**
  * Smart recommendation badge/pill for inline display
  */
 interface SmartRecommendationProps {
-  recommendation: string;
-  onAccept?: () => void;
-  className?: string;
+  recommendation: string
+  onAccept?: () => void
+  className?: string
 }
 
 export function SmartRecommendation({
@@ -237,8 +227,8 @@ export function SmartRecommendation({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
-        "bg-primary/10 text-primary text-xs",
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full',
+        'bg-primary/10 text-primary text-xs',
         className
       )}
     >
@@ -253,17 +243,17 @@ export function SmartRecommendation({
         </button>
       )}
     </motion.div>
-  );
+  )
 }
 
 /**
  * Progress indicator for intake flow
  */
 interface IntakeProgressProps {
-  serviceType: ServiceType;
-  currentStep: number;
-  totalSteps: number;
-  className?: string;
+  serviceType: ServiceType
+  currentStep: number
+  totalSteps: number
+  className?: string
 }
 
 export function IntakeProgress({
@@ -272,15 +262,13 @@ export function IntakeProgress({
   totalSteps,
   className,
 }: IntakeProgressProps) {
-  const serviceDefinition = SERVICE_DEFINITIONS[serviceType];
-  const progress = Math.round((currentStep / totalSteps) * 100);
+  const serviceDefinition = SERVICE_DEFINITIONS[serviceType]
+  const progress = Math.round((currentStep / totalSteps) * 100)
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">
-          {serviceDefinition?.label}
-        </span>
+        <span className="text-muted-foreground">{serviceDefinition?.label}</span>
         <span className="text-muted-foreground">
           {currentStep} of {totalSteps}
         </span>
@@ -294,32 +282,26 @@ export function IntakeProgress({
         />
       </div>
     </div>
-  );
+  )
 }
 
 /**
  * Next step indicator
  */
 interface NextStepIndicatorProps {
-  nextStep: string;
-  className?: string;
+  nextStep: string
+  className?: string
 }
 
-export function NextStepIndicator({
-  nextStep,
-  className,
-}: NextStepIndicatorProps) {
+export function NextStepIndicator({ nextStep, className }: NextStepIndicatorProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "flex items-center gap-2 text-xs text-muted-foreground",
-        className
-      )}
+      className={cn('flex items-center gap-2 text-xs text-muted-foreground', className)}
     >
       <ChevronRight className="h-3 w-3" />
       <span>Next: {nextStep}</span>
     </motion.div>
-  );
+  )
 }

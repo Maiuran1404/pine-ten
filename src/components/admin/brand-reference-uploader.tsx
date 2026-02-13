@@ -1,15 +1,15 @@
-"use client";
+'use client'
 
-import { AIUploader, PendingUpload } from "./ai-uploader";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { AIUploader, PendingUpload } from './ai-uploader'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   TONE_BUCKETS,
   ENERGY_BUCKETS,
@@ -23,21 +23,21 @@ import {
   type EnergyBucket,
   type DensityBucket,
   type ColorBucket,
-} from "@/lib/constants/reference-libraries";
+} from '@/lib/constants/reference-libraries'
 
 interface BrandClassification {
-  name: string;
-  description: string;
-  toneBucket: ToneBucket;
-  energyBucket: EnergyBucket;
-  densityBucket: DensityBucket;
-  colorBucket: ColorBucket;
-  colorSamples: string[];
-  confidence: number;
+  name: string
+  description: string
+  toneBucket: ToneBucket
+  energyBucket: EnergyBucket
+  densityBucket: DensityBucket
+  colorBucket: ColorBucket
+  colorSamples: string[]
+  confidence: number
 }
 
 interface BrandReferenceUploaderProps {
-  onUploadComplete?: () => void;
+  onUploadComplete?: () => void
 }
 
 export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploaderProps) {
@@ -45,7 +45,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
     upload: PendingUpload<BrandClassification>,
     updateClassification: (id: string, field: string, value: unknown) => void
   ) => {
-    if (!upload.classification) return null;
+    if (!upload.classification) return null
 
     return (
       <>
@@ -54,9 +54,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
             <label className="text-xs text-muted-foreground">Brand Name</label>
             <Input
               value={upload.classification.name}
-              onChange={(e) =>
-                updateClassification(upload.id, "name", e.target.value)
-              }
+              onChange={(e) => updateClassification(upload.id, 'name', e.target.value)}
               className="h-8 mt-1"
             />
           </div>
@@ -72,7 +70,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
             <label className="text-xs text-muted-foreground">Tone</label>
             <Select
               value={upload.classification.toneBucket}
-              onValueChange={(v) => updateClassification(upload.id, "toneBucket", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'toneBucket', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -90,7 +88,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
             <label className="text-xs text-muted-foreground">Energy</label>
             <Select
               value={upload.classification.energyBucket}
-              onValueChange={(v) => updateClassification(upload.id, "energyBucket", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'energyBucket', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -108,7 +106,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
             <label className="text-xs text-muted-foreground">Density</label>
             <Select
               value={upload.classification.densityBucket}
-              onValueChange={(v) => updateClassification(upload.id, "densityBucket", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'densityBucket', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -126,7 +124,7 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
             <label className="text-xs text-muted-foreground">Color</label>
             <Select
               value={upload.classification.colorBucket}
-              onValueChange={(v) => updateClassification(upload.id, "colorBucket", v)}
+              onValueChange={(v) => updateClassification(upload.id, 'colorBucket', v)}
             >
               <SelectTrigger className="h-8 mt-1">
                 <SelectValue />
@@ -157,8 +155,8 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
           </div>
         )}
       </>
-    );
-  };
+    )
+  }
 
   return (
     <AIUploader<BrandClassification>
@@ -168,5 +166,5 @@ export function BrandReferenceUploader({ onUploadComplete }: BrandReferenceUploa
       onUploadComplete={onUploadComplete}
       renderClassificationEditor={renderClassificationEditor}
     />
-  );
+  )
 }

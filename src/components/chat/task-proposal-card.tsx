@@ -1,20 +1,20 @@
-"use client";
+'use client'
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Coins, Clock, Sparkles, Pencil } from "lucide-react";
-import { TaskProposal, getDeliveryDateString } from "./types";
-import { LoadingSpinner } from "@/components/shared/loading";
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Coins, Clock, Sparkles, Pencil } from 'lucide-react'
+import { TaskProposal, getDeliveryDateString } from './types'
+import { LoadingSpinner } from '@/components/shared/loading'
 
 interface TaskProposalCardProps {
-  proposal: TaskProposal;
+  proposal: TaskProposal
   /** If provided, shows action buttons for submission */
-  showActions?: boolean;
-  onSubmit?: () => void;
-  onMakeChanges?: () => void;
-  isLoading?: boolean;
-  userCredits?: number;
+  showActions?: boolean
+  onSubmit?: () => void
+  onMakeChanges?: () => void
+  isLoading?: boolean
+  userCredits?: number
 }
 
 /**
@@ -29,8 +29,8 @@ export function TaskProposalCard({
   isLoading = false,
   userCredits = 0,
 }: TaskProposalCardProps) {
-  const creditsRequired = proposal.creditsRequired ?? 15;
-  const hasEnoughCredits = userCredits >= creditsRequired;
+  const creditsRequired = proposal.creditsRequired ?? 15
+  const hasEnoughCredits = userCredits >= creditsRequired
 
   return (
     <Card className="bg-muted/30 border-emerald-500/20">
@@ -40,27 +40,17 @@ export function TaskProposalCard({
             <Sparkles className="h-4 w-4 text-emerald-500" />
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-base">
-              {proposal.title || "Task Summary"}
-            </h4>
-            <p className="text-sm text-muted-foreground mt-1">
-              {proposal.description}
-            </p>
+            <h4 className="font-semibold text-base">{proposal.title || 'Task Summary'}</h4>
+            <p className="text-sm text-muted-foreground mt-1">{proposal.description}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4 ml-11">
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 bg-background"
-          >
+          <Badge variant="outline" className="flex items-center gap-1 bg-background">
             <Coins className="h-3 w-3" aria-hidden="true" />
             {creditsRequired} credits
           </Badge>
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 bg-background"
-          >
+          <Badge variant="outline" className="flex items-center gap-1 bg-background">
             <Clock className="h-3 w-3" aria-hidden="true" />
             {getDeliveryDateString(proposal.deliveryDays || 3)}
           </Badge>
@@ -69,8 +59,8 @@ export function TaskProposalCard({
               variant="outline"
               className={`flex items-center gap-1 ${
                 hasEnoughCredits
-                  ? "text-emerald-600 border-emerald-200 bg-emerald-50"
-                  : "text-rose-600 border-rose-200 bg-rose-50"
+                  ? 'text-emerald-600 border-emerald-200 bg-emerald-50'
+                  : 'text-rose-600 border-rose-200 bg-rose-50'
               }`}
             >
               You have {userCredits} credits
@@ -82,9 +72,8 @@ export function TaskProposalCard({
           <div className="ml-11">
             {!hasEnoughCredits && (
               <div className="mb-3 p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300">
-                <span className="font-medium">Insufficient credits.</span> You
-                need {creditsRequired - userCredits} more credits to submit this
-                request.
+                <span className="font-medium">Insufficient credits.</span> You need{' '}
+                {creditsRequired - userCredits} more credits to submit this request.
               </div>
             )}
             <div className="flex gap-2">
@@ -104,17 +93,13 @@ export function TaskProposalCard({
                 disabled={isLoading}
                 className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
               >
-                {isLoading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-                {hasEnoughCredits ? "Review & Submit" : "Buy Credits"}
+                {isLoading ? <LoadingSpinner size="sm" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {hasEnoughCredits ? 'Review & Submit' : 'Buy Credits'}
               </Button>
             </div>
           </div>
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -1,19 +1,13 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useSession } from "@/lib/auth-client";
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useSession } from '@/lib/auth-client'
+import { motion } from 'framer-motion'
 import {
   FolderOpen,
   Clock,
@@ -29,72 +23,74 @@ import {
   Coins,
   Target,
   DollarSign,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface FreelancerStats {
-  activeTasks: number;
-  completedTasks: number;
-  pendingReview: number;
-  rating: number;
-  totalEarnings: number;
-  monthlyEarnings: number;
-  monthlyTasks: number;
+  activeTasks: number
+  completedTasks: number
+  pendingReview: number
+  rating: number
+  totalEarnings: number
+  monthlyEarnings: number
+  monthlyTasks: number
 }
 
 interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  deadline: string | null;
-  creditsUsed: number;
+  id: string
+  title: string
+  description: string
+  status: string
+  deadline: string | null
+  creditsUsed: number
 }
 
 export default function FreelancerDashboardPage() {
-  const { data: session } = useSession();
-  const [stats, setStats] = useState<FreelancerStats | null>(null);
-  const [activeTasks, setActiveTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [profileStatus, setProfileStatus] = useState<string | null>(null);
+  const { data: session } = useSession()
+  const [stats, setStats] = useState<FreelancerStats | null>(null)
+  const [activeTasks, setActiveTasks] = useState<Task[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [profileStatus, setProfileStatus] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData()
+  }, [])
 
   const fetchDashboardData = async () => {
     try {
       const [statsRes, tasksRes, profileRes] = await Promise.all([
-        fetch("/api/freelancer/stats"),
-        fetch("/api/tasks?limit=5&view=freelancer"),
-        fetch("/api/freelancer/profile"),
-      ]);
+        fetch('/api/freelancer/stats'),
+        fetch('/api/tasks?limit=5&view=freelancer'),
+        fetch('/api/freelancer/profile'),
+      ])
 
       if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data);
+        const data = await statsRes.json()
+        setStats(data)
       }
 
       if (tasksRes.ok) {
-        const data = await tasksRes.json();
-        const taskList = data.data?.tasks || data.tasks || [];
+        const data = await tasksRes.json()
+        const taskList = data.data?.tasks || data.tasks || []
         // Show ASSIGNED and IN_PROGRESS tasks (not just IN_PROGRESS)
-        setActiveTasks(taskList.filter((t: { status: string }) => 
-          ["ASSIGNED", "IN_PROGRESS", "REVISION_REQUESTED"].includes(t.status)
-        ));
+        setActiveTasks(
+          taskList.filter((t: { status: string }) =>
+            ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(t.status)
+          )
+        )
       }
 
       if (profileRes.ok) {
-        const data = await profileRes.json();
-        setProfileStatus(data.status);
+        const data = await profileRes.json()
+        setProfileStatus(data.status)
       }
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+      console.error('Failed to fetch dashboard data:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const user = session?.user;
+  const user = session?.user
 
   // Show loading state
   if (isLoading) {
@@ -110,11 +106,11 @@ export default function FreelancerDashboardPage() {
           <Skeleton className="h-16 w-full max-w-md rounded-xl mt-8 bg-muted" />
         </div>
       </div>
-    );
+    )
   }
 
   // Show onboarding prompt for users who haven't completed onboarding
-  if (profileStatus === "NOT_FOUND") {
+  if (profileStatus === 'NOT_FOUND') {
     return (
       <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-24 pb-20 bg-background overflow-auto">
         {/* Curtain light from top */}
@@ -127,7 +123,7 @@ export default function FreelancerDashboardPage() {
               rgba(13, 148, 136, 0.02) 40%,
               transparent 60%
             )`,
-            filter: "blur(40px)",
+            filter: 'blur(40px)',
           }}
         />
 
@@ -145,7 +141,7 @@ export default function FreelancerDashboardPage() {
           {/* Welcome Text */}
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-normal tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Welcome, {user?.name?.split(" ")[0]}!
+              Welcome, {user?.name?.split(' ')[0]}!
             </h1>
             <h2 className="text-2xl sm:text-3xl font-normal tracking-tight text-foreground">
               Let&apos;s set up your profile
@@ -194,16 +190,14 @@ export default function FreelancerDashboardPage() {
 
         {/* Footer */}
         <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-          <p className="text-sm text-muted-foreground">
-            Join our network of talented designers.
-          </p>
+          <p className="text-sm text-muted-foreground">Join our network of talented designers.</p>
         </div>
       </div>
-    );
+    )
   }
 
   // Show pending review state
-  if (profileStatus === "PENDING") {
+  if (profileStatus === 'PENDING') {
     return (
       <div className="relative flex flex-col items-center justify-start min-h-full px-4 pt-24 pb-20 bg-background overflow-auto">
         {/* Curtain light from top */}
@@ -216,7 +210,7 @@ export default function FreelancerDashboardPage() {
               rgba(234, 179, 8, 0.01) 40%,
               transparent 60%
             )`,
-            filter: "blur(40px)",
+            filter: 'blur(40px)',
           }}
         />
 
@@ -236,17 +230,17 @@ export default function FreelancerDashboardPage() {
             <h1
               className="text-3xl sm:text-4xl font-normal tracking-tight"
               style={{
-                background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
+                background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
               }}
             >
               Application Under Review
             </h1>
             <p className="text-muted-foreground text-base mt-4 max-w-md">
-              Your artist application is being reviewed by our team.
-              You&apos;ll receive a notification once it&apos;s approved.
+              Your artist application is being reviewed by our team. You&apos;ll receive a
+              notification once it&apos;s approved.
             </p>
           </div>
 
@@ -271,18 +265,18 @@ export default function FreelancerDashboardPage() {
           </div>
         </motion.div>
       </div>
-    );
+    )
   }
 
   // Calculate progress towards monthly goal (example: 50 credits)
-  const monthlyGoal = 50;
-  const progressPercent = stats ? Math.min((stats.monthlyEarnings / monthlyGoal) * 100, 100) : 0;
+  const monthlyGoal = 50
+  const progressPercent = stats ? Math.min((stats.monthlyEarnings / monthlyGoal) * 100, 100) : 0
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Welcome back, {user?.name?.split(" ")[0]}
+          Welcome back, {user?.name?.split(' ')[0]}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-0.5 sm:mt-1">
           Here&apos;s an overview of your work
@@ -308,20 +302,26 @@ export default function FreelancerDashboardPage() {
               <div className="grid gap-6 sm:grid-cols-3 mb-6">
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-bold">{stats?.monthlyEarnings || 0}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">
+                      {stats?.monthlyEarnings || 0}
+                    </span>
                     <span className="text-muted-foreground text-sm">credits</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Earned this month</p>
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-bold">{stats?.monthlyTasks || 0}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">
+                      {stats?.monthlyTasks || 0}
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Tasks completed</p>
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-bold">{stats?.rating?.toFixed(1) || "—"}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">
+                      {stats?.rating?.toFixed(1) || '—'}
+                    </span>
                     {stats?.rating && <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Average rating</p>
@@ -335,13 +335,15 @@ export default function FreelancerDashboardPage() {
                     <Target className="h-4 w-4" />
                     Monthly goal
                   </span>
-                  <span className="font-medium">{Math.round(progressPercent)}% of {monthlyGoal} credits</span>
+                  <span className="font-medium">
+                    {Math.round(progressPercent)}% of {monthlyGoal} credits
+                  </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
                     className="h-full bg-primary rounded-full"
                   />
                 </div>
@@ -352,56 +354,73 @@ export default function FreelancerDashboardPage() {
       </Card>
 
       {/* Revision Requested — Critical Banner */}
-      {activeTasks.filter((t) => t.status === "REVISION_REQUESTED").length > 0 && (
+      {activeTasks.filter((t) => t.status === 'REVISION_REQUESTED').length > 0 && (
         <div className="space-y-3">
-          {activeTasks.filter((t) => t.status === "REVISION_REQUESTED").map((task) => (
-            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-              <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:border-red-600 transition-colors cursor-pointer">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-red-700 dark:text-red-400">Revision requested</span>
+          {activeTasks
+            .filter((t) => t.status === 'REVISION_REQUESTED')
+            .map((task) => (
+              <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+                <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:border-red-600 transition-colors cursor-pointer">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
                     </div>
-                    <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
-                    <p className="text-xs text-red-600/70 dark:text-red-400/70">Review feedback and submit an updated version</p>
-                  </div>
-                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
-                    Fix Now
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-red-700 dark:text-red-400">
+                          Revision requested
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground font-medium mt-0.5 truncate">
+                        {task.title}
+                      </p>
+                      <p className="text-xs text-red-600/70 dark:text-red-400/70">
+                        Review feedback and submit an updated version
+                      </p>
+                    </div>
+                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+                      Fix Now
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
         </div>
       )}
 
       {/* New Task Assignment Banners */}
-      {activeTasks.filter((t) => t.status === "ASSIGNED").length > 0 && (
+      {activeTasks.filter((t) => t.status === 'ASSIGNED').length > 0 && (
         <div className="space-y-3">
-          {activeTasks.filter((t) => t.status === "ASSIGNED").map((task) => (
-            <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-              <Card className="border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">New task assigned to you</span>
+          {activeTasks
+            .filter((t) => t.status === 'ASSIGNED')
+            .map((task) => (
+              <Link key={task.id} href={`/portal/tasks/${task.id}`}>
+                <Card className="border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-5 w-5 text-emerald-600" />
                     </div>
-                    <p className="text-sm text-foreground font-medium mt-0.5 truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{task.description}</p>
-                  </div>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
-                    View Task
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                          New task assigned to you
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground font-medium mt-0.5 truncate">
+                        {task.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                    >
+                      View Task
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
         </div>
       )}
 
@@ -474,9 +493,7 @@ export default function FreelancerDashboardPage() {
               </div>
               <div>
                 <CardTitle className="text-lg">My Tasks</CardTitle>
-                <CardDescription>
-                  View and manage your assigned tasks
-                </CardDescription>
+                <CardDescription>View and manage your assigned tasks</CardDescription>
               </div>
             </CardHeader>
           </Link>
@@ -490,9 +507,7 @@ export default function FreelancerDashboardPage() {
               </div>
               <div>
                 <CardTitle className="text-lg">Payouts</CardTitle>
-                <CardDescription>
-                  View your earnings and request payouts
-                </CardDescription>
+                <CardDescription>View your earnings and request payouts</CardDescription>
               </div>
             </CardHeader>
           </Link>
@@ -544,7 +559,7 @@ export default function FreelancerDashboardPage() {
                     <p className="text-sm text-muted-foreground">
                       {task.deadline
                         ? `Due: ${new Date(task.deadline).toLocaleDateString()}`
-                        : "No deadline"}
+                        : 'No deadline'}
                     </p>
                   </div>
                   <Badge>{task.creditsUsed} credits</Badge>
@@ -555,5 +570,5 @@ export default function FreelancerDashboardPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

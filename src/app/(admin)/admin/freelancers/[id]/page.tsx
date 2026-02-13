@@ -1,38 +1,30 @@
-"use client";
+'use client'
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { useEffect, useState, use } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   ArrowLeft,
   Mail,
-  Phone,
   Globe,
-  Clock,
   Star,
   CheckCircle2,
   ExternalLink,
@@ -47,142 +39,138 @@ import {
   Save,
   Plus,
   Trash2,
-} from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/loading";
+} from 'lucide-react'
+import { LoadingSpinner } from '@/components/shared/loading'
 
 interface FreelancerDetails {
-  id: string;
-  userId: string;
-  status: string;
-  skills: string[];
-  specializations: string[];
-  portfolioUrls: string[];
-  bio: string | null;
-  timezone: string | null;
-  hourlyRate: string | null;
-  rating: string | null;
-  completedTasks: number;
-  whatsappNumber: string | null;
-  availability: boolean;
-  createdAt: string;
-  updatedAt: string;
+  id: string
+  userId: string
+  status: string
+  skills: string[]
+  specializations: string[]
+  portfolioUrls: string[]
+  bio: string | null
+  timezone: string | null
+  hourlyRate: string | null
+  rating: string | null
+  completedTasks: number
+  whatsappNumber: string | null
+  availability: boolean
+  createdAt: string
+  updatedAt: string
   user: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-    createdAt: string;
-  };
+    id: string
+    name: string
+    email: string
+    image: string | null
+    createdAt: string
+  }
   taskCounts: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    pending: number;
-    inReview: number;
-  };
+    total: number
+    completed: number
+    inProgress: number
+    pending: number
+    inReview: number
+  }
   recentTasks: Array<{
-    id: string;
-    title: string;
-    status: string;
-    createdAt: string;
-    completedAt: string | null;
-  }>;
+    id: string
+    title: string
+    status: string
+    createdAt: string
+    completedAt: string | null
+  }>
 }
 
 interface EditFormData {
-  name: string;
-  email: string;
-  status: string;
-  skills: string[];
-  specializations: string[];
-  portfolioUrls: string[];
-  bio: string;
-  timezone: string;
-  hourlyRate: string;
-  whatsappNumber: string;
-  availability: boolean;
-  rating: string;
+  name: string
+  email: string
+  status: string
+  skills: string[]
+  specializations: string[]
+  portfolioUrls: string[]
+  bio: string
+  timezone: string
+  hourlyRate: string
+  whatsappNumber: string
+  availability: boolean
+  rating: string
 }
 
-export default function FreelancerDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-  const router = useRouter();
-  const [freelancer, setFreelancer] = useState<FreelancerDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+export default function FreelancerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const router = useRouter()
+  const [freelancer, setFreelancer] = useState<FreelancerDetails | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [editForm, setEditForm] = useState<EditFormData>({
-    name: "",
-    email: "",
-    status: "",
+    name: '',
+    email: '',
+    status: '',
     skills: [],
     specializations: [],
     portfolioUrls: [],
-    bio: "",
-    timezone: "",
-    hourlyRate: "",
-    whatsappNumber: "",
+    bio: '',
+    timezone: '',
+    hourlyRate: '',
+    whatsappNumber: '',
     availability: true,
-    rating: "",
-  });
-  const [newSkill, setNewSkill] = useState("");
-  const [newSpecialization, setNewSpecialization] = useState("");
-  const [newPortfolioUrl, setNewPortfolioUrl] = useState("");
+    rating: '',
+  })
+  const [newSkill, setNewSkill] = useState('')
+  const [newSpecialization, setNewSpecialization] = useState('')
+  const [newPortfolioUrl, setNewPortfolioUrl] = useState('')
 
   useEffect(() => {
-    fetchFreelancer();
-  }, [id]);
+    fetchFreelancer()
+  }, [id])
 
   const fetchFreelancer = async () => {
     try {
-      const response = await fetch(`/api/admin/freelancers/${id}`);
+      const response = await fetch(`/api/admin/freelancers/${id}`)
       if (!response.ok) {
         if (response.status === 404) {
-          toast.error("Artist not found");
-          router.push("/admin/freelancers");
-          return;
+          toast.error('Artist not found')
+          router.push('/admin/freelancers')
+          return
         }
-        throw new Error("Failed to fetch artist");
+        throw new Error('Failed to fetch artist')
       }
-      const data = await response.json();
-      const f = data.data?.freelancer;
-      setFreelancer(f);
+      const data = await response.json()
+      const f = data.data?.freelancer
+      setFreelancer(f)
       if (f) {
         setEditForm({
-          name: f.user.name || "",
-          email: f.user.email || "",
-          status: f.status || "",
+          name: f.user.name || '',
+          email: f.user.email || '',
+          status: f.status || '',
           skills: f.skills || [],
           specializations: f.specializations || [],
           portfolioUrls: f.portfolioUrls || [],
-          bio: f.bio || "",
-          timezone: f.timezone || "",
-          hourlyRate: f.hourlyRate || "",
-          whatsappNumber: f.whatsappNumber || "",
+          bio: f.bio || '',
+          timezone: f.timezone || '',
+          hourlyRate: f.hourlyRate || '',
+          whatsappNumber: f.whatsappNumber || '',
           availability: f.availability ?? true,
-          rating: f.rating || "",
-        });
+          rating: f.rating || '',
+        })
       }
     } catch (error) {
-      console.error("Failed to fetch artist:", error);
-      toast.error("Failed to load artist details");
+      console.error('Failed to fetch artist:', error)
+      toast.error('Failed to load artist details')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleSave = async () => {
-    if (!freelancer) return;
-    setIsSaving(true);
+    if (!freelancer) return
+    setIsSaving(true)
     try {
       const response = await fetch(`/api/admin/freelancers/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editForm.name,
           email: editForm.email,
@@ -197,188 +185,196 @@ export default function FreelancerDetailPage({
           availability: editForm.availability,
           rating: editForm.rating || null,
         }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || "Failed to save");
+        const error = await response.json()
+        throw new Error(error.error?.message || 'Failed to save')
       }
 
-      const data = await response.json();
+      await response.json()
       // Refetch to get full data with task counts
-      await fetchFreelancer();
-      setIsEditing(false);
-      toast.success("Artist profile updated successfully!");
+      await fetchFreelancer()
+      setIsEditing(false)
+      toast.success('Artist profile updated successfully!')
     } catch (error) {
-      console.error("Failed to save artist:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save changes");
+      console.error('Failed to save artist:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save changes')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleCancel = () => {
     if (freelancer) {
       setEditForm({
-        name: freelancer.user.name || "",
-        email: freelancer.user.email || "",
-        status: freelancer.status || "",
+        name: freelancer.user.name || '',
+        email: freelancer.user.email || '',
+        status: freelancer.status || '',
         skills: freelancer.skills || [],
         specializations: freelancer.specializations || [],
         portfolioUrls: freelancer.portfolioUrls || [],
-        bio: freelancer.bio || "",
-        timezone: freelancer.timezone || "",
-        hourlyRate: freelancer.hourlyRate || "",
-        whatsappNumber: freelancer.whatsappNumber || "",
+        bio: freelancer.bio || '',
+        timezone: freelancer.timezone || '',
+        hourlyRate: freelancer.hourlyRate || '',
+        whatsappNumber: freelancer.whatsappNumber || '',
         availability: freelancer.availability ?? true,
-        rating: freelancer.rating || "",
-      });
+        rating: freelancer.rating || '',
+      })
     }
-    setIsEditing(false);
-  };
+    setIsEditing(false)
+  }
 
   const handleApprove = async () => {
-    if (!freelancer) return;
-    setIsProcessing(true);
+    if (!freelancer) return
+    setIsProcessing(true)
     try {
-      const response = await fetch("/api/admin/freelancers/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/freelancers/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerId: freelancer.id }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to approve");
+      if (!response.ok) throw new Error('Failed to approve')
 
-      toast.success("Artist approved successfully!");
-      setFreelancer((prev) =>
-        prev ? { ...prev, status: "APPROVED" } : prev
-      );
-      setEditForm((prev) => ({ ...prev, status: "APPROVED" }));
+      toast.success('Artist approved successfully!')
+      setFreelancer((prev) => (prev ? { ...prev, status: 'APPROVED' } : prev))
+      setEditForm((prev) => ({ ...prev, status: 'APPROVED' }))
     } catch {
-      toast.error("Failed to approve artist");
+      toast.error('Failed to approve artist')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleReject = async () => {
-    if (!freelancer) return;
-    setIsProcessing(true);
+    if (!freelancer) return
+    setIsProcessing(true)
     try {
-      const response = await fetch("/api/admin/freelancers/reject", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/freelancers/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerId: freelancer.id }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to reject");
+      if (!response.ok) throw new Error('Failed to reject')
 
-      toast.success("Artist rejected");
-      setFreelancer((prev) =>
-        prev ? { ...prev, status: "REJECTED" } : prev
-      );
-      setEditForm((prev) => ({ ...prev, status: "REJECTED" }));
+      toast.success('Artist rejected')
+      setFreelancer((prev) => (prev ? { ...prev, status: 'REJECTED' } : prev))
+      setEditForm((prev) => ({ ...prev, status: 'REJECTED' }))
     } catch {
-      toast.error("Failed to reject artist");
+      toast.error('Failed to reject artist')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const addSkill = () => {
     if (newSkill.trim() && !editForm.skills.includes(newSkill.trim())) {
       setEditForm((prev) => ({
         ...prev,
         skills: [...prev.skills, newSkill.trim()],
-      }));
-      setNewSkill("");
+      }))
+      setNewSkill('')
     }
-  };
+  }
 
   const removeSkill = (skill: string) => {
     setEditForm((prev) => ({
       ...prev,
       skills: prev.skills.filter((s) => s !== skill),
-    }));
-  };
+    }))
+  }
 
   const addSpecialization = () => {
     if (newSpecialization.trim() && !editForm.specializations.includes(newSpecialization.trim())) {
       setEditForm((prev) => ({
         ...prev,
         specializations: [...prev.specializations, newSpecialization.trim()],
-      }));
-      setNewSpecialization("");
+      }))
+      setNewSpecialization('')
     }
-  };
+  }
 
   const removeSpecialization = (spec: string) => {
     setEditForm((prev) => ({
       ...prev,
       specializations: prev.specializations.filter((s) => s !== spec),
-    }));
-  };
+    }))
+  }
 
   const addPortfolioUrl = () => {
     if (newPortfolioUrl.trim()) {
       try {
-        new URL(newPortfolioUrl.trim());
+        new URL(newPortfolioUrl.trim())
         if (!editForm.portfolioUrls.includes(newPortfolioUrl.trim())) {
           setEditForm((prev) => ({
             ...prev,
             portfolioUrls: [...prev.portfolioUrls, newPortfolioUrl.trim()],
-          }));
-          setNewPortfolioUrl("");
+          }))
+          setNewPortfolioUrl('')
         }
       } catch {
-        toast.error("Please enter a valid URL");
+        toast.error('Please enter a valid URL')
       }
     }
-  };
+  }
 
   const removePortfolioUrl = (url: string) => {
     setEditForm((prev) => ({
       ...prev,
       portfolioUrls: prev.portfolioUrls.filter((u) => u !== url),
-    }));
-  };
+    }))
+  }
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
-      PENDING: { variant: "secondary", label: "Pending Review" },
-      APPROVED: { variant: "default", label: "Approved" },
-      REJECTED: { variant: "destructive", label: "Rejected" },
-      NOT_ONBOARDED: { variant: "outline", label: "Not Onboarded" },
-    };
-    const { variant, label } = config[status] || { variant: "secondary", label: status };
-    return <Badge variant={variant} className="text-sm">{label}</Badge>;
-  };
+    const config: Record<
+      string,
+      { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }
+    > = {
+      PENDING: { variant: 'secondary', label: 'Pending Review' },
+      APPROVED: { variant: 'default', label: 'Approved' },
+      REJECTED: { variant: 'destructive', label: 'Rejected' },
+      NOT_ONBOARDED: { variant: 'outline', label: 'Not Onboarded' },
+    }
+    const { variant, label } = config[status] || { variant: 'secondary', label: status }
+    return (
+      <Badge variant={variant} className="text-sm">
+        {label}
+      </Badge>
+    )
+  }
 
   const getTaskStatusBadge = (status: string) => {
     const config: Record<string, string> = {
-      PENDING: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      ASSIGNED: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      IN_PROGRESS: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      IN_REVIEW: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      COMPLETED: "bg-green-500/20 text-green-400 border-green-500/30",
-      REVISION_REQUESTED: "bg-red-500/20 text-red-400 border-red-500/30",
-    };
-    const color = config[status] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
-    const label = status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+      PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      ASSIGNED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      IN_PROGRESS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      IN_REVIEW: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      COMPLETED: 'bg-green-500/20 text-green-400 border-green-500/30',
+      REVISION_REQUESTED: 'bg-red-500/20 text-red-400 border-red-500/30',
+    }
+    const color = config[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    const label = status
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (l) => l.toUpperCase())
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${color}`}>
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${color}`}
+      >
         {label}
       </span>
-    );
-  };
+    )
+  }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
 
   if (isLoading) {
     return (
@@ -397,7 +393,7 @@ export default function FreelancerDetailPage({
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!freelancer) {
@@ -405,7 +401,7 @@ export default function FreelancerDetailPage({
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-muted-foreground">Artist not found</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -421,7 +417,7 @@ export default function FreelancerDetailPage({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/admin/freelancers")}
+            onClick={() => router.push('/admin/freelancers')}
             className="shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -446,11 +442,7 @@ export default function FreelancerDetailPage({
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1 sm:flex-none"
-              >
+              <Button onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
                 {isSaving ? (
                   <LoadingSpinner size="sm" />
                 ) : (
@@ -471,7 +463,7 @@ export default function FreelancerDetailPage({
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>
-              {freelancer.status === "PENDING" && (
+              {freelancer.status === 'PENDING' && (
                 <>
                   <Button
                     onClick={handleApprove}
@@ -510,12 +502,15 @@ export default function FreelancerDetailPage({
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
                 <Avatar className="h-24 w-24 mb-4">
-                  <AvatarImage src={freelancer.user.image || undefined} alt={freelancer.user.name} />
+                  <AvatarImage
+                    src={freelancer.user.image || undefined}
+                    alt={freelancer.user.name}
+                  />
                   <AvatarFallback className="text-2xl">
                     {freelancer.user.name
-                      .split(" ")
+                      .split(' ')
                       .map((n) => n[0])
-                      .join("")
+                      .join('')
                       .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -535,7 +530,9 @@ export default function FreelancerDetailPage({
                       <Label htmlFor="status">Status</Label>
                       <Select
                         value={editForm.status}
-                        onValueChange={(value) => setEditForm((prev) => ({ ...prev, status: value }))}
+                        onValueChange={(value) =>
+                          setEditForm((prev) => ({ ...prev, status: value }))
+                        }
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue />
@@ -551,9 +548,7 @@ export default function FreelancerDetailPage({
                 ) : (
                   <>
                     <h2 className="text-xl font-semibold">{freelancer.user.name}</h2>
-                    <div className="mt-2">
-                      {getStatusBadge(freelancer.status)}
-                    </div>
+                    <div className="mt-2">{getStatusBadge(freelancer.status)}</div>
                   </>
                 )}
 
@@ -572,7 +567,9 @@ export default function FreelancerDetailPage({
                         id="email"
                         type="email"
                         value={editForm.email}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, email: e.target.value }))
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -581,7 +578,9 @@ export default function FreelancerDetailPage({
                       <Input
                         id="whatsapp"
                         value={editForm.whatsappNumber}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, whatsappNumber: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, whatsappNumber: e.target.value }))
+                        }
                         placeholder="+1234567890"
                         className="mt-1"
                       />
@@ -591,7 +590,9 @@ export default function FreelancerDetailPage({
                       <Input
                         id="timezone"
                         value={editForm.timezone}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, timezone: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, timezone: e.target.value }))
+                        }
                         placeholder="e.g., America/New_York"
                         className="mt-1"
                       />
@@ -603,7 +604,9 @@ export default function FreelancerDetailPage({
                         type="number"
                         step="0.01"
                         value={editForm.hourlyRate}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, hourlyRate: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, hourlyRate: e.target.value }))
+                        }
                         placeholder="0.00"
                         className="mt-1"
                       />
@@ -617,7 +620,9 @@ export default function FreelancerDetailPage({
                         min="0"
                         max="5"
                         value={editForm.rating}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, rating: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, rating: e.target.value }))
+                        }
                         placeholder="0.0"
                         className="mt-1"
                       />
@@ -627,7 +632,9 @@ export default function FreelancerDetailPage({
                       <Switch
                         id="availability"
                         checked={editForm.availability}
-                        onCheckedChange={(checked) => setEditForm((prev) => ({ ...prev, availability: checked }))}
+                        onCheckedChange={(checked) =>
+                          setEditForm((prev) => ({ ...prev, availability: checked }))
+                        }
                       />
                     </div>
                   </>
@@ -661,7 +668,7 @@ export default function FreelancerDetailPage({
 
                     <div className="flex items-center gap-3 text-sm">
                       <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      <span>{freelancer.availability ? "Available" : "Not Available"}</span>
+                      <span>{freelancer.availability ? 'Available' : 'Not Available'}</span>
                     </div>
                   </>
                 )}
@@ -686,7 +693,11 @@ export default function FreelancerDetailPage({
                 <div className="text-center p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-center gap-1 text-2xl font-bold">
                     <Star className="h-5 w-5 text-yellow-500" />
-                    {isEditing ? editForm.rating || "—" : freelancer.rating ? parseFloat(freelancer.rating).toFixed(1) : "—"}
+                    {isEditing
+                      ? editForm.rating || '—'
+                      : freelancer.rating
+                        ? parseFloat(freelancer.rating).toFixed(1)
+                        : '—'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Rating</p>
                 </div>
@@ -761,7 +772,7 @@ export default function FreelancerDetailPage({
                         value={newSkill}
                         onChange={(e) => setNewSkill(e.target.value)}
                         placeholder="Add a skill..."
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                       />
                       <Button type="button" size="icon" variant="outline" onClick={addSkill}>
                         <Plus className="h-4 w-4" />
@@ -806,9 +817,16 @@ export default function FreelancerDetailPage({
                         value={newSpecialization}
                         onChange={(e) => setNewSpecialization(e.target.value)}
                         placeholder="Add a specialization..."
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSpecialization())}
+                        onKeyDown={(e) =>
+                          e.key === 'Enter' && (e.preventDefault(), addSpecialization())
+                        }
                       />
-                      <Button type="button" size="icon" variant="outline" onClick={addSpecialization}>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={addSpecialization}
+                      >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -835,8 +853,12 @@ export default function FreelancerDetailPage({
             <CardHeader>
               <CardTitle className="text-base">Portfolio</CardTitle>
               <CardDescription>
-                {isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length || 0} portfolio link
-                {(isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length) !== 1 ? "s" : ""}
+                {isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length || 0}{' '}
+                portfolio link
+                {(isEditing ? editForm.portfolioUrls.length : freelancer.portfolioUrls?.length) !==
+                1
+                  ? 's'
+                  : ''}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -862,7 +884,9 @@ export default function FreelancerDetailPage({
                       value={newPortfolioUrl}
                       onChange={(e) => setNewPortfolioUrl(e.target.value)}
                       placeholder="https://..."
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPortfolioUrl())}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && (e.preventDefault(), addPortfolioUrl())
+                      }
                     />
                     <Button type="button" size="icon" variant="outline" onClick={addPortfolioUrl}>
                       <Plus className="h-4 w-4" />
@@ -896,7 +920,8 @@ export default function FreelancerDetailPage({
             <CardHeader>
               <CardTitle className="text-base">Recent Tasks</CardTitle>
               <CardDescription>
-                {freelancer.taskCounts.total} total task{freelancer.taskCounts.total !== 1 ? "s" : ""}
+                {freelancer.taskCounts.total} total task
+                {freelancer.taskCounts.total !== 1 ? 's' : ''}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -917,9 +942,7 @@ export default function FreelancerDetailPage({
                           {task.completedAt && ` • Completed ${formatDate(task.completedAt)}`}
                         </p>
                       </div>
-                      <div className="ml-3">
-                        {getTaskStatusBadge(task.status)}
-                      </div>
+                      <div className="ml-3">{getTaskStatusBadge(task.status)}</div>
                     </Link>
                   ))}
                 </div>
@@ -931,5 +954,5 @@ export default function FreelancerDetailPage({
         </div>
       </div>
     </motion.div>
-  );
+  )
 }

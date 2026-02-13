@@ -1,19 +1,14 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Bell,
   Mail,
@@ -27,133 +22,129 @@ import {
   Edit2,
   Save,
   X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface NotificationSetting {
-  id: string;
-  eventType: string;
-  name: string;
-  description: string | null;
-  emailEnabled: boolean;
-  whatsappEnabled: boolean;
-  inAppEnabled: boolean;
-  notifyClient: boolean;
-  notifyFreelancer: boolean;
-  notifyAdmin: boolean;
-  emailSubject: string | null;
-  emailTemplate: string | null;
-  whatsappTemplate: string | null;
-  updatedAt: string;
+  id: string
+  eventType: string
+  name: string
+  description: string | null
+  emailEnabled: boolean
+  whatsappEnabled: boolean
+  inAppEnabled: boolean
+  notifyClient: boolean
+  notifyFreelancer: boolean
+  notifyAdmin: boolean
+  emailSubject: string | null
+  emailTemplate: string | null
+  whatsappTemplate: string | null
+  updatedAt: string
 }
 
 const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={cn("rounded-xl border border-border bg-card", className)}>
-    {children}
-  </div>
-);
+  <div className={cn('rounded-xl border border-border bg-card', className)}>{children}</div>
+)
 
 export default function NotificationsPage() {
-  const [settings, setSettings] = useState<NotificationSetting[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState<string | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
-  const [editingSetting, setEditingSetting] = useState<NotificationSetting | null>(null);
+  const [settings, setSettings] = useState<NotificationSetting[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState<string | null>(null)
+  const [isResetting, setIsResetting] = useState(false)
+  const [editingSetting, setEditingSetting] = useState<NotificationSetting | null>(null)
   const [editForm, setEditForm] = useState({
-    emailSubject: "",
-    emailTemplate: "",
-    whatsappTemplate: "",
-  });
+    emailSubject: '',
+    emailTemplate: '',
+    whatsappTemplate: '',
+  })
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    fetchSettings()
+  }, [])
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch("/api/admin/notifications");
+      const response = await fetch('/api/admin/notifications')
       if (response.ok) {
-        const data = await response.json();
-        setSettings(data.settings);
+        const data = await response.json()
+        setSettings(data.settings)
       } else {
-        toast.error("Failed to load notification settings");
+        toast.error('Failed to load notification settings')
       }
     } catch (error) {
-      console.error("Failed to fetch settings:", error);
-      toast.error("Failed to load notification settings");
+      console.error('Failed to fetch settings:', error)
+      toast.error('Failed to load notification settings')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const updateSetting = async (id: string, updates: Partial<NotificationSetting>) => {
-    setIsSaving(id);
+    setIsSaving(id)
     try {
-      const response = await fetch("/api/admin/notifications", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates }),
-      });
+      })
 
       if (response.ok) {
-        setSettings((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-        );
-        toast.success("Setting updated");
+        setSettings((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)))
+        toast.success('Setting updated')
       } else {
-        toast.error("Failed to update setting");
+        toast.error('Failed to update setting')
       }
     } catch {
-      toast.error("Failed to update setting");
+      toast.error('Failed to update setting')
     } finally {
-      setIsSaving(null);
+      setIsSaving(null)
     }
-  };
+  }
 
   const resetToDefaults = async () => {
-    if (!confirm("Reset all notification settings to defaults? This cannot be undone.")) {
-      return;
+    if (!confirm('Reset all notification settings to defaults? This cannot be undone.')) {
+      return
     }
-    setIsResetting(true);
+    setIsResetting(true)
     try {
-      const response = await fetch("/api/admin/notifications", {
-        method: "POST",
-      });
+      const response = await fetch('/api/admin/notifications', {
+        method: 'POST',
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        setSettings(data.settings);
-        toast.success("Settings reset to defaults");
+        const data = await response.json()
+        setSettings(data.settings)
+        toast.success('Settings reset to defaults')
       } else {
-        toast.error("Failed to reset settings");
+        toast.error('Failed to reset settings')
       }
     } catch {
-      toast.error("Failed to reset settings");
+      toast.error('Failed to reset settings')
     } finally {
-      setIsResetting(false);
+      setIsResetting(false)
     }
-  };
+  }
 
   const openTemplateEditor = (setting: NotificationSetting) => {
-    setEditingSetting(setting);
+    setEditingSetting(setting)
     setEditForm({
-      emailSubject: setting.emailSubject || "",
-      emailTemplate: setting.emailTemplate || "",
-      whatsappTemplate: setting.whatsappTemplate || "",
-    });
-  };
+      emailSubject: setting.emailSubject || '',
+      emailTemplate: setting.emailTemplate || '',
+      whatsappTemplate: setting.whatsappTemplate || '',
+    })
+  }
 
   const saveTemplates = async () => {
-    if (!editingSetting) return;
+    if (!editingSetting) return
 
     await updateSetting(editingSetting.id, {
       emailSubject: editForm.emailSubject,
       emailTemplate: editForm.emailTemplate,
       whatsappTemplate: editForm.whatsappTemplate,
-    });
+    })
 
-    setEditingSetting(null);
-  };
+    setEditingSetting(null)
+  }
 
   if (isLoading) {
     return (
@@ -170,7 +161,7 @@ export default function NotificationsPage() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -183,11 +174,7 @@ export default function NotificationsPage() {
             Configure which events trigger notifications and how they are sent
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={resetToDefaults}
-          disabled={isResetting}
-        >
+        <Button variant="outline" onClick={resetToDefaults} disabled={isResetting}>
           {isResetting ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
@@ -245,11 +232,7 @@ export default function NotificationsPage() {
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openTemplateEditor(setting)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => openTemplateEditor(setting)}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit Templates
               </Button>
@@ -266,10 +249,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <Mail className={cn(
-                    "h-4 w-4",
-                    setting.emailEnabled ? "text-blue-500" : "text-muted-foreground/40"
-                  )} />
+                  <Mail
+                    className={cn(
+                      'h-4 w-4',
+                      setting.emailEnabled ? 'text-blue-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">Email</span>
                 </div>
 
@@ -281,10 +266,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <MessageCircle className={cn(
-                    "h-4 w-4",
-                    setting.whatsappEnabled ? "text-green-500" : "text-muted-foreground/40"
-                  )} />
+                  <MessageCircle
+                    className={cn(
+                      'h-4 w-4',
+                      setting.whatsappEnabled ? 'text-green-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">WhatsApp</span>
                 </div>
 
@@ -296,10 +283,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <Smartphone className={cn(
-                    "h-4 w-4",
-                    setting.inAppEnabled ? "text-purple-500" : "text-muted-foreground/40"
-                  )} />
+                  <Smartphone
+                    className={cn(
+                      'h-4 w-4',
+                      setting.inAppEnabled ? 'text-purple-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">In-App</span>
                 </div>
 
@@ -312,10 +301,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <Users className={cn(
-                    "h-4 w-4",
-                    setting.notifyClient ? "text-amber-500" : "text-muted-foreground/40"
-                  )} />
+                  <Users
+                    className={cn(
+                      'h-4 w-4',
+                      setting.notifyClient ? 'text-amber-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">Client</span>
                 </div>
 
@@ -327,10 +318,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <Briefcase className={cn(
-                    "h-4 w-4",
-                    setting.notifyFreelancer ? "text-cyan-500" : "text-muted-foreground/40"
-                  )} />
+                  <Briefcase
+                    className={cn(
+                      'h-4 w-4',
+                      setting.notifyFreelancer ? 'text-cyan-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">Freelancer</span>
                 </div>
 
@@ -342,10 +335,12 @@ export default function NotificationsPage() {
                     }
                     disabled={isSaving === setting.id}
                   />
-                  <Shield className={cn(
-                    "h-4 w-4",
-                    setting.notifyAdmin ? "text-red-500" : "text-muted-foreground/40"
-                  )} />
+                  <Shield
+                    className={cn(
+                      'h-4 w-4',
+                      setting.notifyAdmin ? 'text-red-500' : 'text-muted-foreground/40'
+                    )}
+                  />
                   <span className="text-sm text-muted-foreground">Admin</span>
                 </div>
               </div>
@@ -367,19 +362,16 @@ export default function NotificationsPage() {
               <p className="font-medium text-foreground mb-2">Available Variables:</p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  "{{clientName}}",
-                  "{{freelancerName}}",
-                  "{{taskTitle}}",
-                  "{{taskUrl}}",
-                  "{{feedback}}",
-                  "{{credits}}",
-                  "{{portalUrl}}",
-                  "{{creditsUrl}}",
+                  '{{clientName}}',
+                  '{{freelancerName}}',
+                  '{{taskTitle}}',
+                  '{{taskUrl}}',
+                  '{{feedback}}',
+                  '{{credits}}',
+                  '{{portalUrl}}',
+                  '{{creditsUrl}}',
                 ].map((v) => (
-                  <code
-                    key={v}
-                    className="px-2 py-1 rounded bg-background text-xs font-mono"
-                  >
+                  <code key={v} className="px-2 py-1 rounded bg-background text-xs font-mono">
                     {v}
                   </code>
                 ))}
@@ -395,9 +387,7 @@ export default function NotificationsPage() {
               <Input
                 id="emailSubject"
                 value={editForm.emailSubject}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, emailSubject: e.target.value })
-                }
+                onChange={(e) => setEditForm({ ...editForm, emailSubject: e.target.value })}
                 placeholder="Email subject line..."
               />
             </div>
@@ -411,9 +401,7 @@ export default function NotificationsPage() {
               <Textarea
                 id="emailTemplate"
                 value={editForm.emailTemplate}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, emailTemplate: e.target.value })
-                }
+                onChange={(e) => setEditForm({ ...editForm, emailTemplate: e.target.value })}
                 placeholder="<p>Hi {{clientName}},</p>..."
                 rows={8}
                 className="font-mono text-sm"
@@ -429,9 +417,7 @@ export default function NotificationsPage() {
               <Textarea
                 id="whatsappTemplate"
                 value={editForm.whatsappTemplate}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, whatsappTemplate: e.target.value })
-                }
+                onChange={(e) => setEditForm({ ...editForm, whatsappTemplate: e.target.value })}
                 placeholder="*Title*\n\nMessage..."
                 rows={4}
                 className="font-mono text-sm"
@@ -459,5 +445,5 @@ export default function NotificationsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

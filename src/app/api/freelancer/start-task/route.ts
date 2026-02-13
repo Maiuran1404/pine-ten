@@ -1,61 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
-import { config } from "@/lib/config";
-import { logger } from "@/lib/logger";
-import { claimTaskSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { tasks, users } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { notify } from '@/lib/notifications'
+import { config } from '@/lib/config'
+import { logger } from '@/lib/logger'
+import { claimTaskSchema } from '@/lib/validations'
+import { handleZodError } from '@/lib/errors'
+import { ZodError } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
-    const { taskId } = claimTaskSchema.parse(body);
+    const body = await request.json()
+    const { taskId } = claimTaskSchema.parse(body)
 
     // Verify the task exists and is assigned to this freelancer
     const [task] = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, taskId),
-          eq(tasks.freelancerId, session.user.id)
-        )
-      )
-      .limit(1);
+      .where(and(eq(tasks.id, taskId), eq(tasks.freelancerId, session.user.id)))
+      .limit(1)
 
     if (!task) {
-      return NextResponse.json({ error: "Task not found or not assigned to you" }, { status: 404 });
+      return NextResponse.json({ error: 'Task not found or not assigned to you' }, { status: 404 })
     }
 
     // Check task is in ASSIGNED status
-    if (task.status !== "ASSIGNED") {
+    if (task.status !== 'ASSIGNED') {
       return NextResponse.json(
-        { error: "Task must be in ASSIGNED status to start" },
+        { error: 'Task must be in ASSIGNED status to start' },
         { status: 400 }
-      );
+      )
     }
 
     // Update task status to IN_PROGRESS
     await db
       .update(tasks)
       .set({
-        status: "IN_PROGRESS",
+        status: 'IN_PROGRESS',
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, taskId));
+      .where(eq(tasks.id, taskId))
 
     // Notify the client that work has started
     try {
@@ -63,32 +58,29 @@ export async function POST(request: NextRequest) {
         .select({ name: users.name })
         .from(users)
         .where(eq(users.id, session.user.id))
-        .limit(1);
+        .limit(1)
 
       await notify({
         userId: task.clientId,
-        type: "TASK_ASSIGNED",
-        title: "Work Started",
-        content: `${freelancer[0]?.name || "Your designer"} has started working on "${task.title}".`,
+        type: 'TASK_ASSIGNED',
+        title: 'Work Started',
+        content: `${freelancer[0]?.name || 'Your designer'} has started working on "${task.title}".`,
         taskId: task.id,
         taskUrl: `${config.app.url}/dashboard/tasks/${task.id}`,
         additionalData: {
           taskTitle: task.title,
         },
-      });
+      })
     } catch (notifyError) {
-      logger.error({ error: notifyError }, "Failed to send start notification");
+      logger.error({ error: notifyError }, 'Failed to send start notification')
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof ZodError) {
-      return handleZodError(error);
+      return handleZodError(error)
     }
-    logger.error({ error }, "Start task error");
-    return NextResponse.json(
-      { error: "Failed to start task" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Start task error')
+    return NextResponse.json({ error: 'Failed to start task' }, { status: 500 })
   }
 }

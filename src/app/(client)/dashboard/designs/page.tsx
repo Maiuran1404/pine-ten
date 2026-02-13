@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   FileText,
   Folder,
@@ -15,66 +15,66 @@ import {
   MessageCircle,
   FolderOpen,
   Download,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 // File type for the library
 interface LibraryFile {
-  id: string;
-  name: string;
-  size: string;
-  type: "file" | "folder";
-  fileType?: string;
-  createdAt: string;
-  permission: "Editor" | "View Only" | "Administrator";
-  url?: string;
+  id: string
+  name: string
+  size: string
+  type: 'file' | 'folder'
+  fileType?: string
+  createdAt: string
+  permission: 'Editor' | 'View Only' | 'Administrator'
+  url?: string
 }
 
 // Design from API
 interface Design {
-  id: string;
-  templateId: string | null;
-  templateName: string;
-  imageUrl: string;
-  imageFormat: string;
-  savedToAssets: boolean;
-  createdAt: string;
-  templateCategory: string | null;
+  id: string
+  templateId: string | null
+  templateName: string
+  imageUrl: string
+  imageFormat: string
+  savedToAssets: boolean
+  createdAt: string
+  templateCategory: string | null
 }
 
 // Get file extension from filename or URL
 function getFileExtension(filename: string): string {
-  const parts = filename.split(".");
-  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+  const parts = filename.split('.')
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : ''
 }
 
 // Format file size
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
 // Format date
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "2-digit",
-  });
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: '2-digit',
+  })
 }
 
 // Convert design to library file format
@@ -82,94 +82,94 @@ function designToLibraryFile(design: Design): LibraryFile {
   return {
     id: design.id,
     name: `${design.templateName}.${design.imageFormat}`,
-    size: "—",
-    type: "file",
+    size: '—',
+    type: 'file',
     fileType: design.imageFormat,
     createdAt: formatDate(design.createdAt),
-    permission: "Editor",
+    permission: 'Editor',
     url: design.imageUrl,
-  };
+  }
 }
 
 // Get file icon based on type
 function getFileIcon(file: LibraryFile) {
-  if (file.type === "folder") {
-    return <Folder className="h-8 w-8 text-green-600" />;
+  if (file.type === 'folder') {
+    return <Folder className="h-8 w-8 text-green-600" />
   }
 
-  const ext = file.fileType || getFileExtension(file.name);
+  const ext = file.fileType || getFileExtension(file.name)
   switch (ext) {
-    case "pdf":
-    case "doc":
-    case "docx":
-    case "txt":
-      return <FileText className="h-8 w-8 text-green-600" />;
-    case "jpg":
-    case "jpeg":
-    case "png":
-    case "gif":
-    case "webp":
-      return <FileImage className="h-8 w-8 text-green-600" />;
-    case "tsx":
-    case "jsx":
-    case "html":
-    case "css":
-    case "js":
-    case "ts":
-      return <FileCode className="h-8 w-8 text-green-600" />;
+    case 'pdf':
+    case 'doc':
+    case 'docx':
+    case 'txt':
+      return <FileText className="h-8 w-8 text-green-600" />
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+    case 'webp':
+      return <FileImage className="h-8 w-8 text-green-600" />
+    case 'tsx':
+    case 'jsx':
+    case 'html':
+    case 'css':
+    case 'js':
+    case 'ts':
+      return <FileCode className="h-8 w-8 text-green-600" />
     default:
-      return <File className="h-8 w-8 text-green-600" />;
+      return <File className="h-8 w-8 text-green-600" />
   }
 }
 
 // Get small file icon for table rows
 function getSmallFileIcon(file: LibraryFile) {
-  if (file.type === "folder") {
-    return <Folder className="h-5 w-5 text-muted-foreground" />;
+  if (file.type === 'folder') {
+    return <Folder className="h-5 w-5 text-muted-foreground" />
   }
 
-  const ext = file.fileType || getFileExtension(file.name);
+  const ext = file.fileType || getFileExtension(file.name)
   switch (ext) {
-    case "pdf":
-    case "doc":
-    case "docx":
-    case "txt":
-      return <FileText className="h-5 w-5 text-muted-foreground" />;
-    case "jpg":
-    case "jpeg":
-    case "png":
-    case "gif":
-    case "webp":
-      return <FileImage className="h-5 w-5 text-muted-foreground" />;
-    case "tsx":
-    case "jsx":
-    case "html":
-    case "css":
-    case "js":
-    case "ts":
-      return <FileCode className="h-5 w-5 text-muted-foreground" />;
+    case 'pdf':
+    case 'doc':
+    case 'docx':
+    case 'txt':
+      return <FileText className="h-5 w-5 text-muted-foreground" />
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+    case 'webp':
+      return <FileImage className="h-5 w-5 text-muted-foreground" />
+    case 'tsx':
+    case 'jsx':
+    case 'html':
+    case 'css':
+    case 'js':
+    case 'ts':
+      return <FileCode className="h-5 w-5 text-muted-foreground" />
     default:
-      return <File className="h-5 w-5 text-muted-foreground" />;
+      return <File className="h-5 w-5 text-muted-foreground" />
   }
 }
 
 // Permission badge colors
 function getPermissionStyle(permission: string) {
   switch (permission) {
-    case "Editor":
-      return "bg-green-100 text-green-700 border-green-200";
-    case "View Only":
-      return "bg-amber-100 text-amber-700 border-amber-200";
-    case "Administrator":
-      return "bg-blue-100 text-blue-700 border-blue-200";
+    case 'Editor':
+      return 'bg-green-100 text-green-700 border-green-200'
+    case 'View Only':
+      return 'bg-amber-100 text-amber-700 border-amber-200'
+    case 'Administrator':
+      return 'bg-blue-100 text-blue-700 border-blue-200'
     default:
-      return "bg-gray-100 text-gray-700 border-gray-200";
+      return 'bg-gray-100 text-gray-700 border-gray-200'
   }
 }
 
 // Empty state component
 function EmptyState() {
-  const router = useRouter();
+  const router = useRouter()
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -181,14 +181,14 @@ function EmptyState() {
         Completed task deliverables and generated designs will appear here.
       </p>
       <Button
-        onClick={() => router.push("/dashboard")}
+        onClick={() => router.push('/dashboard')}
         className="gap-2 bg-green-600 hover:bg-green-700"
       >
         <MessageCircle className="h-4 w-4" />
         Start a Chat
       </Button>
     </div>
-  );
+  )
 }
 
 // Loading skeleton
@@ -231,49 +231,49 @@ function LoadingSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default function LibraryPage() {
-  const router = useRouter();
-  const [files, setFiles] = useState<LibraryFile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const router = useRouter()
+  const [files, setFiles] = useState<LibraryFile[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [, setSortOrder] = useState<'newest' | 'oldest'>('newest')
 
   useEffect(() => {
-    fetchLibraryData();
-  }, []);
+    fetchLibraryData()
+  }, [])
 
   const fetchLibraryData = async () => {
     try {
-      setIsLoading(true);
-      const allFiles: LibraryFile[] = [];
+      setIsLoading(true)
+      const allFiles: LibraryFile[] = []
 
       // Fetch generated designs
-      const designsResponse = await fetch("/api/orshot/designs");
+      const designsResponse = await fetch('/api/orshot/designs')
       if (designsResponse.ok) {
-        const designsData = await designsResponse.json();
-        const designs: Design[] = designsData.designs || [];
-        allFiles.push(...designs.map(designToLibraryFile));
+        const designsData = await designsResponse.json()
+        const designs: Design[] = designsData.designs || []
+        allFiles.push(...designs.map(designToLibraryFile))
       }
 
       // Fetch tasks with deliverables (completed + in review)
-      const tasksResponse = await fetch("/api/tasks?view=client&limit=50");
+      const tasksResponse = await fetch('/api/tasks?view=client&limit=50')
       if (tasksResponse.ok) {
-        const tasksData = await tasksResponse.json();
-        const tasks = tasksData.data?.tasks || tasksData.tasks || [];
+        const tasksData = await tasksResponse.json()
+        const tasks = tasksData.data?.tasks || tasksData.tasks || []
         const completedTasks = tasks.filter((t: { status: string }) =>
-          ["COMPLETED", "IN_REVIEW"].includes(t.status)
-        );
+          ['COMPLETED', 'IN_REVIEW'].includes(t.status)
+        )
 
         // For each task with deliverables, fetch its files
         for (const task of completedTasks.slice(0, 20)) {
           try {
-            const taskResponse = await fetch(`/api/tasks/${task.id}`);
+            const taskResponse = await fetch(`/api/tasks/${task.id}`)
             if (taskResponse.ok) {
-              const taskData = await taskResponse.json();
-              const taskDetail = taskData.data?.task || taskData.task;
-              const taskFiles = taskDetail?.files || [];
+              const taskData = await taskResponse.json()
+              const taskDetail = taskData.data?.task || taskData.task
+              const taskFiles = taskDetail?.files || []
 
               // Add deliverables to assets
               for (const file of taskFiles) {
@@ -282,62 +282,62 @@ export default function LibraryPage() {
                     id: file.id,
                     name: file.fileName,
                     size: formatFileSize(file.fileSize || 0),
-                    type: "file",
+                    type: 'file',
                     fileType: getFileExtension(file.fileName),
                     createdAt: formatDate(file.createdAt),
-                    permission: "Editor",
+                    permission: 'Editor',
                     url: file.fileUrl,
-                  });
+                  })
                 }
               }
             }
           } catch (err) {
-            console.error(`Failed to fetch task ${task.id}:`, err);
+            console.error(`Failed to fetch task ${task.id}:`, err)
           }
         }
       }
 
       // Sort by date (newest first)
       allFiles.sort((a, b) => {
-        const dateA = new Date(a.createdAt);
-        const dateB = new Date(b.createdAt);
-        return dateB.getTime() - dateA.getTime();
-      });
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+        return dateB.getTime() - dateA.getTime()
+      })
 
-      setFiles(allFiles);
+      setFiles(allFiles)
     } catch (error) {
-      console.error("Failed to fetch library data:", error);
-      toast.error("Failed to load library");
+      console.error('Failed to fetch library data:', error)
+      toast.error('Failed to load library')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleDownload = async (file: LibraryFile) => {
     if (!file.url) {
-      toast.error("Download URL not available");
-      return;
+      toast.error('Download URL not available')
+      return
     }
 
     try {
-      const response = await fetch(file.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      toast.success("File downloaded!");
+      const response = await fetch(file.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success('File downloaded!')
     } catch {
-      window.open(file.url, "_blank");
+      window.open(file.url, '_blank')
     }
-  };
+  }
 
-  const recentFiles = files.slice(0, 4);
-  const totalFiles = files.length;
+  const recentFiles = files.slice(0, 4)
+  const totalFiles = files.length
 
   return (
     <div className="min-h-full bg-background">
@@ -349,7 +349,7 @@ export default function LibraryPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push('/dashboard')}
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -378,10 +378,10 @@ export default function LibraryPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setSortOrder("newest")}>
+                    <DropdownMenuItem onClick={() => setSortOrder('newest')}>
                       Newest First
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOrder("oldest")}>
+                    <DropdownMenuItem onClick={() => setSortOrder('oldest')}>
                       Oldest First
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -411,7 +411,7 @@ export default function LibraryPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {file.url && (
-                            <DropdownMenuItem onClick={() => window.open(file.url, "_blank")}>
+                            <DropdownMenuItem onClick={() => window.open(file.url, '_blank')}>
                               Open
                             </DropdownMenuItem>
                           )}
@@ -492,7 +492,7 @@ export default function LibraryPage() {
                     <div className="col-span-4 sm:col-span-3 flex items-center">
                       <Badge
                         variant="outline"
-                        className={cn("text-xs", getPermissionStyle(file.permission))}
+                        className={cn('text-xs', getPermissionStyle(file.permission))}
                       >
                         {file.permission}
                       </Badge>
@@ -510,7 +510,7 @@ export default function LibraryPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {file.url && (
-                            <DropdownMenuItem onClick={() => window.open(file.url, "_blank")}>
+                            <DropdownMenuItem onClick={() => window.open(file.url, '_blank')}>
                               Open
                             </DropdownMenuItem>
                           )}
@@ -529,5 +529,5 @@ export default function LibraryPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

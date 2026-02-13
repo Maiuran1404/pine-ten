@@ -1,25 +1,25 @@
-"use client";
+'use client'
 
-import { useState, useContext } from "react";
-import { Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { NotificationBell } from "@/components/shared/notification-bell";
-import { CreditPurchaseDialog } from "@/components/shared/credit-purchase-dialog";
-import { CreditContext } from "@/providers/credit-provider";
+import { useState, useContext } from 'react'
+import { Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SidebarTrigger } from '@/components/ui/sidebar'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/shared/notification-bell'
+import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
+import { CreditContext } from '@/providers/credit-provider'
 
 interface HeaderProps {
-  onMenuClick?: () => void;
-  basePath?: string; // Base path for notifications (e.g., "/portal" for freelancers)
-  showUpgrade?: boolean; // Whether to show the upgrade button
+  onMenuClick?: () => void
+  basePath?: string // Base path for notifications (e.g., "/portal" for freelancers)
+  showUpgrade?: boolean // Whether to show the upgrade button
 }
 
-export function Header({ onMenuClick, basePath = "/dashboard", showUpgrade = true }: HeaderProps) {
-  const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+export function Header({ onMenuClick, basePath = '/dashboard', showUpgrade = true }: HeaderProps) {
+  const [showCreditsDialog, setShowCreditsDialog] = useState(false)
   // Use context directly to avoid throwing error when not wrapped in CreditProvider
-  const creditContext = useContext(CreditContext);
-  const credits = creditContext?.credits;
+  const creditContext = useContext(CreditContext)
+  const credits = creditContext?.credits
 
   return (
     <>
@@ -80,5 +80,5 @@ export function Header({ onMenuClick, basePath = "/dashboard", showUpgrade = tru
         currentCredits={credits}
       />
     </>
-  );
+  )
 }

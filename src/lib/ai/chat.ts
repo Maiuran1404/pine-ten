@@ -1,57 +1,52 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { db } from "@/db";
-import {
-  styleReferences,
-  taskCategories,
-  users,
-  audiences as audiencesTable,
-} from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import Anthropic from '@anthropic-ai/sdk'
+import { db } from '@/db'
+import { styleReferences, taskCategories, users, audiences as audiencesTable } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+})
 
 // Helper to get delivery date
-function getDeliveryDate(businessDays: number): string {
-  const date = new Date();
-  let daysAdded = 0;
+function _getDeliveryDate(businessDays: number): string {
+  const date = new Date()
+  let daysAdded = 0
   while (daysAdded < businessDays) {
-    date.setDate(date.getDate() + 1);
-    const dayOfWeek = date.getDay();
+    date.setDate(date.getDate() + 1)
+    const dayOfWeek = date.getDay()
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       // Skip weekends
-      daysAdded++;
+      daysAdded++
     }
   }
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const dayName = days[date.getDay()];
-  const dayNum = date.getDate();
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ]
+  const dayName = days[date.getDay()]
+  const dayNum = date.getDate()
   const suffix =
     dayNum === 1 || dayNum === 21 || dayNum === 31
-      ? "st"
+      ? 'st'
       : dayNum === 2 || dayNum === 22
-      ? "nd"
-      : dayNum === 3 || dayNum === 23
-      ? "rd"
-      : "th";
-  const monthName = months[date.getMonth()];
-  return `${dayName} ${dayNum}${suffix} ${monthName}`;
+        ? 'nd'
+        : dayNum === 3 || dayNum === 23
+          ? 'rd'
+          : 'th'
+  const monthName = months[date.getMonth()]
+  return `${dayName} ${dayNum}${suffix} ${monthName}`
 }
 
 // ============================================================================
@@ -127,16 +122,16 @@ RULES:
 - Be decisive - make recommendations, don't ask for basic info you can infer
 - Use brand data (industry, audience, platform) to make smart assumptions
 - Ask for confirmation, not information
-- ALWAYS include [QUICK_OPTIONS] with confirmation-style options`;
+- ALWAYS include [QUICK_OPTIONS] with confirmation-style options`
 
 function getSystemPrompt(): string {
-  const today = new Date();
-  const todayStr = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const today = new Date()
+  const todayStr = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
   return `${SYSTEM_PROMPT}
 
@@ -160,31 +155,31 @@ ABSOLUTE REQUIREMENTS:
 3. 20-40 words max, no exclamation marks
 4. Make recommendations based on brand data - don't ask questions you can answer yourself
 5. Use confirmation questions ("Sound good?" "Any changes?") instead of open questions ("What platform?")
-6. EVERY response MUST include [QUICK_OPTIONS] with 2-3 clear next-step actions. Never leave the user without a CTA.`;
+6. EVERY response MUST include [QUICK_OPTIONS] with 2-3 clear next-step actions. Never leave the user without a CTA.`
 }
 
 export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
+  role: 'user' | 'assistant'
+  content: string
 }
 
 export interface ChatContext {
   brandDetection?: {
-    detected: boolean;
-    mentionedBrand: string | null;
-    matchesProfile: boolean;
-  };
-  requestCompleteness?: "detailed" | "moderate" | "vague";
-  confirmedFields?: Record<string, string | undefined>;
+    detected: boolean
+    mentionedBrand: string | null
+    matchesProfile: boolean
+  }
+  requestCompleteness?: 'detailed' | 'moderate' | 'vague'
+  confirmedFields?: Record<string, string | undefined>
 }
 
 export interface DeliverableStyleMarker {
-  type: "initial" | "more" | "different" | "semantic" | "refine";
-  deliverableType: string;
-  styleAxis?: string;
-  searchQuery?: string; // For semantic search queries
-  baseStyleId?: string; // For style refinement (id of style being refined)
-  refinementQuery?: string; // For style refinement (user's refinement feedback)
+  type: 'initial' | 'more' | 'different' | 'semantic' | 'refine'
+  deliverableType: string
+  styleAxis?: string
+  searchQuery?: string // For semantic search queries
+  baseStyleId?: string // For style refinement (id of style being refined)
+  refinementQuery?: string // For style refinement (user's refinement feedback)
 }
 
 export async function chat(
@@ -192,10 +187,10 @@ export async function chat(
   userId: string,
   context?: ChatContext
 ): Promise<{
-  content: string;
-  styleReferences?: string[];
-  quickOptions?: { question: string; options: string[] };
-  deliverableStyleMarker?: DeliverableStyleMarker;
+  content: string
+  styleReferences?: string[]
+  quickOptions?: { question: string; options: string[] }
+  deliverableStyleMarker?: DeliverableStyleMarker
 }> {
   // Fetch data in parallel for faster response times
   const [user, styles, categories] = await Promise.all([
@@ -210,17 +205,14 @@ export async function chat(
     db.select().from(styleReferences).where(eq(styleReferences.isActive, true)),
     // Fetch task categories
     db.select().from(taskCategories).where(eq(taskCategories.isActive, true)),
-  ]);
+  ])
 
-  const company = user?.company;
+  const company = user?.company
 
   // Fetch audiences for the company (depends on user query above)
   const audiences = company?.id
-    ? await db
-        .select()
-        .from(audiencesTable)
-        .where(eq(audiencesTable.companyId, company.id))
-    : [];
+    ? await db.select().from(audiencesTable).where(eq(audiencesTable.companyId, company.id))
+    : []
 
   // Build audience context from the audiences table structure
   const audienceContext =
@@ -230,84 +222,77 @@ TARGET AUDIENCES (from brand analysis):
 ${audiences
   .map((a, i) => {
     const psychographics = a.psychographics as {
-      painPoints?: string[];
-      goals?: string[];
-    } | null;
+      painPoints?: string[]
+      goals?: string[]
+    } | null
     const demographics = a.demographics as {
-      ageRange?: { min: number; max: number };
-      locations?: string[];
-    } | null;
-    return `${i + 1}. ${a.name}${a.isPrimary ? " (primary)" : ""}
+      ageRange?: { min: number; max: number }
+      locations?: string[]
+    } | null
+    return `${i + 1}. ${a.name}${a.isPrimary ? ' (primary)' : ''}
    - Demographics: ${
-     demographics?.locations?.join(", ") || demographics?.ageRange
+     demographics?.locations?.join(', ') || demographics?.ageRange
        ? `${demographics.ageRange?.min}-${demographics.ageRange?.max}`
-       : "Not specified"
+       : 'Not specified'
    }
-   - Pain points: ${psychographics?.painPoints?.join(", ") || "Not specified"}
-   - Goals: ${psychographics?.goals?.join(", ") || "Not specified"}`;
+   - Pain points: ${psychographics?.painPoints?.join(', ') || 'Not specified'}
+   - Goals: ${psychographics?.goals?.join(', ') || 'Not specified'}`
   })
-  .join("\n")}`
-      : "";
+  .join('\n')}`
+      : ''
 
   // Determine platform recommendation based on industry
-  const industryLower = (company?.industry || "").toLowerCase();
+  const industryLower = (company?.industry || '').toLowerCase()
   const isB2B =
-    industryLower.includes("b2b") ||
-    industryLower.includes("saas") ||
-    industryLower.includes("software") ||
-    industryLower.includes("consulting") ||
-    industryLower.includes("enterprise") ||
-    industryLower.includes("finance") ||
-    industryLower.includes("legal") ||
-    industryLower.includes("professional");
-  const platformRecommendation = isB2B
-    ? "LinkedIn (B2B audience)"
-    : "Instagram (consumer audience)";
+    industryLower.includes('b2b') ||
+    industryLower.includes('saas') ||
+    industryLower.includes('software') ||
+    industryLower.includes('consulting') ||
+    industryLower.includes('enterprise') ||
+    industryLower.includes('finance') ||
+    industryLower.includes('legal') ||
+    industryLower.includes('professional')
+  const platformRecommendation = isB2B ? 'LinkedIn (B2B audience)' : 'Instagram (consumer audience)'
 
   const companyContext = company
     ? `
-CLIENT: ${company.name}${company.industry ? ` (${company.industry})` : ""}
+CLIENT: ${company.name}${company.industry ? ` (${company.industry})` : ''}
 PLATFORM: ${platformRecommendation}
-${audienceContext ? "AUDIENCE: Known" : ""}
+${audienceContext ? 'AUDIENCE: Known' : ''}
 
 You already know their brand. DO NOT ask about: company, industry, audience, colors, fonts.`
-    : "";
+    : ''
 
-  const basePrompt = getSystemPrompt();
+  const basePrompt = getSystemPrompt()
 
   // Build brand detection context
   // NOTE: We don't add brand questions here anymore - we assume the user's saved brand is correct
   // This prevents double-questions (brand question + style question in same response)
-  let brandDetectionContext = "";
+  let brandDetectionContext = ''
   if (company?.name) {
-    brandDetectionContext = `Using brand: ${company.name}. Don't ask about brand - just use it.`;
+    brandDetectionContext = `Using brand: ${company.name}. Don't ask about brand - just use it.`
   }
 
   // Build request completeness context - keep minimal
-  let completenessContext = "";
-  if (context?.requestCompleteness === "detailed") {
-    completenessContext = "User gave detailed info. Proceed quickly.";
-  } else if (context?.requestCompleteness === "vague") {
+  let completenessContext = ''
+  if (context?.requestCompleteness === 'detailed') {
+    completenessContext = 'User gave detailed info. Proceed quickly.'
+  } else if (context?.requestCompleteness === 'vague') {
     completenessContext =
-      "User gave minimal info. Make smart assumptions based on their brand and ask for confirmation.";
+      'User gave minimal info. Make smart assumptions based on their brand and ask for confirmation.'
   }
 
   // Build confirmed fields context to prevent re-asking
-  let confirmedFieldsContext = "";
-  if (
-    context?.confirmedFields &&
-    Object.values(context.confirmedFields).some(Boolean)
-  ) {
-    const confirmed = context.confirmedFields;
+  let confirmedFieldsContext = ''
+  if (context?.confirmedFields && Object.values(context.confirmedFields).some(Boolean)) {
+    const confirmed = context.confirmedFields
     const fields = [
       confirmed.platform && `platform: ${confirmed.platform}`,
       confirmed.topic && `topic: ${confirmed.topic}`,
       confirmed.contentType && `type: ${confirmed.contentType}`,
-    ].filter(Boolean);
+    ].filter(Boolean)
     if (fields.length > 0) {
-      confirmedFieldsContext = `Already know: ${fields.join(
-        ", "
-      )}. Don't re-ask.`;
+      confirmedFieldsContext = `Already know: ${fields.join(', ')}. Don't re-ask.`
     }
   }
 
@@ -321,132 +306,123 @@ ${confirmedFieldsContext}
 Available task categories:
 ${categories
   .map((c) => `- ${c.name}: ${c.description} (base: ${c.baseCredits} credits)`)
-  .join("\n")}
+  .join('\n')}
 
 Available style reference categories:
-${[...new Set(styles.map((s) => s.category))].join(", ")}`;
+${[...new Set(styles.map((s) => s.category))].join(', ')}`
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: 'claude-sonnet-4-20250514',
     max_tokens: 300, // Limit output to encourage brevity
     system: enhancedSystemPrompt,
     messages: messages.map((m) => ({
       role: m.role,
       content: m.content,
     })),
-  });
+  })
 
-  const content =
-    response.content[0].type === "text" ? response.content[0].text : "";
+  const content = response.content[0].type === 'text' ? response.content[0].text : ''
 
   // Extract style references if mentioned
-  const styleMatch = content.match(/\[STYLE_REFERENCES: ([^\]]+)\]/);
-  const mentionedStyles = styleMatch
-    ? styleMatch[1].split(",").map((s) => s.trim())
-    : undefined;
+  const styleMatch = content.match(/\[STYLE_REFERENCES: ([^\]]+)\]/)
+  const mentionedStyles = styleMatch ? styleMatch[1].split(',').map((s) => s.trim()) : undefined
 
   // Extract deliverable style markers
-  let deliverableStyleMarker: DeliverableStyleMarker | undefined;
+  let deliverableStyleMarker: DeliverableStyleMarker | undefined
 
   // Check for initial deliverable styles: [DELIVERABLE_STYLES: type]
-  const deliverableMatch = content.match(/\[DELIVERABLE_STYLES: ([^\]]+)\]/);
+  const deliverableMatch = content.match(/\[DELIVERABLE_STYLES: ([^\]]+)\]/)
   if (deliverableMatch) {
     deliverableStyleMarker = {
-      type: "initial",
+      type: 'initial',
       deliverableType: deliverableMatch[1].trim(),
-    };
+    }
   }
 
   // Check for more styles: [MORE_STYLES: type, axis]
-  const moreStylesMatch = content.match(/\[MORE_STYLES: ([^,]+),\s*([^\]]+)\]/);
+  const moreStylesMatch = content.match(/\[MORE_STYLES: ([^,]+),\s*([^\]]+)\]/)
   if (moreStylesMatch) {
     deliverableStyleMarker = {
-      type: "more",
+      type: 'more',
       deliverableType: moreStylesMatch[1].trim(),
       styleAxis: moreStylesMatch[2].trim(),
-    };
+    }
   }
 
   // Check for different styles: [DIFFERENT_STYLES: type]
-  const differentMatch = content.match(/\[DIFFERENT_STYLES: ([^\]]+)\]/);
+  const differentMatch = content.match(/\[DIFFERENT_STYLES: ([^\]]+)\]/)
   if (differentMatch) {
     deliverableStyleMarker = {
-      type: "different",
+      type: 'different',
       deliverableType: differentMatch[1].trim(),
-    };
+    }
   }
 
   // Check for semantic style search: [SEARCH_STYLES: query, type]
-  const searchStylesMatch = content.match(
-    /\[SEARCH_STYLES: ([^,]+),\s*([^\]]+)\]/
-  );
+  const searchStylesMatch = content.match(/\[SEARCH_STYLES: ([^,]+),\s*([^\]]+)\]/)
   if (searchStylesMatch) {
     deliverableStyleMarker = {
-      type: "semantic",
+      type: 'semantic',
       searchQuery: searchStylesMatch[1].trim(),
       deliverableType: searchStylesMatch[2].trim(),
-    };
+    }
   }
 
   // Check for style refinement: [REFINE_STYLE: refinement_query, base_style_id, type]
-  const refineStyleMatch = content.match(
-    /\[REFINE_STYLE: ([^,]+),\s*([^,]+),\s*([^\]]+)\]/
-  );
+  const refineStyleMatch = content.match(/\[REFINE_STYLE: ([^,]+),\s*([^,]+),\s*([^\]]+)\]/)
   if (refineStyleMatch) {
     deliverableStyleMarker = {
-      type: "refine",
+      type: 'refine',
       refinementQuery: refineStyleMatch[1].trim(),
       baseStyleId: refineStyleMatch[2].trim(),
       deliverableType: refineStyleMatch[3].trim(),
-    };
+    }
   }
 
   // Extract quick options if present
-  const quickOptionsMatch = content.match(
-    /\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/
-  );
-  let quickOptions: { question: string; options: string[] } | undefined;
+  const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/)
+  let quickOptions: { question: string; options: string[] } | undefined
   if (quickOptionsMatch) {
     try {
-      quickOptions = JSON.parse(quickOptionsMatch[1].trim());
+      quickOptions = JSON.parse(quickOptionsMatch[1].trim())
     } catch (error) {
-      logger.warn({ err: error }, "Failed to parse quick options JSON from chat response");
+      logger.warn({ err: error }, 'Failed to parse quick options JSON from chat response')
     }
   }
 
   // Fallback: if AI didn't include quick options, generate contextual defaults
   if (!quickOptions) {
-    const hasStyleMarker = !!deliverableStyleMarker;
-    const messageCount = messages.length;
+    const hasStyleMarker = !!deliverableStyleMarker
+    const messageCount = messages.length
 
     if (hasStyleMarker) {
       quickOptions = {
-        question: "What would you like to do?",
-        options: ["I like the first one", "Show me more options", "Something different"],
-      };
+        question: 'What would you like to do?',
+        options: ['I like the first one', 'Show me more options', 'Something different'],
+      }
     } else if (messageCount <= 2) {
       quickOptions = {
-        question: "What next?",
-        options: ["Sounds good", "Tell me more", "Something different"],
-      };
+        question: 'What next?',
+        options: ['Sounds good', 'Tell me more', 'Something different'],
+      }
     } else {
       quickOptions = {
-        question: "Ready to proceed?",
-        options: ["Let's do it", "I want to make changes", "Start over"],
-      };
+        question: 'Ready to proceed?',
+        options: ["Let's do it", 'I want to make changes', 'Start over'],
+      }
     }
   }
 
   // Clean the content (use global flag to remove ALL occurrences)
   let cleanContent = content
-    .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, "")
-    .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, "")
-    .replace(/\[MORE_STYLES: [^\]]+\]/g, "")
-    .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, "")
-    .replace(/\[SEARCH_STYLES: [^\]]+\]/g, "")
-    .replace(/\[REFINE_STYLE: [^\]]+\]/g, "")
-    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, "")
-    .trim();
+    .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, '')
+    .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, '')
+    .replace(/\[MORE_STYLES: [^\]]+\]/g, '')
+    .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, '')
+    .replace(/\[SEARCH_STYLES: [^\]]+\]/g, '')
+    .replace(/\[REFINE_STYLE: [^\]]+\]/g, '')
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
+    .trim()
 
   // Post-process to remove enthusiastic/sycophantic language that slipped through
 
@@ -468,7 +444,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     // Verbose intro patterns
     /^(I |I'll |I need to |I want to |Let me |To create |Before |First, I )/i,
     /^(need to understand|to help you|in order to)/i,
-  ];
+  ]
 
   // Banned mid-content patterns
   const BANNED_MID = [
@@ -476,60 +452,54 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     /\s+(Super|Awesome|Amazing)(!|\s)/gi,
     /\s+You're absolutely right[!.]?\s*/gi,
     /\s+That's a (great|excellent|fantastic|wonderful) (idea|choice|direction)[!.]?\s*/gi,
-  ];
+  ]
 
   // Apply opener sanitization
-  const originalLength = cleanContent.length;
+  const originalLength = cleanContent.length
   for (const pattern of BANNED_OPENERS) {
-    cleanContent = cleanContent.replace(pattern, "");
-    if (cleanContent.length < originalLength) break; // Stop after first match
+    cleanContent = cleanContent.replace(pattern, '')
+    if (cleanContent.length < originalLength) break // Stop after first match
   }
 
   // If we removed an opener, capitalize the first letter of remaining content
   if (cleanContent.length < originalLength && cleanContent.length > 0) {
-    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
+    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1)
   }
 
   // Apply mid-content sanitization
   for (const pattern of BANNED_MID) {
-    cleanContent = cleanContent.replace(pattern, " ");
+    cleanContent = cleanContent.replace(pattern, ' ')
   }
 
   // Remove bullet points and list markers - these indicate verbose responses
   cleanContent = cleanContent
-    .replace(/^[-•]\s*/gm, "") // Remove bullet points at start of lines
-    .replace(/\n[-•]\s*/g, " ") // Remove bullet points with newlines
-    .replace(/\*\*[^*]+\*\*:?\s*/g, "") // Remove bold headers like **Tell me about:**
-    .replace(/\n\s*\n/g, " ") // Collapse multiple newlines
-    .replace(/\n/g, " ") // Replace remaining newlines with spaces
-    .replace(/([?.])\s*!/g, "$1") // Remove ! after ? or . (e.g., "?!" → "?")
-    .replace(/!+/g, ".") // Replace remaining exclamation marks with single period
-    .replace(/\.{2,}/g, ".") // Collapse multiple periods into one
-    .replace(/\?\s*\./g, "?") // Fix "?." → "?"
-    .replace(/\.\s*\?/g, "?") // Fix ".?" → "?"
-    .replace(/,\s*\./g, ".") // Fix ",." → "."
-    .replace(/\.\s*,/g, ","); // Fix ".," → ","
+    .replace(/^[-•]\s*/gm, '') // Remove bullet points at start of lines
+    .replace(/\n[-•]\s*/g, ' ') // Remove bullet points with newlines
+    .replace(/\*\*[^*]+\*\*:?\s*/g, '') // Remove bold headers like **Tell me about:**
+    .replace(/\n\s*\n/g, ' ') // Collapse multiple newlines
+    .replace(/\n/g, ' ') // Replace remaining newlines with spaces
+    .replace(/([?.])\s*!/g, '$1') // Remove ! after ? or . (e.g., "?!" → "?")
+    .replace(/!+/g, '.') // Replace remaining exclamation marks with single period
+    .replace(/\.{2,}/g, '.') // Collapse multiple periods into one
+    .replace(/\?\s*\./g, '?') // Fix "?." → "?"
+    .replace(/\.\s*\?/g, '?') // Fix ".?" → "?"
+    .replace(/,\s*\./g, '.') // Fix ",." → "."
+    .replace(/\.\s*,/g, ',') // Fix ".," → ","
 
   // If there are multiple question marks, keep only the last question
-  const questionCount = (cleanContent.match(/\?/g) || []).length;
+  const questionCount = (cleanContent.match(/\?/g) || []).length
   if (questionCount > 1) {
     // Find the last sentence ending with ? and keep only that as the question
-    const lastQuestionMatch = cleanContent.match(/[^.!?]*\?[^?]*$/);
-    const beforeLastQuestion = cleanContent
-      .replace(/[^.!?]*\?[^?]*$/, "")
-      .trim();
+    const lastQuestionMatch = cleanContent.match(/[^.!?]*\?[^?]*$/)
+    const beforeLastQuestion = cleanContent.replace(/[^.!?]*\?[^?]*$/, '').trim()
     // Get the first 1-2 sentences before the questions
-    const firstSentences = beforeLastQuestion
-      .split(/[.!]/)
-      .slice(0, 2)
-      .join(". ")
-      .trim();
+    const firstSentences = beforeLastQuestion.split(/[.!]/).slice(0, 2).join('. ').trim()
     if (firstSentences && lastQuestionMatch) {
       cleanContent =
         firstSentences +
-        (firstSentences.endsWith(".") ? "" : ".") +
-        " " +
-        lastQuestionMatch[0].trim();
+        (firstSentences.endsWith('.') ? '' : '.') +
+        ' ' +
+        lastQuestionMatch[0].trim()
     }
   }
 
@@ -537,45 +507,45 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     // Remove emojis
     .replace(
       /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu,
-      ""
+      ''
     )
     // Strip hex codes to hide technical color values from users
-    .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, " ")
+    .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, ' ')
     // Clean up "color ()" patterns that result from stripping
-    .replace(/\bcolor\s*\(\s*\)/gi, "color")
-    .replace(/\bcolors\s*\(\s*\)/gi, "colors")
-    .replace(/\(\s*\)/g, "")
+    .replace(/\bcolor\s*\(\s*\)/gi, 'color')
+    .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
+    .replace(/\(\s*\)/g, '')
     // Final punctuation cleanup to catch any remaining grammar issues
-    .replace(/\?\s*\./g, "?") // "?." → "?"
-    .replace(/\.\s*\?/g, "?") // ".?" → "?"
-    .replace(/\.{2,}/g, ".") // ".." or "..." → "."
-    .replace(/,\s*\./g, ".") // ",." → "."
-    .replace(/\.\s*,/g, ",") // ".," → ","
-    .replace(/\s+([.,?])/g, "$1") // Remove space before punctuation
+    .replace(/\?\s*\./g, '?') // "?." → "?"
+    .replace(/\.\s*\?/g, '?') // ".?" → "?"
+    .replace(/\.{2,}/g, '.') // ".." or "..." → "."
+    .replace(/,\s*\./g, '.') // ",." → "."
+    .replace(/\.\s*,/g, ',') // ".," → ","
+    .replace(/\s+([.,?])/g, '$1') // Remove space before punctuation
     // Clean up any double spaces or leading/trailing whitespace
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\s+/g, ' ')
+    .trim()
 
   // Final check: Ensure first letter is capitalized (for professional tone)
   // Only capitalize if the very first letter (after any whitespace/punctuation) is lowercase
   if (cleanContent.length > 0) {
     // Find the index of the first letter (uppercase or lowercase)
-    const firstLetterIndex = cleanContent.search(/[a-zA-Z]/);
+    const firstLetterIndex = cleanContent.search(/[a-zA-Z]/)
     if (firstLetterIndex !== -1) {
-      const firstLetter = cleanContent.charAt(firstLetterIndex);
+      const firstLetter = cleanContent.charAt(firstLetterIndex)
       // Only capitalize if it's lowercase
-      if (firstLetter >= "a" && firstLetter <= "z") {
+      if (firstLetter >= 'a' && firstLetter <= 'z') {
         cleanContent =
           cleanContent.slice(0, firstLetterIndex) +
           firstLetter.toUpperCase() +
-          cleanContent.slice(firstLetterIndex + 1);
+          cleanContent.slice(firstLetterIndex + 1)
       }
     }
   }
 
   // If content is empty but we have a style marker, provide a default message
   if (!cleanContent && deliverableStyleMarker) {
-    cleanContent = "Here are some style directions for your project.";
+    cleanContent = 'Here are some style directions for your project.'
   }
 
   return {
@@ -583,7 +553,7 @@ ${[...new Set(styles.map((s) => s.category))].join(", ")}`;
     styleReferences: mentionedStyles,
     quickOptions,
     deliverableStyleMarker,
-  };
+  }
 }
 
 // Helper to strip hex codes from user-facing text
@@ -591,46 +561,44 @@ function stripHexCodes(text: string): string {
   return (
     text
       // Remove hex codes like #15202B or #FFF (with optional surrounding parentheses)
-      .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, " ")
+      .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, ' ')
       // Remove phrases like "color ()" or "Primary color ()" that result from stripping
-      .replace(/\bcolor\s*\(\s*\)/gi, "color")
-      .replace(/\bcolors\s*\(\s*\)/gi, "colors")
+      .replace(/\bcolor\s*\(\s*\)/gi, 'color')
+      .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
       // Clean up resulting double spaces and awkward punctuation
-      .replace(/\s+,/g, ",")
-      .replace(/,\s*,/g, ",")
-      .replace(/\(\s*\)/g, "")
-      .replace(/\s+/g, " ")
+      .replace(/\s+,/g, ',')
+      .replace(/,\s*,/g, ',')
+      .replace(/\(\s*\)/g, '')
+      .replace(/\s+/g, ' ')
       .trim()
-  );
+  )
 }
 
 export function parseTaskFromChat(content: string): object | null {
-  const taskMatch = content.match(/\[TASK_READY\]([\s\S]*?)\[\/TASK_READY\]/);
-  if (!taskMatch) return null;
+  const taskMatch = content.match(/\[TASK_READY\]([\s\S]*?)\[\/TASK_READY\]/)
+  if (!taskMatch) return null
 
   try {
-    const task = JSON.parse(taskMatch[1].trim());
+    const task = JSON.parse(taskMatch[1].trim())
 
     // Strip hex codes from description to hide technical details from users
-    if (task.description && typeof task.description === "string") {
-      task.description = stripHexCodes(task.description);
+    if (task.description && typeof task.description === 'string') {
+      task.description = stripHexCodes(task.description)
     }
 
-    return task;
+    return task
   } catch (error) {
-    logger.warn({ err: error }, "Failed to parse task from chat content");
-    return null;
+    logger.warn({ err: error }, 'Failed to parse task from chat content')
+    return null
   }
 }
 
-export async function getStyleReferencesByCategory(
-  categories: string[]
-): Promise<
+export async function getStyleReferencesByCategory(categories: string[]): Promise<
   {
-    category: string;
-    name: string;
-    description: string | null;
-    imageUrl: string;
+    category: string
+    name: string
+    description: string | null
+    imageUrl: string
   }[]
 > {
   const styles = await db
@@ -641,9 +609,9 @@ export async function getStyleReferencesByCategory(
       imageUrl: styleReferences.imageUrl,
     })
     .from(styleReferences)
-    .where(eq(styleReferences.isActive, true));
+    .where(eq(styleReferences.isActive, true))
 
   return styles.filter((s) =>
     categories.some((c) => s.category.toLowerCase().includes(c.toLowerCase()))
-  );
+  )
 }

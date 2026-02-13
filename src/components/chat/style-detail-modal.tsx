@@ -1,26 +1,25 @@
-"use client";
+'use client'
 
-import { motion } from "framer-motion";
-import { Check, Plus, X, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Check, Plus, X, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { type DeliverableStyle } from "./types";
-import { STYLE_AXES } from "@/lib/constants/reference-libraries";
+} from '@/components/ui/dialog'
+import { type DeliverableStyle } from './types'
+import { STYLE_AXES } from '@/lib/constants/reference-libraries'
 
 interface StyleDetailModalProps {
-  style: DeliverableStyle | null;
-  isOpen: boolean;
-  onClose: () => void;
-  isInCollection: boolean;
-  onAddToCollection: (style: DeliverableStyle) => void;
-  onRemoveFromCollection: (styleId: string) => void;
+  style: DeliverableStyle | null
+  isOpen: boolean
+  onClose: () => void
+  isInCollection: boolean
+  onAddToCollection: (style: DeliverableStyle) => void
+  onRemoveFromCollection: (styleId: string) => void
 }
 
 export function StyleDetailModal({
@@ -31,22 +30,22 @@ export function StyleDetailModal({
   onAddToCollection,
   onRemoveFromCollection,
 }: StyleDetailModalProps) {
-  if (!style) return null;
+  if (!style) return null
 
   const getStyleAxisLabel = (value: string) => {
-    return STYLE_AXES.find((a) => a.value === value)?.label || value;
-  };
+    return STYLE_AXES.find((a) => a.value === value)?.label || value
+  }
 
-  const isGoodMatch = (style.brandMatchScore || 0) >= 60;
-  const isTopMatch = (style.brandMatchScore || 0) >= 70;
+  const isGoodMatch = (style.brandMatchScore || 0) >= 60
+  const isTopMatch = (style.brandMatchScore || 0) >= 70
 
   const handleToggleCollection = () => {
     if (isInCollection) {
-      onRemoveFromCollection(style.id);
+      onRemoveFromCollection(style.id)
     } else {
-      onAddToCollection(style);
+      onAddToCollection(style)
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -59,8 +58,7 @@ export function StyleDetailModal({
             alt={style.name}
             className="w-full h-full object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/400x400?text=Style";
+              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Style'
             }}
           />
 
@@ -82,10 +80,7 @@ export function StyleDetailModal({
 
           {/* Style axis badge */}
           <div className="absolute top-3 right-3">
-            <Badge
-              variant="secondary"
-              className="text-xs bg-background/80 backdrop-blur-sm"
-            >
+            <Badge variant="secondary" className="text-xs bg-background/80 backdrop-blur-sm">
               {getStyleAxisLabel(style.styleAxis)}
             </Badge>
           </div>
@@ -106,16 +101,14 @@ export function StyleDetailModal({
           {style.matchReason && isGoodMatch && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                {style.matchReason}
-              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-300">{style.matchReason}</p>
             </div>
           )}
 
           {/* Action button */}
           <Button
             onClick={handleToggleCollection}
-            variant={isInCollection ? "outline" : "default"}
+            variant={isInCollection ? 'outline' : 'default'}
             className="w-full gap-2"
           >
             {isInCollection ? (
@@ -133,5 +126,5 @@ export function StyleDetailModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

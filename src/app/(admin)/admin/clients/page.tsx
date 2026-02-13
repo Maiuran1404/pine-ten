@@ -1,16 +1,10 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -18,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -26,149 +20,162 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, CheckCircle, XCircle, Coins, Plus, Trash2, Users, TrendingUp, DollarSign, UserCheck } from "lucide-react";
-import { StatCard } from "@/components/admin/stat-card";
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Search,
+  CheckCircle,
+  XCircle,
+  Coins,
+  Plus,
+  Trash2,
+  Users,
+  TrendingUp,
+  DollarSign,
+  UserCheck,
+} from 'lucide-react'
+import { StatCard } from '@/components/admin/stat-card'
 
 interface Client {
-  id: string;
-  name: string;
-  email: string;
-  credits: number;
-  onboardingCompleted: boolean;
-  createdAt: string;
-  totalTasks: number;
-  completedTasks: number;
-  totalCreditsPurchased: number;
+  id: string
+  name: string
+  email: string
+  credits: number
+  onboardingCompleted: boolean
+  createdAt: string
+  totalTasks: number
+  completedTasks: number
+  totalCreditsPurchased: number
 }
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [grantDialogOpen, setGrantDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [grantCredits, setGrantCredits] = useState(5);
-  const [grantReason, setGrantReason] = useState("");
-  const [sendNotification, setSendNotification] = useState(true);
-  const [isGranting, setIsGranting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [clients, setClients] = useState<Client[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [grantDialogOpen, setGrantDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [grantCredits, setGrantCredits] = useState(5)
+  const [grantReason, setGrantReason] = useState('')
+  const [sendNotification, setSendNotification] = useState(true)
+  const [isGranting, setIsGranting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    fetchClients()
+  }, [])
 
   const fetchClients = async () => {
     try {
-      const response = await fetch("/api/admin/clients");
+      const response = await fetch('/api/admin/clients')
       if (response.ok) {
-        const data = await response.json();
-        setClients(data.data?.clients || []);
+        const data = await response.json()
+        setClients(data.data?.clients || [])
       }
     } catch (error) {
-      console.error("Failed to fetch clients:", error);
+      console.error('Failed to fetch clients:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const filteredClients = clients.filter(
     (client) =>
-      searchTerm === "" ||
+      searchTerm === '' ||
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   const openGrantDialog = (client: Client) => {
-    setSelectedClient(client);
-    setGrantCredits(5);
-    setGrantReason("");
-    setSendNotification(true);
-    setGrantDialogOpen(true);
-  };
+    setSelectedClient(client)
+    setGrantCredits(5)
+    setGrantReason('')
+    setSendNotification(true)
+    setGrantDialogOpen(true)
+  }
 
   const handleGrantCredits = async () => {
-    if (!selectedClient || grantCredits <= 0) return;
+    if (!selectedClient || grantCredits <= 0) return
 
-    setIsGranting(true);
+    setIsGranting(true)
     try {
-      const response = await fetch("/api/admin/credits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: selectedClient.id,
           amount: grantCredits,
-          type: "BONUS",
+          type: 'BONUS',
           description: grantReason || `Admin granted ${grantCredits} credits`,
         }),
-      });
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error?.message || "Failed to grant credits");
+        throw new Error(result.error?.message || 'Failed to grant credits')
       }
 
-      toast.success(`Successfully granted ${grantCredits} credits to ${selectedClient.name}`);
+      toast.success(`Successfully granted ${grantCredits} credits to ${selectedClient.name}`)
 
       // Update local state
       setClients((prev) =>
         prev.map((c) =>
-          c.id === selectedClient.id ? { ...c, credits: result.data?.newCredits ?? c.credits + grantCredits } : c
+          c.id === selectedClient.id
+            ? { ...c, credits: result.data?.newCredits ?? c.credits + grantCredits }
+            : c
         )
-      );
+      )
 
-      setGrantDialogOpen(false);
+      setGrantDialogOpen(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to grant credits");
+      toast.error(error instanceof Error ? error.message : 'Failed to grant credits')
     } finally {
-      setIsGranting(false);
+      setIsGranting(false)
     }
-  };
+  }
 
   const openDeleteDialog = (client: Client) => {
-    setSelectedClient(client);
-    setDeleteDialogOpen(true);
-  };
+    setSelectedClient(client)
+    setDeleteDialogOpen(true)
+  }
 
   const handleDeleteUser = async () => {
-    if (!selectedClient) return;
+    if (!selectedClient) return
 
-    setIsDeleting(true);
+    setIsDeleting(true)
     try {
       const response = await fetch(`/api/admin/clients/${selectedClient.id}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete user");
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete user')
       }
 
-      toast.success(`Successfully deleted ${selectedClient.name}`);
-      setClients((prev) => prev.filter((c) => c.id !== selectedClient.id));
-      setDeleteDialogOpen(false);
+      toast.success(`Successfully deleted ${selectedClient.name}`)
+      setClients((prev) => prev.filter((c) => c.id !== selectedClient.id))
+      setDeleteDialogOpen(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete user");
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user')
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(false)
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
 
-  const totalRevenue = clients.reduce((sum, c) => sum + c.totalCreditsPurchased * 49, 0);
+  const totalRevenue = clients.reduce((sum, c) => sum + c.totalCreditsPurchased * 49, 0)
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
@@ -199,7 +206,7 @@ export default function ClientsPage() {
             value={clients.filter((c) => c.totalTasks > 0).length}
             subtext="With at least 1 task"
             icon={UserCheck}
-            trend={clients.filter((c) => c.totalTasks > 0).length > 0 ? "up" : "neutral"}
+            trend={clients.filter((c) => c.totalTasks > 0).length > 0 ? 'up' : 'neutral'}
           />
           <StatCard
             label="Credits Purchased"
@@ -233,7 +240,7 @@ export default function ClientsPage() {
         <CardHeader>
           <CardTitle>All Clients</CardTitle>
           <CardDescription>
-            {filteredClients.length} client{filteredClients.length !== 1 ? "s" : ""} found
+            {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} found
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -244,84 +251,82 @@ export default function ClientsPage() {
               ))}
             </div>
           ) : filteredClients.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">
-              No clients found
-            </p>
+            <p className="text-center py-8 text-muted-foreground">No clients found</p>
           ) : (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <Table className="min-w-[800px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Onboarded</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Tasks</TableHead>
-                  <TableHead>Total Purchased</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{client.name}</p>
-                        <p className="text-sm text-muted-foreground">{client.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {client.onboardingCompleted ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={client.credits > 0 ? "default" : "secondary"}>
-                        {client.credits}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <p>{client.totalTasks} total</p>
-                        <p className="text-muted-foreground">{client.completedTasks} completed</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{client.totalCreditsPurchased}</span>
-                      <span className="text-muted-foreground text-sm ml-1">
-                        (${client.totalCreditsPurchased * 49})
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(client.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openGrantDialog(client)}
-                          className="cursor-pointer"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Grant Credits
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteDialog(client)}
-                          className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+              <Table className="min-w-[800px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Onboarded</TableHead>
+                    <TableHead>Credits</TableHead>
+                    <TableHead>Tasks</TableHead>
+                    <TableHead>Total Purchased</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredClients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{client.name}</p>
+                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {client.onboardingCompleted ? (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={client.credits > 0 ? 'default' : 'secondary'}>
+                          {client.credits}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <p>{client.totalTasks} total</p>
+                          <p className="text-muted-foreground">{client.completedTasks} completed</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{client.totalCreditsPurchased}</span>
+                        <span className="text-muted-foreground text-sm ml-1">
+                          (${client.totalCreditsPurchased * 49})
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(client.createdAt)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openGrantDialog(client)}
+                            className="cursor-pointer"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Grant Credits
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDeleteDialog(client)}
+                            className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -376,11 +381,11 @@ export default function ClientsPage() {
             {selectedClient && (
               <div className="bg-muted p-3 rounded-lg text-sm">
                 <p>
-                  <span className="text-muted-foreground">Current balance:</span>{" "}
+                  <span className="text-muted-foreground">Current balance:</span>{' '}
                   <span className="font-medium">{selectedClient.credits} credits</span>
                 </p>
                 <p>
-                  <span className="text-muted-foreground">After grant:</span>{" "}
+                  <span className="text-muted-foreground">After grant:</span>{' '}
                   <span className="font-medium text-green-600">
                     {selectedClient.credits + grantCredits} credits
                   </span>
@@ -397,11 +402,8 @@ export default function ClientsPage() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleGrantCredits}
-              disabled={isGranting || grantCredits <= 0}
-            >
-              {isGranting ? "Granting..." : `Grant ${grantCredits} Credits`}
+            <Button onClick={handleGrantCredits} disabled={isGranting || grantCredits <= 0}>
+              {isGranting ? 'Granting...' : `Grant ${grantCredits} Credits`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -423,13 +425,23 @@ export default function ClientsPage() {
           {selectedClient && (
             <div className="py-4">
               <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg text-sm space-y-1">
-                <p><span className="text-muted-foreground">Name:</span> {selectedClient.name}</p>
-                <p><span className="text-muted-foreground">Email:</span> {selectedClient.email}</p>
-                <p><span className="text-muted-foreground">Tasks:</span> {selectedClient.totalTasks} total</p>
-                <p><span className="text-muted-foreground">Credits:</span> {selectedClient.credits}</p>
+                <p>
+                  <span className="text-muted-foreground">Name:</span> {selectedClient.name}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Email:</span> {selectedClient.email}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Tasks:</span> {selectedClient.totalTasks}{' '}
+                  total
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Credits:</span> {selectedClient.credits}
+                </p>
               </div>
               <p className="text-sm text-muted-foreground mt-3">
-                This will permanently delete the user and all associated data including tasks, files, and transactions.
+                This will permanently delete the user and all associated data including tasks,
+                files, and transactions.
               </p>
             </div>
           )}
@@ -442,16 +454,12 @@ export default function ClientsPage() {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteUser}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete User"}
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete User'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

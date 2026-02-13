@@ -1,13 +1,13 @@
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv'
 
 // Load environment variables first
-dotenv.config({ path: ".env" });
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: '.env' })
+dotenv.config({ path: '.env.local' })
 
 async function runMigration() {
   // Dynamic imports to ensure env is loaded first
-  const { db } = await import("../src/db");
-  const { sql } = await import("drizzle-orm");
+  const { db } = await import('../src/db')
+  const { sql } = await import('drizzle-orm')
   try {
     // Create enum type
     await db.execute(sql`
@@ -25,8 +25,8 @@ async function runMigration() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `);
-    console.log("Created enum type");
+    `)
+    console.log('Created enum type')
 
     // Create table
     await db.execute(sql`
@@ -48,8 +48,8 @@ async function runMigration() {
         "endpoint" text,
         "created_at" timestamp DEFAULT now() NOT NULL
       );
-    `);
-    console.log("Created table");
+    `)
+    console.log('Created table')
 
     // Add foreign key (ignore if exists)
     await db.execute(sql`
@@ -59,24 +59,36 @@ async function runMigration() {
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `);
-    console.log("Added foreign key");
+    `)
+    console.log('Added foreign key')
 
     // Create indexes
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_actor_id_idx" ON "audit_logs" USING btree ("actor_id");`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_action_idx" ON "audit_logs" USING btree ("action");`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_resource_type_idx" ON "audit_logs" USING btree ("resource_type");`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_resource_id_idx" ON "audit_logs" USING btree ("resource_id");`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_created_at_idx" ON "audit_logs" USING btree ("created_at");`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS "audit_logs_actor_action_idx" ON "audit_logs" USING btree ("actor_id","action");`);
-    console.log("Created indexes");
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_actor_id_idx" ON "audit_logs" USING btree ("actor_id");`
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_action_idx" ON "audit_logs" USING btree ("action");`
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_resource_type_idx" ON "audit_logs" USING btree ("resource_type");`
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_resource_id_idx" ON "audit_logs" USING btree ("resource_id");`
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_created_at_idx" ON "audit_logs" USING btree ("created_at");`
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS "audit_logs_actor_action_idx" ON "audit_logs" USING btree ("actor_id","action");`
+    )
+    console.log('Created indexes')
 
-    console.log("Migration completed successfully!");
-    process.exit(0);
+    console.log('Migration completed successfully!')
+    process.exit(0)
   } catch (error) {
-    console.error("Migration failed:", error);
-    process.exit(1);
+    console.error('Migration failed:', error)
+    process.exit(1)
   }
 }
 
-runMigration();
+runMigration()

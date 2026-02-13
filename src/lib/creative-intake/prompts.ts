@@ -6,8 +6,8 @@
  * while applying smart defaults and recommendations.
  */
 
-import type { ServiceType } from "./types";
-import { logger } from "@/lib/logger";
+import type { ServiceType } from './types'
+import { logger } from '@/lib/logger'
 
 // =============================================================================
 // BASE SYSTEM PROMPT
@@ -115,7 +115,7 @@ When ready to confirm:
 }
 \`\`\`
 
-Never exceed 4 back-and-forth exchanges for basic intake.`;
+Never exceed 4 back-and-forth exchanges for basic intake.`
 
 // =============================================================================
 // SERVICE-SPECIFIC PROMPTS
@@ -360,7 +360,7 @@ You're gathering requirements for organic social media content.
 - Trust goal → Behind the scenes + storytelling, 3x/week
 - Growth goal → Memes + educational + product, 5x/week
 - Storytelling → Storytelling + BTS, 3x/week`,
-};
+}
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -397,10 +397,10 @@ Then output the service selector:
     {"id": "brand_package", "label": "Brand Package", "description": "Full brand identity"}
   ]
 }
-\`\`\``;
+\`\`\``
   }
 
-  return SERVICE_PROMPTS[serviceType];
+  return SERVICE_PROMPTS[serviceType]
 }
 
 export function getInitialMessage(serviceType: ServiceType): string {
@@ -408,7 +408,7 @@ export function getInitialMessage(serviceType: ServiceType): string {
     launch_video:
       "Tell me about your launch - what are you launching, and what's the ONE thing you want viewers to walk away understanding?",
     video_edit:
-      "What type of video are we editing? Is this UGC, a talking head video, screen recording, event footage, or a podcast clip?",
+      'What type of video are we editing? Is this UGC, a talking head video, screen recording, event footage, or a podcast clip?',
     pitch_deck:
       "Share your current deck (Drive, Dropbox, or Figma link works). Any specific pain points with it, or an upcoming presentation you're preparing for?",
     brand_package:
@@ -417,9 +417,9 @@ export function getInitialMessage(serviceType: ServiceType): string {
       "What are you promoting with these ads, and what's your main goal - driving sales, getting sign-ups, building awareness, or capturing leads?",
     social_content:
       "What platforms are you focusing on, and what's your main goal - building authority, growing your audience, or something else?",
-  };
+  }
 
-  return messages[serviceType];
+  return messages[serviceType]
 }
 
 // =============================================================================
@@ -427,81 +427,81 @@ export function getInitialMessage(serviceType: ServiceType): string {
 // =============================================================================
 
 export interface ParsedIntakeResponse {
-  text: string;
+  text: string
   groupedQuestions?: {
-    type: "grouped";
+    type: 'grouped'
     questions: Array<{
-      id: string;
-      label: string;
-      type: "single_select" | "multi_select" | "text" | "link";
-      options?: Array<{ value: string; label: string; recommended?: boolean; description?: string }>;
-      recommendation?: string;
-      placeholder?: string;
-    }>;
-  };
+      id: string
+      label: string
+      type: 'single_select' | 'multi_select' | 'text' | 'link'
+      options?: Array<{ value: string; label: string; recommended?: boolean; description?: string }>
+      recommendation?: string
+      placeholder?: string
+    }>
+  }
   quickOptions?: {
-    type: "quick";
-    options: Array<{ label: string; value: string; recommended?: boolean }>;
-  };
+    type: 'quick'
+    options: Array<{ label: string; value: string; recommended?: boolean }>
+  }
   summary?: {
-    type: "summary";
-    title: string;
-    items: Array<{ label: string; value: string | string[]; source?: string }>;
-    recommendations: string[];
-    nextStep?: string;
-  };
+    type: 'summary'
+    title: string
+    items: Array<{ label: string; value: string | string[]; source?: string }>
+    recommendations: string[]
+    nextStep?: string
+  }
   serviceSelect?: {
-    type: "service_select";
-    services: Array<{ id: string; label: string; description: string }>;
-  };
+    type: 'service_select'
+    services: Array<{ id: string; label: string; description: string }>
+  }
 }
 
 export function parseIntakeResponse(response: string): ParsedIntakeResponse {
-  const result: ParsedIntakeResponse = { text: response };
+  const result: ParsedIntakeResponse = { text: response }
 
   // Extract grouped questions
-  const groupedMatch = response.match(/```intake_questions\n([\s\S]*?)```/);
+  const groupedMatch = response.match(/```intake_questions\n([\s\S]*?)```/)
   if (groupedMatch) {
     try {
-      result.groupedQuestions = JSON.parse(groupedMatch[1]);
-      result.text = response.replace(/```intake_questions\n[\s\S]*?```/, "").trim();
+      result.groupedQuestions = JSON.parse(groupedMatch[1])
+      result.text = response.replace(/```intake_questions\n[\s\S]*?```/, '').trim()
     } catch (error) {
-      logger.warn({ err: error }, "Failed to parse intake grouped questions JSON");
+      logger.warn({ err: error }, 'Failed to parse intake grouped questions JSON')
     }
   }
 
   // Extract quick options
-  const optionsMatch = response.match(/```intake_options\n([\s\S]*?)```/);
+  const optionsMatch = response.match(/```intake_options\n([\s\S]*?)```/)
   if (optionsMatch) {
     try {
-      result.quickOptions = JSON.parse(optionsMatch[1]);
-      result.text = result.text.replace(/```intake_options\n[\s\S]*?```/, "").trim();
+      result.quickOptions = JSON.parse(optionsMatch[1])
+      result.text = result.text.replace(/```intake_options\n[\s\S]*?```/, '').trim()
     } catch (error) {
-      logger.warn({ err: error }, "Failed to parse intake quick options JSON");
+      logger.warn({ err: error }, 'Failed to parse intake quick options JSON')
     }
   }
 
   // Extract summary
-  const summaryMatch = response.match(/```intake_summary\n([\s\S]*?)```/);
+  const summaryMatch = response.match(/```intake_summary\n([\s\S]*?)```/)
   if (summaryMatch) {
     try {
-      result.summary = JSON.parse(summaryMatch[1]);
-      result.text = result.text.replace(/```intake_summary\n[\s\S]*?```/, "").trim();
+      result.summary = JSON.parse(summaryMatch[1])
+      result.text = result.text.replace(/```intake_summary\n[\s\S]*?```/, '').trim()
     } catch (error) {
-      logger.warn({ err: error }, "Failed to parse intake summary JSON");
+      logger.warn({ err: error }, 'Failed to parse intake summary JSON')
     }
   }
 
   // Extract service select
-  const serviceMatch = response.match(/```intake_service_select\n([\s\S]*?)```/);
+  const serviceMatch = response.match(/```intake_service_select\n([\s\S]*?)```/)
   if (serviceMatch) {
     try {
-      result.serviceSelect = JSON.parse(serviceMatch[1]);
-      result.text = result.text.replace(/```intake_service_select\n[\s\S]*?```/, "").trim();
+      result.serviceSelect = JSON.parse(serviceMatch[1])
+      result.text = result.text.replace(/```intake_service_select\n[\s\S]*?```/, '').trim()
     } catch (error) {
-      logger.warn({ err: error }, "Failed to parse intake service select JSON");
+      logger.warn({ err: error }, 'Failed to parse intake service select JSON')
     }
   }
 
-  return result;
+  return result
 }

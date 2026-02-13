@@ -1,44 +1,39 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { Check, Search, X, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { STYLE_AXES } from "@/lib/constants/reference-libraries";
+import { useState, useMemo } from 'react'
+import { Check, Search, X, Eye } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
+import { STYLE_AXES } from '@/lib/constants/reference-libraries'
 
 export interface DeliverableStyle {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  deliverableType: string;
-  styleAxis: string;
-  subStyle: string | null;
-  semanticTags: string[];
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  deliverableType: string
+  styleAxis: string
+  subStyle: string | null
+  semanticTags: string[]
   // Brand-aware scoring fields
-  brandMatchScore?: number;
-  matchReason?: string;
+  brandMatchScore?: number
+  matchReason?: string
   // Example output support
-  exampleOutputUrl?: string | null;
+  exampleOutputUrl?: string | null
 }
 
 interface DeliverableStyleGridProps {
-  styles: DeliverableStyle[];
-  selectedStyles: string[];
-  onSelectStyle: (style: DeliverableStyle) => void;
-  onShowMore?: (styleAxis: string) => void;
-  onShowDifferent?: () => void;
-  isLoading?: boolean;
+  styles: DeliverableStyle[]
+  selectedStyles: string[]
+  onSelectStyle: (style: DeliverableStyle) => void
+  onShowMore?: (styleAxis: string) => void
+  onShowDifferent?: () => void
+  isLoading?: boolean
   // New props for pagination info
-  totalAvailable?: number;
-  shownAxes?: string[];
+  totalAvailable?: number
+  shownAxes?: string[]
 }
 
 export function DeliverableStyleGrid({
@@ -50,37 +45,37 @@ export function DeliverableStyleGrid({
   isLoading,
   shownAxes,
 }: DeliverableStyleGridProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const [exampleModal, setExampleModal] = useState<{
-    style: DeliverableStyle;
-    url: string;
-  } | null>(null);
-  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null);
+    style: DeliverableStyle
+    url: string
+  } | null>(null)
+  const [hoveredStyleId, setHoveredStyleId] = useState<string | null>(null)
 
   // Filter styles by search query
   const filteredStyles = useMemo(() => {
-    if (!searchQuery.trim()) return styles;
-    const query = searchQuery.toLowerCase();
+    if (!searchQuery.trim()) return styles
+    const query = searchQuery.toLowerCase()
     return styles.filter(
       (s) =>
         s.name.toLowerCase().includes(query) ||
         s.styleAxis.toLowerCase().includes(query) ||
         s.description?.toLowerCase().includes(query) ||
         s.semanticTags?.some((t) => t.toLowerCase().includes(query))
-    );
-  }, [styles, searchQuery]);
+    )
+  }, [styles, searchQuery])
 
   if (!styles || styles.length === 0) {
-    return null;
+    return null
   }
 
   // Calculate available axes for "show different" button
-  const currentAxes = new Set(styles.map((s) => s.styleAxis));
-  const allKnownAxes = STYLE_AXES.map((a) => a.value);
-  const seenAxes = new Set([...(shownAxes || []), ...currentAxes]);
-  const remainingAxes = allKnownAxes.filter((a) => !seenAxes.has(a));
-  const hasMoreDifferentStyles = remainingAxes.length > 0;
+  const currentAxes = new Set(styles.map((s) => s.styleAxis))
+  const allKnownAxes = STYLE_AXES.map((a) => a.value)
+  const seenAxes = new Set([...(shownAxes || []), ...currentAxes])
+  const remainingAxes = allKnownAxes.filter((a) => !seenAxes.has(a))
+  const hasMoreDifferentStyles = remainingAxes.length > 0
 
   return (
     <div className="space-y-4">
@@ -91,12 +86,8 @@ export function DeliverableStyleGrid({
             className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             onClick={() => setShowSearch(!showSearch)}
           >
-            {showSearch ? (
-              <X className="w-3 h-3" />
-            ) : (
-              <Search className="w-3 h-3" />
-            )}
-            {showSearch ? "Close" : "Search"}
+            {showSearch ? <X className="w-3 h-3" /> : <Search className="w-3 h-3" />}
+            {showSearch ? 'Close' : 'Search'}
           </button>
         </div>
       )}
@@ -117,7 +108,7 @@ export function DeliverableStyleGrid({
               variant="ghost"
               size="sm"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-              onClick={() => setSearchQuery("")}
+              onClick={() => setSearchQuery('')}
             >
               <X className="w-3.5 h-3.5" />
             </Button>
@@ -128,15 +119,15 @@ export function DeliverableStyleGrid({
       {/* No results message */}
       {filteredStyles.length === 0 && searchQuery && (
         <div className="text-center py-4 text-sm text-muted-foreground">
-          No styles found for "{searchQuery}"
+          No styles found for &quot;{searchQuery}&quot;
         </div>
       )}
 
       {/* Clean grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
         {filteredStyles.map((style) => {
-          const isSelected = selectedStyles.includes(style.id);
-          const isHovered = hoveredStyleId === style.id;
+          const isSelected = selectedStyles.includes(style.id)
+          const isHovered = hoveredStyleId === style.id
 
           return (
             <button
@@ -145,12 +136,11 @@ export function DeliverableStyleGrid({
               onMouseEnter={() => setHoveredStyleId(style.id)}
               onMouseLeave={() => setHoveredStyleId(null)}
               className={cn(
-                "relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200",
-                isHovered && "scale-110 z-10 shadow-2xl",
+                'relative aspect-[4/5] rounded-xl overflow-hidden transition-all duration-200',
+                isHovered && 'scale-110 z-10 shadow-2xl',
                 isSelected
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl"
-                  : isHovered &&
-                      "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl'
+                  : isHovered && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
               )}
             >
               {/* Image */}
@@ -160,8 +150,8 @@ export function DeliverableStyleGrid({
                 alt={style.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://via.placeholder.com/400x500?text=Style";
+                  ;(e.target as HTMLImageElement).src =
+                    'https://via.placeholder.com/400x500?text=Style'
                 }}
               />
 
@@ -169,9 +159,7 @@ export function DeliverableStyleGrid({
               {(isHovered || isSelected) && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-sm font-medium truncate">
-                      {style.name}
-                    </p>
+                    <p className="text-white text-sm font-medium truncate">{style.name}</p>
                   </div>
 
                   {/* Example output button - only on hover */}
@@ -179,11 +167,11 @@ export function DeliverableStyleGrid({
                     <button
                       className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation()
                         setExampleModal({
                           style,
                           url: style.exampleOutputUrl!,
-                        });
+                        })
                       }}
                     >
                       <Eye className="w-3 h-3" />
@@ -201,7 +189,7 @@ export function DeliverableStyleGrid({
                 </div>
               )}
             </button>
-          );
+          )
         })}
       </div>
 
@@ -230,10 +218,7 @@ export function DeliverableStyleGrid({
       )}
 
       {/* Example Output Modal */}
-      <Dialog
-        open={!!exampleModal}
-        onOpenChange={(open) => !open && setExampleModal(null)}
-      >
+      <Dialog open={!!exampleModal} onOpenChange={(open) => !open && setExampleModal(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{exampleModal?.style.name}</DialogTitle>
@@ -247,22 +232,20 @@ export function DeliverableStyleGrid({
                   alt={`Example output for ${exampleModal.style.name}`}
                   className="w-full h-auto"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://via.placeholder.com/800x600?text=Example+Not+Available";
+                    ;(e.target as HTMLImageElement).src =
+                      'https://via.placeholder.com/800x600?text=Example+Not+Available'
                   }}
                 />
               </div>
               <div className="flex items-center justify-between">
                 {exampleModal.style.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {exampleModal.style.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{exampleModal.style.description}</p>
                 )}
                 <Button
                   size="sm"
                   onClick={() => {
-                    onSelectStyle(exampleModal.style);
-                    setExampleModal(null);
+                    onSelectStyle(exampleModal.style)
+                    setExampleModal(null)
                   }}
                 >
                   Select
@@ -273,5 +256,5 @@ export function DeliverableStyleGrid({
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

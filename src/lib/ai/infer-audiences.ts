@@ -3,76 +3,74 @@
  * Used when no website is provided or when website extraction didn't produce audiences
  */
 
-import Anthropic from "@anthropic-ai/sdk";
-import { logger } from "@/lib/logger";
+import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/logger'
 
 // Lazy initialization to avoid errors during build
-let anthropic: Anthropic | null = null;
+let anthropic: Anthropic | null = null
 
 function getAnthropic(): Anthropic {
   if (!anthropic) {
     anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || "",
-    });
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+    })
   }
-  return anthropic;
+  return anthropic
 }
 
 export interface InferredAudience {
-  name: string;
-  isPrimary: boolean;
+  name: string
+  isPrimary: boolean
   demographics?: {
-    ageRange?: { min: number; max: number };
-    gender?: "all" | "male" | "female" | "other";
-    income?: "low" | "middle" | "high" | "enterprise";
-  };
+    ageRange?: { min: number; max: number }
+    gender?: 'all' | 'male' | 'female' | 'other'
+    income?: 'low' | 'middle' | 'high' | 'enterprise'
+  }
   firmographics?: {
-    companySize?: string[];
-    industries?: string[];
-    jobTitles?: string[];
-    departments?: string[];
-    decisionMakingRole?: "decision-maker" | "influencer" | "end-user";
-  };
+    companySize?: string[]
+    industries?: string[]
+    jobTitles?: string[]
+    departments?: string[]
+    decisionMakingRole?: 'decision-maker' | 'influencer' | 'end-user'
+  }
   psychographics?: {
-    painPoints?: string[];
-    goals?: string[];
-    values?: string[];
-  };
+    painPoints?: string[]
+    goals?: string[]
+    values?: string[]
+  }
   behavioral?: {
-    contentPreferences?: string[];
-    platforms?: string[];
-    buyingProcess?: "impulse" | "considered" | "committee";
-  };
-  confidence: number;
+    contentPreferences?: string[]
+    platforms?: string[]
+    buyingProcess?: 'impulse' | 'considered' | 'committee'
+  }
+  confidence: number
 }
 
 interface BrandData {
-  name: string;
-  industry?: string | null;
-  industryArchetype?: string | null;
-  description?: string | null;
-  creativeFocus?: string[];
+  name: string
+  industry?: string | null
+  industryArchetype?: string | null
+  description?: string | null
+  creativeFocus?: string[]
 }
 
 /**
  * Infer target audiences from brand data using AI
  * Returns 1-3 audience segments based on the brand information
  */
-export async function inferAudiencesFromBrand(
-  brandData: BrandData
-): Promise<InferredAudience[]> {
+export async function inferAudiencesFromBrand(brandData: BrandData): Promise<InferredAudience[]> {
   // Don't attempt inference if we have no useful data
   if (!brandData.name && !brandData.industry && !brandData.description) {
-    return [];
+    return []
   }
 
   const prompt = `Based on the following brand/company information, infer the most likely target audience(s).
 
-Company Name: ${brandData.name || "Unknown"}
-Industry: ${brandData.industry || "Not specified"}
-Industry Archetype: ${brandData.industryArchetype || "Not specified"}
-Description: ${brandData.description || "Not provided"}
-Creative Focus Areas: ${brandData.creativeFocus?.join(", ") || "Not specified"}
+Company Name: ${brandData.name || 'Unknown'}
+Industry: ${brandData.industry || 'Not specified'}
+Industry Archetype: ${brandData.industryArchetype || 'Not specified'}
+Description: ${brandData.description || 'Not provided'}
+Creative Focus Areas: ${brandData.creativeFocus?.join(', ') || 'Not specified'}
 
 Using the information above, infer 1-3 target audience segments. Consider:
 - What industry is this? Who typically buys in this industry?
@@ -124,40 +122,38 @@ Return ONLY a valid JSON array:
     },
     "confidence": 55
   }
-]`;
+]`
 
   try {
     const response = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: prompt,
         },
       ],
-    });
+    })
 
     // Extract JSON from response
     const responseText = response.content
-      .filter(
-        (block): block is Anthropic.Messages.TextBlock => block.type === "text"
-      )
+      .filter((block): block is Anthropic.Messages.TextBlock => block.type === 'text')
       .map((block) => block.text)
-      .join("");
+      .join('')
 
     // Parse the JSON response
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/)
     if (!jsonMatch) {
-      logger.error("No JSON array found in audience inference response");
-      return [];
+      logger.error('No JSON array found in audience inference response')
+      return []
     }
 
-    const audiences: InferredAudience[] = JSON.parse(jsonMatch[0]);
+    const audiences: InferredAudience[] = JSON.parse(jsonMatch[0])
 
     // Validate and normalize the audiences
     const validatedAudiences = audiences
-      .filter((a) => a.name && typeof a.name === "string")
+      .filter((a) => a.name && typeof a.name === 'string')
       .map((audience) => ({
         name: audience.name,
         isPrimary: !!audience.isPrimary,
@@ -167,21 +163,21 @@ Return ONLY a valid JSON array:
         behavioral: audience.behavioral || {},
         confidence: Math.min(
           100,
-          Math.max(0, typeof audience.confidence === "number" ? audience.confidence : 50)
+          Math.max(0, typeof audience.confidence === 'number' ? audience.confidence : 50)
         ),
-      }));
+      }))
 
     // Ensure exactly one primary audience
     if (validatedAudiences.length > 0) {
-      const hasPrimary = validatedAudiences.some((a) => a.isPrimary);
+      const hasPrimary = validatedAudiences.some((a) => a.isPrimary)
       if (!hasPrimary) {
-        validatedAudiences[0].isPrimary = true;
+        validatedAudiences[0].isPrimary = true
       }
     }
 
-    return validatedAudiences;
+    return validatedAudiences
   } catch (error) {
-    logger.error({ err: error }, "Failed to infer audiences from brand data");
-    return [];
+    logger.error({ err: error }, 'Failed to infer audiences from brand data')
+    return []
   }
 }

@@ -1,7 +1,7 @@
-import { db } from "@/db";
-import { deliverableStyleReferences } from "@/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
-import type { DeliverableType, StyleAxis } from "@/lib/constants/reference-libraries";
+import { db } from '@/db'
+import { deliverableStyleReferences } from '@/db/schema'
+import { eq, and, sql } from 'drizzle-orm'
+import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libraries'
 
 /**
  * Get initial diverse styles for a deliverable type
@@ -33,9 +33,9 @@ export async function getInitialDeliverableStyles(deliverableType: DeliverableTy
       deliverableStyleReferences.styleAxis,
       deliverableStyleReferences.featuredOrder,
       deliverableStyleReferences.displayOrder
-    );
+    )
 
-  return styles;
+  return styles
 }
 
 /**
@@ -68,9 +68,9 @@ export async function getMoreOfStyle(
     )
     .orderBy(deliverableStyleReferences.displayOrder)
     .limit(limit)
-    .offset(offset);
+    .offset(offset)
 
-  return styles;
+  return styles
 }
 
 /**
@@ -100,7 +100,10 @@ export async function getDifferentStyles(
         eq(deliverableStyleReferences.isActive, true),
         // Exclude already shown style axes
         excludeStyleAxes.length > 0
-          ? sql`${deliverableStyleReferences.styleAxis} NOT IN (${sql.join(excludeStyleAxes.map(s => sql`${s}`), sql`, `)})`
+          ? sql`${deliverableStyleReferences.styleAxis} NOT IN (${sql.join(
+              excludeStyleAxes.map((s) => sql`${s}`),
+              sql`, `
+            )})`
           : sql`true`
       )
     )
@@ -109,29 +112,36 @@ export async function getDifferentStyles(
       deliverableStyleReferences.featuredOrder,
       deliverableStyleReferences.displayOrder
     )
-    .limit(limit);
+    .limit(limit)
 
-  return styles;
+  return styles
 }
 
 /**
  * Increment usage count for selected styles
  */
 export async function incrementStyleUsage(styleIds: string[]) {
-  if (styleIds.length === 0) return;
+  if (styleIds.length === 0) return
 
   await db
     .update(deliverableStyleReferences)
     .set({
       usageCount: sql`${deliverableStyleReferences.usageCount} + 1`,
     })
-    .where(sql`${deliverableStyleReferences.id} IN (${sql.join(styleIds.map(id => sql`${id}`), sql`, `)})`);
+    .where(
+      sql`${deliverableStyleReferences.id} IN (${sql.join(
+        styleIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    )
 }
 
 /**
  * Get all available style axes for a deliverable type
  */
-export async function getAvailableStyleAxes(deliverableType: DeliverableType): Promise<StyleAxis[]> {
+export async function getAvailableStyleAxes(
+  deliverableType: DeliverableType
+): Promise<StyleAxis[]> {
   const result = await db
     .selectDistinct({ styleAxis: deliverableStyleReferences.styleAxis })
     .from(deliverableStyleReferences)
@@ -140,9 +150,9 @@ export async function getAvailableStyleAxes(deliverableType: DeliverableType): P
         eq(deliverableStyleReferences.deliverableType, deliverableType),
         eq(deliverableStyleReferences.isActive, true)
       )
-    );
+    )
 
-  return result.map((r) => r.styleAxis as StyleAxis);
+  return result.map((r) => r.styleAxis as StyleAxis)
 }
 
 /**
@@ -155,16 +165,16 @@ export async function getStyleCount(
   const conditions = [
     eq(deliverableStyleReferences.deliverableType, deliverableType),
     eq(deliverableStyleReferences.isActive, true),
-  ];
+  ]
 
   if (styleAxis) {
-    conditions.push(eq(deliverableStyleReferences.styleAxis, styleAxis));
+    conditions.push(eq(deliverableStyleReferences.styleAxis, styleAxis))
   }
 
   const [result] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(deliverableStyleReferences)
-    .where(and(...conditions));
+    .where(and(...conditions))
 
-  return result?.count || 0;
+  return result?.count || 0
 }

@@ -1,12 +1,12 @@
-"use client";
+'use client'
 
-import { FileIcon, XCircle } from "lucide-react";
-import { UploadedFile } from "./types";
+import { FileIcon, XCircle } from 'lucide-react'
+import { UploadedFile } from './types'
 
 interface FileAttachmentProps {
-  file: UploadedFile;
-  showPreview?: boolean;
-  onRemove?: () => void;
+  file: UploadedFile
+  showPreview?: boolean
+  onRemove?: () => void
 }
 
 /**
@@ -14,20 +14,16 @@ interface FileAttachmentProps {
  */
 export function FileAttachment({ file, showPreview = true, onRemove }: FileAttachmentProps) {
   // Guard against null/undefined file
-  if (!file) return null;
+  if (!file) return null
 
-  const isImage = file.fileType?.startsWith("image/") ?? false;
-  const fileSizeKB = ((file.fileSize || 0) / 1024).toFixed(1);
+  const isImage = file.fileType?.startsWith('image/') ?? false
+  const fileSizeKB = ((file.fileSize || 0) / 1024).toFixed(1)
 
   if (isImage && showPreview) {
     return (
       <div className="relative group">
-        <a
-          href={file.fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block"
-        >
+        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={file.fileUrl}
             alt={file.fileName}
@@ -45,7 +41,7 @@ export function FileAttachment({ file, showPreview = true, onRemove }: FileAttac
           </button>
         )}
       </div>
-    );
+    )
   }
 
   return (
@@ -58,9 +54,7 @@ export function FileAttachment({ file, showPreview = true, onRemove }: FileAttac
       >
         <FileIcon className="h-4 w-4" aria-hidden="true" />
         <span className="truncate">{file.fileName}</span>
-        <span className="text-xs text-muted-foreground">
-          ({fileSizeKB} KB)
-        </span>
+        <span className="text-xs text-muted-foreground">({fileSizeKB} KB)</span>
       </a>
       {onRemove && (
         <button
@@ -73,22 +67,26 @@ export function FileAttachment({ file, showPreview = true, onRemove }: FileAttac
         </button>
       )}
     </div>
-  );
+  )
 }
 
 interface FileAttachmentListProps {
-  files: UploadedFile[];
-  showPreview?: boolean;
-  onRemove?: (index: number) => void;
+  files: UploadedFile[]
+  showPreview?: boolean
+  onRemove?: (index: number) => void
 }
 
 /**
  * Displays a list of file attachments
  */
-export function FileAttachmentList({ files, showPreview = true, onRemove }: FileAttachmentListProps) {
+export function FileAttachmentList({
+  files,
+  showPreview = true,
+  onRemove,
+}: FileAttachmentListProps) {
   // Filter out null/undefined files
-  const validFiles = files.filter(Boolean);
-  if (validFiles.length === 0) return null;
+  const validFiles = files.filter(Boolean)
+  if (validFiles.length === 0) return null
 
   return (
     <div className="mt-3 space-y-2">
@@ -101,5 +99,5 @@ export function FileAttachmentList({ files, showPreview = true, onRemove }: File
         />
       ))}
     </div>
-  );
+  )
 }

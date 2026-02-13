@@ -1,20 +1,12 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { users, creditTransactions } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { db } from '@/db'
+import { users, creditTransactions } from '@/db/schema'
+import { eq, desc } from 'drizzle-orm'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function GET() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
     // Fetch user credits
     const userResult = await db
@@ -23,10 +15,10 @@ export async function GET() {
       })
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1);
+      .limit(1)
 
     if (!userResult.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw Errors.notFound('User')
     }
 
     // Fetch transaction history
@@ -41,17 +33,11 @@ export async function GET() {
       .from(creditTransactions)
       .where(eq(creditTransactions.userId, session.user.id))
       .orderBy(desc(creditTransactions.createdAt))
-      .limit(50);
+      .limit(50)
 
-    return NextResponse.json({
+    return successResponse({
       credits: userResult[0].credits,
       transactions,
-    });
-  } catch (error) {
-    logger.error({ error }, "Billing fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch billing data" },
-      { status: 500 }
-    );
-  }
+    })
+  })
 }

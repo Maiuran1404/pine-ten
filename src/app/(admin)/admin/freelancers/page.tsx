@@ -1,20 +1,14 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -22,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,45 +26,55 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { Check, X, ExternalLink, Users, Clock, UserCheck, Star, CheckCircle2, ChevronRight } from "lucide-react";
-import { useBulkSelection } from "@/hooks/use-bulk-selection";
-import { StatCard } from "@/components/admin/stat-card";
+} from '@/components/ui/alert-dialog'
+import { LoadingSpinner } from '@/components/shared/loading'
+import {
+  Check,
+  X,
+  ExternalLink,
+  Users,
+  Clock,
+  UserCheck,
+  Star,
+  CheckCircle2,
+  ChevronRight,
+} from 'lucide-react'
+import { useBulkSelection } from '@/hooks/use-bulk-selection'
+import { StatCard } from '@/components/admin/stat-card'
 
 interface Freelancer {
-  id: string;
-  userId: string;
+  id: string
+  userId: string
   user: {
-    name: string;
-    email: string;
-  };
-  status: string;
-  skills: string[];
-  specializations: string[];
-  portfolioUrls: string[];
-  bio: string | null;
-  completedTasks: number;
-  rating: string | null;
-  createdAt: string;
+    name: string
+    email: string
+  }
+  status: string
+  skills: string[]
+  specializations: string[]
+  portfolioUrls: string[]
+  bio: string | null
+  completedTasks: number
+  rating: string | null
+  createdAt: string
 }
 
 export default function FreelancersPage() {
-  const router = useRouter();
-  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const [filter, setFilter] = useState("all");
-  const [bulkAction, setBulkAction] = useState<"approve" | "reject" | null>(null);
+  const router = useRouter()
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [processingId, setProcessingId] = useState<string | null>(null)
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+  const [filter, setFilter] = useState('all')
+  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null)
 
   const filteredFreelancers = freelancers.filter((f) => {
-    if (filter === "pending") return f.status === "PENDING";
-    if (filter === "approved") return f.status === "APPROVED";
-    if (filter === "rejected") return f.status === "REJECTED";
-    if (filter === "not_onboarded") return f.status === "NOT_ONBOARDED";
-    return true;
-  });
+    if (filter === 'pending') return f.status === 'PENDING'
+    if (filter === 'approved') return f.status === 'APPROVED'
+    if (filter === 'rejected') return f.status === 'REJECTED'
+    if (filter === 'not_onboarded') return f.status === 'NOT_ONBOARDED'
+    return true
+  })
 
   const {
     selectedIds,
@@ -84,150 +88,148 @@ export default function FreelancersPage() {
   } = useBulkSelection({
     items: filteredFreelancers,
     getId: (f) => f.id,
-  });
+  })
 
   useEffect(() => {
-    fetchFreelancers();
-  }, []);
+    fetchFreelancers()
+  }, [])
 
   // Clear selection when filter changes
   useEffect(() => {
-    clearSelection();
-  }, [filter, clearSelection]);
+    clearSelection()
+  }, [filter, clearSelection])
 
   const fetchFreelancers = async () => {
     try {
-      const response = await fetch("/api/admin/freelancers");
+      const response = await fetch('/api/admin/freelancers')
       if (response.ok) {
-        const data = await response.json();
-        setFreelancers(data.data?.freelancers || []);
+        const data = await response.json()
+        setFreelancers(data.data?.freelancers || [])
       }
     } catch (error) {
-      console.error("Failed to fetch freelancers:", error);
+      console.error('Failed to fetch freelancers:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleApprove = async (freelancerId: string) => {
-    setProcessingId(freelancerId);
+    setProcessingId(freelancerId)
     try {
-      const response = await fetch("/api/admin/freelancers/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/freelancers/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerId }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to approve");
+      if (!response.ok) throw new Error('Failed to approve')
 
-      toast.success("Artist approved successfully!");
+      toast.success('Artist approved successfully!')
       setFreelancers((prev) =>
-        prev.map((f) =>
-          f.id === freelancerId ? { ...f, status: "APPROVED" } : f
-        )
-      );
+        prev.map((f) => (f.id === freelancerId ? { ...f, status: 'APPROVED' } : f))
+      )
     } catch {
-      toast.error("Failed to approve artist");
+      toast.error('Failed to approve artist')
     } finally {
-      setProcessingId(null);
+      setProcessingId(null)
     }
-  };
+  }
 
   const handleReject = async (freelancerId: string) => {
-    setProcessingId(freelancerId);
+    setProcessingId(freelancerId)
     try {
-      const response = await fetch("/api/admin/freelancers/reject", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/freelancers/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerId }),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to reject");
+      if (!response.ok) throw new Error('Failed to reject')
 
-      toast.success("Artist rejected");
+      toast.success('Artist rejected')
       setFreelancers((prev) =>
-        prev.map((f) =>
-          f.id === freelancerId ? { ...f, status: "REJECTED" } : f
-        )
-      );
+        prev.map((f) => (f.id === freelancerId ? { ...f, status: 'REJECTED' } : f))
+      )
     } catch {
-      toast.error("Failed to reject artist");
+      toast.error('Failed to reject artist')
     } finally {
-      setProcessingId(null);
+      setProcessingId(null)
     }
-  };
+  }
 
-  const handleBulkAction = async (action: "approve" | "reject") => {
-    setBulkAction(null);
-    setIsBulkProcessing(true);
+  const handleBulkAction = async (action: 'approve' | 'reject') => {
+    setBulkAction(null)
+    setIsBulkProcessing(true)
 
     try {
-      const freelancerIds = Array.from(selectedIds);
-      const response = await fetch("/api/admin/freelancers/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const freelancerIds = Array.from(selectedIds)
+      const response = await fetch('/api/admin/freelancers/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freelancerIds, action }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Bulk action failed");
+        const error = await response.json()
+        throw new Error(error.message || 'Bulk action failed')
       }
 
-      const result = await response.json();
-      const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
+      const result = await response.json()
+      const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED'
 
       // Update local state
       setFreelancers((prev) =>
-        prev.map((f) =>
-          selectedIds.has(f.id) ? { ...f, status: newStatus } : f
-        )
-      );
+        prev.map((f) => (selectedIds.has(f.id) ? { ...f, status: newStatus } : f))
+      )
 
-      clearSelection();
+      clearSelection()
 
       if (result.data.failed > 0) {
         toast.warning(
-          `${action === "approve" ? "Approved" : "Rejected"} ${result.data.success} artists. ${result.data.failed} failed.`
-        );
+          `${action === 'approve' ? 'Approved' : 'Rejected'} ${result.data.success} artists. ${result.data.failed} failed.`
+        )
       } else {
         toast.success(
-          `${action === "approve" ? "Approved" : "Rejected"} ${result.data.success} artists successfully!`
-        );
+          `${action === 'approve' ? 'Approved' : 'Rejected'} ${result.data.success} artists successfully!`
+        )
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Bulk action failed");
+      toast.error(error instanceof Error ? error.message : 'Bulk action failed')
     } finally {
-      setIsBulkProcessing(false);
+      setIsBulkProcessing(false)
     }
-  };
+  }
 
   const pendingSelected = filteredFreelancers.filter(
-    (f) => selectedIds.has(f.id) && f.status === "PENDING"
-  );
+    (f) => selectedIds.has(f.id) && f.status === 'PENDING'
+  )
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      PENDING: "secondary",
-      APPROVED: "default",
-      REJECTED: "destructive",
-      NOT_ONBOARDED: "outline",
-    };
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      PENDING: 'secondary',
+      APPROVED: 'default',
+      REJECTED: 'destructive',
+      NOT_ONBOARDED: 'outline',
+    }
     const labels: Record<string, string> = {
-      PENDING: "Pending",
-      APPROVED: "Approved",
-      REJECTED: "Rejected",
-      NOT_ONBOARDED: "Not Onboarded",
-    };
-    return <Badge variant={variants[status] || "secondary"}>{labels[status] || status}</Badge>;
-  };
+      PENDING: 'Pending',
+      APPROVED: 'Approved',
+      REJECTED: 'Rejected',
+      NOT_ONBOARDED: 'Not Onboarded',
+    }
+    return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>
+  }
 
-  const pendingCount = freelancers.filter((f) => f.status === "PENDING").length;
-  const approvedCount = freelancers.filter((f) => f.status === "APPROVED").length;
-  const totalCompletedTasks = freelancers.reduce((sum, f) => sum + f.completedTasks, 0);
-  const avgRating = freelancers.filter((f) => f.rating).length > 0
-    ? freelancers.filter((f) => f.rating).reduce((sum, f) => sum + parseFloat(f.rating || "0"), 0) / freelancers.filter((f) => f.rating).length
-    : 0;
+  const pendingCount = freelancers.filter((f) => f.status === 'PENDING').length
+  const approvedCount = freelancers.filter((f) => f.status === 'APPROVED').length
+  const totalCompletedTasks = freelancers.reduce((sum, f) => sum + f.completedTasks, 0)
+  const avgRating =
+    freelancers.filter((f) => f.rating).length > 0
+      ? freelancers
+          .filter((f) => f.rating)
+          .reduce((sum, f) => sum + parseFloat(f.rating || '0'), 0) /
+        freelancers.filter((f) => f.rating).length
+      : 0
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
@@ -250,9 +252,9 @@ export default function FreelancersPage() {
           <StatCard
             label="Pending Review"
             value={pendingCount}
-            subtext={pendingCount === 0 ? "All caught up!" : "Awaiting approval"}
+            subtext={pendingCount === 0 ? 'All caught up!' : 'Awaiting approval'}
             icon={Clock}
-            trend={pendingCount > 5 ? "warning" : pendingCount > 0 ? "neutral" : "up"}
+            trend={pendingCount > 5 ? 'warning' : pendingCount > 0 ? 'neutral' : 'up'}
           />
           <StatCard
             label="Approved Artists"
@@ -269,10 +271,10 @@ export default function FreelancersPage() {
           />
           <StatCard
             label="Avg Rating"
-            value={avgRating > 0 ? avgRating.toFixed(1) : "—"}
-            subtext={avgRating > 0 ? "Out of 5.0" : "No ratings yet"}
+            value={avgRating > 0 ? avgRating.toFixed(1) : '—'}
+            subtext={avgRating > 0 ? 'Out of 5.0' : 'No ratings yet'}
             icon={Star}
-            trend={avgRating >= 4 ? "up" : avgRating > 0 ? "neutral" : undefined}
+            trend={avgRating >= 4 ? 'up' : avgRating > 0 ? 'neutral' : undefined}
           />
         </div>
       )}
@@ -283,15 +285,17 @@ export default function FreelancersPage() {
             All ({freelancers.length})
           </TabsTrigger>
           <TabsTrigger value="pending" className="text-xs sm:text-sm">
-            Pending ({freelancers.filter((f) => f.status === "PENDING").length})
+            Pending ({freelancers.filter((f) => f.status === 'PENDING').length})
           </TabsTrigger>
           <TabsTrigger value="approved" className="text-xs sm:text-sm">
-            Approved ({freelancers.filter((f) => f.status === "APPROVED").length})
+            Approved ({freelancers.filter((f) => f.status === 'APPROVED').length})
           </TabsTrigger>
           <TabsTrigger value="not_onboarded" className="text-xs sm:text-sm hidden sm:inline-flex">
-            Not Onboarded ({freelancers.filter((f) => f.status === "NOT_ONBOARDED").length})
+            Not Onboarded ({freelancers.filter((f) => f.status === 'NOT_ONBOARDED').length})
           </TabsTrigger>
-          <TabsTrigger value="rejected" className="text-xs sm:text-sm">Rejected</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs sm:text-sm">
+            Rejected
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={filter} className="mt-6">
@@ -300,15 +304,18 @@ export default function FreelancersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    {filter === "pending" ? "Pending Applications" :
-                     filter === "not_onboarded" ? "Not Onboarded" : "Artists"}
+                    {filter === 'pending'
+                      ? 'Pending Applications'
+                      : filter === 'not_onboarded'
+                        ? 'Not Onboarded'
+                        : 'Artists'}
                   </CardTitle>
                   <CardDescription>
-                    {filter === "pending"
-                      ? "Review and approve artist applications"
-                      : filter === "not_onboarded"
-                      ? "Artists who registered but haven't completed onboarding"
-                      : "All artists on the platform"}
+                    {filter === 'pending'
+                      ? 'Review and approve artist applications'
+                      : filter === 'not_onboarded'
+                        ? "Artists who registered but haven't completed onboarding"
+                        : 'All artists on the platform'}
                   </CardDescription>
                 </div>
 
@@ -323,7 +330,7 @@ export default function FreelancersPage() {
                       <>
                         <Button
                           size="sm"
-                          onClick={() => setBulkAction("approve")}
+                          onClick={() => setBulkAction('approve')}
                           disabled={isBulkProcessing}
                         >
                           {isBulkProcessing ? (
@@ -338,7 +345,7 @@ export default function FreelancersPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => setBulkAction("reject")}
+                          onClick={() => setBulkAction('reject')}
                           disabled={isBulkProcessing}
                         >
                           <X className="h-4 w-4 mr-1" />
@@ -366,135 +373,135 @@ export default function FreelancersPage() {
                   ))}
                 </div>
               ) : filteredFreelancers.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">
-                  No artists found
-                </p>
+                <p className="text-center py-8 text-muted-foreground">No artists found</p>
               ) : (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <Table className="min-w-[800px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={isAllSelected}
-                          ref={(ref) => {
-                            if (ref) {
-                              (ref as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = isPartiallySelected;
-                            }
-                          }}
-                          onCheckedChange={toggleAll}
-                          aria-label="Select all"
-                        />
-                      </TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Skills</TableHead>
-                      <TableHead>Portfolio</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Stats</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredFreelancers.map((freelancer) => (
-                      <TableRow
-                        key={freelancer.id}
-                        className={`cursor-pointer hover:bg-muted/50 transition-colors ${isSelected(freelancer.id) ? "bg-muted/50" : ""}`}
-                        onClick={() => router.push(`/admin/freelancers/${freelancer.id}`)}
-                      >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Table className="min-w-[800px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
                           <Checkbox
-                            checked={isSelected(freelancer.id)}
-                            onCheckedChange={() => toggle(freelancer.id)}
-                            aria-label={`Select ${freelancer.user.name}`}
+                            checked={isAllSelected}
+                            ref={(ref) => {
+                              if (ref) {
+                                ;(
+                                  ref as HTMLButtonElement & { indeterminate?: boolean }
+                                ).indeterminate = isPartiallySelected
+                              }
+                            }}
+                            onCheckedChange={toggleAll}
+                            aria-label="Select all"
                           />
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{freelancer.user.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {freelancer.user.email}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {freelancer.skills?.slice(0, 3).map((skill) => (
-                              <Badge key={skill} variant="outline" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {freelancer.skills?.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{freelancer.skills.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          {freelancer.portfolioUrls?.length > 0 ? (
-                            <div className="flex gap-1">
-                              {freelancer.portfolioUrls.slice(0, 2).map((url, i) => (
-                                <a
-                                  key={i}
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </a>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(freelancer.status)}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <p>{freelancer.completedTasks} tasks</p>
-                            {freelancer.rating && (
-                              <p className="text-muted-foreground">
-                                {parseFloat(freelancer.rating).toFixed(1)} rating
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          {freelancer.status === "PENDING" ? (
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(freelancer.id)}
-                                disabled={processingId !== null || isBulkProcessing}
-                              >
-                                {processingId === freelancer.id ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  <>
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </>
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleReject(freelancer.id)}
-                                disabled={processingId !== null || isBulkProcessing}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                          )}
-                        </TableCell>
+                        </TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Skills</TableHead>
+                        <TableHead>Portfolio</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Stats</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredFreelancers.map((freelancer) => (
+                        <TableRow
+                          key={freelancer.id}
+                          className={`cursor-pointer hover:bg-muted/50 transition-colors ${isSelected(freelancer.id) ? 'bg-muted/50' : ''}`}
+                          onClick={() => router.push(`/admin/freelancers/${freelancer.id}`)}
+                        >
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={isSelected(freelancer.id)}
+                              onCheckedChange={() => toggle(freelancer.id)}
+                              aria-label={`Select ${freelancer.user.name}`}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{freelancer.user.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {freelancer.user.email}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {freelancer.skills?.slice(0, 3).map((skill) => (
+                                <Badge key={skill} variant="outline" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {freelancer.skills?.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{freelancer.skills.length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {freelancer.portfolioUrls?.length > 0 ? (
+                              <div className="flex gap-1">
+                                {freelancer.portfolioUrls.slice(0, 2).map((url, i) => (
+                                  <a
+                                    key={i}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(freelancer.status)}</TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <p>{freelancer.completedTasks} tasks</p>
+                              {freelancer.rating && (
+                                <p className="text-muted-foreground">
+                                  {parseFloat(freelancer.rating).toFixed(1)} rating
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            {freelancer.status === 'PENDING' ? (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(freelancer.id)}
+                                  disabled={processingId !== null || isBulkProcessing}
+                                >
+                                  {processingId === freelancer.id ? (
+                                    <LoadingSpinner size="sm" />
+                                  ) : (
+                                    <>
+                                      <Check className="h-4 w-4 mr-1" />
+                                      Approve
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleReject(freelancer.id)}
+                                  disabled={processingId !== null || isBulkProcessing}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>
@@ -507,25 +514,29 @@ export default function FreelancersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkAction === "approve" ? "Approve Selected Artists?" : "Reject Selected Artists?"}
+              {bulkAction === 'approve' ? 'Approve Selected Artists?' : 'Reject Selected Artists?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {bulkAction === "approve"
-                ? `This will approve ${pendingSelected.length} pending artist application${pendingSelected.length !== 1 ? "s" : ""}. They will be notified via email.`
-                : `This will reject ${pendingSelected.length} pending artist application${pendingSelected.length !== 1 ? "s" : ""}. They will be notified via email.`}
+              {bulkAction === 'approve'
+                ? `This will approve ${pendingSelected.length} pending artist application${pendingSelected.length !== 1 ? 's' : ''}. They will be notified via email.`
+                : `This will reject ${pendingSelected.length} pending artist application${pendingSelected.length !== 1 ? 's' : ''}. They will be notified via email.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => bulkAction && handleBulkAction(bulkAction)}
-              className={bulkAction === "reject" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              className={
+                bulkAction === 'reject'
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  : ''
+              }
             >
-              {bulkAction === "approve" ? "Approve All" : "Reject All"}
+              {bulkAction === 'approve' ? 'Approve All' : 'Reject All'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

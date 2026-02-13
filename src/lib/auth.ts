@@ -1,34 +1,34 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/db'
+import * as schema from '@/db/schema'
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production'
 
 // Base domain used for OAuth callbacks and trusted origins
-const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "getcrafted.ai";
+const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'getcrafted.ai'
 
 // The canonical auth URL - ALL OAuth callbacks go through this domain
 // This MUST match what's registered in Google OAuth console
 const getAuthBaseURL = () => {
   // Use BETTER_AUTH_URL if provided (Better Auth standard)
   if (process.env.BETTER_AUTH_URL) {
-    const url = process.env.BETTER_AUTH_URL.trim();
+    const url = process.env.BETTER_AUTH_URL.trim()
     // In production, ensure HTTPS (convert HTTP to HTTPS if needed)
-    if (isProduction && url.startsWith("http://")) {
-      return url.replace("http://", "https://");
+    if (isProduction && url.startsWith('http://')) {
+      return url.replace('http://', 'https://')
     }
-    return url;
+    return url
   }
 
   // Fallback: construct URL based on environment
   if (isProduction) {
     // In production, always use app subdomain for OAuth callbacks
     // This is the URL registered with Google OAuth
-    return `https://app.${baseDomain}`;
+    return `https://app.${baseDomain}`
   }
-  return "http://localhost:3000";
-};
+  return 'http://localhost:3000'
+}
 
 // Trusted origins - all subdomains that can make auth requests
 const trustedOrigins = isProduction
@@ -40,15 +40,15 @@ const trustedOrigins = isProduction
       `https://${baseDomain}`,
     ]
   : [
-      "http://localhost:3000",
-      "http://app.localhost:3000",
-      "http://artist.localhost:3000",
-      "http://superadmin.localhost:3000",
-    ];
+      'http://localhost:3000',
+      'http://app.localhost:3000',
+      'http://artist.localhost:3000',
+      'http://superadmin.localhost:3000',
+    ]
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "pg",
+    provider: 'pg',
     schema: {
       user: schema.users,
       session: schema.sessions,
@@ -68,49 +68,49 @@ export const auth = betterAuth({
     // Password reset configuration
     sendResetPassword: async ({ user, url }) => {
       // Import dynamically to avoid circular dependencies
-      const { sendEmail, emailTemplates } = await import("@/lib/notifications");
-      const resetEmail = emailTemplates.passwordReset(user.name, url);
+      const { sendEmail, emailTemplates } = await import('@/lib/notifications')
+      const resetEmail = emailTemplates.passwordReset(user.name, url)
       await sendEmail({
         to: user.email,
         subject: resetEmail.subject,
         html: resetEmail.html,
-      });
+      })
     },
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     },
   },
   user: {
     additionalFields: {
       role: {
-        type: "string",
-        defaultValue: "CLIENT",
+        type: 'string',
+        defaultValue: 'CLIENT',
         input: false,
       },
       phone: {
-        type: "string",
+        type: 'string',
         required: false,
       },
       credits: {
-        type: "number",
+        type: 'number',
         defaultValue: 0,
         input: false,
       },
       onboardingCompleted: {
-        type: "boolean",
+        type: 'boolean',
         defaultValue: false,
         input: false,
       },
       onboardingData: {
-        type: "string",
+        type: 'string',
         required: false,
         input: false,
       },
       notificationPreferences: {
-        type: "string",
+        type: 'string',
         required: false,
         input: false,
       },
@@ -126,12 +126,12 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    cookiePrefix: "crafted",
+    cookiePrefix: 'crafted',
     defaultCookieAttributes: {
-      sameSite: "lax",
+      sameSite: 'lax',
       secure: isProduction,
       httpOnly: true,
-      path: "/",
+      path: '/',
       // Set domain for cookie sharing across subdomains in production
       // Required for OAuth callback to work correctly since the state cookie
       // needs to be readable after Google redirects back to the callback URL
@@ -144,6 +144,6 @@ export const auth = betterAuth({
     window: 60,
     max: 100,
   },
-});
+})
 
-export type Session = typeof auth.$Infer.Session;
+export type Session = typeof auth.$Infer.Session

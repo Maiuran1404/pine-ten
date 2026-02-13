@@ -9,20 +9,18 @@
  * - Performance history (10%)
  */
 
-import { db } from "@/db";
+import { db } from '@/db'
 import {
   freelancerProfiles,
   users,
   tasks,
   assignmentAlgorithmConfig,
   taskOffers,
-  skills,
-  artistSkills,
   clientArtistAffinity,
   taskCategories,
-} from "@/db/schema";
-import { eq, and, sql, not, inArray, desc, count } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+} from '@/db/schema'
+import { eq, and, sql, not, inArray, desc, count } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
 
 // ============================================
 // Types
@@ -30,103 +28,103 @@ import { logger } from "@/lib/logger";
 
 export interface AlgorithmConfig {
   weights: {
-    skillMatch: number;
-    timezoneFit: number;
-    experienceMatch: number;
-    workloadBalance: number;
-    performanceHistory: number;
-  };
+    skillMatch: number
+    timezoneFit: number
+    experienceMatch: number
+    workloadBalance: number
+    performanceHistory: number
+  }
   acceptanceWindows: {
-    critical: number;
-    urgent: number;
-    standard: number;
-    flexible: number;
-  };
+    critical: number
+    urgent: number
+    standard: number
+    flexible: number
+  }
   escalationSettings: {
-    level1SkillThreshold: number;
-    level2SkillThreshold: number;
-    level1MaxOffers: number;
-    level2MaxOffers: number;
-    level3BroadcastMinutes: number;
-    maxWorkloadOverride: number;
-  };
+    level1SkillThreshold: number
+    level2SkillThreshold: number
+    level1MaxOffers: number
+    level2MaxOffers: number
+    level3BroadcastMinutes: number
+    maxWorkloadOverride: number
+  }
   timezoneSettings: {
-    peakHoursStart: string;
-    peakHoursEnd: string;
-    peakScore: number;
-    eveningScore: number;
-    earlyMorningScore: number;
-    lateEveningScore: number;
-    nightScore: number;
-  };
+    peakHoursStart: string
+    peakHoursEnd: string
+    peakScore: number
+    eveningScore: number
+    earlyMorningScore: number
+    lateEveningScore: number
+    nightScore: number
+  }
   experienceMatrix: {
-    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number };
-  };
+    SIMPLE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    INTERMEDIATE: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    ADVANCED: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+    EXPERT: { JUNIOR: number; MID: number; SENIOR: number; EXPERT: number }
+  }
   workloadSettings: {
-    maxActiveTasks: number;
-    scorePerTask: number;
-  };
+    maxActiveTasks: number
+    scorePerTask: number
+  }
   exclusionRules: {
-    minSkillScoreToInclude: number;
-    excludeOverloaded: boolean;
-    excludeNightHoursForUrgent: boolean;
-    excludeVacationMode: boolean;
-  };
+    minSkillScoreToInclude: number
+    excludeOverloaded: boolean
+    excludeNightHoursForUrgent: boolean
+    excludeVacationMode: boolean
+  }
   bonusModifiers: {
-    categorySpecializationBonus: number;
-    niceToHaveSkillBonus: number;
-    favoriteArtistBonus: number;
-  };
+    categorySpecializationBonus: number
+    niceToHaveSkillBonus: number
+    favoriteArtistBonus: number
+  }
 }
 
 export interface ArtistData {
-  userId: string;
-  name: string;
-  email: string;
-  timezone: string | null;
-  experienceLevel: "JUNIOR" | "MID" | "SENIOR" | "EXPERT";
-  rating: number;
-  completedTasks: number;
-  acceptanceRate: number | null;
-  onTimeRate: number | null;
-  maxConcurrentTasks: number;
-  workingHoursStart: string;
-  workingHoursEnd: string;
-  acceptsUrgentTasks: boolean;
-  vacationMode: boolean;
-  skills: string[];
-  specializations: string[];
-  preferredCategories: string[];
+  userId: string
+  name: string
+  email: string
+  timezone: string | null
+  experienceLevel: 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT'
+  rating: number
+  completedTasks: number
+  acceptanceRate: number | null
+  onTimeRate: number | null
+  maxConcurrentTasks: number
+  workingHoursStart: string
+  workingHoursEnd: string
+  acceptsUrgentTasks: boolean
+  vacationMode: boolean
+  skills: string[]
+  specializations: string[]
+  preferredCategories: string[]
 }
 
 export interface TaskData {
-  id: string;
-  title: string;
-  complexity: "SIMPLE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
-  urgency: "CRITICAL" | "URGENT" | "STANDARD" | "FLEXIBLE";
-  categorySlug: string | null;
-  requiredSkills: string[];
-  clientId: string;
-  deadline: Date | null;
+  id: string
+  title: string
+  complexity: 'SIMPLE' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'
+  urgency: 'CRITICAL' | 'URGENT' | 'STANDARD' | 'FLEXIBLE'
+  categorySlug: string | null
+  requiredSkills: string[]
+  clientId: string
+  deadline: Date | null
 }
 
 export interface ScoreBreakdown {
-  skillScore: number;
-  timezoneScore: number;
-  experienceScore: number;
-  workloadScore: number;
-  performanceScore: number;
+  skillScore: number
+  timezoneScore: number
+  experienceScore: number
+  workloadScore: number
+  performanceScore: number
 }
 
 export interface ArtistScore {
-  artist: ArtistData;
-  totalScore: number;
-  breakdown: ScoreBreakdown;
-  excluded: boolean;
-  exclusionReason?: string;
+  artist: ArtistData
+  totalScore: number
+  breakdown: ScoreBreakdown
+  excluded: boolean
+  exclusionReason?: string
 }
 
 // ============================================
@@ -156,8 +154,8 @@ export const DEFAULT_CONFIG: AlgorithmConfig = {
     maxWorkloadOverride: 1,
   },
   timezoneSettings: {
-    peakHoursStart: "09:00",
-    peakHoursEnd: "18:00",
+    peakHoursStart: '09:00',
+    peakHoursEnd: '18:00',
     peakScore: 100,
     eveningScore: 80,
     earlyMorningScore: 70,
@@ -185,7 +183,7 @@ export const DEFAULT_CONFIG: AlgorithmConfig = {
     niceToHaveSkillBonus: 5,
     favoriteArtistBonus: 10,
   },
-};
+}
 
 // ============================================
 // Configuration Management
@@ -198,25 +196,25 @@ export async function getActiveConfig(): Promise<AlgorithmConfig> {
       .from(assignmentAlgorithmConfig)
       .where(eq(assignmentAlgorithmConfig.isActive, true))
       .orderBy(desc(assignmentAlgorithmConfig.version))
-      .limit(1);
+      .limit(1)
 
     if (!activeConfig) {
-      return DEFAULT_CONFIG;
+      return DEFAULT_CONFIG
     }
 
     return {
-      weights: activeConfig.weights as AlgorithmConfig["weights"],
-      acceptanceWindows: activeConfig.acceptanceWindows as AlgorithmConfig["acceptanceWindows"],
-      escalationSettings: activeConfig.escalationSettings as AlgorithmConfig["escalationSettings"],
-      timezoneSettings: activeConfig.timezoneSettings as AlgorithmConfig["timezoneSettings"],
-      experienceMatrix: activeConfig.experienceMatrix as AlgorithmConfig["experienceMatrix"],
-      workloadSettings: activeConfig.workloadSettings as AlgorithmConfig["workloadSettings"],
-      exclusionRules: activeConfig.exclusionRules as AlgorithmConfig["exclusionRules"],
-      bonusModifiers: activeConfig.bonusModifiers as AlgorithmConfig["bonusModifiers"],
-    };
+      weights: activeConfig.weights as AlgorithmConfig['weights'],
+      acceptanceWindows: activeConfig.acceptanceWindows as AlgorithmConfig['acceptanceWindows'],
+      escalationSettings: activeConfig.escalationSettings as AlgorithmConfig['escalationSettings'],
+      timezoneSettings: activeConfig.timezoneSettings as AlgorithmConfig['timezoneSettings'],
+      experienceMatrix: activeConfig.experienceMatrix as AlgorithmConfig['experienceMatrix'],
+      workloadSettings: activeConfig.workloadSettings as AlgorithmConfig['workloadSettings'],
+      exclusionRules: activeConfig.exclusionRules as AlgorithmConfig['exclusionRules'],
+      bonusModifiers: activeConfig.bonusModifiers as AlgorithmConfig['bonusModifiers'],
+    }
   } catch (error) {
-    logger.error({ error }, "Failed to get active algorithm config, using defaults");
-    return DEFAULT_CONFIG;
+    logger.error({ error }, 'Failed to get active algorithm config, using defaults')
+    return DEFAULT_CONFIG
   }
 }
 
@@ -233,23 +231,21 @@ export function calculateSkillScore(
   config: AlgorithmConfig
 ): number {
   if (requiredSkills.length === 0) {
-    return 100; // No skill requirements = perfect match
+    return 100 // No skill requirements = perfect match
   }
 
-  const normalizedArtistSkills = artistSkills.map((s) => s.toLowerCase().trim());
-  const normalizedRequiredSkills = requiredSkills.map((s) => s.toLowerCase().trim());
+  const normalizedArtistSkills = artistSkills.map((s) => s.toLowerCase().trim())
+  const normalizedRequiredSkills = requiredSkills.map((s) => s.toLowerCase().trim())
 
   const matchedSkills = normalizedRequiredSkills.filter((skill) =>
     normalizedArtistSkills.some(
       (artistSkill) =>
-        artistSkill === skill ||
-        artistSkill.includes(skill) ||
-        skill.includes(artistSkill)
+        artistSkill === skill || artistSkill.includes(skill) || skill.includes(artistSkill)
     )
-  );
+  )
 
-  const matchRatio = matchedSkills.length / normalizedRequiredSkills.length;
-  return Math.round(matchRatio * 100);
+  const matchRatio = matchedSkills.length / normalizedRequiredSkills.length
+  return Math.round(matchRatio * 100)
 }
 
 /**
@@ -260,44 +256,40 @@ export function calculateTimezoneScore(
   config: AlgorithmConfig
 ): number {
   if (!artistTimezone) {
-    return 50; // Unknown timezone = neutral score
+    return 50 // Unknown timezone = neutral score
   }
 
   try {
     // Get current time in artist's timezone
-    const now = new Date();
-    const artistTime = new Date(
-      now.toLocaleString("en-US", { timeZone: artistTimezone })
-    );
-    const hour = artistTime.getHours();
-    const minute = artistTime.getMinutes();
-    const currentTime = hour + minute / 60;
+    const now = new Date()
+    const artistTime = new Date(now.toLocaleString('en-US', { timeZone: artistTimezone }))
+    const hour = artistTime.getHours()
+    const minute = artistTime.getMinutes()
+    const currentTime = hour + minute / 60
 
     // Parse working hours
     const [peakStartHour, peakStartMin] = config.timezoneSettings.peakHoursStart
-      .split(":")
-      .map(Number);
-    const [peakEndHour, peakEndMin] = config.timezoneSettings.peakHoursEnd
-      .split(":")
-      .map(Number);
-    const peakStart = peakStartHour + peakStartMin / 60;
-    const peakEnd = peakEndHour + peakEndMin / 60;
+      .split(':')
+      .map(Number)
+    const [peakEndHour, peakEndMin] = config.timezoneSettings.peakHoursEnd.split(':').map(Number)
+    const peakStart = peakStartHour + peakStartMin / 60
+    const peakEnd = peakEndHour + peakEndMin / 60
 
     // Determine score based on time of day
     if (currentTime >= peakStart && currentTime <= peakEnd) {
-      return config.timezoneSettings.peakScore; // Peak hours (9-18)
+      return config.timezoneSettings.peakScore // Peak hours (9-18)
     } else if (currentTime > peakEnd && currentTime <= 21) {
-      return config.timezoneSettings.eveningScore; // Evening (18-21)
+      return config.timezoneSettings.eveningScore // Evening (18-21)
     } else if (currentTime >= 7 && currentTime < peakStart) {
-      return config.timezoneSettings.earlyMorningScore; // Early morning (7-9)
+      return config.timezoneSettings.earlyMorningScore // Early morning (7-9)
     } else if (currentTime > 21 && currentTime <= 23) {
-      return config.timezoneSettings.lateEveningScore; // Late evening (21-23)
+      return config.timezoneSettings.lateEveningScore // Late evening (21-23)
     } else {
-      return config.timezoneSettings.nightScore; // Night (23-7)
+      return config.timezoneSettings.nightScore // Night (23-7)
     }
   } catch (error) {
-    logger.warn({ artistTimezone, error }, "Failed to calculate timezone score");
-    return 50; // Invalid timezone = neutral score
+    logger.warn({ artistTimezone, error }, 'Failed to calculate timezone score')
+    return 50 // Invalid timezone = neutral score
   }
 }
 
@@ -305,18 +297,16 @@ export function calculateTimezoneScore(
  * Check if artist is in night hours
  */
 export function isNightHours(artistTimezone: string | null): boolean {
-  if (!artistTimezone) return false;
+  if (!artistTimezone) return false
 
   try {
-    const now = new Date();
-    const artistTime = new Date(
-      now.toLocaleString("en-US", { timeZone: artistTimezone })
-    );
-    const hour = artistTime.getHours();
-    return hour >= 23 || hour < 7;
+    const now = new Date()
+    const artistTime = new Date(now.toLocaleString('en-US', { timeZone: artistTimezone }))
+    const hour = artistTime.getHours()
+    return hour >= 23 || hour < 7
   } catch (error) {
-    logger.debug({ err: error, artistTimezone }, "Failed to check night hours for timezone");
-    return false;
+    logger.debug({ err: error, artistTimezone }, 'Failed to check night hours for timezone')
+    return false
   }
 }
 
@@ -324,25 +314,19 @@ export function isNightHours(artistTimezone: string | null): boolean {
  * Calculate experience match score (0-100)
  */
 export function calculateExperienceScore(
-  artistLevel: "JUNIOR" | "MID" | "SENIOR" | "EXPERT",
-  taskComplexity: "SIMPLE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT",
+  artistLevel: 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT',
+  taskComplexity: 'SIMPLE' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT',
   config: AlgorithmConfig
 ): number {
-  return config.experienceMatrix[taskComplexity][artistLevel];
+  return config.experienceMatrix[taskComplexity][artistLevel]
 }
 
 /**
  * Calculate workload balance score (0-100)
  */
-export function calculateWorkloadScore(
-  activeTasks: number,
-  config: AlgorithmConfig
-): number {
-  const score = Math.max(
-    0,
-    100 - activeTasks * config.workloadSettings.scorePerTask
-  );
-  return score;
+export function calculateWorkloadScore(activeTasks: number, config: AlgorithmConfig): number {
+  const score = Math.max(0, 100 - activeTasks * config.workloadSettings.scorePerTask)
+  return score
 }
 
 /**
@@ -354,15 +338,15 @@ export function calculatePerformanceScore(
   acceptanceRate: number | null
 ): number {
   // Rating contributes 50% (scale 0-5 to 0-100)
-  const ratingScore = (rating / 5) * 100;
+  const ratingScore = (rating / 5) * 100
 
   // On-time rate contributes 30%
-  const onTimeScore = onTimeRate !== null ? onTimeRate : 80;
+  const onTimeScore = onTimeRate !== null ? onTimeRate : 80
 
   // Acceptance rate contributes 20%
-  const acceptScore = acceptanceRate !== null ? acceptanceRate : 80;
+  const acceptScore = acceptanceRate !== null ? acceptanceRate : 80
 
-  return Math.round(ratingScore * 0.5 + onTimeScore * 0.3 + acceptScore * 0.2);
+  return Math.round(ratingScore * 0.5 + onTimeScore * 0.3 + acceptScore * 0.2)
 }
 
 // ============================================
@@ -384,19 +368,15 @@ export function calculateMatchScore(
     [...artist.skills, ...artist.specializations],
     task.requiredSkills,
     config
-  );
-  const timezoneScore = calculateTimezoneScore(artist.timezone, config);
-  const experienceScore = calculateExperienceScore(
-    artist.experienceLevel,
-    task.complexity,
-    config
-  );
-  const workloadScore = calculateWorkloadScore(activeTasks, config);
+  )
+  const timezoneScore = calculateTimezoneScore(artist.timezone, config)
+  const experienceScore = calculateExperienceScore(artist.experienceLevel, task.complexity, config)
+  const workloadScore = calculateWorkloadScore(activeTasks, config)
   const performanceScore = calculatePerformanceScore(
     artist.rating,
     artist.onTimeRate,
     artist.acceptanceRate
-  );
+  )
 
   const breakdown: ScoreBreakdown = {
     skillScore,
@@ -404,40 +384,37 @@ export function calculateMatchScore(
     experienceScore,
     workloadScore,
     performanceScore,
-  };
+  }
 
   // Check exclusion rules
-  let excluded = false;
-  let exclusionReason: string | undefined;
+  let excluded = false
+  let exclusionReason: string | undefined
 
-  if (
-    config.exclusionRules.excludeVacationMode &&
-    artist.vacationMode
-  ) {
-    excluded = true;
-    exclusionReason = "Artist is on vacation";
+  if (config.exclusionRules.excludeVacationMode && artist.vacationMode) {
+    excluded = true
+    exclusionReason = 'Artist is on vacation'
   } else if (skillScore < config.exclusionRules.minSkillScoreToInclude) {
-    excluded = true;
-    exclusionReason = `Skill score (${skillScore}) below threshold (${config.exclusionRules.minSkillScoreToInclude})`;
+    excluded = true
+    exclusionReason = `Skill score (${skillScore}) below threshold (${config.exclusionRules.minSkillScoreToInclude})`
   } else if (
     config.exclusionRules.excludeOverloaded &&
     activeTasks >= config.workloadSettings.maxActiveTasks
   ) {
-    excluded = true;
-    exclusionReason = `At max capacity (${activeTasks}/${config.workloadSettings.maxActiveTasks} tasks)`;
+    excluded = true
+    exclusionReason = `At max capacity (${activeTasks}/${config.workloadSettings.maxActiveTasks} tasks)`
   } else if (
     config.exclusionRules.excludeNightHoursForUrgent &&
-    (task.urgency === "CRITICAL" || task.urgency === "URGENT") &&
+    (task.urgency === 'CRITICAL' || task.urgency === 'URGENT') &&
     isNightHours(artist.timezone)
   ) {
-    excluded = true;
-    exclusionReason = "Urgent task during night hours";
+    excluded = true
+    exclusionReason = 'Urgent task during night hours'
   } else if (
-    (task.urgency === "CRITICAL" || task.urgency === "URGENT") &&
+    (task.urgency === 'CRITICAL' || task.urgency === 'URGENT') &&
     !artist.acceptsUrgentTasks
   ) {
-    excluded = true;
-    exclusionReason = "Artist does not accept urgent tasks";
+    excluded = true
+    exclusionReason = 'Artist does not accept urgent tasks'
   }
 
   if (excluded) {
@@ -447,7 +424,7 @@ export function calculateMatchScore(
       breakdown,
       excluded: true,
       exclusionReason,
-    };
+    }
   }
 
   // Calculate weighted composite score
@@ -456,29 +433,26 @@ export function calculateMatchScore(
     timezoneScore * (config.weights.timezoneFit / 100) +
     experienceScore * (config.weights.experienceMatch / 100) +
     workloadScore * (config.weights.workloadBalance / 100) +
-    performanceScore * (config.weights.performanceHistory / 100);
+    performanceScore * (config.weights.performanceHistory / 100)
 
   // Apply bonus modifiers
-  if (
-    task.categorySlug &&
-    artist.preferredCategories.includes(task.categorySlug)
-  ) {
-    totalScore += config.bonusModifiers.categorySpecializationBonus;
+  if (task.categorySlug && artist.preferredCategories.includes(task.categorySlug)) {
+    totalScore += config.bonusModifiers.categorySpecializationBonus
   }
 
   if (isFavorite) {
-    totalScore += config.bonusModifiers.favoriteArtistBonus;
+    totalScore += config.bonusModifiers.favoriteArtistBonus
   }
 
   // Cap at 100
-  totalScore = Math.min(100, Math.round(totalScore * 100) / 100);
+  totalScore = Math.min(100, Math.round(totalScore * 100) / 100)
 
   return {
     artist,
     totalScore,
     breakdown,
     excluded: false,
-  };
+  }
 }
 
 // ============================================
@@ -492,7 +466,7 @@ export async function rankArtistsForTask(
   task: TaskData,
   escalationLevel: number = 1
 ): Promise<ArtistScore[]> {
-  const config = await getActiveConfig();
+  const config = await getActiveConfig()
 
   // Get all approved, available artists
   const activeArtists = await db
@@ -518,14 +492,11 @@ export async function rankArtistsForTask(
     .from(freelancerProfiles)
     .innerJoin(users, eq(freelancerProfiles.userId, users.id))
     .where(
-      and(
-        eq(freelancerProfiles.status, "APPROVED"),
-        eq(freelancerProfiles.availability, true)
-      )
-    );
+      and(eq(freelancerProfiles.status, 'APPROVED'), eq(freelancerProfiles.availability, true))
+    )
 
   if (activeArtists.length === 0) {
-    return [];
+    return []
   }
 
   // Get task counts per artist
@@ -541,14 +512,14 @@ export async function rankArtistsForTask(
         sql`${tasks.status} NOT IN ('COMPLETED', 'CANCELLED')`
       )
     )
-    .groupBy(tasks.freelancerId);
+    .groupBy(tasks.freelancerId)
 
-  const countMap = new Map<string, number>();
+  const countMap = new Map<string, number>()
   taskCounts.forEach((tc) => {
     if (tc.freelancerId) {
-      countMap.set(tc.freelancerId, Number(tc.count));
+      countMap.set(tc.freelancerId, Number(tc.count))
     }
-  });
+  })
 
   // Check for client favorites
   const favorites = await db
@@ -559,12 +530,12 @@ export async function rankArtistsForTask(
         eq(clientArtistAffinity.clientId, task.clientId),
         eq(clientArtistAffinity.isFavorite, true)
       )
-    );
+    )
 
-  const favoriteIds = new Set(favorites.map((f) => f.artistId));
+  const favoriteIds = new Set(favorites.map((f) => f.artistId))
 
   // Adjust thresholds based on escalation level
-  let adjustedConfig = { ...config };
+  let adjustedConfig = { ...config }
   if (escalationLevel >= 2) {
     adjustedConfig = {
       ...config,
@@ -575,10 +546,9 @@ export async function rankArtistsForTask(
       workloadSettings: {
         ...config.workloadSettings,
         maxActiveTasks:
-          config.workloadSettings.maxActiveTasks +
-          config.escalationSettings.maxWorkloadOverride,
+          config.workloadSettings.maxActiveTasks + config.escalationSettings.maxWorkloadOverride,
       },
-    };
+    }
   }
 
   // Score all artists
@@ -588,54 +558,53 @@ export async function rankArtistsForTask(
       name: artist.name,
       email: artist.email,
       timezone: artist.timezone,
-      experienceLevel: (artist.experienceLevel || "JUNIOR") as ArtistData["experienceLevel"],
+      experienceLevel: (artist.experienceLevel || 'JUNIOR') as ArtistData['experienceLevel'],
       rating: Number(artist.rating) || 0,
       completedTasks: artist.completedTasks,
       acceptanceRate: artist.acceptanceRate ? Number(artist.acceptanceRate) : null,
       onTimeRate: artist.onTimeRate ? Number(artist.onTimeRate) : null,
       maxConcurrentTasks: artist.maxConcurrentTasks,
-      workingHoursStart: artist.workingHoursStart || "09:00",
-      workingHoursEnd: artist.workingHoursEnd || "18:00",
+      workingHoursStart: artist.workingHoursStart || '09:00',
+      workingHoursEnd: artist.workingHoursEnd || '18:00',
       acceptsUrgentTasks: artist.acceptsUrgentTasks,
       vacationMode: artist.vacationMode,
       skills: (artist.skills as string[]) || [],
       specializations: (artist.specializations as string[]) || [],
       preferredCategories: (artist.preferredCategories as string[]) || [],
-    };
+    }
 
-    const activeTasks = countMap.get(artist.userId) || 0;
-    const isFavorite = favoriteIds.has(artist.userId);
+    const activeTasks = countMap.get(artist.userId) || 0
+    const isFavorite = favoriteIds.has(artist.userId)
 
-    return calculateMatchScore(artistData, task, activeTasks, adjustedConfig, isFavorite);
-  });
+    return calculateMatchScore(artistData, task, activeTasks, adjustedConfig, isFavorite)
+  })
 
   // Sort by score (highest first), excluding invalid scores
-  return scores
-    .filter((s) => !s.excluded)
-    .sort((a, b) => b.totalScore - a.totalScore);
+  return scores.filter((s) => !s.excluded).sort((a, b) => b.totalScore - a.totalScore)
 }
 
 /**
  * Get the acceptance window for a task based on urgency
  */
 export async function getAcceptanceWindow(
-  urgency: "CRITICAL" | "URGENT" | "STANDARD" | "FLEXIBLE"
+  urgency: 'CRITICAL' | 'URGENT' | 'STANDARD' | 'FLEXIBLE'
 ): Promise<number> {
-  const config = await getActiveConfig();
-  return config.acceptanceWindows[urgency.toLowerCase() as keyof typeof config.acceptanceWindows];
+  const config = await getActiveConfig()
+  return config.acceptanceWindows[urgency.toLowerCase() as keyof typeof config.acceptanceWindows]
 }
 
 /**
  * Calculate the offer expiration time
  */
 export function calculateOfferExpiration(
-  urgency: "CRITICAL" | "URGENT" | "STANDARD" | "FLEXIBLE",
+  urgency: 'CRITICAL' | 'URGENT' | 'STANDARD' | 'FLEXIBLE',
   config: AlgorithmConfig
 ): Date {
-  const minutes = config.acceptanceWindows[urgency.toLowerCase() as keyof typeof config.acceptanceWindows];
-  const expiresAt = new Date();
-  expiresAt.setMinutes(expiresAt.getMinutes() + minutes);
-  return expiresAt;
+  const minutes =
+    config.acceptanceWindows[urgency.toLowerCase() as keyof typeof config.acceptanceWindows]
+  const expiresAt = new Date()
+  expiresAt.setMinutes(expiresAt.getMinutes() + minutes)
+  return expiresAt
 }
 
 // ============================================
@@ -650,16 +619,13 @@ export async function createTaskOffer(
   artistScore: ArtistScore,
   escalationLevel: number = 1
 ): Promise<string> {
-  const config = await getActiveConfig();
+  const config = await getActiveConfig()
 
   // Get task urgency
-  const [task] = await db
-    .select({ urgency: tasks.urgency })
-    .from(tasks)
-    .where(eq(tasks.id, taskId));
+  const [task] = await db.select({ urgency: tasks.urgency }).from(tasks).where(eq(tasks.id, taskId))
 
-  const urgency = (task?.urgency || "STANDARD") as TaskData["urgency"];
-  const expiresAt = calculateOfferExpiration(urgency, config);
+  const urgency = (task?.urgency || 'STANDARD') as TaskData['urgency']
+  const expiresAt = calculateOfferExpiration(urgency, config)
 
   const [offer] = await db
     .insert(taskOffers)
@@ -669,24 +635,24 @@ export async function createTaskOffer(
       matchScore: artistScore.totalScore.toString(),
       escalationLevel,
       expiresAt,
-      response: "PENDING",
+      response: 'PENDING',
       scoreBreakdown: artistScore.breakdown,
     })
-    .returning();
+    .returning()
 
   // Update task with offer info
   await db
     .update(tasks)
     .set({
-      status: "OFFERED",
+      status: 'OFFERED',
       offeredTo: artistScore.artist.userId,
       offerExpiresAt: expiresAt,
       escalationLevel,
       updatedAt: new Date(),
     })
-    .where(eq(tasks.id, taskId));
+    .where(eq(tasks.id, taskId))
 
-  return offer.id;
+  return offer.id
 }
 
 /**
@@ -696,9 +662,9 @@ export async function getPreviouslyOfferedArtists(taskId: string): Promise<strin
   const offers = await db
     .select({ artistId: taskOffers.artistId })
     .from(taskOffers)
-    .where(eq(taskOffers.taskId, taskId));
+    .where(eq(taskOffers.taskId, taskId))
 
-  return offers.map((o) => o.artistId);
+  return offers.map((o) => o.artistId)
 }
 
 /**
@@ -708,19 +674,19 @@ export async function findNextBestArtist(
   task: TaskData,
   escalationLevel: number = 1
 ): Promise<ArtistScore | null> {
-  const previouslyOffered = await getPreviouslyOfferedArtists(task.id);
-  const rankedArtists = await rankArtistsForTask(task, escalationLevel);
+  const previouslyOffered = await getPreviouslyOfferedArtists(task.id)
+  const rankedArtists = await rankArtistsForTask(task, escalationLevel)
 
   // Filter out previously offered artists
   const availableArtists = rankedArtists.filter(
     (score) => !previouslyOffered.includes(score.artist.userId)
-  );
+  )
 
   if (availableArtists.length === 0) {
-    return null;
+    return null
   }
 
-  return availableArtists[0];
+  return availableArtists[0]
 }
 
 // ============================================
@@ -734,46 +700,46 @@ export function detectTaskComplexity(
   estimatedHours: number | null,
   requiredSkillsCount: number,
   description: string
-): "SIMPLE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT" {
-  let complexityScore = 0;
+): 'SIMPLE' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT' {
+  let complexityScore = 0
 
   // Estimated hours factor
   if (estimatedHours !== null) {
-    if (estimatedHours <= 2) complexityScore += 0;
-    else if (estimatedHours <= 4) complexityScore += 1;
-    else if (estimatedHours <= 8) complexityScore += 2;
-    else complexityScore += 3;
+    if (estimatedHours <= 2) complexityScore += 0
+    else if (estimatedHours <= 4) complexityScore += 1
+    else if (estimatedHours <= 8) complexityScore += 2
+    else complexityScore += 3
   }
 
   // Required skills factor
-  if (requiredSkillsCount <= 1) complexityScore += 0;
-  else if (requiredSkillsCount <= 2) complexityScore += 1;
-  else if (requiredSkillsCount <= 4) complexityScore += 2;
-  else complexityScore += 3;
+  if (requiredSkillsCount <= 1) complexityScore += 0
+  else if (requiredSkillsCount <= 2) complexityScore += 1
+  else if (requiredSkillsCount <= 4) complexityScore += 2
+  else complexityScore += 3
 
   // Description keywords
   const complexKeywords = [
-    "complex",
-    "advanced",
-    "expert",
-    "multi-page",
-    "campaign",
-    "series",
-    "animation",
-    "3d",
-    "motion graphics",
-  ];
-  const simpleKeywords = ["simple", "basic", "quick", "minor", "small", "edit"];
+    'complex',
+    'advanced',
+    'expert',
+    'multi-page',
+    'campaign',
+    'series',
+    'animation',
+    '3d',
+    'motion graphics',
+  ]
+  const simpleKeywords = ['simple', 'basic', 'quick', 'minor', 'small', 'edit']
 
-  const lowerDesc = description.toLowerCase();
-  if (complexKeywords.some((kw) => lowerDesc.includes(kw))) complexityScore += 2;
-  if (simpleKeywords.some((kw) => lowerDesc.includes(kw))) complexityScore -= 1;
+  const lowerDesc = description.toLowerCase()
+  if (complexKeywords.some((kw) => lowerDesc.includes(kw))) complexityScore += 2
+  if (simpleKeywords.some((kw) => lowerDesc.includes(kw))) complexityScore -= 1
 
   // Map score to complexity
-  if (complexityScore <= 1) return "SIMPLE";
-  if (complexityScore <= 3) return "INTERMEDIATE";
-  if (complexityScore <= 5) return "ADVANCED";
-  return "EXPERT";
+  if (complexityScore <= 1) return 'SIMPLE'
+  if (complexityScore <= 3) return 'INTERMEDIATE'
+  if (complexityScore <= 5) return 'ADVANCED'
+  return 'EXPERT'
 }
 
 /**
@@ -781,16 +747,16 @@ export function detectTaskComplexity(
  */
 export function detectTaskUrgency(
   deadline: Date | null
-): "CRITICAL" | "URGENT" | "STANDARD" | "FLEXIBLE" {
-  if (!deadline) return "FLEXIBLE";
+): 'CRITICAL' | 'URGENT' | 'STANDARD' | 'FLEXIBLE' {
+  if (!deadline) return 'FLEXIBLE'
 
-  const now = new Date();
-  const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const now = new Date()
+  const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-  if (hoursUntilDeadline <= 4) return "CRITICAL";
-  if (hoursUntilDeadline <= 24) return "URGENT";
-  if (hoursUntilDeadline <= 72) return "STANDARD";
-  return "FLEXIBLE";
+  if (hoursUntilDeadline <= 4) return 'CRITICAL'
+  if (hoursUntilDeadline <= 24) return 'URGENT'
+  if (hoursUntilDeadline <= 72) return 'STANDARD'
+  return 'FLEXIBLE'
 }
 
 // ============================================
@@ -809,34 +775,27 @@ export async function updateArtistMetrics(artistId: string): Promise<void> {
       respondedAt: taskOffers.respondedAt,
     })
     .from(taskOffers)
-    .where(
-      and(
-        eq(taskOffers.artistId, artistId),
-        not(eq(taskOffers.response, "PENDING"))
-      )
-    );
+    .where(and(eq(taskOffers.artistId, artistId), not(eq(taskOffers.response, 'PENDING'))))
 
-  if (offers.length === 0) return;
+  if (offers.length === 0) return
 
   // Calculate acceptance rate
-  const acceptedCount = offers.filter((o) => o.response === "ACCEPTED").length;
-  const acceptanceRate = (acceptedCount / offers.length) * 100;
+  const acceptedCount = offers.filter((o) => o.response === 'ACCEPTED').length
+  const acceptanceRate = (acceptedCount / offers.length) * 100
 
   // Calculate average response time
   const responseTimes = offers
     .filter((o) => o.respondedAt)
     .map((o) => {
-      const offered = new Date(o.offeredAt).getTime();
-      const responded = new Date(o.respondedAt!).getTime();
-      return (responded - offered) / (1000 * 60); // minutes
-    });
+      const offered = new Date(o.offeredAt).getTime()
+      const responded = new Date(o.respondedAt!).getTime()
+      return (responded - offered) / (1000 * 60) // minutes
+    })
 
   const avgResponseTime =
     responseTimes.length > 0
-      ? Math.round(
-          responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-        )
-      : null;
+      ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+      : null
 
   // Get on-time rate from completed tasks
   const completedTasks = await db
@@ -845,27 +804,21 @@ export async function updateArtistMetrics(artistId: string): Promise<void> {
       completedAt: tasks.completedAt,
     })
     .from(tasks)
-    .where(
-      and(eq(tasks.freelancerId, artistId), eq(tasks.status, "COMPLETED"))
-    );
+    .where(and(eq(tasks.freelancerId, artistId), eq(tasks.status, 'COMPLETED')))
 
-  const tasksWithDeadline = completedTasks.filter(
-    (t) => t.deadline && t.completedAt
-  );
+  const tasksWithDeadline = completedTasks.filter((t) => t.deadline && t.completedAt)
   const onTimeCount = tasksWithDeadline.filter(
     (t) => new Date(t.completedAt!) <= new Date(t.deadline!)
-  ).length;
+  ).length
   const onTimeRate =
-    tasksWithDeadline.length > 0
-      ? (onTimeCount / tasksWithDeadline.length) * 100
-      : null;
+    tasksWithDeadline.length > 0 ? (onTimeCount / tasksWithDeadline.length) * 100 : null
 
   // Calculate experience level based on completed tasks
-  const totalCompleted = completedTasks.length;
-  let experienceLevel: "JUNIOR" | "MID" | "SENIOR" | "EXPERT" = "JUNIOR";
-  if (totalCompleted > 150) experienceLevel = "EXPERT";
-  else if (totalCompleted > 50) experienceLevel = "SENIOR";
-  else if (totalCompleted > 10) experienceLevel = "MID";
+  const totalCompleted = completedTasks.length
+  let experienceLevel: 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT' = 'JUNIOR'
+  if (totalCompleted > 150) experienceLevel = 'EXPERT'
+  else if (totalCompleted > 50) experienceLevel = 'SENIOR'
+  else if (totalCompleted > 10) experienceLevel = 'MID'
 
   // Update profile
   await db
@@ -878,5 +831,5 @@ export async function updateArtistMetrics(artistId: string): Promise<void> {
       completedTasks: totalCompleted,
       updatedAt: new Date(),
     })
-    .where(eq(freelancerProfiles.userId, artistId));
+    .where(eq(freelancerProfiles.userId, artistId))
 }

@@ -1,140 +1,126 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LoadingSpinner } from "@/components/shared/loading";
-import {
-  Wand2,
-  Share2,
-  Megaphone,
-  PenTool,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { Wand2, Share2, Megaphone, PenTool, Sparkles, ArrowRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Template {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  previewImageUrl: string | null;
-  outputFormat: string;
+  id: string
+  name: string
+  description: string | null
+  category: string
+  previewImageUrl: string | null
+  outputFormat: string
 }
 
 const CATEGORY_CONFIG = {
   social_media: {
-    label: "Social Media",
+    label: 'Social Media',
     icon: Share2,
-    color: "blue",
+    color: 'blue',
   },
   marketing: {
-    label: "Marketing",
+    label: 'Marketing',
     icon: Megaphone,
-    color: "emerald",
+    color: 'emerald',
   },
   brand_assets: {
-    label: "Brand Assets",
+    label: 'Brand Assets',
     icon: PenTool,
-    color: "violet",
+    color: 'violet',
   },
-};
-
-interface QuickDesignModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
-export function QuickDesignModal({
-  open,
-  onOpenChange,
-}: QuickDesignModalProps) {
-  const router = useRouter();
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
+interface QuickDesignModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function QuickDesignModal({ open, onOpenChange }: QuickDesignModalProps) {
+  const router = useRouter()
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [generatingId, setGeneratingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
-      fetchTemplates();
+      fetchTemplates()
     }
-  }, [open]);
+  }, [open])
 
   const fetchTemplates = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch("/api/orshot/templates");
+      const response = await fetch('/api/orshot/templates')
       if (response.ok) {
-        const data = await response.json();
-        setTemplates(data.templates || []);
+        const data = await response.json()
+        setTemplates(data.templates || [])
         // Auto-select first category if templates exist
         if (data.templates?.length > 0) {
-          const categories = [
-            ...new Set(data.templates.map((t: Template) => t.category)),
-          ];
-          setSelectedCategory(categories[0] as string);
+          const categories = [...new Set(data.templates.map((t: Template) => t.category))]
+          setSelectedCategory(categories[0] as string)
         }
       }
     } catch (error) {
-      console.error("Failed to fetch templates:", error);
+      console.error('Failed to fetch templates:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleGenerate = async (template: Template) => {
-    setGeneratingId(template.id);
+    setGeneratingId(template.id)
     try {
-      const response = await fetch("/api/orshot/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/orshot/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ templateId: template.id }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate design");
+        throw new Error(data.error || 'Failed to generate design')
       }
 
-      toast.success("Design generated successfully!");
-      onOpenChange(false);
-      router.push(`/dashboard/designs/${data.design.id}`);
+      toast.success('Design generated successfully!')
+      onOpenChange(false)
+      router.push(`/dashboard/designs/${data.design.id}`)
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to generate design"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to generate design')
     } finally {
-      setGeneratingId(null);
+      setGeneratingId(null)
     }
-  };
+  }
 
-  const categories = [...new Set(templates.map((t) => t.category))];
+  const categories = [...new Set(templates.map((t) => t.category))]
   const filteredTemplates = selectedCategory
     ? templates.filter((t) => t.category === selectedCategory)
-    : templates;
+    : templates
 
   const getCategoryConfig = (category: string) => {
     return (
       CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || {
         label: category,
         icon: Wand2,
-        color: "gray",
+        color: 'gray',
       }
-    );
-  };
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,8 +131,7 @@ export function QuickDesignModal({
             Quick Design
           </DialogTitle>
           <DialogDescription>
-            Generate branded designs instantly using your brand colors and
-            company name
+            Generate branded designs instantly using your brand colors and company name
           </DialogDescription>
         </DialogHeader>
 
@@ -155,24 +140,24 @@ export function QuickDesignModal({
           {!isLoading && categories.length > 0 && (
             <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
               {categories.map((category) => {
-                const config = getCategoryConfig(category);
-                const Icon = config.icon;
-                const isActive = selectedCategory === category;
+                const config = getCategoryConfig(category)
+                const Icon = config.icon
+                const isActive = selectedCategory === category
 
                 const colorClasses = {
                   blue: isActive
-                    ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30"
-                    : "",
+                    ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30'
+                    : '',
                   emerald: isActive
-                    ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30"
-                    : "",
+                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+                    : '',
                   violet: isActive
-                    ? "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30"
-                    : "",
+                    ? 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30'
+                    : '',
                   gray: isActive
-                    ? "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30"
-                    : "",
-                };
+                    ? 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30'
+                    : '',
+                }
 
                 return (
                   <button
@@ -181,13 +166,13 @@ export function QuickDesignModal({
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
                       isActive
                         ? colorClasses[config.color as keyof typeof colorClasses]
-                        : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 hover:bg-muted/50"
+                        : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 hover:bg-muted/50'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                     {config.label}
                   </button>
-                );
+                )
               })}
             </div>
           )}
@@ -203,9 +188,7 @@ export function QuickDesignModal({
             ) : templates.length === 0 ? (
               <div className="text-center py-12">
                 <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No templates available yet
-                </p>
+                <p className="text-muted-foreground">No templates available yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Ask your admin to configure Quick Design templates
                 </p>
@@ -221,9 +204,9 @@ export function QuickDesignModal({
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
                   {filteredTemplates.map((template) => {
-                    const config = getCategoryConfig(template.category);
-                    const Icon = config.icon;
-                    const isGenerating = generatingId === template.id;
+                    const config = getCategoryConfig(template.category)
+                    const Icon = config.icon
+                    const isGenerating = generatingId === template.id
 
                     return (
                       <motion.div
@@ -232,7 +215,7 @@ export function QuickDesignModal({
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.2 }}
                         className={`group relative rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 ${
-                          isGenerating ? "pointer-events-none" : ""
+                          isGenerating ? 'pointer-events-none' : ''
                         }`}
                       >
                         {/* Preview Image */}
@@ -244,8 +227,7 @@ export function QuickDesignModal({
                               alt={template.name}
                               className="object-cover w-full h-full"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).style.display =
-                                  "none";
+                                ;(e.target as HTMLImageElement).style.display = 'none'
                               }}
                             />
                           ) : (
@@ -259,9 +241,7 @@ export function QuickDesignModal({
                             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
                               <div className="text-center">
                                 <LoadingSpinner size="lg" />
-                                <p className="text-sm text-muted-foreground mt-2">
-                                  Generating...
-                                </p>
+                                <p className="text-sm text-muted-foreground mt-2">Generating...</p>
                               </div>
                             </div>
                           )}
@@ -276,9 +256,7 @@ export function QuickDesignModal({
 
                         {/* Content */}
                         <div className="p-4">
-                          <h3 className="font-medium text-foreground mb-1">
-                            {template.name}
-                          </h3>
+                          <h3 className="font-medium text-foreground mb-1">{template.name}</h3>
                           {template.description && (
                             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                               {template.description}
@@ -304,7 +282,7 @@ export function QuickDesignModal({
                           </Button>
                         </div>
                       </motion.div>
-                    );
+                    )
                   })}
                 </motion.div>
               </AnimatePresence>
@@ -313,5 +291,5 @@ export function QuickDesignModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

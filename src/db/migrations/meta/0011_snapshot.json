@@ -95,12 +95,8 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -302,12 +298,8 @@
           "name": "chat_drafts_client_id_users_id_fk",
           "tableFrom": "chat_drafts",
           "tableTo": "users",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -543,12 +535,8 @@
           "name": "credit_transactions_user_id_users_id_fk",
           "tableFrom": "credit_transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -556,12 +544,8 @@
           "name": "credit_transactions_related_task_id_tasks_id_fk",
           "tableFrom": "credit_transactions",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "related_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["related_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -826,12 +810,8 @@
           "name": "freelancer_profiles_user_id_users_id_fk",
           "tableFrom": "freelancer_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -841,9 +821,7 @@
         "freelancer_profiles_user_id_unique": {
           "name": "freelancer_profiles_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -949,12 +927,8 @@
           "name": "generated_designs_client_id_users_id_fk",
           "tableFrom": "generated_designs",
           "tableTo": "users",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -962,12 +936,8 @@
           "name": "generated_designs_template_id_orshot_templates_id_fk",
           "tableFrom": "generated_designs",
           "tableTo": "orshot_templates",
-          "columnsFrom": [
-            "template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["template_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1087,12 +1057,8 @@
           "name": "notification_settings_updated_by_users_id_fk",
           "tableFrom": "notification_settings",
           "tableTo": "users",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1102,9 +1068,7 @@
         "notification_settings_event_type_unique": {
           "name": "notification_settings_event_type_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "event_type"
-          ]
+          "columns": ["event_type"]
         }
       },
       "policies": {},
@@ -1192,12 +1156,8 @@
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1205,12 +1165,8 @@
           "name": "notifications_related_task_id_tasks_id_fk",
           "tableFrom": "notifications",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "related_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["related_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1365,9 +1321,7 @@
         "platform_settings_key_unique": {
           "name": "platform_settings_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -1515,12 +1469,8 @@
           "name": "security_snapshots_last_test_run_id_security_test_runs_id_fk",
           "tableFrom": "security_snapshots",
           "tableTo": "security_test_runs",
-          "columnsFrom": [
-            "last_test_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["last_test_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1678,12 +1628,8 @@
           "name": "security_test_results_run_id_security_test_runs_id_fk",
           "tableFrom": "security_test_results",
           "tableTo": "security_test_runs",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["run_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1691,12 +1637,8 @@
           "name": "security_test_results_test_id_security_tests_id_fk",
           "tableFrom": "security_test_results",
           "tableTo": "security_tests",
-          "columnsFrom": [
-            "test_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["test_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1882,12 +1824,8 @@
           "name": "security_test_runs_schedule_id_test_schedules_id_fk",
           "tableFrom": "security_test_runs",
           "tableTo": "test_schedules",
-          "columnsFrom": [
-            "schedule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["schedule_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1895,12 +1833,8 @@
           "name": "security_test_runs_test_user_id_test_users_id_fk",
           "tableFrom": "security_test_runs",
           "tableTo": "test_users",
-          "columnsFrom": [
-            "test_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["test_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2062,12 +1996,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2077,9 +2007,7 @@
         "sessions_token_unique": {
           "name": "sessions_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -2223,16 +2151,12 @@
         "task_categories_name_unique": {
           "name": "task_categories_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         },
         "task_categories_slug_unique": {
           "name": "task_categories_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -2307,12 +2231,8 @@
           "name": "task_files_task_id_tasks_id_fk",
           "tableFrom": "task_files",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2320,12 +2240,8 @@
           "name": "task_files_uploaded_by_users_id_fk",
           "tableFrom": "task_files",
           "tableTo": "users",
-          "columnsFrom": [
-            "uploaded_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploaded_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2386,12 +2302,8 @@
           "name": "task_messages_task_id_tasks_id_fk",
           "tableFrom": "task_messages",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2399,12 +2311,8 @@
           "name": "task_messages_sender_id_users_id_fk",
           "tableFrom": "task_messages",
           "tableTo": "users",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["sender_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2639,12 +2547,8 @@
           "name": "tasks_client_id_users_id_fk",
           "tableFrom": "tasks",
           "tableTo": "users",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2652,12 +2556,8 @@
           "name": "tasks_freelancer_id_users_id_fk",
           "tableFrom": "tasks",
           "tableTo": "users",
-          "columnsFrom": [
-            "freelancer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["freelancer_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2665,12 +2565,8 @@
           "name": "tasks_category_id_task_categories_id_fk",
           "tableFrom": "tasks",
           "tableTo": "task_categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2792,12 +2688,8 @@
           "name": "test_schedules_test_user_id_test_users_id_fk",
           "tableFrom": "test_schedules",
           "tableTo": "test_users",
-          "columnsFrom": [
-            "test_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["test_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2878,9 +2770,7 @@
         "test_users_email_unique": {
           "name": "test_users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -3021,9 +2911,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -3176,9 +3064,7 @@
         "webhook_events_event_id_unique": {
           "name": "webhook_events_event_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "event_id"
-          ]
+          "columns": ["event_id"]
         }
       },
       "policies": {},
@@ -3190,63 +3076,32 @@
     "public.freelancer_status": {
       "name": "freelancer_status",
       "schema": "public",
-      "values": [
-        "PENDING",
-        "APPROVED",
-        "REJECTED",
-        "SUSPENDED"
-      ]
+      "values": ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]
     },
     "public.notification_channel": {
       "name": "notification_channel",
       "schema": "public",
-      "values": [
-        "EMAIL",
-        "WHATSAPP",
-        "IN_APP"
-      ]
+      "values": ["EMAIL", "WHATSAPP", "IN_APP"]
     },
     "public.onboarding_status": {
       "name": "onboarding_status",
       "schema": "public",
-      "values": [
-        "NOT_STARTED",
-        "IN_PROGRESS",
-        "COMPLETED"
-      ]
+      "values": ["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]
     },
     "public.security_test_run_status": {
       "name": "security_test_run_status",
       "schema": "public",
-      "values": [
-        "PENDING",
-        "RUNNING",
-        "COMPLETED",
-        "FAILED",
-        "CANCELLED"
-      ]
+      "values": ["PENDING", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"]
     },
     "public.security_test_status": {
       "name": "security_test_status",
       "schema": "public",
-      "values": [
-        "PENDING",
-        "RUNNING",
-        "PASSED",
-        "FAILED",
-        "ERROR",
-        "SKIPPED"
-      ]
+      "values": ["PENDING", "RUNNING", "PASSED", "FAILED", "ERROR", "SKIPPED"]
     },
     "public.task_category": {
       "name": "task_category",
       "schema": "public",
-      "values": [
-        "STATIC_ADS",
-        "VIDEO_MOTION",
-        "SOCIAL_MEDIA",
-        "UI_UX"
-      ]
+      "values": ["STATIC_ADS", "VIDEO_MOTION", "SOCIAL_MEDIA", "UI_UX"]
     },
     "public.task_status": {
       "name": "task_status",
@@ -3265,22 +3120,12 @@
     "public.test_schedule_frequency": {
       "name": "test_schedule_frequency",
       "schema": "public",
-      "values": [
-        "MANUAL",
-        "HOURLY",
-        "DAILY",
-        "WEEKLY",
-        "MONTHLY"
-      ]
+      "values": ["MANUAL", "HOURLY", "DAILY", "WEEKLY", "MONTHLY"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "CLIENT",
-        "FREELANCER",
-        "ADMIN"
-      ]
+      "values": ["CLIENT", "FREELANCER", "ADMIN"]
     }
   },
   "schemas": {},

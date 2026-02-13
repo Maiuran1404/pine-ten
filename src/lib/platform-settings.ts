@@ -6,29 +6,29 @@
  * Changes take effect immediately without code deployment
  */
 
-import { db } from "@/db";
-import { platformSettings } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { config } from "./config";
-import { logger } from "@/lib/logger";
+import { db } from '@/db'
+import { platformSettings } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { config } from './config'
+import { logger } from '@/lib/logger'
 
 // Types for platform settings
 export interface CreditSettings {
-  pricePerCredit: number;
-  currency: string;
-  lowBalanceThreshold: number;
+  pricePerCredit: number
+  currency: string
+  lowBalanceThreshold: number
 }
 
 export interface PayoutSettings {
-  artistPercentage: number;
-  minimumPayoutCredits: number;
-  holdingPeriodDays: number;
-  creditValueUSD: number;
+  artistPercentage: number
+  minimumPayoutCredits: number
+  holdingPeriodDays: number
+  creditValueUSD: number
 }
 
 export interface PlatformSettingsData {
-  credits: CreditSettings;
-  payouts: PayoutSettings;
+  credits: CreditSettings
+  payouts: PayoutSettings
 }
 
 // Default values (used when database settings are not available)
@@ -44,13 +44,13 @@ const DEFAULTS: PlatformSettingsData = {
     holdingPeriodDays: config.payouts.holdingPeriodDays,
     creditValueUSD: config.payouts.creditValueUSD,
   },
-};
+}
 
 // Setting keys in database
 const SETTING_KEYS = {
-  CREDITS: "credits",
-  PAYOUTS: "payouts",
-} as const;
+  CREDITS: 'credits',
+  PAYOUTS: 'payouts',
+} as const
 
 /**
  * Fetch a single setting from the database
@@ -61,16 +61,16 @@ async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
       .select()
       .from(platformSettings)
       .where(eq(platformSettings.key, key))
-      .limit(1);
+      .limit(1)
 
     if (result.length > 0 && result[0].value !== null) {
-      return result[0].value as T;
+      return result[0].value as T
     }
-    return defaultValue;
+    return defaultValue
   } catch (error) {
     // Log error but don't throw - return default value
-    logger.error({ err: error, key }, "Failed to fetch setting");
-    return defaultValue;
+    logger.error({ err: error, key }, 'Failed to fetch setting')
+    return defaultValue
   }
 }
 
@@ -78,26 +78,23 @@ async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
  * Get credit settings (price, currency, thresholds)
  */
 export async function getCreditSettings(): Promise<CreditSettings> {
-  return getSetting(SETTING_KEYS.CREDITS, DEFAULTS.credits);
+  return getSetting(SETTING_KEYS.CREDITS, DEFAULTS.credits)
 }
 
 /**
  * Get payout settings (artist percentage, minimums, holding period)
  */
 export async function getPayoutSettings(): Promise<PayoutSettings> {
-  return getSetting(SETTING_KEYS.PAYOUTS, DEFAULTS.payouts);
+  return getSetting(SETTING_KEYS.PAYOUTS, DEFAULTS.payouts)
 }
 
 /**
  * Get all platform settings at once
  */
 export async function getAllPlatformSettings(): Promise<PlatformSettingsData> {
-  const [credits, payouts] = await Promise.all([
-    getCreditSettings(),
-    getPayoutSettings(),
-  ]);
+  const [credits, payouts] = await Promise.all([getCreditSettings(), getPayoutSettings()])
 
-  return { credits, payouts };
+  return { credits, payouts }
 }
 
 /**
@@ -113,19 +110,19 @@ export async function updateSetting(
     .select()
     .from(platformSettings)
     .where(eq(platformSettings.key, key))
-    .limit(1);
+    .limit(1)
 
   if (existing.length > 0) {
     await db
       .update(platformSettings)
       .set({ value, description, updatedAt: new Date() })
-      .where(eq(platformSettings.key, key));
+      .where(eq(platformSettings.key, key))
   } else {
     await db.insert(platformSettings).values({
       key,
       value,
       description,
-    });
+    })
   }
 }
 
@@ -138,24 +135,25 @@ export async function initializeDefaultSettings(): Promise<void> {
     {
       key: SETTING_KEYS.CREDITS,
       value: DEFAULTS.credits,
-      description: "Credit pricing and thresholds (pricePerCredit, currency, lowBalanceThreshold)",
+      description: 'Credit pricing and thresholds (pricePerCredit, currency, lowBalanceThreshold)',
     },
     {
       key: SETTING_KEYS.PAYOUTS,
       value: DEFAULTS.payouts,
-      description: "Payout configuration (artistPercentage, minimumPayoutCredits, holdingPeriodDays, creditValueUSD)",
+      description:
+        'Payout configuration (artistPercentage, minimumPayoutCredits, holdingPeriodDays, creditValueUSD)',
     },
-  ];
+  ]
 
   for (const setting of settingsToInit) {
     const existing = await db
       .select()
       .from(platformSettings)
       .where(eq(platformSettings.key, setting.key))
-      .limit(1);
+      .limit(1)
 
     if (existing.length === 0) {
-      await db.insert(platformSettings).values(setting);
+      await db.insert(platformSettings).values(setting)
     }
   }
 }
@@ -164,8 +162,8 @@ export async function initializeDefaultSettings(): Promise<void> {
  * Calculate artist payout for a given number of credits
  */
 export async function calculateArtistPayout(credits: number): Promise<number> {
-  const settings = await getPayoutSettings();
-  return credits * settings.creditValueUSD;
+  const settings = await getPayoutSettings()
+  return credits * settings.creditValueUSD
 }
 
 /**
@@ -175,9 +173,9 @@ export async function calculatePlatformRevenue(credits: number): Promise<number>
   const [creditSettings, payoutSettings] = await Promise.all([
     getCreditSettings(),
     getPayoutSettings(),
-  ]);
+  ])
 
-  const totalRevenue = credits * creditSettings.pricePerCredit;
-  const artistPayout = credits * payoutSettings.creditValueUSD;
-  return totalRevenue - artistPayout;
+  const totalRevenue = credits * creditSettings.pricePerCredit
+  const artistPayout = credits * payoutSettings.creditValueUSD
+  return totalRevenue - artistPayout
 }

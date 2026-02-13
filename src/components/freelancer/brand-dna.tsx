@@ -1,16 +1,12 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Image from "next/image";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useState } from 'react'
+import Image from 'next/image'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import {
   ChevronDown,
   ChevronRight,
@@ -22,62 +18,59 @@ import {
   Image as ImageIcon,
   FileText,
   ExternalLink,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface BrandDNAProps {
-  defaultExpanded?: boolean;
+  defaultExpanded?: boolean
   brandDNA: {
-    name: string;
-    website?: string | null;
-    industry?: string | null;
-    description?: string | null;
-    logoUrl?: string | null;
-    faviconUrl?: string | null;
+    name: string
+    website?: string | null
+    industry?: string | null
+    description?: string | null
+    logoUrl?: string | null
+    faviconUrl?: string | null
     colors: {
-      primary?: string | null;
-      secondary?: string | null;
-      accent?: string | null;
-      background?: string | null;
-      text?: string | null;
-      additional?: string[];
-    };
+      primary?: string | null
+      secondary?: string | null
+      accent?: string | null
+      background?: string | null
+      text?: string | null
+      additional?: string[]
+    }
     typography: {
-      primaryFont?: string | null;
-      secondaryFont?: string | null;
-    };
+      primaryFont?: string | null
+      secondaryFont?: string | null
+    }
     socialLinks?: {
-      twitter?: string;
-      linkedin?: string;
-      facebook?: string;
-      instagram?: string;
-      youtube?: string;
-    } | null;
+      twitter?: string
+      linkedin?: string
+      facebook?: string
+      instagram?: string
+      youtube?: string
+    } | null
     brandAssets?: {
-      images?: string[];
-      documents?: string[];
-    } | null;
-    tagline?: string | null;
-    keywords?: string[] | null;
-  };
+      images?: string[]
+      documents?: string[]
+    } | null
+    tagline?: string | null
+    keywords?: string[] | null
+  }
 }
 
 function ColorSwatch({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div
-        className="w-8 h-8 rounded-md border shadow-sm"
-        style={{ backgroundColor: color }}
-      />
+      <div className="w-8 h-8 rounded-md border shadow-sm" style={{ backgroundColor: color }} />
       <div className="text-xs">
         <p className="font-medium">{label}</p>
         <p className="text-muted-foreground uppercase">{color}</p>
       </div>
     </div>
-  );
+  )
 }
 
 export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
-  const [isOpen, setIsOpen] = useState(defaultExpanded);
+  const [isOpen, setIsOpen] = useState(defaultExpanded)
 
   const hasColors =
     brandDNA.colors.primary ||
@@ -85,20 +78,17 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
     brandDNA.colors.accent ||
     brandDNA.colors.background ||
     brandDNA.colors.text ||
-    (brandDNA.colors.additional && brandDNA.colors.additional.length > 0);
+    (brandDNA.colors.additional && brandDNA.colors.additional.length > 0)
 
-  const hasTypography =
-    brandDNA.typography.primaryFont || brandDNA.typography.secondaryFont;
+  const hasTypography = brandDNA.typography.primaryFont || brandDNA.typography.secondaryFont
 
   const hasSocialLinks =
-    brandDNA.socialLinks &&
-    Object.values(brandDNA.socialLinks).some((link) => link);
+    brandDNA.socialLinks && Object.values(brandDNA.socialLinks).some((link) => link)
 
   const hasAssets =
     brandDNA.brandAssets &&
     ((brandDNA.brandAssets.images && brandDNA.brandAssets.images.length > 0) ||
-      (brandDNA.brandAssets.documents &&
-        brandDNA.brandAssets.documents.length > 0));
+      (brandDNA.brandAssets.documents && brandDNA.brandAssets.documents.length > 0))
 
   return (
     <Card className="border-primary/20">
@@ -119,9 +109,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                       </Badge>
                     )}
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Brand Guidelines & Assets
-                  </p>
+                  <p className="text-sm text-muted-foreground">Brand Guidelines & Assets</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon">
@@ -154,16 +142,14 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
               <div className="flex-1 space-y-2">
                 {brandDNA.tagline && (
                   <p className="text-sm italic text-muted-foreground">
-                    "{brandDNA.tagline}"
+                    &quot;{brandDNA.tagline}&quot;
                   </p>
                 )}
-                {brandDNA.description && (
-                  <p className="text-sm">{brandDNA.description}</p>
-                )}
+                {brandDNA.description && <p className="text-sm">{brandDNA.description}</p>}
                 {brandDNA.website && (
                   <a
                     href={
-                      brandDNA.website.startsWith("http")
+                      brandDNA.website.startsWith('http')
                         ? brandDNA.website
                         : `https://${brandDNA.website}`
                     }
@@ -200,39 +186,23 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {brandDNA.colors.primary && (
-                      <ColorSwatch
-                        color={brandDNA.colors.primary}
-                        label="Primary"
-                      />
+                      <ColorSwatch color={brandDNA.colors.primary} label="Primary" />
                     )}
                     {brandDNA.colors.secondary && (
-                      <ColorSwatch
-                        color={brandDNA.colors.secondary}
-                        label="Secondary"
-                      />
+                      <ColorSwatch color={brandDNA.colors.secondary} label="Secondary" />
                     )}
                     {brandDNA.colors.accent && (
-                      <ColorSwatch
-                        color={brandDNA.colors.accent}
-                        label="Accent"
-                      />
+                      <ColorSwatch color={brandDNA.colors.accent} label="Accent" />
                     )}
                     {brandDNA.colors.background && (
-                      <ColorSwatch
-                        color={brandDNA.colors.background}
-                        label="Background"
-                      />
+                      <ColorSwatch color={brandDNA.colors.background} label="Background" />
                     )}
                     {brandDNA.colors.text && (
                       <ColorSwatch color={brandDNA.colors.text} label="Text" />
                     )}
                     {brandDNA.colors.additional &&
                       brandDNA.colors.additional.map((color, idx) => (
-                        <ColorSwatch
-                          key={idx}
-                          color={color}
-                          label={`Color ${idx + 1}`}
-                        />
+                        <ColorSwatch key={idx} color={color} label={`Color ${idx + 1}`} />
                       ))}
                   </div>
                 </div>
@@ -251,9 +221,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                   <div className="grid grid-cols-2 gap-4">
                     {brandDNA.typography.primaryFont && (
                       <div className="p-3 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Primary Font
-                        </p>
+                        <p className="text-xs text-muted-foreground mb-1">Primary Font</p>
                         <p
                           className="text-lg font-semibold"
                           style={{
@@ -266,9 +234,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                     )}
                     {brandDNA.typography.secondaryFont && (
                       <div className="p-3 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Secondary Font
-                        </p>
+                        <p className="text-xs text-muted-foreground mb-1">Secondary Font</p>
                         <p
                           className="text-lg"
                           style={{
@@ -300,10 +266,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                        >
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                           Twitter/X
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </Badge>
@@ -315,10 +278,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                        >
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                           Instagram
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </Badge>
@@ -330,10 +290,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                        >
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                           LinkedIn
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </Badge>
@@ -345,10 +302,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                        >
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                           Facebook
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </Badge>
@@ -360,10 +314,7 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Badge
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                        >
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                           YouTube
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </Badge>
@@ -383,47 +334,45 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                     <h4 className="text-sm font-semibold">Brand Assets</h4>
                   </div>
-                  {brandDNA.brandAssets?.images &&
-                    brandDNA.brandAssets.images.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2 mb-3">
-                        {brandDNA.brandAssets.images.map((img, idx) => (
-                          <a
-                            key={idx}
-                            href={img}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="relative aspect-square border rounded-lg overflow-hidden bg-muted hover:ring-2 ring-primary transition-all"
-                          >
-                            <Image
-                              src={img}
-                              alt={`Brand asset ${idx + 1}`}
-                              fill
-                              className="object-cover"
-                            />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  {brandDNA.brandAssets?.documents &&
-                    brandDNA.brandAssets.documents.length > 0 && (
-                      <div className="space-y-1">
-                        {brandDNA.brandAssets.documents.map((doc, idx) => (
-                          <a
-                            key={idx}
-                            href={doc}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-2 border rounded hover:bg-muted transition-colors"
-                          >
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm truncate flex-1">
-                              {doc.split("/").pop() || `Document ${idx + 1}`}
-                            </span>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                  {brandDNA.brandAssets?.images && brandDNA.brandAssets.images.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      {brandDNA.brandAssets.images.map((img, idx) => (
+                        <a
+                          key={idx}
+                          href={img}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative aspect-square border rounded-lg overflow-hidden bg-muted hover:ring-2 ring-primary transition-all"
+                        >
+                          <Image
+                            src={img}
+                            alt={`Brand asset ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {brandDNA.brandAssets?.documents && brandDNA.brandAssets.documents.length > 0 && (
+                    <div className="space-y-1">
+                      {brandDNA.brandAssets.documents.map((doc, idx) => (
+                        <a
+                          key={idx}
+                          href={doc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 border rounded hover:bg-muted transition-colors"
+                        >
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm truncate flex-1">
+                            {doc.split('/').pop() || `Document ${idx + 1}`}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -431,5 +380,5 @@ export function BrandDNA({ brandDNA, defaultExpanded = false }: BrandDNAProps) {
         </CollapsibleContent>
       </Collapsible>
     </Card>
-  );
+  )
 }

@@ -1,66 +1,62 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { AdminSidebar } from "@/components/admin/sidebar";
-import { Header } from "@/components/dashboard/header";
-import { FullPageLoader } from "@/components/shared/loading";
-import { useSession } from "@/lib/auth-client";
-import { useSubdomain } from "@/hooks/use-subdomain";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { CreditProvider } from "@/providers/credit-provider";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { AdminSidebar } from '@/components/admin/sidebar'
+import { Header } from '@/components/dashboard/header'
+import { FullPageLoader } from '@/components/shared/loading'
+import { useSession } from '@/lib/auth-client'
+import { useSubdomain } from '@/hooks/use-subdomain'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { CreditProvider } from '@/providers/credit-provider'
 
 interface Task {
-  id: string;
-  title: string;
+  id: string
+  title: string
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const portal = useSubdomain();
-  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const { data: session, isPending } = useSession()
+  const portal = useSubdomain()
+  const [recentTasks, setRecentTasks] = useState<Task[]>([])
 
   // Set page title for admin portal
   useEffect(() => {
-    document.title = "Superadmin";
-  }, []);
+    document.title = 'Superadmin'
+  }, [])
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push("/login");
+      router.push('/login')
     }
     // Wait for subdomain detection to complete before checking
     if (!portal.isHydrated) {
-      return;
+      return
     }
     // Check if user is an admin AND on the correct subdomain
     if (session?.user) {
-      const user = session.user as { role?: string };
+      const user = session.user as { role?: string }
 
       // Must have ADMIN role first
-      if (user.role !== "ADMIN") {
-        router.push("/dashboard");
-        return;
+      if (user.role !== 'ADMIN') {
+        router.push('/dashboard')
+        return
       }
 
       // Must be on superadmin subdomain to access admin pages (both dev and prod)
       // This means localhost:3000/admin and app.localhost:3000/admin will redirect to /dashboard
       // Only superadmin.localhost:3000/admin will work
-      if (portal.type !== "superadmin") {
-        router.push("/dashboard");
+      if (portal.type !== 'superadmin') {
+        router.push('/dashboard')
       }
     }
-  }, [session, isPending, router, portal.type, portal.isHydrated]);
+  }, [session, isPending, router, portal.type, portal.isHydrated])
 
   // Fetch recent tasks for sidebar
   useEffect(() => {
     if (session) {
-      fetch("/api/admin/tasks?limit=5")
+      fetch('/api/admin/tasks?limit=5')
         .then((res) => res.json())
         .then((data) => {
           if (data.tasks) {
@@ -69,19 +65,19 @@ export default function AdminLayout({
                 id: t.id,
                 title: t.title,
               }))
-            );
+            )
           }
         })
-        .catch(console.error);
+        .catch(console.error)
     }
-  }, [session]);
+  }, [session])
 
   if (isPending) {
-    return <FullPageLoader />;
+    return <FullPageLoader />
   }
 
   if (!session) {
-    return null;
+    return null
   }
 
   return (
@@ -92,8 +88,8 @@ export default function AdminLayout({
         style={
           {
             fontFamily: "'Satoshi', sans-serif",
-            "--sidebar-width": "16rem",
-            "--sidebar-width-icon": "3rem",
+            '--sidebar-width': '16rem',
+            '--sidebar-width-icon': '3rem',
           } as React.CSSProperties
         }
       >
@@ -106,5 +102,5 @@ export default function AdminLayout({
         </SidebarInset>
       </SidebarProvider>
     </CreditProvider>
-  );
+  )
 }

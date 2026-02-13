@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 interface SliderProps {
   value?: number[]
@@ -37,7 +37,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
     }
 
     return (
-      <div className={cn("relative flex w-full touch-none select-none items-center", className)}>
+      <div className={cn('relative flex w-full touch-none select-none items-center', className)}>
         <div className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
           <div
             className="absolute h-full bg-primary transition-all"
@@ -57,8 +57,8 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
         />
         <div
           className={cn(
-            "absolute h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            disabled && "pointer-events-none opacity-50"
+            'absolute h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            disabled && 'pointer-events-none opacity-50'
           )}
           style={{ left: `calc(${percentage}% - 10px)` }}
         />
@@ -66,6 +66,6 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
     )
   }
 )
-Slider.displayName = "Slider"
+Slider.displayName = 'Slider'
 
 export { Slider }

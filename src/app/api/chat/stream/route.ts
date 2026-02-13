@@ -1,31 +1,35 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import Anthropic from "@anthropic-ai/sdk";
-import { db } from "@/db";
-import { users, companies, styleReferences, taskCategories, platformSettings } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { logger } from "@/lib/logger";
-import { chatStreamSchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import { NextRequest } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+import { db } from '@/db'
+import { users, companies } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
+import { chatStreamSchema } from '@/lib/validations'
+import { ZodError } from 'zod'
+import { requireAuth } from '@/lib/require-auth'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
+})
 
 // Get system prompt (simplified for streaming)
 async function getSystemPrompt(company: typeof companies.$inferSelect | null): Promise<string> {
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const today = new Date()
+  const todayStr = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
   const companyContext = company
     ? `
 === CLIENT'S BRAND DNA ===
-COMPANY: ${company.name} (${company.industry || "Not specified"})
-COLORS: Primary ${company.primaryColor || "Not set"}, Secondary ${company.secondaryColor || "Not set"}
-FONTS: ${company.primaryFont || "Not specified"}
+COMPANY: ${company.name} (${company.industry || 'Not specified'})
+COLORS: Primary ${company.primaryColor || 'Not set'}, Secondary ${company.secondaryColor || 'Not set'}
+FONTS: ${company.primaryFont || 'Not specified'}
 Use this information to personalize recommendations.`
-    : "";
+    : ''
 
   return `You are a senior creative operator at Crafted — a design system for founders who value taste and speed.
 
@@ -45,21 +49,15 @@ RESPONSE FORMAT:
 - One question at a time
 
 TODAY: ${todayStr}
-${companyContext}`;
+${companyContext}`
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-
-    const body = await request.json();
-    const { messages } = chatStreamSchema.parse(body);
+    const body = await request.json()
+    const { messages } = chatStreamSchema.parse(body)
 
     // Fetch user's company for context
     const user = await db.query.users.findFirst({
@@ -67,59 +65,64 @@ export async function POST(request: NextRequest) {
       with: {
         company: true,
       },
-    });
+    })
 
-    const systemPrompt = await getSystemPrompt(user?.company || null);
+    const systemPrompt = await getSystemPrompt(user?.company || null)
 
     // Create a streaming response
     const stream = await anthropic.messages.stream({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
       system: systemPrompt,
       messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as "user" | "assistant",
+        role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
-    });
+    })
 
     // Create a readable stream for the response
-    const encoder = new TextEncoder();
+    const encoder = new TextEncoder()
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const event of stream) {
             if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-              const text = event.delta.text;
+              const text = event.delta.text
               // Send as Server-Sent Event format
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
             }
           }
           // Signal completion
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
-          controller.close();
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+          controller.close()
         } catch (error) {
-          logger.error({ error }, "Streaming error");
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream error" })}\n\n`));
-          controller.close();
+          logger.error({ error }, 'Streaming error')
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
+          )
+          controller.close()
         }
       },
-    });
+    })
 
     return new Response(readable, {
       headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
       },
-    });
+    })
   } catch (error) {
     if (error instanceof ZodError) {
-      return new Response(JSON.stringify({ error: "Invalid messages format", details: error.issues }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Invalid messages format', details: error.issues }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
     }
-    logger.error({ error }, "Chat stream error");
-    return new Response("Internal server error", { status: 500 });
+    logger.error({ error }, 'Chat stream error')
+    return new Response('Internal server error', { status: 500 })
   }
 }

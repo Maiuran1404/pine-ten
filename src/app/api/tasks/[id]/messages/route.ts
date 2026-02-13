@@ -1,53 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, taskMessages, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { notify } from "@/lib/notifications";
-import { config } from "@/lib/config";
-import { logger } from "@/lib/logger";
-import { taskMessageSchema } from "@/lib/validations";
-import { handleZodError } from "@/lib/errors";
-import { ZodError } from "zod";
+import { NextRequest } from 'next/server'
+import { db } from '@/db'
+import { tasks, taskMessages, users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { notify } from '@/lib/notifications'
+import { config } from '@/lib/config'
+import { logger } from '@/lib/logger'
+import { taskMessageSchema } from '@/lib/validations'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { requireAuth } from '@/lib/require-auth'
 
 // GET - Fetch messages for a task
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await params
 
     // Get the task to verify permissions
-    const taskResult = await db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
+    const taskResult = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
 
     if (!taskResult.length) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound('Task')
     }
 
-    const task = taskResult[0];
-    const user = session.user as { role?: string };
+    const task = taskResult[0]
+    const user = session.user as { role?: string }
 
     // Check permissions
     if (
-      user.role !== "ADMIN" &&
+      user.role !== 'ADMIN' &&
       task.clientId !== session.user.id &&
       task.freelancerId !== session.user.id
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      throw Errors.forbidden()
     }
 
     // Get messages
@@ -64,57 +49,38 @@ export async function GET(
       .from(taskMessages)
       .leftJoin(users, eq(taskMessages.senderId, users.id))
       .where(eq(taskMessages.taskId, id))
-      .orderBy(taskMessages.createdAt);
+      .orderBy(taskMessages.createdAt)
 
-    return NextResponse.json({ messages });
-  } catch (error) {
-    logger.error({ error }, "Messages fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch messages" },
-      { status: 500 }
-    );
-  }
+    return successResponse({ messages })
+  })
 }
 
 // POST - Send a new message
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return withErrorHandling(async () => {
+    const session = await requireAuth()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-    const { content, attachments } = taskMessageSchema.parse(body);
+    const { id } = await params
+    const body = await request.json()
+    const { content, attachments } = taskMessageSchema.parse(body)
 
     // Get the task to verify permissions
-    const taskResult = await db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
+    const taskResult = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
 
     if (!taskResult.length) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      throw Errors.notFound('Task')
     }
 
-    const task = taskResult[0];
-    const user = session.user as { role?: string };
+    const task = taskResult[0]
+    const user = session.user as { role?: string }
 
     // Check permissions - only client, freelancer, or admin can message
     if (
-      user.role !== "ADMIN" &&
+      user.role !== 'ADMIN' &&
       task.clientId !== session.user.id &&
       task.freelancerId !== session.user.id
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      throw Errors.forbidden()
     }
 
     // Insert the message
@@ -126,28 +92,30 @@ export async function POST(
         content: content.trim(),
         attachments: attachments,
       })
-      .returning();
+      .returning()
 
     // Notify the other party
-    const isClient = task.clientId === session.user.id;
-    const recipientId = isClient ? task.freelancerId : task.clientId;
+    const isClient = task.clientId === session.user.id
+    const recipientId = isClient ? task.freelancerId : task.clientId
 
     if (recipientId) {
       try {
         await notify({
           userId: recipientId,
-          type: "NEW_MESSAGE",
-          title: "New Message",
+          type: 'NEW_MESSAGE',
+          title: 'New Message',
           content: `${session.user.name || 'Someone'} sent you a message: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
           taskId: task.id,
-          taskUrl: isClient ? `${config.app.url}/portal/tasks/${task.id}` : `${config.app.url}/dashboard/tasks/${task.id}`,
+          taskUrl: isClient
+            ? `${config.app.url}/portal/tasks/${task.id}`
+            : `${config.app.url}/dashboard/tasks/${task.id}`,
           additionalData: {
             taskTitle: task.title,
-            senderName: session.user.name,
+            senderName: session.user.name || 'Unknown',
           },
-        });
+        })
       } catch (error) {
-        logger.error({ error }, "Failed to send message notification");
+        logger.error({ error }, 'Failed to send message notification')
       }
     }
 
@@ -165,20 +133,11 @@ export async function POST(
       .from(taskMessages)
       .leftJoin(users, eq(taskMessages.senderId, users.id))
       .where(eq(taskMessages.id, newMessage.id))
-      .limit(1);
+      .limit(1)
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: messageWithSender[0],
-    });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return handleZodError(error);
-    }
-    logger.error({ error }, "Message send error");
-    return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
-    );
-  }
+    })
+  })
 }

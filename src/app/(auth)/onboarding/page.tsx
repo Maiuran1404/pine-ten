@@ -1,18 +1,11 @@
-"use client";
+'use client'
 
-import {
-  Suspense,
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useSession, signOut } from "@/lib/auth-client";
-import { LoadingSpinner } from "@/components/shared/loading";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession, signOut } from '@/lib/auth-client'
+import { LoadingSpinner } from '@/components/shared/loading'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   Check,
   ChevronDown,
@@ -20,10 +13,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  Palette,
-  Type,
-  Eye,
-  MessageSquare,
   Target,
   Layout,
   Share2,
@@ -36,9 +25,7 @@ import {
   Linkedin,
   Instagram,
   Twitter,
-  X,
-  Briefcase,
-} from "lucide-react";
+} from 'lucide-react'
 import {
   type BrandData,
   type OnboardingStep,
@@ -56,31 +43,24 @@ import {
   VISUAL_STYLE_OPTIONS,
   BRAND_TONE_OPTIONS,
   FONT_OPTIONS,
-} from "@/components/onboarding/types";
-import { InfiniteGrid } from "@/components/ui/infinite-grid-integration";
-import { FreelancerOnboarding } from "@/components/onboarding/freelancer-onboarding";
-import {
-  BrandReferenceGridSkeleton,
-  ImageWithSkeleton,
-} from "@/components/ui/skeletons";
-import { useSubdomain } from "@/hooks/use-subdomain";
+} from '@/components/onboarding/types'
+import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
+import { FreelancerOnboarding } from '@/components/onboarding/freelancer-onboarding'
+import { BrandReferenceGridSkeleton, ImageWithSkeleton } from '@/components/ui/skeletons'
+import { useSubdomain } from '@/hooks/use-subdomain'
 
 // ============================================================================
 // HEADER
 // ============================================================================
 
 function Header({ userEmail }: { userEmail?: string }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 sm:gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/craftedcombinedwhite.png"
-          alt="Crafted"
-          className="h-6 sm:h-8 w-auto"
-        />
+        <img src="/craftedcombinedwhite.png" alt="Crafted" className="h-6 sm:h-8 w-auto" />
       </div>
 
       {userEmail && (
@@ -99,7 +79,7 @@ function Header({ userEmail }: { userEmail?: string }) {
                   signOut({
                     fetchOptions: {
                       onSuccess: () => {
-                        window.location.href = "/login";
+                        window.location.href = '/login'
                       },
                     },
                   })
@@ -113,7 +93,7 @@ function Header({ userEmail }: { userEmail?: string }) {
         </div>
       )}
     </header>
-  );
+  )
 }
 
 // ============================================================================
@@ -129,7 +109,7 @@ const staggerContainer = {
       delayChildren: 0.1,
     },
   },
-} as const;
+} as const
 
 const staggerItem = {
   hidden: { opacity: 0, y: 20 },
@@ -137,25 +117,25 @@ const staggerItem = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring" as const,
+      type: 'spring' as const,
       stiffness: 300,
       damping: 24,
     },
   },
-};
+}
 
-const fadeInUp = {
+const _fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   show: {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring" as const,
+      type: 'spring' as const,
       stiffness: 300,
       damping: 24,
     },
   },
-};
+}
 
 // ============================================================================
 // UI COMPONENTS
@@ -163,12 +143,12 @@ const fadeInUp = {
 
 function GlowingCard({
   children,
-  glowColor = "#9AA48C",
-  className = "",
+  glowColor = '#9AA48C',
+  className = '',
 }: {
-  children: React.ReactNode;
-  glowColor?: string;
-  className?: string;
+  children: React.ReactNode
+  glowColor?: string
+  className?: string
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -181,81 +161,63 @@ function GlowingCard({
       <div
         className="relative rounded-2xl p-5 sm:p-8 md:p-10 flex flex-col justify-center"
         style={{
-          background: "rgba(15, 15, 15, 0.9)",
-          backdropFilter: "blur(20px)",
+          background: 'rgba(15, 15, 15, 0.9)',
+          backdropFilter: 'blur(20px)',
           border: `1px solid ${glowColor}30`,
         }}
       >
         {children}
       </div>
     </div>
-  );
+  )
 }
 
 function ProgressIndicator({
   steps,
   currentStep,
-  accentColor = "#9AA48C",
+  accentColor = '#9AA48C',
 }: {
-  steps: readonly { id: string; label: string }[];
-  currentStep: string;
-  accentColor?: string;
+  steps: readonly { id: string; label: string }[]
+  currentStep: string
+  accentColor?: string
 }) {
-  const currentIndex = steps.findIndex((s) => s.id === currentStep);
+  const currentIndex = steps.findIndex((s) => s.id === currentStep)
 
   return (
     <div className="flex items-center gap-1 sm:gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2">
       {steps.map((step, index) => (
-        <div
-          key={step.id}
-          className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
-        >
+        <div key={step.id} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <div
             className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium transition-all ${
               index === currentIndex
-                ? "bg-white/20 text-white border border-white/40"
+                ? 'bg-white/20 text-white border border-white/40'
                 : index > currentIndex
-                ? "bg-white/5 text-white/40"
-                : "text-black"
+                  ? 'bg-white/5 text-white/40'
+                  : 'text-black'
             }`}
-            style={
-              index < currentIndex
-                ? { backgroundColor: accentColor }
-                : undefined
-            }
+            style={index < currentIndex ? { backgroundColor: accentColor } : undefined}
           >
-            {index < currentIndex ? (
-              <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-            ) : (
-              index + 1
-            )}
+            {index < currentIndex ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : index + 1}
           </div>
           {index < steps.length - 1 && (
             <div
               className="w-4 sm:w-8 h-0.5"
               style={{
-                backgroundColor:
-                  index < currentIndex
-                    ? accentColor
-                    : "rgba(255, 255, 255, 0.1)",
+                backgroundColor: index < currentIndex ? accentColor : 'rgba(255, 255, 255, 0.1)',
               }}
             />
           )}
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 // ============================================================================
 // WELCOME SCREEN
 // ============================================================================
 
-function WelcomeScreen({
-  onSelectRoute,
-}: {
-  onSelectRoute: (route: OnboardingRoute) => void;
-}) {
+function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRoute) => void }) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -272,8 +234,7 @@ function WelcomeScreen({
           Welcome to Crafted
         </h1>
         <p className="text-white/60 text-sm sm:text-base">
-          Let&apos;s set up your brand so everything you create stays
-          consistent.
+          Let&apos;s set up your brand so everything you create stays consistent.
         </p>
       </motion.div>
 
@@ -281,13 +242,13 @@ function WelcomeScreen({
         {/* Option A - Existing Brand */}
         <motion.button
           variants={staggerItem}
-          onClick={() => onSelectRoute("existing")}
+          onClick={() => onSelectRoute('existing')}
           className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
-            background: "rgba(15, 15, 15, 0.9)",
-            border: "1px solid rgba(139, 181, 139, 0.3)",
+            background: 'rgba(15, 15, 15, 0.9)',
+            border: '1px solid rgba(139, 181, 139, 0.3)',
           }}
-          whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
+          whileHover={{ borderColor: 'rgba(139, 181, 139, 0.6)' }}
         >
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
             <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
@@ -296,8 +257,7 @@ function WelcomeScreen({
             I already have a brand
           </h2>
           <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
-            Share your website or upload assets — we&apos;ll extract your brand
-            DNA automatically.
+            Share your website or upload assets — we&apos;ll extract your brand DNA automatically.
           </p>
           <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
             <span>Get started</span>
@@ -308,13 +268,13 @@ function WelcomeScreen({
         {/* Option B - Create Brand */}
         <motion.button
           variants={staggerItem}
-          onClick={() => onSelectRoute("create")}
+          onClick={() => onSelectRoute('create')}
           className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
-            background: "rgba(15, 15, 15, 0.9)",
-            border: "1px solid rgba(139, 181, 139, 0.3)",
+            background: 'rgba(15, 15, 15, 0.9)',
+            border: '1px solid rgba(139, 181, 139, 0.3)',
           }}
-          whileHover={{ borderColor: "rgba(139, 181, 139, 0.6)" }}
+          whileHover={{ borderColor: 'rgba(139, 181, 139, 0.6)' }}
         >
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
             <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
@@ -323,8 +283,7 @@ function WelcomeScreen({
             I want to create a brand
           </h2>
           <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
-            Answer a few questions and we&apos;ll generate brand directions for
-            you to choose from.
+            Answer a few questions and we&apos;ll generate brand directions for you to choose from.
           </p>
           <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
             <span>Start building</span>
@@ -336,7 +295,7 @@ function WelcomeScreen({
         </motion.button>
       </div>
     </motion.div>
-  );
+  )
 }
 
 // ============================================================================
@@ -349,10 +308,10 @@ function BrandInputStep({
   onContinue,
   isLoading,
 }: {
-  websiteUrl: string;
-  setWebsiteUrl: (url: string) => void;
-  onContinue: () => void;
-  isLoading: boolean;
+  websiteUrl: string
+  setWebsiteUrl: (url: string) => void
+  onContinue: () => void
+  isLoading: boolean
 }) {
   return (
     <GlowingCard>
@@ -372,14 +331,12 @@ function BrandInputStep({
         <div className="space-y-6">
           {/* Website URL Input */}
           <motion.div variants={staggerItem} className="space-y-2">
-            <label className="text-white/70 text-sm font-medium">
-              Paste your website URL
-            </label>
+            <label className="text-white/70 text-sm font-medium">Paste your website URL</label>
             <div
               className="relative rounded-xl overflow-hidden"
               style={{
-                background: "rgba(40, 40, 40, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: 'rgba(40, 40, 40, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -391,9 +348,7 @@ function BrandInputStep({
                 onChange={(e) => setWebsiteUrl(e.target.value)}
                 className="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none"
                 placeholder="yourcompany.com"
-                onKeyDown={(e) =>
-                  e.key === "Enter" && websiteUrl.trim() && onContinue()
-                }
+                onKeyDown={(e) => e.key === 'Enter' && websiteUrl.trim() && onContinue()}
               />
             </div>
           </motion.div>
@@ -405,10 +360,8 @@ function BrandInputStep({
             disabled={!websiteUrl.trim()}
             className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: websiteUrl.trim()
-                ? "#f5f5f0"
-                : "rgba(245, 245, 240, 0.3)",
-              color: "#1a1a1a",
+              background: websiteUrl.trim() ? '#f5f5f0' : 'rgba(245, 245, 240, 0.3)',
+              color: '#1a1a1a',
             }}
           >
             {isLoading ? (
@@ -417,28 +370,22 @@ function BrandInputStep({
                 Analyzing...
               </span>
             ) : (
-              "Continue"
+              'Continue'
             )}
           </motion.button>
         </div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
-function ScanningStep({
-  progress,
-  scanningTexts,
-}: {
-  progress: number;
-  scanningTexts: string[];
-}) {
+function ScanningStep({ progress, scanningTexts }: { progress: number; scanningTexts: string[] }) {
   return (
     <GlowingCard>
       <div className="text-left">
         <motion.div
           className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
-          style={{ background: "rgba(139, 181, 139, 0.2)" }}
+          style={{ background: 'rgba(139, 181, 139, 0.2)' }}
           animate={{
             scale: [1, 1.1, 1],
             opacity: [0.8, 1, 0.8],
@@ -448,15 +395,10 @@ function ScanningStep({
           <Sparkles className="w-10 h-10 text-[#9AA48C]" />
         </motion.div>
 
-        <h1
-          className="text-2xl text-white mb-2"
-          style={{ fontFamily: "'Times New Roman', serif" }}
-        >
+        <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
           Extracting your Brand DNA
         </h1>
-        <p className="text-white/50 text-sm mb-8">
-          This usually takes less than a minute.
-        </p>
+        <p className="text-white/50 text-sm mb-8">This usually takes less than a minute.</p>
 
         {/* Progress bar */}
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-8">
@@ -471,20 +413,14 @@ function ScanningStep({
         {/* Animated scanning texts */}
         <div className="space-y-3">
           {scanningTexts.map((text, index) => {
-            const isComplete =
-              progress > (index + 1) * (100 / scanningTexts.length);
-            const isActive =
-              progress > index * (100 / scanningTexts.length) && !isComplete;
+            const isComplete = progress > (index + 1) * (100 / scanningTexts.length)
+            const isActive = progress > index * (100 / scanningTexts.length) && !isComplete
 
             return (
               <motion.div
                 key={text}
                 className={`flex items-center gap-3 text-sm transition-all ${
-                  isComplete
-                    ? "text-[#9AA48C]"
-                    : isActive
-                    ? "text-white"
-                    : "text-white/30"
+                  isComplete ? 'text-[#9AA48C]' : isActive ? 'text-white' : 'text-white/30'
                 }`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -499,7 +435,7 @@ function ScanningStep({
                     transition={{
                       duration: 1,
                       repeat: Infinity,
-                      ease: "linear",
+                      ease: 'linear',
                     }}
                   />
                 ) : (
@@ -507,143 +443,138 @@ function ScanningStep({
                 )}
                 {text}
               </motion.div>
-            );
+            )
           })}
         </div>
       </div>
     </GlowingCard>
-  );
+  )
 }
 
 function BrandDNARevealStep({
   brandData,
-  onAdjust,
+  onAdjust: _onAdjust,
   onContinue,
   onBack,
   setBrandData,
 }: {
-  brandData: BrandData;
-  onAdjust: (field: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
-  setBrandData: (data: BrandData) => void;
+  brandData: BrandData
+  onAdjust: (field: string) => void
+  onContinue: () => void
+  onBack: () => void
+  setBrandData: (data: BrandData) => void
 }) {
   // Inline section editing - each section can be edited independently
   const [editingSection, setEditingSection] = useState<
-    "name" | "colors" | "typography" | "style" | "tone" | null
-  >(null);
-  const [editingAudienceIndex, setEditingAudienceIndex] = useState<
-    number | null
-  >(null);
-  const [showAddAudience, setShowAddAudience] = useState(false);
-  const [newAudienceName, setNewAudienceName] = useState("");
-  const [newAudienceType, setNewAudienceType] = useState<"b2b" | "b2c">("b2b");
+    'name' | 'colors' | 'typography' | 'style' | 'tone' | null
+  >(null)
+  const [editingAudienceIndex, setEditingAudienceIndex] = useState<number | null>(null)
+  const [showAddAudience, setShowAddAudience] = useState(false)
+  const [newAudienceName, setNewAudienceName] = useState('')
+  const [newAudienceType, setNewAudienceType] = useState<'b2b' | 'b2c'>('b2b')
 
   // Derive initial style and tone from feel values if not explicitly set
   const getInitialVisualStyle = () => {
-    if (brandData.visualStyle) return brandData.visualStyle;
-    const val = brandData.feelBoldMinimal;
-    if (val < 30) return "bold-impactful";
-    if (val < 45) return "modern-sleek";
-    if (val < 55) return "minimal-clean";
-    if (val < 70) return "elegant-refined";
-    return "classic-timeless";
-  };
+    if (brandData.visualStyle) return brandData.visualStyle
+    const val = brandData.feelBoldMinimal
+    if (val < 30) return 'bold-impactful'
+    if (val < 45) return 'modern-sleek'
+    if (val < 55) return 'minimal-clean'
+    if (val < 70) return 'elegant-refined'
+    return 'classic-timeless'
+  }
 
   const getInitialBrandTone = () => {
-    if (brandData.brandTone) return brandData.brandTone;
-    const val = brandData.feelPlayfulSerious;
-    if (val < 30) return "playful-witty";
-    if (val < 45) return "friendly-approachable";
-    if (val < 55) return "casual-relaxed";
-    if (val < 70) return "professional-trustworthy";
-    return "authoritative-expert";
-  };
+    if (brandData.brandTone) return brandData.brandTone
+    const val = brandData.feelPlayfulSerious
+    if (val < 30) return 'playful-witty'
+    if (val < 45) return 'friendly-approachable'
+    if (val < 55) return 'casual-relaxed'
+    if (val < 70) return 'professional-trustworthy'
+    return 'authoritative-expert'
+  }
 
-  const colors = [
-    brandData.primaryColor,
-    brandData.secondaryColor,
-    brandData.accentColor,
-  ].filter(Boolean);
-  const primaryColor = colors[0] || "#3b82f6";
-  const secondaryColor = colors[1] || "#8b5cf6";
+  const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(
+    Boolean
+  )
+  const primaryColor = colors[0] || '#3b82f6'
+  const secondaryColor = colors[1] || '#8b5cf6'
 
   const getStyleLabel = (value: string) => {
-    const option = VISUAL_STYLE_OPTIONS.find((o) => o.value === value);
-    return option?.label || "Minimal & Clean";
-  };
+    const option = VISUAL_STYLE_OPTIONS.find((o) => o.value === value)
+    return option?.label || 'Minimal & Clean'
+  }
 
   const getToneLabel = (value: string) => {
-    const option = BRAND_TONE_OPTIONS.find((o) => o.value === value);
-    return option?.label || "Professional & Trustworthy";
-  };
+    const option = BRAND_TONE_OPTIONS.find((o) => o.value === value)
+    return option?.label || 'Professional & Trustworthy'
+  }
 
-  const visualStyleLabel = getStyleLabel(
-    brandData.visualStyle || getInitialVisualStyle()
-  );
-  const brandToneLabel = getToneLabel(
-    brandData.brandTone || getInitialBrandTone()
-  );
+  const visualStyleLabel = getStyleLabel(brandData.visualStyle || getInitialVisualStyle())
+  const brandToneLabel = getToneLabel(brandData.brandTone || getInitialBrandTone())
 
   const getFontFamily = (fontName: string) => {
-    const font = FONT_OPTIONS.find((f) => f.value === fontName);
-    return font?.family || "'Satoshi', sans-serif";
-  };
-  const fontFamily = getFontFamily(brandData.primaryFont || "Satoshi");
+    const font = FONT_OPTIONS.find((f) => f.value === fontName)
+    return font?.family || "'Satoshi', sans-serif"
+  }
+  const fontFamily = getFontFamily(brandData.primaryFont || 'Satoshi')
 
   // Group fonts by category for the visual picker
-  const groupedFonts = FONT_OPTIONS.reduce((acc, font) => {
-    if (!acc[font.category]) acc[font.category] = [];
-    acc[font.category].push(font);
-    return acc;
-  }, {} as Record<string, typeof FONT_OPTIONS>);
+  const groupedFonts = FONT_OPTIONS.reduce(
+    (acc, font) => {
+      if (!acc[font.category]) acc[font.category] = []
+      acc[font.category].push(font)
+      return acc
+    },
+    {} as Record<string, typeof FONT_OPTIONS>
+  )
 
   // Color presets for quick selection
   const colorPresets = [
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#f97316",
-    "#eab308",
-    "#22c55e",
-    "#06b6d4",
-    "#6366f1",
-    "#ef4444",
-    "#14b8a6",
-    "#000000",
-    "#374151",
-    "#78716c",
-    "#1e3a8a",
-    "#166534",
-  ];
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+    '#f97316',
+    '#eab308',
+    '#22c55e',
+    '#06b6d4',
+    '#6366f1',
+    '#ef4444',
+    '#14b8a6',
+    '#000000',
+    '#374151',
+    '#78716c',
+    '#1e3a8a',
+    '#166534',
+  ]
 
   // Audience management functions
   const handleRemoveAudience = (index: number) => {
-    const newAudiences = [...(brandData.audiences || [])];
-    newAudiences.splice(index, 1);
+    const newAudiences = [...(brandData.audiences || [])]
+    newAudiences.splice(index, 1)
     // If we removed the primary, make the first one primary
     if (newAudiences.length > 0 && !newAudiences.some((a) => a.isPrimary)) {
-      newAudiences[0].isPrimary = true;
+      newAudiences[0].isPrimary = true
     }
-    setBrandData({ ...brandData, audiences: newAudiences });
-  };
+    setBrandData({ ...brandData, audiences: newAudiences })
+  }
 
   const handleSetPrimaryAudience = (index: number) => {
     const newAudiences = (brandData.audiences || []).map((a, i) => ({
       ...a,
       isPrimary: i === index,
-    }));
-    setBrandData({ ...brandData, audiences: newAudiences });
-  };
+    }))
+    setBrandData({ ...brandData, audiences: newAudiences })
+  }
 
   const handleAddAudience = () => {
-    if (!newAudienceName.trim()) return;
+    if (!newAudienceName.trim()) return
     const newAudience: InferredAudience = {
       name: newAudienceName.trim(),
       isPrimary: !brandData.audiences?.length,
       confidence: 80,
       firmographics:
-        newAudienceType === "b2b"
+        newAudienceType === 'b2b'
           ? {
               jobTitles: [],
               companySize: [],
@@ -651,54 +582,48 @@ function BrandDNARevealStep({
             }
           : undefined,
       demographics:
-        newAudienceType === "b2c"
+        newAudienceType === 'b2c'
           ? {
               ageRange: { min: 18, max: 65 },
-              gender: "all",
+              gender: 'all',
             }
           : undefined,
-    };
+    }
     setBrandData({
       ...brandData,
       audiences: [...(brandData.audiences || []), newAudience],
-    });
-    setNewAudienceName("");
-    setShowAddAudience(false);
-  };
+    })
+    setNewAudienceName('')
+    setShowAddAudience(false)
+  }
 
   const handleUpdateAudienceName = (index: number, name: string) => {
-    const newAudiences = [...(brandData.audiences || [])];
-    newAudiences[index] = { ...newAudiences[index], name };
-    setBrandData({ ...brandData, audiences: newAudiences });
-    setEditingAudienceIndex(null);
-  };
+    const newAudiences = [...(brandData.audiences || [])]
+    newAudiences[index] = { ...newAudiences[index], name }
+    setBrandData({ ...brandData, audiences: newAudiences })
+    setEditingAudienceIndex(null)
+  }
 
-  // Section edit button component
   const SectionEditButton = ({
     section,
     isActive,
   }: {
-    section: "name" | "colors" | "typography" | "style" | "tone";
-    isActive: boolean;
+    section: 'name' | 'colors' | 'typography' | 'style' | 'tone'
+    isActive: boolean
   }) => (
     <button
       onClick={() => setEditingSection(isActive ? null : section)}
       className={`p-1.5 rounded-lg transition-all ${
         isActive
-          ? "bg-[#9AA48C]/20 text-[#9AA48C]"
-          : "text-white/30 hover:text-white/60 hover:bg-white/5"
+          ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
+          : 'text-white/30 hover:text-white/60 hover:bg-white/5'
       }`}
-      title={isActive ? "Done" : "Edit"}
+      title={isActive ? 'Done' : 'Edit'}
     >
       {isActive ? (
         <Check className="w-3.5 h-3.5" />
       ) : (
-        <svg
-          className="w-3.5 h-3.5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -708,7 +633,7 @@ function BrandDNARevealStep({
         </svg>
       )}
     </button>
-  );
+  )
 
   return (
     <motion.div
@@ -722,10 +647,10 @@ function BrandDNARevealStep({
         variants={staggerItem}
         className="relative rounded-2xl overflow-hidden"
         style={{
-          background: "rgba(20, 20, 20, 0.7)",
-          backdropFilter: "blur(40px)",
-          WebkitBackdropFilter: "blur(40px)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: 'rgba(20, 20, 20, 0.7)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
         }}
       >
@@ -749,11 +674,8 @@ function BrandDNARevealStep({
                 boxShadow: `0 8px 32px ${primaryColor}30`,
               }}
             >
-              <span
-                className="text-white font-bold text-2xl sm:text-3xl"
-                style={{ fontFamily }}
-              >
-                {brandData.name?.[0]?.toUpperCase() || "B"}
+              <span className="text-white font-bold text-2xl sm:text-3xl" style={{ fontFamily }}>
+                {brandData.name?.[0]?.toUpperCase() || 'B'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
@@ -761,18 +683,14 @@ function BrandDNARevealStep({
                 <p className="text-white/40 text-xs uppercase tracking-wider font-medium">
                   Your Brand
                 </p>
-                <SectionEditButton
-                  section="name"
-                  isActive={editingSection === "name"}
-                />
+                {/* eslint-disable-next-line react-hooks/static-components */}
+                <SectionEditButton section="name" isActive={editingSection === 'name'} />
               </div>
-              {editingSection === "name" ? (
+              {editingSection === 'name' ? (
                 <input
                   type="text"
                   value={brandData.name}
-                  onChange={(e) =>
-                    setBrandData({ ...brandData, name: e.target.value })
-                  }
+                  onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
                   className="text-3xl sm:text-4xl text-white font-bold bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
                   style={{ fontFamily }}
                   placeholder="Brand name"
@@ -783,7 +701,7 @@ function BrandDNARevealStep({
                   className="text-3xl sm:text-4xl text-white font-bold truncate"
                   style={{ fontFamily }}
                 >
-                  {brandData.name || "Your Brand"}
+                  {brandData.name || 'Your Brand'}
                 </h1>
               )}
             </div>
@@ -792,9 +710,7 @@ function BrandDNARevealStep({
           {/* Description */}
           <div className="mb-6">
             <p className="text-white/60 text-base leading-relaxed line-clamp-3">
-              {brandData.description ||
-                brandData.industry ||
-                "Your brand story"}
+              {brandData.description || brandData.industry || 'Your brand story'}
             </p>
           </div>
 
@@ -806,15 +722,11 @@ function BrandDNARevealStep({
             <div className="flex flex-wrap items-center gap-2">
               {/* Colors - clickable */}
               <button
-                onClick={() =>
-                  setEditingSection(
-                    editingSection === "colors" ? null : "colors"
-                  )
-                }
+                onClick={() => setEditingSection(editingSection === 'colors' ? null : 'colors')}
                 className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all ${
-                  editingSection === "colors"
-                    ? "bg-white/10 ring-1 ring-white/20"
-                    : "hover:bg-white/5"
+                  editingSection === 'colors'
+                    ? 'bg-white/10 ring-1 ring-white/20'
+                    : 'hover:bg-white/5'
                 }`}
               >
                 {colors.length > 0 ? (
@@ -830,18 +742,9 @@ function BrandDNARevealStep({
                   ))
                 ) : (
                   <>
-                    <div
-                      className="w-6 h-6 rounded-md"
-                      style={{ backgroundColor: "#3b82f6" }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded-md"
-                      style={{ backgroundColor: "#8b5cf6" }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded-md"
-                      style={{ backgroundColor: "#f59e0b" }}
-                    />
+                    <div className="w-6 h-6 rounded-md" style={{ backgroundColor: '#3b82f6' }} />
+                    <div className="w-6 h-6 rounded-md" style={{ backgroundColor: '#8b5cf6' }} />
+                    <div className="w-6 h-6 rounded-md" style={{ backgroundColor: '#f59e0b' }} />
                   </>
                 )}
               </button>
@@ -849,29 +752,25 @@ function BrandDNARevealStep({
               {/* Typography - clickable */}
               <button
                 onClick={() =>
-                  setEditingSection(
-                    editingSection === "typography" ? null : "typography"
-                  )
+                  setEditingSection(editingSection === 'typography' ? null : 'typography')
                 }
                 className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
-                  editingSection === "typography"
-                    ? "bg-white/10 ring-1 ring-white/20"
-                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                  editingSection === 'typography'
+                    ? 'bg-white/10 ring-1 ring-white/20'
+                    : 'bg-white/5 hover:bg-white/8 border border-white/8'
                 }`}
                 style={{ fontFamily }}
               >
-                {brandData.primaryFont || "Satoshi"}
+                {brandData.primaryFont || 'Satoshi'}
               </button>
 
               {/* Style - clickable */}
               <button
-                onClick={() =>
-                  setEditingSection(editingSection === "style" ? null : "style")
-                }
+                onClick={() => setEditingSection(editingSection === 'style' ? null : 'style')}
                 className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
-                  editingSection === "style"
-                    ? "bg-white/10 ring-1 ring-white/20"
-                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                  editingSection === 'style'
+                    ? 'bg-white/10 ring-1 ring-white/20'
+                    : 'bg-white/5 hover:bg-white/8 border border-white/8'
                 }`}
               >
                 {visualStyleLabel}
@@ -879,13 +778,11 @@ function BrandDNARevealStep({
 
               {/* Tone - clickable */}
               <button
-                onClick={() =>
-                  setEditingSection(editingSection === "tone" ? null : "tone")
-                }
+                onClick={() => setEditingSection(editingSection === 'tone' ? null : 'tone')}
                 className={`px-3 py-2 rounded-lg text-white text-sm font-medium transition-all ${
-                  editingSection === "tone"
-                    ? "bg-white/10 ring-1 ring-white/20"
-                    : "bg-white/5 hover:bg-white/8 border border-white/8"
+                  editingSection === 'tone'
+                    ? 'bg-white/10 ring-1 ring-white/20'
+                    : 'bg-white/5 hover:bg-white/8 border border-white/8'
                 }`}
               >
                 {brandToneLabel}
@@ -894,10 +791,10 @@ function BrandDNARevealStep({
 
             {/* Expandable editor panels */}
             <AnimatePresence>
-              {editingSection === "colors" && (
+              {editingSection === 'colors' && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -905,9 +802,7 @@ function BrandDNARevealStep({
                   <div className="pt-4 pb-2 space-y-3">
                     {/* Primary Color */}
                     <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">
-                        Primary
-                      </p>
+                      <p className="text-white/40 text-xs font-medium mb-2">Primary</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         {colorPresets.slice(0, 10).map((color) => (
                           <button
@@ -920,8 +815,8 @@ function BrandDNARevealStep({
                             }
                             className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.primaryColor === color
-                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
-                                : "hover:scale-110"
+                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
+                                : 'hover:scale-110'
                             }`}
                             style={{ backgroundColor: color }}
                           />
@@ -929,7 +824,7 @@ function BrandDNARevealStep({
                         <div className="relative">
                           <input
                             type="color"
-                            value={brandData.primaryColor || "#3b82f6"}
+                            value={brandData.primaryColor || '#3b82f6'}
                             onChange={(e) =>
                               setBrandData({
                                 ...brandData,
@@ -946,9 +841,7 @@ function BrandDNARevealStep({
                     </div>
                     {/* Secondary Color */}
                     <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">
-                        Secondary
-                      </p>
+                      <p className="text-white/40 text-xs font-medium mb-2">Secondary</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         {colorPresets.slice(0, 10).map((color) => (
                           <button
@@ -961,8 +854,8 @@ function BrandDNARevealStep({
                             }
                             className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.secondaryColor === color
-                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
-                                : "hover:scale-110"
+                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
+                                : 'hover:scale-110'
                             }`}
                             style={{ backgroundColor: color }}
                           />
@@ -970,7 +863,7 @@ function BrandDNARevealStep({
                         <div className="relative">
                           <input
                             type="color"
-                            value={brandData.secondaryColor || "#8b5cf6"}
+                            value={brandData.secondaryColor || '#8b5cf6'}
                             onChange={(e) =>
                               setBrandData({
                                 ...brandData,
@@ -987,20 +880,16 @@ function BrandDNARevealStep({
                     </div>
                     {/* Accent Color */}
                     <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">
-                        Accent
-                      </p>
+                      <p className="text-white/40 text-xs font-medium mb-2">Accent</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         {colorPresets.slice(5, 15).map((color) => (
                           <button
                             key={color}
-                            onClick={() =>
-                              setBrandData({ ...brandData, accentColor: color })
-                            }
+                            onClick={() => setBrandData({ ...brandData, accentColor: color })}
                             className={`w-8 h-8 rounded-lg transition-all ${
                               brandData.accentColor === color
-                                ? "ring-2 ring-white ring-offset-2 ring-offset-[#141414]"
-                                : "hover:scale-110"
+                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
+                                : 'hover:scale-110'
                             }`}
                             style={{ backgroundColor: color }}
                           />
@@ -1008,7 +897,7 @@ function BrandDNARevealStep({
                         <div className="relative">
                           <input
                             type="color"
-                            value={brandData.accentColor || "#f59e0b"}
+                            value={brandData.accentColor || '#f59e0b'}
                             onChange={(e) =>
                               setBrandData({
                                 ...brandData,
@@ -1027,10 +916,10 @@ function BrandDNARevealStep({
                 </motion.div>
               )}
 
-              {editingSection === "typography" && (
+              {editingSection === 'typography' && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -1038,9 +927,7 @@ function BrandDNARevealStep({
                   <div className="pt-4 max-h-48 overflow-y-auto">
                     {Object.entries(groupedFonts).map(([category, fonts]) => (
                       <div key={category} className="mb-3">
-                        <p className="text-white/40 text-xs font-medium mb-2">
-                          {category}
-                        </p>
+                        <p className="text-white/40 text-xs font-medium mb-2">{category}</p>
                         <div className="grid grid-cols-2 gap-2">
                           {fonts.map((font) => (
                             <button
@@ -1053,8 +940,8 @@ function BrandDNARevealStep({
                               }
                               className={`px-3 py-2 rounded-lg text-left transition-all ${
                                 brandData.primaryFont === font.value
-                                  ? "bg-[#9AA48C]/20 ring-1 ring-[#9AA48C]"
-                                  : "bg-white/5 hover:bg-white/8 border border-white/8"
+                                  ? 'bg-[#9AA48C]/20 ring-1 ring-[#9AA48C]'
+                                  : 'bg-white/5 hover:bg-white/8 border border-white/8'
                               }`}
                             >
                               <span
@@ -1072,19 +959,18 @@ function BrandDNARevealStep({
                 </motion.div>
               )}
 
-              {editingSection === "style" && (
+              {editingSection === 'style' && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
                   <div className="pt-4 flex flex-wrap gap-2">
                     {VISUAL_STYLE_OPTIONS.map((style) => {
-                      const currentStyle =
-                        brandData.visualStyle || getInitialVisualStyle();
-                      const isSelected = currentStyle === style.value;
+                      const currentStyle = brandData.visualStyle || getInitialVisualStyle()
+                      const isSelected = currentStyle === style.value
                       return (
                         <button
                           key={style.value}
@@ -1096,31 +982,30 @@ function BrandDNARevealStep({
                           }
                           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
-                              ? "bg-[#9AA48C] text-black"
-                              : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8"
+                              ? 'bg-[#9AA48C] text-black'
+                              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8'
                           }`}
                         >
                           {style.label}
                         </button>
-                      );
+                      )
                     })}
                   </div>
                 </motion.div>
               )}
 
-              {editingSection === "tone" && (
+              {editingSection === 'tone' && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
                   <div className="pt-4 flex flex-wrap gap-2">
                     {BRAND_TONE_OPTIONS.map((tone) => {
-                      const currentTone =
-                        brandData.brandTone || getInitialBrandTone();
-                      const isSelected = currentTone === tone.value;
+                      const currentTone = brandData.brandTone || getInitialBrandTone()
+                      const isSelected = currentTone === tone.value
                       return (
                         <button
                           key={tone.value}
@@ -1132,13 +1017,13 @@ function BrandDNARevealStep({
                           }
                           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
-                              ? "bg-[#9AA48C] text-black"
-                              : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8"
+                              ? 'bg-[#9AA48C] text-black'
+                              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8'
                           }`}
                         >
                           {tone.label}
                         </button>
-                      );
+                      )
                     })}
                   </div>
                 </motion.div>
@@ -1162,8 +1047,8 @@ function BrandDNARevealStep({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
                     style={{
-                      background: "rgba(10, 102, 194, 0.15)",
-                      color: "#5BA3E0",
+                      background: 'rgba(10, 102, 194, 0.15)',
+                      color: '#5BA3E0',
                     }}
                   >
                     <Linkedin className="w-3.5 h-3.5" />
@@ -1177,8 +1062,8 @@ function BrandDNARevealStep({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
                     style={{
-                      background: "rgba(255, 255, 255, 0.05)",
-                      color: "rgba(255, 255, 255, 0.7)",
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      color: 'rgba(255, 255, 255, 0.7)',
                     }}
                   >
                     <Twitter className="w-3.5 h-3.5" />X
@@ -1191,8 +1076,8 @@ function BrandDNARevealStep({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
                     style={{
-                      background: "rgba(228, 64, 95, 0.15)",
-                      color: "#E4405F",
+                      background: 'rgba(228, 64, 95, 0.15)',
+                      color: '#E4405F',
                     }}
                   >
                     <Instagram className="w-3.5 h-3.5" />
@@ -1224,28 +1109,28 @@ function BrandDNARevealStep({
               <div
                 className="p-3 rounded-xl mb-2"
                 style={{
-                  background: "rgba(154, 164, 140, 0.1)",
-                  border: "1px solid rgba(154, 164, 140, 0.3)",
+                  background: 'rgba(154, 164, 140, 0.1)',
+                  border: '1px solid rgba(154, 164, 140, 0.3)',
                 }}
               >
                 <div className="flex gap-2 mb-2">
                   <button
-                    onClick={() => setNewAudienceType("b2b")}
+                    onClick={() => setNewAudienceType('b2b')}
                     className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
-                      newAudienceType === "b2b"
-                        ? "bg-white/10 text-white"
-                        : "text-white/40 hover:text-white/60"
+                      newAudienceType === 'b2b'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/60'
                     }`}
                   >
                     <Building2 className="w-3 h-3 inline mr-1" />
                     B2B (Companies)
                   </button>
                   <button
-                    onClick={() => setNewAudienceType("b2c")}
+                    onClick={() => setNewAudienceType('b2c')}
                     className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
-                      newAudienceType === "b2c"
-                        ? "bg-white/10 text-white"
-                        : "text-white/40 hover:text-white/60"
+                      newAudienceType === 'b2c'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/60'
                     }`}
                   >
                     <Users className="w-3 h-3 inline mr-1" />
@@ -1258,12 +1143,12 @@ function BrandDNARevealStep({
                     value={newAudienceName}
                     onChange={(e) => setNewAudienceName(e.target.value)}
                     placeholder={
-                      newAudienceType === "b2b"
-                        ? "e.g., HR Leaders at SMBs"
-                        : "e.g., Job seekers in tech"
+                      newAudienceType === 'b2b'
+                        ? 'e.g., HR Leaders at SMBs'
+                        : 'e.g., Job seekers in tech'
                     }
                     className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] text-white bg-white/5 border border-white/10 focus:border-[#9AA48C] outline-none"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddAudience()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddAudience()}
                   />
                   <button
                     onClick={handleAddAudience}
@@ -1273,8 +1158,8 @@ function BrandDNARevealStep({
                   </button>
                   <button
                     onClick={() => {
-                      setShowAddAudience(false);
-                      setNewAudienceName("");
+                      setShowAddAudience(false)
+                      setNewAudienceName('')
                     }}
                     className="px-2 py-1.5 rounded-lg text-[10px] text-white/40 hover:text-white/70"
                   >
@@ -1282,8 +1167,8 @@ function BrandDNARevealStep({
                   </button>
                 </div>
                 <p className="text-white/30 text-[9px] mt-2">
-                  {newAudienceType === "b2b"
-                    ? "Tip: For marketplaces like recruitment, add both your clients (companies hiring) and your service recipients (job seekers)."
+                  {newAudienceType === 'b2b'
+                    ? 'Tip: For marketplaces like recruitment, add both your clients (companies hiring) and your service recipients (job seekers).'
                     : "Tip: Describe who you're serving directly - individuals, consumers, or end users."}
                 </p>
               </div>
@@ -1298,11 +1183,11 @@ function BrandDNARevealStep({
                     className="p-3 rounded-xl flex items-center justify-between group"
                     style={{
                       background: audience.isPrimary
-                        ? "rgba(99, 102, 241, 0.1)"
-                        : "rgba(255, 255, 255, 0.04)",
+                        ? 'rgba(99, 102, 241, 0.1)'
+                        : 'rgba(255, 255, 255, 0.04)',
                       border: audience.isPrimary
-                        ? "1px solid rgba(99, 102, 241, 0.25)"
-                        : "1px solid rgba(255, 255, 255, 0.08)",
+                        ? '1px solid rgba(99, 102, 241, 0.25)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
                     }}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1310,8 +1195,8 @@ function BrandDNARevealStep({
                         className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                         style={{
                           background: audience.isPrimary
-                            ? "rgba(99, 102, 241, 0.25)"
-                            : "rgba(255, 255, 255, 0.08)",
+                            ? 'rgba(99, 102, 241, 0.25)'
+                            : 'rgba(255, 255, 255, 0.08)',
                         }}
                       >
                         {audience.firmographics?.jobTitles !== undefined ? (
@@ -1327,17 +1212,11 @@ function BrandDNARevealStep({
                             defaultValue={audience.name}
                             autoFocus
                             className="text-white text-sm font-medium bg-transparent border-b border-white/30 focus:border-[#9AA48C] outline-none w-full"
-                            onBlur={(e) =>
-                              handleUpdateAudienceName(index, e.target.value)
-                            }
+                            onBlur={(e) => handleUpdateAudienceName(index, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter")
-                                handleUpdateAudienceName(
-                                  index,
-                                  e.currentTarget.value
-                                );
-                              if (e.key === "Escape")
-                                setEditingAudienceIndex(null);
+                              if (e.key === 'Enter')
+                                handleUpdateAudienceName(index, e.currentTarget.value)
+                              if (e.key === 'Escape') setEditingAudienceIndex(null)
                             }}
                           />
                         ) : (
@@ -1349,8 +1228,8 @@ function BrandDNARevealStep({
                               <span
                                 className="text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
                                 style={{
-                                  background: "rgba(99, 102, 241, 0.35)",
-                                  color: "#a5b4fc",
+                                  background: 'rgba(99, 102, 241, 0.35)',
+                                  color: '#a5b4fc',
                                 }}
                               >
                                 Primary
@@ -1361,9 +1240,7 @@ function BrandDNARevealStep({
                         {audience.firmographics?.jobTitles &&
                           audience.firmographics.jobTitles.length > 0 && (
                             <p className="text-white/40 text-xs truncate mt-0.5">
-                              {audience.firmographics.jobTitles
-                                .slice(0, 2)
-                                .join(", ")}
+                              {audience.firmographics.jobTitles.slice(0, 2).join(', ')}
                             </p>
                           )}
                       </div>
@@ -1440,7 +1317,7 @@ function BrandDNARevealStep({
                 <button
                   onClick={() => setShowAddAudience(true)}
                   className="w-full p-4 rounded-xl text-center text-white/40 text-sm hover:text-white/60 hover:bg-white/5 transition-colors"
-                  style={{ border: "1px dashed rgba(255, 255, 255, 0.15)" }}
+                  style={{ border: '1px dashed rgba(255, 255, 255, 0.15)' }}
                 >
                   + Add your target audiences
                 </button>
@@ -1454,8 +1331,8 @@ function BrandDNARevealStep({
               onClick={onBack}
               className="flex-1 py-3 rounded-xl font-medium text-sm text-white/50 hover:text-white/80 transition-colors"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
               }}
             >
               <ArrowLeft className="w-4 h-4 inline mr-1.5" />
@@ -1464,7 +1341,7 @@ function BrandDNARevealStep({
             <button
               onClick={onContinue}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white text-black/90"
-              style={{ background: "rgba(245, 245, 240, 0.95)" }}
+              style={{ background: 'rgba(245, 245, 240, 0.95)' }}
             >
               Looks right
               <Check className="w-4 h-4 inline ml-1.5" />
@@ -1473,537 +1350,533 @@ function BrandDNARevealStep({
         </div>
       </motion.div>
     </motion.div>
-  );
+  )
 }
 
 // Brand archetype image sets - images that work together as a cohesive direction
-const BRAND_ARCHETYPE_IMAGES: Record<string, string[]> = {
+const _BRAND_ARCHETYPE_IMAGES: Record<string, string[]> = {
   boldExplorer: [
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop',
   ],
   refinedAuthority: [
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop',
   ],
   friendlyGuide: [
-    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop',
   ],
   techDisruptor: [
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
   ],
   elegantMinimalist: [
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
   ],
   luxuryStoryteller: [
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop',
   ],
   versatileClassic: [
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop',
   ],
   creativeRebel: [
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop',
   ],
   trustedAdvisor: [
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop',
   ],
   // New archetypes for more coverage
   zenMaster: [
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=600&fit=crop',
   ],
   urbanEdge: [
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop',
   ],
   warmCraftsman: [
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop',
   ],
   neonFuturist: [
-    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop',
   ],
   cleanSlate: [
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545665277-5937489579f2?w=400&h=600&fit=crop',
   ],
   corporateChic: [
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop',
   ],
   playfulPop: [
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop',
   ],
   seriousCraft: [
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop',
   ],
   dynamicLeader: [
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
   ],
   softLuxury: [
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop',
   ],
   boldMinimalist: [
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
   ],
   humanFirst: [
-    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
   ],
   techWarm: [
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
   ],
   accessibleFun: [
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop',
   ],
   quietConfidence: [
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
   ],
   richStoryteller: [
-    "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
   ],
   premiumTech: [
-    "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop',
   ],
   everydayJoy: [
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
   ],
   modernHeritage: [
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400&h=600&fit=crop',
   ],
   energeticPro: [
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop',
   ],
   calmCreative: [
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1518012312832-96bbe1de3e2f?w=400&h=600&fit=crop',
   ],
   industrialChic: [
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=600&fit=crop',
   ],
   organicLuxury: [
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1516383740770-fbcc5ccbece0?w=400&h=600&fit=crop',
   ],
   digitalNative: [
-    "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1633186710895-309db2eca9e4?w=400&h=600&fit=crop',
   ],
   classicTrust: [
-    "https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1553484771-047a44eee27b?w=400&h=600&fit=crop',
   ],
   vibrantMinimal: [
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=600&fit=crop',
   ],
   warmProfessional: [
-    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1525909002-1b05e0c869d8?w=400&h=600&fit=crop',
   ],
   boldAccessible: [
-    "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop',
   ],
-};
+}
 
 // Brand archetype definitions with names and similar brands
 const BRAND_ARCHETYPES: Record<string, { name: string; brands: string[] }> = {
   boldExplorer: {
-    name: "Bold Explorer",
-    brands: ["Red Bull", "GoPro", "Spotify"],
+    name: 'Bold Explorer',
+    brands: ['Red Bull', 'GoPro', 'Spotify'],
   },
   refinedAuthority: {
-    name: "Refined Authority",
-    brands: ["McKinsey", "Bloomberg", "IBM"],
+    name: 'Refined Authority',
+    brands: ['McKinsey', 'Bloomberg', 'IBM'],
   },
   friendlyGuide: {
-    name: "Friendly Guide",
-    brands: ["Airbnb", "Mailchimp", "Slack"],
+    name: 'Friendly Guide',
+    brands: ['Airbnb', 'Mailchimp', 'Slack'],
   },
   techDisruptor: {
-    name: "Tech Disruptor",
-    brands: ["Tesla", "SpaceX", "Stripe"],
+    name: 'Tech Disruptor',
+    brands: ['Tesla', 'SpaceX', 'Stripe'],
   },
   elegantMinimalist: {
-    name: "Elegant Minimalist",
-    brands: ["Apple", "Muji", "Aesop"],
+    name: 'Elegant Minimalist',
+    brands: ['Apple', 'Muji', 'Aesop'],
   },
   luxuryStoryteller: {
-    name: "Luxury Storyteller",
-    brands: ["Hermès", "Rolex", "Cartier"],
+    name: 'Luxury Storyteller',
+    brands: ['Hermès', 'Rolex', 'Cartier'],
   },
   versatileClassic: {
-    name: "Versatile Classic",
-    brands: ["Google", "Microsoft", "Adobe"],
+    name: 'Versatile Classic',
+    brands: ['Google', 'Microsoft', 'Adobe'],
   },
   creativeRebel: {
-    name: "Creative Rebel",
-    brands: ["Figma", "Notion", "Discord"],
+    name: 'Creative Rebel',
+    brands: ['Figma', 'Notion', 'Discord'],
   },
   trustedAdvisor: {
-    name: "Trusted Advisor",
-    brands: ["Deloitte", "Salesforce", "HubSpot"],
+    name: 'Trusted Advisor',
+    brands: ['Deloitte', 'Salesforce', 'HubSpot'],
   },
-  zenMaster: { name: "Zen Master", brands: ["Headspace", "Calm", "Patagonia"] },
-  urbanEdge: { name: "Urban Edge", brands: ["Nike", "Adidas", "Supreme"] },
+  zenMaster: { name: 'Zen Master', brands: ['Headspace', 'Calm', 'Patagonia'] },
+  urbanEdge: { name: 'Urban Edge', brands: ['Nike', 'Adidas', 'Supreme'] },
   warmCraftsman: {
-    name: "Warm Craftsman",
-    brands: ["Etsy", "Anthropologie", "West Elm"],
+    name: 'Warm Craftsman',
+    brands: ['Etsy', 'Anthropologie', 'West Elm'],
   },
   neonFuturist: {
-    name: "Neon Futurist",
-    brands: ["Cyberpunk", "Razer", "Alienware"],
+    name: 'Neon Futurist',
+    brands: ['Cyberpunk', 'Razer', 'Alienware'],
   },
-  cleanSlate: { name: "Clean Slate", brands: ["Everlane", "Glossier", "Away"] },
+  cleanSlate: { name: 'Clean Slate', brands: ['Everlane', 'Glossier', 'Away'] },
   corporateChic: {
-    name: "Corporate Chic",
-    brands: ["WeWork", "LinkedIn", "Dropbox"],
+    name: 'Corporate Chic',
+    brands: ['WeWork', 'LinkedIn', 'Dropbox'],
   },
   playfulPop: {
-    name: "Playful Pop",
-    brands: ["Duolingo", "Snapchat", "TikTok"],
+    name: 'Playful Pop',
+    brands: ['Duolingo', 'Snapchat', 'TikTok'],
   },
   seriousCraft: {
-    name: "Serious Craft",
-    brands: ["Monocle", "Kinfolk", "Cereal"],
+    name: 'Serious Craft',
+    brands: ['Monocle', 'Kinfolk', 'Cereal'],
   },
   dynamicLeader: {
-    name: "Dynamic Leader",
-    brands: ["Amazon", "Netflix", "Uber"],
+    name: 'Dynamic Leader',
+    brands: ['Amazon', 'Netflix', 'Uber'],
   },
   softLuxury: {
-    name: "Soft Luxury",
-    brands: ["Goop", "Net-a-Porter", "Mejuri"],
+    name: 'Soft Luxury',
+    brands: ['Goop', 'Net-a-Porter', 'Mejuri'],
   },
   boldMinimalist: {
-    name: "Bold Minimalist",
-    brands: ["Tesla", "Bang & Olufsen", "Rimowa"],
+    name: 'Bold Minimalist',
+    brands: ['Tesla', 'Bang & Olufsen', 'Rimowa'],
   },
   humanFirst: {
-    name: "Human First",
-    brands: ["Warby Parker", "Casper", "Allbirds"],
+    name: 'Human First',
+    brands: ['Warby Parker', 'Casper', 'Allbirds'],
   },
-  techWarm: { name: "Tech Warm", brands: ["Spotify", "Asana", "Monday.com"] },
+  techWarm: { name: 'Tech Warm', brands: ['Spotify', 'Asana', 'Monday.com'] },
   accessibleFun: {
-    name: "Accessible Fun",
-    brands: ["Target", "IKEA", "Trader Joe's"],
+    name: 'Accessible Fun',
+    brands: ['Target', 'IKEA', "Trader Joe's"],
   },
   quietConfidence: {
-    name: "Quiet Confidence",
-    brands: ["Porsche", "Montblanc", "Leica"],
+    name: 'Quiet Confidence',
+    brands: ['Porsche', 'Montblanc', 'Leica'],
   },
   richStoryteller: {
-    name: "Rich Storyteller",
-    brands: ["National Geographic", "Airbnb", "Patagonia"],
+    name: 'Rich Storyteller',
+    brands: ['National Geographic', 'Airbnb', 'Patagonia'],
   },
-  premiumTech: { name: "Premium Tech", brands: ["Apple", "Sonos", "Dyson"] },
+  premiumTech: { name: 'Premium Tech', brands: ['Apple', 'Sonos', 'Dyson'] },
   everydayJoy: {
-    name: "Everyday Joy",
-    brands: ["Coca-Cola", "McDonald's", "Disney"],
+    name: 'Everyday Joy',
+    brands: ['Coca-Cola', "McDonald's", 'Disney'],
   },
   modernHeritage: {
-    name: "Modern Heritage",
-    brands: ["Burberry", "Coach", "Ralph Lauren"],
+    name: 'Modern Heritage',
+    brands: ['Burberry', 'Coach', 'Ralph Lauren'],
   },
   energeticPro: {
-    name: "Energetic Pro",
-    brands: ["Gatorade", "Under Armour", "Peloton"],
+    name: 'Energetic Pro',
+    brands: ['Gatorade', 'Under Armour', 'Peloton'],
   },
   calmCreative: {
-    name: "Calm Creative",
-    brands: ["Pinterest", "Squarespace", "Behance"],
+    name: 'Calm Creative',
+    brands: ['Pinterest', 'Squarespace', 'Behance'],
   },
   industrialChic: {
-    name: "Industrial Chic",
-    brands: ["Caterpillar", "Carhartt", "Yeti"],
+    name: 'Industrial Chic',
+    brands: ['Caterpillar', 'Carhartt', 'Yeti'],
   },
   organicLuxury: {
-    name: "Organic Luxury",
-    brands: ["Aesop", "Le Labo", "Byredo"],
+    name: 'Organic Luxury',
+    brands: ['Aesop', 'Le Labo', 'Byredo'],
   },
   digitalNative: {
-    name: "Digital Native",
-    brands: ["Twitch", "Discord", "Roblox"],
+    name: 'Digital Native',
+    brands: ['Twitch', 'Discord', 'Roblox'],
   },
   classicTrust: {
-    name: "Classic Trust",
-    brands: ["Goldman Sachs", "Morgan Stanley", "Vanguard"],
+    name: 'Classic Trust',
+    brands: ['Goldman Sachs', 'Morgan Stanley', 'Vanguard'],
   },
   vibrantMinimal: {
-    name: "Vibrant Minimal",
-    brands: ["Stripe", "Linear", "Vercel"],
+    name: 'Vibrant Minimal',
+    brands: ['Stripe', 'Linear', 'Vercel'],
   },
   warmProfessional: {
-    name: "Warm Professional",
-    brands: ["Zendesk", "Intercom", "Drift"],
+    name: 'Warm Professional',
+    brands: ['Zendesk', 'Intercom', 'Drift'],
   },
   boldAccessible: {
-    name: "Bold Accessible",
-    brands: ["Canva", "Wix", "Shopify"],
+    name: 'Bold Accessible',
+    brands: ['Canva', 'Wix', 'Shopify'],
   },
-};
+}
 
 // Function to determine brand archetype based on slider values (4 signals: tone, density, warmth, energy)
 function getBrandArchetype(signals: {
-  tone: number;
-  density: number;
-  warmth: number;
-  energy: number;
+  tone: number
+  density: number
+  warmth: number
+  energy: number
 }): string {
-  const { tone, density, warmth, energy } = signals;
+  const { tone, density, warmth, energy } = signals
 
   // Tone: Serious (< 25), A bit serious (25-45), Neutral (45-55), A bit playful (55-75), Playful (> 75)
-  const isSerious = tone < 25;
-  const isBitSerious = tone >= 25 && tone < 45;
-  const isNeutralTone = tone >= 45 && tone <= 55;
-  const isBitPlayful = tone > 55 && tone <= 75;
-  const isPlayful = tone > 75;
+  const isSerious = tone < 25
+  const isBitSerious = tone >= 25 && tone < 45
+  const isNeutralTone = tone >= 45 && tone <= 55
+  const isBitPlayful = tone > 55 && tone <= 75
+  const isPlayful = tone > 75
 
   // Density: Minimal (< 25), A bit minimal (25-45), Neutral (45-55), A bit rich (55-75), Rich (> 75)
-  const isMinimal = density < 25;
-  const isBitMinimal = density >= 25 && density < 45;
-  const isNeutralDensity = density >= 45 && density <= 55;
-  const isBitRich = density > 55 && density <= 75;
-  const isRich = density > 75;
+  const isMinimal = density < 25
+  const isBitMinimal = density >= 25 && density < 45
+  const isNeutralDensity = density >= 45 && density <= 55
+  const isBitRich = density > 55 && density <= 75
+  const isRich = density > 75
 
   // Warmth: Cold (< 35), Neutral (35-65), Warm (> 65)
-  const isCold = warmth < 35;
-  const isNeutralWarmth = warmth >= 35 && warmth <= 65;
-  const isWarm = warmth > 65;
+  const isCold = warmth < 35
+  const isNeutralWarmth = warmth >= 35 && warmth <= 65
+  const isWarm = warmth > 65
 
   // Energy: Calm (< 25), A bit calm (25-45), Neutral (45-55), A bit energetic (55-75), Energetic (> 75)
-  const isCalm = energy < 25;
-  const isBitCalm = energy >= 25 && energy < 45;
-  const isNeutralEnergy = energy >= 45 && energy <= 55;
-  const isBitEnergetic = energy > 55 && energy <= 75;
-  const isEnergetic = energy > 75;
+  const isCalm = energy < 25
+  const isBitCalm = energy >= 25 && energy < 45
+  const isNeutralEnergy = energy >= 45 && energy <= 55
+  const isBitEnergetic = energy > 55 && energy <= 75
+  const isEnergetic = energy > 75
 
   // === PLAYFUL COMBINATIONS ===
-  if (isPlayful && isWarm && isEnergetic) return "boldExplorer";
-  if (isPlayful && isWarm && isCalm) return "everydayJoy";
-  if (isPlayful && isWarm && isRich) return "richStoryteller";
-  if (isPlayful && isWarm) return "friendlyGuide";
-  if (isPlayful && isCold && isEnergetic) return "neonFuturist";
-  if (isPlayful && isCold && isCalm) return "digitalNative";
-  if (isPlayful && isCold) return "vibrantMinimal";
-  if (isPlayful && isMinimal) return "playfulPop";
-  if (isPlayful && isRich) return "creativeRebel";
-  if (isPlayful && isCalm) return "accessibleFun";
-  if (isPlayful && isEnergetic) return "softLuxury";
-  if (isPlayful) return "humanFirst";
+  if (isPlayful && isWarm && isEnergetic) return 'boldExplorer'
+  if (isPlayful && isWarm && isCalm) return 'everydayJoy'
+  if (isPlayful && isWarm && isRich) return 'richStoryteller'
+  if (isPlayful && isWarm) return 'friendlyGuide'
+  if (isPlayful && isCold && isEnergetic) return 'neonFuturist'
+  if (isPlayful && isCold && isCalm) return 'digitalNative'
+  if (isPlayful && isCold) return 'vibrantMinimal'
+  if (isPlayful && isMinimal) return 'playfulPop'
+  if (isPlayful && isRich) return 'creativeRebel'
+  if (isPlayful && isCalm) return 'accessibleFun'
+  if (isPlayful && isEnergetic) return 'softLuxury'
+  if (isPlayful) return 'humanFirst'
 
   // === SERIOUS COMBINATIONS ===
-  if (isSerious && isCold && isEnergetic && isMinimal)
-    return "elegantMinimalist";
-  if (isSerious && isCold && isEnergetic) return "refinedAuthority";
-  if (isSerious && isCold && isMinimal) return "industrialChic";
-  if (isSerious && isCold) return "techDisruptor";
-  if (isSerious && isWarm && isEnergetic && isRich) return "luxuryStoryteller";
-  if (isSerious && isWarm && isEnergetic) return "organicLuxury";
-  if (isSerious && isWarm && isRich) return "modernHeritage";
-  if (isSerious && isWarm) return "trustedAdvisor";
-  if (isSerious && isEnergetic && isMinimal) return "premiumTech";
-  if (isSerious && isEnergetic) return "quietConfidence";
-  if (isSerious && isCalm) return "corporateChic";
-  if (isSerious && isMinimal) return "cleanSlate";
-  if (isSerious && isRich) return "seriousCraft";
-  if (isSerious) return "classicTrust";
+  if (isSerious && isCold && isEnergetic && isMinimal) return 'elegantMinimalist'
+  if (isSerious && isCold && isEnergetic) return 'refinedAuthority'
+  if (isSerious && isCold && isMinimal) return 'industrialChic'
+  if (isSerious && isCold) return 'techDisruptor'
+  if (isSerious && isWarm && isEnergetic && isRich) return 'luxuryStoryteller'
+  if (isSerious && isWarm && isEnergetic) return 'organicLuxury'
+  if (isSerious && isWarm && isRich) return 'modernHeritage'
+  if (isSerious && isWarm) return 'trustedAdvisor'
+  if (isSerious && isEnergetic && isMinimal) return 'premiumTech'
+  if (isSerious && isEnergetic) return 'quietConfidence'
+  if (isSerious && isCalm) return 'corporateChic'
+  if (isSerious && isMinimal) return 'cleanSlate'
+  if (isSerious && isRich) return 'seriousCraft'
+  if (isSerious) return 'classicTrust'
 
   // === BIT PLAYFUL COMBINATIONS ===
-  if (isBitPlayful && isWarm && isEnergetic) return "warmCraftsman";
-  if (isBitPlayful && isWarm && isCalm) return "boldAccessible";
-  if (isBitPlayful && isWarm) return "humanFirst";
-  if (isBitPlayful && isCold && isEnergetic) return "boldMinimalist";
-  if (isBitPlayful && isCold) return "urbanEdge";
-  if (isBitPlayful && isMinimal) return "cleanSlate";
-  if (isBitPlayful && isRich) return "richStoryteller";
-  if (isBitPlayful && isEnergetic) return "softLuxury";
-  if (isBitPlayful && isCalm) return "accessibleFun";
+  if (isBitPlayful && isWarm && isEnergetic) return 'warmCraftsman'
+  if (isBitPlayful && isWarm && isCalm) return 'boldAccessible'
+  if (isBitPlayful && isWarm) return 'humanFirst'
+  if (isBitPlayful && isCold && isEnergetic) return 'boldMinimalist'
+  if (isBitPlayful && isCold) return 'urbanEdge'
+  if (isBitPlayful && isMinimal) return 'cleanSlate'
+  if (isBitPlayful && isRich) return 'richStoryteller'
+  if (isBitPlayful && isEnergetic) return 'softLuxury'
+  if (isBitPlayful && isCalm) return 'accessibleFun'
 
   // === BIT SERIOUS COMBINATIONS ===
-  if (isBitSerious && isCold && isEnergetic) return "premiumTech";
-  if (isBitSerious && isCold) return "industrialChic";
-  if (isBitSerious && isWarm && isEnergetic) return "modernHeritage";
-  if (isBitSerious && isWarm) return "warmProfessional";
-  if (isBitSerious && isEnergetic && isMinimal) return "elegantMinimalist";
-  if (isBitSerious && isEnergetic) return "quietConfidence";
-  if (isBitSerious && isCalm) return "corporateChic";
-  if (isBitSerious && isMinimal) return "seriousCraft";
-  if (isBitSerious && isRich) return "dynamicLeader";
+  if (isBitSerious && isCold && isEnergetic) return 'premiumTech'
+  if (isBitSerious && isCold) return 'industrialChic'
+  if (isBitSerious && isWarm && isEnergetic) return 'modernHeritage'
+  if (isBitSerious && isWarm) return 'warmProfessional'
+  if (isBitSerious && isEnergetic && isMinimal) return 'elegantMinimalist'
+  if (isBitSerious && isEnergetic) return 'quietConfidence'
+  if (isBitSerious && isCalm) return 'corporateChic'
+  if (isBitSerious && isMinimal) return 'seriousCraft'
+  if (isBitSerious && isRich) return 'dynamicLeader'
 
   // === MINIMAL COMBINATIONS ===
-  if (isMinimal && isEnergetic && isCold) return "elegantMinimalist";
-  if (isMinimal && isEnergetic && isWarm) return "organicLuxury";
-  if (isMinimal && isEnergetic) return "premiumTech";
-  if (isMinimal && isCalm && isWarm) return "zenMaster";
-  if (isMinimal && isCalm) return "cleanSlate";
-  if (isMinimal && isWarm) return "calmCreative";
-  if (isMinimal && isCold) return "boldMinimalist";
+  if (isMinimal && isEnergetic && isCold) return 'elegantMinimalist'
+  if (isMinimal && isEnergetic && isWarm) return 'organicLuxury'
+  if (isMinimal && isEnergetic) return 'premiumTech'
+  if (isMinimal && isCalm && isWarm) return 'zenMaster'
+  if (isMinimal && isCalm) return 'cleanSlate'
+  if (isMinimal && isWarm) return 'calmCreative'
+  if (isMinimal && isCold) return 'boldMinimalist'
 
   // === RICH COMBINATIONS ===
-  if (isRich && isEnergetic && isWarm) return "luxuryStoryteller";
-  if (isRich && isEnergetic && isCold) return "modernHeritage";
-  if (isRich && isEnergetic) return "richStoryteller";
-  if (isRich && isCalm && isWarm) return "everydayJoy";
-  if (isRich && isCalm) return "creativeRebel";
-  if (isRich && isWarm) return "warmCraftsman";
-  if (isRich && isCold) return "dynamicLeader";
+  if (isRich && isEnergetic && isWarm) return 'luxuryStoryteller'
+  if (isRich && isEnergetic && isCold) return 'modernHeritage'
+  if (isRich && isEnergetic) return 'richStoryteller'
+  if (isRich && isCalm && isWarm) return 'everydayJoy'
+  if (isRich && isCalm) return 'creativeRebel'
+  if (isRich && isWarm) return 'warmCraftsman'
+  if (isRich && isCold) return 'dynamicLeader'
 
   // === ENERGETIC COMBINATIONS ===
-  if (isEnergetic && isCold) return "refinedAuthority";
-  if (isEnergetic && isWarm) return "organicLuxury";
-  if (isEnergetic) return "quietConfidence";
+  if (isEnergetic && isCold) return 'refinedAuthority'
+  if (isEnergetic && isWarm) return 'organicLuxury'
+  if (isEnergetic) return 'quietConfidence'
 
   // === CALM COMBINATIONS ===
-  if (isCalm && isWarm) return "humanFirst";
-  if (isCalm && isCold) return "digitalNative";
-  if (isCalm) return "boldAccessible";
+  if (isCalm && isWarm) return 'humanFirst'
+  if (isCalm && isCold) return 'digitalNative'
+  if (isCalm) return 'boldAccessible'
 
   // === WARMTH COMBINATIONS ===
-  if (isWarm && isNeutralDensity) return "friendlyGuide";
-  if (isCold && isNeutralDensity) return "techDisruptor";
+  if (isWarm && isNeutralDensity) return 'friendlyGuide'
+  if (isCold && isNeutralDensity) return 'techDisruptor'
 
   // === NEUTRAL / DEFAULT ===
-  if (isNeutralTone && isNeutralDensity && isNeutralEnergy)
-    return "versatileClassic";
+  if (isNeutralTone && isNeutralDensity && isNeutralEnergy) return 'versatileClassic'
 
   // Fallback based on strongest signal
-  if (isEnergetic) return "quietConfidence";
-  if (isCalm) return "humanFirst";
-  if (isPlayful) return "playfulPop";
-  if (isSerious) return "trustedAdvisor";
-  if (isMinimal) return "cleanSlate";
-  if (isRich) return "richStoryteller";
-  if (isWarm) return "warmCraftsman";
-  if (isCold) return "industrialChic";
+  if (isEnergetic) return 'quietConfidence'
+  if (isCalm) return 'humanFirst'
+  if (isPlayful) return 'playfulPop'
+  if (isSerious) return 'trustedAdvisor'
+  if (isMinimal) return 'cleanSlate'
+  if (isRich) return 'richStoryteller'
+  if (isWarm) return 'warmCraftsman'
+  if (isCold) return 'industrialChic'
 
-  return "versatileClassic";
+  return 'versatileClassic'
 }
 
 interface BrandReference {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string;
-  toneBucket: string;
-  energyBucket: string;
-  densityBucket: string;
-  colorBucket: string;
-  score?: number;
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string
+  toneBucket: string
+  energyBucket: string
+  densityBucket: string
+  colorBucket: string
+  score?: number
 }
 
 // Brand Card Preview Panel for DNA Reveal step (Option A)
 function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
-  const colors = [
-    brandData.primaryColor,
-    brandData.secondaryColor,
-    brandData.accentColor,
-  ].filter(Boolean);
-  const primaryColor = colors[0] || "#3b82f6";
-  const secondaryColor = colors[1] || "#8b5cf6";
+  const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(
+    Boolean
+  )
+  const primaryColor = colors[0] || '#3b82f6'
+  const secondaryColor = colors[1] || '#8b5cf6'
 
   const getFontFamily = (fontName: string) => {
-    const font = FONT_OPTIONS.find((f) => f.value === fontName);
-    return font?.family || "'Satoshi', sans-serif";
-  };
-  const fontFamily = getFontFamily(brandData.primaryFont || "Satoshi");
+    const font = FONT_OPTIONS.find((f) => f.value === fontName)
+    return font?.family || "'Satoshi', sans-serif"
+  }
+  const fontFamily = getFontFamily(brandData.primaryFont || 'Satoshi')
 
   return (
     <motion.div
@@ -2040,7 +1913,7 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+              transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
               className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 mx-auto"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor}, ${
@@ -2049,11 +1922,8 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 boxShadow: `0 8px 32px ${primaryColor}40`,
               }}
             >
-              <span
-                className="text-white text-3xl font-bold"
-                style={{ fontFamily }}
-              >
-                {brandData.name?.[0]?.toUpperCase() || "B"}
+              <span className="text-white text-3xl font-bold" style={{ fontFamily }}>
+                {brandData.name?.[0]?.toUpperCase() || 'B'}
               </span>
             </motion.div>
 
@@ -2065,7 +1935,7 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
               className="text-3xl text-white font-semibold text-center mb-2"
               style={{ fontFamily }}
             >
-              {brandData.name || "Your Brand"}
+              {brandData.name || 'Your Brand'}
             </motion.h2>
 
             {/* Tagline/Description */}
@@ -2075,9 +1945,7 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
               transition={{ delay: 0.7 }}
               className="text-white/50 text-sm text-center mb-8 line-clamp-2 max-w-xs mx-auto"
             >
-              {brandData.tagline ||
-                brandData.description?.slice(0, 80) ||
-                "Your brand story"}
+              {brandData.tagline || brandData.description?.slice(0, 80) || 'Your brand story'}
             </motion.p>
 
             {/* Color Palette */}
@@ -2093,7 +1961,7 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                     key={i}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.9 + i * 0.1, type: "spring" }}
+                    transition={{ delay: 0.9 + i * 0.1, type: 'spring' }}
                     className="w-10 h-10 rounded-xl"
                     style={{
                       backgroundColor: color,
@@ -2103,18 +1971,9 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 ))
               ) : (
                 <>
-                  <div
-                    className="w-10 h-10 rounded-xl"
-                    style={{ backgroundColor: "#3b82f6" }}
-                  />
-                  <div
-                    className="w-10 h-10 rounded-xl"
-                    style={{ backgroundColor: "#8b5cf6" }}
-                  />
-                  <div
-                    className="w-10 h-10 rounded-xl"
-                    style={{ backgroundColor: "#f59e0b" }}
-                  />
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#3b82f6' }} />
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#8b5cf6' }} />
+                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#f59e0b' }} />
                 </>
               )}
             </motion.div>
@@ -2125,13 +1984,11 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
               animate={{ opacity: 1 }}
               transition={{ delay: 1.1 }}
               className="text-center p-4 rounded-xl"
-              style={{ background: "rgba(255, 255, 255, 0.03)" }}
+              style={{ background: 'rgba(255, 255, 255, 0.03)' }}
             >
-              <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2">
-                Typography
-              </p>
+              <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2">Typography</p>
               <p className="text-white text-lg" style={{ fontFamily }}>
-                {brandData.primaryFont || "Satoshi"}
+                {brandData.primaryFont || 'Satoshi'}
               </p>
               <p className="text-white/40 text-xs mt-1" style={{ fontFamily }}>
                 Aa Bb Cc Dd Ee Ff Gg
@@ -2153,9 +2010,8 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                     color: primaryColor,
                   }}
                 >
-                  {VISUAL_STYLE_OPTIONS.find(
-                    (o) => o.value === brandData.visualStyle
-                  )?.label || brandData.visualStyle}
+                  {VISUAL_STYLE_OPTIONS.find((o) => o.value === brandData.visualStyle)?.label ||
+                    brandData.visualStyle}
                 </span>
               )}
               {brandData.brandTone && (
@@ -2166,9 +2022,8 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                     color: secondaryColor,
                   }}
                 >
-                  {BRAND_TONE_OPTIONS.find(
-                    (o) => o.value === brandData.brandTone
-                  )?.label || brandData.brandTone}
+                  {BRAND_TONE_OPTIONS.find((o) => o.value === brandData.brandTone)?.label ||
+                    brandData.brandTone}
                 </span>
               )}
             </motion.div>
@@ -2186,50 +2041,50 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
         />
       </div>
     </motion.div>
-  );
+  )
 }
 
 function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
-  const [brandReferences, setBrandReferences] = useState<BrandReference[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [brandReferences, setBrandReferences] = useState<BrandReference[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Get slider values for all signals (4 signals now)
   const getSignalValue = (id: string): number => {
-    const value = brandData[id as keyof BrandData];
-    if (typeof value === "number") return value;
+    const value = brandData[id as keyof BrandData]
+    if (typeof value === 'number') return value
     // Fallback to old values
     switch (id) {
-      case "signalTone":
-        return (brandData.feelPlayfulSerious as number) || 50;
-      case "signalDensity":
-        return (brandData.feelBoldMinimal as number) || 50;
-      case "signalWarmth":
-        return 50;
-      case "signalEnergy":
-        return 50;
+      case 'signalTone':
+        return (brandData.feelPlayfulSerious as number) || 50
+      case 'signalDensity':
+        return (brandData.feelBoldMinimal as number) || 50
+      case 'signalWarmth':
+        return 50
+      case 'signalEnergy':
+        return 50
       default:
-        return 50;
+        return 50
     }
-  };
+  }
 
   // Get all signal values (4 signals)
   const signals = {
-    tone: getSignalValue("signalTone"),
-    density: getSignalValue("signalDensity"),
-    warmth: getSignalValue("signalWarmth"),
-    energy: getSignalValue("signalEnergy"),
-  };
+    tone: getSignalValue('signalTone'),
+    density: getSignalValue('signalDensity'),
+    warmth: getSignalValue('signalWarmth'),
+    energy: getSignalValue('signalEnergy'),
+  }
 
   // Fetch brand references from the database based on current slider values
   // Debounced to prevent excessive API calls when adjusting sliders
   useEffect(() => {
     const fetchBrandReferences = async () => {
       try {
-        setIsLoading(true);
-        const response = await fetch("/api/brand-references/match", {
-          method: "POST",
+        setIsLoading(true)
+        const response = await fetch('/api/brand-references/match', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             signalTone: signals.tone,
@@ -2238,30 +2093,30 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
             signalEnergy: signals.energy,
             limit: 12,
           }),
-        });
+        })
 
         if (response.ok) {
-          const data = await response.json();
-          setBrandReferences(data.references || []);
+          const data = await response.json()
+          setBrandReferences(data.references || [])
         }
       } catch (error) {
-        console.error("Error fetching brand references:", error);
+        console.error('Error fetching brand references:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
     // Debounce the fetch to avoid too many API calls while adjusting sliders
-    const timeoutId = setTimeout(fetchBrandReferences, 300);
-    return () => clearTimeout(timeoutId);
-  }, [signals.tone, signals.density, signals.warmth, signals.energy]);
+    const timeoutId = setTimeout(fetchBrandReferences, 300)
+    return () => clearTimeout(timeoutId)
+  }, [signals.tone, signals.density, signals.warmth, signals.energy])
 
   // Get the current brand archetype for displaying name/description
-  const archetypeKey = getBrandArchetype(signals);
-  const archetype = BRAND_ARCHETYPES[archetypeKey];
+  const archetypeKey = getBrandArchetype(signals)
+  const archetype = BRAND_ARCHETYPES[archetypeKey]
 
   // Use fetched brand reference images, or show loading state
-  const images = brandReferences.map((ref) => ref.imageUrl);
+  const images = brandReferences.map((ref) => ref.imageUrl)
 
   // If we have fewer than 4 images, duplicate them to fill 4 columns
   const displayImages =
@@ -2269,7 +2124,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
       ? images.length >= 4
         ? images.slice(0, 4)
         : [...images, ...images, ...images, ...images].slice(0, 4)
-      : [];
+      : []
 
   return (
     <motion.div
@@ -2294,14 +2149,14 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.08 }}
                 className="relative flex-shrink-0"
-                style={{ width: "140px" }}
+                style={{ width: '140px' }}
               >
                 {/* Scrolling container */}
                 <div
                   className="relative h-[420px] overflow-hidden rounded-2xl"
                   style={{
-                    background: "rgba(15, 15, 15, 0.4)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: 'rgba(15, 15, 15, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                   }}
                 >
                   {/* Top fade gradient */}
@@ -2309,7 +2164,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                     className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
                     style={{
                       background:
-                        "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+                        'linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
                     }}
                   />
 
@@ -2318,7 +2173,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                     className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
                     style={{
                       background:
-                        "linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)",
+                        'linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
                     }}
                   />
 
@@ -2336,7 +2191,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                       y: {
                         duration: 60 + index * 10,
                         repeat: Infinity,
-                        ease: "linear",
+                        ease: 'linear',
                       },
                     }}
                   >
@@ -2348,15 +2203,15 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                         animate={{ opacity: 1 }}
                         className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-lg"
                         style={{
-                          width: "100%",
-                          height: "200px",
+                          width: '100%',
+                          height: '200px',
                         }}
                       >
                         <ImageWithSkeleton
                           src={src}
                           alt={
-                            brandReferences[imgIndex % brandReferences.length]
-                              ?.name || `Brand reference ${imgIndex + 1}`
+                            brandReferences[imgIndex % brandReferences.length]?.name ||
+                            `Brand reference ${imgIndex + 1}`
                           }
                           className="w-full h-full"
                           skeletonClassName="bg-white/5"
@@ -2381,120 +2236,116 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
         className="mt-8 text-center"
       >
         {/* Archetype Name */}
-        <h3
-          className="text-2xl text-white mb-2"
-          style={{ fontFamily: "'Times New Roman', serif" }}
-        >
+        <h3 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
           {archetype.name}
         </h3>
 
         {/* Similar Brands */}
         <p className="text-white/40 text-sm">
-          Similar to{" "}
-          <span className="text-white/60">{archetype.brands.join(", ")}</span>
+          Similar to <span className="text-white/60">{archetype.brands.join(', ')}</span>
         </p>
       </motion.div>
     </motion.div>
-  );
+  )
 }
 
 // Core brand signal sliders configuration (4 signals)
 const BRAND_SIGNAL_SLIDERS = [
   {
-    id: "signalTone",
-    name: "Tone",
-    leftLabel: "Serious",
-    rightLabel: "Playful",
-    description: "Emotional seriousness of expression",
-    levels: ["Serious", "Composed", "Balanced", "Spirited", "Playful"],
+    id: 'signalTone',
+    name: 'Tone',
+    leftLabel: 'Serious',
+    rightLabel: 'Playful',
+    description: 'Emotional seriousness of expression',
+    levels: ['Serious', 'Composed', 'Balanced', 'Spirited', 'Playful'],
   },
   {
-    id: "signalDensity",
-    name: "Visual Density",
-    leftLabel: "Minimal",
-    rightLabel: "Rich",
-    description: "Amount of visual information per surface",
-    levels: ["Minimal", "Clean", "Balanced", "Detailed", "Rich"],
+    id: 'signalDensity',
+    name: 'Visual Density',
+    leftLabel: 'Minimal',
+    rightLabel: 'Rich',
+    description: 'Amount of visual information per surface',
+    levels: ['Minimal', 'Clean', 'Balanced', 'Detailed', 'Rich'],
   },
   {
-    id: "signalWarmth",
-    name: "Warmth",
-    leftLabel: "Cold",
-    rightLabel: "Warm",
-    description: "How human and inviting the visual language feels",
-    levels: ["Cold", "Neutral", "Warm"],
+    id: 'signalWarmth',
+    name: 'Warmth',
+    leftLabel: 'Cold',
+    rightLabel: 'Warm',
+    description: 'How human and inviting the visual language feels',
+    levels: ['Cold', 'Neutral', 'Warm'],
   },
   {
-    id: "signalEnergy",
-    name: "Energy",
-    leftLabel: "Calm",
-    rightLabel: "Energetic",
-    description: "How dynamic and vibrant the visual language feels",
-    levels: ["Calm", "Relaxed", "Balanced", "Dynamic", "Energetic"],
+    id: 'signalEnergy',
+    name: 'Energy',
+    leftLabel: 'Calm',
+    rightLabel: 'Energetic',
+    description: 'How dynamic and vibrant the visual language feels',
+    levels: ['Calm', 'Relaxed', 'Balanced', 'Dynamic', 'Energetic'],
   },
-];
+]
 
 // Simple stepped slider component
 function BrandSignalSlider({
   slider,
   value,
   onChange,
-  accentColor = "#9AA48C",
+  accentColor = '#9AA48C',
 }: {
-  slider: (typeof BRAND_SIGNAL_SLIDERS)[0];
-  value: number;
-  onChange: (value: number) => void;
-  accentColor?: string;
+  slider: (typeof BRAND_SIGNAL_SLIDERS)[0]
+  value: number
+  onChange: (value: number) => void
+  accentColor?: string
 }) {
-  const numSteps = slider.levels.length;
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const numSteps = slider.levels.length
+  const sliderRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Get current level index and label
   const getLevelIndex = (val: number) => {
-    const stepSize = 100 / (numSteps - 1);
-    return Math.round(val / stepSize);
-  };
+    const stepSize = 100 / (numSteps - 1)
+    return Math.round(val / stepSize)
+  }
 
-  const currentLevelIndex = getLevelIndex(value);
-  const currentLevel = slider.levels[currentLevelIndex];
+  const currentLevelIndex = getLevelIndex(value)
+  const currentLevel = slider.levels[currentLevelIndex]
 
   // Snap value to nearest step
   const snapToStep = (val: number) => {
-    const stepSize = 100 / (numSteps - 1);
-    const stepIndex = Math.round(val / stepSize);
-    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
-  };
+    const stepSize = 100 / (numSteps - 1)
+    const stepIndex = Math.round(val / stepSize)
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100)
+  }
 
   // Calculate value from mouse/touch position
   const getValueFromPosition = (clientX: number) => {
-    if (!sliderRef.current) return value;
-    const rect = sliderRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const percentage = Math.min(Math.max((x / rect.width) * 100, 0), 100);
-    return snapToStep(percentage);
-  };
+    if (!sliderRef.current) return value
+    const rect = sliderRef.current.getBoundingClientRect()
+    const x = clientX - rect.left
+    const percentage = Math.min(Math.max((x / rect.width) * 100, 0), 100)
+    return snapToStep(percentage)
+  }
 
   // Handle pointer down
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    const newValue = getValueFromPosition(e.clientX);
-    onChange(newValue);
-  };
+    e.preventDefault()
+    setIsDragging(true)
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    const newValue = getValueFromPosition(e.clientX)
+    onChange(newValue)
+  }
 
   // Handle pointer move
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const newValue = getValueFromPosition(e.clientX);
-    onChange(newValue);
-  };
+    if (!isDragging) return
+    const newValue = getValueFromPosition(e.clientX)
+    onChange(newValue)
+  }
 
   // Handle pointer up
   const handlePointerUp = () => {
-    setIsDragging(false);
-  };
+    setIsDragging(false)
+  }
 
   return (
     <div className="space-y-2">
@@ -2507,8 +2358,8 @@ function BrandSignalSlider({
           animate={{ opacity: 1, scale: 1 }}
           className="text-xs font-medium px-2.5 py-1 rounded-full text-[#9AA48C]"
           style={{
-            background: "rgba(154, 164, 140, 0.15)",
-            border: "1px solid rgba(154, 164, 140, 0.3)",
+            background: 'rgba(154, 164, 140, 0.15)',
+            border: '1px solid rgba(154, 164, 140, 0.3)',
           }}
         >
           {currentLevel}
@@ -2538,14 +2389,14 @@ function BrandSignalSlider({
           className="absolute left-0 h-1 rounded-full bg-[#9AA48C]"
           initial={false}
           animate={{ width: `${value}%` }}
-          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         />
 
         {/* Step indicators */}
         <div className="absolute inset-x-0 flex justify-between pointer-events-none">
           {slider.levels.map((_, index) => {
-            const stepPosition = (index / (numSteps - 1)) * 100;
-            const isActive = value >= stepPosition;
+            const stepPosition = (index / (numSteps - 1)) * 100
+            const isActive = value >= stepPosition
 
             return (
               <div
@@ -2553,11 +2404,11 @@ function BrandSignalSlider({
                 className="w-0.5 h-3 rounded-full transition-colors duration-150"
                 style={{
                   backgroundColor: isActive
-                    ? "rgba(154, 164, 140, 0.8)"
-                    : "rgba(255, 255, 255, 0.2)",
+                    ? 'rgba(154, 164, 140, 0.8)'
+                    : 'rgba(255, 255, 255, 0.2)',
                 }}
               />
-            );
+            )
           })}
         </div>
 
@@ -2566,39 +2417,39 @@ function BrandSignalSlider({
           className="absolute pointer-events-none"
           initial={false}
           animate={{ left: `${value}%` }}
-          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         >
           <motion.div
             className="relative rounded-full -ml-2.5 bg-[#9AA48C]"
             style={{
-              width: "20px",
-              height: "20px",
+              width: '20px',
+              height: '20px',
               boxShadow: isDragging
-                ? "0 2px 12px rgba(154, 164, 140, 0.5)"
-                : "0 2px 8px rgba(154, 164, 140, 0.3)",
+                ? '0 2px 12px rgba(154, 164, 140, 0.5)'
+                : '0 2px 8px rgba(154, 164, 140, 0.3)',
             }}
             animate={{
               scale: isDragging ? 1.2 : 1,
             }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           >
             {/* Inner dot */}
             <div
               className="absolute rounded-full"
               style={{
-                width: "6px",
-                height: "6px",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                backgroundColor: "rgba(0, 0, 0, 0.2)",
+                width: '6px',
+                height: '6px',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
               }}
             />
           </motion.div>
         </motion.div>
       </div>
     </div>
-  );
+  )
 }
 
 function FineTuneStep({
@@ -2607,54 +2458,54 @@ function FineTuneStep({
   onContinue,
   onBack,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
   // Use brand primary color or fallback to default
-  const accentColor = brandData.primaryColor || "#9AA48C";
+  const accentColor = brandData.primaryColor || '#9AA48C'
 
   // Get the number of levels for a slider by id
   const getNumLevels = (id: string): number => {
-    const slider = BRAND_SIGNAL_SLIDERS.find((s) => s.id === id);
-    return slider?.levels.length || 5;
-  };
+    const slider = BRAND_SIGNAL_SLIDERS.find((s) => s.id === id)
+    return slider?.levels.length || 5
+  }
 
   // Snap value to nearest step
   const snapToStep = (val: number, numLevels: number) => {
-    const stepSize = 100 / (numLevels - 1);
-    const stepIndex = Math.round(val / stepSize);
-    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
-  };
+    const stepSize = 100 / (numLevels - 1)
+    const stepIndex = Math.round(val / stepSize)
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100)
+  }
 
   // Initialize signal values if not present (4 signals)
   const getSignalValue = (id: string): number => {
-    const numLevels = getNumLevels(id);
-    const value = brandData[id as keyof BrandData];
-    if (typeof value === "number") {
-      return snapToStep(value, numLevels);
+    const numLevels = getNumLevels(id)
+    const value = brandData[id as keyof BrandData]
+    if (typeof value === 'number') {
+      return snapToStep(value, numLevels)
     }
     // Map from old values if available, then snap
-    let rawValue: number;
+    let rawValue: number
     switch (id) {
-      case "signalTone":
-        rawValue = (brandData.feelPlayfulSerious as number) || 50;
-        break;
-      case "signalDensity":
-        rawValue = (brandData.feelBoldMinimal as number) || 50;
-        break;
-      case "signalWarmth":
-        rawValue = 50;
-        break;
-      case "signalEnergy":
-        rawValue = 50;
-        break;
+      case 'signalTone':
+        rawValue = (brandData.feelPlayfulSerious as number) || 50
+        break
+      case 'signalDensity':
+        rawValue = (brandData.feelBoldMinimal as number) || 50
+        break
+      case 'signalWarmth':
+        rawValue = 50
+        break
+      case 'signalEnergy':
+        rawValue = 50
+        break
       default:
-        rawValue = 50;
+        rawValue = 50
     }
-    return snapToStep(rawValue, numLevels);
-  };
+    return snapToStep(rawValue, numLevels)
+  }
 
   return (
     <GlowingCard glowColor="#9AA48C" className="max-w-lg">
@@ -2677,9 +2528,7 @@ function FineTuneStep({
               <BrandSignalSlider
                 slider={slider}
                 value={getSignalValue(slider.id)}
-                onChange={(value) =>
-                  setBrandData({ ...brandData, [slider.id]: value })
-                }
+                onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
                 accentColor={accentColor}
               />
             </motion.div>
@@ -2697,7 +2546,7 @@ function FineTuneStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Save & continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -2705,7 +2554,7 @@ function FineTuneStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function CreativeFocusStep({
@@ -2715,26 +2564,26 @@ function CreativeFocusStep({
   onBack,
   isLoading,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
-  isLoading: boolean;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
+  isLoading: boolean
 }) {
   const toggleFocus = (id: string) => {
     const newFocus = brandData.creativeFocus.includes(id)
       ? brandData.creativeFocus.filter((f) => f !== id)
-      : [...brandData.creativeFocus, id];
-    setBrandData({ ...brandData, creativeFocus: newFocus });
-  };
+      : [...brandData.creativeFocus, id]
+    setBrandData({ ...brandData, creativeFocus: newFocus })
+  }
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     ads: Target,
-    "landing-pages": Layout,
+    'landing-pages': Layout,
     social: Share2,
-    "pitch-decks": Presentation,
-    "brand-guidelines": BookOpen,
-  };
+    'pitch-decks': Presentation,
+    'brand-guidelines': BookOpen,
+  }
 
   return (
     <GlowingCard glowColor="#9AA48C" className="w-full max-w-2xl">
@@ -2753,8 +2602,8 @@ function CreativeFocusStep({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {CREATIVE_FOCUS_OPTIONS.map((option) => {
-            const isSelected = brandData.creativeFocus.includes(option.id);
-            const Icon = iconMap[option.id] || Zap;
+            const isSelected = brandData.creativeFocus.includes(option.id)
+            const Icon = iconMap[option.id] || Zap
 
             return (
               <motion.button
@@ -2762,45 +2611,32 @@ function CreativeFocusStep({
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
                 className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 min-h-[72px] ${
-                  isSelected
-                    ? "bg-[#9AA48C]/20 border-[#9AA48C]/50"
-                    : "hover:bg-white/5"
+                  isSelected ? 'bg-[#9AA48C]/20 border-[#9AA48C]/50' : 'hover:bg-white/5'
                 }`}
                 style={{
                   border: isSelected
-                    ? "1px solid rgba(154, 164, 140, 0.5)"
-                    : "1px solid rgba(255, 255, 255, 0.1)",
+                    ? '1px solid rgba(154, 164, 140, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.1)',
                 }}
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    isSelected
-                      ? "bg-[#9AA48C] text-black"
-                      : "bg-white/10 text-white/50"
+                    isSelected ? 'bg-[#9AA48C] text-black' : 'bg-white/10 text-white/50'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-medium text-sm leading-tight">
-                    {option.title}
-                  </h3>
-                  <p className="text-white/40 text-xs mt-0.5 leading-tight">
-                    {option.description}
-                  </p>
+                  <h3 className="text-white font-medium text-sm leading-tight">{option.title}</h3>
+                  <p className="text-white/40 text-xs mt-0.5 leading-tight">{option.description}</p>
                 </div>
-                {isSelected && (
-                  <Check className="w-5 h-5 text-[#9AA48C] shrink-0" />
-                )}
+                {isSelected && <Check className="w-5 h-5 text-[#9AA48C] shrink-0" />}
               </motion.button>
-            );
+            )
           })}
         </div>
 
-        <motion.p
-          variants={staggerItem}
-          className="text-white/30 text-xs text-left mb-6"
-        >
+        <motion.p variants={staggerItem} className="text-white/30 text-xs text-left mb-6">
           Most teams start with 1–3.
         </motion.p>
 
@@ -2816,7 +2652,7 @@ function CreativeFocusStep({
             onClick={onContinue}
             disabled={isLoading}
             className="flex-1 py-4 rounded-xl font-medium text-sm"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -2833,32 +2669,27 @@ function CreativeFocusStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function BrandReadyStep({
   brandData,
   onComplete,
 }: {
-  brandData: BrandData;
-  onComplete: () => void;
+  brandData: BrandData
+  onComplete: () => void
 }) {
-  const accentColor = brandData.primaryColor || "#9AA48C";
+  const accentColor = brandData.primaryColor || '#9AA48C'
 
   return (
     <GlowingCard glowColor={accentColor}>
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="text-left"
-      >
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="text-left">
         <motion.div
           className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
           style={{ backgroundColor: accentColor }}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+          transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
         >
           <Check className="w-10 h-10 text-black" />
         </motion.div>
@@ -2871,8 +2702,7 @@ function BrandReadyStep({
             You&apos;re all set
           </h1>
           <p className="text-white/50 text-sm mb-8">
-            Crafted now understands your brand — and will protect it as you
-            create.
+            Crafted now understands your brand — and will protect it as you create.
           </p>
         </motion.div>
 
@@ -2880,7 +2710,7 @@ function BrandReadyStep({
           <motion.div
             variants={staggerItem}
             className="p-4 rounded-xl flex items-center gap-4"
-            style={{ background: "rgba(40, 40, 40, 0.6)" }}
+            style={{ background: 'rgba(40, 40, 40, 0.6)' }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2891,7 +2721,7 @@ function BrandReadyStep({
             <div>
               <h3 className="text-white font-medium text-sm">Your Brand DNA</h3>
               <p className="text-white/40 text-xs">
-                {brandData.name} • {brandData.industry || "Ready to go"}
+                {brandData.name} • {brandData.industry || 'Ready to go'}
               </p>
             </div>
           </motion.div>
@@ -2900,7 +2730,7 @@ function BrandReadyStep({
             <motion.div
               variants={staggerItem}
               className="p-4 rounded-xl flex items-center gap-4"
-              style={{ background: "rgba(40, 40, 40, 0.6)" }}
+              style={{ background: 'rgba(40, 40, 40, 0.6)' }}
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2912,7 +2742,7 @@ function BrandReadyStep({
                 <h3 className="text-white font-medium text-sm">Focus Areas</h3>
                 <p className="text-white/40 text-xs">
                   {brandData.creativeFocus.length} area
-                  {brandData.creativeFocus.length > 1 ? "s" : ""} selected
+                  {brandData.creativeFocus.length > 1 ? 's' : ''} selected
                 </p>
               </div>
             </motion.div>
@@ -2921,7 +2751,7 @@ function BrandReadyStep({
           <motion.div
             variants={staggerItem}
             className="p-4 rounded-xl flex items-center gap-4"
-            style={{ background: "rgba(40, 40, 40, 0.6)" }}
+            style={{ background: 'rgba(40, 40, 40, 0.6)' }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2930,12 +2760,8 @@ function BrandReadyStep({
               <Zap className="w-5 h-5" style={{ color: accentColor }} />
             </div>
             <div>
-              <h3 className="text-white font-medium text-sm">
-                Available Credits
-              </h3>
-              <p className="text-white/40 text-xs">
-                Ready to create your first asset
-              </p>
+              <h3 className="text-white font-medium text-sm">Available Credits</h3>
+              <p className="text-white/40 text-xs">Ready to create your first asset</p>
             </div>
           </motion.div>
         </div>
@@ -2944,14 +2770,14 @@ function BrandReadyStep({
           variants={staggerItem}
           onClick={onComplete}
           className="w-full py-4 rounded-xl font-medium text-sm"
-          style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+          style={{ background: '#f5f5f0', color: '#1a1a1a' }}
         >
           Create your first asset
           <ArrowRight className="w-4 h-4 inline ml-2" />
         </motion.button>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 // ============================================================================
@@ -2964,24 +2790,22 @@ function BrandIntentStep({
   onContinue,
   onBack,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>(
-    brandData.targetAudience
-      ? brandData.targetAudience.split(", ").filter(Boolean)
-      : []
-  );
+    brandData.targetAudience ? brandData.targetAudience.split(', ').filter(Boolean) : []
+  )
 
   const toggleAudience = (id: string) => {
     const newAudiences = selectedAudiences.includes(id)
       ? selectedAudiences.filter((a) => a !== id)
-      : [...selectedAudiences, id];
-    setSelectedAudiences(newAudiences);
-    setBrandData({ ...brandData, targetAudience: newAudiences.join(", ") });
-  };
+      : [...selectedAudiences, id]
+    setSelectedAudiences(newAudiences)
+    setBrandData({ ...brandData, targetAudience: newAudiences.join(', ') })
+  }
 
   return (
     <GlowingCard>
@@ -3007,8 +2831,8 @@ function BrandIntentStep({
             <div
               className="relative rounded-xl overflow-hidden"
               style={{
-                background: "rgba(40, 40, 40, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: 'rgba(40, 40, 40, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -3017,9 +2841,7 @@ function BrandIntentStep({
               <input
                 type="text"
                 value={brandData.name}
-                onChange={(e) =>
-                  setBrandData({ ...brandData, name: e.target.value })
-                }
+                onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
                 className="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none"
                 placeholder="Company or product name"
               />
@@ -3028,33 +2850,25 @@ function BrandIntentStep({
 
           {/* Product Type */}
           <motion.div variants={staggerItem} className="space-y-3">
-            <label className="text-white/70 text-sm font-medium">
-              What are you building?
-            </label>
+            <label className="text-white/70 text-sm font-medium">What are you building?</label>
             <div className="grid grid-cols-3 gap-2">
               {PRODUCT_TYPES.map((type) => (
                 <button
                   key={type.id}
-                  onClick={() =>
-                    setBrandData({ ...brandData, productType: type.id })
-                  }
+                  onClick={() => setBrandData({ ...brandData, productType: type.id })}
                   className={`p-3 rounded-xl text-center transition-all duration-200 ${
-                    brandData.productType === type.id
-                      ? "bg-[#9AA48C]/20"
-                      : "hover:bg-white/5"
+                    brandData.productType === type.id ? 'bg-[#9AA48C]/20' : 'hover:bg-white/5'
                   }`}
                   style={{
                     border:
                       brandData.productType === type.id
-                        ? "1px solid rgba(154, 164, 140, 0.5)"
-                        : "1px solid rgba(255, 255, 255, 0.08)",
+                        ? '1px solid rgba(154, 164, 140, 0.5)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
                   }}
                 >
                   <span
                     className={`text-sm font-medium ${
-                      brandData.productType === type.id
-                        ? "text-[#9AA48C]"
-                        : "text-white/80"
+                      brandData.productType === type.id ? 'text-[#9AA48C]' : 'text-white/80'
                     }`}
                   >
                     {type.label}
@@ -3066,9 +2880,7 @@ function BrandIntentStep({
 
           {/* Target Audience */}
           <motion.div variants={staggerItem} className="space-y-3">
-            <label className="text-white/70 text-sm font-medium">
-              Who is this for?
-            </label>
+            <label className="text-white/70 text-sm font-medium">Who is this for?</label>
             <div className="flex flex-wrap gap-2">
               {TARGET_AUDIENCES.map((audience) => (
                 <button
@@ -3076,13 +2888,13 @@ function BrandIntentStep({
                   onClick={() => toggleAudience(audience.id)}
                   className={`px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                     selectedAudiences.includes(audience.id)
-                      ? "bg-[#9AA48C]/20 text-[#9AA48C]"
-                      : "text-white/60 hover:bg-white/5 hover:text-white/80"
+                      ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/80'
                   }`}
                   style={{
                     border: selectedAudiences.includes(audience.id)
-                      ? "1px solid rgba(154, 164, 140, 0.5)"
-                      : "1px solid rgba(255, 255, 255, 0.08)",
+                      ? '1px solid rgba(154, 164, 140, 0.5)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
                   }}
                 >
                   {audience.label}
@@ -3103,7 +2915,7 @@ function BrandIntentStep({
           <button
             onClick={onContinue}
             className="flex-1 py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3111,7 +2923,7 @@ function BrandIntentStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function BrandPersonalityStep({
@@ -3120,51 +2932,51 @@ function BrandPersonalityStep({
   onContinue,
   onBack,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
   // Get the number of levels for a slider by id
   const getNumLevels = (id: string): number => {
-    const slider = BRAND_SIGNAL_SLIDERS.find((s) => s.id === id);
-    return slider?.levels.length || 5;
-  };
+    const slider = BRAND_SIGNAL_SLIDERS.find((s) => s.id === id)
+    return slider?.levels.length || 5
+  }
 
   // Snap value to nearest step
   const snapToStep = (val: number, numLevels: number) => {
-    const stepSize = 100 / (numLevels - 1);
-    const stepIndex = Math.round(val / stepSize);
-    return Math.min(Math.max(stepIndex * stepSize, 0), 100);
-  };
+    const stepSize = 100 / (numLevels - 1)
+    const stepIndex = Math.round(val / stepSize)
+    return Math.min(Math.max(stepIndex * stepSize, 0), 100)
+  }
 
   // Get signal value with proper snapping
   const getSignalValue = (id: string): number => {
-    const numLevels = getNumLevels(id);
-    const value = brandData[id as keyof BrandData];
-    if (typeof value === "number") {
-      return snapToStep(value, numLevels);
+    const numLevels = getNumLevels(id)
+    const value = brandData[id as keyof BrandData]
+    if (typeof value === 'number') {
+      return snapToStep(value, numLevels)
     }
     // Map from old values if available
-    let rawValue: number;
+    let rawValue: number
     switch (id) {
-      case "signalTone":
-        rawValue = (brandData.feelPlayfulSerious as number) || 50;
-        break;
-      case "signalDensity":
-        rawValue = (brandData.feelBoldMinimal as number) || 50;
-        break;
-      case "signalWarmth":
-        rawValue = 50;
-        break;
-      case "signalEnergy":
-        rawValue = 50;
-        break;
+      case 'signalTone':
+        rawValue = (brandData.feelPlayfulSerious as number) || 50
+        break
+      case 'signalDensity':
+        rawValue = (brandData.feelBoldMinimal as number) || 50
+        break
+      case 'signalWarmth':
+        rawValue = 50
+        break
+      case 'signalEnergy':
+        rawValue = 50
+        break
       default:
-        rawValue = 50;
+        rawValue = 50
     }
-    return snapToStep(rawValue, numLevels);
-  };
+    return snapToStep(rawValue, numLevels)
+  }
 
   return (
     <GlowingCard glowColor="#9AA48C" className="max-w-lg">
@@ -3187,9 +2999,7 @@ function BrandPersonalityStep({
               <BrandSignalSlider
                 slider={slider}
                 value={getSignalValue(slider.id)}
-                onChange={(value) =>
-                  setBrandData({ ...brandData, [slider.id]: value })
-                }
+                onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
                 accentColor="#9AA48C"
               />
             </motion.div>
@@ -3207,7 +3017,7 @@ function BrandPersonalityStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3215,7 +3025,7 @@ function BrandPersonalityStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function VisualInstinctStep({
@@ -3224,50 +3034,47 @@ function VisualInstinctStep({
   onContinue,
   onBack,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
-  const [currentPairIndex, setCurrentPairIndex] = useState(0);
-  const currentPair = VISUAL_COMPARISON_PAIRS[currentPairIndex];
+  const [currentPairIndex, setCurrentPairIndex] = useState(0)
+  const currentPair = VISUAL_COMPARISON_PAIRS[currentPairIndex]
 
-  const handleChoice = (choice: "A" | "B") => {
+  const handleChoice = (choice: 'A' | 'B') => {
     const newPreference: VisualPreference = {
       id: currentPair.id,
       choice,
       dimension: currentPair.dimension,
-    };
+    }
 
-    const existingPrefs = brandData.visualPreferences || [];
-    const updatedPrefs = [
-      ...existingPrefs.filter((p) => p.id !== currentPair.id),
-      newPreference,
-    ];
-    setBrandData({ ...brandData, visualPreferences: updatedPrefs });
+    const existingPrefs = brandData.visualPreferences || []
+    const updatedPrefs = [...existingPrefs.filter((p) => p.id !== currentPair.id), newPreference]
+    setBrandData({ ...brandData, visualPreferences: updatedPrefs })
 
     if (currentPairIndex < VISUAL_COMPARISON_PAIRS.length - 1) {
-      setCurrentPairIndex(currentPairIndex + 1);
+      setCurrentPairIndex(currentPairIndex + 1)
     } else {
-      onContinue();
+      onContinue()
     }
-  };
+  }
 
   const getVisualComponent = (visual: string) => {
     switch (visual) {
-      case "light":
+      case 'light':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
             <div className="w-14 h-14 rounded-full bg-gray-200" />
           </div>
-        );
-      case "dark":
+        )
+      case 'dark':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
             <div className="w-14 h-14 rounded-full bg-gray-800" />
           </div>
-        );
-      case "text-heavy":
+        )
+      case 'text-heavy':
         return (
           <div className="w-full h-28 rounded-xl bg-white p-4 flex flex-col justify-center gap-1.5">
             <div className="h-2.5 bg-gray-800 rounded w-3/4" />
@@ -3275,35 +3082,35 @@ function VisualInstinctStep({
             <div className="h-1.5 bg-gray-400 rounded w-2/3" />
             <div className="h-1.5 bg-gray-400 rounded w-5/6" />
           </div>
-        );
-      case "visual":
+        )
+      case 'visual':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-[#9AA48C] to-[#7A8575] flex items-center justify-center">
             <ImageIcon className="w-10 h-10 text-white/80" />
           </div>
-        );
-      case "structured":
+        )
+      case 'structured':
         return (
           <div className="w-full h-28 rounded-xl bg-white p-2.5 grid grid-cols-3 gap-1.5">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-gray-200 rounded" />
             ))}
           </div>
-        );
-      case "expressive":
+        )
+      case 'expressive':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 relative overflow-hidden">
             <div className="absolute top-2 left-4 w-6 h-6 rounded-full bg-white/30 -rotate-12" />
             <div className="absolute bottom-3 right-2 w-10 h-10 rounded-full bg-white/20 rotate-45" />
           </div>
-        );
-      case "calm":
+        )
+      case 'calm':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
             <div className="w-16 h-1 bg-blue-300 rounded" />
           </div>
-        );
-      case "energetic":
+        )
+      case 'energetic':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center gap-1">
             {[...Array(5)].map((_, i) => (
@@ -3314,42 +3121,39 @@ function VisualInstinctStep({
               />
             ))}
           </div>
-        );
-      case "minimal":
+        )
+      case 'minimal':
         return (
           <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-gray-900 rounded-full" />
           </div>
-        );
-      case "dense":
+        )
+      case 'dense':
         return (
           <div className="w-full h-28 rounded-xl bg-gray-900 p-2 grid grid-cols-4 gap-1">
             {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-gradient-to-br from-gray-700 to-gray-800 rounded"
-              />
+              <div key={i} className="bg-gradient-to-br from-gray-700 to-gray-800 rounded" />
             ))}
           </div>
-        );
-      case "geometric":
+        )
+      case 'geometric':
         return (
           <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center gap-2">
             <div className="w-8 h-8 bg-gray-900" />
             <div className="w-8 h-8 bg-gray-900 rotate-45" />
             <div className="w-0 h-0 border-l-[16px] border-r-[16px] border-b-[28px] border-l-transparent border-r-transparent border-b-gray-900" />
           </div>
-        );
-      case "organic":
+        )
+      case 'organic':
         return (
           <div className="w-full h-28 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
             <div className="w-14 h-10 bg-green-400 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]" />
           </div>
-        );
+        )
       default:
-        return <div className="w-full h-28 rounded-xl bg-gray-200" />;
+        return <div className="w-full h-28 rounded-xl bg-gray-200" />
     }
-  };
+  }
 
   return (
     <GlowingCard>
@@ -3361,9 +3165,7 @@ function VisualInstinctStep({
           >
             What feels right to you?
           </h1>
-          <p className="text-white/50 text-sm">
-            Go with your gut. There are no wrong answers.
-          </p>
+          <p className="text-white/50 text-sm">Go with your gut. There are no wrong answers.</p>
         </motion.div>
 
         {/* Progress */}
@@ -3373,10 +3175,10 @@ function VisualInstinctStep({
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                 i < currentPairIndex
-                  ? "bg-[#9AA48C]"
+                  ? 'bg-[#9AA48C]'
                   : i === currentPairIndex
-                  ? "bg-white/40"
-                  : "bg-white/10"
+                    ? 'bg-white/40'
+                    : 'bg-white/10'
               }`}
             />
           ))}
@@ -3392,40 +3194,32 @@ function VisualInstinctStep({
             className="grid grid-cols-2 gap-4"
           >
             <button
-              onClick={() => handleChoice("A")}
+              onClick={() => handleChoice('A')}
               className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
               style={{
-                background: "rgba(40, 40, 40, 0.4)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: 'rgba(40, 40, 40, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               {getVisualComponent(currentPair.optionA.visual)}
               <div className="mt-3 text-left">
-                <h3 className="text-white font-medium text-sm">
-                  {currentPair.optionA.label}
-                </h3>
-                <p className="text-white/40 text-xs">
-                  {currentPair.optionA.description}
-                </p>
+                <h3 className="text-white font-medium text-sm">{currentPair.optionA.label}</h3>
+                <p className="text-white/40 text-xs">{currentPair.optionA.description}</p>
               </div>
             </button>
 
             <button
-              onClick={() => handleChoice("B")}
+              onClick={() => handleChoice('B')}
               className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
               style={{
-                background: "rgba(40, 40, 40, 0.4)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: 'rgba(40, 40, 40, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               {getVisualComponent(currentPair.optionB.visual)}
               <div className="mt-3 text-left">
-                <h3 className="text-white font-medium text-sm">
-                  {currentPair.optionB.label}
-                </h3>
-                <p className="text-white/40 text-xs">
-                  {currentPair.optionB.description}
-                </p>
+                <h3 className="text-white font-medium text-sm">{currentPair.optionB.label}</h3>
+                <p className="text-white/40 text-xs">{currentPair.optionB.description}</p>
               </div>
             </button>
           </motion.div>
@@ -3442,7 +3236,7 @@ function VisualInstinctStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Skip to directions
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3450,7 +3244,7 @@ function VisualInstinctStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function ToneOfVoiceStep({
@@ -3459,10 +3253,10 @@ function ToneOfVoiceStep({
   onContinue,
   onBack,
 }: {
-  brandData: BrandData;
-  setBrandData: (data: BrandData) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  brandData: BrandData
+  setBrandData: (data: BrandData) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
   const examples = [
     "We're fast and technical",
@@ -3470,7 +3264,7 @@ function ToneOfVoiceStep({
     "We're modern but serious",
     "We're bold and creative",
     "We're friendly and approachable",
-  ];
+  ]
 
   return (
     <GlowingCard>
@@ -3492,15 +3286,13 @@ function ToneOfVoiceStep({
             variants={staggerItem}
             className="relative rounded-xl overflow-hidden"
             style={{
-              background: "rgba(40, 40, 40, 0.6)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: 'rgba(40, 40, 40, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
             <textarea
-              value={brandData.brandPositioning || ""}
-              onChange={(e) =>
-                setBrandData({ ...brandData, brandPositioning: e.target.value })
-              }
+              value={brandData.brandPositioning || ''}
+              onChange={(e) => setBrandData({ ...brandData, brandPositioning: e.target.value })}
               className="w-full bg-transparent py-4 px-4 text-white placeholder:text-white/30 focus:outline-none min-h-[120px] resize-none"
               placeholder="Describe your brand in a sentence..."
             />
@@ -3512,11 +3304,9 @@ function ToneOfVoiceStep({
               {examples.map((example) => (
                 <button
                   key={example}
-                  onClick={() =>
-                    setBrandData({ ...brandData, brandPositioning: example })
-                  }
+                  onClick={() => setBrandData({ ...brandData, brandPositioning: example })}
                   className="px-3 py-1.5 rounded-full text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                  style={{ border: "1px solid rgba(255, 255, 255, 0.1)" }}
+                  style={{ border: '1px solid rgba(255, 255, 255, 0.1)' }}
                 >
                   {example}
                 </button>
@@ -3536,7 +3326,7 @@ function ToneOfVoiceStep({
           <button
             onClick={onContinue}
             className="flex-1 py-4 rounded-xl font-medium text-sm"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Generate Directions
             <Sparkles className="w-4 h-4 inline ml-2" />
@@ -3552,7 +3342,7 @@ function ToneOfVoiceStep({
         </motion.button>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 function AIDirectionsStep({
@@ -3564,13 +3354,13 @@ function AIDirectionsStep({
   onBack,
   isGenerating,
 }: {
-  brandData: BrandData;
-  directions: BrandDirection[];
-  selectedDirection: BrandDirection | null;
-  onSelectDirection: (direction: BrandDirection) => void;
-  onContinue: () => void;
-  onBack: () => void;
-  isGenerating: boolean;
+  brandData: BrandData
+  directions: BrandDirection[]
+  selectedDirection: BrandDirection | null
+  onSelectDirection: (direction: BrandDirection) => void
+  onContinue: () => void
+  onBack: () => void
+  isGenerating: boolean
 }) {
   if (isGenerating) {
     return (
@@ -3578,7 +3368,7 @@ function AIDirectionsStep({
         <div className="text-left">
           <motion.div
             className="w-16 h-16 rounded-full mb-6 flex items-center justify-center"
-            style={{ background: "rgba(154, 164, 140, 0.2)" }}
+            style={{ background: 'rgba(154, 164, 140, 0.2)' }}
             animate={{
               scale: [1, 1.1, 1],
               opacity: [0.8, 1, 0.8],
@@ -3599,7 +3389,7 @@ function AIDirectionsStep({
           </p>
         </div>
       </GlowingCard>
-    );
+    )
   }
 
   return (
@@ -3619,33 +3409,29 @@ function AIDirectionsStep({
 
         <div className="space-y-6 mb-8">
           {directions.map((direction) => {
-            const isSelected = selectedDirection?.id === direction.id;
+            const isSelected = selectedDirection?.id === direction.id
             const getFontFamilyCSS = (fontName: string) => {
-              const font = FONT_OPTIONS.find((f) => f.value === fontName);
-              return font?.family || `'${fontName}', sans-serif`;
-            };
+              const font = FONT_OPTIONS.find((f) => f.value === fontName)
+              return font?.family || `'${fontName}', sans-serif`
+            }
             return (
               <motion.button
                 key={direction.id}
                 variants={staggerItem}
                 onClick={() => onSelectDirection(direction)}
                 className={`w-full rounded-2xl text-left transition-all overflow-hidden ${
-                  isSelected
-                    ? "ring-2 ring-[#9AA48C]"
-                    : "hover:ring-1 hover:ring-white/20"
+                  isSelected ? 'ring-2 ring-[#9AA48C]' : 'hover:ring-1 hover:ring-white/20'
                 }`}
                 style={{
-                  background: "rgba(20, 20, 20, 0.8)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: 'rgba(20, 20, 20, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
                 {/* Header with name and check */}
                 <div className="p-5 pb-4 flex items-center justify-between border-b border-white/5">
                   <div>
                     <p className="text-white/30 text-xs mb-1">Direction</p>
-                    <h3 className="text-white text-lg font-medium">
-                      {direction.name}
-                    </h3>
+                    <h3 className="text-white text-lg font-medium">{direction.name}</h3>
                   </div>
                   {isSelected && (
                     <div className="w-8 h-8 rounded-full bg-[#9AA48C]/20 flex items-center justify-center">
@@ -3667,19 +3453,19 @@ function AIDirectionsStep({
                           style={{
                             backgroundColor: color,
                             boxShadow:
-                              color === "#ffffff" ||
-                              color === "#fafaf9" ||
-                              color === "#f5f5f5" ||
-                              color === "#f5f5f4"
-                                ? "inset 0 0 0 1px rgba(0,0,0,0.08)"
+                              color === '#ffffff' ||
+                              color === '#fafaf9' ||
+                              color === '#f5f5f5' ||
+                              color === '#f5f5f4'
+                                ? 'inset 0 0 0 1px rgba(0,0,0,0.08)'
                                 : undefined,
                           }}
                         />
                         <p className="text-white/60 text-[10px] leading-tight mb-0.5 truncate">
-                          {direction.colorNames?.[i] || "Color"}
+                          {direction.colorNames?.[i] || 'Color'}
                         </p>
                         <p className="text-white/30 text-[9px] font-mono">
-                          {color.replace("#", "").toLowerCase()}
+                          {color.replace('#', '').toLowerCase()}
                         </p>
                       </div>
                     ))}
@@ -3702,9 +3488,7 @@ function AIDirectionsStep({
                       >
                         Aa
                       </div>
-                      <p className="text-white/50 text-xs">
-                        {direction.primaryFont}
-                      </p>
+                      <p className="text-white/50 text-xs">{direction.primaryFont}</p>
                     </div>
                     {/* Secondary Font */}
                     <div className="flex-1">
@@ -3716,18 +3500,14 @@ function AIDirectionsStep({
                       >
                         Aa
                       </div>
-                      <p className="text-white/50 text-xs">
-                        {direction.secondaryFont}
-                      </p>
+                      <p className="text-white/50 text-xs">{direction.secondaryFont}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Description & Keywords */}
                 <div className="p-5">
-                  <p className="text-white/50 text-sm mb-4">
-                    {direction.narrative}
-                  </p>
+                  <p className="text-white/50 text-sm mb-4">{direction.narrative}</p>
                   <div className="flex flex-wrap gap-2">
                     {direction.moodKeywords.map((keyword) => (
                       <span
@@ -3740,7 +3520,7 @@ function AIDirectionsStep({
                   </div>
                 </div>
               </motion.button>
-            );
+            )
           })}
         </div>
 
@@ -3756,7 +3536,7 @@ function AIDirectionsStep({
             onClick={onContinue}
             disabled={!selectedDirection}
             className="flex-1 py-3 rounded-xl font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            style={{ background: "#f5f5f0", color: "#1a1a1a" }}
+            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3764,7 +3544,7 @@ function AIDirectionsStep({
         </motion.div>
       </motion.div>
     </GlowingCard>
-  );
+  )
 }
 
 // ============================================================================
@@ -3772,157 +3552,142 @@ function AIDirectionsStep({
 // ============================================================================
 
 function OnboardingContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const portal = useSubdomain();
-  const { data: session, isPending, refetch: refetchSession } = useSession();
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const portal = useSubdomain()
+  const { data: session, isPending, refetch: refetchSession } = useSession()
 
   // Restore state from sessionStorage on mount
   const getInitialState = useCallback(() => {
-    if (typeof window === "undefined")
-      return { route: null, step: "welcome" as OnboardingStep };
+    if (typeof window === 'undefined') return { route: null, step: 'welcome' as OnboardingStep }
     try {
-      const saved = sessionStorage.getItem("onboarding-state");
+      const saved = sessionStorage.getItem('onboarding-state')
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(saved)
         return {
           route: parsed.route || null,
-          step: parsed.step || "welcome",
-        };
+          step: parsed.step || 'welcome',
+        }
       }
     } catch {
       // Ignore parse errors
     }
-    return { route: null, step: "welcome" as OnboardingStep };
-  }, []);
+    return { route: null, step: 'welcome' as OnboardingStep }
+  }, [])
 
-  const initialState = getInitialState();
-  const [route, setRoute] = useState<OnboardingRoute | null>(
-    initialState.route
-  );
-  const [step, setStep] = useState<OnboardingStep>(initialState.step);
-  const [brandData, setBrandData] = useState<BrandData>(defaultBrandData);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [brandDirections, setBrandDirections] = useState<BrandDirection[]>([]);
-  const [selectedDirection, setSelectedDirection] =
-    useState<BrandDirection | null>(null);
-  const [isGeneratingDirections, setIsGeneratingDirections] = useState(false);
-  const [showingCompletionScreen, setShowingCompletionScreen] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const initialState = getInitialState()
+  const [route, setRoute] = useState<OnboardingRoute | null>(initialState.route)
+  const [step, setStep] = useState<OnboardingStep>(initialState.step)
+  const [brandData, setBrandData] = useState<BrandData>(defaultBrandData)
+  const [websiteUrl, setWebsiteUrl] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [scanProgress, setScanProgress] = useState(0)
+  const [brandDirections, setBrandDirections] = useState<BrandDirection[]>([])
+  const [selectedDirection, setSelectedDirection] = useState<BrandDirection | null>(null)
+  const [isGeneratingDirections, setIsGeneratingDirections] = useState(false)
+  const [showingCompletionScreen, setShowingCompletionScreen] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
 
   // Save state to sessionStorage when it changes
   useEffect(() => {
-    if (typeof window !== "undefined" && step !== "welcome") {
-      sessionStorage.setItem(
-        "onboarding-state",
-        JSON.stringify({ route, step })
-      );
+    if (typeof window !== 'undefined' && step !== 'welcome') {
+      sessionStorage.setItem('onboarding-state', JSON.stringify({ route, step }))
     }
-  }, [route, step]);
+  }, [route, step])
 
   // Clear sessionStorage when onboarding is completed
   const clearOnboardingState = useCallback(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("onboarding-state");
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('onboarding-state')
     }
-  }, []);
+  }, [])
 
   const scanningTexts = [
-    "Studying colors and type",
-    "Reading tone and language",
-    "Noticing layout patterns",
-    "Learning your visual style",
-  ];
+    'Studying colors and type',
+    'Reading tone and language',
+    'Noticing layout patterns',
+    'Learning your visual style',
+  ]
 
   // Compute sphere colors based on brand data for steps after brand extraction
   // Must be defined here before any early returns to follow Rules of Hooks
   const brandColorSteps: OnboardingStep[] = [
-    "brand-dna-reveal",
-    "fine-tune",
-    "creative-focus",
-    "brand-ready",
-  ];
+    'brand-dna-reveal',
+    'fine-tune',
+    'creative-focus',
+    'brand-ready',
+  ]
   const sphereColors = useMemo((): [string, string, string] | undefined => {
     if (brandColorSteps.includes(step)) {
       const colors = [
         brandData.primaryColor,
         brandData.secondaryColor,
         brandData.accentColor,
-      ].filter(Boolean);
+      ].filter(Boolean)
       if (colors.length >= 2) {
         return [
-          colors[0] || "#3b82f6",
-          colors[1] || colors[0] || "#8b5cf6",
-          colors[2] || colors[1] || colors[0] || "#f59e0b",
-        ] as [string, string, string];
+          colors[0] || '#3b82f6',
+          colors[1] || colors[0] || '#8b5cf6',
+          colors[2] || colors[1] || colors[0] || '#f59e0b',
+        ] as [string, string, string]
       }
     }
-    return undefined;
-  }, [
-    step,
-    brandData.primaryColor,
-    brandData.secondaryColor,
-    brandData.accentColor,
-  ]);
+    return undefined
+  }, [step, brandData.primaryColor, brandData.secondaryColor, brandData.accentColor])
 
   // Handle redirects
   useEffect(() => {
     if (!isPending && !session) {
-      router.push("/login");
-      return;
+      router.push('/login')
+      return
     }
 
     // Skip redirect if we're intentionally showing the completion screen
     if (showingCompletionScreen) {
-      return;
+      return
     }
 
-    const user = session?.user as
-      | { onboardingCompleted?: boolean; role?: string }
-      | undefined;
+    const user = session?.user as { onboardingCompleted?: boolean; role?: string } | undefined
     if (user?.onboardingCompleted) {
-      router.push("/dashboard");
+      router.push('/dashboard')
     }
-  }, [session, isPending, router, showingCompletionScreen]);
+  }, [session, isPending, router, showingCompletionScreen])
 
   // Brand extraction
   const handleBrandExtraction = async () => {
-    if (!websiteUrl.trim()) return;
+    if (!websiteUrl.trim()) return
 
-    setStep("scanning");
-    setIsLoading(true);
-    setScanProgress(0);
+    setStep('scanning')
+    setIsLoading(true)
+    setScanProgress(0)
 
     // Animate progress
     const progressInterval = setInterval(() => {
       setScanProgress((prev) => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 15;
-      });
-    }, 500);
+        if (prev >= 90) return prev
+        return prev + Math.random() * 15
+      })
+    }, 500)
 
     try {
       if (websiteUrl.trim()) {
-        const response = await fetch("/api/brand/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/brand/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ websiteUrl }),
-        });
+        })
 
-        const result = await response.json();
+        const result = await response.json()
 
         if (!response.ok) {
           // API returned an error - show error message and go back
-          clearInterval(progressInterval);
+          clearInterval(progressInterval)
           const errorMessage =
-            result.error ||
-            "Failed to extract brand information from this website.";
-          toast.error(errorMessage);
-          setStep("brand-input");
-          setIsLoading(false);
-          return;
+            result.error || 'Failed to extract brand information from this website.'
+          toast.error(errorMessage)
+          setStep('brand-input')
+          setIsLoading(false)
+          return
         }
 
         if (result.data) {
@@ -3930,207 +3695,186 @@ function OnboardingContent() {
             ...brandData,
             ...result.data,
             website: websiteUrl,
-          });
+          })
         }
       }
 
-      clearInterval(progressInterval);
-      setScanProgress(100);
+      clearInterval(progressInterval)
+      setScanProgress(100)
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setStep("brand-dna-reveal");
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setStep('brand-dna-reveal')
     } catch (error) {
-      console.error("Extraction error:", error);
-      toast.error("Failed to extract brand. Please try again.");
-      setStep("brand-input");
+      console.error('Extraction error:', error)
+      toast.error('Failed to extract brand. Please try again.')
+      setStep('brand-input')
     } finally {
-      clearInterval(progressInterval);
-      setIsLoading(false);
+      clearInterval(progressInterval)
+      setIsLoading(false)
     }
-  };
+  }
 
   // Generate brand directions for Route B
   const generateBrandDirections = useCallback(async () => {
-    setIsGeneratingDirections(true);
-    setStep("ai-directions");
+    setIsGeneratingDirections(true)
+    setStep('ai-directions')
 
     // Simulate AI generation - in production, call your AI endpoint
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Generate directions based on user preferences
     const directions: BrandDirection[] = [
       {
-        id: "1",
-        name: "Modern Confidence",
+        id: '1',
+        name: 'Modern Confidence',
         narrative: `A confident, forward-thinking identity designed for ${
-          brandData.targetAudience || "your audience"
+          brandData.targetAudience || 'your audience'
         } who value clarity and precision.`,
-        colorPalette: ["#f5f5f5", "#3b82f6", "#1a1a1a", "#64748b", "#0ea5e9"],
-        colorNames: [
-          "Cloud White",
-          "Electric Blue",
-          "Midnight",
-          "Steel Gray",
-          "Sky Blue",
-        ],
-        typographyStyle: "modern",
-        primaryFont: "Inter",
-        secondaryFont: "DM Sans",
-        visualStyle: "Clean, geometric, with bold accents",
-        moodKeywords: ["Professional", "Trustworthy", "Modern", "Clean"],
+        colorPalette: ['#f5f5f5', '#3b82f6', '#1a1a1a', '#64748b', '#0ea5e9'],
+        colorNames: ['Cloud White', 'Electric Blue', 'Midnight', 'Steel Gray', 'Sky Blue'],
+        typographyStyle: 'modern',
+        primaryFont: 'Inter',
+        secondaryFont: 'DM Sans',
+        visualStyle: 'Clean, geometric, with bold accents',
+        moodKeywords: ['Professional', 'Trustworthy', 'Modern', 'Clean'],
       },
       {
-        id: "2",
-        name: "Warm Innovation",
+        id: '2',
+        name: 'Warm Innovation',
         narrative:
-          "An approachable feel that balances warmth with innovation. Perfect for building genuine connections.",
-        colorPalette: ["#c8d69b", "#f6e6a5", "#3971b8", "#fbfcee", "#343b1b"],
-        colorNames: [
-          "Tea Green",
-          "Vanilla",
-          "Celtic Blue",
-          "Ivory",
-          "Dark Brown",
-        ],
-        typographyStyle: "bold",
-        primaryFont: "Poppins",
-        secondaryFont: "Lato",
-        visualStyle: "Rounded, warm, inviting",
-        moodKeywords: ["Friendly", "Innovative", "Approachable", "Dynamic"],
+          'An approachable feel that balances warmth with innovation. Perfect for building genuine connections.',
+        colorPalette: ['#c8d69b', '#f6e6a5', '#3971b8', '#fbfcee', '#343b1b'],
+        colorNames: ['Tea Green', 'Vanilla', 'Celtic Blue', 'Ivory', 'Dark Brown'],
+        typographyStyle: 'bold',
+        primaryFont: 'Poppins',
+        secondaryFont: 'Lato',
+        visualStyle: 'Rounded, warm, inviting',
+        moodKeywords: ['Friendly', 'Innovative', 'Approachable', 'Dynamic'],
       },
       {
-        id: "3",
-        name: "Refined Elegance",
+        id: '3',
+        name: 'Refined Elegance',
         narrative:
-          "Sophisticated and premium, communicating quality and meticulous attention to detail.",
-        colorPalette: ["#fafaf9", "#a78bfa", "#18181b", "#78716c", "#e4e4e7"],
-        colorNames: [
-          "Pearl White",
-          "Soft Violet",
-          "Onyx",
-          "Warm Stone",
-          "Silver Mist",
-        ],
-        typographyStyle: "elegant",
-        primaryFont: "Cormorant Garamond",
-        secondaryFont: "Outfit",
-        visualStyle: "Minimal, luxurious, refined",
-        moodKeywords: ["Premium", "Elegant", "Sophisticated", "Quality"],
+          'Sophisticated and premium, communicating quality and meticulous attention to detail.',
+        colorPalette: ['#fafaf9', '#a78bfa', '#18181b', '#78716c', '#e4e4e7'],
+        colorNames: ['Pearl White', 'Soft Violet', 'Onyx', 'Warm Stone', 'Silver Mist'],
+        typographyStyle: 'elegant',
+        primaryFont: 'Cormorant Garamond',
+        secondaryFont: 'Outfit',
+        visualStyle: 'Minimal, luxurious, refined',
+        moodKeywords: ['Premium', 'Elegant', 'Sophisticated', 'Quality'],
       },
-    ];
+    ]
 
-    setBrandDirections(directions);
-    setIsGeneratingDirections(false);
-  }, [brandData.targetAudience]);
+    setBrandDirections(directions)
+    setIsGeneratingDirections(false)
+  }, [brandData.targetAudience])
 
   // Save onboarding data
   const handleSaveOnboarding = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: "client",
+          type: 'client',
           data: {
             brand: brandData,
             hasWebsite: !!websiteUrl.trim(),
           },
         }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || "Failed to save onboarding";
-        console.error("Onboarding API error:", errorMessage, errorData);
-        throw new Error(errorMessage);
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Failed to save onboarding'
+        console.error('Onboarding API error:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
 
       // Set flag before refetching to prevent auto-redirect
-      setShowingCompletionScreen(true);
-      await refetchSession();
+      setShowingCompletionScreen(true)
+      await refetchSession()
 
       // Clear state and redirect to dashboard
-      clearOnboardingState();
-      setIsExiting(true);
+      clearOnboardingState()
+      setIsExiting(true)
       setTimeout(() => {
-        router.push("/dashboard");
-      }, 500);
+        router.push('/dashboard')
+      }, 500)
     } catch (error) {
-      console.error("Save error:", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to save. Please try again.";
-      toast.error(message);
+      console.error('Save error:', error)
+      const message = error instanceof Error ? error.message : 'Failed to save. Please try again.'
+      toast.error(message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleComplete = () => {
-    clearOnboardingState();
-    setIsExiting(true);
+    clearOnboardingState()
+    setIsExiting(true)
     // Wait for exit animation to complete before navigating
     setTimeout(() => {
-      router.push("/dashboard");
-    }, 500);
-  };
+      router.push('/dashboard')
+    }, 500)
+  }
 
   // Route selection handler
   const handleRouteSelect = (selectedRoute: OnboardingRoute) => {
-    setRoute(selectedRoute);
-    if (selectedRoute === "existing") {
-      setStep("brand-input");
+    setRoute(selectedRoute)
+    if (selectedRoute === 'existing') {
+      setStep('brand-input')
     } else {
-      setStep("brand-intent");
+      setStep('brand-intent')
     }
-  };
+  }
 
   if (isPending) {
     return (
       <div
         className="flex items-center justify-center min-h-screen"
-        style={{ backgroundColor: "#0a0a0a" }}
+        style={{ backgroundColor: '#0a0a0a' }}
       >
         <LoadingSpinner size="lg" />
       </div>
-    );
+    )
   }
 
   if (!session) {
-    return null;
+    return null
   }
 
   // Check if this is freelancer onboarding - check both query param AND subdomain
   // This ensures artists on artist.localhost always see the freelancer flow
   const isFreelancerOnboarding =
-    searchParams.get("type") === "freelancer" || portal.type === "artist";
+    searchParams.get('type') === 'freelancer' || portal.type === 'artist'
 
   if (isFreelancerOnboarding) {
     return (
       <FreelancerOnboarding
         onComplete={() => {
-          router.push("/portal");
+          router.push('/portal')
         }}
       />
-    );
+    )
   }
 
-  const userEmail = session.user?.email || undefined;
-  const currentSteps = route === "existing" ? ROUTE_A_STEPS : ROUTE_B_STEPS;
+  const userEmail = session.user?.email || undefined
+  const currentSteps = route === 'existing' ? ROUTE_A_STEPS : ROUTE_B_STEPS
 
   return (
     <motion.div
       className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden"
       style={{
         fontFamily: "'Satoshi', sans-serif",
-        backgroundColor: "#0a0a0a",
+        backgroundColor: '#0a0a0a',
       }}
       initial={{ opacity: 1 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
+      transition={{ duration: 0.5, ease: 'easeInOut' }}
     >
       {/* Infinite Grid Background - uses brand colors on brand-dna-reveal step */}
       <InfiniteGrid
@@ -4148,7 +3892,7 @@ function OnboardingContent() {
 
       <main className="relative z-10 px-4 sm:px-6 py-20 sm:py-16 mx-auto lg:mx-0 lg:ml-[10%] w-full max-w-2xl">
         {/* Progress indicator for non-welcome steps */}
-        {step !== "welcome" && step !== "scanning" && step !== "complete" && (
+        {step !== 'welcome' && step !== 'scanning' && step !== 'complete' && (
           <div className="mb-6">
             <ProgressIndicator steps={currentSteps} currentStep={step} />
           </div>
@@ -4156,7 +3900,7 @@ function OnboardingContent() {
 
         <AnimatePresence mode="wait">
           {/* Welcome Screen */}
-          {step === "welcome" && (
+          {step === 'welcome' && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0 }}
@@ -4168,7 +3912,7 @@ function OnboardingContent() {
           )}
 
           {/* Route A Steps */}
-          {step === "brand-input" && (
+          {step === 'brand-input' && (
             <motion.div
               key="brand-input"
               initial={{ opacity: 0, y: 20 }}
@@ -4184,21 +3928,18 @@ function OnboardingContent() {
             </motion.div>
           )}
 
-          {step === "scanning" && (
+          {step === 'scanning' && (
             <motion.div
               key="scanning"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <ScanningStep
-                progress={scanProgress}
-                scanningTexts={scanningTexts}
-              />
+              <ScanningStep progress={scanProgress} scanningTexts={scanningTexts} />
             </motion.div>
           )}
 
-          {step === "brand-dna-reveal" && (
+          {step === 'brand-dna-reveal' && (
             <motion.div
               key="brand-dna-reveal"
               initial={{ opacity: 0, y: 20 }}
@@ -4208,14 +3949,14 @@ function OnboardingContent() {
               <BrandDNARevealStep
                 brandData={brandData}
                 setBrandData={setBrandData}
-                onAdjust={(field) => console.log("Adjust:", field)}
-                onContinue={() => setStep("fine-tune")}
-                onBack={() => setStep("brand-input")}
+                onAdjust={(field) => console.log('Adjust:', field)}
+                onContinue={() => setStep('fine-tune')}
+                onBack={() => setStep('brand-input')}
               />
             </motion.div>
           )}
 
-          {step === "fine-tune" && (
+          {step === 'fine-tune' && (
             <motion.div
               key="fine-tune"
               initial={{ opacity: 0, y: 20 }}
@@ -4225,17 +3966,15 @@ function OnboardingContent() {
               <FineTuneStep
                 brandData={brandData}
                 setBrandData={setBrandData}
-                onContinue={() => setStep("creative-focus")}
+                onContinue={() => setStep('creative-focus')}
                 onBack={() =>
-                  route === "existing"
-                    ? setStep("brand-dna-reveal")
-                    : setStep("brand-personality")
+                  route === 'existing' ? setStep('brand-dna-reveal') : setStep('brand-personality')
                 }
               />
             </motion.div>
           )}
 
-          {step === "creative-focus" && (
+          {step === 'creative-focus' && (
             <motion.div
               key="creative-focus"
               initial={{ opacity: 0, y: 20 }}
@@ -4246,30 +3985,25 @@ function OnboardingContent() {
                 brandData={brandData}
                 setBrandData={setBrandData}
                 onContinue={handleSaveOnboarding}
-                onBack={() =>
-                  setStep(route === "create" ? "ai-directions" : "fine-tune")
-                }
+                onBack={() => setStep(route === 'create' ? 'ai-directions' : 'fine-tune')}
                 isLoading={isLoading}
               />
             </motion.div>
           )}
 
-          {step === "brand-ready" && (
+          {step === 'brand-ready' && (
             <motion.div
               key="brand-ready"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
             >
-              <BrandReadyStep
-                brandData={brandData}
-                onComplete={handleComplete}
-              />
+              <BrandReadyStep brandData={brandData} onComplete={handleComplete} />
             </motion.div>
           )}
 
           {/* Route B Steps */}
-          {step === "brand-intent" && (
+          {step === 'brand-intent' && (
             <motion.div
               key="brand-intent"
               initial={{ opacity: 0, y: 20 }}
@@ -4279,16 +4013,16 @@ function OnboardingContent() {
               <BrandIntentStep
                 brandData={brandData}
                 setBrandData={setBrandData}
-                onContinue={() => setStep("brand-personality")}
+                onContinue={() => setStep('brand-personality')}
                 onBack={() => {
-                  setRoute(null);
-                  setStep("welcome");
+                  setRoute(null)
+                  setStep('welcome')
                 }}
               />
             </motion.div>
           )}
 
-          {step === "brand-personality" && (
+          {step === 'brand-personality' && (
             <motion.div
               key="brand-personality"
               initial={{ opacity: 0, y: 20 }}
@@ -4298,13 +4032,13 @@ function OnboardingContent() {
               <BrandPersonalityStep
                 brandData={brandData}
                 setBrandData={setBrandData}
-                onContinue={() => setStep("visual-instinct")}
-                onBack={() => setStep("brand-intent")}
+                onContinue={() => setStep('visual-instinct')}
+                onBack={() => setStep('brand-intent')}
               />
             </motion.div>
           )}
 
-          {step === "visual-instinct" && (
+          {step === 'visual-instinct' && (
             <motion.div
               key="visual-instinct"
               initial={{ opacity: 0, y: 20 }}
@@ -4315,12 +4049,12 @@ function OnboardingContent() {
                 brandData={brandData}
                 setBrandData={setBrandData}
                 onContinue={generateBrandDirections}
-                onBack={() => setStep("brand-personality")}
+                onBack={() => setStep('brand-personality')}
               />
             </motion.div>
           )}
 
-          {step === "ai-directions" && (
+          {step === 'ai-directions' && (
             <motion.div
               key="ai-directions"
               initial={{ opacity: 0, y: 20 }}
@@ -4332,7 +4066,7 @@ function OnboardingContent() {
                 directions={brandDirections}
                 selectedDirection={selectedDirection}
                 onSelectDirection={(dir) => {
-                  setSelectedDirection(dir);
+                  setSelectedDirection(dir)
                   setBrandData({
                     ...brandData,
                     selectedDirection: dir,
@@ -4342,10 +4076,10 @@ function OnboardingContent() {
                     backgroundColor: dir.colorPalette[3],
                     primaryFont: dir.primaryFont,
                     secondaryFont: dir.secondaryFont,
-                  });
+                  })
                 }}
-                onContinue={() => setStep("creative-focus")}
-                onBack={() => setStep("visual-instinct")}
+                onContinue={() => setStep('creative-focus')}
+                onBack={() => setStep('visual-instinct')}
                 isGenerating={isGeneratingDirections}
               />
             </motion.div>
@@ -4357,15 +4091,10 @@ function OnboardingContent() {
       <div className="relative z-10 flex-1 h-full hidden lg:flex items-center justify-center pr-[10%]">
         <AnimatePresence mode="wait">
           {/* Option A: Split-screen with brand card preview */}
-          {step === "brand-dna-reveal" && (
-            <BrandCardPreviewPanel
-              key="brand-card-preview"
-              brandData={brandData}
-            />
+          {step === 'brand-dna-reveal' && (
+            <BrandCardPreviewPanel key="brand-card-preview" brandData={brandData} />
           )}
-          {step === "fine-tune" && (
-            <MoodPreviewPanel key="mood-preview" brandData={brandData} />
-          )}
+          {step === 'fine-tune' && <MoodPreviewPanel key="mood-preview" brandData={brandData} />}
         </AnimatePresence>
       </div>
 
@@ -4373,7 +4102,7 @@ function OnboardingContent() {
         <p>&copy; {new Date().getFullYear()} Crafted. All rights reserved.</p>
       </footer>
     </motion.div>
-  );
+  )
 }
 
 export default function OnboardingPage() {
@@ -4382,7 +4111,7 @@ export default function OnboardingPage() {
       fallback={
         <div
           className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: "#0a0a0a" }}
+          style={{ backgroundColor: '#0a0a0a' }}
         >
           <LoadingSpinner size="lg" />
         </div>
@@ -4390,5 +4119,5 @@ export default function OnboardingPage() {
     >
       <OnboardingContent />
     </Suspense>
-  );
+  )
 }

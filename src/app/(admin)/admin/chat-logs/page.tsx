@@ -1,30 +1,27 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -32,9 +29,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { StatCard } from "@/components/admin/stat-card";
+} from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { StatCard } from '@/components/admin/stat-card'
 import {
   MessageSquare,
   Search,
@@ -45,117 +42,111 @@ import {
   User,
   Palette,
   Paperclip,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { logger } from "@/lib/logger";
-import type { AdminChatMessage, ChatLog } from "@/types/admin-chat-logs";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { formatDistanceToNow } from 'date-fns'
+import { logger } from '@/lib/logger'
+import type { AdminChatMessage, ChatLog } from '@/types/admin-chat-logs'
 
 interface Stats {
-  total: number;
-  drafts: number;
-  tasks: number;
-  avgMessages: number;
+  total: number
+  drafts: number
+  tasks: number
+  avgMessages: number
 }
 
 export default function ChatLogsPage() {
-  const [logs, setLogs] = useState<ChatLog[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, drafts: 0, tasks: 0, avgMessages: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedLog, setSelectedLog] = useState<ChatLog | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [logs, setLogs] = useState<ChatLog[]>([])
+  const [stats, setStats] = useState<Stats>({ total: 0, drafts: 0, tasks: 0, avgMessages: 0 })
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedLog, setSelectedLog] = useState<ChatLog | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
-    fetchLogs();
-  }, [statusFilter, searchTerm]);
+    fetchLogs()
+  }, [statusFilter, searchTerm])
 
   const fetchLogs = async () => {
     try {
-      setIsLoading(true);
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      if (searchTerm) params.set("search", searchTerm);
+      setIsLoading(true)
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (searchTerm) params.set('search', searchTerm)
 
-      const response = await fetch(`/api/admin/chat-logs?${params.toString()}`);
+      const response = await fetch(`/api/admin/chat-logs?${params.toString()}`)
       if (response.ok) {
-        const data = await response.json();
-        setLogs(data.logs || []);
-        setStats(data.stats || { total: 0, drafts: 0, tasks: 0, avgMessages: 0 });
+        const data = await response.json()
+        setLogs(data.logs || [])
+        setStats(data.stats || { total: 0, drafts: 0, tasks: 0, avgMessages: 0 })
       }
     } catch (error) {
-      logger.error({ err: error }, "Failed to fetch chat logs");
-      toast.error("Failed to load chat logs");
+      logger.error({ err: error }, 'Failed to fetch chat logs')
+      toast.error('Failed to load chat logs')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const openDetailDialog = (log: ChatLog) => {
-    setSelectedLog(log);
-    setDialogOpen(true);
-  };
+    setSelectedLog(log)
+    setDialogOpen(true)
+  }
 
   const getStatusBadge = (log: ChatLog) => {
-    if (log.type === "draft") {
+    if (log.type === 'draft') {
       if (log.pendingTask) {
-        return <Badge className="bg-yellow-500">Ready to Submit</Badge>;
+        return <Badge className="bg-yellow-500">Ready to Submit</Badge>
       }
-      return <Badge variant="secondary">Draft</Badge>;
+      return <Badge variant="secondary">Draft</Badge>
     }
 
     const statusColors: Record<string, string> = {
-      PENDING: "bg-yellow-500",
-      ASSIGNED: "bg-blue-500",
-      IN_PROGRESS: "bg-purple-500",
-      IN_REVIEW: "bg-orange-500",
-      COMPLETED: "bg-green-500",
-    };
+      PENDING: 'bg-yellow-500',
+      ASSIGNED: 'bg-blue-500',
+      IN_PROGRESS: 'bg-purple-500',
+      IN_REVIEW: 'bg-orange-500',
+      COMPLETED: 'bg-green-500',
+    }
 
     return (
-      <Badge className={statusColors[log.taskStatus || ""] || "bg-gray-500"}>
-        {log.taskStatus?.replace("_", " ") || "Unknown"}
+      <Badge className={statusColors[log.taskStatus || ''] || 'bg-gray-500'}>
+        {log.taskStatus?.replace('_', ' ') || 'Unknown'}
       </Badge>
-    );
-  };
+    )
+  }
 
   const getInitials = (name: string) => {
     return name
-      .split(" ")
+      .split(' ')
       .map((n) => n[0])
-      .join("")
+      .join('')
       .toUpperCase()
-      .slice(0, 2);
-  };
+      .slice(0, 2)
+  }
 
   const getMessagePreview = (messages: AdminChatMessage[]) => {
-    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')
     if (lastUserMessage) {
       return lastUserMessage.content.length > 100
-        ? lastUserMessage.content.slice(0, 100) + "..."
-        : lastUserMessage.content;
+        ? lastUserMessage.content.slice(0, 100) + '...'
+        : lastUserMessage.content
     }
-    return "No messages";
-  };
+    return 'No messages'
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Chat Logs</h1>
-        <p className="text-muted-foreground">
-          Monitor all user conversations and style selections
-        </p>
+        <p className="text-muted-foreground">Monitor all user conversations and style selections</p>
       </div>
 
       {/* Stats */}
       {!isLoading && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Total Conversations"
-            value={stats.total}
-            icon={MessageSquare}
-          />
+          <StatCard label="Total Conversations" value={stats.total} icon={MessageSquare} />
           <StatCard
             label="Active Drafts"
             value={stats.drafts}
@@ -219,9 +210,9 @@ export default function ChatLogsPage() {
             </div>
             <h2 className="text-2xl font-semibold mb-2">No Chat Logs Found</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              {searchTerm || statusFilter !== "all"
-                ? "Try adjusting your filters to see more results."
-                : "Chat conversations will appear here as users start interacting."}
+              {searchTerm || statusFilter !== 'all'
+                ? 'Try adjusting your filters to see more results.'
+                : 'Chat conversations will appear here as users start interacting.'}
             </p>
           </CardContent>
         </Card>
@@ -242,7 +233,11 @@ export default function ChatLogsPage() {
               </TableHeader>
               <TableBody>
                 {logs.map((log) => (
-                  <TableRow key={log.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetailDialog(log)}>
+                  <TableRow
+                    key={log.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => openDetailDialog(log)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -304,8 +299,8 @@ export default function ChatLogsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          openDetailDialog(log);
+                          e.stopPropagation()
+                          openDetailDialog(log)
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -325,7 +320,7 @@ export default function ChatLogsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              {selectedLog?.title || "Conversation Details"}
+              {selectedLog?.title || 'Conversation Details'}
             </DialogTitle>
             <DialogDescription>
               {selectedLog && (
@@ -350,16 +345,16 @@ export default function ChatLogsPage() {
                       <div
                         key={message.id || idx}
                         className={cn(
-                          "flex",
-                          message.role === "user" ? "justify-end" : "justify-start"
+                          'flex',
+                          message.role === 'user' ? 'justify-end' : 'justify-start'
                         )}
                       >
                         <div
                           className={cn(
-                            "max-w-[80%] rounded-lg p-3",
-                            message.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-background border"
+                            'max-w-[80%] rounded-lg p-3',
+                            message.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-background border'
                           )}
                         >
                           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -372,10 +367,10 @@ export default function ChatLogsPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className={cn(
-                                    "flex items-center gap-1 text-xs px-2 py-1 rounded",
-                                    message.role === "user"
-                                      ? "bg-primary-foreground/20 text-primary-foreground"
-                                      : "bg-muted"
+                                    'flex items-center gap-1 text-xs px-2 py-1 rounded',
+                                    message.role === 'user'
+                                      ? 'bg-primary-foreground/20 text-primary-foreground'
+                                      : 'bg-muted'
                                   )}
                                 >
                                   <Paperclip className="h-3 w-3" />
@@ -386,10 +381,10 @@ export default function ChatLogsPage() {
                           )}
                           <p
                             className={cn(
-                              "text-[10px] mt-1",
-                              message.role === "user"
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground"
+                              'text-[10px] mt-1',
+                              message.role === 'user'
+                                ? 'text-primary-foreground/70'
+                                : 'text-muted-foreground'
                             )}
                           >
                             {new Date(message.timestamp).toLocaleString()}
@@ -416,7 +411,9 @@ export default function ChatLogsPage() {
                     </Avatar>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">{selectedLog.userName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{selectedLog.userEmail}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {selectedLog.userEmail}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -446,7 +443,7 @@ export default function ChatLogsPage() {
                             <p className="font-medium text-xs truncate">{style.name}</p>
                             <div className="flex gap-1 mt-1">
                               <Badge variant="outline" className="text-[10px] px-1">
-                                {style.deliverableType.replace("_", " ")}
+                                {style.deliverableType.replace('_', ' ')}
                               </Badge>
                               <Badge variant="secondary" className="text-[10px] px-1">
                                 {style.styleAxis}
@@ -480,7 +477,7 @@ export default function ChatLogsPage() {
                 )}
 
                 {/* Task Status */}
-                {selectedLog.type === "task" && selectedLog.taskStatus && (
+                {selectedLog.type === 'task' && selectedLog.taskStatus && (
                   <div>
                     <h3 className="font-medium text-sm mb-2 flex items-center gap-1">
                       <CheckCircle className="h-4 w-4" />
@@ -489,7 +486,8 @@ export default function ChatLogsPage() {
                     <div className="p-3 rounded-lg border bg-background">
                       {getStatusBadge(selectedLog)}
                       <p className="text-xs text-muted-foreground mt-2">
-                        Created {formatDistanceToNow(new Date(selectedLog.createdAt), { addSuffix: true })}
+                        Created{' '}
+                        {formatDistanceToNow(new Date(selectedLog.createdAt), { addSuffix: true })}
                       </p>
                     </div>
                   </div>
@@ -506,5 +504,5 @@ export default function ChatLogsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

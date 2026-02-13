@@ -1,6 +1,7 @@
 # Chat & Submission Flow - Bug Report
 
 ## Testing Summary
+
 Tested the complete chat and task submission flow on localhost:3000
 
 ---
@@ -8,6 +9,7 @@ Tested the complete chat and task submission flow on localhost:3000
 ## CRITICAL BUGS
 
 ### 1. Task Submission Completely Broken
+
 **Severity:** CRITICAL
 **Location:** Task submission flow
 **Description:** The AI claims "Your task has been submitted to our creative team" but NO task is actually created. Verified by checking /dashboard/tasks which shows "No tasks yet."
@@ -15,6 +17,7 @@ Tested the complete chat and task submission flow on localhost:3000
 **Actual:** Task is not created despite success message
 
 ### 2. No Credit Validation Before Submission
+
 **Severity:** CRITICAL
 **Location:** Brief panel / submission flow
 **Description:** User has 0 credits but task costs 3 credits. No error or warning is shown. The submission proceeds (though ultimately fails silently).
@@ -26,6 +29,7 @@ Tested the complete chat and task submission flow on localhost:3000
 ## SIGNIFICANT BUGS
 
 ### 3. AI Response Starts with "Choice -"
+
 **Severity:** Medium
 **Location:** `src/lib/ai/chat.ts` - BANNED_OPENERS regex
 **Description:** AI response begins with "Choice -" which is awkward. The BANNED_OPENERS list has `/^Choice[!,.\s]+/i` but doesn't match "Choice -"
@@ -34,6 +38,7 @@ Tested the complete chat and task submission flow on localhost:3000
 **Fix:** Add `/^Choice\s*-\s*/i` to BANNED_OPENERS
 
 ### 4. AUDIENCE Field Shows User's Message
+
 **Severity:** Medium
 **Location:** Brief panel extraction
 **Description:** The AUDIENCE field in the brief panel shows the user's input message verbatim instead of extracted audience info
@@ -41,6 +46,7 @@ Tested the complete chat and task submission flow on localhost:3000
 **Actual:** "i need a instagram post for my coffee shop"
 
 ### 5. SUMMARY Field Shows User's Message
+
 **Severity:** Medium
 **Location:** Brief panel extraction
 **Description:** The SUMMARY field shows the user's message instead of an AI-generated project summary
@@ -48,6 +54,7 @@ Tested the complete chat and task submission flow on localhost:3000
 **Actual:** "i need a instagram post for my coffee shop"
 
 ### 6. Chat Flow Stuck in Style Selection Loop
+
 **Severity:** Medium
 **Location:** Chat state management
 **Description:** After selecting a style, the AI keeps showing style options again instead of proceeding to submission
@@ -55,6 +62,7 @@ Tested the complete chat and task submission flow on localhost:3000
 **Actual:** Loops back to showing styles repeatedly
 
 ### 7. AI Response Missing Proper Punctuation
+
 **Severity:** Low
 **Location:** AI response formatting
 **Description:** Some AI responses lack proper sentence structure and punctuation
@@ -66,36 +74,43 @@ Tested the complete chat and task submission flow on localhost:3000
 ## UX IMPROVEMENTS
 
 ### 8. Green Dot Misleading for Zero Credits
+
 **Location:** Credits display in sidebar
 **Issue:** Shows green dot with "0 credits available" - green implies positive/good
 **Suggestion:** Use red/orange indicator when credits are 0 or low
 
 ### 9. Style Cards Hidden Below Fold
+
 **Location:** Chat interface
 **Issue:** Style reference cards appear below the visible area, requiring scroll
 **Suggestion:** Auto-scroll to show styles, or show them more prominently
 
 ### 10. No Clear "Select Style" Button
+
 **Location:** Style preview modal
 **Issue:** When previewing a style, there's no obvious "Select This Style" button
 **Suggestion:** Add prominent CTA button in modal
 
 ### 11. Brief Panel Fields Not Editable
+
 **Location:** Right panel brief summary
 **Issue:** Extracted fields (SUMMARY, INTENT, etc.) cannot be edited by user
 **Suggestion:** Make fields editable for user corrections
 
 ### 12. No Loading State During Submission
+
 **Location:** Submit button
 **Issue:** No visual feedback that submission is processing
 **Suggestion:** Add spinner/loading state on submit button
 
 ### 13. No Confirmation Before Spending Credits
+
 **Location:** Submission flow
 **Issue:** No final confirmation like "This will use 3 credits. Continue?"
 **Suggestion:** Add confirmation dialog before deducting credits
 
 ### 14. Chat Input Placeholder Too Generic
+
 **Location:** Chat input field
 **Issue:** Placeholder doesn't guide users on what to type
 **Suggestion:** Use examples like "Describe your design project..."

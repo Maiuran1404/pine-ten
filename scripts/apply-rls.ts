@@ -1,8 +1,8 @@
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv'
 
 // Load environment variables
-dotenv.config({ path: ".env" });
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: '.env' })
+dotenv.config({ path: '.env.local' })
 
 /**
  * Script to enable Row Level Security (RLS) on all tables in the Supabase database.
@@ -14,81 +14,81 @@ dotenv.config({ path: ".env.local" });
  * Run with: pnpm tsx scripts/apply-rls.ts
  */
 async function applyRLS() {
-  const postgres = (await import("postgres")).default;
+  const postgres = (await import('postgres')).default
 
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = process.env.DATABASE_URL
   if (!connectionString) {
-    throw new Error("DATABASE_URL environment variable is not set");
+    throw new Error('DATABASE_URL environment variable is not set')
   }
 
-  console.log("Connecting to database...");
+  console.log('Connecting to database...')
   const sql = postgres(connectionString, {
-    ssl: "require",
+    ssl: 'require',
     max: 1,
-  });
+  })
 
   // All tables that need RLS enabled
   const tables = [
     // Auth-related tables (managed by BetterAuth)
-    "users",
-    "sessions",
-    "accounts",
-    "verifications",
+    'users',
+    'sessions',
+    'accounts',
+    'verifications',
     // Business tables
-    "companies",
-    "freelancer_profiles",
-    "tasks",
-    "task_files",
-    "task_messages",
-    "task_categories",
-    "chat_drafts",
+    'companies',
+    'freelancer_profiles',
+    'tasks',
+    'task_files',
+    'task_messages',
+    'task_categories',
+    'chat_drafts',
     // Reference and settings tables
-    "style_references",
-    "platform_settings",
+    'style_references',
+    'platform_settings',
     // Transaction and notification tables
-    "credit_transactions",
-    "notifications",
+    'credit_transactions',
+    'notifications',
     // Template and design tables
-    "generated_designs",
-    "orshot_templates",
-    "brand_references",
-    "deliverable_style_references",
-    "style_selection_history",
+    'generated_designs',
+    'orshot_templates',
+    'brand_references',
+    'deliverable_style_references',
+    'style_selection_history',
     // Webhook events (system table)
-    "webhook_events",
+    'webhook_events',
     // Notification settings (admin table)
-    "notification_settings",
+    'notification_settings',
     // Security testing tables
-    "test_users",
-    "test_schedules",
-    "security_tests",
-    "security_test_runs",
-    "security_test_results",
-    "security_snapshots",
+    'test_users',
+    'test_schedules',
+    'security_tests',
+    'security_test_runs',
+    'security_test_results',
+    'security_snapshots',
     // Audit logging table
-    "audit_logs",
+    'audit_logs',
     // Task activity and import tracking
-    "task_activity_log",
-    "import_logs",
-  ];
+    'task_activity_log',
+    'import_logs',
+  ]
 
   try {
-    console.log("\n1. Enabling RLS on all tables...\n");
+    console.log('\n1. Enabling RLS on all tables...\n')
 
     for (const table of tables) {
       try {
-        await sql.unsafe(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`);
-        console.log(`✓ Enabled RLS on: ${table}`);
+        await sql.unsafe(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`)
+        console.log(`✓ Enabled RLS on: ${table}`)
       } catch (error: unknown) {
-        const err = error as { message?: string };
-        console.log(`⚠ ${table}: ${err.message}`);
+        const err = error as { message?: string }
+        console.log(`⚠ ${table}: ${err.message}`)
       }
     }
 
-    console.log("\n2. Creating service_role policies...\n");
+    console.log('\n2. Creating service_role policies...\n')
 
     for (const table of tables) {
-      const policyName = `service_role_${table}`;
+      const policyName = `service_role_${table}`
       try {
         await sql.unsafe(`
           CREATE POLICY "${policyName}" ON "${table}"
@@ -96,74 +96,74 @@ async function applyRLS() {
             TO service_role
             USING (true)
             WITH CHECK (true)
-        `);
-        console.log(`✓ Created policy: ${policyName}`);
+        `)
+        console.log(`✓ Created policy: ${policyName}`)
       } catch (error: unknown) {
-        const err = error as { code?: string; message?: string };
-        if (err.code === "42710" || err.message?.includes("already exists")) {
-          console.log(`⚠ Policy exists: ${policyName}`);
+        const err = error as { code?: string; message?: string }
+        if (err.code === '42710' || err.message?.includes('already exists')) {
+          console.log(`⚠ Policy exists: ${policyName}`)
         } else {
-          console.log(`✗ Error for ${policyName}: ${err.message}`);
+          console.log(`✗ Error for ${policyName}: ${err.message}`)
         }
       }
     }
 
-    console.log("\n3. Creating authenticated user policies...\n");
+    console.log('\n3. Creating authenticated user policies...\n')
 
     // Policies for public read access to reference tables
     const publicReadPolicies = [
-      { table: "orshot_templates", condition: "is_active = true" },
-      { table: "brand_references", condition: "is_active = true" },
-      { table: "deliverable_style_references", condition: "is_active = true" },
-    ];
+      { table: 'orshot_templates', condition: 'is_active = true' },
+      { table: 'brand_references', condition: 'is_active = true' },
+      { table: 'deliverable_style_references', condition: 'is_active = true' },
+    ]
 
     for (const { table, condition } of publicReadPolicies) {
-      const policyName = `authenticated_read_${table}`;
+      const policyName = `authenticated_read_${table}`
       try {
         await sql.unsafe(`
           CREATE POLICY "${policyName}" ON "${table}"
             FOR SELECT
             TO authenticated
             USING (${condition})
-        `);
-        console.log(`✓ Created policy: ${policyName}`);
+        `)
+        console.log(`✓ Created policy: ${policyName}`)
       } catch (error: unknown) {
-        const err = error as { code?: string; message?: string };
-        if (err.code === "42710" || err.message?.includes("already exists")) {
-          console.log(`⚠ Policy exists: ${policyName}`);
+        const err = error as { code?: string; message?: string }
+        if (err.code === '42710' || err.message?.includes('already exists')) {
+          console.log(`⚠ Policy exists: ${policyName}`)
         } else {
-          console.log(`✗ Error for ${policyName}: ${err.message}`);
+          console.log(`✗ Error for ${policyName}: ${err.message}`)
         }
       }
     }
 
     // User-specific read policies
     const userReadPolicies = [
-      { table: "generated_designs", userColumn: "client_id" },
-      { table: "style_selection_history", userColumn: "user_id" },
-    ];
+      { table: 'generated_designs', userColumn: 'client_id' },
+      { table: 'style_selection_history', userColumn: 'user_id' },
+    ]
 
     for (const { table, userColumn } of userReadPolicies) {
-      const policyName = `users_read_own_${table}`;
+      const policyName = `users_read_own_${table}`
       try {
         await sql.unsafe(`
           CREATE POLICY "${policyName}" ON "${table}"
             FOR SELECT
             TO authenticated
             USING (${userColumn} = auth.uid()::text)
-        `);
-        console.log(`✓ Created policy: ${policyName}`);
+        `)
+        console.log(`✓ Created policy: ${policyName}`)
       } catch (error: unknown) {
-        const err = error as { code?: string; message?: string };
-        if (err.code === "42710" || err.message?.includes("already exists")) {
-          console.log(`⚠ Policy exists: ${policyName}`);
+        const err = error as { code?: string; message?: string }
+        if (err.code === '42710' || err.message?.includes('already exists')) {
+          console.log(`⚠ Policy exists: ${policyName}`)
         } else {
-          console.log(`✗ Error for ${policyName}: ${err.message}`);
+          console.log(`✗ Error for ${policyName}: ${err.message}`)
         }
       }
     }
 
-    console.log("\n4. Verifying RLS status...\n");
+    console.log('\n4. Verifying RLS status...\n')
 
     const result = await sql`
       SELECT tablename, rowsecurity
@@ -171,27 +171,26 @@ async function applyRLS() {
       WHERE schemaname = 'public'
       AND tablename = ANY(${tables})
       ORDER BY tablename
-    `;
+    `
 
-    let allEnabled = true;
+    let allEnabled = true
     for (const row of result) {
-      const status = row.rowsecurity ? "✓ ENABLED" : "✗ DISABLED";
-      if (!row.rowsecurity) allEnabled = false;
-      console.log(`${row.tablename.padEnd(25)} ${status}`);
+      const status = row.rowsecurity ? '✓ ENABLED' : '✗ DISABLED'
+      if (!row.rowsecurity) allEnabled = false
+      console.log(`${row.tablename.padEnd(25)} ${status}`)
     }
 
     if (allEnabled) {
-      console.log("\n✓ All tables have RLS enabled!");
+      console.log('\n✓ All tables have RLS enabled!')
     } else {
-      console.log("\n⚠ Some tables still have RLS disabled.");
+      console.log('\n⚠ Some tables still have RLS disabled.')
     }
   } finally {
-    await sql.end();
+    await sql.end()
   }
 }
 
-applyRLS()
-  .catch((error) => {
-    console.error("\n✗ Migration failed:", error);
-    process.exit(1);
-  });
+applyRLS().catch((error) => {
+  console.error('\n✗ Migration failed:', error)
+  process.exit(1)
+})

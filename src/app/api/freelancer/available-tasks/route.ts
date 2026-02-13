@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/db";
-import { tasks, taskCategories, freelancerProfiles } from "@/db/schema";
-import { eq, isNull, and } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { db } from '@/db'
+import { tasks, taskCategories, freelancerProfiles } from '@/db/schema'
+import { eq, isNull, and } from 'drizzle-orm'
+import { logger } from '@/lib/logger'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    })
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is an approved freelancer
@@ -21,13 +21,10 @@ export async function GET(request: NextRequest) {
       .select()
       .from(freelancerProfiles)
       .where(eq(freelancerProfiles.userId, session.user.id))
-      .limit(1);
+      .limit(1)
 
-    if (!profile.length || profile[0].status !== "APPROVED") {
-      return NextResponse.json(
-        { error: "Freelancer not approved" },
-        { status: 403 }
-      );
+    if (!profile.length || profile[0].status !== 'APPROVED') {
+      return NextResponse.json({ error: 'Freelancer not approved' }, { status: 403 })
     }
 
     // Get available tasks (not assigned to anyone, status is PENDING)
@@ -47,14 +44,11 @@ export async function GET(request: NextRequest) {
       })
       .from(tasks)
       .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-      .where(and(eq(tasks.status, "PENDING"), isNull(tasks.freelancerId)));
+      .where(and(eq(tasks.status, 'PENDING'), isNull(tasks.freelancerId)))
 
-    return NextResponse.json({ tasks: availableTasks });
+    return NextResponse.json({ tasks: availableTasks })
   } catch (error) {
-    logger.error({ error }, "Available tasks fetch error");
-    return NextResponse.json(
-      { error: "Failed to fetch available tasks" },
-      { status: 500 }
-    );
+    logger.error({ error }, 'Available tasks fetch error')
+    return NextResponse.json({ error: 'Failed to fetch available tasks' }, { status: 500 })
   }
 }

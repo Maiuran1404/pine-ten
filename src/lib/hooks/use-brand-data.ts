@@ -1,8 +1,8 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import type { InferredAudience } from "@/components/onboarding/types";
-import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import type { InferredAudience } from '@/components/onboarding/types'
+import { logger } from '@/lib/logger'
 
 // =============================================================================
 // TYPES
@@ -10,65 +10,65 @@ import { logger } from "@/lib/logger";
 
 export interface BrandData {
   // Company basics
-  id: string;
-  name: string;
-  website: string | null;
-  industry: string | null;
-  industryArchetype: string | null;
-  description: string | null;
-  tagline: string | null;
+  id: string
+  name: string
+  website: string | null
+  industry: string | null
+  industryArchetype: string | null
+  description: string | null
+  tagline: string | null
 
   // Visual identity
-  logoUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
-  accentColor: string | null;
-  backgroundColor: string | null;
-  textColor: string | null;
-  brandColors: string[];
+  logoUrl: string | null
+  primaryColor: string | null
+  secondaryColor: string | null
+  accentColor: string | null
+  backgroundColor: string | null
+  textColor: string | null
+  brandColors: string[]
 
   // Typography
-  primaryFont: string | null;
-  secondaryFont: string | null;
+  primaryFont: string | null
+  secondaryFont: string | null
 
   // Keywords & tone
-  keywords: string[];
+  keywords: string[]
 
   // Social links
   socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    facebook?: string;
-    instagram?: string;
-    youtube?: string;
-  } | null;
+    twitter?: string
+    linkedin?: string
+    facebook?: string
+    instagram?: string
+    youtube?: string
+  } | null
 
   // Contact
-  contactEmail: string | null;
-  contactPhone: string | null;
+  contactEmail: string | null
+  contactPhone: string | null
 
   // Onboarding status
-  onboardingStatus: string | null;
+  onboardingStatus: string | null
 }
 
 export interface BrandContext {
   // Core brand info
-  brand: BrandData | null;
+  brand: BrandData | null
 
   // Target audiences
-  audiences: InferredAudience[];
+  audiences: InferredAudience[]
 
   // Derived helpers
-  brandColors: string[];
+  brandColors: string[]
   brandTypography: {
-    primary: string;
-    secondary: string;
-  };
-  toneOfVoice: string;
+    primary: string
+    secondary: string
+  }
+  toneOfVoice: string
 
   // Loading state
-  isLoading: boolean;
-  error: string | null;
+  isLoading: boolean
+  error: string | null
 }
 
 // =============================================================================
@@ -76,27 +76,27 @@ export interface BrandContext {
 // =============================================================================
 
 export function useBrandData(): BrandContext & { refetch: () => Promise<void> } {
-  const [brand, setBrand] = useState<BrandData | null>(null);
-  const [audiences, setAudiences] = useState<InferredAudience[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [brand, setBrand] = useState<BrandData | null>(null)
+  const [audiences, setAudiences] = useState<InferredAudience[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchBrandData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
       // Fetch company data
-      const companyResponse = await fetch("/api/user/company");
+      const companyResponse = await fetch('/api/user/company')
       if (!companyResponse.ok) {
-        throw new Error("Failed to fetch company data");
+        throw new Error('Failed to fetch company data')
       }
-      const companyData = await companyResponse.json();
+      const companyData = await companyResponse.json()
 
       if (companyData.company) {
         setBrand({
           id: companyData.company.id,
-          name: companyData.company.name || "",
+          name: companyData.company.name || '',
           website: companyData.company.website,
           industry: companyData.company.industry,
           industryArchetype: companyData.company.industryArchetype,
@@ -116,50 +116,56 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
           contactEmail: companyData.company.contactEmail,
           contactPhone: companyData.company.contactPhone,
           onboardingStatus: companyData.company.onboardingStatus,
-        });
+        })
 
         // Fetch audiences for this company
         try {
-          const audiencesResponse = await fetch(`/api/audiences?companyId=${companyData.company.id}`);
+          const audiencesResponse = await fetch(
+            `/api/audiences?companyId=${companyData.company.id}`
+          )
           if (audiencesResponse.ok) {
-            const audiencesData = await audiencesResponse.json();
-            setAudiences(audiencesData.audiences || []);
+            const audiencesData = await audiencesResponse.json()
+            setAudiences(audiencesData.audiences || [])
           }
         } catch {
           // Audiences fetch failed, but we still have brand data
-          logger.warn("Failed to fetch audiences");
+          logger.warn('Failed to fetch audiences')
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    fetchBrandData();
-  }, [fetchBrandData]);
+    fetchBrandData()
+  }, [fetchBrandData])
 
   // Derive brand colors array - memoized to prevent infinite re-renders
+
   const brandColors = useMemo(() => {
-    if (!brand) return [];
+    if (!brand) return []
     return [
       brand.primaryColor,
       brand.secondaryColor,
       brand.accentColor,
       ...(brand.brandColors || []),
-    ].filter((c): c is string => !!c);
-  }, [brand?.primaryColor, brand?.secondaryColor, brand?.accentColor, brand?.brandColors]);
+    ].filter((c): c is string => !!c)
+  }, [brand?.primaryColor, brand?.secondaryColor, brand?.accentColor, brand?.brandColors])
 
   // Derive typography - memoized to prevent infinite re-renders
-  const brandTypography = useMemo(() => ({
-    primary: brand?.primaryFont || "",
-    secondary: brand?.secondaryFont || "",
-  }), [brand?.primaryFont, brand?.secondaryFont]);
+  const brandTypography = useMemo(
+    () => ({
+      primary: brand?.primaryFont || '',
+      secondary: brand?.secondaryFont || '',
+    }),
+    [brand?.primaryFont, brand?.secondaryFont]
+  )
 
   // Derive tone of voice from industry/archetype
-  const toneOfVoice = useMemo(() => deriveToneOfVoice(brand), [brand]);
+  const toneOfVoice = useMemo(() => deriveToneOfVoice(brand), [brand])
 
   return {
     brand,
@@ -170,7 +176,7 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
     isLoading,
     error,
     refetch: fetchBrandData,
-  };
+  }
 }
 
 // =============================================================================
@@ -178,61 +184,61 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
 // =============================================================================
 
 function deriveToneOfVoice(brand: BrandData | null): string {
-  if (!brand) return "Professional";
+  if (!brand) return 'Professional'
 
-  const { industry, industryArchetype, keywords } = brand;
+  const { industry, industryArchetype, keywords } = brand
 
   // Check keywords for tone indicators
-  const keywordsLower = (keywords || []).map((k) => k.toLowerCase());
+  const keywordsLower = (keywords || []).map((k) => k.toLowerCase())
 
-  if (keywordsLower.some((k) => ["playful", "fun", "creative", "vibrant"].includes(k))) {
-    return "Playful & Creative";
+  if (keywordsLower.some((k) => ['playful', 'fun', 'creative', 'vibrant'].includes(k))) {
+    return 'Playful & Creative'
   }
-  if (keywordsLower.some((k) => ["luxury", "premium", "exclusive", "elegant"].includes(k))) {
-    return "Premium & Sophisticated";
+  if (keywordsLower.some((k) => ['luxury', 'premium', 'exclusive', 'elegant'].includes(k))) {
+    return 'Premium & Sophisticated'
   }
-  if (keywordsLower.some((k) => ["friendly", "approachable", "warm", "welcoming"].includes(k))) {
-    return "Friendly & Approachable";
+  if (keywordsLower.some((k) => ['friendly', 'approachable', 'warm', 'welcoming'].includes(k))) {
+    return 'Friendly & Approachable'
   }
-  if (keywordsLower.some((k) => ["bold", "innovative", "disruptive", "cutting-edge"].includes(k))) {
-    return "Bold & Innovative";
+  if (keywordsLower.some((k) => ['bold', 'innovative', 'disruptive', 'cutting-edge'].includes(k))) {
+    return 'Bold & Innovative'
   }
 
   // Derive from archetype
   if (industryArchetype) {
     const archetypeTones: Record<string, string> = {
-      hospitality: "Warm & Welcoming",
-      "blue-collar": "Direct & Trustworthy",
-      "white-collar": "Professional & Authoritative",
-      "e-commerce": "Engaging & Persuasive",
-      tech: "Modern & Innovative",
-    };
+      hospitality: 'Warm & Welcoming',
+      'blue-collar': 'Direct & Trustworthy',
+      'white-collar': 'Professional & Authoritative',
+      'e-commerce': 'Engaging & Persuasive',
+      tech: 'Modern & Innovative',
+    }
     if (archetypeTones[industryArchetype.toLowerCase()]) {
-      return archetypeTones[industryArchetype.toLowerCase()];
+      return archetypeTones[industryArchetype.toLowerCase()]
     }
   }
 
   // Derive from industry
   if (industry) {
     const industryTones: Record<string, string> = {
-      technology: "Modern & Innovative",
-      saas: "Clear & Solution-focused",
-      finance: "Trustworthy & Professional",
-      healthcare: "Caring & Authoritative",
-      education: "Informative & Encouraging",
-      "food & beverage": "Appetizing & Inviting",
-      "fashion & apparel": "Trendy & Aspirational",
-      entertainment: "Exciting & Engaging",
-    };
-    const industryLower = industry.toLowerCase();
+      technology: 'Modern & Innovative',
+      saas: 'Clear & Solution-focused',
+      finance: 'Trustworthy & Professional',
+      healthcare: 'Caring & Authoritative',
+      education: 'Informative & Encouraging',
+      'food & beverage': 'Appetizing & Inviting',
+      'fashion & apparel': 'Trendy & Aspirational',
+      entertainment: 'Exciting & Engaging',
+    }
+    const industryLower = industry.toLowerCase()
     for (const [key, tone] of Object.entries(industryTones)) {
       if (industryLower.includes(key)) {
-        return tone;
+        return tone
       }
     }
   }
 
-  return "Professional & Clear";
+  return 'Professional & Clear'
 }
 
-export default useBrandData;
+export default useBrandData
