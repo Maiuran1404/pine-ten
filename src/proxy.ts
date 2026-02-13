@@ -75,6 +75,7 @@ function getSubdomain(request: NextRequest): SubdomainType | null {
 const publicPaths = [
   '/login',
   '/register',
+  '/early-access',
   '/onboarding',
   '/auth-error',
   '/api/auth',
@@ -101,7 +102,12 @@ function isPublicPath(pathname: string): boolean {
  * Main proxy function (renamed from middleware for Next.js 16+)
  */
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+
+  // Gate /register behind invite code — redirect to /early-access if no code param
+  if (pathname === '/register' && !searchParams.get('code')) {
+    return NextResponse.redirect(new URL('/early-access', request.url))
+  }
 
   // Skip middleware for static files and public paths
   if (pathname.startsWith('/_next') || pathname.includes('.') || isPublicPath(pathname)) {
