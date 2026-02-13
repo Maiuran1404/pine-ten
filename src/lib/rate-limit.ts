@@ -3,8 +3,19 @@ import { config } from './config'
 import { errorResponse, ErrorCodes } from './errors'
 
 /**
- * Simple in-memory rate limiter
- * For production, consider using Redis or Upstash
+ * In-memory rate limiter
+ *
+ * SCALING LIMITATION: This uses an in-memory Map, which means:
+ * - Rate limit state resets on every server restart / redeploy
+ * - State is NOT shared across multiple serverless instances or replicas
+ * - At single-instance scale this is fine; at multi-instance scale it silently stops working
+ *
+ * MIGRATION PLAN: When scaling to multiple instances, replace the in-memory store
+ * with @upstash/ratelimit (Upstash Redis). The Upstash SDK is a near drop-in replacement:
+ *   import { Ratelimit } from "@upstash/ratelimit"
+ *   import { Redis } from "@upstash/redis"
+ *   const ratelimit = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(max, window) })
+ * See: https://github.com/upstash/ratelimit
  */
 
 interface RateLimitEntry {
