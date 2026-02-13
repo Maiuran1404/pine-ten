@@ -111,8 +111,8 @@ export default function InviteCodesPage() {
         }),
       })
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to create invite code')
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create invite code')
       }
       toast.success('Invite code created successfully')
       setCreateDialogOpen(false)
@@ -133,8 +133,8 @@ export default function InviteCodesPage() {
         method: 'DELETE',
       })
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to delete invite code')
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to delete invite code')
       }
       toast.success('Invite code deactivated')
       setDeleteDialogOpen(false)
