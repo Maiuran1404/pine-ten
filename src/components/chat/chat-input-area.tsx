@@ -16,7 +16,13 @@ import {
   LayoutGrid,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ChatMessage as Message, UploadedFile, TaskProposal } from './types'
+import type {
+  ChatMessage as Message,
+  UploadedFile,
+  TaskProposal,
+  QuickOptions as QuickOptionsType,
+} from './types'
+import { QuickOptions } from './quick-options'
 
 // =============================================================================
 // PROPS
@@ -49,6 +55,10 @@ export interface ChatInputAreaProps {
   // Credits
   userCredits: number
 
+  // State machine quick options (rendered as chips when enabled)
+  stateMachineQuickOptions?: QuickOptionsType | null
+  onQuickOptionClick?: (option: string) => void
+
   // Handlers
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -80,6 +90,8 @@ export function ChatInputArea({
   fileInputRef,
   inputRef,
   userCredits,
+  stateMachineQuickOptions,
+  onQuickOptionClick,
   handleSend,
   handleFileUpload,
   handleRequestTaskSummary,
@@ -87,6 +99,20 @@ export function ChatInputArea({
 }: ChatInputAreaProps) {
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
+      {/* State machine quick option chips */}
+      {stateMachineQuickOptions &&
+        stateMachineQuickOptions.options.length > 0 &&
+        onQuickOptionClick &&
+        !isLoading && (
+          <div className="mb-3">
+            <QuickOptions
+              options={stateMachineQuickOptions}
+              onSelect={onQuickOptionClick}
+              disabled={isLoading}
+            />
+          </div>
+        )}
+
       {/* Pending uploads preview */}
       {uploadedFiles.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">

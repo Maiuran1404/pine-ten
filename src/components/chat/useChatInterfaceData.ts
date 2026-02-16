@@ -31,7 +31,8 @@ import type { VideoReferenceStyle } from './video-reference-grid'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
 import { useBrief } from '@/lib/hooks/use-brief'
 import { useBrandData } from '@/lib/hooks/use-brand-data'
-import { calculateChatStage } from '@/lib/chat-progress'
+import { calculateChatStage, calculateChatStageFromBriefing } from '@/lib/chat-progress'
+import { useBriefingStateMachine } from '@/hooks/use-briefing-state-machine'
 import {
   autoCapitalizeI,
   generateSmartCompletion,
@@ -40,6 +41,11 @@ import {
   getChatTitle,
 } from './chat-interface.utils'
 import type { TaskData } from './chat-interface'
+
+// Feature flag — gated via NEXT_PUBLIC_ env var so it's available client-side
+const BRIEFING_SM_ENABLED =
+  process.env.NEXT_PUBLIC_BRIEFING_STATE_MACHINE_ENABLED === 'true' ||
+  process.env.NEXT_PUBLIC_BRIEFING_STATE_MACHINE_ENABLED === '1'
 
 interface UseChatInterfaceDataOptions {
   draftId: string
@@ -147,6 +153,21 @@ export function useChatInterfaceData({
     brandDescription: brandData?.description || '',
   })
 
+  // Briefing state machine (called unconditionally per React rules of hooks)
+  // When BRIEFING_SM_ENABLED is false, the hook runs but its values are unused.
+  const initialBriefingState = useMemo(() => {
+    if (!BRIEFING_SM_ENABLED) return undefined
+    const draft = getDraft(draftId)
+    return draft?.briefingState ?? undefined
+  }, [draftId])
+
+  const {
+    briefingState: _briefingState,
+    serializedState: serializedBriefingState,
+    quickOptions: smQuickOptions,
+    syncFromServer: syncBriefingFromServer,
+  } = useBriefingStateMachine(initialBriefingState, { draftId, brandAudiences })
+
   // Sync moodboard changes to visual direction
   useEffect(() => {
     if (moodboardItems.length > 0) {
@@ -155,24 +176,28 @@ export function useChatInterfaceData({
   }, [moodboardItems, syncMoodboardToVisualDirection])
 
   // Calculate chat progress
-  const progressState = useMemo(
-    () =>
-      calculateChatStage({
-        messages,
-        selectedStyles: [...selectedStyles, ...selectedDeliverableStyles],
-        moodboardItems,
-        pendingTask,
-        taskSubmitted,
-      }),
-    [
+  const progressState = useMemo(() => {
+    // When state machine is enabled, derive progress from briefing stage
+    if (BRIEFING_SM_ENABLED && _briefingState) {
+      return calculateChatStageFromBriefing(_briefingState.stage)
+    }
+    // Fallback: existing message-count-based progress
+    return calculateChatStage({
       messages,
-      selectedStyles,
-      selectedDeliverableStyles,
+      selectedStyles: [...selectedStyles, ...selectedDeliverableStyles],
       moodboardItems,
       pendingTask,
       taskSubmitted,
-    ]
-  )
+    })
+  }, [
+    _briefingState,
+    messages,
+    selectedStyles,
+    selectedDeliverableStyles,
+    moodboardItems,
+    pendingTask,
+    taskSubmitted,
+  ])
 
   // Collapse left sidebar when chat starts
   useEffect(() => {
@@ -197,9 +222,20 @@ export function useChatInterfaceData({
   const [smartCompletion, setSmartCompletion] = useState<string | null>(null)
   const smartCompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Get suggestion text from the last assistant message's quick options
+  // Get suggestion text from quick options
+  // When state machine is enabled, use deterministic quick options from state machine.
+  // Otherwise, parse from the last assistant message's quick options.
   const quickOptionSuggestion = useMemo(() => {
     if (isLoading) return null
+
+    // State machine quick options take precedence when enabled
+    if (BRIEFING_SM_ENABLED && smQuickOptions && smQuickOptions.options.length > 0) {
+      const options = smQuickOptions.options
+      const safeIndex = suggestionIndex % options.length
+      return options[safeIndex]
+    }
+
+    // Fallback: parse from messages
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i]
       if (msg.role === 'assistant' && msg.quickOptions && msg.quickOptions.options.length > 0) {
@@ -209,7 +245,7 @@ export function useChatInterfaceData({
       }
     }
     return null
-  }, [messages, isLoading, suggestionIndex])
+  }, [messages, isLoading, suggestionIndex, smQuickOptions])
 
   // Update smart completion when input changes (debounced)
   useEffect(() => {
@@ -479,6 +515,7 @@ export function useChatInterfaceData({
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             selectedStyles,
             moodboardHasStyles,
+            ...(BRIEFING_SM_ENABLED && { briefingState: serializedBriefingState }),
           }),
         })
 
@@ -488,6 +525,10 @@ export function useChatInterfaceData({
         const thinkingTime = requestStartTimeRef.current
           ? Math.round((Date.now() - requestStartTimeRef.current) / 1000)
           : undefined
+
+        if (BRIEFING_SM_ENABLED && data.briefingState) {
+          syncBriefingFromServer(data.briefingState)
+        }
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -500,7 +541,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: data.quickOptions,
+          quickOptions: BRIEFING_SM_ENABLED ? undefined : data.quickOptions,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -802,6 +843,7 @@ export function useChatInterfaceData({
           attachments: currentFiles.length > 0 ? currentFiles : undefined,
           selectedStyles,
           moodboardHasStyles,
+          ...(BRIEFING_SM_ENABLED && { briefingState: serializedBriefingState }),
         }),
       })
 
@@ -811,6 +853,11 @@ export function useChatInterfaceData({
       const thinkingTime = requestStartTimeRef.current
         ? Math.round((Date.now() - requestStartTimeRef.current) / 1000)
         : undefined
+
+      // Sync state machine from server response
+      if (BRIEFING_SM_ENABLED && data.briefingState) {
+        syncBriefingFromServer(data.briefingState)
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -823,7 +870,7 @@ export function useChatInterfaceData({
         deliverableStyleMarker: data.deliverableStyleMarker,
         videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
-        quickOptions: data.quickOptions,
+        quickOptions: BRIEFING_SM_ENABLED ? undefined : data.quickOptions,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -836,7 +883,16 @@ export function useChatInterfaceData({
       setIsLoading(false)
       requestStartTimeRef.current = null
     }
-  }, [input, uploadedFiles, messages, selectedStyles, moodboardHasStyles, processBriefMessage])
+  }, [
+    input,
+    uploadedFiles,
+    messages,
+    selectedStyles,
+    moodboardHasStyles,
+    processBriefMessage,
+    serializedBriefingState,
+    syncBriefingFromServer,
+  ])
 
   // Send a specific message (for clickable options)
   const handleSendOption = useCallback(
@@ -862,12 +918,17 @@ export function useChatInterfaceData({
             messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
             selectedStyles,
             moodboardHasStyles,
+            ...(BRIEFING_SM_ENABLED && { briefingState: serializedBriefingState }),
           }),
         })
 
         if (!response.ok) throw new Error('Failed to get response')
 
         const data = await response.json()
+
+        if (BRIEFING_SM_ENABLED && data.briefingState) {
+          syncBriefingFromServer(data.briefingState)
+        }
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -879,7 +940,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: data.quickOptions,
+          quickOptions: BRIEFING_SM_ENABLED ? undefined : data.quickOptions,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -892,7 +953,14 @@ export function useChatInterfaceData({
         setIsLoading(false)
       }
     },
-    [isLoading, messages, selectedStyles, moodboardHasStyles]
+    [
+      isLoading,
+      messages,
+      selectedStyles,
+      moodboardHasStyles,
+      serializedBriefingState,
+      syncBriefingFromServer,
+    ]
   )
 
   const handleDiscard = useCallback(() => {
@@ -1249,6 +1317,7 @@ export function useChatInterfaceData({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
+            ...(BRIEFING_SM_ENABLED && { briefingState: serializedBriefingState }),
             ...extraBody,
           }),
         })
@@ -1256,6 +1325,10 @@ export function useChatInterfaceData({
         if (!response.ok) throw new Error('Failed to get response')
 
         const data = await response.json()
+
+        if (BRIEFING_SM_ENABLED && data.briefingState) {
+          syncBriefingFromServer(data.briefingState)
+        }
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -1267,7 +1340,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: data.quickOptions,
+          quickOptions: BRIEFING_SM_ENABLED ? undefined : data.quickOptions,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1285,7 +1358,7 @@ export function useChatInterfaceData({
         setIsLoading(false)
       }
     },
-    [messages]
+    [messages, serializedBriefingState, syncBriefingFromServer]
   )
 
   // Handle style submissions
@@ -1446,12 +1519,17 @@ export function useChatInterfaceData({
             messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
             selectedStyles,
             moodboardHasStyles,
+            ...(BRIEFING_SM_ENABLED && { briefingState: serializedBriefingState }),
           }),
         })
 
         if (!response.ok) throw new Error('Failed to get response')
 
         const data = await response.json()
+
+        if (BRIEFING_SM_ENABLED && data.briefingState) {
+          syncBriefingFromServer(data.briefingState)
+        }
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -1463,7 +1541,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: data.quickOptions,
+          quickOptions: BRIEFING_SM_ENABLED ? undefined : data.quickOptions,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1478,7 +1556,14 @@ export function useChatInterfaceData({
         setIsLoading(false)
       }
     },
-    [isLoading, messages, selectedStyles, moodboardHasStyles]
+    [
+      isLoading,
+      messages,
+      selectedStyles,
+      moodboardHasStyles,
+      serializedBriefingState,
+      syncBriefingFromServer,
+    ]
   )
 
   const handleShowMoreStyles = useCallback(
@@ -1628,6 +1713,9 @@ export function useChatInterfaceData({
     quickOptionSuggestion,
     smartCompletion,
     setSmartCompletion,
+
+    // State machine quick options (for rendering as chips when enabled)
+    stateMachineQuickOptions: BRIEFING_SM_ENABLED ? smQuickOptions : null,
 
     // Style selection
     selectedStyles,

@@ -58,6 +58,7 @@ export interface UseBriefingStateMachineReturn {
   systemPromptContext: string
   processMessage: (message: string, inference: InferenceResult) => BriefingState
   dispatch: (action: BriefingAction) => void
+  syncFromServer: (serverState: SerializedBriefingState) => void
 }
 
 // =============================================================================
@@ -252,6 +253,18 @@ export function useBriefingStateMachine(
   )
 
   // ==========================================================================
+  // syncFromServer — update local state from server-returned serialized state
+  // ==========================================================================
+
+  const syncFromServer = useCallback(
+    (serverState: SerializedBriefingState) => {
+      const newState = deserialize(serverState)
+      updateState(newState)
+    },
+    [updateState]
+  )
+
+  // ==========================================================================
   // Derived values
   // ==========================================================================
 
@@ -271,5 +284,6 @@ export function useBriefingStateMachine(
     systemPromptContext,
     processMessage,
     dispatch,
+    syncFromServer,
   }
 }

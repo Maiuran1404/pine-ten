@@ -119,6 +119,9 @@ export function ChatInterface({
     smartCompletion,
     setSmartCompletion,
 
+    // State machine quick options
+    stateMachineQuickOptions,
+
     // Style selection
     selectedStyles,
     hoveredStyleName,
@@ -209,7 +212,7 @@ export function ChatInterface({
     handleSubmitDeliverableStyles,
     handleConfirmStyleSelection,
     handleSelectVideo,
-    handleQuickOptionClick: _handleQuickOptionClick,
+    handleQuickOptionClick,
     handleShowMoreStyles,
     handleShowDifferentStyles,
     handleConfirmTask,
@@ -404,6 +407,8 @@ export function ChatInterface({
           fileInputRef={fileInputRef}
           inputRef={inputRef}
           userCredits={userCredits}
+          stateMachineQuickOptions={stateMachineQuickOptions}
+          onQuickOptionClick={handleQuickOptionClick}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}
