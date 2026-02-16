@@ -21,6 +21,7 @@ import { TaskSubmissionModal } from './task-submission-modal'
 import { useChatInterfaceData } from './useChatInterfaceData'
 import { ChatMessageList } from './chat-message-list'
 import { ChatInputArea } from './chat-input-area'
+import { TopProgressBar } from './progress-stepper'
 
 // Task data types for when viewing an active task
 export interface TaskFile {
@@ -347,6 +348,15 @@ export function ChatInterface({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Progress bar - visible when state machine is active */}
+        {briefingStage && !isTaskMode && (
+          <TopProgressBar
+            currentStage={progressState.currentStage}
+            completedStages={progressState.completedStages}
+            progressPercentage={progressState.progressPercentage}
+          />
+        )}
 
         {/* Messages - scrollable area */}
         <ChatMessageList
