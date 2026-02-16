@@ -1,11 +1,10 @@
 import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { db, withTransaction } from '@/db'
 import { assignmentAlgorithmConfig } from '@/db/schema'
 import { eq, ne } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { logger } from '@/lib/logger'
+import { requireAdmin } from '@/lib/require-auth'
 
 /**
  * POST /api/admin/algorithm/publish
@@ -14,18 +13,7 @@ import { logger } from '@/lib/logger'
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
-
-      const user = session.user as { role?: string }
-      if (user.role !== 'ADMIN') {
-        throw Errors.forbidden('Admin access required')
-      }
+      const { user } = await requireAdmin()
 
       const body = await request.json()
       const { id } = body
@@ -65,7 +53,7 @@ export async function POST(request: NextRequest) {
           .set({
             isActive: true,
             publishedAt: new Date(),
-            updatedBy: session.user.id,
+            updatedBy: user.id,
             updatedAt: new Date(),
           })
           .where(eq(assignmentAlgorithmConfig.id, id))
@@ -75,7 +63,7 @@ export async function POST(request: NextRequest) {
         {
           configId: id,
           version: configToPublish.version,
-          userId: session.user.id,
+          userId: user.id,
         },
         'Algorithm configuration published and activated'
       )

@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server'
 import { eq, and, sql } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { earlyAccessCodes, earlyAccessCodeUsages } from '@/db'
 import { withTransaction } from '@/db'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { validateEarlyAccessCodeSchema } from '@/lib/validations'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/require-auth'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
-    const session = await auth.api.getSession({ headers: await headers() })
-    if (!session?.user) throw Errors.unauthorized()
+    const { user } = await requireAuth()
 
     const body = validateEarlyAccessCodeSchema.parse(await request.json())
 
@@ -29,7 +27,7 @@ export async function POST(request: NextRequest) {
       // Record usage
       await tx.insert(earlyAccessCodeUsages).values({
         codeId: code.id,
-        userId: session.user.id,
+        userId: user.id,
       })
 
       // Increment used_count

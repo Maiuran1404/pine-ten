@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { withTransaction } from '@/db'
 import { tasks, taskOffers, taskActivityLog, taskCategories } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -14,6 +12,7 @@ import {
 } from '@/lib/assignment-algorithm'
 import { notify, adminNotifications } from '@/lib/notifications'
 import { config } from '@/lib/config'
+import { requireRole } from '@/lib/require-auth'
 
 type DeclineReason =
   | 'TOO_BUSY'
@@ -33,23 +32,11 @@ export async function POST(
 ) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
+      const { user } = await requireRole('FREELANCER', 'ADMIN')
 
       const { taskId } = await params
       const body = await request.json().catch(() => ({}))
       const { reason, note } = body as { reason?: DeclineReason; note?: string }
-
-      // Verify the user is a freelancer
-      const user = session.user as { role?: string }
-      if (user.role !== 'FREELANCER' && user.role !== 'ADMIN') {
-        throw Errors.forbidden('Only artists can decline task offers')
-      }
 
       const algorithmConfig = await getActiveConfig()
 
@@ -80,7 +67,7 @@ export async function POST(
         }
 
         // Check if the task is offered to this user
-        if (task.offeredTo !== session.user.id) {
+        if (task.offeredTo !== user.id) {
           throw Errors.forbidden('This task is not offered to you')
         }
 
@@ -101,7 +88,7 @@ export async function POST(
           .where(
             and(
               eq(taskOffers.taskId, taskId),
-              eq(taskOffers.artistId, session.user.id),
+              eq(taskOffers.artistId, user.id),
               eq(taskOffers.response, 'PENDING')
             )
           )
@@ -109,7 +96,7 @@ export async function POST(
         // Log the activity
         await tx.insert(taskActivityLog).values({
           taskId,
-          actorId: session.user.id,
+          actorId: user.id,
           actorType: 'freelancer',
           action: 'declined',
           previousStatus: 'OFFERED',
@@ -305,7 +292,7 @@ export async function POST(
       logger.info(
         {
           taskId,
-          artistId: session.user.id,
+          artistId: user.id,
           reason,
           nextAction: result.nextAction,
           nextArtistId: result.nextArtist?.artist.userId,

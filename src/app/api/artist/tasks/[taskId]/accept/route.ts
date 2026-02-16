@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { withTransaction } from '@/db'
 import { tasks, taskOffers, taskActivityLog, users } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -8,6 +6,7 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { notify } from '@/lib/notifications'
 import { config } from '@/lib/config'
+import { requireRole } from '@/lib/require-auth'
 
 /**
  * POST /api/artist/tasks/[taskId]/accept
@@ -19,21 +18,9 @@ export async function POST(
 ) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
+      const { user } = await requireRole('FREELANCER', 'ADMIN')
 
       const { taskId } = await params
-
-      // Verify the user is a freelancer
-      const user = session.user as { role?: string }
-      if (user.role !== 'FREELANCER' && user.role !== 'ADMIN') {
-        throw Errors.forbidden('Only artists can accept task offers')
-      }
 
       const result = await withTransaction(async (tx) => {
         // Get the task with its current offer
@@ -44,7 +31,7 @@ export async function POST(
         }
 
         // Check if the task is offered to this user
-        if (task.offeredTo !== session.user.id) {
+        if (task.offeredTo !== user.id) {
           throw Errors.forbidden('This task is not offered to you')
         }
 
@@ -62,7 +49,7 @@ export async function POST(
           .update(tasks)
           .set({
             status: 'ASSIGNED',
-            freelancerId: session.user.id,
+            freelancerId: user.id,
             assignedAt: new Date(),
             offeredTo: null,
             offerExpiresAt: null,
@@ -81,7 +68,7 @@ export async function POST(
           .where(
             and(
               eq(taskOffers.taskId, taskId),
-              eq(taskOffers.artistId, session.user.id),
+              eq(taskOffers.artistId, user.id),
               eq(taskOffers.response, 'PENDING')
             )
           )
@@ -89,7 +76,7 @@ export async function POST(
         // Log the activity
         await tx.insert(taskActivityLog).values({
           taskId,
-          actorId: session.user.id,
+          actorId: user.id,
           actorType: 'freelancer',
           action: 'accepted',
           previousStatus: 'OFFERED',
@@ -114,12 +101,12 @@ export async function POST(
           userId: result.task.clientId,
           type: 'TASK_ASSIGNED',
           title: 'Artist Assigned to Your Task',
-          content: `${session.user.name} has accepted your task: ${result.task.title}`,
+          content: `${user.name} has accepted your task: ${result.task.title}`,
           taskId: result.task.id,
           taskUrl: `${config.app.url}/dashboard/tasks/${result.task.id}`,
           additionalData: {
             taskTitle: result.task.title,
-            artistName: session.user.name,
+            artistName: user.name ?? 'Unknown',
           },
         })
       } catch (error) {
@@ -129,8 +116,8 @@ export async function POST(
       logger.info(
         {
           taskId,
-          artistId: session.user.id,
-          artistName: session.user.name,
+          artistId: user.id,
+          artistName: user.name,
         },
         'Task offer accepted'
       )

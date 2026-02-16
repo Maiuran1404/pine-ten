@@ -1,12 +1,11 @@
 import { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { db } from '@/db'
 import { assignmentAlgorithmConfig, skills } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { DEFAULT_CONFIG } from '@/lib/assignment-algorithm'
+import { requireAdmin } from '@/lib/require-auth'
 
 /**
  * GET /api/admin/algorithm
@@ -15,18 +14,7 @@ import { DEFAULT_CONFIG } from '@/lib/assignment-algorithm'
 export async function GET(_request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
-
-      const user = session.user as { role?: string }
-      if (user.role !== 'ADMIN') {
-        throw Errors.forbidden('Admin access required')
-      }
+      await requireAdmin()
 
       // Get all configurations
       const configs = await db
@@ -91,18 +79,7 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
-
-      const user = session.user as { role?: string }
-      if (user.role !== 'ADMIN') {
-        throw Errors.forbidden('Admin access required')
-      }
+      const { user } = await requireAdmin()
 
       const body = await request.json()
       const {
@@ -154,13 +131,13 @@ export async function POST(request: NextRequest) {
           workloadSettings: workloadSettings || DEFAULT_CONFIG.workloadSettings,
           exclusionRules: exclusionRules || DEFAULT_CONFIG.exclusionRules,
           bonusModifiers: bonusModifiers || DEFAULT_CONFIG.bonusModifiers,
-          createdBy: session.user.id,
-          updatedBy: session.user.id,
+          createdBy: user.id,
+          updatedBy: user.id,
         })
         .returning()
 
       logger.info(
-        { configId: newConfig.id, version: newConfig.version, userId: session.user.id },
+        { configId: newConfig.id, version: newConfig.version, userId: user.id },
         'New algorithm configuration created'
       )
 
@@ -177,18 +154,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      })
-
-      if (!session?.user) {
-        throw Errors.unauthorized()
-      }
-
-      const user = session.user as { role?: string }
-      if (user.role !== 'ADMIN') {
-        throw Errors.forbidden('Admin access required')
-      }
+      const { user } = await requireAdmin()
 
       const body = await request.json()
       const {
@@ -251,13 +217,13 @@ export async function PUT(request: NextRequest) {
           workloadSettings: workloadSettings ?? existingConfig.workloadSettings,
           exclusionRules: exclusionRules ?? existingConfig.exclusionRules,
           bonusModifiers: bonusModifiers ?? existingConfig.bonusModifiers,
-          updatedBy: session.user.id,
+          updatedBy: user.id,
           updatedAt: new Date(),
         })
         .where(eq(assignmentAlgorithmConfig.id, id))
         .returning()
 
-      logger.info({ configId: id, userId: session.user.id }, 'Algorithm configuration updated')
+      logger.info({ configId: id, userId: user.id }, 'Algorithm configuration updated')
 
       return successResponse({ config: updatedConfig })
     },
