@@ -242,8 +242,8 @@ export function ChatMessageList({
   removeMoodboardItem,
   handleClearStyleCollection,
   handleSelectVideo,
-  handleOpenSubmissionModal,
-  handleRejectTask,
+  handleOpenSubmissionModal: _handleOpenSubmissionModal,
+  handleRejectTask: _handleRejectTask,
   handleRequestTaskSummary,
   handleEditLastMessage,
   briefingStage,
@@ -547,17 +547,14 @@ export function ChatMessageList({
                             </motion.div>
                           )}
 
-                        {/* Task Proposal - only on last assistant message when stage CTA is taskProposal */}
+                        {/* Task Proposal - read-only card when submit bar handles actions */}
                         {isLastAssistant &&
                           (!briefingStage || stageCTA === 'taskProposal') &&
                           message.taskProposal && (
                             <div className="mt-4 ml-8">
                               <TaskProposalCard
                                 proposal={message.taskProposal}
-                                showActions={pendingTask?.title === message.taskProposal.title}
-                                onSubmit={handleOpenSubmissionModal}
-                                onMakeChanges={handleRejectTask}
-                                isLoading={isLoading}
+                                showActions={false}
                                 userCredits={userCredits}
                               />
                             </div>
