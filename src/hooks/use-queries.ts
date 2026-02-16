@@ -13,7 +13,7 @@ export const queryKeys = {
   // Task queries
   tasks: {
     all: ['tasks'] as const,
-    list: (filters?: { status?: string; limit?: number; offset?: number }) =>
+    list: (filters?: { status?: string; limit?: number; offset?: number; view?: string }) =>
       [...queryKeys.tasks.all, 'list', filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
     messages: (id: string) => [...queryKeys.tasks.all, 'messages', id] as const,
@@ -91,11 +91,17 @@ interface TasksResponse {
   }
 }
 
-export function useTasks(filters?: { status?: string; limit?: number; offset?: number }) {
+export function useTasks(filters?: {
+  status?: string
+  limit?: number
+  offset?: number
+  view?: string
+}) {
   const params = new URLSearchParams()
   if (filters?.status) params.set('status', filters.status)
   if (filters?.limit) params.set('limit', filters.limit.toString())
   if (filters?.offset) params.set('offset', filters.offset.toString())
+  if (filters?.view) params.set('view', filters.view)
 
   const queryString = params.toString()
   const url = `/api/tasks${queryString ? `?${queryString}` : ''}`

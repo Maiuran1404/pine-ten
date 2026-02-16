@@ -144,7 +144,7 @@ const navigationGroups: NavigationGroup[] = [
         icon: KeyRound,
       },
       {
-        name: 'Chat QA',
+        name: 'AI Chat QA Testing',
         href: '/admin/chat-tests',
         icon: FlaskConical,
       },

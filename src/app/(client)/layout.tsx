@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/dashboard/sidebar'
 import { FullPageLoader } from '@/components/shared/loading'
@@ -9,17 +9,10 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
 import { CreditProvider } from '@/providers/credit-provider'
 
-interface Task {
-  id: string
-  title: string
-  status?: string
-}
-
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { data: session, isPending } = useSession()
-  const [, setRecentTasks] = useState<Task[]>([])
 
   // Check if we're on the chat page - which has its own layout
   // Note: /dashboard/chat now redirects to /dashboard, but we keep this check
@@ -44,43 +37,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       router.replace('/onboarding')
     }
   }, [session, isPending, router])
-
-  // Function to fetch tasks (explicitly request client view to show tasks they created)
-  const fetchTasks = () => {
-    fetch('/api/tasks?limit=10&view=client')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.data?.tasks) {
-          setRecentTasks(
-            data.data.tasks.map((t: { id: string; title: string; status: string }) => ({
-              id: t.id,
-              title: t.title,
-              status: t.status,
-            }))
-          )
-        }
-      })
-      .catch(console.error)
-  }
-
-  // Fetch recent tasks for sidebar
-  useEffect(() => {
-    if (session) {
-      fetchTasks()
-    }
-  }, [session])
-
-  // Listen for tasks-updated event to refresh sidebar
-  useEffect(() => {
-    const handleTasksUpdated = () => {
-      fetchTasks()
-    }
-
-    window.addEventListener('tasks-updated', handleTasksUpdated)
-    return () => {
-      window.removeEventListener('tasks-updated', handleTasksUpdated)
-    }
-  }, [])
 
   // Show loading while checking session
   if (isPending) {

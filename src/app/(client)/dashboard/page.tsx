@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { getImageVariantUrls } from '@/lib/image/utils'
+import { useCredits } from '@/providers/credit-provider'
 
 interface UploadedFile {
   fileName: string
@@ -207,9 +208,9 @@ function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
+  const { credits, isLoading: isLoadingCredits } = useCredits()
   const [chatInput, setChatInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [credits, setCredits] = useState<number | null>(null)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -228,6 +229,7 @@ function DashboardContent() {
 
   const userName = session?.user?.name?.split(' ')[0] || 'there'
 
+  // Handle payment redirect toasts
   useEffect(() => {
     const payment = searchParams.get('payment')
     const creditsParam = searchParams.get('credits')
@@ -237,13 +239,10 @@ function DashboardContent() {
     } else if (payment === 'cancelled') {
       toast.info('Payment was cancelled')
     }
+  }, [searchParams])
 
-    // Fetch credits
-    fetch('/api/user/credits')
-      .then((res) => res.json())
-      .then((data) => setCredits(data.data?.credits))
-      .catch(console.error)
-
+  // Fetch tasks and style references on mount only
+  useEffect(() => {
     // Fetch tasks needing client review
     fetch('/api/tasks?limit=10&view=client')
       .then((res) => res.json())
@@ -264,7 +263,7 @@ function DashboardContent() {
       })
       .catch(console.error)
       .finally(() => setIsLoadingStyles(false))
-  }, [searchParams])
+  }, [])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -662,7 +661,7 @@ function DashboardContent() {
 
                 {/* Credits indicator */}
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  {credits === null ? (
+                  {isLoadingCredits ? (
                     <Skeleton className="h-4 w-28" />
                   ) : (
                     <>
