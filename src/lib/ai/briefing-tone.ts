@@ -27,6 +27,19 @@ interface ToneContext {
   intent: string | null
 }
 
+const GLOBAL_ANTI_PATTERNS: string[] = [
+  'heartbeat of the campaign',
+  'trust-forward',
+  'conversion-focused',
+  'elevates the narrative',
+  'positions you as',
+  'creates a sense of',
+  'speaks to the audience',
+  'resonates deeply',
+  'drives home the message',
+  'leans into',
+]
+
 const TONE_RULES: ToneRule[] = [
   // Enterprise CTO
   {
@@ -196,11 +209,12 @@ export function calibrateTone(
   }
 
   const { profile, vocabularyHints, antiPatterns } = matchedRule
+  const mergedAntiPatterns = [...new Set([...antiPatterns, ...GLOBAL_ANTI_PATTERNS])]
 
   return {
     ...profile,
     vocabularyRegister: vocabularyHints,
-    toneDescription: buildToneDescription(profile, vocabularyHints, antiPatterns, ctx),
+    toneDescription: buildToneDescription(profile, vocabularyHints, mergedAntiPatterns, ctx),
   }
 }
 
@@ -212,9 +226,10 @@ function buildDefaultTone(): ToneProfile {
     directnessLevel: 'medium',
     vocabularyRegister: [],
     toneDescription:
-      'Use a clear, friendly, conversational tone. ' +
-      'Be direct without being cold. ' +
-      'Match the energy of the user.',
+      'Use a clear, warm, conversational tone. ' +
+      'Be direct without being cold — show genuine engagement with their project. ' +
+      'Vary sentence length. Match the energy of the user. ' +
+      `Do NOT use: ${GLOBAL_ANTI_PATTERNS.join(', ')}.`,
   }
 }
 
