@@ -171,6 +171,7 @@ export function ChatInterface({
 
     // Progress
     progressState,
+    briefingStage,
 
     // Files
     uploadedFiles,
@@ -407,6 +408,7 @@ export function ChatInterface({
           fileInputRef={fileInputRef}
           inputRef={inputRef}
           userCredits={userCredits}
+          briefingStage={briefingStage}
           stateMachineQuickOptions={stateMachineQuickOptions}
           onQuickOptionClick={handleQuickOptionClick}
           handleSend={handleSend}

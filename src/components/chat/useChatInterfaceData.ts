@@ -1759,6 +1759,7 @@ export function useChatInterfaceData({
 
     // Progress
     progressState,
+    briefingStage: _briefingState?.stage ?? null,
 
     // Files
     uploadedFiles,

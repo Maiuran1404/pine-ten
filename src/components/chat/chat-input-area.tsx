@@ -55,6 +55,9 @@ export interface ChatInputAreaProps {
   // Credits
   userCredits: number
 
+  // Briefing stage (used to gate certain buttons)
+  briefingStage?: string | null
+
   // State machine quick options (rendered as chips when enabled)
   stateMachineQuickOptions?: QuickOptionsType | null
   onQuickOptionClick?: (option: string) => void
@@ -90,6 +93,7 @@ export function ChatInputArea({
   fileInputRef,
   inputRef,
   userCredits,
+  briefingStage,
   stateMachineQuickOptions,
   onQuickOptionClick,
   handleSend,
@@ -149,19 +153,22 @@ export function ChatInputArea({
       )}
 
       {/* Quick submit button - positioned above input on the right */}
-      {messages.length > 0 && !pendingTask && !isLoading && (
-        <div className="flex justify-end mb-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRequestTaskSummary}
-            className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            You decide & submit
-          </Button>
-        </div>
-      )}
+      {messages.length > 0 &&
+        !pendingTask &&
+        !isLoading &&
+        (!briefingStage || ['REVIEW', 'DEEPEN', 'SUBMIT'].includes(briefingStage)) && (
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRequestTaskSummary}
+              className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              You decide & submit
+            </Button>
+          </div>
+        )}
 
       {/* Modern input box - matching design reference */}
       <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
