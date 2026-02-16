@@ -1,8 +1,8 @@
 /**
- * Creative Intake Module
- *
- * Optimized intake system for creative projects with minimal questions,
- * smart defaults, and adaptive flows.
+ * @deprecated Use `src/lib/ai/briefing-state-machine` instead.
+ * This module is kept for backward compatibility — 9+ files still import from it.
+ * No new code should depend on creative-intake; migrate callers to the
+ * briefing state machine pipeline.
  */
 
 // Types

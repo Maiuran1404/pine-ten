@@ -35,7 +35,6 @@ import { users, audiences as audiencesTable } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
-import { getEnvSafe } from '@/lib/env'
 // State machine imports (Phase 1)
 import {
   type BriefingState,
@@ -72,9 +71,6 @@ async function handler(request: NextRequest) {
         brief, // Brief data for confirmed fields
         briefingState: clientBriefingState, // Serialized state machine state (Phase 2)
       } = body
-
-      // Feature flag check
-      const stateMachineEnabled = getEnvSafe('BRIEFING_STATE_MACHINE_ENABLED') === true
 
       // Extract context from messages for content-aware style filtering
       const styleContext = extractStyleContext(messages || [])
@@ -171,16 +167,16 @@ async function handler(request: NextRequest) {
       }
 
       // ====================================================================
-      // STATE MACHINE PIPELINE (feature-flagged)
-      // When enabled and client provides briefingState, runs the new pipeline
-      // alongside the existing chat() call.
+      // STATE MACHINE PIPELINE
+      // When client provides briefingState, runs the pipeline alongside
+      // the existing chat() call.
       // ====================================================================
 
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineQuickOptions: { question: string; options: string[] } | undefined
       let stateMachineOverride: { systemPrompt: string } | undefined
 
-      if (stateMachineEnabled && clientBriefingState) {
+      if (clientBriefingState) {
         try {
           const lastUserMessage = messages[messages.length - 1]?.content || ''
           const briefingState: BriefingState = deserialize(clientBriefingState)
@@ -294,8 +290,8 @@ async function handler(request: NextRequest) {
           // 10. Serialize updated state for response
           updatedBriefingState = serialize(briefingState)
         } catch (err) {
-          logger.error({ err }, 'State machine pipeline failed — falling back to legacy')
-          // On error, clear override so legacy path runs
+          logger.error({ err }, 'State machine pipeline failed — using default AI prompt')
+          // On error, clear override so default prompt is used
           stateMachineOverride = undefined
           updatedBriefingState = undefined
           stateMachineQuickOptions = undefined

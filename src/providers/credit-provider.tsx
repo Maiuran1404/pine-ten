@@ -24,7 +24,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/user/billing')
       if (response.ok) {
         const data = await response.json()
-        setCredits(data.credits ?? 0)
+        setCredits(data.data?.credits ?? 0)
       }
     } catch (error) {
       console.error('Failed to fetch credits:', error)
