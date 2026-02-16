@@ -83,9 +83,9 @@ export default function DatabasePage() {
       )
       const data = await response.json()
       if (response.ok) {
-        setTableData(data)
+        setTableData(data.data)
       } else {
-        setError(data.error || `Failed to fetch ${tableName} data`)
+        setError(data.error?.message || `Failed to fetch ${tableName} data`)
         setTableData(null)
       }
     } catch (err) {

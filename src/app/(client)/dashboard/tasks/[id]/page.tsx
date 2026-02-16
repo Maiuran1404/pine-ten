@@ -227,7 +227,7 @@ export default function TaskDetailPage() {
       const response = await fetch(`/api/tasks/${id}`)
       if (response.ok) {
         const data = await response.json()
-        setTask(data.task)
+        setTask(data.data?.task)
       } else if (response.status === 404) {
         setError('Task not found')
       } else {

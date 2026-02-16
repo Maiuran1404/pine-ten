@@ -79,7 +79,7 @@ export default function CreditsPage() {
       const data = await response.json()
 
       // Redirect to Stripe checkout
-      window.location.href = data.url
+      window.location.href = data.data?.url
     } catch {
       toast.error('Failed to start checkout. Please try again.')
     } finally {

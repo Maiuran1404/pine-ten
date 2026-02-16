@@ -78,8 +78,8 @@ export default function ChatLogsPage() {
       const response = await fetch(`/api/admin/chat-logs?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        setLogs(data.logs || [])
-        setStats(data.stats || { total: 0, drafts: 0, tasks: 0, avgMessages: 0 })
+        setLogs(data.data?.logs || [])
+        setStats(data.data?.stats || { total: 0, drafts: 0, tasks: 0, avgMessages: 0 })
       }
     } catch (error) {
       logger.error({ err: error }, 'Failed to fetch chat logs')

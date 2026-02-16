@@ -2097,7 +2097,7 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
 
         if (response.ok) {
           const data = await response.json()
-          setBrandReferences(data.references || [])
+          setBrandReferences(data.data?.references || [])
         }
       } catch (error) {
         console.error('Error fetching brand references:', error)

@@ -241,7 +241,7 @@ function DashboardContent() {
     // Fetch credits
     fetch('/api/user/credits')
       .then((res) => res.json())
-      .then((data) => setCredits(data.credits))
+      .then((data) => setCredits(data.data?.credits))
       .catch(console.error)
 
     // Fetch tasks needing client review

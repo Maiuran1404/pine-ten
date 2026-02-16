@@ -103,9 +103,9 @@ export default function CreativeIntakePromptsPage() {
       const response = await fetch('/api/admin/creative-intake-prompts')
       if (response.ok) {
         const data = await response.json()
-        if (data.config) {
-          setConfig(data.config)
-          setSavedConfig(data.config)
+        if (data.data?.config) {
+          setConfig(data.data.config)
+          setSavedConfig(data.data.config)
         }
       }
     } catch (error) {

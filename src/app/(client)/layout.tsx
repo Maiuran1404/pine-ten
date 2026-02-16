@@ -50,9 +50,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     fetch('/api/tasks?limit=10&view=client')
       .then((res) => res.json())
       .then((data) => {
-        if (data.tasks) {
+        if (data.data?.tasks) {
           setRecentTasks(
-            data.tasks.map((t: { id: string; title: string; status: string }) => ({
+            data.data.tasks.map((t: { id: string; title: string; status: string }) => ({
               id: t.id,
               title: t.title,
               status: t.status,

@@ -156,12 +156,12 @@ export default function PayoutsPage() {
       const res = await fetch('/api/freelancer/payouts')
       if (res.ok) {
         const data = await res.json()
-        setStats(data.stats)
-        setEarnings(data.earnings || [])
-        setPayoutHistory(data.payoutHistory || [])
-        setMonthlyEarnings(data.monthlyEarnings || [])
-        setStripeConnectStatus(data.stripeConnectStatus)
-        setPayoutConfig(data.payoutConfig)
+        setStats(data.data?.stats)
+        setEarnings(data.data?.earnings || [])
+        setPayoutHistory(data.data?.payoutHistory || [])
+        setMonthlyEarnings(data.data?.monthlyEarnings || [])
+        setStripeConnectStatus(data.data?.stripeConnectStatus)
+        setPayoutConfig(data.data?.payoutConfig)
       }
     } catch (error) {
       console.error('Failed to fetch payout data:', error)
@@ -175,10 +175,10 @@ export default function PayoutsPage() {
       const res = await fetch('/api/freelancer/earnings-guide')
       if (res.ok) {
         const data = await res.json()
-        setEarningsGuide(data)
+        setEarningsGuide(data.data)
         // Set the first category as selected by default
-        if (data.earningsGuide?.length > 0) {
-          setSelectedCategory(data.earningsGuide[0].slug)
+        if (data.data?.earningsGuide?.length > 0) {
+          setSelectedCategory(data.data.earningsGuide[0].slug)
         }
       }
     } catch (error) {

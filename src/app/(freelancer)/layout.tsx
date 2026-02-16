@@ -28,7 +28,7 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
         const res = await fetch('/api/freelancer/profile')
         if (res.ok) {
           const data = await res.json()
-          setProfileStatus(data.status)
+          setProfileStatus(data.data?.status)
         }
       } catch (error) {
         logger.error({ err: error }, 'Failed to fetch profile status')

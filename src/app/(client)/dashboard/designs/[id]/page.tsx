@@ -93,7 +93,7 @@ export default function DesignResultPage() {
         throw new Error('Failed to fetch design')
       }
       const data = await response.json()
-      setDesign(data.design)
+      setDesign(data.data?.design)
     } catch (error) {
       console.error('Failed to fetch design:', error)
       toast.error('Failed to load design')

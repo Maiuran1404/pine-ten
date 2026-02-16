@@ -294,7 +294,7 @@ export default function FreelancerTaskDetailPage() {
       const response = await fetch(`/api/tasks/${id}`)
       if (response.ok) {
         const data = await response.json()
-        setTask(data.task)
+        setTask(data.data?.task)
       } else if (response.status === 404) {
         setError('Task not found. It may have been deleted or the link is incorrect.')
       } else if (response.status === 403) {

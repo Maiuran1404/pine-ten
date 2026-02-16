@@ -87,7 +87,7 @@ export default function InviteCodesPage() {
       const response = await fetch('/api/admin/invite-codes')
       if (response.ok) {
         const data = await response.json()
-        setCodes(data.codes || [])
+        setCodes(data.data?.codes || [])
       }
     } catch (error) {
       console.error('Failed to fetch invite codes:', error)

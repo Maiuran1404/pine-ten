@@ -59,9 +59,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       fetch('/api/admin/tasks?limit=5')
         .then((res) => res.json())
         .then((data) => {
-          if (data.tasks) {
+          if (data.data?.tasks) {
             setRecentTasks(
-              data.tasks.map((t: { id: string; title: string }) => ({
+              data.data.tasks.map((t: { id: string; title: string }) => ({
                 id: t.id,
                 title: t.title,
               }))
