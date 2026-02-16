@@ -413,7 +413,9 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, '')
     .replace(/\[SEARCH_STYLES: [^\]]+\]/g, '')
     .replace(/\[REFINE_STYLE: [^\]]+\]/g, '')
-    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?(?:\[\/QUICK_OPTIONS\]|$)/g, '')
+    .replace(/\[\/QUICK_OPTIONS\]/g, '') // Orphaned closing tags
+    .replace(/\[QUICK_OPTIONS[^\]]*$/gm, '') // Truncated opening tags at end of line
     .trim()
 
   // ========================================================================
