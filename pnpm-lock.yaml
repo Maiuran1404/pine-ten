@@ -224,6 +224,9 @@ importers:
       '@vitest/browser':
         specifier: ^4.0.16
         version: 4.0.16(msw@2.12.7(@types/node@20.19.26)(typescript@5.9.3))(vite@7.3.0(@types/node@20.19.26)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.16(@types/node@20.19.26)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(msw@2.12.7(@types/node@20.19.26)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2))
+      agentation:
+        specifier: ^2.2.1
+        version: 2.2.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -4021,6 +4024,20 @@ packages:
         integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==,
       }
     engines: { node: '>= 14' }
+
+  agentation@2.2.1:
+    resolution:
+      {
+        integrity: sha512-yV9P1DggI7M3SRaRwLwt+xqE5lXqg5l8xtqCr8KzEkbnH8Wa6eRATU97uKnD7cC8FrsJP62Mmw0Xf5Xi5KV50Q==,
+      }
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   ajv@6.12.6:
     resolution:
@@ -11627,6 +11644,11 @@ snapshots:
       - supports-color
 
   agent-base@7.1.4: {}
+
+  agentation@2.2.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
+    optionalDependencies:
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
 
   ajv@6.12.6:
     dependencies:

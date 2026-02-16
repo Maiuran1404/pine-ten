@@ -7,6 +7,7 @@ import { CsrfProvider } from '@/providers/csrf-provider'
 import { QueryProvider } from '@/providers/query-provider'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { SkipLink } from '@/components/shared/skip-link'
+import { DevAgentation } from '@/components/dev-agentation'
 import './globals.css'
 
 const geistSans = Geist({
@@ -65,6 +66,7 @@ export default function RootLayout({
           <SpeedInsights />
           <Analytics />
         </ThemeProvider>
+        <DevAgentation />
       </body>
     </html>
   )
