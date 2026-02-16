@@ -534,7 +534,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: undefined,
+          quickOptions: data.quickOptions ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -863,7 +863,7 @@ export function useChatInterfaceData({
         deliverableStyleMarker: data.deliverableStyleMarker,
         videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
-        quickOptions: undefined,
+        quickOptions: data.quickOptions ?? undefined,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -933,7 +933,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: undefined,
+          quickOptions: data.quickOptions ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1333,7 +1333,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: undefined,
+          quickOptions: data.quickOptions ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1534,7 +1534,7 @@ export function useChatInterfaceData({
           deliverableStyleMarker: data.deliverableStyleMarker,
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
-          quickOptions: undefined,
+          quickOptions: data.quickOptions ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
