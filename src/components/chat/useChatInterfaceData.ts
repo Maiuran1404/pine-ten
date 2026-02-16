@@ -92,6 +92,9 @@ export function useChatInterfaceData({
   const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(new Set())
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'up' | 'down' | null>>({})
   const [taskSubmitted, setTaskSubmitted] = useState(false)
+  const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false)
+  const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
+  const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -1101,8 +1104,10 @@ export function useChatInterfaceData({
       dispatchCreditsUpdated()
       onTaskCreated?.(taskId)
 
-      toast.success('Task created successfully!', { duration: 5000 })
-      router.push(`/dashboard/tasks/${taskId}`)
+      // Show celebration overlay instead of immediate redirect
+      setSubmittedTaskId(taskId)
+      setSubmittedAssignedArtist(result.data.assignedTo || null)
+      setShowSubmissionSuccess(true)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create task')
       throw error
@@ -1119,7 +1124,6 @@ export function useChatInterfaceData({
     onDraftUpdate,
     onTaskCreated,
     deductCredits,
-    router,
   ])
 
   const handleOpenSubmissionModal = useCallback(() => {
@@ -1131,6 +1135,16 @@ export function useChatInterfaceData({
     }
     setShowSubmissionModal(true)
   }, [pendingTask, userCredits])
+
+  const handleInsufficientCredits = useCallback(() => {
+    setShowCreditDialog(true)
+  }, [])
+
+  const handleViewProject = useCallback(() => {
+    if (submittedTaskId) {
+      router.push(`/dashboard/tasks/${submittedTaskId}`)
+    }
+  }, [submittedTaskId, router])
 
   const handleRejectTask = useCallback(() => {
     setPendingTask(null)
@@ -1605,6 +1619,9 @@ export function useChatInterfaceData({
     setShowCreditDialog,
     showSubmissionModal,
     setShowSubmissionModal,
+    showSubmissionSuccess,
+    submittedTaskId,
+    submittedAssignedArtist,
 
     // Moodboard
     moodboardItems,
@@ -1677,6 +1694,8 @@ export function useChatInterfaceData({
     handleShowDifferentStyles,
     handleConfirmTask,
     handleOpenSubmissionModal,
+    handleInsufficientCredits,
+    handleViewProject,
     handleRejectTask,
     handleRequestTaskSummary,
     handleDeleteChat,

@@ -15,9 +15,10 @@ import {
 } from '@/components/ui/alert-dialog'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
 import { type UploadedFile } from './types'
+import { isBriefReadyForDesigner } from './brief-panel/types'
 import { ChatLayout } from './chat-layout'
 import { StyleDetailModal } from './style-detail-modal'
-import { TaskSubmissionModal } from './task-submission-modal'
+import { SubmissionSuccess } from './submission-success'
 import { useChatInterfaceData } from './useChatInterfaceData'
 import { ChatMessageList } from './chat-message-list'
 import { ChatInputArea } from './chat-input-area'
@@ -138,8 +139,11 @@ export function ChatInterface({
     showManualSubmit,
     showCreditDialog,
     setShowCreditDialog,
-    showSubmissionModal,
-    setShowSubmissionModal,
+    showSubmissionModal: _showSubmissionModal,
+    setShowSubmissionModal: _setShowSubmissionModal,
+    showSubmissionSuccess,
+    submittedTaskId,
+    submittedAssignedArtist,
 
     // Moodboard
     moodboardItems,
@@ -212,6 +216,8 @@ export function ChatInterface({
     handleShowDifferentStyles,
     handleConfirmTask,
     handleOpenSubmissionModal,
+    handleInsufficientCredits,
+    handleViewProject,
     handleRejectTask,
     handleRequestTaskSummary,
     handleDeleteChat,
@@ -249,6 +255,8 @@ export function ChatInterface({
       onBriefUpdate={updateBrief}
       onExportBrief={exportBrief}
       briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
+      onRequestSubmit={handleOpenSubmissionModal}
+      isReadyForDesigner={brief ? isBriefReadyForDesigner(brief) : false}
       showProgress={false}
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
@@ -391,7 +399,7 @@ export function ChatInterface({
           briefingStage={briefingStage}
         />
 
-        {/* Input area */}
+        {/* Input area / Submit action bar */}
         <ChatInputArea
           messages={messages}
           input={input}
@@ -410,11 +418,27 @@ export function ChatInterface({
           inputRef={inputRef}
           userCredits={userCredits}
           briefingStage={briefingStage}
+          moodboardItems={moodboardItems}
+          onConfirmTask={handleConfirmTask}
+          onMakeChanges={handleRejectTask}
+          onInsufficientCredits={handleInsufficientCredits}
+          isSubmitting={isLoading}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}
           removeFile={removeFile}
         />
+
+        {/* Submission success celebration overlay */}
+        <AnimatePresence>
+          {showSubmissionSuccess && submittedTaskId && (
+            <SubmissionSuccess
+              taskId={submittedTaskId}
+              assignedArtist={submittedAssignedArtist}
+              onViewProject={handleViewProject}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Style Detail Modal */}
@@ -427,17 +451,7 @@ export function ChatInterface({
         onRemoveFromCollection={handleRemoveFromCollection}
       />
 
-      {/* Task Submission Modal */}
-      <TaskSubmissionModal
-        isOpen={showSubmissionModal}
-        onClose={() => setShowSubmissionModal(false)}
-        onConfirm={handleConfirmTask}
-        onMakeChanges={handleRejectTask}
-        taskProposal={pendingTask}
-        moodboardItems={moodboardItems}
-        userCredits={userCredits}
-        isSubmitting={isLoading}
-      />
+      {/* Task Submission Modal (kept for backward compat, no longer rendered) */}
 
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog

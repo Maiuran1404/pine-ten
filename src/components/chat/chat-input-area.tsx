@@ -20,9 +20,11 @@ import type {
   ChatMessage as Message,
   UploadedFile,
   TaskProposal,
+  MoodboardItem,
   QuickOptions as QuickOptionsType,
 } from './types'
 import { QuickOptions } from './quick-options'
+import { SubmitActionBar } from './submit-action-bar'
 
 // =============================================================================
 // PROPS
@@ -62,6 +64,15 @@ export interface ChatInputAreaProps {
   stateMachineQuickOptions?: QuickOptionsType | null
   onQuickOptionClick?: (option: string) => void
 
+  // Moodboard (for submit action bar)
+  moodboardItems?: MoodboardItem[]
+
+  // Submit action bar handlers
+  onConfirmTask?: () => Promise<void>
+  onMakeChanges?: () => void
+  onInsufficientCredits?: () => void
+  isSubmitting?: boolean
+
   // Handlers
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -94,6 +105,11 @@ export function ChatInputArea({
   inputRef,
   userCredits,
   briefingStage,
+  moodboardItems = [],
+  onConfirmTask,
+  onMakeChanges,
+  onInsufficientCredits,
+  isSubmitting = false,
   stateMachineQuickOptions,
   onQuickOptionClick,
   handleSend,
@@ -101,6 +117,21 @@ export function ChatInputArea({
   handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
+  // When a pending task exists, render the submit action bar instead of the input
+  if (pendingTask && onConfirmTask && onMakeChanges && onInsufficientCredits) {
+    return (
+      <SubmitActionBar
+        taskProposal={pendingTask}
+        moodboardItems={moodboardItems}
+        userCredits={userCredits}
+        isSubmitting={isSubmitting}
+        onConfirm={onConfirmTask}
+        onMakeChanges={onMakeChanges}
+        onInsufficientCredits={onInsufficientCredits}
+      />
+    )
+  }
+
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
       {/* State machine quick option chips */}

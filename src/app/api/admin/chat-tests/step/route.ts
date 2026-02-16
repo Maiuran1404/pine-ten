@@ -15,8 +15,19 @@ import {
   type StrategicReviewData,
   type StructureData,
   type DeliverableCategory,
+  type BriefingStage,
 } from '@/lib/ai/briefing-state-machine'
 import type { ChatTestScenario } from '@/lib/ai/chat-test-scenarios'
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** After this many user turns stuck in the same stage, force advance to next stage */
+const FORCE_ADVANCE_AFTER_TURNS = 8
+
+/** Max messages to send to /api/chat to prevent AI context pollution */
+const MAX_MESSAGES_TO_SEND = 16
 
 const stepSchema = z.object({
   runId: z.string().uuid(),
@@ -280,6 +291,244 @@ function ensureScenarioDataSeeded(
   return updated
 }
 
+// =============================================================================
+// FORCE STAGE ADVANCEMENT (for stuck conversations)
+// =============================================================================
+
+const STAGE_ORDER: BriefingStage[] = [
+  'EXTRACT',
+  'TASK_TYPE',
+  'INTENT',
+  'INSPIRATION',
+  'STRUCTURE',
+  'STRATEGIC_REVIEW',
+  'MOODBOARD',
+  'REVIEW',
+]
+
+/**
+ * Force advance to the next stage when stuck for too many turns.
+ * Populates required fields with placeholder data so the state machine
+ * doesn't reject the advancement.
+ */
+function forceAdvanceStage(
+  state: SerializedBriefingState,
+  scenario: ChatTestScenario
+): SerializedBriefingState {
+  const currentIdx = STAGE_ORDER.indexOf(state.stage)
+  if (currentIdx === -1 || currentIdx >= STAGE_ORDER.length - 1) return state
+
+  const nextStage = STAGE_ORDER[currentIdx + 1]
+  let updated: SerializedBriefingState = {
+    ...state,
+    stage: nextStage,
+    turnsInCurrentStage: 0,
+  }
+
+  // Populate required fields for the transition
+  switch (state.stage) {
+    case 'INSPIRATION': {
+      // STRUCTURE requires selectedStyles.length > 0
+      if (
+        !updated.brief.visualDirection ||
+        updated.brief.visualDirection.selectedStyles.length === 0
+      ) {
+        updated = {
+          ...updated,
+          brief: {
+            ...updated.brief,
+            visualDirection: {
+              selectedStyles: [
+                {
+                  id: 'placeholder-style',
+                  name: 'Modern Minimal',
+                  description: 'Clean, modern aesthetic',
+                  imageUrl: '',
+                  deliverableType: scenarioToCategory(scenario),
+                  styleAxis: 'modern',
+                  subStyle: null,
+                  semanticTags: ['minimal', 'clean'],
+                },
+              ],
+              moodKeywords: ['modern', 'clean'],
+              colorPalette: [],
+              typography: { primary: '', secondary: '' },
+              avoidElements: [],
+            },
+          },
+        }
+      }
+      break
+    }
+    case 'STRUCTURE': {
+      // STRATEGIC_REVIEW requires structure !== null
+      if (!updated.structure) {
+        const category = updated.deliverableCategory ?? scenarioToCategory(scenario)
+        updated.structure = createPlaceholderStructure(category)
+      }
+      break
+    }
+    case 'STRATEGIC_REVIEW': {
+      // MOODBOARD advancement via dispatch (not automatic)
+      if (!updated.strategicReview) {
+        updated.strategicReview = {
+          strengths: ['Strong brand alignment', 'Clear target audience'],
+          risks: ['Timeline may be tight'],
+          optimizationSuggestion: 'Consider A/B testing the creative approach',
+          inspirationFitScore: 'aligned',
+          inspirationFitNote: null,
+          userOverride: false,
+        }
+      }
+      break
+    }
+  }
+
+  // Also ensure deliverableCategory is set
+  if (!updated.deliverableCategory || updated.deliverableCategory === 'unknown') {
+    updated.deliverableCategory = scenarioToCategory(scenario)
+  }
+
+  return updated
+}
+
+/**
+ * Create minimal placeholder structure data for a given deliverable category.
+ */
+function createPlaceholderStructure(category: DeliverableCategory): StructureData {
+  switch (category) {
+    case 'video':
+      return {
+        type: 'storyboard',
+        scenes: [
+          {
+            sceneNumber: 1,
+            title: 'Hook',
+            description: 'Opening hook',
+            duration: '3s',
+            visualNote: 'Eye-catching opening',
+          },
+          {
+            sceneNumber: 2,
+            title: 'Problem',
+            description: 'Present the problem',
+            duration: '5s',
+            visualNote: 'Relatable scenario',
+          },
+          {
+            sceneNumber: 3,
+            title: 'Solution',
+            description: 'Present the solution',
+            duration: '10s',
+            visualNote: 'Product showcase',
+          },
+          {
+            sceneNumber: 4,
+            title: 'CTA',
+            description: 'Call to action',
+            duration: '3s',
+            visualNote: 'Clear CTA overlay',
+          },
+        ],
+      }
+    case 'website':
+      return {
+        type: 'layout',
+        sections: [
+          {
+            sectionName: 'Hero',
+            purpose: 'First impression',
+            contentGuidance: 'Headline + CTA',
+            order: 1,
+          },
+          {
+            sectionName: 'Features',
+            purpose: 'Value proposition',
+            contentGuidance: 'Key benefits',
+            order: 2,
+          },
+          {
+            sectionName: 'Social Proof',
+            purpose: 'Trust building',
+            contentGuidance: 'Testimonials',
+            order: 3,
+          },
+          {
+            sectionName: 'CTA',
+            purpose: 'Conversion',
+            contentGuidance: 'Final call to action',
+            order: 4,
+          },
+        ],
+      }
+    case 'design':
+    case 'brand':
+      return {
+        type: 'single_design',
+        specification: {
+          format: 'Digital',
+          dimensions: [{ width: 1080, height: 1080, label: 'Square', aspectRatio: '1:1' }],
+          keyElements: ['Logo', 'Headline', 'CTA'],
+          copyGuidance: 'Keep messaging concise and action-oriented',
+        },
+      }
+    case 'content':
+    default:
+      return {
+        type: 'calendar',
+        outline: {
+          totalDuration: '4 weeks',
+          postingCadence: '3 times per week',
+          platforms: ['instagram'],
+          distributionLogic: 'Spread across week',
+          contentPillars: [
+            { name: 'Education', description: 'Informative content', percentage: 40 },
+            { name: 'Engagement', description: 'Interactive content', percentage: 30 },
+            { name: 'Promotion', description: 'Product-focused content', percentage: 30 },
+          ],
+          weeks: [
+            {
+              weekNumber: 1,
+              narrativeArc: 'Introduction',
+              theme: 'Getting started',
+              posts: [
+                {
+                  dayOfWeek: 'Monday',
+                  pillarType: 'pillar',
+                  topic: 'Intro post',
+                  format: 'carousel',
+                  cta: 'Follow for more',
+                  engagementTrigger: 'Question in caption',
+                },
+                {
+                  dayOfWeek: 'Wednesday',
+                  pillarType: 'support',
+                  topic: 'Tips',
+                  format: 'reel',
+                  cta: 'Save this',
+                  engagementTrigger: 'Poll in stories',
+                },
+                {
+                  dayOfWeek: 'Friday',
+                  pillarType: 'pillar',
+                  topic: 'Feature spotlight',
+                  format: 'single image',
+                  cta: 'Learn more',
+                  engagementTrigger: 'Tag a friend',
+                },
+              ],
+            },
+          ],
+          ctaEscalation: {
+            awarenessPhase: { weeks: [1, 2], ctaStyle: 'Soft - follow/save' },
+            engagementPhase: { weeks: [3], ctaStyle: 'Medium - comment/share' },
+            conversionPhase: { weeks: [4], ctaStyle: 'Hard - shop now/sign up' },
+          },
+        },
+      }
+  }
+}
+
 /**
  * POST /api/admin/chat-tests/step — Execute one conversation turn
  *
@@ -436,10 +685,20 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. Build the messages array for /api/chat
-      const chatMessages = run.messages.map((m) => ({
+      // Trim to prevent AI context pollution from too many repetitive turns.
+      // Keep first 4 messages (project context) + last messages up to limit.
+      const allMsgs = run.messages.map((m) => ({
         role: m.role,
         content: m.content,
       }))
+      let chatMessages: typeof allMsgs
+      if (allMsgs.length > MAX_MESSAGES_TO_SEND) {
+        const contextMsgs = allMsgs.slice(0, 4)
+        const recentMsgs = allMsgs.slice(-(MAX_MESSAGES_TO_SEND - 4))
+        chatMessages = [...contextMsgs, ...recentMsgs]
+      } else {
+        chatMessages = allMsgs
+      }
       chatMessages.push({ role: 'user' as const, content: userContent })
 
       // Seed scenario data into briefingState when stuck (prevents infinite loops)
@@ -544,7 +803,29 @@ export async function POST(request: NextRequest) {
       }
 
       // Determine current stage from briefing state
-      const updatedStage = newBriefingState?.stage ?? currentStage
+      let updatedStage = newBriefingState?.stage ?? currentStage
+
+      // Force advance if stuck in the same stage for too many turns
+      if (
+        newBriefingState &&
+        updatedStage === currentStage &&
+        turnsInStage >= FORCE_ADVANCE_AFTER_TURNS
+      ) {
+        logger.warn(
+          {
+            scenario: run.scenarioName,
+            stage: currentStage,
+            turnsInStage,
+            totalTurns: run.totalTurns,
+          },
+          'Chat test force-advancing stage due to stall'
+        )
+        newBriefingState = forceAdvanceStage(
+          newBriefingState,
+          run.scenarioConfig as ChatTestScenario
+        )
+        updatedStage = newBriefingState.stage
+      }
 
       // Fix 2A: Determine pending action for next turn
       const nextPendingAction = determinePendingAction(chatData, moodboardHasStyles)

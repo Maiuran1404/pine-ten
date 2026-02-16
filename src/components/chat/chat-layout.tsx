@@ -2,18 +2,17 @@
 
 import { useState, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Palette, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { type ChatStage, type MoodboardItem } from './types'
 import { type LiveBrief } from './brief-panel/types'
 import { TopProgressBar } from './progress-stepper'
+import { CompactProgress } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
-import { BriefPanel } from './brief-panel'
-
-type RightPanelTab = 'brief' | 'moodboard'
+import { Palette } from 'lucide-react'
+import { UnifiedPanel } from './unified-panel'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -30,6 +29,9 @@ interface ChatLayoutProps {
   onBriefUpdate?: (brief: LiveBrief) => void
   onExportBrief?: () => void
   briefCompletion?: number
+  // Submission props
+  onRequestSubmit?: () => void
+  isReadyForDesigner?: boolean
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -49,13 +51,14 @@ export function ChatLayout({
   onBriefUpdate,
   onExportBrief,
   briefCompletion = 0,
+  onRequestSubmit,
+  isReadyForDesigner,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
   className,
 }: ChatLayoutProps) {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<RightPanelTab>('brief')
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
 
   const showRightPanel = showMoodboard || showBrief
@@ -81,65 +84,27 @@ export function ChatLayout({
               <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
-                    {activeTab === 'brief' ? (
-                      <>
-                        <FileText className="h-4 w-4" />
-                        <span className="text-xs">{briefCompletion}%</span>
-                      </>
-                    ) : (
-                      <>
-                        <Palette className="h-4 w-4" />
-                        <span className="text-xs">
-                          {moodboardItems.length > 0 ? moodboardItems.length : ''}
-                        </span>
-                      </>
-                    )}
+                    <FileText className="h-4 w-4" />
+                    <span className="text-xs">{briefCompletion}%</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80 p-0">
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={(v) => setActiveTab(v as RightPanelTab)}
-                    className="h-full flex flex-col"
-                  >
-                    <TabsList className="shrink-0 grid grid-cols-2 m-2">
-                      <TabsTrigger value="brief" className="text-xs gap-1.5">
-                        <FileText className="h-3.5 w-3.5" />
-                        Brief
-                      </TabsTrigger>
-                      <TabsTrigger value="moodboard" className="text-xs gap-1.5">
-                        <Palette className="h-3.5 w-3.5" />
-                        Moodboard
-                        {moodboardItems.length > 0 && (
-                          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                            {moodboardItems.length}
-                          </span>
-                        )}
-                      </TabsTrigger>
-                    </TabsList>
-                    <div className="flex-1 min-h-0">
-                      <TabsContent value="brief" className="h-full mt-0">
-                        {brief && onBriefUpdate ? (
-                          <BriefPanel
-                            brief={brief}
-                            onBriefUpdate={onBriefUpdate}
-                            onExportBrief={onExportBrief}
-                          />
-                        ) : (
-                          <div className="p-4 text-center text-muted-foreground text-sm">
-                            Brief will appear as you chat
-                          </div>
-                        )}
-                      </TabsContent>
-                      <TabsContent value="moodboard" className="h-full mt-0">
-                        <MoodboardPanel
-                          items={moodboardItems}
-                          onRemoveItem={onRemoveMoodboardItem}
-                          onClearAll={onClearMoodboard}
-                        />
-                      </TabsContent>
-                    </div>
-                  </Tabs>
+                  <div className="h-full pt-8">
+                    <UnifiedPanel
+                      currentStage={currentStage}
+                      completedStages={completedStages}
+                      progressPercentage={progressPercentage}
+                      brief={brief || null}
+                      onBriefUpdate={onBriefUpdate || (() => {})}
+                      onExportBrief={onExportBrief}
+                      briefCompletion={briefCompletion}
+                      moodboardItems={moodboardItems}
+                      onRemoveMoodboardItem={onRemoveMoodboardItem}
+                      onClearMoodboard={onClearMoodboard}
+                      onRequestSubmit={onRequestSubmit}
+                      isReadyForDesigner={isReadyForDesigner}
+                    />
+                  </div>
                 </SheetContent>
               </Sheet>
             )}
@@ -149,7 +114,7 @@ export function ChatLayout({
           <div className="flex-1 min-h-0">{children}</div>
         </div>
 
-        {/* Right Panel - Tabbed Brief/Moodboard (Desktop) */}
+        {/* Right Panel - Unified (Desktop) */}
         {showRightPanel && (
           <AnimatePresence mode="wait">
             {isRightPanelCollapsed ? (
@@ -169,45 +134,12 @@ export function ChatLayout({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="flex flex-col items-center gap-3">
-                  {showBrief && (
-                    <button
-                      onClick={() => {
-                        setActiveTab('brief')
-                        setIsRightPanelCollapsed(false)
-                      }}
-                      className={cn(
-                        'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
-                        activeTab === 'brief'
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted'
-                      )}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </button>
-                  )}
-                  {showMoodboard && (
-                    <button
-                      onClick={() => {
-                        setActiveTab('moodboard')
-                        setIsRightPanelCollapsed(false)
-                      }}
-                      className={cn(
-                        'w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative',
-                        activeTab === 'moodboard'
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted'
-                      )}
-                    >
-                      <Palette className="h-4 w-4" />
-                      {moodboardItems.length > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-medium">
-                          {moodboardItems.length}
-                        </span>
-                      )}
-                    </button>
-                  )}
-                </div>
+                <CompactProgress
+                  currentStage={currentStage}
+                  completedStages={completedStages}
+                  progressPercentage={progressPercentage}
+                  className="flex-col"
+                />
               </motion.div>
             ) : (
               <motion.div
@@ -218,7 +150,7 @@ export function ChatLayout({
                 transition={{ duration: 0.2 }}
                 className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
               >
-                {/* Minimal Header - Brief only */}
+                {/* Collapse button */}
                 <div className="shrink-0 flex items-center justify-start px-3 py-2">
                   <Button
                     variant="ghost"
@@ -230,19 +162,22 @@ export function ChatLayout({
                   </Button>
                 </div>
 
-                {/* Brief Content - No tabs, just brief */}
+                {/* Unified Panel */}
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  {brief && onBriefUpdate ? (
-                    <BriefPanel
-                      brief={brief}
-                      onBriefUpdate={onBriefUpdate}
-                      onExportBrief={onExportBrief}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                      <p className="text-xs text-muted-foreground/50">Brief builds as you chat</p>
-                    </div>
-                  )}
+                  <UnifiedPanel
+                    currentStage={currentStage}
+                    completedStages={completedStages}
+                    progressPercentage={progressPercentage}
+                    brief={brief || null}
+                    onBriefUpdate={onBriefUpdate || (() => {})}
+                    onExportBrief={onExportBrief}
+                    briefCompletion={briefCompletion}
+                    moodboardItems={moodboardItems}
+                    onRemoveMoodboardItem={onRemoveMoodboardItem}
+                    onClearMoodboard={onClearMoodboard}
+                    onRequestSubmit={onRequestSubmit}
+                    isReadyForDesigner={isReadyForDesigner}
+                  />
                 </div>
               </motion.div>
             )}
@@ -255,72 +190,32 @@ export function ChatLayout({
             <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
               <SheetTrigger asChild>
                 <Button size="lg" className="rounded-full shadow-lg gap-2">
-                  {activeTab === 'brief' ? (
-                    <>
-                      <FileText className="h-5 w-5" />
-                      Brief
-                      {briefCompletion > 0 && (
-                        <span className="ml-1 px-2 py-0.5 rounded-full bg-primary-foreground/20 text-xs">
-                          {briefCompletion}%
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Palette className="h-5 w-5" />
-                      Moodboard
-                      {moodboardItems.length > 0 && (
-                        <span className="ml-1 px-2 py-0.5 rounded-full bg-primary-foreground/20 text-xs">
-                          {moodboardItems.length}
-                        </span>
-                      )}
-                    </>
+                  <FileText className="h-5 w-5" />
+                  Brief
+                  {briefCompletion > 0 && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-primary-foreground/20 text-xs">
+                      {briefCompletion}%
+                    </span>
                   )}
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="h-[70vh] p-0 rounded-t-xl">
-                <Tabs
-                  value={activeTab}
-                  onValueChange={(v) => setActiveTab(v as RightPanelTab)}
-                  className="h-full flex flex-col"
-                >
-                  <TabsList className="shrink-0 grid grid-cols-2 mx-4 mt-4">
-                    {showBrief && (
-                      <TabsTrigger value="brief" className="gap-1.5">
-                        <FileText className="h-4 w-4" />
-                        Brief
-                      </TabsTrigger>
-                    )}
-                    {showMoodboard && (
-                      <TabsTrigger value="moodboard" className="gap-1.5">
-                        <Palette className="h-4 w-4" />
-                        Moodboard
-                      </TabsTrigger>
-                    )}
-                  </TabsList>
-                  <div className="flex-1 min-h-0 mt-2">
-                    <TabsContent value="brief" className="h-full mt-0">
-                      {brief && onBriefUpdate ? (
-                        <BriefPanel
-                          brief={brief}
-                          onBriefUpdate={onBriefUpdate}
-                          onExportBrief={onExportBrief}
-                        />
-                      ) : (
-                        <div className="p-4 text-center text-muted-foreground text-sm">
-                          Brief will appear as you chat
-                        </div>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="moodboard" className="h-full mt-0">
-                      <MoodboardPanel
-                        items={moodboardItems}
-                        onRemoveItem={onRemoveMoodboardItem}
-                        onClearAll={onClearMoodboard}
-                      />
-                    </TabsContent>
-                  </div>
-                </Tabs>
+                <div className="h-full pt-4">
+                  <UnifiedPanel
+                    currentStage={currentStage}
+                    completedStages={completedStages}
+                    progressPercentage={progressPercentage}
+                    brief={brief || null}
+                    onBriefUpdate={onBriefUpdate || (() => {})}
+                    onExportBrief={onExportBrief}
+                    briefCompletion={briefCompletion}
+                    moodboardItems={moodboardItems}
+                    onRemoveMoodboardItem={onRemoveMoodboardItem}
+                    onClearMoodboard={onClearMoodboard}
+                    onRequestSubmit={onRequestSubmit}
+                    isReadyForDesigner={isReadyForDesigner}
+                  />
+                </div>
               </SheetContent>
             </Sheet>
           </div>

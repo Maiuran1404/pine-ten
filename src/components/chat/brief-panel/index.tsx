@@ -13,7 +13,7 @@ import { PLATFORM_DISPLAY_NAMES, calculateBriefCompletion, isBriefReadyForDesign
 // SLEEK FIELD ROW - With suggestions and status indicators
 // =============================================================================
 
-interface SleekFieldProps {
+export interface SleekFieldProps {
   label: string
   value: string | null
   source: FieldSource
@@ -22,7 +22,7 @@ interface SleekFieldProps {
   onUseSuggestion?: () => void
 }
 
-function SleekField({
+export function SleekField({
   label,
   value,
   source,
@@ -102,6 +102,148 @@ function SleekField({
         </button>
       ) : (
         <span className="text-sm text-muted-foreground/30 italic">Mention in chat...</span>
+      )}
+    </div>
+  )
+}
+
+// =============================================================================
+// BRIEF FIELDS CONTENT - Extracted for reuse in UnifiedPanel
+// =============================================================================
+
+interface BriefFieldsContentProps {
+  brief: LiveBrief
+  onBriefUpdate: (brief: LiveBrief) => void
+}
+
+export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentProps) {
+  const isReady = isBriefReadyForDesigner(brief)
+
+  // Get display values
+  const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
+  const audienceValue = brief.audience.value?.name || null
+  const intentValue = brief.intent.value
+    ? brief.intent.value.charAt(0).toUpperCase() + brief.intent.value.slice(1)
+    : null
+
+  // Handlers to apply suggestions
+  const applySuggestion = useCallback(
+    (field: keyof LiveBrief, value: unknown) => {
+      onBriefUpdate({
+        ...brief,
+        [field]:
+          typeof value === 'string'
+            ? { value, confidence: 0.7, source: 'inferred' as const }
+            : value,
+        updatedAt: new Date(),
+      })
+    },
+    [brief, onBriefUpdate]
+  )
+
+  return (
+    <div className="px-4 pb-4">
+      <SleekField
+        label="Summary"
+        value={brief.taskSummary.value}
+        source={brief.taskSummary.source}
+        confidence={brief.taskSummary.confidence}
+        suggestion={!brief.taskSummary.value ? 'Describe your project...' : null}
+      />
+      <SleekField
+        label="Intent"
+        value={intentValue}
+        source={brief.intent.source}
+        confidence={brief.intent.confidence}
+        suggestion={!brief.intent.value ? 'Launch / Promote / Engage' : null}
+        onUseSuggestion={() =>
+          applySuggestion('intent', {
+            value: 'launch',
+            confidence: 0.5,
+            source: 'inferred',
+          })
+        }
+      />
+      <SleekField
+        label="Platform"
+        value={platformValue}
+        source={brief.platform.source}
+        confidence={brief.platform.confidence}
+        suggestion={!brief.platform.value ? 'Instagram / LinkedIn / Web' : null}
+        onUseSuggestion={() =>
+          applySuggestion('platform', {
+            value: 'instagram',
+            confidence: 0.5,
+            source: 'inferred',
+          })
+        }
+      />
+      <SleekField
+        label="Audience"
+        value={audienceValue}
+        source={brief.audience.source}
+        confidence={brief.audience.confidence}
+        suggestion={brief.audience.value?.name ? null : 'From your brand profile'}
+      />
+      <SleekField
+        label="Topic"
+        value={brief.topic.value}
+        source={brief.topic.source}
+        confidence={brief.topic.confidence}
+        suggestion={!brief.topic.value ? "What's this about?" : null}
+      />
+
+      {/* Dimensions - compact */}
+      {brief.dimensions.length > 0 && (
+        <div className="pt-3 mt-1">
+          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+            Dimensions
+          </span>
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {brief.dimensions.slice(0, 3).map((dim, idx) => (
+              <span
+                key={`${dim.width}x${dim.height}-${idx}`}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground/70"
+              >
+                {dim.width}x{dim.height}
+              </span>
+            ))}
+            {brief.dimensions.length > 3 && (
+              <span className="text-[10px] text-muted-foreground/40">
+                +{brief.dimensions.length - 3}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Colors from brand */}
+      {brief.visualDirection?.colorPalette && brief.visualDirection.colorPalette.length > 0 && (
+        <div className="pt-3 mt-1">
+          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+            Brand Colors
+          </span>
+          <div className="flex gap-1.5 mt-1.5">
+            {brief.visualDirection.colorPalette.slice(0, 5).map((color, idx) => (
+              <div
+                key={idx}
+                className="w-5 h-5 rounded-full border border-white/20 shadow-sm"
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ready indicator */}
+      {isReady && (
+        <div className="mt-4 pt-3 border-t border-border/20">
+          <div className="flex items-center gap-2 text-emerald-500">
+            <Check className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Ready to submit</span>
+          </div>
+        </div>
       )}
     </div>
   )
