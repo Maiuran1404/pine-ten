@@ -123,6 +123,27 @@ function LoadingIndicator({ requestStartTime }: { requestStartTime: number | nul
 }
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+/**
+ * Map a briefing stage to the CTA type that should be shown.
+ * Returns null when the state machine is inactive or at a stage with no CTA.
+ */
+function getStageCTA(briefingStage: string | null): 'styleSelection' | 'taskProposal' | null {
+  switch (briefingStage) {
+    case 'INSPIRATION':
+    case 'MOODBOARD':
+      return 'styleSelection'
+    case 'REVIEW':
+    case 'SUBMIT':
+      return 'taskProposal'
+    default:
+      return null
+  }
+}
+
+// =============================================================================
 // PROPS
 // =============================================================================
 
@@ -287,7 +308,7 @@ export function ChatMessageList({
 
                         {/* Style References - only on last assistant message when stage CTA is styleSelection */}
                         {isLastAssistant &&
-                          stageCTA === 'styleSelection' &&
+                          (!briefingStage || stageCTA === 'styleSelection') &&
                           message.styleReferences &&
                           message.styleReferences.length > 0 &&
                           (animatingMessageId !== message.id ||
@@ -397,7 +418,7 @@ export function ChatMessageList({
 
                         {/* Deliverable Style References - only on last assistant message when stage CTA is styleSelection */}
                         {isLastAssistant &&
-                          stageCTA === 'styleSelection' &&
+                          (!briefingStage || stageCTA === 'styleSelection') &&
                           message.deliverableStyles &&
                           message.deliverableStyles.length > 0 &&
                           (animatingMessageId !== message.id ||
@@ -462,7 +483,7 @@ export function ChatMessageList({
 
                         {/* Video References - only on last assistant message when stage CTA is styleSelection */}
                         {isLastAssistant &&
-                          stageCTA === 'styleSelection' &&
+                          (!briefingStage || stageCTA === 'styleSelection') &&
                           message.videoReferences &&
                           message.videoReferences.length > 0 &&
                           (animatingMessageId !== message.id ||
@@ -527,18 +548,20 @@ export function ChatMessageList({
                           )}
 
                         {/* Task Proposal - only on last assistant message when stage CTA is taskProposal */}
-                        {isLastAssistant && stageCTA === 'taskProposal' && message.taskProposal && (
-                          <div className="mt-4 ml-8">
-                            <TaskProposalCard
-                              proposal={message.taskProposal}
-                              showActions={pendingTask?.title === message.taskProposal.title}
-                              onSubmit={handleOpenSubmissionModal}
-                              onMakeChanges={handleRejectTask}
-                              isLoading={isLoading}
-                              userCredits={userCredits}
-                            />
-                          </div>
-                        )}
+                        {isLastAssistant &&
+                          (!briefingStage || stageCTA === 'taskProposal') &&
+                          message.taskProposal && (
+                            <div className="mt-4 ml-8">
+                              <TaskProposalCard
+                                proposal={message.taskProposal}
+                                showActions={pendingTask?.title === message.taskProposal.title}
+                                onSubmit={handleOpenSubmissionModal}
+                                onMakeChanges={handleRejectTask}
+                                isLoading={isLoading}
+                                userCredits={userCredits}
+                              />
+                            </div>
+                          )}
 
                         {/* Quick Options removed - using input field suggestions instead */}
                       </div>
