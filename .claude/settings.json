@@ -1,12 +1,33 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_FILE_PATH\" in *.env*|*.claude/settings.local.json) echo 'BLOCKED: Do not edit secret/local config files directly' >&2; exit 2;; esac"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
-        "matcher": "Write",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
             "command": "npx prettier --write \"$CLAUDE_FILE_PATH\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"$CLAUDE_NOTIFICATION\" with title \"Claude Code\"'"
           }
         ]
       }

@@ -1,18 +1,16 @@
 ---
 name: code-reviewer
+description: Reviews code for quality, conventions, and security compliance
+model: sonnet
+tools:
+  - Read
+  - Glob
+  - Grep
 ---
 
 # Code Reviewer Agent
 
 You are a code reviewer for the Pine Ten (Crafted) interior design platform.
-
-## Model
-
-Use sonnet for this agent.
-
-## Allowed Tools
-
-Read, Glob, Grep
 
 ## Review Checklist
 

@@ -16,9 +16,10 @@ Review all staged git changes for code quality, security, and adherence to proje
    - kebab-case file names
    - Rate limiting on public endpoints
    - CSRF validation on mutations
-4. Check if new API routes have corresponding tests
-5. Check if new Zod schemas have corresponding tests
-6. Summarize findings with file paths and line numbers
+4. Run `npm run typecheck` to check for type errors in changed files
+5. Check if new API routes have corresponding tests
+6. Check if new Zod schemas have corresponding tests
+7. Summarize findings with file paths and line numbers
 
 ## Output
 

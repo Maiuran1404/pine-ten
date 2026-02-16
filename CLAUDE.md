@@ -1,4 +1,6 @@
-# Pine Ten (Crafted) — Interior Design Platform
+# Pine Ten (Crafted)
+
+AI-powered interior design marketplace connecting clients with freelance designers. Clients describe projects via a chat-driven creative briefing flow; freelancers receive matched tasks and deliver designs.
 
 ## Stack
 
@@ -11,7 +13,6 @@ Next.js 16 (App Router), TypeScript strict, Drizzle ORM, Better Auth, Supabase (
 | `npm run dev`         | Start dev server            |
 | `npm run build`       | Production build            |
 | `npm run test`        | Run tests (Vitest)          |
-| `npm run test:watch`  | Watch mode tests            |
 | `npm run lint`        | ESLint                      |
 | `npm run typecheck`   | `npx tsc --noEmit`          |
 | `npm run db:generate` | Generate Drizzle migrations |
@@ -23,26 +24,18 @@ Next.js 16 (App Router), TypeScript strict, Drizzle ORM, Better Auth, Supabase (
 
 ```
 src/
-  app/              # Next.js App Router
-    (admin)/        # Admin route group
-    (auth)/         # Auth route group
-    (client)/       # Client route group
-    (freelancer)/   # Freelancer route group
+  app/              # Next.js App Router — (admin), (auth), (client), (freelancer) route groups
     api/            # API routes (withErrorHandling pattern)
   components/       # React components (shadcn/ui based)
   db/               # Drizzle schema, migrations, seeds
     schema.ts       # All tables and relations
-    migrations/     # SQL migration files
   hooks/            # Custom React hooks
   lib/              # Utilities, AI, validations, auth
     validations/    # Zod schemas (types.ts has ActionResult<T>)
     errors.ts       # withErrorHandling, APIError, Errors helpers
     env.ts          # Env validation (add new vars here)
     auth.ts         # Better Auth config
-    rate-limit.ts   # Rate limiting
   test/             # Test utilities, mocks, factories
-    mocks/supabase.ts  # Supabase mock client
-  types/            # Shared TypeScript types
 ```
 
 ## Code Patterns
@@ -53,67 +46,97 @@ All API routes use `withErrorHandling` from `src/lib/errors.ts`:
 
 ```typescript
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { someSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
-    const body = someSchema.parse(await request.json()) // Zod validation first
+    const body = someSchema.parse(await request.json())
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) throw Errors.unauthorized()
-    // ... business logic
     return successResponse(data, 201)
   })
 }
 ```
 
-### ActionResult<T>
-
-For client-side server action returns: `type ActionResult<T> = { data: T; error: null } | { data: null; error: string }`
-
 ### Error Helpers
 
 `Errors.unauthorized()`, `Errors.notFound("Task")`, `Errors.badRequest("msg")`, `Errors.insufficientCredits(required, available)`, `Errors.rateLimited(retryAfter)`
 
-## Code Style
+### ActionResult<T>
 
-- **TypeScript strict** — no `any`, no `@ts-ignore`
-- **Named exports** everywhere (except default exports for pages/layouts)
-- **`server-only`** import for server modules
-- **Zod validation first** in every API route before any logic
-- **kebab-case** file names
-- **Path alias**: `@/` maps to `src/`
+Server actions return: `{ data: T; error: null } | { data: null; error: string }`
 
-## Testing
+## Forbidden Patterns
 
-- **Framework**: Vitest + Testing Library
-- Every new API route needs a test
-- Every new Zod schema needs a test
-- Mock Supabase with `createMockSupabaseClient` from `src/test/mocks/supabase.ts`
-- Mock helpers in `src/test/utils.ts` (renderWithProviders, createMockNextRequest)
-- Factories in `src/test/factories.ts`
-- Co-locate tests: `src/lib/errors.test.ts` next to `src/lib/errors.ts`
+- **NEVER** use `any` or `@ts-ignore` — fix the types properly
+- **NEVER** write raw SQL that modifies schema — use Drizzle migrations
+- **NEVER** run seed scripts without explicit user permission (377 deliverable style references were lost)
+- **NEVER** expose `SUPABASE_SERVICE_ROLE_KEY` in client code
+- **NEVER** skip Zod validation in API routes
+- **NEVER** use default exports (except pages/layouts)
+- **NEVER** hardcode credentials or database URLs
 
 ## Database
 
 - **ORM**: Drizzle — schema in `src/db/schema.ts`
-- **NEVER** write raw SQL that modifies schema — use Drizzle migrations
-- **NEVER** run seed scripts without explicit user permission
-- 377 deliverable style references were lost by running a seed script without permission
 - Key tables: users, companies, tasks, briefs, taskCategories, freelancerProfiles, creditTransactions, deliverableStyles, brandReferences
 - Roles: CLIENT, FREELANCER, ADMIN
 
-## Gotchas
+### Migration Workflow
 
-- Supabase admin client uses service role key — NEVER expose in client code
-- Environment variables validated in `src/lib/env.ts` — add new vars there
-- Rate limiting configured in middleware and per-route via `checkRateLimit`
+1. Edit `src/db/schema.ts`
+2. `npm run db:generate` — creates migration SQL
+3. Review the generated migration (check for accidental DROP statements)
+4. `npm run db:migrate` — apply migration
+5. `npm run typecheck` — verify no type breakage
+
+Use the `db-migration` agent for guided workflows.
+
+## Testing
+
+- Vitest + Testing Library, co-located: `foo.ts` → `foo.test.ts`
+- Every new API route and Zod schema needs tests
+- Mock Supabase: `createMockSupabaseClient` from `src/test/mocks/supabase.ts`
+- Factories: `src/test/factories.ts`
+
+## Commits & PRs
+
+Use conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
+
+```
+feat: add credit purchase flow
+fix: prevent duplicate task assignment
+refactor: extract brief validation into shared schema
+```
+
+PR titles follow the same format. Keep commits atomic — one logical change per commit.
+
+## Code Style
+
+- **TypeScript strict** — named exports, `server-only` import for server modules
+- **Zod validation first** in every API route
+- **kebab-case** file names, `@/` path alias maps to `src/`
 - Auth via Better Auth (not Supabase Auth) — see `src/lib/auth.ts`
-- CSRF protection on mutation routes via `src/app/api/csrf/route.ts`
+- New env vars must be added to `src/lib/env.ts`
+- Rate limiting via `checkRateLimit`, CSRF on mutations
+
+## Agents & Commands
+
+| Agent              | Purpose                                        |
+| ------------------ | ---------------------------------------------- |
+| `code-reviewer`    | PR review against project conventions          |
+| `security-auditor` | Auth, secrets, input validation audits         |
+| `test-writer`      | Generate co-located Vitest tests               |
+| `db-migration`     | Safe schema → generate → review → migrate flow |
+| `refactor`         | DRY refactoring with project conventions       |
+
+| Command        | Purpose                                   |
+| -------------- | ----------------------------------------- |
+| `/review`      | Review staged changes                     |
+| `/deep-review` | Deep review with security + perf analysis |
+| `/validate`    | Run full validation suite with summary    |
+| `/fix-types`   | Find and fix TypeScript errors            |
 
 ## Sub-Agent Dispatch Rules
 
 - **Parallel**: independent file reads, linting + typechecking, test runs across modules
-- **Sequential**: schema change -> migration -> seed, API route -> validation schema -> test
-- Use `code-reviewer` agent for PR reviews
-- Use `security-auditor` agent for auth/RLS/env audits
-- Use `test-writer` agent for generating test files
+- **Sequential**: schema change → migration → seed, API route → validation schema → test
