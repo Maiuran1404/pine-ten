@@ -119,6 +119,18 @@ PR titles follow the same format. Keep commits atomic — one logical change per
 - New env vars must be added to `src/lib/env.ts`
 - Rate limiting via `checkRateLimit`, CSRF on mutations
 
+## Planning Requirements
+
+IMPORTANT: ALWAYS use EnterPlanMode before implementing any task that:
+
+- Touches more than 1 file
+- Adds new functionality or features
+- Modifies existing behavior or refactors code
+- Involves database schema changes
+- Has unclear or ambiguous requirements
+
+Only skip planning for trivial single-line fixes (typos, obvious bugs, small tweaks). When in doubt, plan first — never jump straight to implementation.
+
 ## Agents & Commands
 
 | Agent              | Purpose                                        |
