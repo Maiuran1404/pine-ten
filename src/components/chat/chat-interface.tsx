@@ -112,16 +112,10 @@ export function ChatInterface({
     messageFeedback: _messageFeedback,
 
     // Suggestions
-    suggestionIndex,
-    setSuggestionIndex,
     currentSuggestion,
     ghostText,
-    quickOptionSuggestion,
     smartCompletion,
     setSmartCompletion,
-
-    // State machine quick options
-    stateMachineQuickOptions,
 
     // Style selection
     selectedStyles,
@@ -214,7 +208,6 @@ export function ChatInterface({
     handleSubmitDeliverableStyles,
     handleConfirmStyleSelection,
     handleSelectVideo,
-    handleQuickOptionClick,
     handleShowMoreStyles,
     handleShowDifferentStyles,
     handleConfirmTask,
@@ -413,15 +406,10 @@ export function ChatInterface({
           smartCompletion={smartCompletion}
           setSmartCompletion={setSmartCompletion}
           currentSuggestion={currentSuggestion}
-          quickOptionSuggestion={quickOptionSuggestion}
-          suggestionIndex={suggestionIndex}
-          setSuggestionIndex={setSuggestionIndex}
           fileInputRef={fileInputRef}
           inputRef={inputRef}
           userCredits={userCredits}
           briefingStage={briefingStage}
-          stateMachineQuickOptions={stateMachineQuickOptions}
-          onQuickOptionClick={handleQuickOptionClick}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}

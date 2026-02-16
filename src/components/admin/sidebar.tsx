@@ -30,6 +30,7 @@ import {
   Brain,
   Video,
   KeyRound,
+  FlaskConical,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -141,6 +142,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Invite Codes',
         href: '/admin/invite-codes',
         icon: KeyRound,
+      },
+      {
+        name: 'Chat QA',
+        href: '/admin/chat-tests',
+        icon: FlaskConical,
       },
     ],
   },

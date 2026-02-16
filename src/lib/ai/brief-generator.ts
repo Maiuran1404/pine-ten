@@ -3,7 +3,6 @@
  * Converts LiveBrief to DesignerBrief and generates content outlines
  */
 
-import 'server-only'
 import type {
   LiveBrief,
   DesignerBrief,

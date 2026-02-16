@@ -90,7 +90,6 @@ export function useChatInterfaceData({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null)
   const [completedTypingIds, setCompletedTypingIds] = useState<Set<string>>(new Set())
-  const [suggestionIndex, setSuggestionIndex] = useState(0)
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'up' | 'down' | null>>({})
   const [taskSubmitted, setTaskSubmitted] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -99,11 +98,6 @@ export function useChatInterfaceData({
   const dragCounterRef = useRef(0)
   const requestStartTimeRef = useRef<number | null>(null)
   const chatStartedRef = useRef(false)
-
-  // Reset suggestion index when messages change
-  useEffect(() => {
-    setSuggestionIndex(0)
-  }, [messages.length])
 
   // Moodboard state management
   const {
@@ -157,7 +151,6 @@ export function useChatInterfaceData({
   const {
     briefingState: _briefingState,
     serializedState: serializedBriefingState,
-    quickOptions: smQuickOptions,
     syncFromServer: syncBriefingFromServer,
   } = useBriefingStateMachine(initialBriefingState, { draftId, brandAudiences })
 
@@ -215,31 +208,6 @@ export function useChatInterfaceData({
   const [smartCompletion, setSmartCompletion] = useState<string | null>(null)
   const smartCompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Get suggestion text from quick options
-  // When state machine is enabled, use deterministic quick options from state machine.
-  // Otherwise, parse from the last assistant message's quick options.
-  const quickOptionSuggestion = useMemo(() => {
-    if (isLoading) return null
-
-    // State machine quick options take precedence
-    if (smQuickOptions && smQuickOptions.options.length > 0) {
-      const options = smQuickOptions.options
-      const safeIndex = suggestionIndex % options.length
-      return options[safeIndex]
-    }
-
-    // Fallback: parse from messages
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i]
-      if (msg.role === 'assistant' && msg.quickOptions && msg.quickOptions.options.length > 0) {
-        const options = msg.quickOptions.options
-        const safeIndex = suggestionIndex % options.length
-        return options[safeIndex]
-      }
-    }
-    return null
-  }, [messages, isLoading, suggestionIndex, smQuickOptions])
-
   // Update smart completion when input changes (debounced)
   useEffect(() => {
     if (smartCompleteTimeoutRef.current) {
@@ -249,17 +217,6 @@ export function useChatInterfaceData({
     if (isLoading || input.length < 3) {
       setSmartCompletion(null)
       return
-    }
-
-    if (quickOptionSuggestion) {
-      const trimmedInput = input.trim().toLowerCase()
-      if (
-        trimmedInput.length === 0 ||
-        quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)
-      ) {
-        setSmartCompletion(null)
-        return
-      }
     }
 
     smartCompleteTimeoutRef.current = setTimeout(() => {
@@ -272,47 +229,29 @@ export function useChatInterfaceData({
         clearTimeout(smartCompleteTimeoutRef.current)
       }
     }
-  }, [input, isLoading, quickOptionSuggestion])
+  }, [input, isLoading])
 
   // Determine which suggestion to show
   const currentSuggestion = useMemo(() => {
     if (isLoading) return null
-    const trimmedInput = input.trim().toLowerCase()
 
-    if (quickOptionSuggestion) {
-      if (trimmedInput.length === 0) return quickOptionSuggestion
-      if (quickOptionSuggestion.toLowerCase().startsWith(trimmedInput)) {
-        return quickOptionSuggestion
-      }
-    }
-
-    if (smartCompletion && trimmedInput.length >= 3) {
+    if (smartCompletion && input.trim().length >= 3) {
       return input.trim() + ' ' + smartCompletion
     }
 
     return null
-  }, [quickOptionSuggestion, smartCompletion, input, isLoading])
+  }, [smartCompletion, input, isLoading])
 
   // Get the ghost text to display
   const ghostText = useMemo(() => {
     if (!currentSuggestion || isLoading) return ''
-    const trimmedInput = input.trim()
 
-    if (
-      smartCompletion &&
-      trimmedInput.length >= 3 &&
-      !quickOptionSuggestion?.toLowerCase().startsWith(trimmedInput.toLowerCase())
-    ) {
+    if (smartCompletion && input.trim().length >= 3) {
       return ' ' + smartCompletion
     }
 
-    if (trimmedInput.length === 0) return currentSuggestion
-    if (currentSuggestion.toLowerCase().startsWith(trimmedInput.toLowerCase())) {
-      return currentSuggestion.slice(trimmedInput.length)
-    }
-
     return ''
-  }, [currentSuggestion, smartCompletion, quickOptionSuggestion, input, isLoading])
+  }, [currentSuggestion, smartCompletion, input, isLoading])
 
   // Find last style message index
   const lastStyleMessageIndex = useMemo(() => {
@@ -1498,77 +1437,6 @@ export function useChatInterfaceData({
     [isLoading, sendChatAndReceive, hasMoodboardItem, addFromStyle]
   )
 
-  const handleQuickOptionClick = useCallback(
-    async (option: string) => {
-      if (isLoading) return
-
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: option,
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, userMessage])
-      setIsLoading(true)
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
-            selectedStyles,
-            moodboardHasStyles,
-            briefingState: serializedBriefingState,
-          }),
-        })
-
-        if (!response.ok) throw new Error('Failed to get response')
-
-        const data = await response.json()
-
-        if (data.briefingState) {
-          syncBriefingFromServer(data.briefingState)
-        }
-
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.content,
-          timestamp: new Date(),
-          styleReferences: data.styleReferences,
-          deliverableStyles: data.deliverableStyles,
-          deliverableStyleMarker: data.deliverableStyleMarker,
-          videoReferences: data.videoReferences,
-          taskProposal: data.taskProposal,
-          quickOptions: data.quickOptions ?? undefined,
-          structureData: data.structureData ?? undefined,
-          strategicReviewData: data.strategicReviewData ?? undefined,
-        }
-
-        setMessages((prev) => [...prev, assistantMessage])
-        setAnimatingMessageId(assistantMessage.id)
-
-        if (data.taskProposal) setPendingTask(data.taskProposal)
-        if (data.deliverableStyleMarker)
-          setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType)
-      } catch {
-        toast.error('Failed to send message. Please try again.')
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [
-      isLoading,
-      messages,
-      selectedStyles,
-      moodboardHasStyles,
-      serializedBriefingState,
-      syncBriefingFromServer,
-    ]
-  )
-
   const handleShowMoreStyles = useCallback(
     async (styleAxis: string) => {
       if (!currentDeliverableType || isLoading) return
@@ -1709,16 +1577,10 @@ export function useChatInterfaceData({
     messageFeedback,
 
     // Suggestions
-    suggestionIndex,
-    setSuggestionIndex,
     currentSuggestion,
     ghostText,
-    quickOptionSuggestion,
     smartCompletion,
     setSmartCompletion,
-
-    // State machine quick options (for rendering as chips when enabled)
-    stateMachineQuickOptions: smQuickOptions,
 
     // Style selection
     selectedStyles,
@@ -1811,7 +1673,6 @@ export function useChatInterfaceData({
     handleSubmitDeliverableStyles,
     handleConfirmStyleSelection,
     handleSelectVideo,
-    handleQuickOptionClick,
     handleShowMoreStyles,
     handleShowDifferentStyles,
     handleConfirmTask,

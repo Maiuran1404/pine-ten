@@ -2165,3 +2165,68 @@ export const earlyAccessCodeUsagesRelations = relations(earlyAccessCodeUsages, (
     references: [users.id],
   }),
 }))
+
+// ============================================
+// Chat QA Testing Tables
+// ============================================
+
+export const chatTestRuns = pgTable(
+  'chat_test_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    batchId: uuid('batch_id').notNull(),
+    triggeredBy: text('triggered_by')
+      .notNull()
+      .references(() => users.id),
+    status: text('status').notNull().default('pending'),
+    scenarioName: text('scenario_name').notNull(),
+    scenarioConfig: jsonb('scenario_config')
+      .$type<{
+        name: string
+        industry: string
+        platform: string
+        contentType: string
+        intent: string
+        openingMessage: string
+      }>()
+      .notNull(),
+    messages: jsonb('messages')
+      .$type<
+        Array<{
+          turn: number
+          role: 'user' | 'assistant'
+          content: string
+          stage: string
+          quickOptions?: { question: string; options: string[] } | null
+          hasStructureData: boolean
+          hasStrategicReview: boolean
+          deliverableStyleCount: number
+          videoReferenceCount: number
+          generatedBy?: 'quick_option' | 'template' | 'haiku'
+          durationMs?: number
+        }>
+      >()
+      .notNull()
+      .default([]),
+    briefingState: jsonb('briefing_state'),
+    finalStage: text('final_stage'),
+    totalTurns: integer('total_turns').notNull().default(0),
+    reachedReview: boolean('reached_review').notNull().default(false),
+    errorMessage: text('error_message'),
+    durationMs: integer('duration_ms'),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('chat_test_runs_batch_id_idx').on(table.batchId),
+    index('chat_test_runs_created_at_idx').on(table.createdAt),
+  ]
+)
+
+export const chatTestRunsRelations = relations(chatTestRuns, ({ one }) => ({
+  triggeredByUser: one(users, {
+    fields: [chatTestRuns.triggeredBy],
+    references: [users.id],
+  }),
+}))
