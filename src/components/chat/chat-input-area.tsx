@@ -44,9 +44,9 @@ export interface ChatInputAreaProps {
   smartCompletion: string | null
   setSmartCompletion: (value: string | null) => void
   currentSuggestion: string | null
-  quickOptionSuggestion: string | null
-  suggestionIndex: number
-  setSuggestionIndex: React.Dispatch<React.SetStateAction<number>>
+  quickOptionSuggestion?: string | null
+  suggestionIndex?: number
+  setSuggestionIndex?: React.Dispatch<React.SetStateAction<number>>
 
   // Refs
   fileInputRef: React.RefObject<HTMLInputElement | null>
@@ -87,8 +87,8 @@ export function ChatInputArea({
   smartCompletion,
   setSmartCompletion,
   currentSuggestion,
-  quickOptionSuggestion,
-  suggestionIndex: _suggestionIndex,
+  quickOptionSuggestion = null,
+  suggestionIndex: _suggestionIndex = 0,
   setSuggestionIndex,
   fileInputRef,
   inputRef,
@@ -207,12 +207,12 @@ export function ChatInputArea({
               // Arrow down to cycle through quick options (only when empty)
               else if (e.key === 'ArrowDown' && quickOptionSuggestion && !input.trim()) {
                 e.preventDefault()
-                setSuggestionIndex((prev) => prev + 1)
+                setSuggestionIndex?.((prev) => prev + 1)
               }
               // Arrow up to cycle back through quick options
               else if (e.key === 'ArrowUp' && quickOptionSuggestion && !input.trim()) {
                 e.preventDefault()
-                setSuggestionIndex((prev) => Math.max(0, prev - 1))
+                setSuggestionIndex?.((prev) => Math.max(0, prev - 1))
               }
               // Escape to clear smart completion
               else if (e.key === 'Escape' && smartCompletion) {
