@@ -20,6 +20,11 @@ import { VideoReferenceGrid, type VideoReferenceStyle } from './video-reference-
 import { StyleSelectionGrid } from './style-selection-grid'
 import { InlineCollection } from './inline-collection'
 import { TaskProposalCard } from './task-proposal-card'
+import { StoryboardView } from './storyboard-view'
+import { LayoutPreview } from './layout-preview'
+import { DesignSpecView } from './design-spec-view'
+import { ContentCalendar } from './brief-panel/content-calendar'
+import { StrategicReviewCard } from './strategic-review-card'
 import type { ChatMessage as Message, DeliverableStyle, MoodboardItem, TaskProposal } from './types'
 
 // =============================================================================
@@ -456,6 +461,48 @@ export function ChatMessageList({
                               onSelectVideo={handleSelectVideo}
                               isLoading={isLoading}
                               title="Video Style References"
+                            />
+                          </motion.div>
+                        )}
+
+                      {/* Structure components - show after typing completes */}
+                      {message.structureData &&
+                        (animatingMessageId !== message.id ||
+                          completedTypingIds.has(message.id)) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-4"
+                          >
+                            {message.structureData.type === 'storyboard' && (
+                              <StoryboardView scenes={message.structureData.scenes} />
+                            )}
+                            {message.structureData.type === 'layout' && (
+                              <LayoutPreview sections={message.structureData.sections} />
+                            )}
+                            {message.structureData.type === 'calendar' && (
+                              <ContentCalendar outline={message.structureData.outline} />
+                            )}
+                            {message.structureData.type === 'single_design' && (
+                              <DesignSpecView specification={message.structureData.specification} />
+                            )}
+                          </motion.div>
+                        )}
+
+                      {/* Strategic Review card */}
+                      {message.strategicReviewData &&
+                        (animatingMessageId !== message.id ||
+                          completedTypingIds.has(message.id)) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-4"
+                          >
+                            <StrategicReviewCard
+                              review={message.strategicReviewData}
+                              onAction={() => {}}
                             />
                           </motion.div>
                         )}

@@ -2,6 +2,8 @@
  * Shared types for chat components
  */
 
+import type { StructureData, StrategicReviewData } from '@/lib/ai/briefing-state-machine'
+
 export interface UploadedFile {
   fileName: string
   fileUrl: string
@@ -114,7 +116,12 @@ export interface ChatMessage {
   attachments?: UploadedFile[]
   quickOptions?: QuickOptions
   selectedStyle?: DeliverableStyle // Style selected by user from style grid
+  structureData?: StructureData // Structured output (storyboard, layout, calendar, design spec)
+  strategicReviewData?: StrategicReviewData // Strategic review card data
 }
+
+// Re-export structure types from state machine for convenience
+export type { StructureData, StrategicReviewData } from '@/lib/ai/briefing-state-machine'
 
 /**
  * Calculate delivery date from business days

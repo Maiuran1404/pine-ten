@@ -53,6 +53,11 @@ import {
   extractIndustrySignals,
   resolveDeliverableCategory,
 } from '@/lib/ai/briefing-extractors'
+import {
+  parseStructuredOutput,
+  parseStrategicReview,
+  type StructureType,
+} from '@/lib/ai/briefing-response-parser'
 import type { InferredAudience } from '@/components/onboarding/types'
 
 async function handler(request: NextRequest) {
@@ -221,6 +226,11 @@ async function handler(request: NextRequest) {
             briefingState.inspirationRefs = [
               ...new Set([...briefingState.inspirationRefs, ...inspirationRefs]),
             ]
+          }
+
+          // Inject "launch" keyword when user mentions launching
+          if (/\b(launch|launching)\b/i.test(lastUserMessage)) {
+            briefingState.styleKeywords = [...new Set([...briefingState.styleKeywords, 'launch'])]
           }
 
           // 5. Resolve deliverable category
@@ -568,6 +578,46 @@ async function handler(request: NextRequest) {
         }
       }
 
+      // Parse structured output from AI response when state machine is at STRUCTURE or STRATEGIC_REVIEW
+      let structureData = undefined
+      let strategicReviewData = undefined
+
+      if (clientBriefingState) {
+        const briefingState: BriefingState = deserialize(
+          updatedBriefingState ?? clientBriefingState
+        )
+        const categoryToStructureType: Record<string, StructureType> = {
+          video: 'storyboard',
+          website: 'layout',
+          content: 'calendar',
+          design: 'single_design',
+          brand: 'single_design',
+        }
+
+        if (
+          briefingState.stage === 'STRUCTURE' ||
+          briefingState.stage === 'STRATEGIC_REVIEW' ||
+          briefingState.stage === 'REVIEW'
+        ) {
+          // Parse structure data if category is known
+          const structureType = briefingState.deliverableCategory
+            ? categoryToStructureType[briefingState.deliverableCategory]
+            : undefined
+          if (structureType) {
+            const parsed = parseStructuredOutput(response.content, structureType)
+            if (parsed.success && parsed.data) {
+              structureData = parsed.data
+            }
+          }
+
+          // Parse strategic review
+          const reviewParsed = parseStrategicReview(response.content)
+          if (reviewParsed.success && reviewParsed.data) {
+            strategicReviewData = reviewParsed.data
+          }
+        }
+      }
+
       return NextResponse.json({
         content: response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '').trim(),
         taskProposal,
@@ -576,7 +626,9 @@ async function handler(request: NextRequest) {
         deliverableStyleMarker,
         selectedStyles,
         quickOptions,
-        videoReferences, // Video style references for launch videos, video ads, etc.
+        videoReferences,
+        structureData,
+        strategicReviewData,
         ...(updatedBriefingState && { briefingState: updatedBriefingState }),
       })
     },

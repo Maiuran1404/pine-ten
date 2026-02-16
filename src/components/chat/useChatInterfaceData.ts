@@ -535,6 +535,8 @@ export function useChatInterfaceData({
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions ?? undefined,
+          structureData: data.structureData ?? undefined,
+          strategicReviewData: data.strategicReviewData ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -864,6 +866,8 @@ export function useChatInterfaceData({
         videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions ?? undefined,
+        structureData: data.structureData ?? undefined,
+        strategicReviewData: data.strategicReviewData ?? undefined,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -934,6 +938,8 @@ export function useChatInterfaceData({
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions ?? undefined,
+          structureData: data.structureData ?? undefined,
+          strategicReviewData: data.strategicReviewData ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1334,6 +1340,8 @@ export function useChatInterfaceData({
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions ?? undefined,
+          structureData: data.structureData ?? undefined,
+          strategicReviewData: data.strategicReviewData ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1535,6 +1543,8 @@ export function useChatInterfaceData({
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions ?? undefined,
+          structureData: data.structureData ?? undefined,
+          strategicReviewData: data.strategicReviewData ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
