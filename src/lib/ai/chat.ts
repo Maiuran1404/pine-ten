@@ -439,31 +439,9 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     /^Love that[.!,\s—-]*/i,
   ]
 
-  // Banned mid-response phrases — strip jargon and hollow marketing language
-  const BANNED_MID = [
-    'Strong direction',
-    "That's a strong",
-    'positions you as',
-    'elevates the narrative',
-    'heartbeat of the campaign',
-    'clean, trust-forward, conversion-focused',
-    'trust-forward',
-    'conversion-focused',
-    'resonates deeply',
-    'drives home the message',
-    'leans into',
-    'speaks to the audience',
-    'creates a sense of',
-  ]
-
-  // Strip banned openers
+  // Strip banned openers (start-of-response only — safe, no fragment risk)
   for (const pattern of BANNED_OPENERS) {
     cleanContent = cleanContent.replace(pattern, '')
-  }
-
-  // Strip banned mid-response phrases
-  for (const phrase of BANNED_MID) {
-    cleanContent = cleanContent.replaceAll(phrase, '')
   }
 
   cleanContent = cleanContent

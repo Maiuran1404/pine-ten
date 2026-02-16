@@ -68,8 +68,8 @@ export function buildSystemPrompt(state: BriefingState, brandContext?: BrandCont
     sections.push(buildBrandSection(brandContext))
   }
 
-  // Closing instruction
-  sections.push(CLOSING_INSTRUCTION)
+  // Closing instruction (stage-specific)
+  sections.push(buildClosingInstruction(state.stage))
 
   return sections.join('\n\n')
 }
@@ -292,12 +292,15 @@ function buildStructureTask(state: BriefingState): string {
   const category = state.deliverableCategory
   const isFirstTurn = state.turnsInCurrentStage === 0
   const intentValue = state.brief.intent.value?.toLowerCase() ?? ''
-  const isLaunch = intentValue.includes('launch')
+  const isLaunch =
+    intentValue.includes('launch') ||
+    (state.brief.topic.value?.toLowerCase().includes('launch') ?? false) ||
+    state.styleKeywords.includes('launch')
 
-  // On first turn, ask a clarifying question before generating structure
+  // On first turn, acknowledge differentiator and optionally clarify
   const clarifyPrefix = isFirstTurn
-    ? `Before generating structure, ask ONE clarifying question (e.g., "What's the single action you want someone to take after seeing this?").
-If the user already shared a key differentiator (e.g., "we're clinically proven"), acknowledge it first — "That's a strong angle, we should lead with that." Then lay out the structure. Then note that this follows best practices. Don't silently incorporate it into a layout dump.\n\n`
+    ? `If the user shared a key differentiator or strong angle, acknowledge it in one line before the structure (e.g., "The clinical proof angle is strong — leading with that.").
+If you have an open question about the primary action or audience, ask it before building. Otherwise, go straight to the structure.\n\n`
     : ''
 
   // For any launch intent, ask for latest assets
@@ -495,5 +498,10 @@ function buildBrandSection(ctx: BrandContext): string {
 // CLOSING
 // =============================================================================
 
-const CLOSING_INSTRUCTION =
-  'Your response MUST end with a confident statement or clear direction, not a passive question.'
+function buildClosingInstruction(stage: BriefingStage): string {
+  const authorityStages: BriefingStage[] = ['STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW', 'SUBMIT']
+  if (authorityStages.includes(stage)) {
+    return 'CLOSING: End with a confident statement or clear next step. Do NOT end with a question like "What do you think?" or "Does this work?" — you are the expert, state your assessment.'
+  }
+  return 'End with either a clear question or a confident direction — no wishy-washy "let me know" closings.'
+}

@@ -268,11 +268,17 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('SaaS')
   })
 
-  // Closing instruction
-  it('always ends with closing instruction', () => {
+  // Closing instruction — stage-specific
+  it('uses conversational closing for EXTRACT stage', () => {
     const state = makeState({ stage: 'EXTRACT' })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('confident statement or clear direction')
+    expect(prompt).toContain('clear question or a confident direction')
+  })
+
+  it('uses authority closing for STRUCTURE stage', () => {
+    const state = makeState({ stage: 'STRUCTURE' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('Do NOT end with a question like')
   })
 
   // Current state section
