@@ -9,6 +9,7 @@
  * - Performance history (10%)
  */
 
+import 'server-only'
 import { db } from '@/db'
 import {
   freelancerProfiles,

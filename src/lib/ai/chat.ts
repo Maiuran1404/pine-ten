@@ -1,3 +1,4 @@
+import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/db'
 import { styleReferences, taskCategories, users, audiences as audiencesTable } from '@/db/schema'

@@ -1,3 +1,4 @@
+import 'server-only'
 import Stripe from 'stripe'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'

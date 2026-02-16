@@ -1,3 +1,4 @@
+import 'server-only'
 import { db } from '@/db'
 import { notifications, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'

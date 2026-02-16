@@ -1,3 +1,4 @@
+import 'server-only'
 import twilio from 'twilio'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'

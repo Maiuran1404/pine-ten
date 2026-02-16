@@ -1,3 +1,4 @@
+import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import { config } from './config'
 import { errorResponse, ErrorCodes } from './errors'

@@ -1,3 +1,4 @@
+import 'server-only'
 import { db } from '@/db'
 import { auditLogs } from '@/db/schema'
 import { logger } from '@/lib/logger'
