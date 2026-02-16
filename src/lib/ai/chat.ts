@@ -475,7 +475,8 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\bcolor\s*\(\s*\)/gi, 'color')
     .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
     .replace(/\(\s*\)/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[ \t]+/g, ' ') // Collapse horizontal whitespace only (preserve newlines)
+    .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines to double (preserve paragraphs)
     .trim()
 
   // Capitalize first letter
