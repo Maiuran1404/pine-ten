@@ -30,7 +30,33 @@ export function generateQuickOptions(state: BriefingState): QuickOptions | null 
 // =============================================================================
 
 const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOptions | null> = {
-  EXTRACT: () => null, // Single-pass stage
+  EXTRACT: (state) => {
+    const turns = state.turnsInCurrentStage
+    const config = STALL_CONFIG.EXTRACT
+
+    // Turn 3+: confident recommendation
+    if (config.maxTurnsBeforeRecommend !== null && turns >= config.maxTurnsBeforeRecommend) {
+      return {
+        question: 'Pick a direction',
+        options: [
+          'Sounds good',
+          "Actually, let's do something else",
+          'I need to think about this differently',
+        ],
+      }
+    }
+
+    // Turn 2: narrowed options
+    if (config.maxTurnsBeforeNarrow !== null && turns >= config.maxTurnsBeforeNarrow) {
+      return {
+        question: 'What kind of project?',
+        options: ['Video content', 'Social media graphics', 'Website design', 'Something else'],
+      }
+    }
+
+    // Turn 0-1: no quick options — let the user describe freely
+    return null
+  },
 
   TASK_TYPE: (state) => {
     const turns = state.turnsInCurrentStage

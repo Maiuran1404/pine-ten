@@ -8,19 +8,172 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { generateSyntheticReply, isRunComplete } from '@/lib/ai/chat-test-engine'
 import { getEnv } from '@/lib/env'
 import { logger } from '@/lib/logger'
+import {
+  createInitialBriefingState,
+  serialize,
+  type SerializedBriefingState,
+  type StrategicReviewData,
+  type StructureData,
+} from '@/lib/ai/briefing-state-machine'
 
 const stepSchema = z.object({
   runId: z.string().uuid(),
 })
 
+// =============================================================================
+// PENDING ACTION TYPES
+// Mirrors what the real client does between turns (style selection, etc.)
+// =============================================================================
+
+interface PendingStyleSelection {
+  type: 'style_selection'
+  styleName: string
+  styleId: string
+  styleData: Record<string, unknown>
+}
+
+interface PendingVideoSelection {
+  type: 'video_selection'
+  videoName: string
+  videoId: string
+  videoData: Record<string, unknown>
+}
+
+type PendingAction = PendingStyleSelection | PendingVideoSelection
+
+/**
+ * Determine if there's a pending client-side action based on the last response.
+ * Mirrors what the real client does — when deliverableStyles or videoReferences
+ * are returned, the next step should select one.
+ */
+function determinePendingAction(
+  chatData: Record<string, unknown>,
+  moodboardHasStyles: boolean
+): PendingAction | null {
+  // Style selection (mirrors handleConfirmStyleSelection)
+  if (!moodboardHasStyles && chatData.deliverableStyles) {
+    const styles = chatData.deliverableStyles as Array<{
+      id: string
+      name: string
+      [key: string]: unknown
+    }>
+    if (styles.length > 0) {
+      const style = styles[0]
+      return {
+        type: 'style_selection',
+        styleName: style.name,
+        styleId: style.id,
+        styleData: style as Record<string, unknown>,
+      }
+    }
+  }
+
+  // Video selection (mirrors handleSelectVideo)
+  if (!moodboardHasStyles && chatData.videoReferences) {
+    const videos = chatData.videoReferences as Array<{
+      id: string
+      name: string
+      [key: string]: unknown
+    }>
+    if (videos.length > 0) {
+      const video = videos[0]
+      return {
+        type: 'video_selection',
+        videoName: video.name,
+        videoId: video.id,
+        videoData: video as Record<string, unknown>,
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Merge structureData into briefingState (mirrors client local state merge).
+ */
+function mergeStructureData(
+  briefingState: SerializedBriefingState,
+  structureData: StructureData
+): SerializedBriefingState {
+  return {
+    ...briefingState,
+    structure: structureData,
+  }
+}
+
+/**
+ * Merge strategicReviewData and advance to MOODBOARD
+ * (mirrors dispatch({ type: 'STAGE_RESPONSE', response: 'accept' })).
+ */
+function mergeStrategicReviewAndAdvance(
+  briefingState: SerializedBriefingState,
+  reviewData: StrategicReviewData
+): SerializedBriefingState {
+  return {
+    ...briefingState,
+    strategicReview: reviewData,
+    stage: 'MOODBOARD',
+    turnsInCurrentStage: 0,
+  }
+}
+
+/**
+ * Add style to visualDirection in briefingState
+ * (mirrors addStyleToVisualDirection from use-brief).
+ */
+function addStyleToVisualDirection(
+  briefingState: SerializedBriefingState,
+  styleData: Record<string, unknown>
+): SerializedBriefingState {
+  const currentVD = briefingState.brief.visualDirection ?? {
+    selectedStyles: [],
+    moodKeywords: [],
+    colorPalette: [],
+    typography: { primary: '', secondary: '' },
+    avoidElements: [],
+  }
+
+  // Don't add if already exists
+  if (currentVD.selectedStyles.some((s: { id: string }) => s.id === styleData.id)) {
+    return briefingState
+  }
+
+  return {
+    ...briefingState,
+    brief: {
+      ...briefingState.brief,
+      visualDirection: {
+        ...currentVD,
+        selectedStyles: [
+          ...currentVD.selectedStyles,
+          {
+            id: (styleData.id as string) ?? '',
+            name: (styleData.name as string) ?? '',
+            description: (styleData.description as string | null) ?? null,
+            imageUrl: (styleData.imageUrl as string) ?? '',
+            deliverableType: (styleData.deliverableType as string) ?? '',
+            styleAxis: (styleData.styleAxis as string) ?? '',
+            subStyle: (styleData.subStyle as string | null) ?? null,
+            semanticTags: (styleData.semanticTags as string[]) ?? [],
+          },
+        ],
+      },
+    },
+  }
+}
+
 /**
  * POST /api/admin/chat-tests/step — Execute one conversation turn
  *
+ * Mirrors the real client flow (useBriefingStateMachine + useChatInterfaceData):
  * 1. Load run state from DB
- * 2. Generate synthetic user message (quick option / template / Haiku)
- * 3. Call the real POST /api/chat endpoint with admin's cookies
- * 4. Save user + assistant messages to the run record
- * 5. Return progress
+ * 2. Initialize BriefingState on first turn (like createInitialBriefingState)
+ * 3. Check for pending actions (style/video selection from previous turn)
+ * 4. Generate synthetic user message (quick option / template / Haiku)
+ * 5. Call the real POST /api/chat endpoint with admin's cookies
+ * 6. Process response: merge structure/review data, determine next pending action
+ * 7. Save state to DB, return progress
  */
 export async function POST(request: NextRequest) {
   return withErrorHandling(
@@ -58,19 +211,48 @@ export async function POST(request: NextRequest) {
 
       const turnStart = Date.now()
 
-      // 2. Generate synthetic user message
+      // 2. Initialize BriefingState on first turn (Fix 1)
+      // Mirrors: createInitialBriefingState() in useBriefingStateMachine
       const isFirstTurn = run.messages.length === 0
+      let currentBriefingState = run.briefingState as SerializedBriefingState | null
+      if (isFirstTurn && !currentBriefingState) {
+        currentBriefingState = serialize(createInitialBriefingState())
+      }
+
+      // Load pending action and moodboardHasStyles from run metadata
+      // These are stored as extra fields in the briefingState wrapper
+      const runMeta = (run.briefingState as Record<string, unknown>) ?? {}
+      let pendingAction: PendingAction | null =
+        (runMeta._pendingAction as PendingAction | null) ?? null
+      let moodboardHasStyles: boolean = (runMeta._moodboardHasStyles as boolean) ?? false
+
+      // Strip our metadata keys from the briefing state before sending to /api/chat
+      if (currentBriefingState && '_pendingAction' in currentBriefingState) {
+        const {
+          _pendingAction: _,
+          _moodboardHasStyles: __,
+          ...cleanState
+        } = currentBriefingState as SerializedBriefingState & {
+          _pendingAction?: unknown
+          _moodboardHasStyles?: unknown
+        }
+        currentBriefingState = cleanState as SerializedBriefingState
+      }
+
+      // 3. Determine user message
       const lastAssistantMsg =
         run.messages.length > 0 ? (run.messages[run.messages.length - 1]?.content ?? '') : ''
       const lastQuickOptions =
         run.messages.length > 0 ? run.messages[run.messages.length - 1]?.quickOptions : null
 
-      // Count turns in current stage
+      // Count turns in current stage (Fix 6: only count user messages)
       const currentStage = run.finalStage ?? 'EXTRACT'
       let turnsInStage = 0
       for (let i = run.messages.length - 1; i >= 0; i--) {
         if (run.messages[i].stage === currentStage) {
-          turnsInStage++
+          if (run.messages[i].role === 'user') {
+            turnsInStage++
+          }
         } else {
           break
         }
@@ -78,8 +260,49 @@ export async function POST(request: NextRequest) {
 
       let userContent: string
       let generatedBy: 'quick_option' | 'template' | 'haiku'
+      let extraRequestBody: Record<string, unknown> = {}
 
-      if (isFirstTurn) {
+      // Fix 2: Check for pending action from previous turn
+      if (pendingAction) {
+        if (pendingAction.type === 'style_selection') {
+          // Mirrors handleConfirmStyleSelection: "Style selected: {name}"
+          userContent = `Style selected: ${pendingAction.styleName}`
+          generatedBy = 'template'
+          extraRequestBody = {
+            selectedDeliverableStyles: [pendingAction.styleId],
+            moodboardHasStyles: true,
+          }
+          // Update state: add style to visual direction (mirrors addStyleToVisualDirection)
+          if (currentBriefingState) {
+            currentBriefingState = addStyleToVisualDirection(
+              currentBriefingState,
+              pendingAction.styleData
+            )
+          }
+          moodboardHasStyles = true
+        } else if (pendingAction.type === 'video_selection') {
+          // Mirrors handleSelectVideo: "Video style selected: {name}"
+          userContent = `Video style selected: ${pendingAction.videoName}`
+          generatedBy = 'template'
+          extraRequestBody = {
+            selectedDeliverableStyles: [pendingAction.videoId],
+            moodboardHasStyles: true,
+          }
+          if (currentBriefingState) {
+            currentBriefingState = addStyleToVisualDirection(
+              currentBriefingState,
+              pendingAction.videoData
+            )
+          }
+          moodboardHasStyles = true
+        } else {
+          // Unknown action, proceed normally
+          userContent = ''
+          generatedBy = 'template'
+        }
+        // Clear the pending action
+        pendingAction = null
+      } else if (isFirstTurn) {
         userContent = run.scenarioConfig.openingMessage
         generatedBy = 'template'
       } else {
@@ -95,14 +318,14 @@ export async function POST(request: NextRequest) {
         generatedBy = reply.generatedBy
       }
 
-      // 3. Build the messages array for /api/chat
+      // 4. Build the messages array for /api/chat
       const chatMessages = run.messages.map((m) => ({
         role: m.role,
         content: m.content,
       }))
       chatMessages.push({ role: 'user' as const, content: userContent })
 
-      // 4. Call the real /api/chat endpoint
+      // 5. Call the real /api/chat endpoint (Fix 3+4: send full body like real client)
       const env = getEnv()
       const cookie = request.headers.get('cookie') ?? ''
 
@@ -116,8 +339,10 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify({
             messages: chatMessages,
-            briefingState: run.briefingState ?? undefined,
+            briefingState: currentBriefingState ?? undefined,
             selectedStyles: [],
+            moodboardHasStyles,
+            ...extraRequestBody,
           }),
         })
       } catch (err) {
@@ -162,20 +387,50 @@ export async function POST(request: NextRequest) {
         return successResponse({ run: failedRun[0], isComplete: true, reason: 'error' })
       }
 
-      // 5. Parse response
+      // 6. Parse response
       const chatData = await chatResponse.json()
       const turnDuration = Date.now() - turnStart
 
       const assistantContent: string = chatData.content ?? ''
-      const newBriefingState = chatData.briefingState ?? run.briefingState
+      let newBriefingState: SerializedBriefingState | null =
+        (chatData.briefingState as SerializedBriefingState | null) ?? currentBriefingState
       const quickOptions = chatData.quickOptions ?? null
       const deliverableStyleCount = chatData.deliverableStyles?.length ?? 0
       const videoReferenceCount = chatData.videoReferences?.length ?? 0
       const hasStructureData = !!chatData.structureData
       const hasStrategicReview = !!chatData.strategicReviewData
 
+      // Fix 2B: Merge structureData into state (mirrors client local state merge)
+      if (hasStructureData && newBriefingState) {
+        newBriefingState = mergeStructureData(
+          newBriefingState,
+          chatData.structureData as StructureData
+        )
+      }
+
+      // Fix 2C: Merge strategicReviewData and advance to MOODBOARD
+      // (mirrors dispatch({ type: 'STAGE_RESPONSE', response: 'accept' }))
+      if (hasStrategicReview && newBriefingState && newBriefingState.stage === 'STRATEGIC_REVIEW') {
+        newBriefingState = mergeStrategicReviewAndAdvance(
+          newBriefingState,
+          chatData.strategicReviewData as StrategicReviewData
+        )
+      }
+
       // Determine current stage from briefing state
       const updatedStage = newBriefingState?.stage ?? currentStage
+
+      // Fix 2A: Determine pending action for next turn
+      const nextPendingAction = determinePendingAction(chatData, moodboardHasStyles)
+
+      // Store metadata alongside briefingState for next step
+      const briefingStateToStore = newBriefingState
+        ? {
+            ...newBriefingState,
+            _pendingAction: nextPendingAction,
+            _moodboardHasStyles: moodboardHasStyles,
+          }
+        : null
 
       // Build new message entries
       const turnNumber = Math.floor(run.messages.length / 2) + 1
@@ -218,12 +473,12 @@ export async function POST(request: NextRequest) {
           : 'completed'
         : 'running'
 
-      // 6. Update DB
+      // 7. Update DB
       await db
         .update(chatTestRuns)
         .set({
           messages: updatedMessages,
-          briefingState: newBriefingState,
+          briefingState: briefingStateToStore,
           finalStage: updatedStage,
           totalTurns: newTotalTurns,
           reachedReview,

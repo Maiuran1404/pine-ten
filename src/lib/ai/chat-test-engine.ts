@@ -131,8 +131,10 @@ export async function generateSyntheticReply(
       { scenario: scenario.name, stage, turnsInStage },
       'Chat test stuck - forcing hard agree'
     )
+    // Include scenario context so the inference engine has actual signals to work with
+    const contextMessage = buildContextRichAgreeMessage(scenario, stage)
     return {
-      content: "Yes, that looks perfect, let's continue to the next step.",
+      content: contextMessage,
       generatedBy: 'template',
     }
   }
@@ -200,4 +202,35 @@ export function isRunComplete(
   }
 
   return { complete: false }
+}
+
+/**
+ * Build a context-rich agree message that gives the inference engine
+ * real signals based on the scenario and current stage.
+ */
+function buildContextRichAgreeMessage(scenario: ChatTestScenario, stage: string): string {
+  switch (stage) {
+    case 'EXTRACT':
+    case 'TASK_TYPE': {
+      const parts: string[] = ["Yes, let's go with that."]
+      if (scenario.contentType) parts.push(`We need a ${scenario.contentType}.`)
+      if (scenario.platform) parts.push(`It's for ${scenario.platform}.`)
+      return parts.join(' ')
+    }
+    case 'INTENT': {
+      const parts: string[] = ['That sounds right.']
+      if (scenario.intent) parts.push(`The main goal is ${scenario.intent}.`)
+      return parts.join(' ')
+    }
+    case 'INSPIRATION':
+      return "I love that style, it fits our brand perfectly. Let's go with it."
+    case 'STRUCTURE':
+      return "That structure looks great. Let's proceed with this approach."
+    case 'STRATEGIC_REVIEW':
+      return "Good analysis, the strategy makes sense. I'm happy to continue."
+    case 'MOODBOARD':
+      return "The visual direction works well for us. Let's move to review."
+    default:
+      return "Yes, that looks perfect, let's continue to the next step."
+  }
 }

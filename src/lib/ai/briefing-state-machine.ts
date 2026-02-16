@@ -179,7 +179,7 @@ export interface StallConfig {
 }
 
 export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
-  EXTRACT: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+  EXTRACT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
   TASK_TYPE: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
   INTENT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
   INSPIRATION: {
@@ -267,8 +267,14 @@ export function evaluateTransitions(
  * Key principle: skip stages when data is available.
  */
 function evaluateExtractLanding(state: BriefingState, inference: InferenceResult): BriefingStage {
-  const hasTaskType = inference.taskType.value !== null && inference.taskType.confidence >= 0.75
-  const hasIntent = inference.intent.value !== null && inference.intent.confidence >= 0.75
+  // Check both inference AND accumulated state — prevents re-stalling at EXTRACT
+  // when accumulated state has good data but the latest message's inference is weak
+  const hasTaskType =
+    (inference.taskType.value !== null && inference.taskType.confidence >= 0.75) ||
+    (state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.75)
+  const hasIntent =
+    (inference.intent.value !== null && inference.intent.confidence >= 0.75) ||
+    (state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75)
 
   // If we don't even know what they're making, go to TASK_TYPE
   if (!hasTaskType) {
