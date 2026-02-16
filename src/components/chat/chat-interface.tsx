@@ -385,6 +385,7 @@ export function ChatInterface({
           handleRejectTask={handleRejectTask}
           handleRequestTaskSummary={handleRequestTaskSummary}
           handleEditLastMessage={handleEditLastMessage}
+          briefingStage={briefingStage}
         />
 
         {/* Input area */}

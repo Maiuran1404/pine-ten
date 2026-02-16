@@ -175,6 +175,9 @@ export interface ChatMessageListProps {
 
   // Edit handlers
   handleEditLastMessage: () => void
+
+  // Briefing stage (used to gate legacy CTAs)
+  briefingStage?: string | null
 }
 
 // =============================================================================
@@ -217,6 +220,7 @@ export function ChatMessageList({
   handleRejectTask,
   handleRequestTaskSummary,
   handleEditLastMessage,
+  briefingStage,
 }: ChatMessageListProps) {
   return (
     <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
@@ -529,9 +533,11 @@ export function ChatMessageList({
         {isLoading && <LoadingIndicator requestStartTime={requestStartTimeRef.current} />}
 
         {/* Inline submit prompt - shown as an AI message when ready to submit */}
+        {/* Hidden when state machine is active (briefingStage is set) */}
         {!isLoading &&
           !pendingTask &&
           !isTaskMode &&
+          !briefingStage &&
           (() => {
             // Check if the last assistant message asked a question (ends with ?)
             const lastAssistantMsg = messages.filter((m) => m.role === 'assistant').pop()
