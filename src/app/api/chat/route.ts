@@ -16,6 +16,7 @@ import {
 } from '@/lib/ai/semantic-style-search'
 import {
   inferFromMessage,
+  applyInferenceToBrief,
   detectBrandMention,
   analyzeRequestCompleteness,
 } from '@/lib/ai/inference-engine'
@@ -30,10 +31,30 @@ import { autoDetectStyleMarker } from '@/lib/ai/style-filter'
 import type { StyleAxis } from '@/lib/constants/reference-libraries'
 import { normalizeDeliverableType } from '@/lib/constants/reference-libraries'
 import { db } from '@/db'
-import { users } from '@/db/schema'
+import { users, audiences as audiencesTable } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
+import { getEnvSafe } from '@/lib/env'
+// State machine imports (Phase 1)
+import {
+  type BriefingState,
+  type SerializedBriefingState,
+  deserialize,
+  serialize,
+  evaluateTransitions,
+} from '@/lib/ai/briefing-state-machine'
+import { calibrateTone } from '@/lib/ai/briefing-tone'
+import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
+import { generateQuickOptions } from '@/lib/ai/briefing-quick-options'
+import {
+  extractStyleKeywords,
+  extractInspirationReferences,
+  extractAudienceSignals,
+  extractIndustrySignals,
+  resolveDeliverableCategory,
+} from '@/lib/ai/briefing-extractors'
+import type { InferredAudience } from '@/components/onboarding/types'
 
 async function handler(request: NextRequest) {
   return withErrorHandling(
@@ -49,7 +70,11 @@ async function handler(request: NextRequest) {
         deliverableStyleMarker: clientStyleMarker,
         moodboardHasStyles, // Client indicates if moodboard already has style items
         brief, // Brief data for confirmed fields
+        briefingState: clientBriefingState, // Serialized state machine state (Phase 2)
       } = body
+
+      // Feature flag check
+      const stateMachineEnabled = getEnvSafe('BRIEFING_STATE_MACHINE_ENABLED') === true
 
       // Extract context from messages for content-aware style filtering
       const styleContext = extractStyleContext(messages || [])
@@ -145,8 +170,140 @@ async function handler(request: NextRequest) {
         })
       }
 
-      // Get AI response with context
-      const response = await chat(messages, session.user.id, chatContext)
+      // ====================================================================
+      // STATE MACHINE PIPELINE (feature-flagged)
+      // When enabled and client provides briefingState, runs the new pipeline
+      // alongside the existing chat() call.
+      // ====================================================================
+
+      let updatedBriefingState: SerializedBriefingState | undefined
+      let stateMachineQuickOptions: { question: string; options: string[] } | undefined
+      let stateMachineOverride: { systemPrompt: string } | undefined
+
+      if (stateMachineEnabled && clientBriefingState) {
+        try {
+          const lastUserMessage = messages[messages.length - 1]?.content || ''
+          const briefingState: BriefingState = deserialize(clientBriefingState)
+
+          // 1. Run inference on latest user message
+          const inference = inferFromMessage({
+            message: lastUserMessage,
+            conversationHistory: messages.slice(0, -1).map((m: { content: string }) => m.content),
+          })
+
+          // 2. Fetch brand audiences for inference
+          const brandAudiences: InferredAudience[] = company?.id
+            ? (
+                await db
+                  .select()
+                  .from(audiencesTable)
+                  .where(eq(audiencesTable.companyId, company.id))
+              ).map((a) => ({
+                name: a.name,
+                isPrimary: a.isPrimary,
+                demographics: a.demographics as InferredAudience['demographics'],
+                psychographics: a.psychographics as InferredAudience['psychographics'],
+                confidence: 1.0,
+              }))
+            : []
+
+          // 3. Apply inference to LiveBrief
+          briefingState.brief = applyInferenceToBrief(
+            briefingState.brief,
+            inference,
+            brandAudiences,
+            lastUserMessage
+          )
+
+          // 4. Extract additional signals
+          const styleKw = extractStyleKeywords(lastUserMessage)
+          if (styleKw.length > 0) {
+            briefingState.styleKeywords = [...new Set([...briefingState.styleKeywords, ...styleKw])]
+          }
+          const inspirationRefs = extractInspirationReferences(lastUserMessage)
+          if (inspirationRefs.length > 0) {
+            briefingState.inspirationRefs = [
+              ...new Set([...briefingState.inspirationRefs, ...inspirationRefs]),
+            ]
+          }
+
+          // 5. Resolve deliverable category
+          if (
+            !briefingState.deliverableCategory ||
+            briefingState.deliverableCategory === 'unknown'
+          ) {
+            const category = resolveDeliverableCategory(inference)
+            if (category !== 'unknown') {
+              briefingState.deliverableCategory = category
+            }
+          }
+
+          // 6. Calibrate tone
+          const audienceSignals = extractAudienceSignals(lastUserMessage)
+          const industrySignals = extractIndustrySignals(lastUserMessage)
+
+          if (industrySignals.length > 0 && !briefingState.industry) {
+            briefingState.industry = {
+              value: industrySignals[0],
+              confidence: 0.8,
+              source: 'inferred',
+            }
+          }
+
+          const shouldRecalibrateTone =
+            !briefingState.toneProfile || audienceSignals.length > 0 || industrySignals.length > 0
+          if (shouldRecalibrateTone) {
+            const audience =
+              audienceSignals.length > 0
+                ? audienceSignals[0].label
+                : (briefingState.brief.audience.value?.name ?? null)
+            const industry = briefingState.industry?.value ?? null
+            const platform = briefingState.brief.platform.value ?? null
+            const intent = briefingState.brief.intent.value ?? null
+
+            if (audience || industry) {
+              briefingState.toneProfile = calibrateTone(audience, industry, platform, intent)
+            }
+          }
+
+          // 7. Evaluate stage transitions
+          briefingState.messageCount += 1
+          const nextStage = evaluateTransitions(briefingState, inference)
+          if (nextStage !== briefingState.stage) {
+            briefingState.stage = nextStage
+            briefingState.turnsInCurrentStage = 0
+          } else {
+            briefingState.turnsInCurrentStage += 1
+          }
+
+          // 8. Build system prompt from state
+          const brandContext: BrandContext = {
+            companyName: company?.name,
+            industry: company?.industry ?? undefined,
+            brandDescription: company?.description ?? undefined,
+          }
+          const systemPrompt = buildSystemPrompt(briefingState, brandContext)
+          stateMachineOverride = { systemPrompt }
+
+          // 9. Generate quick options from state machine (deterministic)
+          const smQuickOpts = generateQuickOptions(briefingState)
+          if (smQuickOpts) {
+            stateMachineQuickOptions = smQuickOpts
+          }
+
+          // 10. Serialize updated state for response
+          updatedBriefingState = serialize(briefingState)
+        } catch (err) {
+          logger.error({ err }, 'State machine pipeline failed — falling back to legacy')
+          // On error, clear override so legacy path runs
+          stateMachineOverride = undefined
+          updatedBriefingState = undefined
+          stateMachineQuickOptions = undefined
+        }
+      }
+
+      // Get AI response with context (+ optional state machine override)
+      const response = await chat(messages, session.user.id, chatContext, stateMachineOverride)
 
       // Check if a task proposal was generated
       const taskProposal = parseTaskFromChat(response.content)
@@ -404,7 +561,8 @@ async function handler(request: NextRequest) {
       }
 
       // Auto-generate quick options from deliverable styles if AI didn't provide any
-      let quickOptions = response.quickOptions
+      // State machine quick options take priority when available
+      let quickOptions = stateMachineQuickOptions ?? response.quickOptions
       if (!quickOptions && deliverableStyles && deliverableStyles.length > 0) {
         // Generate options from the style names
         const styleOptions = deliverableStyles.slice(0, 4).map((style) => style.name)
@@ -423,6 +581,7 @@ async function handler(request: NextRequest) {
         selectedStyles,
         quickOptions,
         videoReferences, // Video style references for launch videos, video ads, etc.
+        ...(updatedBriefingState && { briefingState: updatedBriefingState }),
       })
     },
     { endpoint: 'POST /api/chat' }

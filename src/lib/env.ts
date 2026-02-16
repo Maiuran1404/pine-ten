@@ -47,6 +47,12 @@ const envSchema = z.object({
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 
+  // Feature Flags
+  BRIEFING_STATE_MACHINE_ENABLED: z
+    .enum(['true', 'false', '1', '0'])
+    .optional()
+    .transform((val) => val === 'true' || val === '1'),
+
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),

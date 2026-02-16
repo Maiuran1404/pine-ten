@@ -262,6 +262,8 @@ export const chatMessageSchema = z.object({
       })
     )
     .optional(),
+  // Serialized BriefingState for state-machine-driven briefing flow (Phase 2)
+  briefingState: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
 // ============ Freelancer Schemas ============

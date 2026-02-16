@@ -182,10 +182,15 @@ export interface DeliverableStyleMarker {
   refinementQuery?: string // For style refinement (user's refinement feedback)
 }
 
+export interface StateMachineOverride {
+  systemPrompt: string
+}
+
 export async function chat(
   messages: ChatMessage[],
   userId: string,
-  context?: ChatContext
+  context?: ChatContext,
+  stateMachineOverride?: StateMachineOverride
 ): Promise<{
   content: string
   styleReferences?: string[]
@@ -296,7 +301,19 @@ You already know their brand. DO NOT ask about: company, industry, audience, col
     }
   }
 
-  const enhancedSystemPrompt = `${basePrompt}
+  // Feature flag: use state machine prompt or legacy prompt
+  const useStateMachine = !!stateMachineOverride
+
+  let finalSystemPrompt: string
+  let maxTokens: number
+
+  if (useStateMachine) {
+    // State machine mode: prompt comes from buildSystemPrompt(), higher token limit
+    finalSystemPrompt = stateMachineOverride.systemPrompt
+    maxTokens = 800
+  } else {
+    // Legacy mode: build enhanced system prompt as before
+    finalSystemPrompt = `${basePrompt}
 
 ${companyContext}
 ${brandDetectionContext}
@@ -310,11 +327,13 @@ ${categories
 
 Available style reference categories:
 ${[...new Set(styles.map((s) => s.category))].join(', ')}`
+    maxTokens = 300
+  }
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 300, // Limit output to encourage brevity
-    system: enhancedSystemPrompt,
+    max_tokens: maxTokens,
+    system: finalSystemPrompt,
     messages: messages.map((m) => ({
       role: m.role,
       content: m.content,
@@ -379,41 +398,50 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     }
   }
 
-  // Extract quick options if present
-  const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/)
+  // ========================================================================
+  // Quick options extraction (legacy only — state machine generates its own)
+  // ========================================================================
+
   let quickOptions: { question: string; options: string[] } | undefined
-  if (quickOptionsMatch) {
-    try {
-      quickOptions = JSON.parse(quickOptionsMatch[1].trim())
-    } catch (error) {
-      logger.warn({ err: error }, 'Failed to parse quick options JSON from chat response')
+
+  if (!useStateMachine) {
+    const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]([\s\S]*?)\[\/QUICK_OPTIONS\]/)
+    if (quickOptionsMatch) {
+      try {
+        quickOptions = JSON.parse(quickOptionsMatch[1].trim())
+      } catch (error) {
+        logger.warn({ err: error }, 'Failed to parse quick options JSON from chat response')
+      }
+    }
+
+    // Fallback: if AI didn't include quick options, generate contextual defaults
+    if (!quickOptions) {
+      const hasStyleMarker = !!deliverableStyleMarker
+      const messageCount = messages.length
+
+      if (hasStyleMarker) {
+        quickOptions = {
+          question: 'What would you like to do?',
+          options: ['I like the first one', 'Show me more options', 'Something different'],
+        }
+      } else if (messageCount <= 2) {
+        quickOptions = {
+          question: 'What next?',
+          options: ['Sounds good', 'Tell me more', 'Something different'],
+        }
+      } else {
+        quickOptions = {
+          question: 'Ready to proceed?',
+          options: ["Let's do it", 'I want to make changes', 'Start over'],
+        }
+      }
     }
   }
 
-  // Fallback: if AI didn't include quick options, generate contextual defaults
-  if (!quickOptions) {
-    const hasStyleMarker = !!deliverableStyleMarker
-    const messageCount = messages.length
+  // ========================================================================
+  // Content cleaning — strip markers from raw AI output
+  // ========================================================================
 
-    if (hasStyleMarker) {
-      quickOptions = {
-        question: 'What would you like to do?',
-        options: ['I like the first one', 'Show me more options', 'Something different'],
-      }
-    } else if (messageCount <= 2) {
-      quickOptions = {
-        question: 'What next?',
-        options: ['Sounds good', 'Tell me more', 'Something different'],
-      }
-    } else {
-      quickOptions = {
-        question: 'Ready to proceed?',
-        options: ["Let's do it", 'I want to make changes', 'Start over'],
-      }
-    }
-  }
-
-  // Clean the content (use global flag to remove ALL occurrences)
   let cleanContent = content
     .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, '')
     .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, '')
@@ -424,121 +452,140 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
     .trim()
 
-  // Post-process to remove enthusiastic/sycophantic language that slipped through
+  // ========================================================================
+  // Post-processing: two paths
+  //   - State machine: lightweight (emoji, hex, capitalize only)
+  //   - Legacy: full sanitization (banned openers, bullets, question limiting)
+  // ========================================================================
 
-  // Banned opener patterns (expanded list)
-  const BANNED_OPENERS = [
-    // Standalone "Choice" at the start (common AI mistake)
-    /^Choice[\s\-!,.]+/i,
-    // Enthusiastic affirmations
-    /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
-    // Enthusiastic affirmations with "choice/pick"
-    /^(Great|Excellent|Good|Nice|Solid|Smart|Wise) (choice|pick|selection)[!,.]?\s*/i,
-    // Validation phrases
-    /^(Love it|That's great|That works|Sure thing|Absolutely|Definitely|Totally)[!,.]?\s*/i,
-    // Eager helper phrases
-    /^(I'd be happy to|I'd love to|Happy to|Glad to|Excited to)[!,.]?\s*/i,
-    /^(Of course|Certainly|Sure|Absolutely)[!,]?\s*/i,
-    // Acknowledgment phrases (keep simple, remove excessive)
-    /^(Got it|Noted|Understood|Makes sense|I see|I understand)[!,.]?\s*/i,
-    // Verbose intro patterns
-    /^(I |I'll |I need to |I want to |Let me |To create |Before |First, I )/i,
-    /^(need to understand|to help you|in order to)/i,
-  ]
+  if (useStateMachine) {
+    // ----- State machine path: minimal post-processing -----
+    cleanContent = cleanContent
+      // Remove emojis
+      .replace(
+        /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu,
+        ''
+      )
+      // Strip hex codes
+      .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, ' ')
+      .replace(/\bcolor\s*\(\s*\)/gi, 'color')
+      .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
+      .replace(/\(\s*\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
 
-  // Banned mid-content patterns
-  const BANNED_MID = [
-    /\s+(That's exciting|That sounds amazing|I love that|That's great|That's wonderful)[!.]?\s*/gi,
-    /\s+(Super|Awesome|Amazing)(!|\s)/gi,
-    /\s+You're absolutely right[!.]?\s*/gi,
-    /\s+That's a (great|excellent|fantastic|wonderful) (idea|choice|direction)[!.]?\s*/gi,
-  ]
-
-  // Apply opener sanitization
-  const originalLength = cleanContent.length
-  for (const pattern of BANNED_OPENERS) {
-    cleanContent = cleanContent.replace(pattern, '')
-    if (cleanContent.length < originalLength) break // Stop after first match
-  }
-
-  // If we removed an opener, capitalize the first letter of remaining content
-  if (cleanContent.length < originalLength && cleanContent.length > 0) {
-    cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1)
-  }
-
-  // Apply mid-content sanitization
-  for (const pattern of BANNED_MID) {
-    cleanContent = cleanContent.replace(pattern, ' ')
-  }
-
-  // Remove bullet points and list markers - these indicate verbose responses
-  cleanContent = cleanContent
-    .replace(/^[-•]\s*/gm, '') // Remove bullet points at start of lines
-    .replace(/\n[-•]\s*/g, ' ') // Remove bullet points with newlines
-    .replace(/\*\*[^*]+\*\*:?\s*/g, '') // Remove bold headers like **Tell me about:**
-    .replace(/\n\s*\n/g, ' ') // Collapse multiple newlines
-    .replace(/\n/g, ' ') // Replace remaining newlines with spaces
-    .replace(/([?.])\s*!/g, '$1') // Remove ! after ? or . (e.g., "?!" → "?")
-    .replace(/!+/g, '.') // Replace remaining exclamation marks with single period
-    .replace(/\.{2,}/g, '.') // Collapse multiple periods into one
-    .replace(/\?\s*\./g, '?') // Fix "?." → "?"
-    .replace(/\.\s*\?/g, '?') // Fix ".?" → "?"
-    .replace(/,\s*\./g, '.') // Fix ",." → "."
-    .replace(/\.\s*,/g, ',') // Fix ".," → ","
-
-  // If there are multiple question marks, keep only the last question
-  const questionCount = (cleanContent.match(/\?/g) || []).length
-  if (questionCount > 1) {
-    // Find the last sentence ending with ? and keep only that as the question
-    const lastQuestionMatch = cleanContent.match(/[^.!?]*\?[^?]*$/)
-    const beforeLastQuestion = cleanContent.replace(/[^.!?]*\?[^?]*$/, '').trim()
-    // Get the first 1-2 sentences before the questions
-    const firstSentences = beforeLastQuestion.split(/[.!]/).slice(0, 2).join('. ').trim()
-    if (firstSentences && lastQuestionMatch) {
-      cleanContent =
-        firstSentences +
-        (firstSentences.endsWith('.') ? '' : '.') +
-        ' ' +
-        lastQuestionMatch[0].trim()
+    // Capitalize first letter
+    if (cleanContent.length > 0) {
+      const firstLetterIndex = cleanContent.search(/[a-zA-Z]/)
+      if (firstLetterIndex !== -1) {
+        const firstLetter = cleanContent.charAt(firstLetterIndex)
+        if (firstLetter >= 'a' && firstLetter <= 'z') {
+          cleanContent =
+            cleanContent.slice(0, firstLetterIndex) +
+            firstLetter.toUpperCase() +
+            cleanContent.slice(firstLetterIndex + 1)
+        }
+      }
     }
-  }
+  } else {
+    // ----- Legacy path: full post-processing -----
 
-  cleanContent = cleanContent
-    // Remove emojis
-    .replace(
-      /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu,
-      ''
-    )
-    // Strip hex codes to hide technical color values from users
-    .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, ' ')
-    // Clean up "color ()" patterns that result from stripping
-    .replace(/\bcolor\s*\(\s*\)/gi, 'color')
-    .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
-    .replace(/\(\s*\)/g, '')
-    // Final punctuation cleanup to catch any remaining grammar issues
-    .replace(/\?\s*\./g, '?') // "?." → "?"
-    .replace(/\.\s*\?/g, '?') // ".?" → "?"
-    .replace(/\.{2,}/g, '.') // ".." or "..." → "."
-    .replace(/,\s*\./g, '.') // ",." → "."
-    .replace(/\.\s*,/g, ',') // ".," → ","
-    .replace(/\s+([.,?])/g, '$1') // Remove space before punctuation
-    // Clean up any double spaces or leading/trailing whitespace
-    .replace(/\s+/g, ' ')
-    .trim()
+    // Banned opener patterns (expanded list)
+    const BANNED_OPENERS = [
+      /^Choice[\s\-!,.]+/i,
+      /^(Perfect|Great|Excellent|Amazing|Awesome|Wonderful|Fantastic|Nice|Solid|Good|Beautiful|Lovely)[!,.]?\s*/i,
+      /^(Great|Excellent|Good|Nice|Solid|Smart|Wise) (choice|pick|selection)[!,.]?\s*/i,
+      /^(Love it|That's great|That works|Sure thing|Absolutely|Definitely|Totally)[!,.]?\s*/i,
+      /^(I'd be happy to|I'd love to|Happy to|Glad to|Excited to)[!,.]?\s*/i,
+      /^(Of course|Certainly|Sure|Absolutely)[!,]?\s*/i,
+      /^(Got it|Noted|Understood|Makes sense|I see|I understand)[!,.]?\s*/i,
+      /^(I |I'll |I need to |I want to |Let me |To create |Before |First, I )/i,
+      /^(need to understand|to help you|in order to)/i,
+    ]
 
-  // Final check: Ensure first letter is capitalized (for professional tone)
-  // Only capitalize if the very first letter (after any whitespace/punctuation) is lowercase
-  if (cleanContent.length > 0) {
-    // Find the index of the first letter (uppercase or lowercase)
-    const firstLetterIndex = cleanContent.search(/[a-zA-Z]/)
-    if (firstLetterIndex !== -1) {
-      const firstLetter = cleanContent.charAt(firstLetterIndex)
-      // Only capitalize if it's lowercase
-      if (firstLetter >= 'a' && firstLetter <= 'z') {
+    // Banned mid-content patterns
+    const BANNED_MID = [
+      /\s+(That's exciting|That sounds amazing|I love that|That's great|That's wonderful)[!.]?\s*/gi,
+      /\s+(Super|Awesome|Amazing)(!|\s)/gi,
+      /\s+You're absolutely right[!.]?\s*/gi,
+      /\s+That's a (great|excellent|fantastic|wonderful) (idea|choice|direction)[!.]?\s*/gi,
+    ]
+
+    // Apply opener sanitization
+    const originalLength = cleanContent.length
+    for (const pattern of BANNED_OPENERS) {
+      cleanContent = cleanContent.replace(pattern, '')
+      if (cleanContent.length < originalLength) break
+    }
+
+    if (cleanContent.length < originalLength && cleanContent.length > 0) {
+      cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1)
+    }
+
+    // Apply mid-content sanitization
+    for (const pattern of BANNED_MID) {
+      cleanContent = cleanContent.replace(pattern, ' ')
+    }
+
+    // Remove bullet points and list markers
+    cleanContent = cleanContent
+      .replace(/^[-•]\s*/gm, '')
+      .replace(/\n[-•]\s*/g, ' ')
+      .replace(/\*\*[^*]+\*\*:?\s*/g, '')
+      .replace(/\n\s*\n/g, ' ')
+      .replace(/\n/g, ' ')
+      .replace(/([?.])\s*!/g, '$1')
+      .replace(/!+/g, '.')
+      .replace(/\.{2,}/g, '.')
+      .replace(/\?\s*\./g, '?')
+      .replace(/\.\s*\?/g, '?')
+      .replace(/,\s*\./g, '.')
+      .replace(/\.\s*,/g, ',')
+
+    // Limit to single question
+    const questionCount = (cleanContent.match(/\?/g) || []).length
+    if (questionCount > 1) {
+      const lastQuestionMatch = cleanContent.match(/[^.!?]*\?[^?]*$/)
+      const beforeLastQuestion = cleanContent.replace(/[^.!?]*\?[^?]*$/, '').trim()
+      const firstSentences = beforeLastQuestion.split(/[.!]/).slice(0, 2).join('. ').trim()
+      if (firstSentences && lastQuestionMatch) {
         cleanContent =
-          cleanContent.slice(0, firstLetterIndex) +
-          firstLetter.toUpperCase() +
-          cleanContent.slice(firstLetterIndex + 1)
+          firstSentences +
+          (firstSentences.endsWith('.') ? '' : '.') +
+          ' ' +
+          lastQuestionMatch[0].trim()
+      }
+    }
+
+    cleanContent = cleanContent
+      .replace(
+        /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu,
+        ''
+      )
+      .replace(/\s*\(?\s*#[A-Fa-f0-9]{3,8}\s*\)?\s*/g, ' ')
+      .replace(/\bcolor\s*\(\s*\)/gi, 'color')
+      .replace(/\bcolors\s*\(\s*\)/gi, 'colors')
+      .replace(/\(\s*\)/g, '')
+      .replace(/\?\s*\./g, '?')
+      .replace(/\.\s*\?/g, '?')
+      .replace(/\.{2,}/g, '.')
+      .replace(/,\s*\./g, '.')
+      .replace(/\.\s*,/g, ',')
+      .replace(/\s+([.,?])/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    // Final capitalization check
+    if (cleanContent.length > 0) {
+      const firstLetterIndex = cleanContent.search(/[a-zA-Z]/)
+      if (firstLetterIndex !== -1) {
+        const firstLetter = cleanContent.charAt(firstLetterIndex)
+        if (firstLetter >= 'a' && firstLetter <= 'z') {
+          cleanContent =
+            cleanContent.slice(0, firstLetterIndex) +
+            firstLetter.toUpperCase() +
+            cleanContent.slice(firstLetterIndex + 1)
+        }
       }
     }
   }

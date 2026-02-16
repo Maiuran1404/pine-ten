@@ -1205,6 +1205,7 @@ export const chatDrafts = pgTable(
       deliveryDays?: number
       creditsRequired: number
     } | null>(),
+    briefingState: jsonb('briefing_state'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

@@ -1,6 +1,7 @@
 // Chat drafts storage - uses server API with localStorage fallback for offline
 
 import { logger } from '@/lib/logger'
+import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
 
 export interface MoodboardItemData {
   id: string
@@ -87,6 +88,7 @@ export interface ChatDraft {
   }[]
   selectedStyles: string[]
   moodboardItems?: MoodboardItemData[]
+  briefingState?: SerializedBriefingState
   pendingTask: {
     title: string
     description: string
