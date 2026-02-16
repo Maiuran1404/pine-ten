@@ -282,6 +282,19 @@ async function handler(request: NextRequest) {
             briefingState.turnsInCurrentStage += 1
           }
 
+          // 7b. Detect explicit submit intent — force SUBMIT stage
+          // The state machine keeps REVIEW/DEEPEN locked until CONFIRM_SUBMIT dispatch,
+          // but we need to handle natural language like "yes let's submit" / "submit this"
+          if (
+            (briefingState.stage === 'REVIEW' || briefingState.stage === 'DEEPEN') &&
+            /\b(yes|yeah|yep|sure|go ahead|do it|ready|let'?s?\s*(go|submit|do)|submit\s*(this|it|now|the|my)?|send\s*(this|it)|confirm|looks?\s*good)\b/i.test(
+              lastUserMessage
+            )
+          ) {
+            briefingState.stage = 'SUBMIT'
+            briefingState.turnsInCurrentStage = 0
+          }
+
           // 8. Build system prompt from state
           const brandContext: BrandContext = {
             companyName: company?.name,

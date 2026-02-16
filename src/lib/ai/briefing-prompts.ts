@@ -386,12 +386,28 @@ Available paths: ${options.join(', ')}.
 - If they selected a deepening, execute it (e.g., refine copy, generate variant).`
 }
 
-function buildSubmitTask(_state: BriefingState): string {
+function buildSubmitTask(state: BriefingState): string {
+  const title = state.brief.taskSummary.value || state.brief.topic.value || 'Design Project'
+  const category = state.deliverableCategory || 'design'
+
   return `Generate the task submission. This brief will be sent to a professional Crafted designer who will build the deliverable.
-- Summarize the brief concisely.
-- Output [TASK_READY] block with all relevant details.
+- Summarize the brief concisely in 1-2 sentences.
 - Express confidence that the Crafted designer will deliver great work based on this brief.
-- No suggestions to go elsewhere — Crafted handles everything from here.`
+- No suggestions to go elsewhere — Crafted handles everything from here.
+- You MUST include the following [TASK_READY] block in your response (the user will NOT see it — it is parsed by the system to create the task):
+
+[TASK_READY]
+{
+  "title": "${title}",
+  "description": "A concise description of the deliverable based on the brief",
+  "category": "${category}",
+  "estimatedHours": 24,
+  "deliveryDays": 3,
+  "creditsRequired": 15
+}
+[/TASK_READY]
+
+IMPORTANT: You MUST output the [TASK_READY]...[/TASK_READY] block above with valid JSON. Fill in the "title" and "description" based on the conversation. Without this block, the task cannot be created.`
 }
 
 function getDeepenOptionsForCategory(category: DeliverableCategory | null): string[] {
