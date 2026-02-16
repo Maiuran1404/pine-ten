@@ -43,15 +43,16 @@ export default function SettingsPage() {
       const response = await fetch('/api/admin/settings')
       if (response.ok) {
         const data = await response.json()
+        const settings = data.data?.settings ?? {}
         const merged = {
-          creditPrice: data.settings.creditPrice ?? 49,
-          maxRevisions: data.settings.maxRevisions ?? 2,
-          platformFeePercent: data.settings.platformFeePercent ?? 20,
-          maintenanceMode: data.settings.maintenanceMode ?? false,
-          newUserCredits: data.settings.newUserCredits ?? 0,
-          minWithdrawal: data.settings.minWithdrawal ?? 100,
+          creditPrice: settings.creditPrice ?? 49,
+          maxRevisions: settings.maxRevisions ?? 2,
+          platformFeePercent: settings.platformFeePercent ?? 20,
+          maintenanceMode: settings.maintenanceMode ?? false,
+          newUserCredits: settings.newUserCredits ?? 0,
+          minWithdrawal: settings.minWithdrawal ?? 100,
         }
-        setSettings(data.settings)
+        setSettings(settings)
         setLocalSettings(merged)
       }
     } catch (error) {
