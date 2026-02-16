@@ -4,6 +4,7 @@ import {
   type TaskProposal,
   type ChatMessage,
 } from '@/components/chat/types'
+import type { BriefingStage } from '@/lib/ai/briefing-state-machine'
 
 interface ProgressState {
   messages: ChatMessage[]
@@ -29,8 +30,72 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   brief: 'Describe your project',
   style: 'Choose your visual style',
   details: 'Refine your requirements',
+  strategic_review: 'Strategic review',
   review: 'Review your request',
+  deepen: 'Deepen your brief',
   submit: 'Submit for creation',
+}
+
+/**
+ * Stages used when the briefing state machine is enabled.
+ * Adds strategic_review and deepen between details and review.
+ */
+export const BRIEFING_CHAT_STAGES: ChatStage[] = [
+  'brief',
+  'style',
+  'details',
+  'strategic_review',
+  'review',
+  'deepen',
+  'submit',
+]
+
+/**
+ * Map a BriefingStage (state machine) to a ChatStage (progress UI).
+ * Multiple BriefingStages collapse into a single ChatStage so the
+ * progress bar stays simple.
+ */
+export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
+  switch (stage) {
+    case 'EXTRACT':
+    case 'TASK_TYPE':
+    case 'INTENT':
+      return 'brief'
+    case 'INSPIRATION':
+    case 'MOODBOARD':
+      return 'style'
+    case 'STRUCTURE':
+      return 'details'
+    case 'STRATEGIC_REVIEW':
+      return 'strategic_review'
+    case 'REVIEW':
+      return 'review'
+    case 'DEEPEN':
+      return 'deepen'
+    case 'SUBMIT':
+      return 'submit'
+    default:
+      return 'brief'
+  }
+}
+
+/**
+ * Calculate progress from a BriefingStage.
+ * Returns a ProgressResult compatible with the existing progress UI.
+ */
+export function calculateChatStageFromBriefing(briefingStage: BriefingStage): ProgressResult {
+  const chatStage = mapBriefingStageToChat(briefingStage)
+  const stageIndex = BRIEFING_CHAT_STAGES.indexOf(chatStage)
+
+  const completedStages = BRIEFING_CHAT_STAGES.slice(0, stageIndex)
+  const progressPercentage = Math.round((stageIndex / (BRIEFING_CHAT_STAGES.length - 1)) * 100)
+
+  return {
+    currentStage: chatStage,
+    completedStages,
+    progressPercentage: Math.min(100, progressPercentage),
+    stageDescriptions: STAGE_DESCRIPTIONS,
+  }
 }
 
 /**
@@ -124,7 +189,9 @@ function calculateProgressPercentage(
     brief: 15,
     style: 20,
     details: 30,
+    strategic_review: 0, // Only used in state machine path
     review: 20,
+    deepen: 0, // Only used in state machine path
     submit: 15,
   }
 
