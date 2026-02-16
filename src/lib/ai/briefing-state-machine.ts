@@ -1,0 +1,514 @@
+/**
+ * Briefing State Machine
+ *
+ * Core logic for state management and transitions in the creative briefing flow.
+ * BriefingState COMPOSES LiveBrief — it holds a `brief: LiveBrief` field.
+ * All functions are pure — no side effects, no API calls, no DOM access.
+ */
+
+import type {
+  LiveBrief,
+  InferredField,
+  VisualDirection,
+  Dimension,
+  InferenceResult,
+} from '@/components/chat/brief-panel/types'
+import { createEmptyBrief } from '@/components/chat/brief-panel/types'
+
+// =============================================================================
+// CORE ENUMS & TYPES
+// =============================================================================
+
+export type BriefingStage =
+  | 'EXTRACT'
+  | 'TASK_TYPE'
+  | 'INTENT'
+  | 'INSPIRATION'
+  | 'STRUCTURE'
+  | 'STRATEGIC_REVIEW'
+  | 'MOODBOARD'
+  | 'REVIEW'
+  | 'DEEPEN'
+  | 'SUBMIT'
+
+export type DeliverableCategory = 'video' | 'website' | 'content' | 'design' | 'brand' | 'unknown'
+
+// =============================================================================
+// STRUCTURE TYPES (Branched by Deliverable)
+// =============================================================================
+
+export type StructureData =
+  | { type: 'storyboard'; scenes: StoryboardScene[] }
+  | { type: 'layout'; sections: LayoutSection[] }
+  | { type: 'calendar'; outline: ContentCalendarOutline }
+  | { type: 'single_design'; specification: DesignSpec }
+
+export interface StoryboardScene {
+  sceneNumber: number
+  title: string
+  description: string
+  duration: string
+  visualNote: string
+  hookData?: VideoHookData
+  referenceVideoId?: string
+}
+
+export interface VideoHookData {
+  targetPersona: string
+  painMetric: string
+  quantifiableImpact: string
+}
+
+export interface LayoutSection {
+  sectionName: string
+  purpose: string
+  contentGuidance: string
+  order: number
+}
+
+export interface ContentCalendarOutline {
+  totalDuration: string
+  postingCadence: string
+  platforms: string[]
+  distributionLogic: string
+  contentPillars: ContentPillar[]
+  weeks: ContentWeek[]
+  ctaEscalation: CTAEscalationPlan
+}
+
+export interface ContentPillar {
+  name: string
+  description: string
+  percentage: number
+}
+
+export interface ContentWeek {
+  weekNumber: number
+  narrativeArc: string
+  theme: string
+  posts: ContentPost[]
+}
+
+export interface ContentPost {
+  dayOfWeek: string
+  pillarType: 'pillar' | 'support'
+  topic: string
+  format: string
+  cta: string
+  engagementTrigger: string
+}
+
+export interface CTAEscalationPlan {
+  awarenessPhase: { weeks: number[]; ctaStyle: string }
+  engagementPhase: { weeks: number[]; ctaStyle: string }
+  conversionPhase: { weeks: number[]; ctaStyle: string }
+}
+
+export interface DesignSpec {
+  format: string
+  dimensions: Dimension[]
+  keyElements: string[]
+  copyGuidance: string
+}
+
+// =============================================================================
+// STRATEGIC REVIEW TYPES
+// =============================================================================
+
+export interface StrategicReviewData {
+  strengths: string[]
+  risks: string[]
+  optimizationSuggestion: string
+  inspirationFitScore: 'aligned' | 'minor_mismatch' | 'significant_mismatch'
+  inspirationFitNote: string | null
+  userOverride: boolean
+}
+
+export type DeepenOption =
+  | 'production_copy'
+  | 'script_writing'
+  | 'ab_variant'
+  | 'conversion_optimization'
+  | 'asset_specifications'
+
+// =============================================================================
+// TONE PROFILE TYPES
+// =============================================================================
+
+export interface ToneProfile {
+  languageSharpness: 'direct' | 'conversational' | 'formal'
+  technicalDepth: 'high' | 'medium' | 'low'
+  emotionalIntensity: 'high' | 'medium' | 'low'
+  directnessLevel: 'high' | 'medium' | 'low'
+  vocabularyRegister: string[]
+  toneDescription: string
+}
+
+// =============================================================================
+// BRIEFING STATE (Composes LiveBrief)
+// =============================================================================
+
+export interface BriefingState {
+  stage: BriefingStage
+  deliverableCategory: DeliverableCategory | null
+  brief: LiveBrief
+
+  // Fields that DON'T exist in LiveBrief
+  industry: InferredField<string> | null
+  styleKeywords: string[]
+  inspirationRefs: string[]
+  videoReferenceIds: string[]
+  structure: StructureData | null
+  strategicReview: StrategicReviewData | null
+  sectionMoodboards: Record<string, Partial<VisualDirection>>
+  competitiveDifferentiation: string | null
+  deepenSelections: DeepenOption[] | null
+  toneProfile: ToneProfile | null
+  turnsInCurrentStage: number
+  messageCount: number
+}
+
+// =============================================================================
+// STALL CONFIG
+// =============================================================================
+
+export interface StallConfig {
+  maxTurnsBeforeNarrow: number | null
+  maxTurnsBeforeRecommend: number | null
+  softNudgeAfter: number | null
+}
+
+export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
+  EXTRACT: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+  TASK_TYPE: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
+  INTENT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
+  INSPIRATION: {
+    maxTurnsBeforeNarrow: null,
+    maxTurnsBeforeRecommend: null,
+    softNudgeAfter: null,
+  },
+  STRUCTURE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 4 },
+  STRATEGIC_REVIEW: {
+    maxTurnsBeforeNarrow: null,
+    maxTurnsBeforeRecommend: null,
+    softNudgeAfter: null,
+  },
+  MOODBOARD: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+  REVIEW: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+  DEEPEN: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+  SUBMIT: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+}
+
+// Stage ordering for navigation
+const STAGE_ORDER: BriefingStage[] = [
+  'EXTRACT',
+  'TASK_TYPE',
+  'INTENT',
+  'INSPIRATION',
+  'STRUCTURE',
+  'STRATEGIC_REVIEW',
+  'MOODBOARD',
+  'REVIEW',
+  'DEEPEN',
+  'SUBMIT',
+]
+
+// =============================================================================
+// FACTORY
+// =============================================================================
+
+export function createInitialBriefingState(briefId?: string): BriefingState {
+  return {
+    stage: 'EXTRACT',
+    deliverableCategory: null,
+    brief: createEmptyBrief(briefId ?? crypto.randomUUID()),
+    industry: null,
+    styleKeywords: [],
+    inspirationRefs: [],
+    videoReferenceIds: [],
+    structure: null,
+    strategicReview: null,
+    sectionMoodboards: {},
+    competitiveDifferentiation: null,
+    deepenSelections: null,
+    toneProfile: null,
+    turnsInCurrentStage: 0,
+    messageCount: 0,
+  }
+}
+
+// =============================================================================
+// TRANSITION LOGIC
+// =============================================================================
+
+/**
+ * Evaluate what stage the state machine should be in given current state and inference.
+ * Pure function — same inputs always produce same output.
+ *
+ * Only evaluates FORWARD transitions from EXTRACT.
+ * For ongoing transitions (staying/advancing from non-EXTRACT stages),
+ * the stage is managed by the message processing pipeline.
+ */
+export function evaluateTransitions(
+  state: BriefingState,
+  inference: InferenceResult
+): BriefingStage {
+  // EXTRACT is the entry point — determine landing stage from first message
+  if (state.stage === 'EXTRACT') {
+    return evaluateExtractLanding(state, inference)
+  }
+
+  // For non-EXTRACT stages, evaluate if we can advance
+  return evaluateStageAdvancement(state)
+}
+
+/**
+ * After EXTRACT, determine which stage to land on based on what was inferred.
+ * Key principle: skip stages when data is available.
+ */
+function evaluateExtractLanding(state: BriefingState, inference: InferenceResult): BriefingStage {
+  const hasTaskType = inference.taskType.value !== null && inference.taskType.confidence >= 0.75
+  const hasIntent = inference.intent.value !== null && inference.intent.confidence >= 0.75
+
+  // If we don't even know what they're making, go to TASK_TYPE
+  if (!hasTaskType) {
+    return 'TASK_TYPE'
+  }
+
+  // If we know what but not why, go to INTENT
+  if (!hasIntent) {
+    return 'INTENT'
+  }
+
+  // Both task type and intent are known — skip to INSPIRATION
+  return 'INSPIRATION'
+}
+
+/**
+ * Evaluate if the current stage can advance to the next one.
+ * Returns current stage if requirements not met.
+ */
+function evaluateStageAdvancement(state: BriefingState): BriefingStage {
+  switch (state.stage) {
+    case 'TASK_TYPE': {
+      // Can advance when taskType has sufficient confidence
+      const hasTaskType =
+        state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.75
+      if (!hasTaskType) return 'TASK_TYPE'
+
+      // Check if intent is also already known
+      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75
+      return hasIntent ? 'INSPIRATION' : 'INTENT'
+    }
+
+    case 'INTENT': {
+      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75
+      return hasIntent ? 'INSPIRATION' : 'INTENT'
+    }
+
+    case 'INSPIRATION': {
+      // STRUCTURE requires selectedStyles.length > 0
+      const hasStyles =
+        state.brief.visualDirection !== null &&
+        state.brief.visualDirection.selectedStyles.length > 0
+      return hasStyles ? 'STRUCTURE' : 'INSPIRATION'
+    }
+
+    case 'STRUCTURE': {
+      // STRATEGIC_REVIEW requires structure !== null
+      return state.structure !== null ? 'STRATEGIC_REVIEW' : 'STRUCTURE'
+    }
+
+    case 'STRATEGIC_REVIEW': {
+      // Advances via dispatch STAGE_RESPONSE — not automatic
+      return 'STRATEGIC_REVIEW'
+    }
+
+    case 'MOODBOARD': {
+      // REVIEW requires overallMoodboard !== null (visualDirection)
+      return state.brief.visualDirection !== null ? 'REVIEW' : 'MOODBOARD'
+    }
+
+    case 'REVIEW': {
+      // DEEPEN only entered via explicit "Go deeper first"
+      // SUBMIT requires explicit confirmation
+      // Both handled by dispatch — stays at REVIEW
+      return 'REVIEW'
+    }
+
+    case 'DEEPEN': {
+      // Stays until user dispatches CONFIRM_SUBMIT
+      return 'DEEPEN'
+    }
+
+    case 'SUBMIT':
+      return 'SUBMIT'
+
+    default:
+      return state.stage
+  }
+}
+
+// =============================================================================
+// GO BACK
+// =============================================================================
+
+/**
+ * Navigate back to a previous stage, clearing data produced at and after the target stage.
+ * Returns a new state — does not mutate the input.
+ */
+export function goBackTo(state: BriefingState, targetStage: BriefingStage): BriefingState {
+  const targetIndex = STAGE_ORDER.indexOf(targetStage)
+  const currentIndex = STAGE_ORDER.indexOf(state.stage)
+
+  // Can't go forward or stay
+  if (targetIndex >= currentIndex) {
+    return state
+  }
+
+  const newState: BriefingState = {
+    ...state,
+    stage: targetStage,
+    turnsInCurrentStage: 0,
+  }
+
+  // Clear fields based on target stage
+  // Going back to INSPIRATION: clears selectedStyles, preserves intent/topic/audience
+  if (targetIndex <= STAGE_ORDER.indexOf('INSPIRATION')) {
+    newState.brief = {
+      ...newState.brief,
+      visualDirection: null,
+    }
+  }
+
+  // Going back to INTENT or earlier: clears intent + all downstream
+  if (targetIndex <= STAGE_ORDER.indexOf('INTENT')) {
+    newState.brief = {
+      ...newState.brief,
+      intent: { value: null, confidence: 0, source: 'pending' },
+    }
+  }
+
+  // Going back to TASK_TYPE or earlier: clears taskType + all downstream
+  if (targetIndex <= STAGE_ORDER.indexOf('TASK_TYPE')) {
+    newState.brief = {
+      ...newState.brief,
+      taskType: { value: null, confidence: 0, source: 'pending' },
+    }
+    newState.deliverableCategory = null
+  }
+
+  // Clear structure and downstream for anything at STRUCTURE or earlier
+  if (targetIndex <= STAGE_ORDER.indexOf('STRUCTURE')) {
+    newState.structure = null
+    newState.strategicReview = null
+    newState.sectionMoodboards = {}
+    newState.deepenSelections = null
+  }
+
+  // Clear strategic review and downstream for anything at STRATEGIC_REVIEW or earlier
+  if (
+    targetIndex <= STAGE_ORDER.indexOf('STRATEGIC_REVIEW') &&
+    targetIndex > STAGE_ORDER.indexOf('STRUCTURE')
+  ) {
+    newState.strategicReview = null
+    newState.sectionMoodboards = {}
+    newState.deepenSelections = null
+  }
+
+  // Clear moodboard stuff for MOODBOARD or earlier
+  if (
+    targetIndex <= STAGE_ORDER.indexOf('MOODBOARD') &&
+    targetIndex > STAGE_ORDER.indexOf('STRATEGIC_REVIEW')
+  ) {
+    newState.sectionMoodboards = {}
+    newState.deepenSelections = null
+  }
+
+  // Clear deepen selections for REVIEW or earlier
+  if (
+    targetIndex <= STAGE_ORDER.indexOf('REVIEW') &&
+    targetIndex > STAGE_ORDER.indexOf('MOODBOARD')
+  ) {
+    newState.deepenSelections = null
+  }
+
+  return newState
+}
+
+// =============================================================================
+// PIVOT CATEGORY
+// =============================================================================
+
+/**
+ * Change deliverable category, preserving intent/topic/audience/styleKeywords/inspirationRefs/moodboard.
+ * Clears structure, strategicReview, sectionMoodboards, competitiveDifferentiation, deepenSelections.
+ * Resets to STRUCTURE stage.
+ */
+export function pivotCategory(
+  state: BriefingState,
+  newCategory: DeliverableCategory
+): BriefingState {
+  return {
+    ...state,
+    stage: 'STRUCTURE',
+    deliverableCategory: newCategory,
+    // Preserve: intent, topic, audience, styleKeywords, inspirationRefs, overallMoodboard
+    // Clear downstream
+    structure: null,
+    strategicReview: null,
+    sectionMoodboards: {},
+    competitiveDifferentiation: null,
+    deepenSelections: null,
+    turnsInCurrentStage: 0,
+  }
+}
+
+// =============================================================================
+// SERIALIZATION
+// =============================================================================
+
+export interface SerializedBriefingState {
+  stage: BriefingStage
+  deliverableCategory: DeliverableCategory | null
+  brief: SerializedLiveBrief
+  industry: InferredField<string> | null
+  styleKeywords: string[]
+  inspirationRefs: string[]
+  videoReferenceIds: string[]
+  structure: StructureData | null
+  strategicReview: StrategicReviewData | null
+  sectionMoodboards: Record<string, Partial<VisualDirection>>
+  competitiveDifferentiation: string | null
+  deepenSelections: DeepenOption[] | null
+  toneProfile: ToneProfile | null
+  turnsInCurrentStage: number
+  messageCount: number
+}
+
+interface SerializedLiveBrief extends Omit<LiveBrief, 'createdAt' | 'updatedAt'> {
+  createdAt: string
+  updatedAt: string
+}
+
+export function serialize(state: BriefingState): SerializedBriefingState {
+  return {
+    ...state,
+    brief: {
+      ...state.brief,
+      createdAt: state.brief.createdAt.toISOString(),
+      updatedAt: state.brief.updatedAt.toISOString(),
+    },
+  }
+}
+
+export function deserialize(data: SerializedBriefingState): BriefingState {
+  return {
+    ...data,
+    brief: {
+      ...data.brief,
+      createdAt: new Date(data.brief.createdAt),
+      updatedAt: new Date(data.brief.updatedAt),
+    },
+  }
+}
