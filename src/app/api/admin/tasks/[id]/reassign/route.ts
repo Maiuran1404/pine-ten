@@ -156,6 +156,7 @@ export async function GET(
         .from(freelancerProfiles)
         .innerJoin(users, eq(freelancerProfiles.userId, users.id))
         .where(eq(freelancerProfiles.status, 'APPROVED'))
+        .limit(200)
 
       return successResponse({ freelancers })
     },

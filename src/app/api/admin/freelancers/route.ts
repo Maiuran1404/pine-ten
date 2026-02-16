@@ -34,6 +34,7 @@ export async function GET(_request: NextRequest) {
         .leftJoin(freelancerProfiles, eq(users.id, freelancerProfiles.userId))
         .where(eq(users.role, 'FREELANCER'))
         .orderBy(desc(users.createdAt))
+        .limit(200)
 
       // Transform the data to handle users without profiles
       const transformedFreelancers = freelancers.map((f) => ({
