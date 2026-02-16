@@ -20,7 +20,6 @@ interface Message {
 
 interface ConversationReplayProps {
   messages: Message[]
-  scenarioName?: string
 }
 
 function generatedByLabel(method?: string) {
@@ -36,10 +35,7 @@ function generatedByLabel(method?: string) {
   }
 }
 
-export function ConversationReplay({
-  messages,
-  scenarioName: _scenarioName,
-}: ConversationReplayProps) {
+export function ConversationReplay({ messages }: ConversationReplayProps) {
   return (
     <div className="space-y-3">
       {messages.map((msg, idx) => {

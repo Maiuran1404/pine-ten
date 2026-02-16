@@ -3,9 +3,8 @@
 import { useEffect, useState, useCallback, use } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConversationCard } from '@/components/admin/chat-tests/conversation-card'
 import { ArrowLeft, CheckCircle2, XCircle, MessageSquare, Clock } from 'lucide-react'
@@ -52,7 +51,6 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
     fetchBatch()
   }, [fetchBatch])
 
-  const completed = runs.filter((r) => r.status === 'completed').length
   const failed = runs.filter((r) => r.status === 'failed').length
   const passed = runs.filter((r) => r.reachedReview).length
   const avgTurns =

@@ -22,6 +22,7 @@ export async function POST() {
         scenarioName: scenario.name,
         scenarioConfig: {
           name: scenario.name,
+          companyName: scenario.companyName,
           industry: scenario.industry,
           platform: scenario.platform,
           contentType: scenario.contentType,

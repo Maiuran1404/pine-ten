@@ -9,16 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConversationReplay } from '@/components/admin/chat-tests/conversation-replay'
-import {
-  ArrowLeft,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-  Clock,
-  Building2,
-  Target,
-  Layers,
-} from 'lucide-react'
+import { ArrowLeft, XCircle, MessageSquare, Building2, Target, Layers } from 'lucide-react'
 
 interface Message {
   turn: number
@@ -231,7 +222,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ runId: str
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px] pr-4">
-            <ConversationReplay messages={run.messages} scenarioName={run.scenarioName} />
+            <ConversationReplay messages={run.messages} />
           </ScrollArea>
         </CardContent>
       </Card>

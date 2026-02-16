@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, startTransition } from 'react'
+import { useState, useEffect, useRef, useCallback, startTransition } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ChatInterface } from '@/components/chat/chat-interface'
 import { getDrafts, generateDraftId, type ChatDraft } from '@/lib/chat-drafts'
@@ -48,7 +48,7 @@ export default function ChatPage() {
   }, [draftParam, messageParam, paymentParam, router])
 
   // Initialize drafts directly (only runs once on mount due to lazy initializer)
-  const [drafts, setDrafts] = useState<ChatDraft[]>(() => {
+  const [_drafts, setDrafts] = useState<ChatDraft[]>(() => {
     if (typeof window === 'undefined') return []
     return getDrafts()
   })
@@ -98,7 +98,7 @@ export default function ChatPage() {
         setCurrentDraftId(newId)
       })
     }
-  }, [draftParam, messageParam, hasUrlParams, drafts.length, initialMessage])
+  }, [draftParam, messageParam, hasUrlParams, initialMessage])
 
   const handleStartNew = () => {
     const newId = generateDraftId()
@@ -107,9 +107,11 @@ export default function ChatPage() {
     router.push('/dashboard')
   }
 
-  const handleDraftUpdate = () => {
-    setDrafts(getDrafts())
-  }
+  const draftUpdateTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const handleDraftUpdate = useCallback(() => {
+    clearTimeout(draftUpdateTimer.current)
+    draftUpdateTimer.current = setTimeout(() => setDrafts(getDrafts()), 500)
+  }, [])
 
   // Get user credits from context
   const { credits: userCredits } = useCredits()

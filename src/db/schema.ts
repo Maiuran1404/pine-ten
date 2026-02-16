@@ -2183,6 +2183,7 @@ export const chatTestRuns = pgTable(
     scenarioConfig: jsonb('scenario_config')
       .$type<{
         name: string
+        companyName: string
         industry: string
         platform: string
         contentType: string
