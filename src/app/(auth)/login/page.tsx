@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -121,7 +121,7 @@ function LoginContent() {
 
   // Get redirect destination based on SUBDOMAIN (not user role)
   // Users should be redirected to the appropriate page for the subdomain they're on
-  const getRedirectUrl = () => {
+  const getRedirectUrl = useCallback(() => {
     const redirect = searchParams.get('redirect')
     if (redirect && redirect !== '/' && !redirect.includes('login')) {
       return redirect
@@ -130,7 +130,7 @@ function LoginContent() {
     // Always use subdomain's default redirect, not role-based routing
     // This ensures users on app.getcrafted.ai go to /dashboard, not /admin
     return portal.defaultRedirect
-  }
+  }, [searchParams, portal.defaultRedirect])
 
   // Redirect artists to early-access by default (unless they explicitly chose to sign in)
   useEffect(() => {
@@ -145,7 +145,7 @@ function LoginContent() {
       const redirectUrl = getRedirectUrl()
       router.replace(redirectUrl)
     }
-  }, [session, isPending, router])
+  }, [session, isPending, router, getRedirectUrl])
 
   const {
     register,

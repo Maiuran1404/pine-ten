@@ -164,7 +164,7 @@ function generateContentIdea(
   intent: Intent,
   position: number,
   topic: string,
-  audienceName?: string
+  _audienceName?: string
 ): { title: string; description: string } {
   // Templates based on theme
   const templates: Record<string, Array<{ title: string; description: string }>> = {
@@ -582,7 +582,7 @@ export function exportBriefAsJSON(brief: DesignerBrief): string {
   return JSON.stringify(brief, null, 2)
 }
 
-export default {
+export const briefGenerator = {
   generateContentOutline,
   generateDesignerBrief,
   exportBriefAsMarkdown,

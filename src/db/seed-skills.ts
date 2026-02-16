@@ -363,7 +363,7 @@ async function seedSkills() {
   console.log('Seeding skills (upsert mode - no data will be deleted)...\n')
 
   let _inserted = 0
-  let skipped = 0
+  let _skipped = 0
 
   for (const skill of skillsData) {
     try {
@@ -378,7 +378,7 @@ async function seedSkills() {
       _inserted++
     } catch (error) {
       console.log(`⊘ Skipped: ${skill.name} (error: ${error})`)
-      skipped++
+      _skipped++
     }
   }
 

@@ -20,27 +20,19 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Image as ImageIcon,
   FileIcon,
   ExternalLink,
   Download,
-  Monitor,
-  Maximize2,
-  Target,
   FolderOpen,
-  ListChecks,
-  StickyNote,
   Send,
   ThumbsUp,
   Loader2,
   Expand,
   X,
-  History,
   Play,
   Eye,
   RotateCcw,
   Circle,
-  MoreHorizontal,
   Sparkles,
 } from 'lucide-react'
 import Image from 'next/image'
@@ -282,7 +274,7 @@ export default function TaskDetailPage() {
           toast.error(error.error || 'Failed to send message')
         }
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to send message')
     } finally {
       setIsSendingMessage(false)
@@ -338,7 +330,7 @@ export default function TaskDetailPage() {
         const error = await response.json()
         toast.error(error.error || 'Failed to approve task')
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to approve task')
     } finally {
       setIsApproving(false)

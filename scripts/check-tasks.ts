@@ -15,7 +15,7 @@ const tasks = pgTable('tasks', {
   createdAt: timestamp('created_at'),
 })
 
-const users = pgTable('users', {
+const _users = pgTable('users', {
   id: uuid('id').primaryKey(),
   name: text('name'),
   email: text('email'),

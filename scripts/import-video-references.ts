@@ -137,7 +137,7 @@ async function runMigration() {
       ADD COLUMN IF NOT EXISTS "video_tags" jsonb DEFAULT '[]'::jsonb;
     `)
     console.log('✅ Migration complete - video columns added\n')
-  } catch (_error) {
+  } catch {
     // Columns might already exist
     console.log('ℹ️  Columns may already exist, continuing...\n')
   }

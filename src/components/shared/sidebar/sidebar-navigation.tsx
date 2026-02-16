@@ -9,12 +9,7 @@ import {
   SidebarGroupLabel,
   useSidebar,
 } from '@/components/ui/sidebar'
-import {
-  type NavigationItem,
-  type NavigationGroup,
-  type AccentColor,
-  accentColorStyles,
-} from './types'
+import { type NavigationItem, type NavigationGroup, type AccentColor } from './types'
 
 interface SidebarNavigationProps {
   items: NavigationItem[]
@@ -37,7 +32,7 @@ interface SidebarGroupedNavigationProps {
 export function SidebarNavigation({
   items,
   basePath,
-  accentColor = 'emerald',
+  accentColor: _accentColor = 'emerald',
   onItemClick,
 }: SidebarNavigationProps) {
   const pathname = usePathname()
@@ -77,7 +72,7 @@ export function SidebarNavigation({
 export function SidebarGroupedNavigation({
   groups,
   basePath,
-  accentColor = 'emerald',
+  accentColor: _accentColor = 'emerald',
   onItemClick,
 }: SidebarGroupedNavigationProps) {
   const pathname = usePathname()
@@ -90,7 +85,7 @@ export function SidebarGroupedNavigation({
 
   return (
     <div className="space-y-4">
-      {groups.map((group, groupIndex) => (
+      {groups.map((group, _groupIndex) => (
         <div key={group.label}>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
             {group.label}

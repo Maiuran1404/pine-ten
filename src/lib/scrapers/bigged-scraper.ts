@@ -31,16 +31,13 @@ async function getPlaywright() {
     }
   }
   return playwrightModule as {
-    chromium: { launch: (options?: { headless?: boolean }) => Promise<any> }
+    chromium: { launch: (options?: { headless?: boolean }) => Promise<unknown> }
   }
 }
 import { db } from '@/db'
 import { deliverableStyleReferences, importLogs } from '@/db/schema'
 import { eq, or, like } from 'drizzle-orm'
-import {
-  classifyDeliverableStyle,
-  type DeliverableStyleClassification,
-} from '@/lib/ai/classify-deliverable-style'
+import { classifyDeliverableStyle } from '@/lib/ai/classify-deliverable-style'
 import { generateContentHash, isValidImageUrl, validateImageUrl } from '@/lib/utils/image-hash'
 
 // Types

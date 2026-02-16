@@ -40,6 +40,7 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
           exit={{ opacity: 0, scale: 0.9 }}
           className="group relative aspect-square rounded-lg overflow-hidden border border-border"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={style.imageUrl} alt={style.name} className="w-full h-full object-cover" />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">

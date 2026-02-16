@@ -527,6 +527,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden flex-shrink-0">
                           {formData.profileImage ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={formData.profileImage}
                               alt="Profile"

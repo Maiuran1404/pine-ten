@@ -157,7 +157,7 @@ export default function AlgorithmPage() {
       setConfigurations(data.configurations || [])
       setActiveConfig(data.activeConfig)
       setEditingConfig(JSON.parse(JSON.stringify(data.activeConfig))) // Deep clone
-    } catch (_error) {
+    } catch {
       toast.error('Failed to load algorithm configuration')
     } finally {
       setIsLoading(false)

@@ -1,7 +1,13 @@
 'use client'
 
 import React, { useRef, useEffect, useId } from 'react'
-import { motion, useMotionValue, useMotionTemplate, useAnimationFrame } from 'framer-motion'
+import {
+  motion,
+  useMotionValue,
+  useMotionTemplate,
+  useAnimationFrame,
+  type MotionValue,
+} from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 /**
@@ -13,8 +19,8 @@ const GridPattern = ({
   size,
   patternId,
 }: {
-  offsetX: any
-  offsetY: any
+  offsetX: MotionValue<number>
+  offsetY: MotionValue<number>
   size: number
   patternId: string
 }) => {
@@ -105,12 +111,12 @@ export const InfiniteGrid = ({
   sphereColors,
   className,
   children,
-  sphereAnimationDuration = 25,
-  sphereMovementRange = 25,
-  sphereOpacity = 0.32,
-  sphereScaleRange = 0.05,
-  sphereBlur = 150,
-  sphereSizeMultiplier = 1,
+  sphereAnimationDuration: _sphereAnimationDuration = 25,
+  sphereMovementRange: _sphereMovementRange = 25,
+  sphereOpacity: _sphereOpacity = 0.32,
+  sphereScaleRange: _sphereScaleRange = 0.05,
+  sphereBlur: _sphereBlur = 150,
+  sphereSizeMultiplier: _sphereSizeMultiplier = 1,
 }: InfiniteGridProps) => {
   // Default colors: Sahara, Green sage, Sea light
   const defaultColors: [string, string, string] = ['#EDBA8D', '#9AA48C', '#D2ECF2']

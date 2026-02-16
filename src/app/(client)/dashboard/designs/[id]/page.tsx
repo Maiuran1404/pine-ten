@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -12,9 +12,7 @@ import {
   Check,
   CheckCircle,
   Calendar,
-  Palette,
   FileType,
-  Clock,
   Sparkles,
   Share2,
   Megaphone,
@@ -24,7 +22,6 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadingSpinner } from '@/components/shared/loading'
 
@@ -75,13 +72,7 @@ export default function DesignResultPage() {
 
   const designId = params.id as string
 
-  useEffect(() => {
-    if (designId) {
-      fetchDesign()
-    }
-  }, [designId])
-
-  const fetchDesign = async () => {
+  const fetchDesign = useCallback(async () => {
     try {
       const response = await fetch(`/api/orshot/designs/${designId}`)
       if (!response.ok) {
@@ -100,7 +91,13 @@ export default function DesignResultPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [designId, router])
+
+  useEffect(() => {
+    if (designId) {
+      fetchDesign()
+    }
+  }, [designId, fetchDesign])
 
   const handleDownload = async () => {
     if (!design) return

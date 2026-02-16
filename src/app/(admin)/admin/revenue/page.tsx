@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -132,11 +132,7 @@ export default function RevenuePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [period, setPeriod] = useState('all')
 
-  useEffect(() => {
-    fetchRevenue()
-  }, [period])
-
-  const fetchRevenue = async () => {
+  const fetchRevenue = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/admin/revenue?period=${period}`)
@@ -149,7 +145,11 @@ export default function RevenuePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [period])
+
+  useEffect(() => {
+    fetchRevenue()
+  }, [fetchRevenue])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

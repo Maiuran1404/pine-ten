@@ -31,7 +31,7 @@ const Accordion = ({
   value: controlledValue,
   defaultValue,
   onValueChange,
-  collapsible = false,
+  collapsible: _collapsible = false,
   className,
   children,
 }: AccordionProps) => {

@@ -267,7 +267,7 @@ describe('inferAudiencesFromBrand', () => {
 
     it('should return empty array on rate limit error', async () => {
       const err = new Error('Rate limited')
-      ;(err as Record<string, unknown>).status = 429
+      Object.assign(err, { status: 429 })
       mockCreate.mockRejectedValueOnce(err)
 
       const result = await inferAudiencesFromBrand({ name: 'Acme', industry: 'Tech' })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -122,11 +122,7 @@ export default function FreelancerDetailPage({ params }: { params: Promise<{ id:
   const [newSpecialization, setNewSpecialization] = useState('')
   const [newPortfolioUrl, setNewPortfolioUrl] = useState('')
 
-  useEffect(() => {
-    fetchFreelancer()
-  }, [id])
-
-  const fetchFreelancer = async () => {
+  const fetchFreelancer = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/freelancers/${id}`)
       if (!response.ok) {
@@ -162,7 +158,11 @@ export default function FreelancerDetailPage({ params }: { params: Promise<{ id:
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [id, router])
+
+  useEffect(() => {
+    fetchFreelancer()
+  }, [fetchFreelancer])
 
   const handleSave = async () => {
     if (!freelancer) return

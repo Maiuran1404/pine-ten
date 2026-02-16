@@ -126,7 +126,7 @@ export function BriefPanel({
   onExportBrief: _onExportBrief,
   className,
   isExpanded: _isExpanded = true,
-  onToggleExpanded,
+  onToggleExpanded: _onToggleExpanded,
 }: BriefPanelProps) {
   const [copiedBrief, setCopiedBrief] = useState(false)
 

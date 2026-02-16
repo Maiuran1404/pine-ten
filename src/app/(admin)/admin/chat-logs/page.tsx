@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -64,11 +64,7 @@ export default function ChatLogsPage() {
   const [selectedLog, setSelectedLog] = useState<ChatLog | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  useEffect(() => {
-    fetchLogs()
-  }, [statusFilter, searchTerm])
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setIsLoading(true)
       const params = new URLSearchParams()
@@ -87,7 +83,11 @@ export default function ChatLogsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [statusFilter, searchTerm])
+
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
 
   const openDetailDialog = (log: ChatLog) => {
     setSelectedLog(log)

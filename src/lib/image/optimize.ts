@@ -40,8 +40,8 @@ export async function optimizeImage(input: Buffer | ArrayBuffer): Promise<ImageV
 
   // Get original metadata
   const metadata = await sharp(buffer).metadata()
-  const originalWidth = metadata.width || 1600
-  const originalHeight = metadata.height || 1600
+  const _originalWidth = metadata.width || 1600
+  const _originalHeight = metadata.height || 1600
 
   // Process all variants in parallel
   const [full, preview, thumbnail] = await Promise.all([

@@ -9,10 +9,12 @@ import type { LiveBrief } from '@/components/chat/brief-panel/types'
 
 function makeLiveBrief(overrides?: Partial<LiveBrief>): LiveBrief {
   return {
+    id: 'brief-1',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     taskSummary: { value: 'Launch campaign for FitApp', confidence: 90, source: 'confirmed' },
     topic: { value: 'fitness app launch', confidence: 80, source: 'confirmed' },
     platform: { value: 'instagram', confidence: 90, source: 'confirmed' },
-    contentType: { value: 'post', confidence: 85, source: 'confirmed' },
     intent: { value: 'awareness', confidence: 80, source: 'confirmed' },
     taskType: { value: 'single_asset', confidence: 85, source: 'confirmed' },
     audience: {
@@ -32,8 +34,11 @@ function makeLiveBrief(overrides?: Partial<LiveBrief>): LiveBrief {
         {
           id: 's1',
           name: 'Bold',
+          description: null,
           imageUrl: '/styles/bold.png',
           styleAxis: 'bold',
+          subStyle: null,
+          semanticTags: ['dynamic', 'high-contrast'],
           deliverableType: 'instagram_post',
         },
       ],
@@ -43,8 +48,11 @@ function makeLiveBrief(overrides?: Partial<LiveBrief>): LiveBrief {
       avoidElements: ['stock photos'],
     },
     contentOutline: null,
+    completionPercentage: 80,
+    isReadyForDesigner: false,
+    clarifyingQuestionsAsked: [],
     ...overrides,
-  }
+  } as LiveBrief
 }
 
 const BRAND_CONTEXT = {
@@ -223,7 +231,7 @@ describe('generateDesignerBrief', () => {
     const result = generateDesignerBrief(brief, BRAND_CONTEXT, 'conv-1')
 
     expect(result.content.hashtags).toContain('#instagram')
-    expect(result.content.hashtags.some((h: string) => h.includes('fitness'))).toBe(true)
+    expect(result.content.hashtags?.some((h: string) => h.includes('fitness'))).toBe(true)
   })
 
   it('should set content type to multi for multi_asset_plan', () => {

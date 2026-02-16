@@ -619,7 +619,7 @@ export function useChatInterfaceData({
       url.searchParams.delete('payment')
       window.history.replaceState({}, '', url.toString())
     }
-  }, [searchParams, paymentProcessed])
+  }, [searchParams, paymentProcessed, refreshCredits])
 
   // Detect "ready to execute" patterns
   useEffect(() => {

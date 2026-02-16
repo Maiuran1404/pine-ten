@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-
-// We need to control NODE_ENV for certain tests
-const originalEnv = process.env.NODE_ENV
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 describe('logger module', () => {
   beforeEach(() => {
     vi.resetModules()
-    process.env.NODE_ENV = originalEnv
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('should export a logger instance', async () => {

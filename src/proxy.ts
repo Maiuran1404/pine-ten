@@ -20,25 +20,7 @@ const COOKIE_PREFIX = 'crafted'
  * 3. Layout components (e.g., /app/(admin)/layout.tsx) enforce role-based access
  * 4. API routes check roles before processing requests
  */
-const subdomainConfig = {
-  app: {
-    allowedRoles: ['CLIENT'],
-    defaultRedirect: '/dashboard',
-    requireOnboarding: true,
-  },
-  artist: {
-    allowedRoles: ['FREELANCER'],
-    defaultRedirect: '/portal',
-    requireOnboarding: true,
-  },
-  superadmin: {
-    allowedRoles: ['ADMIN'],
-    defaultRedirect: '/admin',
-    requireOnboarding: false,
-  },
-} as const
-
-type SubdomainType = keyof typeof subdomainConfig
+type SubdomainType = 'app' | 'artist' | 'superadmin'
 
 /**
  * Get subdomain from request
@@ -116,7 +98,7 @@ export async function proxy(request: NextRequest) {
 
   // Rate limit auth routes (stricter — 20 req/min per IP)
   if (pathname.startsWith('/api/auth') || pathname === '/login' || pathname === '/register') {
-    const { limited, remaining, resetIn } = rateLimiters.auth(request)
+    const { limited, remaining: _remaining, resetIn } = rateLimiters.auth(request)
     if (limited) {
       return new NextResponse(
         JSON.stringify({

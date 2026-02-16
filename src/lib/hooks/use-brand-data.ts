@@ -153,7 +153,7 @@ export function useBrandData(): BrandContext & { refetch: () => Promise<void> } 
       brand.accentColor,
       ...(brand.brandColors || []),
     ].filter((c): c is string => !!c)
-  }, [brand?.primaryColor, brand?.secondaryColor, brand?.accentColor, brand?.brandColors])
+  }, [brand])
 
   // Derive typography - memoized to prevent infinite re-renders
   const brandTypography = useMemo(

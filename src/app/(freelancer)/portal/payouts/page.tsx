@@ -27,7 +27,7 @@ import {
   RefreshCw,
   Sparkles,
   Video,
-  Image,
+  Image as ImageIcon,
   Layout,
   Share2,
 } from 'lucide-react'
@@ -127,7 +127,7 @@ interface EarningsGuide {
 // Icons for different task categories
 const categoryIcons: Record<string, React.ReactNode> = {
   'video-motion-graphics': <Video className="h-5 w-5" />,
-  'static-ads': <Image className="h-5 w-5" />,
+  'static-ads': <ImageIcon className="h-5 w-5" />,
   'ui-ux-design': <Layout className="h-5 w-5" />,
   'social-media-content': <Share2 className="h-5 w-5" />,
 }

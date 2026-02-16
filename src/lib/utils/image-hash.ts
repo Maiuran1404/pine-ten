@@ -116,8 +116,8 @@ export interface ImageValidationResult {
 
 export async function validateImageUrl(
   url: string,
-  minWidth: number = 200,
-  minHeight: number = 200,
+  _minWidth: number = 200,
+  _minHeight: number = 200,
   maxFileSize: number = 50 * 1024 * 1024 // 50MB
 ): Promise<ImageValidationResult> {
   try {

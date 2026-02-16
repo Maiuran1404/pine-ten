@@ -384,7 +384,7 @@ function DashboardContent() {
     )
   }
 
-  const handleTemplateClick = (prompt: string) => {
+  const _handleTemplateClick = (prompt: string) => {
     setChatInput(prompt)
     inputRef.current?.focus()
     // Place cursor at the end of the prompt
@@ -584,6 +584,7 @@ function DashboardContent() {
                       className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/50"
                     >
                       {file.fileType?.startsWith('image/') ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={file.fileUrl}
                           alt={file.fileName}
@@ -780,6 +781,7 @@ function DashboardContent() {
                         >
                           {/* Image */}
                           <div className="relative w-full h-24 overflow-hidden bg-muted/30">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={option.image}
                               alt={option.title}

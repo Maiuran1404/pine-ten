@@ -133,6 +133,8 @@ describe('env module', () => {
       const env = getValidEnv()
       delete env.NODE_ENV
       Object.assign(process.env, env)
+      // Remove NODE_ENV entirely so the default kicks in
+      // @ts-expect-error -- delete needed to simulate unset env var
       delete process.env.NODE_ENV
 
       const { validateEnv } = await import('./env')

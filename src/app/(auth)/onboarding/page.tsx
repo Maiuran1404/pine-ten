@@ -49,6 +49,13 @@ import { FreelancerOnboarding } from '@/components/onboarding/freelancer-onboard
 import { BrandReferenceGridSkeleton, ImageWithSkeleton } from '@/components/ui/skeletons'
 import { useSubdomain } from '@/hooks/use-subdomain'
 
+const BRAND_COLOR_STEPS: OnboardingStep[] = [
+  'brand-dna-reveal',
+  'fine-tune',
+  'creative-focus',
+  'brand-ready',
+]
+
 // ============================================================================
 // HEADER
 // ============================================================================
@@ -1735,21 +1742,21 @@ function getBrandArchetype(signals: {
 
   // Density: Minimal (< 25), A bit minimal (25-45), Neutral (45-55), A bit rich (55-75), Rich (> 75)
   const isMinimal = density < 25
-  const isBitMinimal = density >= 25 && density < 45
+  const _isBitMinimal = density >= 25 && density < 45
   const isNeutralDensity = density >= 45 && density <= 55
-  const isBitRich = density > 55 && density <= 75
+  const _isBitRich = density > 55 && density <= 75
   const isRich = density > 75
 
   // Warmth: Cold (< 35), Neutral (35-65), Warm (> 65)
   const isCold = warmth < 35
-  const isNeutralWarmth = warmth >= 35 && warmth <= 65
+  const _isNeutralWarmth = warmth >= 35 && warmth <= 65
   const isWarm = warmth > 65
 
   // Energy: Calm (< 25), A bit calm (25-45), Neutral (45-55), A bit energetic (55-75), Energetic (> 75)
   const isCalm = energy < 25
-  const isBitCalm = energy >= 25 && energy < 45
+  const _isBitCalm = energy >= 25 && energy < 45
   const isNeutralEnergy = energy >= 45 && energy <= 55
-  const isBitEnergetic = energy > 55 && energy <= 75
+  const _isBitEnergetic = energy > 55 && energy <= 75
   const isEnergetic = energy > 75
 
   // === PLAYFUL COMBINATIONS ===
@@ -2290,7 +2297,7 @@ function BrandSignalSlider({
   slider,
   value,
   onChange,
-  accentColor = '#9AA48C',
+  accentColor: _accentColor = '#9AA48C',
 }: {
   slider: (typeof BRAND_SIGNAL_SLIDERS)[0]
   value: number
@@ -3247,7 +3254,7 @@ function VisualInstinctStep({
   )
 }
 
-function ToneOfVoiceStep({
+function _ToneOfVoiceStep({
   brandData,
   setBrandData,
   onContinue,
@@ -3346,7 +3353,7 @@ function ToneOfVoiceStep({
 }
 
 function AIDirectionsStep({
-  brandData,
+  brandData: _brandData,
   directions,
   selectedDirection,
   onSelectDirection,
@@ -3611,14 +3618,8 @@ function OnboardingContent() {
 
   // Compute sphere colors based on brand data for steps after brand extraction
   // Must be defined here before any early returns to follow Rules of Hooks
-  const brandColorSteps: OnboardingStep[] = [
-    'brand-dna-reveal',
-    'fine-tune',
-    'creative-focus',
-    'brand-ready',
-  ]
   const sphereColors = useMemo((): [string, string, string] | undefined => {
-    if (brandColorSteps.includes(step)) {
+    if (BRAND_COLOR_STEPS.includes(step)) {
       const colors = [
         brandData.primaryColor,
         brandData.secondaryColor,

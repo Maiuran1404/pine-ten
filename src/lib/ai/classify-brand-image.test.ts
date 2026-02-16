@@ -143,7 +143,7 @@ describe('classifyBrandImage', () => {
 
   it('should return default classification on rate limit error', async () => {
     const rateLimitErr = new Error('Rate limit exceeded')
-    ;(rateLimitErr as Record<string, unknown>).status = 429
+    Object.assign(rateLimitErr, { status: 429 })
     mockCreate.mockRejectedValueOnce(rateLimitErr)
 
     const result = await classifyBrandImage('base64data')

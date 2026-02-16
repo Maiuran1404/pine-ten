@@ -26,7 +26,6 @@ import {
   LayoutTemplate,
   Shield,
   ClipboardCheck,
-  Image,
   Sparkles,
   Brain,
   Video,

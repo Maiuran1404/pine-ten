@@ -28,7 +28,6 @@ import {
   Type,
   Globe,
   RefreshCw,
-  ExternalLink,
   Copy,
   Check,
   Sparkles,
@@ -36,7 +35,6 @@ import {
   Users,
   Briefcase,
   X,
-  Plus,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
@@ -186,7 +184,7 @@ const COLOR_PRESETS = {
 }
 
 export default function BrandPage() {
-  const router = useRouter()
+  const _router = useRouter()
   const [brand, setBrand] = useState<BrandData | null>(null)
   const [audiences, setAudiences] = useState<Audience[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -1238,6 +1236,7 @@ export default function BrandPage() {
                 >
                   <div className="flex items-center gap-3">
                     {brand.logoUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={brand.logoUrl}
                         alt=""

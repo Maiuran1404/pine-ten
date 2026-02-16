@@ -10,9 +10,9 @@ import type { IntakeData } from '@/lib/creative-intake/types'
 
 export default function IntakePage() {
   const router = useRouter()
-  const [isComplete, setIsComplete] = useState(false)
+  const [, setIsComplete] = useState(false)
 
-  const handleComplete = async (data: IntakeData) => {
+  const handleComplete = async (_data: IntakeData) => {
     setIsComplete(true)
 
     // TODO: Create task from intake data

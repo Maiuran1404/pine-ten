@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { logger } from '@/lib/logger'
 import type {
   LiveBrief,
-  InferenceResult,
   ContentOutline,
   VisualDirection,
   Intent,
@@ -23,7 +22,6 @@ import {
   applyInferenceToBrief,
   generateClarifyingQuestions,
   shouldAskClarifyingQuestion,
-  generateTaskSummary,
   type InferenceInput,
 } from '@/lib/ai/inference-engine'
 import {
@@ -303,7 +301,7 @@ export function useBrief({
     }
 
     loadBrief()
-  }, [draftId])
+  }, [draftId, brandAudiences, brandColors, brandTypography])
 
   // Auto-save brief when it changes (debounced)
   useEffect(() => {

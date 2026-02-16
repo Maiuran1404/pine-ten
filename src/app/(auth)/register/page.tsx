@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -124,13 +124,13 @@ function RegisterContent() {
   const showSocialLogin = true // Enable Google sign-in for all portals
 
   // Get redirect destination
-  const getRedirectUrl = () => {
+  const getRedirectUrl = useCallback(() => {
     const redirect = searchParams.get('redirect')
     if (redirect && redirect !== '/' && !redirect.includes('register')) {
       return redirect
     }
     return portal.defaultRedirect
-  }
+  }, [searchParams, portal.defaultRedirect])
 
   // Validate invite code on mount
   useEffect(() => {
@@ -167,7 +167,7 @@ function RegisterContent() {
       const redirectUrl = getRedirectUrl()
       router.replace(redirectUrl)
     }
-  }, [session, isPending, router])
+  }, [session, isPending, router, getRedirectUrl])
 
   const {
     register,

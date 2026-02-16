@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -169,15 +169,7 @@ export default function AllTasksPage() {
     }
   }
 
-  useEffect(() => {
-    if (activeTab === 'tasks') {
-      fetchTasks()
-    } else {
-      fetchDrafts()
-    }
-  }, [page, activeTab])
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/admin/tasks?limit=${limit}&offset=${page * limit}`)
@@ -193,9 +185,9 @@ export default function AllTasksPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page])
 
-  const fetchDrafts = async () => {
+  const fetchDrafts = useCallback(async () => {
     setIsDraftsLoading(true)
     try {
       const response = await fetch('/api/admin/drafts')
@@ -210,7 +202,15 @@ export default function AllTasksPage() {
     } finally {
       setIsDraftsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'tasks') {
+      fetchTasks()
+    } else {
+      fetchDrafts()
+    }
+  }, [page, activeTab, fetchTasks, fetchDrafts])
 
   const filteredTasks = tasks.filter((task) => {
     const matchesFilter =

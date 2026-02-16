@@ -19,7 +19,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const router = useRouter()
   const pathname = usePathname()
   const { data: session, isPending } = useSession()
-  const [recentTasks, setRecentTasks] = useState<Task[]>([])
+  const [, setRecentTasks] = useState<Task[]>([])
 
   // Check if we're on the chat page - which has its own layout
   // Note: /dashboard/chat now redirects to /dashboard, but we keep this check

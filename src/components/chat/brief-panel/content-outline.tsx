@@ -27,7 +27,6 @@ import type {
   Platform,
   ContentType,
 } from './types'
-import { PLATFORM_DISPLAY_NAMES } from './types'
 
 // =============================================================================
 // OUTLINE ITEM COMPONENT
@@ -263,7 +262,7 @@ function SingleAssetOutline({ outline, onOutlineUpdate }: SingleAssetOutlineProp
       </div>
       {outline.subtitle && <p className="text-xs text-muted-foreground">{outline.subtitle}</p>}
       <div className="space-y-2">
-        {allItems.map((item, idx) => (
+        {allItems.map((item, _idx) => (
           <OutlineItemRow
             key={item.id}
             item={item}

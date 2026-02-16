@@ -138,7 +138,7 @@ export function useNotifications({
       setConnectionError('Failed to connect to notification stream')
       console.error('SSE connection error:', error)
     }
-  }, [enabled, showToasts, onNotification])
+  }, [enabled, showToasts, onNotification, basePath])
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {

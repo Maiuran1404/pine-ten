@@ -17,7 +17,6 @@ import {
   assignmentAlgorithmConfig,
   taskOffers,
   clientArtistAffinity,
-  taskCategories,
 } from '@/db/schema'
 import { eq, and, sql, not, inArray, desc, count } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
@@ -228,7 +227,7 @@ export async function getActiveConfig(): Promise<AlgorithmConfig> {
 export function calculateSkillScore(
   artistSkills: string[],
   requiredSkills: string[],
-  config: AlgorithmConfig
+  _config: AlgorithmConfig
 ): number {
   if (requiredSkills.length === 0) {
     return 100 // No skill requirements = perfect match

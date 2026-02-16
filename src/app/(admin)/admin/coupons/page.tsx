@@ -184,7 +184,7 @@ export default function CouponsPage() {
 
       toast.success(`Promotion code ${!currentActive ? 'activated' : 'deactivated'}`)
       fetchCoupons()
-    } catch (_error) {
+    } catch {
       toast.error('Failed to update promotion code')
     }
   }

@@ -52,7 +52,7 @@ export function SidebarRecents({
       <SidebarGroupContent>
         <SidebarMenu>
           {displayItems.map((item) => {
-            const ItemIcon = item.icon || History
+            const _ItemIcon = item.icon || History
             return (
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton asChild tooltip={item.title} size="sm">

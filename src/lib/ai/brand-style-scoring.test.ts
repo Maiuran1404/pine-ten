@@ -6,17 +6,17 @@ const mockFindFirst = vi.fn()
 
 vi.mock('@/db', () => {
   // Create a chainable builder that always resolves to queryResult
-  function createChain(): Record<string, (...args: unknown[]) => unknown> {
-    const chain: Record<string, (...args: unknown[]) => unknown> = {}
+  function createChain() {
+    const chain: Record<string, unknown> = {}
     const methods = ['select', 'from', 'where', 'orderBy', 'limit', 'offset']
     for (const method of methods) {
       chain[method] = () => chain
     }
     // Make the chain thenable so await resolves to queryResult
-    chain.then = (resolve: (value: unknown) => void) => {
+    chain.then = ((resolve: (value: unknown) => void) => {
       resolve(queryResult)
       return chain
-    }
+    }) as unknown as PromiseLike<unknown>['then']
     return chain
   }
 

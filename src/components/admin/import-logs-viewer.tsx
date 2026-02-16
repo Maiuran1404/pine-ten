@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -123,11 +123,7 @@ export function ImportLogsViewer({
     totalSkipped: 0,
   })
 
-  useEffect(() => {
-    fetchLogs()
-  }, [target, sourceFilter])
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams({ target, limit: '100' })
@@ -150,7 +146,11 @@ export function ImportLogsViewer({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [target, sourceFilter])
+
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
 
   const handleDelete = async (id: string) => {
     try {

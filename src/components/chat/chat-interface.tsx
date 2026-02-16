@@ -215,7 +215,7 @@ export function ChatInterface({
 
     // Messages and chat
     messages,
-    setMessages,
+    setMessages: _setMessages,
     input,
     setInput,
     isLoading,
@@ -224,11 +224,11 @@ export function ChatInterface({
     setAnimatingMessageId,
     completedTypingIds,
     setCompletedTypingIds,
-    copiedMessageId,
-    messageFeedback,
+    copiedMessageId: _copiedMessageId,
+    messageFeedback: _messageFeedback,
 
     // Suggestions
-    suggestionIndex,
+    suggestionIndex: _suggestionIndex,
     setSuggestionIndex,
     currentSuggestion,
     ghostText,
@@ -240,20 +240,20 @@ export function ChatInterface({
     selectedStyles,
     hoveredStyleName,
     setHoveredStyleName,
-    selectedDeliverableStyles,
+    selectedDeliverableStyles: _selectedDeliverableStyles,
     selectedStyleForModal,
     setSelectedStyleForModal,
     lastStyleMessageIndex,
 
     // Task
     pendingTask,
-    setPendingTask,
-    taskData,
+    setPendingTask: _setPendingTask,
+    taskData: _taskData,
     isTaskMode,
-    assignedArtist,
-    deliverables,
-    taskFiles,
-    taskSubmitted,
+    assignedArtist: _assignedArtist,
+    deliverables: _deliverables,
+    taskFiles: _taskFiles,
+    taskSubmitted: _taskSubmitted,
     showManualSubmit,
     showCreditDialog,
     setShowCreditDialog,
@@ -263,32 +263,32 @@ export function ChatInterface({
     // Moodboard
     moodboardItems,
     moodboardStyleIds,
-    moodboardHasStyles,
-    addMoodboardItem,
+    moodboardHasStyles: _moodboardHasStyles,
+    addMoodboardItem: _addMoodboardItem,
     removeMoodboardItem,
     clearMoodboard,
     hasMoodboardItem,
-    addFromStyle,
-    addFromUpload,
+    addFromStyle: _addFromStyle,
+    addFromUpload: _addFromUpload,
 
     // Brief
     brief,
     briefCompletion,
-    isBriefReady,
+    isBriefReady: _isBriefReady,
     updateBrief,
-    generateOutline,
+    generateOutline: _generateOutline,
     exportBrief,
 
     // Brand data
-    brandData,
-    isBrandLoading,
+    brandData: _brandData,
+    isBrandLoading: _isBrandLoading,
 
     // Progress
     progressState,
 
     // Files
     uploadedFiles,
-    allAttachments,
+    allAttachments: _allAttachments,
     isDragging,
 
     // Refs
@@ -298,11 +298,11 @@ export function ChatInterface({
     requestStartTimeRef,
 
     // User info
-    userName,
-    userInitial,
+    userName: _userName,
+    userInitial: _userInitial,
 
     // Chat title & dialogs
-    chatTitle,
+    chatTitle: _chatTitle,
     showDeleteDialog,
     setShowDeleteDialog,
     showStartOverDialog,
@@ -313,12 +313,12 @@ export function ChatInterface({
 
     // Handlers
     handleSend,
-    handleSendOption,
-    handleDiscard,
-    handleCopyMessage,
-    handleMessageFeedback,
+    handleSendOption: _handleSendOption,
+    handleDiscard: _handleDiscard,
+    handleCopyMessage: _handleCopyMessage,
+    handleMessageFeedback: _handleMessageFeedback,
     handleStyleSelect,
-    handleStyleCardClick,
+    handleStyleCardClick: _handleStyleCardClick,
     handleAddToCollection,
     handleRemoveFromCollection,
     handleClearStyleCollection,
@@ -326,7 +326,7 @@ export function ChatInterface({
     handleSubmitDeliverableStyles,
     handleConfirmStyleSelection,
     handleSelectVideo,
-    handleQuickOptionClick,
+    handleQuickOptionClick: _handleQuickOptionClick,
     handleShowMoreStyles,
     handleShowDifferentStyles,
     handleConfirmTask,
@@ -342,9 +342,9 @@ export function ChatInterface({
     handleDragOver,
     handleDrop,
     removeFile,
-    uploadFiles,
-    refreshCredits,
-    scrollToBottom,
+    uploadFiles: _uploadFiles,
+    refreshCredits: _refreshCredits,
+    scrollToBottom: _scrollToBottom,
   } = useChatInterfaceData({
     draftId,
     onDraftUpdate,
@@ -568,6 +568,7 @@ export function ChatInterface({
                                         {/* Image */}
                                         <div className="aspect-[4/3] bg-muted overflow-hidden">
                                           {style.imageUrl ? (
+                                            /* eslint-disable-next-line @next/next/no-img-element */
                                             <img
                                               src={style.imageUrl}
                                               alt={style.name}
@@ -730,6 +731,7 @@ export function ChatInterface({
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle && message.selectedStyle.imageUrl && (
                           <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={message.selectedStyle.imageUrl}
                               alt={message.selectedStyle.name}
@@ -847,6 +849,7 @@ export function ChatInterface({
                     className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
                   >
                     {file.fileType?.startsWith('image/') ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={file.fileUrl}
                         alt={file.fileName || 'Uploaded file'}

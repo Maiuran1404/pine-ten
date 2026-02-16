@@ -4,7 +4,7 @@
  */
 
 import { db } from '@/db'
-import { companies, users, freelancerProfiles } from '@/db/schema'
+import { companies, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import {
   createChannel,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -181,13 +181,7 @@ export default function DeliverableStylesPage() {
     fetchStyles()
   }, [])
 
-  useEffect(() => {
-    if (styles.length > 0) {
-      calculateStats()
-    }
-  }, [styles])
-
-  const calculateStats = () => {
+  const calculateStats = useCallback(() => {
     const active = styles.filter((s) => s.isActive)
     const typesUsed = new Set(styles.map((s) => s.deliverableType))
     const axesUsed = new Set(styles.map((s) => s.styleAxis))
@@ -237,7 +231,13 @@ export default function DeliverableStylesPage() {
       missingColors,
       missingColorsByType,
     })
-  }
+  }, [styles])
+
+  useEffect(() => {
+    if (styles.length > 0) {
+      calculateStats()
+    }
+  }, [styles, calculateStats])
 
   const fetchStyles = async () => {
     try {

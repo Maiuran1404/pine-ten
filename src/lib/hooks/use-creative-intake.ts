@@ -268,6 +268,36 @@ export function useCreativeIntake(options: UseCreativeIntakeOptions = {}): UseCr
     [state.serviceType, state.messages, state.data, currentStepId, addMessage, updateData]
   )
 
+  // Move to review stage
+  const moveToReview = useCallback(() => {
+    if (!state.serviceType) return
+
+    const finalData = applySmartDefaults(state.serviceType, state.data)
+    const serviceDefinition = SERVICE_DEFINITIONS[state.serviceType]
+
+    // Generate summary
+    const summary: IntakeSummary = {
+      serviceType: state.serviceType,
+      title: `${serviceDefinition.label} Brief`,
+      items: generateSummaryItems(state.serviceType, finalData),
+      recommendations: generateRecommendations(state.serviceType, finalData),
+      readyToSubmit: true,
+    }
+
+    addMessage({
+      role: 'assistant',
+      content: "Here's what I have. Look good?",
+      questionType: 'confirmation',
+      summary,
+    })
+
+    setState((prev) => ({
+      ...prev,
+      stage: 'review',
+      data: finalData,
+    }))
+  }, [state.serviceType, state.data, addMessage])
+
   // Submit grouped answers
   const submitGroupedAnswers = useCallback(
     (answers: Record<string, string | string[]>) => {
@@ -333,7 +363,7 @@ export function useCreativeIntake(options: UseCreativeIntakeOptions = {}): UseCr
         moveToReview()
       }
     },
-    [state.serviceType, state.data, currentStepId, addMessage, updateData]
+    [state.serviceType, state.data, currentStepId, addMessage, updateData, moveToReview]
   )
 
   // Submit quick option
@@ -406,38 +436,8 @@ export function useCreativeIntake(options: UseCreativeIntakeOptions = {}): UseCr
         moveToReview()
       }
     },
-    [state.serviceType, state.data, currentStepId, addMessage, updateData]
+    [state.serviceType, state.data, currentStepId, addMessage, updateData, moveToReview]
   )
-
-  // Move to review stage
-  const moveToReview = useCallback(() => {
-    if (!state.serviceType) return
-
-    const finalData = applySmartDefaults(state.serviceType, state.data)
-    const serviceDefinition = SERVICE_DEFINITIONS[state.serviceType]
-
-    // Generate summary
-    const summary: IntakeSummary = {
-      serviceType: state.serviceType,
-      title: `${serviceDefinition.label} Brief`,
-      items: generateSummaryItems(state.serviceType, finalData),
-      recommendations: generateRecommendations(state.serviceType, finalData),
-      readyToSubmit: true,
-    }
-
-    addMessage({
-      role: 'assistant',
-      content: "Here's what I have. Look good?",
-      questionType: 'confirmation',
-      summary,
-    })
-
-    setState((prev) => ({
-      ...prev,
-      stage: 'review',
-      data: finalData,
-    }))
-  }, [state.serviceType, state.data, addMessage])
 
   // Confirm summary and complete
   const confirmSummary = useCallback(() => {

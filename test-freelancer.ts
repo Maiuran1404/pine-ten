@@ -1,6 +1,6 @@
 import { db } from './src/db'
-import { users, freelancerProfiles, tasks } from './src/db/schema'
-import { eq, count } from 'drizzle-orm'
+import { users, freelancerProfiles } from './src/db/schema'
+import { eq } from 'drizzle-orm'
 
 async function test() {
   const id = 'vjczHtQ3cJm8x6MV76PXF1NGMwgARWEM'

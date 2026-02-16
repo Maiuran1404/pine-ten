@@ -39,7 +39,7 @@ import {
 import { LoadingSpinner } from '@/components/shared/loading'
 import { BrandDNA } from '@/components/freelancer/brand-dna'
 import { PreviousDeliverables } from '@/components/freelancer/previous-deliverables'
-import { calculateWorkingDeadline, getDeadlineUrgency, formatTimeRemaining, cn } from '@/lib/utils'
+import { calculateWorkingDeadline, getDeadlineUrgency, cn } from '@/lib/utils'
 
 interface UploadedFile {
   fileName: string
@@ -265,7 +265,7 @@ function WorkflowStepper({ currentStatus }: { currentStatus: string }) {
 
 export default function FreelancerTaskDetailPage() {
   const params = useParams()
-  const router = useRouter()
+  const _router = useRouter()
   const [task, setTask] = useState<Task | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -478,21 +478,21 @@ export default function FreelancerTaskDetailPage() {
   const clientAttachments = task.files.filter((f) => !f.isDeliverable)
   const deliverables = task.files.filter((f) => f.isDeliverable)
   const canSubmit = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(task.status)
-  const canStart = task.status === 'ASSIGNED'
+  const _canStart = task.status === 'ASSIGNED'
 
   // Calculate deadline info for sidebar
-  const workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline)
-  const urgency = getDeadlineUrgency(task.deadline, workingDeadline)
-  const isActiveTask = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(task.status)
+  const _workingDeadline = calculateWorkingDeadline(task.assignedAt, task.deadline)
+  const _urgency = getDeadlineUrgency(task.deadline, _workingDeadline)
+  const _isActiveTask = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(task.status)
 
-  const urgencyStyles: Record<string, string> = {
+  const _urgencyStyles: Record<string, string> = {
     overdue: 'text-destructive',
     urgent: 'text-orange-500',
     warning: 'text-yellow-600',
     safe: 'text-foreground',
   }
 
-  const urgencyBgStyles: Record<string, string> = {
+  const _urgencyBgStyles: Record<string, string> = {
     overdue: 'bg-destructive/10 border-destructive/20',
     urgent: 'bg-orange-500/10 border-orange-500/20',
     warning: 'bg-yellow-500/10 border-yellow-500/20',

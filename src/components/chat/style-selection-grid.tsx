@@ -24,7 +24,7 @@ export function StyleSelectionGrid({
   styles,
   collectionStyleIds: _collectionStyleIds,
   onAddToCollection: _onAddToCollection,
-  onRemoveFromCollection,
+  onRemoveFromCollection: _onRemoveFromCollection,
   onConfirmSelection,
   onShowMore,
   onShowDifferent,

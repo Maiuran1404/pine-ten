@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,17 +45,7 @@ export default function DatabasePage() {
   const [page, setPage] = useState(0)
   const limit = 25
 
-  useEffect(() => {
-    fetchTables()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTable) {
-      fetchTableData(selectedTable)
-    }
-  }, [selectedTable, page])
-
-  const fetchTables = async () => {
+  const fetchTables = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -72,30 +62,43 @@ export default function DatabasePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const fetchTableData = async (tableName: string) => {
-    setIsLoadingData(true)
-    setError(null)
-    try {
-      const response = await fetch(
-        `/api/admin/database?table=${tableName}&limit=${limit}&offset=${page * limit}`
-      )
-      const data = await response.json()
-      if (response.ok) {
-        setTableData(data.data)
-      } else {
-        setError(data.error?.message || `Failed to fetch ${tableName} data`)
+  const fetchTableData = useCallback(
+    async (tableName: string) => {
+      setIsLoadingData(true)
+      setError(null)
+      try {
+        const response = await fetch(
+          `/api/admin/database?table=${tableName}&limit=${limit}&offset=${page * limit}`
+        )
+        const data = await response.json()
+        if (response.ok) {
+          setTableData(data.data)
+        } else {
+          setError(data.error?.message || `Failed to fetch ${tableName} data`)
+          setTableData(null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch table data:', err)
+        setError('Failed to connect to the database API')
         setTableData(null)
+      } finally {
+        setIsLoadingData(false)
       }
-    } catch (err) {
-      console.error('Failed to fetch table data:', err)
-      setError('Failed to connect to the database API')
-      setTableData(null)
-    } finally {
-      setIsLoadingData(false)
+    },
+    [page]
+  )
+
+  useEffect(() => {
+    fetchTables()
+  }, [fetchTables])
+
+  useEffect(() => {
+    if (selectedTable) {
+      fetchTableData(selectedTable)
     }
-  }
+  }, [selectedTable, page, fetchTableData])
 
   const handleTableSelect = (tableName: string) => {
     setSelectedTable(tableName)
