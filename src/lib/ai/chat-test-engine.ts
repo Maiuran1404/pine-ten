@@ -114,7 +114,7 @@ export async function generateSyntheticReply(
   quickOptions: { question: string; options: string[] } | null | undefined,
   stage: string,
   turnsInStage: number,
-  totalTurns: number
+  _totalTurns: number
 ): Promise<GeneratedReply> {
   // Stuck detection: force progress after too many turns in same stage
   if (turnsInStage >= STUCK_HARD_AGREE_TURNS) {

@@ -17,7 +17,6 @@ import {
   type DeliverableCategory,
 } from '@/lib/ai/briefing-state-machine'
 import type { ChatTestScenario } from '@/lib/ai/chat-test-scenarios'
-import type { TaskType, Intent, Platform } from '@/components/chat/brief-panel/types'
 
 const stepSchema = z.object({
   runId: z.string().uuid(),
@@ -212,16 +211,14 @@ function ensureScenarioDataSeeded(
   // Seed intent if missing (map scenario intent to valid Intent type)
   if (!updated.brief.intent.value || updated.brief.intent.confidence < 0.75) {
     if (scenario.intent) {
-      const validIntents = [
-        'signups',
-        'authority',
-        'awareness',
-        'sales',
-        'engagement',
-        'education',
-        'announcement',
-      ] as const
-      type ValidIntent = (typeof validIntents)[number]
+      type ValidIntent =
+        | 'signups'
+        | 'authority'
+        | 'awareness'
+        | 'sales'
+        | 'engagement'
+        | 'education'
+        | 'announcement'
       const intentMap: Record<string, ValidIntent> = {
         signups: 'signups',
         authority: 'authority',
