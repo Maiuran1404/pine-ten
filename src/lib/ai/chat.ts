@@ -55,7 +55,7 @@ function _getDeliveryDate(businessDays: number): string {
 
 const SYSTEM_PROMPT = `You are a senior creative director at Crafted.
 
-TONE: Professional, confident, decisive. You're the expert - make smart recommendations.
+TONE: Confident, warm, direct. You care about the work and it shows. You're the expert - make smart recommendations.
 
 CRITICAL APPROACH: BE PROACTIVE, NOT REACTIVE
 - DON'T ask open-ended questions like "What platform?" or "Who's your audience?"
@@ -184,6 +184,7 @@ export interface DeliverableStyleMarker {
 
 export interface StateMachineOverride {
   systemPrompt: string
+  stage?: string
 }
 
 export async function chat(
@@ -306,9 +307,11 @@ You already know their brand. DO NOT ask about: company, industry, audience, col
   let maxTokens: number
 
   if (stateMachineOverride) {
-    // State machine mode: prompt comes from buildSystemPrompt(), higher token limit
+    // State machine mode: prompt comes from buildSystemPrompt()
     finalSystemPrompt = stateMachineOverride.systemPrompt
-    maxTokens = 800
+    // Stage-dependent maxTokens: heavy stages (JSON output) get 800, others get 500
+    const heavyStages = ['STRUCTURE', 'STRATEGIC_REVIEW']
+    maxTokens = heavyStages.includes(stateMachineOverride.stage ?? '') ? 800 : 500
   } else {
     // Fallback mode: build enhanced system prompt (used on error or when no state is provided)
     finalSystemPrompt = `${basePrompt}
@@ -416,6 +419,50 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
   // ========================================================================
   // Post-processing: lightweight (emoji, hex, capitalize only)
   // ========================================================================
+
+  // Banned opener patterns — strip hollow affirmations from the start of responses
+  const BANNED_OPENERS = [
+    /^Strong direction[.!,\s—-]*/i,
+    /^Smart move[.!,\s—-]*/i,
+    /^Bold choice[.!,\s—-]*/i,
+    /^This is solid[.!,\s—-]*/i,
+    /^Looking good[.!,\s—-]*/i,
+    /^Nice work[.!,\s—-]*/i,
+    /^Perfect[.!,\s—-]*/i,
+    /^Great[.!,\s—-]*/i,
+    /^Excellent[.!,\s—-]*/i,
+    /^Amazing[.!,\s—-]*/i,
+    /^Awesome[.!,\s—-]*/i,
+    /^Love it[.!,\s—-]*/i,
+    /^Love that[.!,\s—-]*/i,
+  ]
+
+  // Banned mid-response phrases — strip jargon and hollow marketing language
+  const BANNED_MID = [
+    'Strong direction',
+    "That's a strong",
+    'positions you as',
+    'elevates the narrative',
+    'heartbeat of the campaign',
+    'clean, trust-forward, conversion-focused',
+    'trust-forward',
+    'conversion-focused',
+    'resonates deeply',
+    'drives home the message',
+    'leans into',
+    'speaks to the audience',
+    'creates a sense of',
+  ]
+
+  // Strip banned openers
+  for (const pattern of BANNED_OPENERS) {
+    cleanContent = cleanContent.replace(pattern, '')
+  }
+
+  // Strip banned mid-response phrases
+  for (const phrase of BANNED_MID) {
+    cleanContent = cleanContent.replaceAll(phrase, '')
+  }
 
   cleanContent = cleanContent
     // Remove emojis

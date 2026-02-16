@@ -115,7 +115,7 @@ describe('buildSystemPrompt', () => {
   it('REVIEW stage includes expert consultation instructions', () => {
     const state = makeState({ stage: 'REVIEW' })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('STRONGEST')
+    expect(prompt).toContain('strongest element')
   })
 
   it('DEEPEN stage includes depth escalation', () => {

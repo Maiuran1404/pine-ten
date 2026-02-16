@@ -369,7 +369,7 @@ Available paths: ${options.join(', ')}.
 }
 
 function buildSubmitTask(_state: BriefingState): string {
-  return `Generate the task submission.
+  return `Generate the task submission. Summary should be tight — the one or two things that matter most.
 - Summarize the brief concisely.
 - Output [TASK_READY] block with all relevant details.
 - Express confidence in the brief. No passive language.`
@@ -471,7 +471,10 @@ function buildCompetitivePrompt(state: BriefingState): string | null {
 
   return `== COMPETITIVE DIFFERENTIATION (OPTIONAL) ==
 If the user hasn't mentioned competitors and this is a website/brand/product launch:
-"Is there anyone in your space doing something similar that you want to differentiate from?"
+If you can identify a known adjacent player based on their industry/audience, suggest one:
+"In your space, [Player X] is the closest comparison I can think of — how would you describe where you sit relative to them?"
+Make it concrete. If you can't identify a player, ask:
+"Who comes to mind when you think about the companies your audience is already familiar with?"
 This is optional — if the user ignores it, move on. If they engage, note it.`
 }
 

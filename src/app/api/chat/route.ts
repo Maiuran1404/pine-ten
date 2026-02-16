@@ -174,7 +174,7 @@ async function handler(request: NextRequest) {
 
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineQuickOptions: { question: string; options: string[] } | undefined
-      let stateMachineOverride: { systemPrompt: string } | undefined
+      let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
 
       if (clientBriefingState) {
         try {
@@ -279,7 +279,7 @@ async function handler(request: NextRequest) {
             brandDescription: company?.description ?? undefined,
           }
           const systemPrompt = buildSystemPrompt(briefingState, brandContext)
-          stateMachineOverride = { systemPrompt }
+          stateMachineOverride = { systemPrompt, stage: briefingState.stage }
 
           // 9. Generate quick options from state machine (deterministic)
           const smQuickOpts = generateQuickOptions(briefingState)
