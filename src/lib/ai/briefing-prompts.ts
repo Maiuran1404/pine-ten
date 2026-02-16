@@ -271,7 +271,8 @@ function buildExtractTask(_state: BriefingState): string {
 - If you understood their task type and intent clearly, confirm and move forward.
 - If the message is vague, ask what they want to create.
 - Reference any style keywords or inspiration they mentioned.
-- Ask one meaningful question about their goals or audience before generating ideas.
+- IMPORTANT: Do NOT re-ask about things the user already stated clearly (e.g. if they said "new customers" or "driving traffic", their intent and audience are already clear — confirm it and move to the next unknown).
+- Only ask about what's genuinely missing. If audience/goal/intent are clear, ask about something else (style preference, brand personality, specific requirements).
 - Be concise — don't repeat back everything they said.`
 }
 

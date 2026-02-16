@@ -195,6 +195,22 @@ const INTENT_PATTERNS: PatternMatch[] = [
     value: 'sales',
     confidence: 0.8,
   },
+  {
+    pattern:
+      /\b(driv(?:e|ing)|attract(?:ing)?|bring(?:ing)?|get(?:ting)?)\s+(?:new\s+)?customers?\b/i,
+    value: 'sales',
+    confidence: 0.9,
+  },
+  {
+    pattern: /\bnew\s+customers?\b/i,
+    value: 'sales',
+    confidence: 0.8,
+  },
+  {
+    pattern: /\b(customer\s*acquisition|foot\s*traffic|drive\s*traffic)\b/i,
+    value: 'sales',
+    confidence: 0.85,
+  },
 
   // Engagement
   {
