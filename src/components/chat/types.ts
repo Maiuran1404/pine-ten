@@ -30,7 +30,14 @@ export interface MoodboardItem {
 /**
  * Chat stages for progress tracking
  */
-export type ChatStage = 'brief' | 'style' | 'details' | 'review' | 'submit'
+export type ChatStage =
+  | 'brief'
+  | 'style'
+  | 'details'
+  | 'strategic_review'
+  | 'review'
+  | 'deepen'
+  | 'submit'
 
 export interface QuickOptions {
   question: string
