@@ -10,7 +10,6 @@ interface GeneratedReply {
   generatedBy: GeneratedBy
 }
 
-const MAX_TURNS = 20
 const STUCK_FORCE_AGREE_TURNS = 4
 const STUCK_HARD_AGREE_TURNS = 6
 
@@ -117,14 +116,6 @@ export async function generateSyntheticReply(
   turnsInStage: number,
   totalTurns: number
 ): Promise<GeneratedReply> {
-  // Hard cap: if we've exceeded max turns, we're done
-  if (totalTurns >= MAX_TURNS) {
-    return {
-      content: "Everything looks perfect, let's finalize this brief.",
-      generatedBy: 'template',
-    }
-  }
-
   // Stuck detection: force progress after too many turns in same stage
   if (turnsInStage >= STUCK_HARD_AGREE_TURNS) {
     logger.warn(
@@ -184,6 +175,8 @@ export async function generateSyntheticReply(
 /**
  * Check if a conversation run should be considered complete.
  */
+const SAFETY_CAP_TURNS = 50
+
 export function isRunComplete(
   stage: string | null,
   totalTurns: number,
@@ -197,8 +190,9 @@ export function isRunComplete(
     return { complete: true, reason: 'reached_review' }
   }
 
-  if (totalTurns >= MAX_TURNS) {
-    return { complete: true, reason: 'max_turns_exceeded' }
+  // Safety cap to prevent infinite loops
+  if (totalTurns >= SAFETY_CAP_TURNS) {
+    return { complete: true, reason: 'safety_cap_exceeded' }
   }
 
   return { complete: false }

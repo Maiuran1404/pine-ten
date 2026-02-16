@@ -146,12 +146,29 @@ export async function GET(request: NextRequest) {
       logs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
       // Collect all style IDs to fetch details
-      const allStyleIds = [...new Set(logs.flatMap((log) => log.selectedStyles))]
+      const allStyleValues = [...new Set(logs.flatMap((log) => log.selectedStyles))]
+
+      // Split into valid UUIDs vs plain style names
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const validUuids = allStyleValues.filter((v) => uuidRegex.test(v))
+      const plainNames = allStyleValues.filter((v) => !uuidRegex.test(v))
 
       // Fetch style details if there are any
-      let styleDetailsMap: Record<string, StyleDetail> = {}
+      const styleDetailsMap: Record<string, StyleDetail> = {}
 
-      if (allStyleIds.length > 0) {
+      // Build synthetic entries for plain name values (no DB lookup needed)
+      for (const name of plainNames) {
+        styleDetailsMap[name] = {
+          id: name,
+          name,
+          imageUrl: '',
+          deliverableType: '',
+          styleAxis: '',
+        }
+      }
+
+      // Query DB only with valid UUIDs
+      if (validUuids.length > 0) {
         const styleDetails = await db
           .select({
             id: deliverableStyleReferences.id,
@@ -161,9 +178,11 @@ export async function GET(request: NextRequest) {
             styleAxis: deliverableStyleReferences.styleAxis,
           })
           .from(deliverableStyleReferences)
-          .where(inArray(deliverableStyleReferences.id, allStyleIds))
+          .where(inArray(deliverableStyleReferences.id, validUuids))
 
-        styleDetailsMap = Object.fromEntries(styleDetails.map((s) => [s.id, s]))
+        for (const s of styleDetails) {
+          styleDetailsMap[s.id] = s
+        }
       }
 
       // Add style details to each log

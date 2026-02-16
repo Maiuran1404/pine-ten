@@ -1,3 +1,5 @@
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { db } from '@/db'
 import { chatTestRuns } from '@/db/schema'
 import { requireAdmin } from '@/lib/require-auth'
@@ -5,17 +7,26 @@ import { withErrorHandling, successResponse } from '@/lib/errors'
 import { chatTestScenarios } from '@/lib/ai/chat-test-scenarios'
 import { desc, sql } from 'drizzle-orm'
 
+const createBatchSchema = z.object({
+  count: z.number().int().min(1).max(10).optional().default(10),
+})
+
 /**
- * POST /api/admin/chat-tests — Create a new batch of 10 chat test runs
+ * POST /api/admin/chat-tests — Create a batch of chat test runs
+ * Accepts optional `count` (1-10) to run fewer than all 10 scenarios.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
       const session = await requireAdmin()
 
-      const batchId = crypto.randomUUID()
+      const body = await request.json().catch(() => ({}))
+      const { count } = createBatchSchema.parse(body)
 
-      const rows = chatTestScenarios.map((scenario) => ({
+      const batchId = crypto.randomUUID()
+      const selectedScenarios = chatTestScenarios.slice(0, count)
+
+      const rows = selectedScenarios.map((scenario) => ({
         batchId,
         triggeredBy: session.user.id,
         status: 'pending' as const,

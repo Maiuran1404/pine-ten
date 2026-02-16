@@ -257,6 +257,27 @@ describe('buildSystemPrompt', () => {
     expect(prompt).not.toContain('COMPETITIVE DIFFERENTIATION (OPTIONAL)')
   })
 
+  // Platform context and never-deflect rules
+  it('EXTRACT prompt contains platform context and NEVER DEFLECT rule', () => {
+    const state = makeState({ stage: 'EXTRACT' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('freelance designers build deliverables')
+    expect(prompt).toContain('NEVER DEFLECT')
+  })
+
+  it('REVIEW prompt contains Crafted designer reference and no-deflect rule', () => {
+    const state = makeState({ stage: 'REVIEW' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('Crafted designer')
+    expect(prompt).toContain('NEVER suggest they hire someone else')
+  })
+
+  it('SUBMIT prompt contains Crafted designer who will build the deliverable', () => {
+    const state = makeState({ stage: 'SUBMIT' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('Crafted designer who will build the deliverable')
+  })
+
   // Brand context
   it('injects brand context when provided', () => {
     const state = makeState({ stage: 'EXTRACT' })

@@ -16,6 +16,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { BatchProgress } from '@/components/admin/chat-tests/batch-progress'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { FlaskConical, Play, Loader2, ArrowRight, CheckCircle2, XCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -47,6 +54,7 @@ export default function ChatTestsPage() {
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
   const [activeRuns, setActiveRuns] = useState<RunProgress[]>([])
+  const [chatCount, setChatCount] = useState('3')
   const abortRef = useRef(false)
 
   const fetchBatches = useCallback(async () => {
@@ -115,6 +123,7 @@ export default function ChatTestsPage() {
       const createRes = await fetch('/api/admin/chat-tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: parseInt(chatCount, 10) }),
       })
       if (!createRes.ok) throw new Error('Failed to create batch')
       const createData = await createRes.json()
@@ -185,22 +194,36 @@ export default function ChatTestsPage() {
             Chat QA Testing
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Test AI chat quality across 10 diverse scenarios
+            Test AI chat quality across diverse scenarios
           </p>
         </div>
-        <Button onClick={runBatch} disabled={running} size="lg">
-          {running ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Running...
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" />
-              Run 10 Chats
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={chatCount} onValueChange={setChatCount} disabled={running}>
+            <SelectTrigger className="w-[80px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 5, 10].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={runBatch} disabled={running} size="lg">
+            {running ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Run Chats
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Active batch progress */}
@@ -230,7 +253,7 @@ export default function ChatTestsPage() {
             </div>
           ) : batches.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No batches yet. Click &quot;Run 10 Chats&quot; to start.
+              No batches yet. Select a count and click &quot;Run Chats&quot; to start.
             </p>
           ) : (
             <Table>
