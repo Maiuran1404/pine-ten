@@ -6,6 +6,7 @@ import { Palette, Type, Image as ImageIcon, Plus, X, Sparkles, EyeOff } from 'lu
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { VisualDirection } from './types'
 import type { DeliverableStyle } from '../types'
 
@@ -40,8 +41,14 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
           exit={{ opacity: 0, scale: 0.9 }}
           className="group relative aspect-square rounded-lg overflow-hidden border border-border"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={style.imageUrl} alt={style.name} className="w-full h-full object-cover" />
+          <OptimizedImage
+            src={style.imageUrl}
+            alt={style.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 25vw"
+            showSkeleton={false}
+          />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="absolute bottom-0 left-0 right-0 p-2">
