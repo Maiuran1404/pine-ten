@@ -28,19 +28,97 @@ import { StrategicReviewCard } from './strategic-review-card'
 import type { ChatMessage as Message, DeliverableStyle, MoodboardItem, TaskProposal } from './types'
 
 // =============================================================================
+// STAGE-AWARE LOADING MESSAGES
+// =============================================================================
+
+const STAGE_LOADING_MESSAGES: Record<string, string[]> = {
+  EXTRACT: [
+    'Understanding your vision...',
+    'Piecing together the details...',
+    'Getting the full picture...',
+    'Almost there...',
+  ],
+  TASK_TYPE: [
+    'Figuring out the best format...',
+    'Matching your idea to the right medium...',
+    'Narrowing down the approach...',
+    'Almost there...',
+  ],
+  INTENT: [
+    'Identifying your goal...',
+    'Aligning with your strategy...',
+    'Connecting the dots...',
+    'Almost there...',
+  ],
+  INSPIRATION: [
+    'Scouting visual references...',
+    'Curating styles that fit...',
+    'Pulling together inspiration...',
+    'Almost there...',
+  ],
+  STRUCTURE: [
+    'Drafting the blueprint...',
+    'Building out the structure...',
+    'Shaping the deliverable...',
+    'Almost there...',
+  ],
+  STRATEGIC_REVIEW: [
+    'Reviewing your strategy...',
+    'Spotting strengths and risks...',
+    'Refining the approach...',
+    'Almost there...',
+  ],
+  MOODBOARD: [
+    'Mapping out your moodboard...',
+    'Curating the perfect visuals...',
+    'Locking in the aesthetic...',
+    'Almost there...',
+  ],
+  REVIEW: [
+    'Running a final review...',
+    'Checking every detail...',
+    'Polishing the brief...',
+    'Almost there...',
+  ],
+  DEEPEN: [
+    'Digging deeper...',
+    'Adding layers of detail...',
+    'Expanding the brief...',
+    'Almost there...',
+  ],
+  SUBMIT: [
+    'Packaging everything up...',
+    'Preparing your submission...',
+    'Final touches...',
+    'Almost there...',
+  ],
+}
+
+const DEFAULT_LOADING_MESSAGES = [
+  'Thinking about your project...',
+  'Working on a response...',
+  'Putting ideas together...',
+  'Almost there...',
+]
+
+// =============================================================================
 // LOADING INDICATOR
 // =============================================================================
 
-function LoadingIndicator({ requestStartTime }: { requestStartTime: number | null }) {
+function LoadingIndicator({
+  requestStartTime,
+  briefingStage,
+}: {
+  requestStartTime: number | null
+  briefingStage?: string | null
+}) {
   const [loadingStage, setLoadingStage] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
 
-  const loadingMessages = [
-    'Reading between the lines...',
-    'Mapping out your moodboard...',
-    'Curating the perfect visuals...',
-    'Polishing the final touches...',
-  ]
+  const loadingMessages =
+    briefingStage && STAGE_LOADING_MESSAGES[briefingStage]
+      ? STAGE_LOADING_MESSAGES[briefingStage]
+      : DEFAULT_LOADING_MESSAGES
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -616,8 +694,14 @@ export function ChatMessageList({
         </AnimatePresence>
 
         {/* Enhanced loading indicator with progressive messages */}
-        {/* eslint-disable-next-line react-hooks/refs */}
-        {isLoading && <LoadingIndicator requestStartTime={requestStartTimeRef.current} />}
+        {/* eslint-disable react-hooks/refs */}
+        {isLoading && (
+          <LoadingIndicator
+            requestStartTime={requestStartTimeRef.current}
+            briefingStage={briefingStage}
+          />
+        )}
+        {/* eslint-enable react-hooks/refs */}
 
         {/* Inline submit prompt - shown as an AI message when ready to submit */}
         {/* Hidden when state machine is active (briefingStage is set) */}
