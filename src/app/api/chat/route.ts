@@ -579,9 +579,9 @@ async function handler(request: NextRequest) {
         logger.debug('Video request with moodboard styles - skipping video grid')
       }
 
-      // Auto-generate quick options from deliverable styles if AI didn't provide any
-      // State machine quick options take priority when available
-      let quickOptions = stateMachineQuickOptions ?? response.quickOptions
+      // Use AI-generated quick options only — state machine options are too generic
+      // and don't match the actual question the AI asked
+      let quickOptions = response.quickOptions
       if (!quickOptions && deliverableStyles && deliverableStyles.length > 0) {
         // Generate options from the style names
         const styleOptions = deliverableStyles.slice(0, 4).map((style) => style.name)
