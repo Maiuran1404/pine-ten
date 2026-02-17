@@ -178,7 +178,6 @@ async function handler(request: NextRequest) {
       // ====================================================================
 
       let updatedBriefingState: SerializedBriefingState | undefined
-      let stateMachineQuickOptions: { question: string; options: string[] } | undefined
       let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
 
       if (clientBriefingState) {
