@@ -227,7 +227,7 @@ function buildDefaultTone(): ToneProfile {
     vocabularyRegister: [],
     toneDescription:
       'Use a clear, warm, conversational tone. ' +
-      'Be direct without being cold — show genuine engagement with their project. ' +
+      'Be direct without being cold. Show genuine engagement with their project. ' +
       'Vary sentence length. Match the energy of the user. ' +
       `Do NOT use: ${GLOBAL_ANTI_PATTERNS.join(', ')}.`,
   }
