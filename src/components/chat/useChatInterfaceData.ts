@@ -633,19 +633,9 @@ export function useChatInterfaceData({
   // The AI is instructed to output [TASK_READY] but doesn't reliably do so.
   // When the stage transitions to SUBMIT and no taskProposal came from the API,
   // deterministically build one from the conversation (same as "You decide & submit").
-  const prevBriefingStageRef = useRef<string | null>(null)
+  // Guard: once pendingTask is set, !pendingTask prevents re-firing — no prev-stage ref needed.
   useEffect(() => {
-    const currentStage = _briefingState?.stage ?? null
-    const prevStage = prevBriefingStageRef.current
-    prevBriefingStageRef.current = currentStage
-
-    if (
-      currentStage === 'SUBMIT' &&
-      prevStage !== 'SUBMIT' &&
-      !pendingTask &&
-      !isLoading &&
-      messages.length > 0
-    ) {
+    if (_briefingState?.stage === 'SUBMIT' && !pendingTask && !isLoading && messages.length > 0) {
       const constructedTask = constructTaskFromConversation(messages)
       setPendingTask(constructedTask)
 

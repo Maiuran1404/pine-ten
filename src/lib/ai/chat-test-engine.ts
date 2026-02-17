@@ -26,7 +26,8 @@ const stageTemplates: Record<string, (scenario: ChatTestScenario) => string> = {
   STRUCTURE: () => "That structure looks great, let's proceed with it",
   STRATEGIC_REVIEW: () => "Good analysis, the strategy makes sense. Let's continue",
   MOODBOARD: () => "The visual direction works for us, let's move forward",
-  REVIEW: () => "Everything looks good, I'm happy with this brief",
+  REVIEW: () => "Everything looks good, I'm happy with this brief. Let's submit it.",
+  DEEPEN: () => "No changes needed, let's finalize and submit.",
 }
 
 /**
@@ -186,8 +187,8 @@ export function isRunComplete(
     return { complete: true, reason: 'already_finished' }
   }
 
-  if (stage === 'REVIEW') {
-    return { complete: true, reason: 'reached_review' }
+  if (stage === 'SUBMIT') {
+    return { complete: true, reason: 'reached_submit' }
   }
 
   // Safety cap to prevent infinite loops
@@ -224,6 +225,10 @@ function buildContextRichAgreeMessage(scenario: ChatTestScenario, stage: string)
       return "Good analysis, the strategy makes sense. I'm happy to continue."
     case 'MOODBOARD':
       return "The visual direction works well for us. Let's move to review."
+    case 'REVIEW':
+      return "Everything looks good, I'm happy with this brief. Let's submit it."
+    case 'DEEPEN':
+      return "No changes needed, let's finalize and submit."
     default:
       return "Yes, that looks perfect, let's continue to the next step."
   }

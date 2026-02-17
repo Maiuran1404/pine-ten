@@ -570,17 +570,9 @@ async function handler(request: NextRequest) {
         logger.debug('Video request with moodboard styles - skipping video grid')
       }
 
-      // Use AI-generated quick options only — state machine options are too generic
-      // and don't match the actual question the AI asked
-      let quickOptions = response.quickOptions
-      if (!quickOptions && deliverableStyles && deliverableStyles.length > 0) {
-        // Generate options from the style names
-        const styleOptions = deliverableStyles.slice(0, 4).map((style) => style.name)
-        quickOptions = {
-          question: 'Which style do you prefer?',
-          options: [...styleOptions, 'Show me more options'],
-        }
-      }
+      // Use AI-generated quick options only — style fallback removed as it fires
+      // indiscriminately at all stages and duplicates the style grid cards
+      const quickOptions = response.quickOptions
 
       // Parse structured output from AI response when state machine is at STRUCTURE or STRATEGIC_REVIEW
       let structureData = undefined
@@ -598,32 +590,52 @@ async function handler(request: NextRequest) {
           brand: 'single_design',
         }
 
-        if (
-          briefingState.stage === 'STRUCTURE' ||
-          briefingState.stage === 'STRATEGIC_REVIEW' ||
-          briefingState.stage === 'REVIEW'
-        ) {
-          // Parse structure data if category is known
-          const structureType = briefingState.deliverableCategory
-            ? categoryToStructureType[briefingState.deliverableCategory]
-            : undefined
-          if (structureType) {
-            const parsed = parseStructuredOutput(response.content, structureType)
-            if (parsed.success && parsed.data) {
-              structureData = parsed.data
-            }
-          }
+        // Determine structure type from category, with marker-based fallback
+        let structureType: StructureType | undefined = briefingState.deliverableCategory
+          ? categoryToStructureType[briefingState.deliverableCategory]
+          : undefined
+        if (!structureType) {
+          if (response.content.includes('[STORYBOARD]')) structureType = 'storyboard'
+          else if (response.content.includes('[LAYOUT]')) structureType = 'layout'
+          else if (response.content.includes('[CALENDAR]')) structureType = 'calendar'
+          else if (response.content.includes('[DESIGN_SPEC]')) structureType = 'single_design'
+        }
 
-          // Parse strategic review
-          const reviewParsed = parseStrategicReview(response.content)
-          if (reviewParsed.success && reviewParsed.data) {
-            strategicReviewData = reviewParsed.data
+        // Parse structure data — always attempt regardless of stage
+        if (structureType) {
+          const parsed = parseStructuredOutput(response.content, structureType)
+          if (parsed.success && parsed.data) {
+            structureData = parsed.data
+            briefingState.structure = parsed.data
           }
+        }
+
+        // Parse strategic review
+        const reviewParsed = parseStrategicReview(response.content)
+        if (reviewParsed.success && reviewParsed.data) {
+          strategicReviewData = reviewParsed.data
+          briefingState.strategicReview = reviewParsed.data
+        }
+
+        // Re-serialize state with structure/review updates
+        if (structureData || strategicReviewData) {
+          updatedBriefingState = serialize(briefingState)
         }
       }
 
+      // Strip structured markers from displayed content
+      let cleanContent = response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '')
+      // Strip structure markers (STORYBOARD, LAYOUT, CALENDAR, DESIGN_SPEC, STRATEGIC_REVIEW)
+      cleanContent = cleanContent
+        .replace(/\[STORYBOARD\][\s\S]*?\[\/STORYBOARD\]/g, '')
+        .replace(/\[LAYOUT\][\s\S]*?\[\/LAYOUT\]/g, '')
+        .replace(/\[CALENDAR\][\s\S]*?\[\/CALENDAR\]/g, '')
+        .replace(/\[DESIGN_SPEC\][\s\S]*?\[\/DESIGN_SPEC\]/g, '')
+        .replace(/\[STRATEGIC_REVIEW\][\s\S]*?\[\/STRATEGIC_REVIEW\]/g, '')
+        .trim()
+
       return NextResponse.json({
-        content: response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '').trim(),
+        content: cleanContent,
         taskProposal,
         styleReferences,
         deliverableStyles,

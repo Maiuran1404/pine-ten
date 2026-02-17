@@ -317,9 +317,8 @@ You already know their brand. DO NOT ask about: company, industry, audience, col
   if (stateMachineOverride) {
     // State machine mode: prompt comes from buildSystemPrompt()
     finalSystemPrompt = stateMachineOverride.systemPrompt
-    // Stage-dependent maxTokens: heavy stages (JSON output) get 800, others get 500
-    const heavyStages = ['STRUCTURE', 'STRATEGIC_REVIEW']
-    maxTokens = heavyStages.includes(stateMachineOverride.stage ?? '') ? 800 : 500
+    // No maxTokens cap — structured JSON (storyboards, layouts) needs room to complete
+    maxTokens = 4096
   } else {
     // Fallback mode: build enhanced system prompt (used on error or when no state is provided)
     finalSystemPrompt = `${basePrompt}

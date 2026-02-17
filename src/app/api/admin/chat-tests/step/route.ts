@@ -304,6 +304,8 @@ const STAGE_ORDER: BriefingStage[] = [
   'STRATEGIC_REVIEW',
   'MOODBOARD',
   'REVIEW',
+  'DEEPEN',
+  'SUBMIT',
 ]
 
 /**
@@ -871,7 +873,8 @@ export async function POST(request: NextRequest) {
       const newTotalTurns = turnNumber
 
       // Check if we've reached completion
-      const reachedReview = updatedStage === 'REVIEW'
+      const reachedReview =
+        updatedStage === 'REVIEW' || updatedStage === 'DEEPEN' || updatedStage === 'SUBMIT'
       const { complete, reason } = isRunComplete(updatedStage, newTotalTurns, 'running')
 
       const newStatus = complete
@@ -895,7 +898,7 @@ export async function POST(request: NextRequest) {
             durationMs: run.startedAt ? Date.now() - new Date(run.startedAt).getTime() : undefined,
           }),
           ...(reason === 'safety_cap_exceeded' && {
-            errorMessage: `Conversation did not reach REVIEW within ${newTotalTurns} turns (stuck at ${updatedStage})`,
+            errorMessage: `Conversation did not reach SUBMIT within ${newTotalTurns} turns (stuck at ${updatedStage})`,
           }),
         })
         .where(eq(chatTestRuns.id, run.id))

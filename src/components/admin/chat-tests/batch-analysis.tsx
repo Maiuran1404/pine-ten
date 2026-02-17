@@ -26,6 +26,8 @@ const STAGE_ORDER = [
   'STRATEGIC_REVIEW',
   'MOODBOARD',
   'REVIEW',
+  'DEEPEN',
+  'SUBMIT',
 ] as const
 
 const STAGE_LABELS: Record<string, string> = {
@@ -37,6 +39,8 @@ const STAGE_LABELS: Record<string, string> = {
   STRATEGIC_REVIEW: 'Strategic Review',
   MOODBOARD: 'Moodboard',
   REVIEW: 'Review',
+  DEEPEN: 'Deepen',
+  SUBMIT: 'Submit',
 }
 
 interface Message {
@@ -322,7 +326,9 @@ function buildAnalysisPrompt(runs: Run[], batchId: string, funnel: FunnelData[])
   L.push(`5. STRUCTURE -- Generate deliverable structure (storyboard/layout/calendar/spec)`)
   L.push(`6. STRATEGIC_REVIEW -- AI provides strategic assessment, user must accept to proceed`)
   L.push(`7. MOODBOARD -- Finalize visual direction (colors, typography, mood)`)
-  L.push(`8. REVIEW -- Expert review of completed brief (SUCCESS = reaching this stage)`)
+  L.push(`8. REVIEW -- Expert review of completed brief`)
+  L.push(`9. DEEPEN -- Optional deepening of brief details`)
+  L.push(`10. SUBMIT -- Brief finalized and task created (SUCCESS = reaching this stage)`)
   L.push('')
   L.push(`### Key Files`)
   L.push(`- State machine: src/lib/ai/briefing-state-machine.ts`)
@@ -352,7 +358,7 @@ function buildAnalysisPrompt(runs: Run[], batchId: string, funnel: FunnelData[])
   // ---- BATCH SUMMARY ----
   L.push(`## Batch Results`)
   L.push(
-    `- Pass rate: **${total > 0 ? Math.round((passed / total) * 100) : 0}%** (${passed}/${total} reached REVIEW)`
+    `- Pass rate: **${total > 0 ? Math.round((passed / total) * 100) : 0}%** (${passed}/${total} reached SUBMIT)`
   )
   L.push(`- Failed: ${failed}`)
   L.push(`- Avg turns: ${avgTurns}`)
@@ -630,6 +636,8 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
     STRATEGIC_REVIEW: 'SR',
     MOODBOARD: 'MB',
     REVIEW: 'REV',
+    DEEPEN: 'DEP',
+    SUBMIT: 'SUB',
   }
 
   return (

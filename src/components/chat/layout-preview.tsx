@@ -1,9 +1,22 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Layout, GripVertical, Layers } from 'lucide-react'
+import { Layout, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import {
+  BrowserChrome,
+  WireframeLabel,
+  ImagePlaceholder,
+  TextLines,
+  ButtonShape,
+  CircleIcon,
+  NavBar,
+  BlockRect,
+  CheckRow,
+  ChevronBar,
+  QuoteGlyph,
+} from '@/components/chat/wireframe'
 import type { LayoutSection } from '@/lib/ai/briefing-state-machine'
 
 // =============================================================================
@@ -16,58 +29,206 @@ interface LayoutPreviewProps {
 }
 
 // =============================================================================
-// SECTION CARD
+// SECTION KEYWORD MATCHING
 // =============================================================================
 
-function SectionRow({ section, index }: { section: LayoutSection; index: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.04 }}
-      className="group flex items-start gap-3 rounded-lg border border-border/40 bg-white/60 dark:bg-card/60 p-3 hover:border-border hover:bg-white/80 dark:hover:bg-card/80 transition-colors"
-    >
-      {/* Order indicator */}
-      <div className="shrink-0 flex flex-col items-center gap-1">
-        <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-          {section.order}
-        </div>
-        <GripVertical className="h-3 w-3 text-muted-foreground/30" />
-      </div>
+type SectionType =
+  | 'hero'
+  | 'features'
+  | 'testimonials'
+  | 'cta'
+  | 'footer'
+  | 'pricing'
+  | 'faq'
+  | 'gallery'
+  | 'fallback'
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-semibold text-foreground">{section.sectionName}</h4>
-        <p className="text-xs text-primary/80 dark:text-primary/70 mt-0.5">{section.purpose}</p>
-        {section.contentGuidance && (
-          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-            {section.contentGuidance}
-          </p>
-        )}
+function detectSectionType(sectionName: string): SectionType {
+  const name = sectionName.toLowerCase()
+
+  if (/hero|header/.test(name)) return 'hero'
+  if (/features?|benefits?/.test(name)) return 'features'
+  if (/social\s*proof|testimonials?/.test(name)) return 'testimonials'
+  if (/cta|call[\s-]*to[\s-]*action/.test(name)) return 'cta'
+  if (/footer/.test(name)) return 'footer'
+  if (/pricing/.test(name)) return 'pricing'
+  if (/faq/.test(name)) return 'faq'
+  if (/gallery|portfolio/.test(name)) return 'gallery'
+
+  return 'fallback'
+}
+
+// =============================================================================
+// SECTION WIREFRAME RENDERERS
+// =============================================================================
+
+function HeroBlock() {
+  return (
+    <div className="space-y-3 p-4">
+      <NavBar />
+      <ImagePlaceholder className="h-28 w-full" />
+      <TextLines lines={2} widths={[80, 55]} size="lg" />
+      <ButtonShape width="w-24" />
+    </div>
+  )
+}
+
+function FeaturesBlock() {
+  return (
+    <div className="grid grid-cols-3 gap-3 p-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex flex-col items-center gap-2">
+          <CircleIcon size="lg" />
+          <TextLines lines={3} widths={[90, 70, 50]} size="sm" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TestimonialsBlock() {
+  return (
+    <div className="flex flex-col items-center gap-2 p-4">
+      <QuoteGlyph className="text-3xl" />
+      <TextLines lines={2} widths={[75, 55]} size="sm" className="w-3/4" />
+      <CircleIcon size="sm" className="mt-1" />
+    </div>
+  )
+}
+
+function CtaBlock() {
+  return (
+    <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800/50 border-y border-slate-300 dark:border-slate-600 py-5 px-4">
+      <ButtonShape width="w-28" />
+    </div>
+  )
+}
+
+function FooterBlock() {
+  return (
+    <div className="px-4 py-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          {[1, 2, 3, 4].map((i) => (
+            <BlockRect key={i} className="w-4 h-4" />
+          ))}
+        </div>
+        <div className="flex gap-6">
+          {[1, 2, 3].map((i) => (
+            <TextLines key={i} lines={3} widths={[100, 80, 60]} size="sm" className="w-12" />
+          ))}
+        </div>
       </div>
-    </motion.div>
+    </div>
+  )
+}
+
+function PricingBlock() {
+  return (
+    <div className="grid grid-cols-3 gap-2 p-4">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="border border-slate-300 dark:border-slate-600 rounded-sm overflow-hidden"
+        >
+          <div className="h-4 bg-slate-200 dark:bg-slate-700 border-b border-slate-300 dark:border-slate-600" />
+          <div className="p-2 space-y-1.5">
+            <CheckRow />
+            <CheckRow />
+            <CheckRow />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FaqBlock() {
+  return (
+    <div className="space-y-1.5 p-4">
+      {[1, 2, 3, 4].map((i) => (
+        <ChevronBar key={i} />
+      ))}
+    </div>
+  )
+}
+
+function GalleryBlock() {
+  return (
+    <div className="grid grid-cols-2 gap-2 p-4">
+      {[1, 2, 3, 4].map((i) => (
+        <ImagePlaceholder key={i} className="h-16 w-full" />
+      ))}
+    </div>
+  )
+}
+
+function FallbackBlock({ sectionName }: { sectionName: string }) {
+  return (
+    <div className="relative p-4">
+      <div className="h-16 w-full border rounded-sm border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+        <span className="text-[9px] text-slate-400 dark:text-slate-500">{sectionName}</span>
+      </div>
+    </div>
   )
 }
 
 // =============================================================================
-// WIREFRAME PREVIEW
+// SECTION WIREFRAME DISPATCHER
 // =============================================================================
 
-function WireframePreview({ sections }: { sections: LayoutSection[] }) {
+function renderSectionWireframe(type: SectionType, sectionName: string) {
+  switch (type) {
+    case 'hero':
+      return <HeroBlock />
+    case 'features':
+      return <FeaturesBlock />
+    case 'testimonials':
+      return <TestimonialsBlock />
+    case 'cta':
+      return <CtaBlock />
+    case 'footer':
+      return <FooterBlock />
+    case 'pricing':
+      return <PricingBlock />
+    case 'faq':
+      return <FaqBlock />
+    case 'gallery':
+      return <GalleryBlock />
+    case 'fallback':
+      return <FallbackBlock sectionName={sectionName} />
+  }
+}
+
+// =============================================================================
+// SECTION BLOCK
+// =============================================================================
+
+function SectionBlock({ section, index }: { section: LayoutSection; index: number }) {
+  const type = detectSectionType(section.sectionName)
+  const tooltip = [section.purpose, section.contentGuidance].filter(Boolean).join(' — ')
+
   return (
-    <div className="rounded-lg border border-border/40 bg-muted/20 p-2 space-y-1">
-      {sections.map((section) => (
-        <div
-          key={section.order}
-          className={cn(
-            'rounded px-2 py-1 text-[10px] text-muted-foreground/70 bg-muted/40 border border-border/20 truncate',
-            section.order === 1 && 'bg-primary/5 border-primary/10 text-primary/60 py-2'
-          )}
-        >
-          {section.sectionName}
-        </div>
-      ))}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.05 }}
+      className="relative"
+      title={tooltip}
+    >
+      {/* Label */}
+      <div className="absolute top-1.5 left-1.5 z-10">
+        <WireframeLabel>{section.sectionName}</WireframeLabel>
+      </div>
+
+      {/* Divider between sections */}
+      {index > 0 && (
+        <div className="border-t border-dashed border-slate-200 dark:border-slate-700" />
+      )}
+
+      {/* Wireframe content */}
+      {renderSectionWireframe(type, section.sectionName)}
+    </motion.div>
   )
 }
 
@@ -101,30 +262,20 @@ export function LayoutPreview({ sections, className }: LayoutPreviewProps) {
   return (
     <div className={cn('space-y-3', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Layout className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">Page Layout</span>
-          <Badge variant="secondary" className="text-xs">
-            {sections.length} {sections.length === 1 ? 'section' : 'sections'}
-          </Badge>
-        </div>
+      <div className="flex items-center gap-2">
+        <Layout className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold text-foreground">Page Layout</span>
+        <Badge variant="secondary" className="text-xs">
+          {sections.length} {sections.length === 1 ? 'section' : 'sections'}
+        </Badge>
       </div>
 
-      {/* Two-column: wireframe + details */}
-      <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3">
-        {/* Mini wireframe */}
-        <div className="hidden sm:block">
-          <WireframePreview sections={sortedSections} />
-        </div>
-
-        {/* Section list */}
-        <div className="space-y-2">
-          {sortedSections.map((section, index) => (
-            <SectionRow key={section.order} section={section} index={index} />
-          ))}
-        </div>
-      </div>
+      {/* Figma-style browser wireframe */}
+      <BrowserChrome>
+        {sortedSections.map((section, index) => (
+          <SectionBlock key={section.order} section={section} index={index} />
+        ))}
+      </BrowserChrome>
     </div>
   )
 }
