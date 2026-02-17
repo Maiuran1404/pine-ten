@@ -618,8 +618,8 @@ async function handler(request: NextRequest) {
           logger.error({ err }, 'Error fetching video references')
           // Even if video fetch fails, don't fall back to image styles for video requests
         }
-      } else if (isStyleEligible && moodboardHasStyles && isVideoRequest) {
-        // Still clear image styles for video requests even when skipping video references
+      } else if (isStyleEligible && moodboardHasStyles && hasVideoMarker) {
+        // Still clear image styles for video marker when skipping video references
         deliverableStyles = undefined
         logger.debug('Video request with moodboard styles - skipping video grid')
       }
