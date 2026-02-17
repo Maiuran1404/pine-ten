@@ -27,6 +27,7 @@ import {
   type TaskProposal,
   type ChatMessage as Message,
   type SceneReference,
+  type StructureData,
 } from './types'
 import type { VideoReferenceStyle } from './video-reference-grid'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
