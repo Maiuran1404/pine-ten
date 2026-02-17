@@ -211,13 +211,16 @@ function ContextStrip({
   currentStage: ChatStage
   completedStages: ChatStage[]
 }) {
+  const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
+  const progressPercent = Math.round((currentIndex / (BRIEFING_CHAT_STAGES.length - 1)) * 100)
+
   return (
     <div className="shrink-0 px-4 py-2.5 border-b border-border/30">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest">
           {STAGE_DESCRIPTIONS[currentStage]}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {BRIEFING_CHAT_STAGES.map((stage) => {
             const isCompleted = isStageCompleted(stage, completedStages)
             const isCurrent = isCurrentStage(stage, currentStage)
@@ -226,7 +229,7 @@ function ContextStrip({
               <div
                 key={stage}
                 className={cn(
-                  'w-1.5 h-1.5 rounded-full transition-colors',
+                  'w-2 h-2 rounded-full transition-colors',
                   isCompleted && 'bg-emerald-500',
                   isCurrent && !isCompleted && 'bg-emerald-500/50',
                   !isCompleted && !isCurrent && 'bg-muted-foreground/20'
@@ -236,6 +239,13 @@ function ContextStrip({
             )
           })}
         </div>
+      </div>
+      {/* Thin progress bar */}
+      <div className="mt-1.5 h-0.5 w-full rounded-full bg-muted-foreground/10 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
     </div>
   )

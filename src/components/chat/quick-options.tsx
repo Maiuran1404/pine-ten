@@ -57,25 +57,25 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
           return (
             <motion.button
               key={idx}
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: idx * 0.04 }}
               type="button"
               onClick={() => handleOptionClick(option)}
               disabled={disabled}
               className={cn(
-                'px-4 py-2.5 text-sm font-medium rounded-full border transition-all duration-150',
+                'px-3 py-1.5 text-[13px] font-normal rounded-full border transition-all duration-150',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'whitespace-nowrap',
+                'whitespace-nowrap cursor-pointer',
                 isMultiSelect && isSelected
                   ? // Selected state for multi-select
                     'border-[#7C9A7C] bg-[#E5EFE5] text-[#3D5A3D]'
                   : // Default state
-                    'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-card dark:text-gray-200',
-                // Hover: light sage green
-                'hover:border-[#B8D4B8] hover:bg-[#F0F7F0] dark:hover:bg-[#2A3F2A] dark:hover:border-[#4A6B4A]',
-                // Active: stronger sage green
-                'active:border-[#7C9A7C] active:bg-[#E5EFE5] dark:active:bg-[#3A4F3A]'
+                    'border-gray-200/70 bg-gray-50/50 text-gray-600 dark:border-gray-700 dark:bg-card dark:text-gray-200',
+                // Hover: light sage green with shadow
+                'hover:border-[#B8D4B8] hover:bg-[#F0F7F0] hover:shadow-sm hover:text-[#3D5A3D] dark:hover:bg-[#2A3F2A] dark:hover:border-[#4A6B4A]',
+                // Active: stronger sage green with scale
+                'active:border-[#7C9A7C] active:bg-[#E5EFE5] active:scale-[0.97] dark:active:bg-[#3A4F3A]'
               )}
             >
               {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}

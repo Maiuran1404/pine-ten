@@ -447,10 +447,17 @@ export function ChatInputArea({
           <div className="flex items-center gap-2">
             <Button
               onClick={handleSend}
-              disabled={!input.trim() && uploadedFiles.length === 0}
+              disabled={isLoading || (!input.trim() && uploadedFiles.length === 0)}
               className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
             >
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Submit'}
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span className="ml-1.5">Thinking...</span>
+                </>
+              ) : (
+                'Submit'
+              )}
             </Button>
           </div>
         </div>

@@ -703,6 +703,9 @@ async function handler(request: NextRequest) {
             }
           } else {
             // BRIEF_META missing or failed — fallback to evaluateTransitions()
+            console.warn(
+              `[chat/route] BRIEF_META missing from AI response at stage=${briefingState.stage}, turn=${briefingState.turnsInCurrentStage}. Falling back to evaluateTransitions.`
+            )
             logger.debug(
               { parseError: briefMetaResult.parseError },
               'BRIEF_META not found — falling back to evaluateTransitions'
@@ -714,6 +717,20 @@ async function handler(request: NextRequest) {
                 briefingState.turnsInCurrentStage = 0
               } else {
                 briefingState.turnsInCurrentStage += 1
+                // Force-advance if stuck in the same stage for too many turns
+                if (briefingState.turnsInCurrentStage >= 3) {
+                  const forceNext = evaluateTransitions(
+                    { ...briefingState, turnsInCurrentStage: 999 },
+                    preAiInference
+                  )
+                  if (forceNext !== briefingState.stage) {
+                    console.warn(
+                      `[chat/route] Force-advancing from ${briefingState.stage} to ${forceNext} after ${briefingState.turnsInCurrentStage} turns`
+                    )
+                    briefingState.stage = forceNext
+                    briefingState.turnsInCurrentStage = 0
+                  }
+                }
               }
             } else {
               briefingState.turnsInCurrentStage += 1

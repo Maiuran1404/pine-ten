@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { PenTool, Ruler, Type, Sparkles } from 'lucide-react'
+import { PenTool, Type, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import type { DesignSpec } from '@/lib/ai/briefing-state-machine'
@@ -82,48 +82,6 @@ function SpecHeader({ format }: { format: string }) {
 }
 
 // =============================================================================
-// DIMENSION CALLOUTS
-// =============================================================================
-
-function DimensionCallouts({ width, height }: { width: number; height: number }) {
-  return (
-    <>
-      {/* Top edge - width callout */}
-      <div className="absolute -top-5 left-0 right-0 flex items-end justify-center">
-        <div className="relative flex items-center w-full px-1">
-          {/* Left cap */}
-          <div className="w-px h-2 bg-slate-400 dark:bg-slate-500" />
-          {/* Line */}
-          <div className="flex-1 h-px bg-slate-400 dark:bg-slate-500" />
-          {/* Label */}
-          <span className="absolute left-1/2 -translate-x-1/2 -top-3 text-[10px] text-muted-foreground font-mono tabular-nums">
-            {width}px
-          </span>
-          {/* Right cap */}
-          <div className="w-px h-2 bg-slate-400 dark:bg-slate-500" />
-        </div>
-      </div>
-
-      {/* Left edge - height callout */}
-      <div className="absolute -left-5 top-0 bottom-0 flex items-center justify-end">
-        <div className="relative flex flex-col items-end h-full py-1">
-          {/* Top cap */}
-          <div className="h-px w-2 bg-slate-400 dark:bg-slate-500" />
-          {/* Line */}
-          <div className="w-px flex-1 bg-slate-400 dark:bg-slate-500" />
-          {/* Label */}
-          <span className="absolute top-1/2 -translate-y-1/2 -left-4 text-[10px] text-muted-foreground font-mono tabular-nums -rotate-90 whitespace-nowrap">
-            {height}px
-          </span>
-          {/* Bottom cap */}
-          <div className="h-px w-2 bg-slate-400 dark:bg-slate-500" />
-        </div>
-      </div>
-    </>
-  )
-}
-
-// =============================================================================
 // ELEMENT PLACEHOLDER — renders appropriate wireframe shape
 // =============================================================================
 
@@ -147,7 +105,7 @@ function ElementPlaceholder({ element, index }: { element: string; index: number
 }
 
 // =============================================================================
-// ARTBOARD PREVIEW (Left Panel)
+// ARTBOARD PREVIEW (stacked, full-width)
 // =============================================================================
 
 function ArtboardPreview({
@@ -160,35 +118,29 @@ function ArtboardPreview({
   const aspectRatio = dimension.width / dimension.height
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="relative pl-10 pt-8">
-        <DimensionCallouts width={dimension.width} height={dimension.height} />
+    <div className="space-y-2">
+      {/* Dimension label */}
+      <p className="text-xs text-muted-foreground text-center font-mono tabular-nums">
+        {dimension.width} x {dimension.height}px ({dimension.label})
+      </p>
 
-        {/* Artboard */}
+      {/* Artboard */}
+      <div className="flex items-center justify-center">
         <div
           className={cn(
             'relative border-dashed border-2 border-slate-300 dark:border-slate-600',
-            'rounded-sm overflow-hidden'
+            'rounded-lg overflow-hidden bg-muted/20 border-border/60'
           )}
           style={{
             aspectRatio: `${dimension.width} / ${dimension.height}`,
             width: aspectRatio >= 1 ? '100%' : 'auto',
             height: aspectRatio < 1 ? '100%' : 'auto',
-            maxWidth: '20rem',
-            maxHeight: '20rem',
-            // Checkerboard background
-            backgroundImage: [
-              'linear-gradient(45deg, hsl(var(--muted) / 0.3) 25%, transparent 25%)',
-              'linear-gradient(-45deg, hsl(var(--muted) / 0.3) 25%, transparent 25%)',
-              'linear-gradient(45deg, transparent 75%, hsl(var(--muted) / 0.3) 75%)',
-              'linear-gradient(-45deg, transparent 75%, hsl(var(--muted) / 0.3) 75%)',
-            ].join(', '),
-            backgroundSize: '16px 16px',
-            backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+            maxWidth: '100%',
+            maxHeight: '24rem',
           }}
         >
           {/* Element placeholders */}
-          <div className="absolute inset-0 flex flex-col items-center justify-between p-3 gap-2">
+          <div className="absolute inset-0 flex flex-col items-center justify-between p-4 gap-2">
             {keyElements.length > 0 ? (
               keyElements.map((el, i) => (
                 <div key={el} className="flex items-center justify-center w-full">
@@ -230,10 +182,9 @@ function DimensionChips({
           onClick={() => onSelect(i)}
           className={cn(
             'px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
-            'border',
             i === activeIndex
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-transparent text-muted-foreground hover:bg-muted'
           )}
         >
           {dim.label} ({dim.width}x{dim.height})
@@ -244,10 +195,10 @@ function DimensionChips({
 }
 
 // =============================================================================
-// PROPERTIES PANEL (Right Panel)
+// PROPERTIES GRID (full-width, 2-col)
 // =============================================================================
 
-function PropertiesPanel({
+function PropertiesGrid({
   keyElements,
   copyGuidance,
 }: {
@@ -255,7 +206,7 @@ function PropertiesPanel({
   copyGuidance: string
 }) {
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Element List */}
       {keyElements.length > 0 && (
         <div className="space-y-2">
@@ -291,14 +242,6 @@ function PropertiesPanel({
           </div>
         </div>
       )}
-
-      {/* Dimensions info */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Dimensions</span>
-        </div>
-      </div>
     </div>
   )
 }
@@ -342,48 +285,38 @@ export function DesignSpecView({ specification, className }: DesignSpecViewProps
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className={cn('space-y-3', className)}
+      className={cn('space-y-4', className)}
     >
       {/* Header */}
       <SpecHeader format={specification.format} />
 
-      {/* Two-panel layout */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Left panel — Artboard */}
+      {/* Stacked layout — full width */}
+      {specification.dimensions.length > 0 && activeDimension && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0 }}
-          className="flex-1 min-w-0"
+          transition={{ duration: 0.25 }}
         >
-          {specification.dimensions.length > 0 && activeDimension && (
-            <>
-              <DimensionChips
-                dimensions={specification.dimensions}
-                activeIndex={activeDimIndex}
-                onSelect={setActiveDimIndex}
-              />
-              <ArtboardPreview
-                dimension={activeDimension}
-                keyElements={specification.keyElements}
-              />
-            </>
-          )}
-        </motion.div>
-
-        {/* Right panel — Properties */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
-          className="sm:w-44 shrink-0"
-        >
-          <PropertiesPanel
-            keyElements={specification.keyElements}
-            copyGuidance={specification.copyGuidance}
+          <DimensionChips
+            dimensions={specification.dimensions}
+            activeIndex={activeDimIndex}
+            onSelect={setActiveDimIndex}
           />
+          <ArtboardPreview dimension={activeDimension} keyElements={specification.keyElements} />
         </motion.div>
-      </div>
+      )}
+
+      {/* Properties below as 2-col grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
+      >
+        <PropertiesGrid
+          keyElements={specification.keyElements}
+          copyGuidance={specification.copyGuidance}
+        />
+      </motion.div>
     </motion.div>
   )
 }

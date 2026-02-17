@@ -187,9 +187,8 @@ export function VideoReferenceGrid({
             <div
               key={video.id}
               className={cn(
-                'relative aspect-video rounded-xl overflow-hidden cursor-pointer transition-all duration-200 group',
-                isHovered && 'scale-105 z-10 shadow-2xl',
-                isHovered && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
+                'relative aspect-video rounded-lg overflow-hidden cursor-pointer transition-all duration-200 group',
+                isHovered && 'shadow-lg ring-1 ring-primary/20'
               )}
               onMouseEnter={() => setHoveredVideoId(video.id)}
               onMouseLeave={() => setHoveredVideoId(null)}
@@ -213,55 +212,30 @@ export function VideoReferenceGrid({
               {/* Play button overlay */}
               <div
                 className={cn(
-                  'absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity',
+                  'absolute inset-0 flex items-center justify-center transition-opacity',
                   isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 )}
               >
-                <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
-                  <Play className="w-7 h-7 text-black fill-black ml-1" />
+                <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-transform">
+                  <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                 </div>
+              </div>
+
+              {/* Permanent name overlay at bottom via gradient */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2.5 pt-6">
+                <p className="text-white text-xs font-medium truncate">{video.name}</p>
               </div>
 
               {/* Duration badge */}
               {video.videoDuration && (
-                <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 rounded text-[10px] text-white font-medium">
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/80 rounded text-[10px] text-white font-medium">
                   {video.videoDuration}
-                </div>
-              )}
-
-              {/* Name overlay on hover */}
-              {isHovered && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
-                  <p className="text-white text-sm font-medium truncate">{video.name}</p>
-                  {video.matchReason && (
-                    <p className="text-white/70 text-xs truncate">{video.matchReason}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Tags - show on hover */}
-              {isHovered && video.videoTags && video.videoTags.length > 0 && (
-                <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[80%]">
-                  {video.videoTags.slice(0, 2).map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="text-[10px] px-1.5 py-0 bg-black/60 text-white border-0"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
                 </div>
               )}
             </div>
           )
         })}
       </div>
-
-      {/* Helper text */}
-      <p className="text-xs text-muted-foreground text-center">
-        Click to preview and select • These videos show the style direction for your project
-      </p>
 
       {/* Video preview modal with select button */}
       {previewVideo && (
