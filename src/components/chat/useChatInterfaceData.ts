@@ -861,6 +861,18 @@ export function useChatInterfaceData({
         syncBriefingFromServer(data.briefingState)
       }
 
+      // Track latest storyboard data
+      let resolvedStructureData: StructureData | undefined = data.structureData ?? undefined
+      if (resolvedStructureData?.type === 'storyboard') {
+        latestStoryboardRef.current = resolvedStructureData
+      }
+
+      // Re-attach storyboard when AI responds to scene feedback without new storyboard
+      const isSceneFeedback = processedContent.startsWith('[Feedback on Scene')
+      if (isSceneFeedback && !resolvedStructureData && latestStoryboardRef.current) {
+        resolvedStructureData = latestStoryboardRef.current
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -873,7 +885,7 @@ export function useChatInterfaceData({
         videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
         quickOptions: data.quickOptions ?? undefined,
-        structureData: data.structureData ?? undefined,
+        structureData: resolvedStructureData,
         strategicReviewData: data.strategicReviewData ?? undefined,
       }
 
