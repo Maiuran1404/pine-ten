@@ -439,6 +439,10 @@ export function ChatInterface({
           isSubmitting={isLoading}
           stateMachineQuickOptions={resolvedQuickOptions}
           onQuickOptionClick={handleSendOption}
+          hasStrategicReviewCTA={(() => {
+            const last = [...messages].reverse().find((m) => m.role === 'assistant')
+            return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
+          })()}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}

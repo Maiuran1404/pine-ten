@@ -651,8 +651,15 @@ async function handler(request: NextRequest) {
             const declaredStage = briefMetaResult.data.stage
             const legal = getLegalTransitions(briefingState.stage)
             if (legal.includes(declaredStage)) {
-              // Legal transition — apply
-              if (declaredStage !== briefingState.stage) {
+              // Guard: Don't auto-advance to STRATEGIC_REVIEW in the same response
+              // that outputs structure data. User should interact with structure first.
+              const blockingAdvance =
+                briefingState.stage === 'STRUCTURE' && declaredStage === 'STRATEGIC_REVIEW'
+
+              if (blockingAdvance) {
+                // Stay in STRUCTURE — the advance will happen on the next user turn
+                briefingState.turnsInCurrentStage += 1
+              } else if (declaredStage !== briefingState.stage) {
                 briefingState.stage = declaredStage
                 briefingState.turnsInCurrentStage = 0
               } else {
@@ -802,11 +809,9 @@ async function handler(request: NextRequest) {
           // 14-15. Auto-advance on structure/review parse
           // ================================================================
 
-          // Auto-advance STRUCTURE -> STRATEGIC_REVIEW when structure data is parsed
-          if (briefingState.stage === 'STRUCTURE' && structureData) {
-            briefingState.stage = 'STRATEGIC_REVIEW'
-            briefingState.turnsInCurrentStage = 0
-          }
+          // NOTE: We intentionally do NOT auto-advance STRUCTURE -> STRATEGIC_REVIEW here.
+          // The structure response should stay in STRUCTURE stage so the user can interact
+          // with the storyboard/layout first. STRATEGIC_REVIEW comes on the next user turn.
 
           // Auto-advance STRATEGIC_REVIEW -> MOODBOARD when review data is parsed
           if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
@@ -843,9 +848,7 @@ async function handler(request: NextRequest) {
               if (retryParsed.success && retryParsed.data) {
                 structureData = retryParsed.data
                 briefingState.structure = retryParsed.data
-                // Auto-advance after successful retry
-                briefingState.stage = 'STRATEGIC_REVIEW'
-                briefingState.turnsInCurrentStage = 0
+                // Stay in STRUCTURE — user should interact with the structure first
               }
             } catch (retryErr) {
               logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')

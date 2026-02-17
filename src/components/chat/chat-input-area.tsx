@@ -75,6 +75,9 @@ export interface ChatInputAreaProps {
   onInsufficientCredits?: () => void
   isSubmitting?: boolean
 
+  // When true, a strategic review card with its own CTA is showing — hide quick option chips
+  hasStrategicReviewCTA?: boolean
+
   // Scene reference
   sceneReference?: { sceneNumber: number; title: string } | null
   onRemoveSceneReference?: () => void
@@ -118,6 +121,7 @@ export function ChatInputArea({
   isSubmitting = false,
   stateMachineQuickOptions,
   onQuickOptionClick,
+  hasStrategicReviewCTA = false,
   sceneReference,
   onRemoveSceneReference,
   handleSend,
@@ -148,7 +152,8 @@ export function ChatInputArea({
           stateMachineQuickOptions.options.length > 0 &&
           onQuickOptionClick &&
           !isLoading &&
-          !input.trim() && (
+          !input.trim() &&
+          !hasStrategicReviewCTA && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
