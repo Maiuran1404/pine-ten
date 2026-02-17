@@ -116,7 +116,7 @@ RULES:
 - One question at a time unless grouping makes sense.
 - Never repeat what the user already told you.
 - Match the user's energy and vocabulary level.
-- DO NOT generate [QUICK_OPTIONS]. They are handled by the system.`
+- ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.`
 
 // =============================================================================
 // CURRENT STATE
