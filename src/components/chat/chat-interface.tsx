@@ -170,6 +170,7 @@ export function ChatInterface({
     // Progress
     progressState,
     briefingStage,
+    deliverableCategory,
 
     // Files
     uploadedFiles,
@@ -198,6 +199,11 @@ export function ChatInterface({
 
     // Quick options
     resolvedQuickOptions,
+
+    // Scene reference
+    sceneReference,
+    setSceneReference,
+    handleSceneClick,
 
     // Handlers
     handleSend,
@@ -262,6 +268,7 @@ export function ChatInterface({
       showProgress={false}
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
+      deliverableCategory={deliverableCategory}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div
@@ -390,6 +397,7 @@ export function ChatInterface({
           handleRequestTaskSummary={handleRequestTaskSummary}
           handleEditLastMessage={handleEditLastMessage}
           briefingStage={briefingStage}
+          onSceneClick={handleSceneClick}
         />
 
         {/* Input area / Submit action bar */}
@@ -422,6 +430,8 @@ export function ChatInterface({
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}
           removeFile={removeFile}
+          sceneReference={sceneReference}
+          onRemoveSceneReference={() => setSceneReference(null)}
         />
 
         {/* Submission success celebration overlay */}

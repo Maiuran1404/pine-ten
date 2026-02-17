@@ -26,6 +26,7 @@ import {
   type DeliverableStyle,
   type TaskProposal,
   type ChatMessage as Message,
+  type SceneReference,
 } from './types'
 import type { VideoReferenceStyle } from './video-reference-grid'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
@@ -94,6 +95,7 @@ export function useChatInterfaceData({
   const [taskSubmitted, setTaskSubmitted] = useState(false)
   const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false)
   const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
+  const [sceneReference, setSceneReference] = useState<SceneReference | null>(null)
   const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -802,11 +804,15 @@ export function useChatInterfaceData({
     if (!input.trim() && uploadedFiles.length === 0) return
 
     const currentFiles = [...uploadedFiles]
-    const processedContent = input
+    const rawContent = input
       ? autoCapitalizeI(input)
       : currentFiles.length > 0
         ? `Attached ${currentFiles.length} file(s)`
         : ''
+    // Prefix with scene reference context if one is attached
+    const processedContent = sceneReference
+      ? `[Feedback on Scene ${sceneReference.sceneNumber}: ${sceneReference.title}] ${rawContent}`
+      : rawContent
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -818,6 +824,7 @@ export function useChatInterfaceData({
     setMessages((prev) => [...prev, userMessage])
     setInput('')
     setUploadedFiles([])
+    setSceneReference(null)
     setIsLoading(true)
     requestStartTimeRef.current = Date.now()
 
@@ -887,6 +894,7 @@ export function useChatInterfaceData({
     processBriefMessage,
     serializedBriefingState,
     syncBriefingFromServer,
+    sceneReference,
   ])
 
   // Send a specific message (for clickable options)
@@ -1294,6 +1302,20 @@ export function useChatInterfaceData({
     setShowManualSubmit(false)
     inputRef.current?.focus()
   }, [messages])
+
+  // Handle clicking a storyboard scene to reference it in chat
+  const handleSceneClick = useCallback(
+    (scene: { sceneNumber: number; title: string; description: string; visualNote: string }) => {
+      setSceneReference({
+        sceneNumber: scene.sceneNumber,
+        title: scene.title,
+        description: scene.description,
+        visualNote: scene.visualNote,
+      })
+      inputRef.current?.focus()
+    },
+    []
+  )
 
   const lastUserMessageIndex = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -1705,6 +1727,7 @@ export function useChatInterfaceData({
     // Progress
     progressState,
     briefingStage: _briefingState?.stage ?? null,
+    deliverableCategory: _briefingState?.deliverableCategory ?? null,
 
     // Files
     uploadedFiles,
@@ -1733,6 +1756,11 @@ export function useChatInterfaceData({
 
     // Quick options
     resolvedQuickOptions,
+
+    // Scene reference
+    sceneReference,
+    setSceneReference,
+    handleSceneClick,
 
     // Handlers
     handleSend,

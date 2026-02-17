@@ -9,6 +9,8 @@ import {
   Paperclip,
   FileIcon,
   XCircle,
+  X,
+  Film,
   Sparkles,
   Share2,
   Megaphone,
@@ -73,6 +75,10 @@ export interface ChatInputAreaProps {
   onInsufficientCredits?: () => void
   isSubmitting?: boolean
 
+  // Scene reference
+  sceneReference?: { sceneNumber: number; title: string } | null
+  onRemoveSceneReference?: () => void
+
   // Handlers
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -112,6 +118,8 @@ export function ChatInputArea({
   isSubmitting = false,
   stateMachineQuickOptions,
   onQuickOptionClick,
+  sceneReference,
+  onRemoveSceneReference,
   handleSend,
   handleFileUpload,
   handleRequestTaskSummary,
@@ -161,6 +169,27 @@ export function ChatInputArea({
             </motion.div>
           )}
       </AnimatePresence>
+
+      {/* Scene reference chip */}
+      {sceneReference && (
+        <div className="mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/40 text-sm">
+            <Film className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+              Scene {sceneReference.sceneNumber}: {sceneReference.title}
+            </span>
+            {onRemoveSceneReference && (
+              <button
+                type="button"
+                onClick={onRemoveSceneReference}
+                className="ml-1 text-emerald-400 hover:text-emerald-600 dark:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Pending uploads preview */}
       {uploadedFiles.length > 0 && (

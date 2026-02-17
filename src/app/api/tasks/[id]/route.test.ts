@@ -67,6 +67,28 @@ vi.mock('@/db/schema', () => ({
     taskId: 'taskId',
   },
   companies: { id: 'id' },
+  briefs: {
+    id: 'id',
+    status: 'status',
+    completionPercentage: 'completionPercentage',
+    taskSummary: 'taskSummary',
+    topic: 'topic',
+    platform: 'platform',
+    contentType: 'contentType',
+    intent: 'intent',
+    taskType: 'taskType',
+    audience: 'audience',
+    dimensions: 'dimensions',
+    visualDirection: 'visualDirection',
+    contentOutline: 'contentOutline',
+    brandContext: 'brandContext',
+    draftId: 'draftId',
+    taskId: 'taskId',
+  },
+  chatDrafts: {
+    id: 'id',
+    briefingState: 'briefingState',
+  },
   taskActivityLog: {
     id: 'id',
     action: 'action',
@@ -218,7 +240,16 @@ function setupTaskFound(
     })
   }
 
-  // 8th select: previous deliverables (only if previousWork has items)
+  // 8th select: brief data (always runs, after conditional brand/previousWork)
+  mockSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([]),
+      }),
+    }),
+  })
+
+  // 9th select: previous deliverables (only if previousWork has items)
   if (previousWork.length > 0) {
     mockSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({

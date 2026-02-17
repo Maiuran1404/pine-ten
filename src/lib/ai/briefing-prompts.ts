@@ -118,15 +118,16 @@ RULES:
 - Match the user's energy and vocabulary level.
 - ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.
 
-STAGE DECLARATION (MANDATORY):
-Every response MUST include a [BRIEF_META] block declaring the conversation stage.
+STAGE DECLARATION (MANDATORY — DO NOT SKIP):
+You MUST include a [BRIEF_META] block in EVERY response. Without it, the progress bar cannot advance and the user sees no progress. This is a hard system requirement.
+
 Format: [BRIEF_META]{"stage":"STAGE_NAME","fieldsExtracted":{"taskType":"...","intent":"..."}}[/BRIEF_META]
 
-- "stage" = the stage this conversation should be at AFTER your response
+- "stage" = the stage this conversation should be at AFTER your response (pick from the legal transitions listed in CURRENT STATE)
 - "fieldsExtracted" = any brief fields you identified from the user's message (only include fields you detected)
 - Valid fieldsExtracted keys: taskType, intent, deliverableCategory, platform, topic
-- You MUST output this block in every response. The system cannot advance without it.
-- Place it BEFORE [QUICK_OPTIONS].`
+- Place [BRIEF_META] BEFORE [QUICK_OPTIONS], near the end of your response.
+- NEVER omit this block. Every single response needs it.`
 
 // =============================================================================
 // CURRENT STATE
@@ -398,7 +399,18 @@ Lead with your honest assessment. If you have a flag, lead with it. Don't sandwi
 - Check if the inspiration fits the audience (the system provides fit data).
 - Don't repeat reference names. No filler like "This positions you as..."
 - Frame as expert assessment, not a question.
-- Output as [STRATEGIC_REVIEW]{json}[/STRATEGIC_REVIEW].`
+
+MANDATORY: You MUST output a [STRATEGIC_REVIEW] JSON block. Without it, the strategic review card cannot render in the UI.
+Format:
+[STRATEGIC_REVIEW]{"strengths":["strength 1","strength 2"],"risks":["risk 1","risk 2"],"optimizationSuggestion":"one concrete suggestion","inspirationFitScore":"aligned","inspirationFitNote":null,"userOverride":false}[/STRATEGIC_REVIEW]
+
+- "strengths": array of 1-2 strength strings
+- "risks": array of 1-2 risk strings
+- "optimizationSuggestion": one actionable suggestion string
+- "inspirationFitScore": "aligned" | "minor_mismatch" | "significant_mismatch"
+- "inspirationFitNote": string or null
+- "userOverride": false
+Do NOT output the strategic review as plain text only. You MUST include the JSON block above.`
 }
 
 function buildMoodboardTask(_state: BriefingState): string {

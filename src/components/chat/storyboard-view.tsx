@@ -14,6 +14,7 @@ import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 interface StoryboardViewProps {
   scenes: StoryboardScene[]
   className?: string
+  onSceneClick?: (scene: StoryboardScene) => void
 }
 
 // =============================================================================
@@ -156,18 +157,35 @@ function SceneCard({
   scene,
   isFirst,
   timestamp,
+  onClick,
 }: {
   scene: StoryboardScene
   isFirst: boolean
   timestamp: { start: string; end: string }
+  onClick?: () => void
 }) {
   return (
     <div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
       className={cn(
-        'rounded-lg border overflow-hidden transition-colors',
+        'rounded-lg border overflow-hidden transition-all',
         isFirst
           ? 'border-amber-400 shadow-sm shadow-amber-200/20 dark:shadow-amber-900/20'
-          : 'border-border/60'
+          : 'border-border/60',
+        onClick &&
+          'cursor-pointer hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-200/20 dark:hover:shadow-emerald-900/20 group/scene'
       )}
     >
       {/* 16:9 Thumbnail */}
@@ -219,6 +237,13 @@ function SceneCard({
             <span className="text-xs text-primary">Reference video linked</span>
           </div>
         )}
+
+        {/* Click hint */}
+        {onClick && (
+          <div className="mt-2 opacity-0 group-hover/scene:opacity-100 transition-opacity text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+            Click to give feedback
+          </div>
+        )}
       </div>
     </div>
   )
@@ -241,7 +266,7 @@ function StoryboardEmpty() {
 // MAIN COMPONENT
 // =============================================================================
 
-export function StoryboardView({ scenes, className }: StoryboardViewProps) {
+export function StoryboardView({ scenes, className, onSceneClick }: StoryboardViewProps) {
   if (scenes.length === 0) {
     return <StoryboardEmpty />
   }
@@ -293,7 +318,7 @@ export function StoryboardView({ scenes, className }: StoryboardViewProps) {
 
       {/* Scene Grid */}
       <div className="p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {scenes.map((scene, index) => (
             <motion.div
               key={scene.sceneNumber}
@@ -301,7 +326,12 @@ export function StoryboardView({ scenes, className }: StoryboardViewProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.05 }}
             >
-              <SceneCard scene={scene} isFirst={index === 0} timestamp={timestampRanges[index]} />
+              <SceneCard
+                scene={scene}
+                isFirst={index === 0}
+                timestamp={timestampRanges[index]}
+                onClick={onSceneClick ? () => onSceneClick(scene) : undefined}
+              />
             </motion.div>
           ))}
         </div>

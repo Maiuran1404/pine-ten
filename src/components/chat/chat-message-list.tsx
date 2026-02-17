@@ -285,6 +285,14 @@ export interface ChatMessageListProps {
 
   // Briefing stage (used to gate legacy CTAs)
   briefingStage?: string | null
+
+  // Scene click handler for storyboard interactivity
+  onSceneClick?: (scene: {
+    sceneNumber: number
+    title: string
+    description: string
+    visualNote: string
+  }) => void
 }
 
 // =============================================================================
@@ -329,6 +337,7 @@ export function ChatMessageList({
   handleEditLastMessage,
   onStrategicReviewAction,
   briefingStage,
+  onSceneClick,
 }: ChatMessageListProps) {
   return (
     <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
@@ -596,7 +605,10 @@ export function ChatMessageList({
                               className="mt-4"
                             >
                               {message.structureData.type === 'storyboard' && (
-                                <StoryboardView scenes={message.structureData.scenes} />
+                                <StoryboardView
+                                  scenes={message.structureData.scenes}
+                                  onSceneClick={onSceneClick}
+                                />
                               )}
                               {message.structureData.type === 'layout' && (
                                 <LayoutPreview sections={message.structureData.sections} />

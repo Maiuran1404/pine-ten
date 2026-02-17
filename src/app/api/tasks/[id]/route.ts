@@ -8,6 +8,8 @@ import {
   taskMessages,
   companies,
   taskActivityLog,
+  briefs,
+  chatDrafts,
 } from '@/db/schema'
 import { eq, desc, and, ne } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
@@ -88,70 +90,93 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const companyId = clientInfo[0]?.companyId
 
-    // Fetch files, messages, activity log, and optionally brand info in parallel
-    const [files, messages, activityLog, brandResult, previousWorkResult] = await Promise.all([
-      db
-        .select()
-        .from(taskFiles)
-        .where(eq(taskFiles.taskId, id))
-        .orderBy(desc(taskFiles.createdAt)),
-      db
-        .select({
-          id: taskMessages.id,
-          content: taskMessages.content,
-          attachments: taskMessages.attachments,
-          createdAt: taskMessages.createdAt,
-          senderId: taskMessages.senderId,
-          senderName: users.name,
-          senderImage: users.image,
-        })
-        .from(taskMessages)
-        .leftJoin(users, eq(taskMessages.senderId, users.id))
-        .where(eq(taskMessages.taskId, id))
-        .orderBy(taskMessages.createdAt),
-      // Fetch activity log for timeline
-      db
-        .select({
-          id: taskActivityLog.id,
-          action: taskActivityLog.action,
-          actorType: taskActivityLog.actorType,
-          actorId: taskActivityLog.actorId,
-          previousStatus: taskActivityLog.previousStatus,
-          newStatus: taskActivityLog.newStatus,
-          metadata: taskActivityLog.metadata,
-          createdAt: taskActivityLog.createdAt,
-        })
-        .from(taskActivityLog)
-        .where(eq(taskActivityLog.taskId, id))
-        .orderBy(taskActivityLog.createdAt),
-      // Fetch company/brand info if companyId exists
-      companyId
-        ? db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
-        : Promise.resolve([]),
-      // Fetch previous completed work for this company (tasks with deliverables)
-      companyId
-        ? db
-            .select({
-              taskId: tasks.id,
-              taskTitle: tasks.title,
-              taskStatus: tasks.status,
-              completedAt: tasks.completedAt,
-              categoryName: taskCategories.name,
-            })
-            .from(tasks)
-            .leftJoin(users, eq(tasks.clientId, users.id))
-            .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-            .where(
-              and(
-                eq(users.companyId, companyId),
-                eq(tasks.status, 'COMPLETED'),
-                ne(tasks.id, id) // Exclude current task
+    // Fetch files, messages, activity log, brief, and optionally brand info in parallel
+    const [files, messages, activityLog, brandResult, previousWorkResult, briefResult] =
+      await Promise.all([
+        db
+          .select()
+          .from(taskFiles)
+          .where(eq(taskFiles.taskId, id))
+          .orderBy(desc(taskFiles.createdAt)),
+        db
+          .select({
+            id: taskMessages.id,
+            content: taskMessages.content,
+            attachments: taskMessages.attachments,
+            createdAt: taskMessages.createdAt,
+            senderId: taskMessages.senderId,
+            senderName: users.name,
+            senderImage: users.image,
+          })
+          .from(taskMessages)
+          .leftJoin(users, eq(taskMessages.senderId, users.id))
+          .where(eq(taskMessages.taskId, id))
+          .orderBy(taskMessages.createdAt),
+        // Fetch activity log for timeline
+        db
+          .select({
+            id: taskActivityLog.id,
+            action: taskActivityLog.action,
+            actorType: taskActivityLog.actorType,
+            actorId: taskActivityLog.actorId,
+            previousStatus: taskActivityLog.previousStatus,
+            newStatus: taskActivityLog.newStatus,
+            metadata: taskActivityLog.metadata,
+            createdAt: taskActivityLog.createdAt,
+          })
+          .from(taskActivityLog)
+          .where(eq(taskActivityLog.taskId, id))
+          .orderBy(taskActivityLog.createdAt),
+        // Fetch company/brand info if companyId exists
+        companyId
+          ? db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
+          : Promise.resolve([]),
+        // Fetch previous completed work for this company (tasks with deliverables)
+        companyId
+          ? db
+              .select({
+                taskId: tasks.id,
+                taskTitle: tasks.title,
+                taskStatus: tasks.status,
+                completedAt: tasks.completedAt,
+                categoryName: taskCategories.name,
+              })
+              .from(tasks)
+              .leftJoin(users, eq(tasks.clientId, users.id))
+              .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+              .where(
+                and(
+                  eq(users.companyId, companyId),
+                  eq(tasks.status, 'COMPLETED'),
+                  ne(tasks.id, id) // Exclude current task
+                )
               )
-            )
-            .orderBy(desc(tasks.completedAt))
-            .limit(20)
-        : Promise.resolve([]),
-    ])
+              .orderBy(desc(tasks.completedAt))
+              .limit(20)
+          : Promise.resolve([]),
+        // Fetch brief data linked to this task
+        db
+          .select({
+            id: briefs.id,
+            status: briefs.status,
+            completionPercentage: briefs.completionPercentage,
+            taskSummary: briefs.taskSummary,
+            topic: briefs.topic,
+            platform: briefs.platform,
+            contentType: briefs.contentType,
+            intent: briefs.intent,
+            taskType: briefs.taskType,
+            audience: briefs.audience,
+            dimensions: briefs.dimensions,
+            visualDirection: briefs.visualDirection,
+            contentOutline: briefs.contentOutline,
+            brandContext: briefs.brandContext,
+            draftId: briefs.draftId,
+          })
+          .from(briefs)
+          .where(eq(briefs.taskId, id))
+          .limit(1),
+      ])
 
     // Get deliverable files for previous work
     const previousTaskIds = previousWorkResult.map((t) => t.taskId)
@@ -211,6 +236,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       : null
 
+    // Build brief data object
+    const briefData = briefResult[0]
+      ? {
+          id: briefResult[0].id,
+          status: briefResult[0].status,
+          completionPercentage: briefResult[0].completionPercentage,
+          taskSummary: briefResult[0].taskSummary,
+          topic: briefResult[0].topic,
+          platform: briefResult[0].platform,
+          contentType: briefResult[0].contentType,
+          intent: briefResult[0].intent,
+          taskType: briefResult[0].taskType,
+          audience: briefResult[0].audience,
+          dimensions: briefResult[0].dimensions,
+          visualDirection: briefResult[0].visualDirection,
+          contentOutline: briefResult[0].contentOutline,
+          brandContext: briefResult[0].brandContext,
+        }
+      : null
+
+    // Fetch briefingState from the linked chatDraft (contains structure, strategic review, etc.)
+    const briefingStateDraftId = briefResult[0]?.draftId
+    const briefingStateResult = briefingStateDraftId
+      ? await db
+          .select({ briefingState: chatDrafts.briefingState })
+          .from(chatDrafts)
+          .where(eq(chatDrafts.id, briefingStateDraftId))
+          .limit(1)
+      : null
+    const briefingState = briefingStateResult?.[0]?.briefingState ?? null
+
     // Construct category object if it exists
     const category = taskRow.categoryDbId
       ? {
@@ -256,6 +312,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         files,
         messages,
         brandDNA,
+        briefData,
+        briefingState,
         previousWork,
         activityLog,
       },

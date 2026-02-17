@@ -59,6 +59,7 @@ import {
   parseStrategicReview,
   parseBriefMeta,
   getFormatReinforcement,
+  getStrategicReviewReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
 import type { InferredAudience } from '@/components/onboarding/types'
@@ -528,12 +529,18 @@ async function handler(request: NextRequest) {
         }
 
         // If no styles were found, clear the marker so UI doesn't show empty style grid
+        // BUT preserve the marker for video types — video references need it downstream
         if (!deliverableStyles || deliverableStyles.length === 0) {
-          logger.debug(
-            { deliverableType: deliverableStyleMarker?.deliverableType },
-            'No styles found for deliverable type - clearing marker'
-          )
-          deliverableStyleMarker = undefined
+          const markerIsVideoType =
+            deliverableStyleMarker &&
+            isVideoDeliverableType(normalizeDeliverableType(deliverableStyleMarker.deliverableType))
+          if (!markerIsVideoType) {
+            logger.debug(
+              { deliverableType: deliverableStyleMarker?.deliverableType },
+              'No styles found for deliverable type - clearing marker'
+            )
+            deliverableStyleMarker = undefined
+          }
           deliverableStyles = undefined
         }
       }
@@ -814,6 +821,50 @@ async function handler(request: NextRequest) {
               }
             } catch (retryErr) {
               logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')
+            }
+          }
+
+          // ================================================================
+          // 16b. Strategic review retry with format reinforcement (single attempt)
+          // ================================================================
+          if (
+            briefingState.stage === 'STRATEGIC_REVIEW' &&
+            !strategicReviewData &&
+            briefingState.turnsInCurrentStage === 0
+          ) {
+            // Check if the AI wrote strategic assessment text without the marker
+            const hasReviewText =
+              response.content.includes('strategic') ||
+              response.content.includes('assessment') ||
+              response.content.includes('strengths') ||
+              response.content.includes('risks')
+            if (hasReviewText) {
+              logger.debug(
+                'Strategic review text found but no marker — retrying with format reinforcement'
+              )
+              try {
+                const reinforcement = getStrategicReviewReinforcement()
+                const retryResponse = await chat(
+                  [
+                    ...messages,
+                    { role: 'assistant', content: response.content },
+                    { role: 'user', content: reinforcement },
+                  ],
+                  session.user.id,
+                  chatContext,
+                  stateMachineOverride
+                )
+                const retryParsed = parseStrategicReview(retryResponse.content)
+                if (retryParsed.success && retryParsed.data) {
+                  strategicReviewData = retryParsed.data
+                  briefingState.strategicReview = retryParsed.data
+                  // Auto-advance after successful retry
+                  briefingState.stage = 'MOODBOARD'
+                  briefingState.turnsInCurrentStage = 0
+                }
+              } catch (retryErr) {
+                logger.warn({ err: retryErr }, 'Strategic review format reinforcement retry failed')
+              }
             }
           }
 

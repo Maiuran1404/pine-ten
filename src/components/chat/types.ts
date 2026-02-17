@@ -121,6 +121,16 @@ export interface ChatMessage {
   strategicReviewData?: StrategicReviewData // Strategic review card data
 }
 
+/**
+ * Scene reference for feedback on a specific storyboard scene
+ */
+export interface SceneReference {
+  sceneNumber: number
+  title: string
+  description: string
+  visualNote: string
+}
+
 // Re-export structure types from state machine for convenience
 export type { StructureData, StrategicReviewData } from '@/lib/ai/briefing-state-machine'
 

@@ -32,6 +32,8 @@ interface ChatLayoutProps {
   // Submission props
   onRequestSubmit?: () => void
   isReadyForDesigner?: boolean
+  // Deliverable category (used to hide irrelevant sections)
+  deliverableCategory?: string | null
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -53,6 +55,7 @@ export function ChatLayout({
   briefCompletion = 0,
   onRequestSubmit,
   isReadyForDesigner,
+  deliverableCategory,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -103,6 +106,7 @@ export function ChatLayout({
                       onClearMoodboard={onClearMoodboard}
                       onRequestSubmit={onRequestSubmit}
                       isReadyForDesigner={isReadyForDesigner}
+                      deliverableCategory={deliverableCategory}
                     />
                   </div>
                 </SheetContent>
@@ -177,6 +181,7 @@ export function ChatLayout({
                     onClearMoodboard={onClearMoodboard}
                     onRequestSubmit={onRequestSubmit}
                     isReadyForDesigner={isReadyForDesigner}
+                    deliverableCategory={deliverableCategory}
                   />
                 </div>
               </motion.div>

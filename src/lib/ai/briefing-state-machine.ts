@@ -355,7 +355,10 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'STRATEGIC_REVIEW': {
-      // Advances via dispatch STAGE_RESPONSE — not automatic
+      // Advance to MOODBOARD if strategic review data exists, or after 2 turns
+      if (state.strategicReview !== null || state.turnsInCurrentStage >= 2) {
+        return 'MOODBOARD'
+      }
       return 'STRATEGIC_REVIEW'
     }
 
@@ -365,9 +368,10 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'REVIEW': {
-      // DEEPEN only entered via explicit "Go deeper first"
-      // SUBMIT requires explicit confirmation
-      // Both handled by dispatch — stays at REVIEW
+      // Advance to SUBMIT after 2+ turns (user has reviewed and responded)
+      if (state.turnsInCurrentStage >= 2) {
+        return 'SUBMIT'
+      }
       return 'REVIEW'
     }
 

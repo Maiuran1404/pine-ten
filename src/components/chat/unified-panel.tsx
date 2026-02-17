@@ -40,6 +40,7 @@ interface UnifiedPanelProps {
   onClearMoodboard?: () => void
   onRequestSubmit?: () => void
   isReadyForDesigner?: boolean
+  deliverableCategory?: string | null
   className?: string
 }
 
@@ -59,10 +60,16 @@ interface SectionConfig {
 function getSectionsForStage(
   currentStage: ChatStage,
   brief: LiveBrief | null,
-  moodboardItems: MoodboardItem[]
+  moodboardItems: MoodboardItem[],
+  deliverableCategory?: string | null
 ): SectionConfig[] {
   const moodboardCount = moodboardItems.length
   const outlineCount = brief?.contentOutline?.totalItems || 0
+  // Only show Content Plan for content/calendar deliverables or multi-asset plans
+  const showOutline =
+    !deliverableCategory ||
+    deliverableCategory === 'content' ||
+    brief?.taskType.value === 'multi_asset_plan'
   const visualCount =
     (brief?.visualDirection?.selectedStyles.length || 0) +
     (brief?.visualDirection?.colorPalette.length || 0) +
@@ -99,12 +106,16 @@ function getSectionsForStage(
           defaultOpen: false,
           itemCount: visualCount || undefined,
         },
-        {
-          key: 'outline',
-          label: 'Content Plan',
-          defaultOpen: true,
-          itemCount: outlineCount || undefined,
-        },
+        ...(showOutline
+          ? [
+              {
+                key: 'outline' as SectionKey,
+                label: 'Content Plan',
+                defaultOpen: true,
+                itemCount: outlineCount || undefined,
+              },
+            ]
+          : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
 
@@ -118,12 +129,16 @@ function getSectionsForStage(
           defaultOpen: true,
           itemCount: visualCount || undefined,
         },
-        {
-          key: 'outline',
-          label: 'Content Plan',
-          defaultOpen: false,
-          itemCount: outlineCount || undefined,
-        },
+        ...(showOutline
+          ? [
+              {
+                key: 'outline' as SectionKey,
+                label: 'Content Plan',
+                defaultOpen: false,
+                itemCount: outlineCount || undefined,
+              },
+            ]
+          : []),
       ]
 
     case 'review':
@@ -136,12 +151,16 @@ function getSectionsForStage(
           defaultOpen: false,
           itemCount: visualCount || undefined,
         },
-        {
-          key: 'outline',
-          label: 'Content Plan',
-          defaultOpen: true,
-          itemCount: outlineCount || undefined,
-        },
+        ...(showOutline
+          ? [
+              {
+                key: 'outline' as SectionKey,
+                label: 'Content Plan',
+                defaultOpen: true,
+                itemCount: outlineCount || undefined,
+              },
+            ]
+          : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
 
@@ -154,12 +173,16 @@ function getSectionsForStage(
           defaultOpen: true,
           itemCount: visualCount || undefined,
         },
-        {
-          key: 'outline',
-          label: 'Content Plan',
-          defaultOpen: false,
-          itemCount: outlineCount || undefined,
-        },
+        ...(showOutline
+          ? [
+              {
+                key: 'outline' as SectionKey,
+                label: 'Content Plan',
+                defaultOpen: false,
+                itemCount: outlineCount || undefined,
+              },
+            ]
+          : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
 
@@ -359,6 +382,7 @@ export function UnifiedPanel({
   onRemoveMoodboardItem,
   onRequestSubmit,
   isReadyForDesigner,
+  deliverableCategory,
   className,
 }: UnifiedPanelProps) {
   // Track user-toggled open/close state per section
@@ -373,8 +397,8 @@ export function UnifiedPanel({
   const [seenSections, setSeenSections] = useState<Set<SectionKey>>(new Set(['brief']))
 
   const sections = useMemo(
-    () => getSectionsForStage(currentStage, brief, moodboardItems),
-    [currentStage, brief, moodboardItems]
+    () => getSectionsForStage(currentStage, brief, moodboardItems, deliverableCategory),
+    [currentStage, brief, moodboardItems, deliverableCategory]
   )
 
   // Update seen sections when new ones appear
