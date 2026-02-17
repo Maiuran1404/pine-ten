@@ -9,6 +9,12 @@ tools:
   - Glob
   - Grep
   - Bash
+capabilities:
+  - DRY extraction (shared utilities, hooks, components)
+  - Shared validation schema consolidation
+  - API route pattern standardization
+  - Component decomposition and co-location
+  - Behavior-preserving code restructuring
 ---
 
 # Refactor Agent

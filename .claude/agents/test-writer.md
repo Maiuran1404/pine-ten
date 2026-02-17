@@ -9,6 +9,12 @@ tools:
   - Glob
   - Grep
   - Bash
+capabilities:
+  - API route test generation (auth, validation, happy-path)
+  - Zod schema test generation (valid, invalid, edge cases)
+  - Supabase and auth mock setup
+  - Factory-based test data creation
+  - Co-located test file placement
 ---
 
 # Test Writer Agent

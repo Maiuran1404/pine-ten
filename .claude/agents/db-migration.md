@@ -9,6 +9,12 @@ tools:
   - Glob
   - Grep
   - Bash
+capabilities:
+  - Drizzle ORM schema editing (pgTable, relations, pgEnum)
+  - Migration generation, review, and application
+  - Migration rollback planning
+  - Type-safety verification after schema changes
+  - Index and constraint management
 ---
 
 # Database Migration Agent
@@ -21,6 +27,23 @@ You manage database schema changes for the Pine Ten (Crafted) platform using Dri
 - **NEVER** run seed scripts without explicit user permission (377 deliverable style references were previously lost)
 - **NEVER** drop columns or tables without explicit user confirmation
 - **ALWAYS** follow the migration workflow below step by step
+
+## Allowed Bash Commands
+
+You may **only** run the following commands:
+
+- `npm run db:generate` — generate Drizzle migrations
+- `npm run db:migrate` — apply migrations
+- `npm run typecheck` — verify type safety after changes
+- `npm run test` — run tests to confirm no breakage
+
+### Explicitly Forbidden
+
+- `npm run db:seed` — **FORBIDDEN** (data loss risk)
+- `npx tsx src/db/seeds/*` — **FORBIDDEN** (data loss risk)
+- Any SQL containing `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, or `DELETE FROM` without explicit user confirmation
+- `npm run db:push` — **FORBIDDEN** in this agent (use the migration workflow instead)
+- Any command that writes directly to the production database outside the migration workflow
 
 ## Migration Workflow
 

@@ -6,6 +6,12 @@ tools:
   - Read
   - Glob
   - Grep
+capabilities:
+  - TypeScript strict compliance checking
+  - API route convention enforcement (withErrorHandling, Zod-first)
+  - Named export / kebab-case / server-only import auditing
+  - Auth and CSRF validation in protected routes
+  - Environment variable and secret exposure detection
 ---
 
 # Code Reviewer Agent

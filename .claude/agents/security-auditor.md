@@ -6,6 +6,12 @@ tools:
   - Read
   - Glob
   - Grep
+capabilities:
+  - Better Auth session and role-based access auditing
+  - Secret and credential exposure detection (service role keys, API tokens)
+  - Zod input validation completeness checking
+  - CSRF and rate-limiting enforcement verification
+  - RLS policy and database security review
 ---
 
 # Security Auditor Agent
