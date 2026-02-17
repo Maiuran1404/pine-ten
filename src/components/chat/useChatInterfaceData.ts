@@ -629,6 +629,42 @@ export function useChatInterfaceData({
     }
   }, [messages, pendingTask, hasRequestedTaskSummary])
 
+  // Auto-construct task proposal when briefing reaches SUBMIT stage
+  // The AI is instructed to output [TASK_READY] but doesn't reliably do so.
+  // When the stage transitions to SUBMIT and no taskProposal came from the API,
+  // deterministically build one from the conversation (same as "You decide & submit").
+  const prevBriefingStageRef = useRef<string | null>(null)
+  useEffect(() => {
+    const currentStage = _briefingState?.stage ?? null
+    const prevStage = prevBriefingStageRef.current
+    prevBriefingStageRef.current = currentStage
+
+    if (
+      currentStage === 'SUBMIT' &&
+      prevStage !== 'SUBMIT' &&
+      !pendingTask &&
+      !isLoading &&
+      messages.length > 0
+    ) {
+      const constructedTask = constructTaskFromConversation(messages)
+      setPendingTask(constructedTask)
+
+      // Add the task proposal to the last assistant message so it renders inline
+      setMessages((prev) => {
+        const updated = [...prev]
+        const lastIdx = updated.length - 1
+        if (
+          lastIdx >= 0 &&
+          updated[lastIdx].role === 'assistant' &&
+          !updated[lastIdx].taskProposal
+        ) {
+          updated[lastIdx] = { ...updated[lastIdx], taskProposal: constructedTask }
+        }
+        return updated
+      })
+    }
+  }, [_briefingState?.stage, pendingTask, isLoading, messages])
+
   // Scroll to bottom helper
   const scrollToBottom = useRef((smooth = false) => {
     if (scrollAreaRef.current) {
