@@ -31,6 +31,7 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   style: 'Choose your visual style',
   details: 'Refine your requirements',
   strategic_review: 'Strategic review',
+  moodboard: 'Refine your moodboard',
   review: 'Review your request',
   deepen: 'Deepen your brief',
   submit: 'Submit for creation',
@@ -45,8 +46,8 @@ export const BRIEFING_CHAT_STAGES: ChatStage[] = [
   'style',
   'details',
   'strategic_review',
+  'moodboard',
   'review',
-  'deepen',
   'submit',
 ]
 
@@ -62,16 +63,16 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
     case 'INTENT':
       return 'brief'
     case 'INSPIRATION':
-    case 'MOODBOARD':
       return 'style'
     case 'STRUCTURE':
       return 'details'
     case 'STRATEGIC_REVIEW':
       return 'strategic_review'
+    case 'MOODBOARD':
+      return 'moodboard'
     case 'REVIEW':
-      return 'review'
     case 'DEEPEN':
-      return 'deepen'
+      return 'review'
     case 'SUBMIT':
       return 'submit'
     default:
@@ -186,12 +187,13 @@ function calculateProgressPercentage(
   moodboardItemCount: number
 ): number {
   const stageWeights: Record<ChatStage, number> = {
-    brief: 15,
-    style: 20,
-    details: 30,
-    strategic_review: 0, // Only used in state machine path
+    brief: 10,
+    style: 15,
+    details: 20,
+    strategic_review: 10,
+    moodboard: 10,
     review: 20,
-    deepen: 0, // Only used in state machine path
+    deepen: 0, // DEEPEN maps to 'review' in state machine path
     submit: 15,
   }
 

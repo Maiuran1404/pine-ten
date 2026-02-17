@@ -37,6 +37,7 @@ export type ChatStage =
   | 'style'
   | 'details'
   | 'strategic_review'
+  | 'moodboard'
   | 'review'
   | 'deepen'
   | 'submit'

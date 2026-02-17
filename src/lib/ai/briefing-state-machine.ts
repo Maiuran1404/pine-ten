@@ -269,12 +269,13 @@ export function evaluateTransitions(
 function evaluateExtractLanding(state: BriefingState, inference: InferenceResult): BriefingStage {
   // Check both inference AND accumulated state — prevents re-stalling at EXTRACT
   // when accumulated state has good data but the latest message's inference is weak
+  // Threshold lowered to 0.4: any weak signal from inference is enough to advance
   const hasTaskType =
-    (inference.taskType.value !== null && inference.taskType.confidence >= 0.75) ||
-    (state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.75)
+    (inference.taskType.value !== null && inference.taskType.confidence >= 0.4) ||
+    (state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.4)
   const hasIntent =
-    (inference.intent.value !== null && inference.intent.confidence >= 0.75) ||
-    (state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75)
+    (inference.intent.value !== null && inference.intent.confidence >= 0.4) ||
+    (state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4)
 
   // If we don't even know what they're making, go to TASK_TYPE
   if (!hasTaskType) {
@@ -297,19 +298,27 @@ function evaluateExtractLanding(state: BriefingState, inference: InferenceResult
 function evaluateStageAdvancement(state: BriefingState): BriefingStage {
   switch (state.stage) {
     case 'TASK_TYPE': {
-      // Can advance when taskType has sufficient confidence
+      // Can advance when taskType has sufficient confidence (0.4 threshold)
       const hasTaskType =
-        state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.75
-      if (!hasTaskType) return 'TASK_TYPE'
+        state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.4
+      // Turn-based safety fallback: after maxTurnsBeforeRecommend turns, advance if ANY value exists
+      const stallFallback =
+        state.turnsInCurrentStage >= (STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend ?? Infinity) &&
+        state.brief.taskType.value !== null
+      if (!hasTaskType && !stallFallback) return 'TASK_TYPE'
 
       // Check if intent is also already known
-      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75
+      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
       return hasIntent ? 'INSPIRATION' : 'INTENT'
     }
 
     case 'INTENT': {
-      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.75
-      return hasIntent ? 'INSPIRATION' : 'INTENT'
+      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
+      // Turn-based safety fallback: after maxTurnsBeforeRecommend turns, advance if ANY value exists
+      const stallFallback =
+        state.turnsInCurrentStage >= (STALL_CONFIG.INTENT.maxTurnsBeforeRecommend ?? Infinity) &&
+        state.brief.intent.value !== null
+      return hasIntent || stallFallback ? 'INSPIRATION' : 'INTENT'
     }
 
     case 'INSPIRATION': {
