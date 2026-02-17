@@ -204,6 +204,7 @@ export function ChatInterface({
     sceneReference,
     setSceneReference,
     handleSceneClick,
+    handleMultiSceneFeedback,
 
     // Handlers
     handleSend,
@@ -398,6 +399,7 @@ export function ChatInterface({
           handleEditLastMessage={handleEditLastMessage}
           briefingStage={briefingStage}
           onSceneClick={handleSceneClick}
+          onMultiSceneFeedback={handleMultiSceneFeedback}
         />
 
         {/* Input area / Submit action bar */}
