@@ -5,7 +5,7 @@ import { Check, Circle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type ChatStage } from '@/components/chat/types'
 import {
-  CHAT_STAGES,
+  BRIEFING_CHAT_STAGES,
   STAGE_DESCRIPTIONS,
   isStageCompleted,
   isCurrentStage,
@@ -54,10 +54,10 @@ export function ProgressStepper({
       {/* Steps */}
       <div className="flex-1 px-4 py-2">
         <div className="space-y-0">
-          {CHAT_STAGES.map((stage, index) => {
+          {BRIEFING_CHAT_STAGES.map((stage, index) => {
             const isCompleted = isStageCompleted(stage, completedStages)
             const isCurrent = isCurrentStage(stage, currentStage)
-            const isLast = index === CHAT_STAGES.length - 1
+            const isLast = index === BRIEFING_CHAT_STAGES.length - 1
 
             return (
               <div key={stage} className="flex items-start gap-3">
@@ -171,7 +171,7 @@ export function CompactProgress({
     <div className={cn('flex items-center gap-3', className)}>
       {/* Progress dots */}
       <div className="flex items-center gap-1.5">
-        {CHAT_STAGES.map((stage) => {
+        {BRIEFING_CHAT_STAGES.map((stage) => {
           const isCompleted = isStageCompleted(stage, completedStages)
           const isCurrent = isCurrentStage(stage, currentStage)
 
@@ -235,7 +235,7 @@ export function TopProgressBar({
         <div className="flex items-center gap-2">
           {/* Stage dots */}
           <div className="flex items-center gap-1">
-            {CHAT_STAGES.map((stage) => {
+            {BRIEFING_CHAT_STAGES.map((stage) => {
               const isCompleted = isStageCompleted(stage, completedStages)
               const isCurrent = isCurrentStage(stage, currentStage)
 

@@ -16,7 +16,7 @@ import { MoodboardCard } from './moodboard/moodboard-card'
 import { MoodboardSectionHeader } from './moodboard/moodboard-header'
 import { ColorSwatches } from './moodboard/color-swatches'
 import {
-  CHAT_STAGES,
+  BRIEFING_CHAT_STAGES,
   STAGE_DESCRIPTIONS,
   isStageCompleted,
   isCurrentStage,
@@ -91,6 +91,41 @@ function getSectionsForStage(
       ]
 
     case 'strategic_review':
+      return [
+        { key: 'brief', label: 'Brief', defaultOpen: true },
+        {
+          key: 'visual',
+          label: 'Visual Direction',
+          defaultOpen: false,
+          itemCount: visualCount || undefined,
+        },
+        {
+          key: 'outline',
+          label: 'Content Plan',
+          defaultOpen: true,
+          itemCount: outlineCount || undefined,
+        },
+        { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
+      ]
+
+    case 'moodboard':
+      return [
+        { key: 'brief', label: 'Brief', defaultOpen: false },
+        { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
+        {
+          key: 'visual',
+          label: 'Visual Direction',
+          defaultOpen: true,
+          itemCount: visualCount || undefined,
+        },
+        {
+          key: 'outline',
+          label: 'Content Plan',
+          defaultOpen: false,
+          itemCount: outlineCount || undefined,
+        },
+      ]
+
     case 'review':
     case 'deepen':
       return [
@@ -160,7 +195,7 @@ function ContextStrip({
           {STAGE_DESCRIPTIONS[currentStage]}
         </span>
         <div className="flex items-center gap-1">
-          {CHAT_STAGES.map((stage) => {
+          {BRIEFING_CHAT_STAGES.map((stage) => {
             const isCompleted = isStageCompleted(stage, completedStages)
             const isCurrent = isCurrentStage(stage, currentStage)
 

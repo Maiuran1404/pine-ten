@@ -271,6 +271,7 @@ export function getStageHint(currentStage: ChatStage): string {
     style: 'Select styles that match your vision',
     details: 'Let me refine the requirements',
     strategic_review: 'Reviewing your creative strategy',
+    moodboard: 'Refine your moodboard selections',
     review: 'Review and confirm your request',
     deepen: 'Add more detail to your brief',
     submit: 'Ready to submit!',

@@ -201,7 +201,7 @@ export function ChatInputArea({
       {messages.length > 0 &&
         !pendingTask &&
         !isLoading &&
-        (!briefingStage || ['REVIEW', 'DEEPEN', 'SUBMIT'].includes(briefingStage)) && (
+        (!briefingStage || briefingStage !== 'EXTRACT') && (
           <div className="flex justify-end mb-2">
             <Button
               variant="ghost"

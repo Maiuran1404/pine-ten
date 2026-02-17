@@ -80,13 +80,23 @@ describe('evaluateTransitions', () => {
   })
 
   // Plan example #4: "We're launching a new AI tool next month"
-  // taskType=null, intent=announcement(0.7) => TASK_TYPE
-  it('lands on TASK_TYPE when taskType null and intent low confidence (example #4)', () => {
+  // taskType=null, intent=announcement(0.7) => TASK_TYPE (intent known but no taskType)
+  it('lands on TASK_TYPE when taskType null even with intent at 0.7 (example #4)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       intent: makeInferredField('announcement', 0.7),
     })
     expect(evaluateTransitions(state, inference)).toBe('TASK_TYPE')
+  })
+
+  // With 0.4 threshold: intent at 0.4+ with taskType at 0.4+ should land on INSPIRATION
+  it('lands on INSPIRATION when both taskType and intent are at 0.4 threshold', () => {
+    const state = createInitialBriefingState()
+    const inference = makeInference({
+      taskType: makeInferredField('single_asset', 0.4),
+      intent: makeInferredField('announcement', 0.4),
+    })
+    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
   })
 
   // Plan example #5: "Website landing page, bold, conversion-focused"
@@ -159,26 +169,58 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, makeInference())).toBe('TASK_TYPE')
   })
 
-  it('advances from TASK_TYPE to INTENT when taskType confirmed but intent unknown', () => {
+  it('advances from TASK_TYPE to INTENT when taskType at 0.4+ but intent unknown', () => {
     const state = createInitialBriefingState()
     state.stage = 'TASK_TYPE'
-    state.brief.taskType = makeInferredField('single_asset', 0.85)
+    state.brief.taskType = makeInferredField('single_asset', 0.4)
     expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
   })
 
-  it('advances from TASK_TYPE to INSPIRATION when both taskType and intent confirmed', () => {
+  it('advances from TASK_TYPE to INSPIRATION when both taskType and intent at 0.4+', () => {
     const state = createInitialBriefingState()
     state.stage = 'TASK_TYPE'
-    state.brief.taskType = makeInferredField('single_asset', 0.85)
-    state.brief.intent = makeInferredField('signups', 0.8)
+    state.brief.taskType = makeInferredField('single_asset', 0.4)
+    state.brief.intent = makeInferredField('signups', 0.4)
     expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
   })
 
-  it('advances from INTENT to INSPIRATION when intent confirmed', () => {
+  it('advances from INTENT to INSPIRATION when intent at 0.4+', () => {
     const state = createInitialBriefingState()
     state.stage = 'INTENT'
-    state.brief.intent = makeInferredField('awareness', 0.8)
+    state.brief.intent = makeInferredField('awareness', 0.4)
     expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+  })
+
+  it('auto-advances from TASK_TYPE after 3 turns with any non-null value', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'TASK_TYPE'
+    state.brief.taskType = makeInferredField('single_asset', 0.2) // Below 0.4 threshold
+    state.turnsInCurrentStage = 3 // At maxTurnsBeforeRecommend
+    expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
+  })
+
+  it('does NOT auto-advance from TASK_TYPE after 3 turns when value is null', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'TASK_TYPE'
+    state.turnsInCurrentStage = 3
+    // taskType.value is still null — no fallback
+    expect(evaluateTransitions(state, makeInference())).toBe('TASK_TYPE')
+  })
+
+  it('auto-advances from INTENT after 3 turns with any non-null value', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'INTENT'
+    state.brief.intent = makeInferredField('awareness', 0.15) // Below 0.4 threshold
+    state.turnsInCurrentStage = 3
+    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+  })
+
+  it('does NOT auto-advance from INTENT after 3 turns when value is null', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'INTENT'
+    state.turnsInCurrentStage = 3
+    // intent.value is still null — no fallback
+    expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
   })
 
   it('advances from INSPIRATION to STRUCTURE when styles selected', () => {
