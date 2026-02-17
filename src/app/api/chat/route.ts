@@ -45,7 +45,6 @@ import {
 } from '@/lib/ai/briefing-state-machine'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
-import { generateQuickOptions } from '@/lib/ai/briefing-quick-options'
 import {
   extractStyleKeywords,
   extractInspirationReferences,
@@ -303,20 +302,13 @@ async function handler(request: NextRequest) {
           const systemPrompt = buildSystemPrompt(briefingState, brandContext)
           stateMachineOverride = { systemPrompt, stage: briefingState.stage }
 
-          // 9. Generate quick options from state machine (deterministic)
-          const smQuickOpts = generateQuickOptions(briefingState)
-          if (smQuickOpts) {
-            stateMachineQuickOptions = smQuickOpts
-          }
-
-          // 10. Serialize updated state for response
+          // 9. Serialize updated state for response
           updatedBriefingState = serialize(briefingState)
         } catch (err) {
           logger.error({ err }, 'State machine pipeline failed — using default AI prompt')
           // On error, clear override so default prompt is used
           stateMachineOverride = undefined
           updatedBriefingState = undefined
-          stateMachineQuickOptions = undefined
         }
       }
 
