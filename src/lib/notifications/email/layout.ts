@@ -34,7 +34,7 @@ export function wrapUserEmail(content: string): string {
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;background-color:${colors.cardBg};border-radius:${radii.lg};box-shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);overflow:hidden;">
           <!-- Header -->
           <tr>
-            <td style="padding:${spacing.xl}px ${spacing.xxl}px ${spacing.lg}px;border-bottom:1px solid ${colors.borderLight};">
+            <td style="padding:${spacing.xl}px ${spacing.xxl}px ${spacing.lg}px;background-color:${colors.dark};border-radius:${radii.lg} ${radii.lg} 0 0;">
               <img src="${logoUrl()}" alt="${appName()}" width="120" height="auto" style="display:block;max-width:120px;height:auto;" />
             </td>
           </tr>
@@ -92,7 +92,7 @@ export function wrapAdminEmail(content: string): string {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="vertical-align:middle;padding-right:${spacing.sm}px;">
-                    <img src="${figureLogoUrl()}" alt="" width="24" height="24" style="display:block;filter:brightness(0) invert(1);" />
+                    <img src="${figureLogoUrl()}" alt="" width="24" height="24" style="display:block;" />
                   </td>
                   <td style="vertical-align:middle;">
                     <span style="font-family:${fonts.stack};font-size:15px;font-weight:600;color:#ffffff;letter-spacing:0.02em;">${appName()} Admin</span>

@@ -316,7 +316,18 @@ async function handler(request: NextRequest) {
             industry: company?.industry ?? undefined,
             brandDescription: company?.description ?? undefined,
           }
-          const systemPrompt = buildSystemPrompt(briefingState, brandContext)
+          let systemPrompt = buildSystemPrompt(briefingState, brandContext)
+
+          // Add scene feedback hint: when user gives feedback on specific scenes during STRUCTURE,
+          // instruct the AI to regenerate the full storyboard with changes applied
+          const lastUserContent = messages[messages.length - 1]?.content || ''
+          if (briefingState.stage === 'STRUCTURE' && /\[Feedback on Scene/.test(lastUserContent)) {
+            systemPrompt +=
+              '\n\nIMPORTANT: The user is giving feedback on specific storyboard scenes. ' +
+              'Apply their feedback and regenerate the FULL [STORYBOARD] block with all scenes, ' +
+              'incorporating the requested changes. Always output the complete updated storyboard.'
+          }
+
           stateMachineOverride = { systemPrompt, stage: briefingState.stage }
 
           // 9. Serialize updated state for response

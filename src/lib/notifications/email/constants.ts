@@ -63,11 +63,11 @@ export const radii = {
 const SUPABASE_STORAGE_BASE = `${config.supabase.url}/storage/v1/object/public/uploads/email`
 
 export function logoUrl(): string {
-  return `${SUPABASE_STORAGE_BASE}/logo-combined-black.png`
+  return `${SUPABASE_STORAGE_BASE}/logo-combined-white.png`
 }
 
 export function figureLogoUrl(): string {
-  return `${SUPABASE_STORAGE_BASE}/logo-figure-black.png`
+  return `${SUPABASE_STORAGE_BASE}/logo-figure-white.png`
 }
 
 export function appUrl(): string {
