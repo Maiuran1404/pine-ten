@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -20,7 +19,6 @@ import {
 import {
   Play,
   Loader2,
-  ArrowRight,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -29,7 +27,7 @@ import {
   Activity,
   ChevronRight,
 } from 'lucide-react'
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
+import { format, isToday, isYesterday } from 'date-fns'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -579,7 +577,7 @@ export default function ChatTestsPage() {
   }, [batches])
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8">
       {/* ----------------------------------------------------------------- */}
       {/* Header: title left, action right                                  */}
       {/* ----------------------------------------------------------------- */}

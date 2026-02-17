@@ -409,11 +409,23 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
         </Card>
       </div>
 
-      {/* Copy Prompt Button */}
-      <Button variant="outline" className="w-full" onClick={handleCopyPrompt}>
-        <ClipboardCopy className="h-4 w-4 mr-2" />
-        Copy Analysis Prompt to Clipboard
-      </Button>
+      {/* Analysis Prompt */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium">Analysis Prompt</CardTitle>
+            <Button variant="outline" size="sm" onClick={handleCopyPrompt}>
+              <ClipboardCopy className="h-3.5 w-3.5 mr-1.5" />
+              Copy
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted/50 rounded-lg p-4 max-h-[600px] overflow-y-auto leading-relaxed">
+            {buildAnalysisPrompt(runs, batchId, funnel)}
+          </pre>
+        </CardContent>
+      </Card>
     </div>
   )
 }
