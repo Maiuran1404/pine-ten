@@ -612,6 +612,7 @@ export function ChatMessageList({
                                 <StoryboardView
                                   scenes={message.structureData.scenes}
                                   onSceneClick={onSceneClick}
+                                  onMultiSceneFeedback={onMultiSceneFeedback}
                                 />
                               )}
                               {message.structureData.type === 'layout' && (
