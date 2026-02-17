@@ -280,6 +280,9 @@ export interface ChatMessageListProps {
   // Edit handlers
   handleEditLastMessage: () => void
 
+  // Strategic review handler
+  onStrategicReviewAction?: (response: 'accept' | 'override') => void
+
   // Briefing stage (used to gate legacy CTAs)
   briefingStage?: string | null
 }
@@ -324,6 +327,7 @@ export function ChatMessageList({
   handleRejectTask: _handleRejectTask,
   handleRequestTaskSummary,
   handleEditLastMessage,
+  onStrategicReviewAction,
   briefingStage,
 }: ChatMessageListProps) {
   return (
@@ -620,7 +624,7 @@ export function ChatMessageList({
                             >
                               <StrategicReviewCard
                                 review={message.strategicReviewData}
-                                onAction={() => {}}
+                                onAction={onStrategicReviewAction || (() => {})}
                               />
                             </motion.div>
                           )}

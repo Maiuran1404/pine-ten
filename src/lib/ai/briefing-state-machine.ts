@@ -180,8 +180,8 @@ export interface StallConfig {
 
 export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
   EXTRACT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
-  TASK_TYPE: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
-  INTENT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
+  TASK_TYPE: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
+  INTENT: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
   INSPIRATION: {
     maxTurnsBeforeNarrow: null,
     maxTurnsBeforeRecommend: null,
@@ -298,27 +298,22 @@ function evaluateExtractLanding(state: BriefingState, inference: InferenceResult
 function evaluateStageAdvancement(state: BriefingState): BriefingStage {
   switch (state.stage) {
     case 'TASK_TYPE': {
-      // Can advance when taskType has sufficient confidence (0.4 threshold)
       const hasTaskType =
         state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.4
-      // Turn-based safety fallback: after maxTurnsBeforeRecommend turns, advance if ANY value exists
-      const stallFallback =
-        state.turnsInCurrentStage >= (STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend ?? Infinity) &&
-        state.brief.taskType.value !== null
-      if (!hasTaskType && !stallFallback) return 'TASK_TYPE'
+      // Force advance after maxTurnsBeforeRecommend turns — don't gate on value being non-null
+      const forceAdvance =
+        state.turnsInCurrentStage >= (STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend ?? Infinity)
+      if (!hasTaskType && !forceAdvance) return 'TASK_TYPE'
 
-      // Check if intent is also already known
       const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
       return hasIntent ? 'INSPIRATION' : 'INTENT'
     }
 
     case 'INTENT': {
       const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
-      // Turn-based safety fallback: after maxTurnsBeforeRecommend turns, advance if ANY value exists
-      const stallFallback =
-        state.turnsInCurrentStage >= (STALL_CONFIG.INTENT.maxTurnsBeforeRecommend ?? Infinity) &&
-        state.brief.intent.value !== null
-      return hasIntent || stallFallback ? 'INSPIRATION' : 'INTENT'
+      const forceAdvance =
+        state.turnsInCurrentStage >= (STALL_CONFIG.INTENT.maxTurnsBeforeRecommend ?? Infinity)
+      return hasIntent || forceAdvance ? 'INSPIRATION' : 'INTENT'
     }
 
     case 'INSPIRATION': {

@@ -191,36 +191,36 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
   })
 
-  it('auto-advances from TASK_TYPE after 3 turns with any non-null value', () => {
+  it('auto-advances from TASK_TYPE after 2 turns with any non-null value', () => {
     const state = createInitialBriefingState()
     state.stage = 'TASK_TYPE'
     state.brief.taskType = makeInferredField('single_asset', 0.2) // Below 0.4 threshold
-    state.turnsInCurrentStage = 3 // At maxTurnsBeforeRecommend
+    state.turnsInCurrentStage = 2 // At maxTurnsBeforeRecommend
     expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
   })
 
-  it('does NOT auto-advance from TASK_TYPE after 3 turns when value is null', () => {
+  it('force-advances from TASK_TYPE after 2 turns even with null taskType value', () => {
     const state = createInitialBriefingState()
     state.stage = 'TASK_TYPE'
-    state.turnsInCurrentStage = 3
-    // taskType.value is still null — no fallback
-    expect(evaluateTransitions(state, makeInference())).toBe('TASK_TYPE')
+    state.turnsInCurrentStage = 2
+    // taskType.value is null — force advance anyway
+    expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
   })
 
-  it('auto-advances from INTENT after 3 turns with any non-null value', () => {
+  it('auto-advances from INTENT after 2 turns with any non-null value', () => {
     const state = createInitialBriefingState()
     state.stage = 'INTENT'
     state.brief.intent = makeInferredField('awareness', 0.15) // Below 0.4 threshold
-    state.turnsInCurrentStage = 3
+    state.turnsInCurrentStage = 2
     expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
   })
 
-  it('does NOT auto-advance from INTENT after 3 turns when value is null', () => {
+  it('force-advances from INTENT after 2 turns even with null intent value', () => {
     const state = createInitialBriefingState()
     state.stage = 'INTENT'
-    state.turnsInCurrentStage = 3
-    // intent.value is still null — no fallback
-    expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
+    state.turnsInCurrentStage = 2
+    // intent.value is null — force advance anyway
+    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
   })
 
   it('advances from INSPIRATION to STRUCTURE when styles selected', () => {
@@ -521,11 +521,11 @@ describe('serialize / deserialize', () => {
 // =============================================================================
 
 describe('STALL_CONFIG', () => {
-  it('TASK_TYPE/INTENT narrow at 2, recommend at 3 (test #17)', () => {
-    expect(STALL_CONFIG.TASK_TYPE.maxTurnsBeforeNarrow).toBe(2)
-    expect(STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend).toBe(3)
-    expect(STALL_CONFIG.INTENT.maxTurnsBeforeNarrow).toBe(2)
-    expect(STALL_CONFIG.INTENT.maxTurnsBeforeRecommend).toBe(3)
+  it('TASK_TYPE/INTENT narrow at 1, recommend at 2 (test #17)', () => {
+    expect(STALL_CONFIG.TASK_TYPE.maxTurnsBeforeNarrow).toBe(1)
+    expect(STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend).toBe(2)
+    expect(STALL_CONFIG.INTENT.maxTurnsBeforeNarrow).toBe(1)
+    expect(STALL_CONFIG.INTENT.maxTurnsBeforeRecommend).toBe(2)
   })
 
   it('STRUCTURE soft nudge at 4 (test #18)', () => {

@@ -37,17 +37,17 @@ describe('generateQuickOptions', () => {
     expect(opts!.options).toContain('Something else')
   })
 
-  // TASK_TYPE — turn 2: narrowed (test #17 stall behavior)
-  it('TASK_TYPE turn 2: narrowed options', () => {
-    const opts = generateQuickOptions(makeState({ stage: 'TASK_TYPE', turnsInCurrentStage: 2 }))
+  // TASK_TYPE — turn 1: narrowed (stall threshold lowered to 1)
+  it('TASK_TYPE turn 1: narrowed options', () => {
+    const opts = generateQuickOptions(makeState({ stage: 'TASK_TYPE', turnsInCurrentStage: 1 }))
     expect(opts).not.toBeNull()
     expect(opts!.options.length).toBeLessThanOrEqual(3)
     expect(opts!.options).toContain('Something else')
   })
 
-  // TASK_TYPE — turn 3: recommendation (test #17 stall behavior)
-  it('TASK_TYPE turn 3: recommendation options', () => {
-    const opts = generateQuickOptions(makeState({ stage: 'TASK_TYPE', turnsInCurrentStage: 3 }))
+  // TASK_TYPE — turn 2: recommendation (stall threshold lowered to 2)
+  it('TASK_TYPE turn 2: recommendation options', () => {
+    const opts = generateQuickOptions(makeState({ stage: 'TASK_TYPE', turnsInCurrentStage: 2 }))
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Sounds good')
     expect(opts!.options.some((o) => o.includes('think'))).toBe(true)

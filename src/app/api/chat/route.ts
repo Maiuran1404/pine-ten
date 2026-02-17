@@ -242,6 +242,36 @@ async function handler(request: NextRequest) {
             }
           }
 
+          // 5b. Sync visualDirection from moodboard — the useBrief hook updates its own
+          // brief.visualDirection but the state machine's brief is separate. When client
+          // indicates moodboard has styles, populate state machine's visualDirection
+          // so INSPIRATION → STRUCTURE transition works.
+          if (moodboardHasStyles && briefingState.stage === 'INSPIRATION') {
+            if (
+              !briefingState.brief.visualDirection ||
+              briefingState.brief.visualDirection.selectedStyles.length === 0
+            ) {
+              briefingState.brief.visualDirection = {
+                selectedStyles: [
+                  {
+                    id: 'moodboard-synced',
+                    name: 'User selected styles',
+                    description: null,
+                    imageUrl: '',
+                    deliverableType: briefingState.deliverableCategory || 'unknown',
+                    styleAxis: 'reference',
+                    subStyle: null,
+                    semanticTags: [],
+                  },
+                ],
+                moodKeywords: [],
+                colorPalette: [],
+                typography: { primary: '', secondary: '' },
+                avoidElements: [],
+              }
+            }
+          }
+
           // 6. Calibrate tone
           const audienceSignals = extractAudienceSignals(lastUserMessage)
           const industrySignals = extractIndustrySignals(lastUserMessage)
@@ -312,6 +342,11 @@ async function handler(request: NextRequest) {
         }
       }
 
+      // Stage-based gating: only attach style/video data at eligible stages
+      const STYLE_ELIGIBLE_STAGES = new Set(['INSPIRATION', 'MOODBOARD'])
+      const currentStage = updatedBriefingState?.stage ?? clientBriefingState?.stage
+      const isStyleEligible = !currentStage || STYLE_ELIGIBLE_STAGES.has(currentStage)
+
       // Get AI response with context (+ optional state machine override)
       const response = await chat(messages, session.user.id, chatContext, stateMachineOverride)
 
@@ -330,10 +365,26 @@ async function handler(request: NextRequest) {
       let deliverableStyleMarker = response.deliverableStyleMarker
 
       // FALLBACK: If AI didn't include marker but mentions a deliverable type,
-      // automatically detect and show styles to ensure user sees visual options
-      if (!deliverableStyleMarker) {
+      // automatically detect and show styles to ensure user sees visual options.
+      // Only at style-eligible stages to prevent misaligned CTAs.
+      // When state machine is active, also suppress auto-detect when the AI is
+      // asking a question (ending with ?) — it means the AI is gathering info,
+      // not presenting visual references.
+      const aiResponseEndsWithQuestion =
+        currentStage &&
+        response.content
+          .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
+          .trim()
+          .endsWith('?')
+
+      if (!deliverableStyleMarker && isStyleEligible && !aiResponseEndsWithQuestion) {
         const lastUserMsg = messages[messages.length - 1]?.content || ''
         deliverableStyleMarker = autoDetectStyleMarker(response.content, lastUserMsg)
+      }
+
+      // Suppress marker at non-eligible stages (safety net)
+      if (!isStyleEligible) {
+        deliverableStyleMarker = undefined
       }
 
       if (deliverableStyleMarker) {
@@ -504,13 +555,13 @@ async function handler(request: NextRequest) {
       // Get video references for video deliverable types
       let videoReferences: VideoReference[] | undefined = undefined
 
-      // Check for video-related content in the conversation
+      // Check for video-related content in the conversation (used only for clearing
+      // image styles when we know this is a video project, not for triggering video fetch)
       const lastUserMessage = messages[messages.length - 1]?.content || ''
       const lastUserMessageLower = lastUserMessage.toLowerCase()
       const responseContentLower = response.content.toLowerCase()
       const combinedVideoContext = `${lastUserMessageLower} ${responseContentLower}`
 
-      // Direct video detection - more aggressive approach
       const isVideoRequest =
         combinedVideoContext.includes('video') ||
         combinedVideoContext.includes('cinematic') ||
@@ -519,22 +570,25 @@ async function handler(request: NextRequest) {
         combinedVideoContext.includes('commercial') ||
         combinedVideoContext.includes('reel')
 
-      logger.debug({ isVideoRequest, deliverableStyleMarker }, 'Video detection check')
+      // Video references require a deliverable style marker that indicates a video type.
+      // Keyword-only detection (isVideoRequest) is NOT sufficient to trigger video refs
+      // because user messages like "product launch video" would match at every stage,
+      // causing videos to appear while the AI is still asking about audience/intent.
+      const hasVideoMarker =
+        deliverableStyleMarker &&
+        isVideoDeliverableType(normalizeDeliverableType(deliverableStyleMarker.deliverableType))
 
-      // Skip video references if user has already selected a style (moodboardHasStyles)
-      // This prevents showing the same video grid repeatedly after selection
-      if (
-        !moodboardHasStyles &&
-        (isVideoRequest ||
-          (deliverableStyleMarker &&
-            isVideoDeliverableType(
-              normalizeDeliverableType(deliverableStyleMarker.deliverableType)
-            )))
-      ) {
-        // For video requests, ALWAYS clear image styles - we only want to show video references
-        // Do this BEFORE fetching video references so even if fetch fails, we don't show images
+      logger.debug(
+        { isVideoRequest, hasVideoMarker, deliverableStyleMarker },
+        'Video detection check'
+      )
+
+      // Only fetch video refs when there's a video-type marker AND stage is eligible.
+      // Skip if user already selected styles (moodboardHasStyles).
+      if (isStyleEligible && !moodboardHasStyles && hasVideoMarker) {
+        // For video requests, clear image styles - we only want to show video references
         deliverableStyles = undefined
-        logger.debug('Video request detected - cleared image styles')
+        logger.debug('Video marker detected - cleared image styles, fetching video refs')
 
         try {
           const deliverableType = deliverableStyleMarker?.deliverableType
@@ -564,7 +618,7 @@ async function handler(request: NextRequest) {
           logger.error({ err }, 'Error fetching video references')
           // Even if video fetch fails, don't fall back to image styles for video requests
         }
-      } else if (moodboardHasStyles && isVideoRequest) {
+      } else if (isStyleEligible && moodboardHasStyles && isVideoRequest) {
         // Still clear image styles for video requests even when skipping video references
         deliverableStyles = undefined
         logger.debug('Video request with moodboard styles - skipping video grid')
@@ -617,6 +671,13 @@ async function handler(request: NextRequest) {
           briefingState.strategicReview = reviewParsed.data
         }
 
+        // Auto-advance from STRATEGIC_REVIEW to MOODBOARD when review data is parsed
+        // (mirrors mergeStrategicReviewAndAdvance in admin/chat-tests/step/route.ts)
+        if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
+          briefingState.stage = 'MOODBOARD'
+          briefingState.turnsInCurrentStage = 0
+        }
+
         // Re-serialize state with structure/review updates
         if (structureData || strategicReviewData) {
           updatedBriefingState = serialize(briefingState)
@@ -632,6 +693,8 @@ async function handler(request: NextRequest) {
         .replace(/\[CALENDAR\][\s\S]*?\[\/CALENDAR\]/g, '')
         .replace(/\[DESIGN_SPEC\][\s\S]*?\[\/DESIGN_SPEC\]/g, '')
         .replace(/\[STRATEGIC_REVIEW\][\s\S]*?\[\/STRATEGIC_REVIEW\]/g, '')
+        .replace(/\[STYLE_CARDS\][\s\S]*?\[\/STYLE_CARDS\]/g, '')
+        .replace(/\[DELIVERABLE_STYLES[^\]]*\]/g, '')
         .trim()
 
       return NextResponse.json({

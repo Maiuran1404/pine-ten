@@ -331,6 +331,30 @@ const TASK_TYPE_PATTERNS: PatternMatch[] = [
     value: 'single_asset',
     confidence: 0.6,
   },
+  // Video / motion content
+  {
+    pattern: /\b(video|cinematic|film|motion\s*graphic|animation|reel|commercial|clip)\b/i,
+    value: 'single_asset',
+    confidence: 0.7,
+  },
+  // Website / landing page
+  {
+    pattern: /\b(website|landing\s*page|web\s*page|web\s*site|homepage|site)\b/i,
+    value: 'single_asset',
+    confidence: 0.7,
+  },
+  // Logo / brand identity
+  {
+    pattern: /\b(logo|brand\s*identity|brand\s*mark|wordmark|logomark)\b/i,
+    value: 'single_asset',
+    confidence: 0.8,
+  },
+  // Presentation / pitch deck
+  {
+    pattern: /\b(presentation|pitch\s*deck|slide\s*deck|keynote)\b/i,
+    value: 'single_asset',
+    confidence: 0.8,
+  },
 ]
 
 // Content type patterns

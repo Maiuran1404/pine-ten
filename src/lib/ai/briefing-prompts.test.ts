@@ -200,19 +200,19 @@ describe('buildSystemPrompt', () => {
   })
 
   // Stall escalation
-  it('injects narrow prompt at TASK_TYPE turn 2', () => {
+  it('injects narrow prompt at TASK_TYPE turn 1', () => {
     const state = makeState({
       stage: 'TASK_TYPE',
-      turnsInCurrentStage: 2,
+      turnsInCurrentStage: 1,
     })
     const prompt = buildSystemPrompt(state)
     expect(prompt).toContain('NARROW')
   })
 
-  it('injects recommend prompt at TASK_TYPE turn 3', () => {
+  it('injects recommend prompt at TASK_TYPE turn 2', () => {
     const state = makeState({
       stage: 'TASK_TYPE',
-      turnsInCurrentStage: 3,
+      turnsInCurrentStage: 2,
     })
     const prompt = buildSystemPrompt(state)
     expect(prompt).toContain('RECOMMEND')

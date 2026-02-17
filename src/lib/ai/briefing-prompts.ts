@@ -296,13 +296,33 @@ function buildIntentTask(state: BriefingState): string {
 - One question. Be brief.`
 }
 
-function buildInspirationTask(_state: BriefingState): string {
+function buildInspirationTask(state: BriefingState): string {
+  const deliverableType = resolveDeliverableTypeForMarker(state)
   return `Show visual style references that match the context.
 - Frame the creative direction based on what you know about audience, industry, and intent.
 - The system will display style cards. Your job is to introduce them with context.
+- IMPORTANT: Include the marker [DELIVERABLE_STYLES: ${deliverableType}] in your response so the system knows which styles to show. Place it at the end of your message on its own line.
 - If the user shared references, acknowledge them once and extract the principle. Don't keep citing the reference name.
 - Reference real campaigns from adjacent industries rather than abstract mood language.
 - Keep it to 1-2 sentences framing the direction.`
+}
+
+function resolveDeliverableTypeForMarker(state: BriefingState): string {
+  const categoryMap: Record<string, string> = {
+    video: 'launch_video',
+    website: 'landing_page',
+    content: 'social_content',
+    design: 'design_asset',
+    brand: 'brand_identity',
+  }
+  if (state.deliverableCategory && categoryMap[state.deliverableCategory]) {
+    return categoryMap[state.deliverableCategory]
+  }
+  const topic = (state.brief.topic.value ?? '').toLowerCase()
+  if (topic.includes('video') || topic.includes('cinematic')) return 'launch_video'
+  if (topic.includes('website') || topic.includes('landing')) return 'landing_page'
+  if (topic.includes('logo') || topic.includes('brand')) return 'brand_identity'
+  return 'launch_video'
 }
 
 function buildStructureTask(state: BriefingState): string {
