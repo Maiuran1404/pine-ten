@@ -293,6 +293,9 @@ export interface ChatMessageListProps {
     description: string
     visualNote: string
   }) => void
+
+  // Multi-scene feedback handler
+  onMultiSceneFeedback?: (scenes: { sceneNumber: number; title: string }[]) => void
 }
 
 // =============================================================================
@@ -338,6 +341,7 @@ export function ChatMessageList({
   onStrategicReviewAction,
   briefingStage,
   onSceneClick,
+  onMultiSceneFeedback,
 }: ChatMessageListProps) {
   return (
     <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
