@@ -8,7 +8,7 @@
  */
 
 import type { BriefingState, BriefingStage, DeliverableCategory } from './briefing-state-machine'
-import { STALL_CONFIG } from './briefing-state-machine'
+import { STALL_CONFIG, getLegalTransitions } from './briefing-state-machine'
 
 // =============================================================================
 // BRAND CONTEXT TYPE (passed from caller)
@@ -116,7 +116,17 @@ RULES:
 - One question at a time unless grouping makes sense.
 - Never repeat what the user already told you.
 - Match the user's energy and vocabulary level.
-- ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.`
+- ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.
+
+STAGE DECLARATION (MANDATORY):
+Every response MUST include a [BRIEF_META] block declaring the conversation stage.
+Format: [BRIEF_META]{"stage":"STAGE_NAME","fieldsExtracted":{"taskType":"...","intent":"..."}}[/BRIEF_META]
+
+- "stage" = the stage this conversation should be at AFTER your response
+- "fieldsExtracted" = any brief fields you identified from the user's message (only include fields you detected)
+- Valid fieldsExtracted keys: taskType, intent, deliverableCategory, platform, topic
+- You MUST output this block in every response. The system cannot advance without it.
+- Place it BEFORE [QUICK_OPTIONS].`
 
 // =============================================================================
 // CURRENT STATE
@@ -202,7 +212,10 @@ What we know:
 ${known.length > 0 ? known.map((k) => `- ${k}`).join('\n') : '- Nothing yet'}
 
 What's missing:
-${missing.length > 0 ? missing.map((m) => `- ${m}`).join('\n') : '- Nothing critical'}`
+${missing.length > 0 ? missing.map((m) => `- ${m}`).join('\n') : '- Nothing critical'}
+
+Legal next stages from ${state.stage}: ${getLegalTransitions(state.stage).join(', ')}
+Set "stage" in [BRIEF_META] to one of these values.`
 }
 
 function getStructureSummary(structure: BriefingState['structure']): string {
@@ -347,28 +360,32 @@ If you have an open question about the primary action or audience, ask it before
 
   switch (category) {
     case 'video':
-      return `${clarifyPrefix}Create a scene-by-scene storyboard with a strong opening hook.
+      return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
 - Generate 3-5 scenes. Scene 1 MUST have a hook with persona + pain metric.
 - Each scene: title, description, duration, visual note.
-- Output as [STORYBOARD]{json}[/STORYBOARD].${launchAssetPrompt}`
+- You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
     case 'website':
-      return `${clarifyPrefix}Create a section-by-section layout.
+      return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
 - Each section: name, purpose, content guidance, order.
-- Output as [LAYOUT]{json}[/LAYOUT].${launchAssetPrompt}`
+- You MUST output the structure as [LAYOUT]{json}[/LAYOUT]. Without this marker the UI cannot render the layout.
+- Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1}]}[/LAYOUT]${launchAssetPrompt}`
     case 'content':
-      return `${clarifyPrefix}Create a strategic content calendar.
+      return `${clarifyPrefix}MANDATORY: Create a strategic content calendar.
 - Include: posting cadence, content pillars (with %), weekly arcs, CTA escalation.
 - Each post: day, pillar type, topic, format, CTA, engagement trigger.
-- Output as [CALENDAR]{json}[/CALENDAR].${launchAssetPrompt}`
+- You MUST output the structure as [CALENDAR]{json}[/CALENDAR]. Without this marker the UI cannot render the calendar.
+- Example: [CALENDAR]{"totalDuration":"4 weeks","postingCadence":"3x/week","platforms":["Instagram"],"contentPillars":[{"name":"Authority","description":"...","percentage":40}],"weeks":[],"ctaEscalation":{"awarenessPhase":{"weeks":[1,2],"ctaStyle":"soft"},"engagementPhase":{"weeks":[3],"ctaStyle":"engage"},"conversionPhase":{"weeks":[4],"ctaStyle":"direct"}}}[/CALENDAR]${launchAssetPrompt}`
     case 'design':
     case 'brand':
-      return `${clarifyPrefix}Create a design specification.
+      return `${clarifyPrefix}MANDATORY: Create a design specification.
 - Include: format, dimensions, key elements, copy guidance.
-- Output as [DESIGN_SPEC]{json}[/DESIGN_SPEC].${launchAssetPrompt}`
+- You MUST output the structure as [DESIGN_SPEC]{json}[/DESIGN_SPEC]. Without this marker the UI cannot render the spec.
+- Example: [DESIGN_SPEC]{"format":"Social post","dimensions":[{"width":1080,"height":1080,"label":"Instagram square"}],"keyElements":["Logo","CTA"],"copyGuidance":"Lead with benefit"}[/DESIGN_SPEC]${launchAssetPrompt}`
     default:
       return `${clarifyPrefix}Based on what we know, create the appropriate structure for this deliverable.
-Output the structure in the appropriate marker format.${launchAssetPrompt}`
+You MUST output the structure in the appropriate marker format ([STORYBOARD], [LAYOUT], [CALENDAR], or [DESIGN_SPEC]).${launchAssetPrompt}`
   }
 }
 

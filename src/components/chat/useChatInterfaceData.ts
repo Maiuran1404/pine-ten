@@ -155,7 +155,7 @@ export function useChatInterfaceData({
     briefingState: _briefingState,
     serializedState: serializedBriefingState,
     syncFromServer: syncBriefingFromServer,
-  } = useBriefingStateMachine(initialBriefingState, { draftId, brandAudiences })
+  } = useBriefingStateMachine(initialBriefingState, { draftId })
 
   // Sync moodboard changes to visual direction
   useEffect(() => {

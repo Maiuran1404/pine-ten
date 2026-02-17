@@ -437,6 +437,8 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\[QUICK_OPTIONS\][\s\S]*?(?:\[\/QUICK_OPTIONS\]|$)/g, '')
     .replace(/\[\/QUICK_OPTIONS\]/g, '') // Orphaned closing tags
     .replace(/\[QUICK_OPTIONS[^\]]*$/gm, '') // Truncated opening tags at end of line
+    .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
+    .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
     .trim()
 
   // ========================================================================

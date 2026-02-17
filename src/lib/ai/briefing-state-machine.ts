@@ -214,6 +214,30 @@ const STAGE_ORDER: BriefingStage[] = [
 ]
 
 // =============================================================================
+// LEGAL TRANSITIONS
+// =============================================================================
+
+/**
+ * Returns the set of stages that are legal next states from the given stage.
+ * Used to validate AI-declared stage transitions via [BRIEF_META].
+ */
+export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
+  const LEGAL: Record<BriefingStage, BriefingStage[]> = {
+    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'],
+    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'INSPIRATION'],
+    INTENT: ['INTENT', 'INSPIRATION'],
+    INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
+    STRUCTURE: ['STRUCTURE', 'STRATEGIC_REVIEW'],
+    STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'MOODBOARD'],
+    MOODBOARD: ['MOODBOARD', 'REVIEW'],
+    REVIEW: ['REVIEW', 'DEEPEN', 'SUBMIT'],
+    DEEPEN: ['DEEPEN', 'REVIEW', 'SUBMIT'],
+    SUBMIT: ['SUBMIT'],
+  }
+  return LEGAL[stage] ?? [stage]
+}
+
+// =============================================================================
 // FACTORY
 // =============================================================================
 
@@ -317,11 +341,12 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'INSPIRATION': {
-      // STRUCTURE requires selectedStyles.length > 0
+      // STRUCTURE requires selectedStyles.length > 0, or force-advance after 3 turns
       const hasStyles =
         state.brief.visualDirection !== null &&
         state.brief.visualDirection.selectedStyles.length > 0
-      return hasStyles ? 'STRUCTURE' : 'INSPIRATION'
+      const forceAdvance = state.turnsInCurrentStage >= 3
+      return hasStyles || forceAdvance ? 'STRUCTURE' : 'INSPIRATION'
     }
 
     case 'STRUCTURE': {

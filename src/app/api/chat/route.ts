@@ -35,13 +35,15 @@ import { users, audiences as audiencesTable } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
-// State machine imports (Phase 1)
+// State machine imports
 import {
   type BriefingState,
+  type DeliverableCategory,
   type SerializedBriefingState,
   deserialize,
   serialize,
   evaluateTransitions,
+  getLegalTransitions,
 } from '@/lib/ai/briefing-state-machine'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
@@ -55,6 +57,8 @@ import {
 import {
   parseStructuredOutput,
   parseStrategicReview,
+  parseBriefMeta,
+  getFormatReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
 import type { InferredAudience } from '@/components/onboarding/types'
@@ -178,17 +182,19 @@ async function handler(request: NextRequest) {
 
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
+      let preAiInference: ReturnType<typeof inferFromMessage> | undefined
 
       if (clientBriefingState) {
         try {
           const lastUserMessage = messages[messages.length - 1]?.content || ''
           const briefingState: BriefingState = deserialize(clientBriefingState)
 
-          // 1. Run inference on latest user message
+          // 1. Run inference on latest user message (field population only, NOT for transitions)
           const inference = inferFromMessage({
             message: lastUserMessage,
             conversationHistory: messages.slice(0, -1).map((m: { content: string }) => m.content),
           })
+          preAiInference = inference // Store for post-AI fallback
 
           // 2. Fetch brand audiences for inference
           const brandAudiences: InferredAudience[] = company?.id
@@ -300,30 +306,10 @@ async function handler(request: NextRequest) {
             }
           }
 
-          // 7. Evaluate stage transitions
+          // 7. Increment message count — stage transitions are now handled post-AI via BRIEF_META
           briefingState.messageCount += 1
-          const nextStage = evaluateTransitions(briefingState, inference)
-          if (nextStage !== briefingState.stage) {
-            briefingState.stage = nextStage
-            briefingState.turnsInCurrentStage = 0
-          } else {
-            briefingState.turnsInCurrentStage += 1
-          }
 
-          // 7b. Detect explicit submit intent — force SUBMIT stage
-          // The state machine keeps REVIEW/DEEPEN locked until CONFIRM_SUBMIT dispatch,
-          // but we need to handle natural language like "yes let's submit" / "submit this"
-          if (
-            (briefingState.stage === 'REVIEW' || briefingState.stage === 'DEEPEN') &&
-            /\b(yes|yeah|yep|sure|go ahead|do it|ready|let'?s?\s*(go|submit|do)|submit\s*(this|it|now|the|my)?|send\s*(this|it)|confirm|looks?\s*good)\b/i.test(
-              lastUserMessage
-            )
-          ) {
-            briefingState.stage = 'SUBMIT'
-            briefingState.turnsInCurrentStage = 0
-          }
-
-          // 8. Build system prompt from state
+          // 8. Build system prompt from state (includes legal transitions + BRIEF_META instruction)
           const brandContext: BrandContext = {
             companyName: company?.name,
             industry: company?.industry ?? undefined,
@@ -633,60 +619,219 @@ async function handler(request: NextRequest) {
       let strategicReviewData = undefined
 
       if (clientBriefingState) {
-        const briefingState: BriefingState = deserialize(
-          updatedBriefingState ?? clientBriefingState
-        )
-        const categoryToStructureType: Record<string, StructureType> = {
-          video: 'storyboard',
-          website: 'layout',
-          content: 'calendar',
-          design: 'single_design',
-          brand: 'single_design',
-        }
+        try {
+          const briefingState: BriefingState = deserialize(
+            updatedBriefingState ?? clientBriefingState
+          )
 
-        // Determine structure type from category, with marker-based fallback
-        let structureType: StructureType | undefined = briefingState.deliverableCategory
-          ? categoryToStructureType[briefingState.deliverableCategory]
-          : undefined
-        if (!structureType) {
-          if (response.content.includes('[STORYBOARD]')) structureType = 'storyboard'
-          else if (response.content.includes('[LAYOUT]')) structureType = 'layout'
-          else if (response.content.includes('[CALENDAR]')) structureType = 'calendar'
-          else if (response.content.includes('[DESIGN_SPEC]')) structureType = 'single_design'
-        }
+          // ================================================================
+          // 10. Parse [BRIEF_META] from AI response for stage transitions
+          // ================================================================
+          const briefMetaResult = parseBriefMeta(response.content)
+          if (briefMetaResult.success && briefMetaResult.data) {
+            // 11. Validate declared stage against legal transitions
+            const declaredStage = briefMetaResult.data.stage
+            const legal = getLegalTransitions(briefingState.stage)
+            if (legal.includes(declaredStage)) {
+              // Legal transition — apply
+              if (declaredStage !== briefingState.stage) {
+                briefingState.stage = declaredStage
+                briefingState.turnsInCurrentStage = 0
+              } else {
+                briefingState.turnsInCurrentStage += 1
+              }
+            } else {
+              // Illegal transition — log warning, keep current stage
+              logger.warn(
+                { declaredStage, currentStage: briefingState.stage, legal },
+                'AI declared illegal stage transition — keeping current stage'
+              )
+              briefingState.turnsInCurrentStage += 1
+            }
 
-        // Parse structure data — always attempt regardless of stage
-        if (structureType) {
-          const parsed = parseStructuredOutput(response.content, structureType)
-          if (parsed.success && parsed.data) {
-            structureData = parsed.data
-            briefingState.structure = parsed.data
+            // 12. Apply AI-extracted fieldsExtracted to boost brief field confidence to 0.9
+            const fields = briefMetaResult.data.fieldsExtracted
+            if (fields.taskType && briefingState.brief.taskType.confidence < 0.9) {
+              briefingState.brief.taskType = {
+                value: fields.taskType as typeof briefingState.brief.taskType.value,
+                confidence: 0.9,
+                source: 'inferred',
+              }
+            }
+            if (fields.intent && briefingState.brief.intent.confidence < 0.9) {
+              briefingState.brief.intent = {
+                value: fields.intent as typeof briefingState.brief.intent.value,
+                confidence: 0.9,
+                source: 'inferred',
+              }
+            }
+            if (fields.platform && briefingState.brief.platform.confidence < 0.9) {
+              briefingState.brief.platform = {
+                value: fields.platform as typeof briefingState.brief.platform.value,
+                confidence: 0.9,
+                source: 'inferred',
+              }
+            }
+            if (fields.topic && briefingState.brief.topic.confidence < 0.9) {
+              briefingState.brief.topic = {
+                value: fields.topic,
+                confidence: 0.9,
+                source: 'inferred',
+              }
+            }
+            if (
+              fields.deliverableCategory &&
+              (!briefingState.deliverableCategory ||
+                briefingState.deliverableCategory === 'unknown')
+            ) {
+              const catMap: Record<string, DeliverableCategory> = {
+                video: 'video',
+                website: 'website',
+                content: 'content',
+                design: 'design',
+                brand: 'brand',
+              }
+              const mapped = catMap[fields.deliverableCategory]
+              if (mapped) briefingState.deliverableCategory = mapped
+            }
+          } else {
+            // BRIEF_META missing or failed — fallback to evaluateTransitions()
+            logger.debug(
+              { parseError: briefMetaResult.parseError },
+              'BRIEF_META not found — falling back to evaluateTransitions'
+            )
+            if (preAiInference) {
+              const nextStage = evaluateTransitions(briefingState, preAiInference)
+              if (nextStage !== briefingState.stage) {
+                briefingState.stage = nextStage
+                briefingState.turnsInCurrentStage = 0
+              } else {
+                briefingState.turnsInCurrentStage += 1
+              }
+            } else {
+              briefingState.turnsInCurrentStage += 1
+            }
+
+            // Detect explicit submit intent as additional fallback
+            const lastMsg = messages[messages.length - 1]?.content || ''
+            if (
+              (briefingState.stage === 'REVIEW' || briefingState.stage === 'DEEPEN') &&
+              /\b(yes|yeah|yep|sure|go ahead|do it|ready|let'?s?\s*(go|submit|do)|submit\s*(this|it|now|the|my)?|send\s*(this|it)|confirm|looks?\s*good)\b/i.test(
+                lastMsg
+              )
+            ) {
+              briefingState.stage = 'SUBMIT'
+              briefingState.turnsInCurrentStage = 0
+            }
           }
-        }
 
-        // Parse strategic review
-        const reviewParsed = parseStrategicReview(response.content)
-        if (reviewParsed.success && reviewParsed.data) {
-          strategicReviewData = reviewParsed.data
-          briefingState.strategicReview = reviewParsed.data
-        }
+          // ================================================================
+          // 13. Parse structure/review/task markers from AI response
+          // ================================================================
+          const categoryToStructureType: Record<string, StructureType> = {
+            video: 'storyboard',
+            website: 'layout',
+            content: 'calendar',
+            design: 'single_design',
+            brand: 'single_design',
+          }
 
-        // Auto-advance from STRATEGIC_REVIEW to MOODBOARD when review data is parsed
-        // (mirrors mergeStrategicReviewAndAdvance in admin/chat-tests/step/route.ts)
-        if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
-          briefingState.stage = 'MOODBOARD'
-          briefingState.turnsInCurrentStage = 0
-        }
+          // Determine structure type from category, with marker-based fallback
+          let structureType: StructureType | undefined = briefingState.deliverableCategory
+            ? categoryToStructureType[briefingState.deliverableCategory]
+            : undefined
+          if (!structureType) {
+            if (response.content.includes('[STORYBOARD]')) structureType = 'storyboard'
+            else if (response.content.includes('[LAYOUT]')) structureType = 'layout'
+            else if (response.content.includes('[CALENDAR]')) structureType = 'calendar'
+            else if (response.content.includes('[DESIGN_SPEC]')) structureType = 'single_design'
+          }
 
-        // Re-serialize state with structure/review updates
-        if (structureData || strategicReviewData) {
+          // Parse structure data — always attempt regardless of stage
+          if (structureType) {
+            const parsed = parseStructuredOutput(response.content, structureType)
+            if (parsed.success && parsed.data) {
+              structureData = parsed.data
+              briefingState.structure = parsed.data
+            }
+          }
+
+          // Parse strategic review
+          const reviewParsed = parseStrategicReview(response.content)
+          if (reviewParsed.success && reviewParsed.data) {
+            strategicReviewData = reviewParsed.data
+            briefingState.strategicReview = reviewParsed.data
+          }
+
+          // ================================================================
+          // 14-15. Auto-advance on structure/review parse
+          // ================================================================
+
+          // Auto-advance STRUCTURE -> STRATEGIC_REVIEW when structure data is parsed
+          if (briefingState.stage === 'STRUCTURE' && structureData) {
+            briefingState.stage = 'STRATEGIC_REVIEW'
+            briefingState.turnsInCurrentStage = 0
+          }
+
+          // Auto-advance STRATEGIC_REVIEW -> MOODBOARD when review data is parsed
+          if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
+            briefingState.stage = 'MOODBOARD'
+            briefingState.turnsInCurrentStage = 0
+          }
+
+          // ================================================================
+          // 16. Structure retry with format reinforcement (single attempt)
+          // ================================================================
+          if (
+            briefingState.stage === 'STRUCTURE' &&
+            !structureData &&
+            structureType &&
+            briefingState.turnsInCurrentStage === 0
+          ) {
+            logger.debug(
+              { structureType },
+              'Structure not parsed at STRUCTURE stage — retrying with format reinforcement'
+            )
+            try {
+              const reinforcement = getFormatReinforcement(structureType)
+              const retryResponse = await chat(
+                [
+                  ...messages,
+                  { role: 'assistant', content: response.content },
+                  { role: 'user', content: reinforcement },
+                ],
+                session.user.id,
+                chatContext,
+                stateMachineOverride
+              )
+              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
+              if (retryParsed.success && retryParsed.data) {
+                structureData = retryParsed.data
+                briefingState.structure = retryParsed.data
+                // Auto-advance after successful retry
+                briefingState.stage = 'STRATEGIC_REVIEW'
+                briefingState.turnsInCurrentStage = 0
+              }
+            } catch (retryErr) {
+              logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')
+            }
+          }
+
+          // 18. Always re-serialize state (client always gets latest state)
           updatedBriefingState = serialize(briefingState)
+        } catch (postAiErr) {
+          logger.error({ err: postAiErr }, 'Post-AI state machine pipeline failed')
+          // Fallback: return client state as-is so it's not lost
+          if (!updatedBriefingState) {
+            updatedBriefingState = clientBriefingState
+          }
         }
       }
 
-      // Strip structured markers from displayed content
+      // ================================================================
+      // 17. Strip markers from displayed content (including BRIEF_META)
+      // ================================================================
       let cleanContent = response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '')
-      // Strip structure markers (STORYBOARD, LAYOUT, CALENDAR, DESIGN_SPEC, STRATEGIC_REVIEW)
       cleanContent = cleanContent
         .replace(/\[STORYBOARD\][\s\S]*?\[\/STORYBOARD\]/g, '')
         .replace(/\[LAYOUT\][\s\S]*?\[\/LAYOUT\]/g, '')
@@ -695,6 +840,8 @@ async function handler(request: NextRequest) {
         .replace(/\[STRATEGIC_REVIEW\][\s\S]*?\[\/STRATEGIC_REVIEW\]/g, '')
         .replace(/\[STYLE_CARDS\][\s\S]*?\[\/STYLE_CARDS\]/g, '')
         .replace(/\[DELIVERABLE_STYLES[^\]]*\]/g, '')
+        .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
+        .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
         .trim()
 
       return NextResponse.json({
@@ -708,7 +855,7 @@ async function handler(request: NextRequest) {
         videoReferences,
         structureData,
         strategicReviewData,
-        ...(updatedBriefingState && { briefingState: updatedBriefingState }),
+        briefingState: updatedBriefingState ?? clientBriefingState,
       })
     },
     { endpoint: 'POST /api/chat' }

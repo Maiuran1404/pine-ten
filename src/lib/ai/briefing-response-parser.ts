@@ -15,6 +15,7 @@
  */
 
 import type {
+  BriefingStage,
   StructureData,
   StrategicReviewData,
   StoryboardScene,
@@ -36,7 +37,13 @@ export interface ParseResult<T> {
 
 export type StructureType = StructureData['type']
 
-export type MarkerType = 'STORYBOARD' | 'LAYOUT' | 'CALENDAR' | 'DESIGN_SPEC' | 'STRATEGIC_REVIEW'
+export type MarkerType =
+  | 'STORYBOARD'
+  | 'LAYOUT'
+  | 'CALENDAR'
+  | 'DESIGN_SPEC'
+  | 'STRATEGIC_REVIEW'
+  | 'BRIEF_META'
 
 /** Maps StructureData['type'] to marker name */
 const STRUCTURE_TO_MARKER: Record<StructureType, MarkerType> = {
@@ -46,8 +53,8 @@ const STRUCTURE_TO_MARKER: Record<StructureType, MarkerType> = {
   single_design: 'DESIGN_SPEC',
 }
 
-/** Maps marker name to StructureData['type'] */
-const _MARKER_TO_STRUCTURE: Record<MarkerType, StructureType | 'strategic_review'> = {
+/** Maps marker name to StructureData['type'] (excludes BRIEF_META which is not a structure) */
+const _MARKER_TO_STRUCTURE: Partial<Record<MarkerType, StructureType | 'strategic_review'>> = {
   STORYBOARD: 'storyboard',
   LAYOUT: 'layout',
   CALENDAR: 'calendar',
@@ -127,6 +134,98 @@ export function parseStrategicReview(aiResponse: string): ParseResult<StrategicR
     isPartial: false,
     rawText: aiResponse,
     parseError: 'Failed to parse strategic review JSON',
+  }
+}
+
+// =============================================================================
+// BRIEF_META PARSING
+// =============================================================================
+
+const VALID_STAGES: Set<string> = new Set([
+  'EXTRACT',
+  'TASK_TYPE',
+  'INTENT',
+  'INSPIRATION',
+  'STRUCTURE',
+  'STRATEGIC_REVIEW',
+  'MOODBOARD',
+  'REVIEW',
+  'DEEPEN',
+  'SUBMIT',
+])
+
+export interface BriefMetaData {
+  stage: BriefingStage
+  fieldsExtracted: {
+    taskType?: string
+    intent?: string
+    deliverableCategory?: string
+    platform?: string
+    topic?: string
+  }
+}
+
+/**
+ * Parse [BRIEF_META] block from AI response.
+ * Returns stage declaration and any extracted fields.
+ * Never throws — returns ParseResult with success=false on failure.
+ */
+export function parseBriefMeta(aiResponse: string): ParseResult<BriefMetaData> {
+  const extracted = extractMarkerContent(aiResponse, 'BRIEF_META')
+
+  if (!extracted) {
+    return {
+      success: false,
+      data: null,
+      isPartial: false,
+      rawText: aiResponse,
+      parseError: 'No [BRIEF_META] marker found',
+    }
+  }
+
+  const parsed = lenientJsonParse(extracted)
+  if (!parsed || Array.isArray(parsed)) {
+    return {
+      success: false,
+      data: null,
+      isPartial: false,
+      rawText: aiResponse,
+      parseError: 'Failed to parse BRIEF_META JSON',
+    }
+  }
+
+  const stage = typeof parsed.stage === 'string' ? parsed.stage : null
+  if (!stage || !VALID_STAGES.has(stage)) {
+    return {
+      success: false,
+      data: null,
+      isPartial: false,
+      rawText: aiResponse,
+      parseError: `Invalid stage in BRIEF_META: ${stage}`,
+    }
+  }
+
+  const fieldsRaw =
+    typeof parsed.fieldsExtracted === 'object' && parsed.fieldsExtracted !== null
+      ? (parsed.fieldsExtracted as Record<string, unknown>)
+      : {}
+
+  return {
+    success: true,
+    data: {
+      stage: stage as BriefingStage,
+      fieldsExtracted: {
+        ...(typeof fieldsRaw.taskType === 'string' ? { taskType: fieldsRaw.taskType } : {}),
+        ...(typeof fieldsRaw.intent === 'string' ? { intent: fieldsRaw.intent } : {}),
+        ...(typeof fieldsRaw.deliverableCategory === 'string'
+          ? { deliverableCategory: fieldsRaw.deliverableCategory }
+          : {}),
+        ...(typeof fieldsRaw.platform === 'string' ? { platform: fieldsRaw.platform } : {}),
+        ...(typeof fieldsRaw.topic === 'string' ? { topic: fieldsRaw.topic } : {}),
+      },
+    },
+    isPartial: false,
+    rawText: aiResponse,
   }
 }
 
