@@ -104,6 +104,7 @@ export function useChatInterfaceData({
   const dragCounterRef = useRef(0)
   const requestStartTimeRef = useRef<number | null>(null)
   const chatStartedRef = useRef(false)
+  const latestStoryboardRef = useRef<StructureData | null>(null)
 
   // Moodboard state management
   const {
