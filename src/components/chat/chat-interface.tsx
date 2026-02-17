@@ -196,9 +196,12 @@ export function ChatInterface({
     // Last user message index (for edit button)
     lastUserMessageIndex,
 
+    // Quick options
+    resolvedQuickOptions,
+
     // Handlers
     handleSend,
-    handleSendOption: _handleSendOption,
+    handleSendOption,
     handleDiscard: _handleDiscard,
     handleCopyMessage: _handleCopyMessage,
     handleMessageFeedback: _handleMessageFeedback,
@@ -413,6 +416,8 @@ export function ChatInterface({
           onMakeChanges={handleRejectTask}
           onInsufficientCredits={handleInsufficientCredits}
           isSubmitting={isLoading}
+          stateMachineQuickOptions={resolvedQuickOptions}
+          onQuickOptionClick={handleSendOption}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}

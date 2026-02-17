@@ -154,6 +154,7 @@ export function useChatInterfaceData({
   const {
     briefingState: _briefingState,
     serializedState: serializedBriefingState,
+    quickOptions: stateMachineQuickOptions,
     syncFromServer: syncBriefingFromServer,
   } = useBriefingStateMachine(initialBriefingState, { draftId, brandAudiences })
 
@@ -187,6 +188,27 @@ export function useChatInterfaceData({
     pendingTask,
     taskSubmitted,
   ])
+
+  // Resolve quick options with priority: AI response > state machine > null
+  const resolvedQuickOptions = useMemo(() => {
+    if (isLoading || pendingTask) return null
+
+    // Priority 1: Quick options from the last assistant message (most contextual)
+    const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant')
+    if (
+      lastAssistantMessage?.quickOptions &&
+      lastAssistantMessage.quickOptions.options.length > 0
+    ) {
+      return lastAssistantMessage.quickOptions
+    }
+
+    // Priority 2: State machine quick options (reliable stage-based fallback)
+    if (stateMachineQuickOptions && stateMachineQuickOptions.options.length > 0) {
+      return stateMachineQuickOptions
+    }
+
+    return null
+  }, [messages, isLoading, pendingTask, stateMachineQuickOptions])
 
   // Collapse left sidebar when chat starts
   useEffect(() => {
@@ -1674,6 +1696,9 @@ export function useChatInterfaceData({
 
     // Last user message index (for edit button)
     lastUserMessageIndex,
+
+    // Quick options
+    resolvedQuickOptions,
 
     // Handlers
     handleSend,

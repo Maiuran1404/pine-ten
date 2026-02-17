@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/shared/loading'
 import {
@@ -135,18 +135,32 @@ export function ChatInputArea({
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
       {/* State machine quick option chips */}
-      {stateMachineQuickOptions &&
-        stateMachineQuickOptions.options.length > 0 &&
-        onQuickOptionClick &&
-        !isLoading && (
-          <div className="mb-3">
-            <QuickOptions
-              options={stateMachineQuickOptions}
-              onSelect={onQuickOptionClick}
-              disabled={isLoading}
-            />
-          </div>
-        )}
+      <AnimatePresence>
+        {stateMachineQuickOptions &&
+          stateMachineQuickOptions.options.length > 0 &&
+          onQuickOptionClick &&
+          !isLoading &&
+          !input.trim() && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="mb-3"
+            >
+              {stateMachineQuickOptions.question && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  {stateMachineQuickOptions.question}
+                </p>
+              )}
+              <QuickOptions
+                options={stateMachineQuickOptions}
+                onSelect={onQuickOptionClick}
+                disabled={isLoading}
+              />
+            </motion.div>
+          )}
+      </AnimatePresence>
 
       {/* Pending uploads preview */}
       {uploadedFiles.length > 0 && (

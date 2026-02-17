@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Check, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { QuickOptions as QuickOptionsType } from './types'
@@ -14,15 +15,15 @@ interface QuickOptionsProps {
 
 /**
  * Displays quick option buttons for user selection
- * Compact horizontal layout with max 4 options
+ * Compact horizontal layout with max 5 options
  * Sage green hover/active states matching brand
  */
 export function QuickOptions({ options, onSelect, disabled = false }: QuickOptionsProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const isMultiSelect = options.multiSelect === true
 
-  // Only show first 4 options
-  const displayOptions = options.options.slice(0, 4)
+  // Only show first 5 options
+  const displayOptions = options.options.slice(0, 5)
 
   if (displayOptions.length === 0) return null
 
@@ -54,13 +55,16 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
           const isSelected = selectedOptions.includes(option)
 
           return (
-            <button
+            <motion.button
               key={idx}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: idx * 0.04 }}
               type="button"
               onClick={() => handleOptionClick(option)}
               disabled={disabled}
               className={cn(
-                'px-4 py-2.5 text-sm font-medium rounded-xl border transition-all duration-150',
+                'px-4 py-2.5 text-sm font-medium rounded-full border transition-all duration-150',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 'whitespace-nowrap',
                 isMultiSelect && isSelected
@@ -76,7 +80,7 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
             >
               {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}
               {option}
-            </button>
+            </motion.button>
           )
         })}
       </div>
