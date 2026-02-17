@@ -142,7 +142,7 @@ export function ChatInputArea({
 
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
-      {/* State machine quick option chips */}
+      {/* State machine quick option chips + "You decide & submit" grouped */}
       <AnimatePresence>
         {stateMachineQuickOptions &&
           stateMachineQuickOptions.options.length > 0 &&
@@ -154,18 +154,35 @@ export function ChatInputArea({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.2 }}
-              className="mb-3"
+              className="mb-2"
             >
               {stateMachineQuickOptions.question && (
                 <p className="text-xs text-muted-foreground mb-2">
                   {stateMachineQuickOptions.question}
                 </p>
               )}
-              <QuickOptions
-                options={stateMachineQuickOptions}
-                onSelect={onQuickOptionClick}
-                disabled={isLoading}
-              />
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <QuickOptions
+                    options={stateMachineQuickOptions}
+                    onSelect={onQuickOptionClick}
+                    disabled={isLoading}
+                  />
+                </div>
+                {messages.length > 0 &&
+                  !pendingTask &&
+                  (!briefingStage || briefingStage !== 'EXTRACT') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRequestTaskSummary}
+                      className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3 shrink-0"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      You decide & submit
+                    </Button>
+                  )}
+              </div>
             </motion.div>
           )}
       </AnimatePresence>
@@ -226,12 +243,17 @@ export function ChatInputArea({
         </div>
       )}
 
-      {/* Quick submit button - positioned above input on the right */}
+      {/* Quick submit button - only when no quick options are showing */}
       {messages.length > 0 &&
         !pendingTask &&
         !isLoading &&
-        (!briefingStage || briefingStage !== 'EXTRACT') && (
-          <div className="flex justify-end mb-2">
+        (!briefingStage || briefingStage !== 'EXTRACT') &&
+        !(
+          stateMachineQuickOptions &&
+          stateMachineQuickOptions.options.length > 0 &&
+          !input.trim()
+        ) && (
+          <div className="flex justify-end mb-1.5">
             <Button
               variant="ghost"
               size="sm"

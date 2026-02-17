@@ -2,31 +2,12 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Film,
-  Clock,
-  Eye,
-  Target,
-  Video,
-  ChevronDown,
-  ChevronRight,
-  MessageSquare,
-} from 'lucide-react'
+import { Film, Clock, Eye, Target, Video, MessageSquare, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
-
-// =============================================================================
-// PROPS
-// =============================================================================
-
-interface StoryboardViewProps {
-  scenes: StoryboardScene[]
-  className?: string
-  onSceneClick?: (scene: StoryboardScene) => void
-  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
-}
 
 // =============================================================================
 // HELPERS
@@ -93,214 +74,23 @@ function HookDataInline({ hookData }: { hookData: NonNullable<StoryboardScene['h
 }
 
 // =============================================================================
-// SCENE ROW — compact horizontal row with checkbox
+// STORYBOARD SUMMARY CARD — compact inline chat component
 // =============================================================================
 
-function SceneRow({
-  scene,
-  isFirst,
-  timestamp,
-  isSelected,
-  isExpanded,
-  onToggleSelect,
-  onToggleExpand,
-  onClickFeedback,
-}: {
-  scene: StoryboardScene
-  isFirst: boolean
-  timestamp: { start: string; end: string }
-  isSelected: boolean
-  isExpanded: boolean
-  onToggleSelect: () => void
-  onToggleExpand: () => void
-  onClickFeedback?: () => void
-}) {
-  return (
-    <div
-      className={cn(
-        'rounded-lg border transition-all',
-        isFirst ? 'border-amber-300/60 dark:border-amber-800/40' : 'border-border/40',
-        isSelected && 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'
-      )}
-    >
-      {/* Main row */}
-      <div className="flex items-center gap-3 px-3 py-2.5">
-        {/* Checkbox */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleSelect()
-          }}
-          className={cn(
-            'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
-            isSelected
-              ? 'bg-emerald-600 border-emerald-600'
-              : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
-          )}
-        >
-          {isSelected && (
-            <svg
-              className="w-2.5 h-2.5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </button>
-
-        {/* Scene number + timestamp */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-mono text-muted-foreground w-10">{timestamp.start}</span>
-          {isFirst && (
-            <Badge
-              variant="outline"
-              className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide"
-            >
-              Hook
-            </Badge>
-          )}
-        </div>
-
-        {/* Title + truncated description */}
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className="flex-1 min-w-0 text-left flex items-center gap-2"
-        >
-          <h4 className="text-sm font-medium text-foreground truncate">{scene.title}</h4>
-          <span className="text-xs text-muted-foreground truncate hidden sm:inline">
-            {scene.description.length > 60
-              ? scene.description.slice(0, 60) + '...'
-              : scene.description}
-          </span>
-          {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          )}
-        </button>
-
-        {/* Duration */}
-        <span className="text-[10px] text-muted-foreground shrink-0">{scene.duration}</span>
-
-        {/* Single scene feedback button */}
-        {onClickFeedback && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClickFeedback()
-            }}
-            className="p-1 rounded text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors shrink-0"
-            title="Give feedback on this scene"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* Expanded detail */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 pt-0 ml-7 space-y-2 border-t border-border/30">
-              <p className="text-sm text-muted-foreground leading-relaxed pt-2">
-                {scene.description}
-              </p>
-
-              {/* Visual note */}
-              {scene.visualNote && (
-                <div className="flex items-start gap-1.5 text-muted-foreground/80">
-                  <Eye className="h-3 w-3 mt-0.5 shrink-0" />
-                  <span className="text-xs italic">{scene.visualNote}</span>
-                </div>
-              )}
-
-              {/* Hook data - only on scene 1 */}
-              {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
-
-              {/* Reference video link */}
-              {scene.referenceVideoId && (
-                <div className="flex items-center gap-1.5">
-                  <Video className="h-3 w-3 text-primary" />
-                  <span className="text-xs text-primary">Reference video linked</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
+interface StoryboardSummaryCardProps {
+  scenes: StoryboardScene[]
+  className?: string
+  onViewStoryboard?: () => void
 }
 
-// =============================================================================
-// EMPTY STATE
-// =============================================================================
-
-function StoryboardEmpty() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Film className="h-8 w-8 text-muted-foreground/40 mb-3" />
-      <p className="text-sm text-muted-foreground">Storyboard will appear here</p>
-    </div>
-  )
-}
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
-
-export function StoryboardView({
+export function StoryboardSummaryCard({
   scenes,
   className,
-  onSceneClick,
-  onMultiSceneFeedback,
-}: StoryboardViewProps) {
-  const [selectedScenes, setSelectedScenes] = useState<number[]>([])
-  const [expandedScenes, setExpandedScenes] = useState<Set<number>>(new Set())
-
-  if (scenes.length === 0) {
-    return <StoryboardEmpty />
-  }
+  onViewStoryboard,
+}: StoryboardSummaryCardProps) {
+  if (scenes.length === 0) return null
 
   const totalDuration = scenes.reduce((acc, scene) => acc + parseDurationSeconds(scene.duration), 0)
-  const timestampRanges = computeTimestampRanges(scenes)
-
-  const toggleSelect = (sceneNumber: number) => {
-    setSelectedScenes((prev) =>
-      prev.includes(sceneNumber) ? prev.filter((n) => n !== sceneNumber) : [...prev, sceneNumber]
-    )
-  }
-
-  const toggleExpand = (sceneNumber: number) => {
-    setExpandedScenes((prev) => {
-      const next = new Set(prev)
-      if (next.has(sceneNumber)) {
-        next.delete(sceneNumber)
-      } else {
-        next.add(sceneNumber)
-      }
-      return next
-    })
-  }
-
-  const handleMultiFeedback = () => {
-    if (selectedScenes.length === 0 || !onMultiSceneFeedback) return
-    const selected = scenes.filter((s) => selectedScenes.includes(s.sceneNumber))
-    onMultiSceneFeedback(selected)
-    setSelectedScenes([])
-  }
 
   return (
     <motion.div
@@ -309,7 +99,7 @@ export function StoryboardView({
       transition={{ duration: 0.3 }}
       className={cn('rounded-lg border border-border/60 overflow-hidden', className)}
     >
-      {/* Header — simple icon + text + metadata on one line */}
+      {/* Header */}
       <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Film className="h-4 w-4 text-emerald-600" />
@@ -326,28 +116,257 @@ export function StoryboardView({
         )}
       </div>
 
-      {/* Scene rows */}
-      <div className="p-3 space-y-1.5">
+      {/* Compact scene list */}
+      <div className="px-4 py-2.5 space-y-1">
         {scenes.map((scene, index) => (
-          <motion.div
-            key={scene.sceneNumber}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.03 }}
-          >
-            <SceneRow
-              scene={scene}
-              isFirst={index === 0}
-              timestamp={timestampRanges[index]}
-              isSelected={selectedScenes.includes(scene.sceneNumber)}
-              isExpanded={expandedScenes.has(scene.sceneNumber)}
-              onToggleSelect={() => toggleSelect(scene.sceneNumber)}
-              onToggleExpand={() => toggleExpand(scene.sceneNumber)}
-              onClickFeedback={onSceneClick ? () => onSceneClick(scene) : undefined}
-            />
-          </motion.div>
+          <div key={scene.sceneNumber} className="flex items-center gap-2 text-sm">
+            <span className="text-xs text-muted-foreground/60 w-4 text-right shrink-0">
+              {index + 1}.
+            </span>
+            <span className="text-foreground truncate">{scene.title}</span>
+            {index === 0 && (
+              <Badge
+                variant="outline"
+                className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide shrink-0"
+              >
+                Hook
+              </Badge>
+            )}
+          </div>
         ))}
       </div>
+
+      {/* View Storyboard button */}
+      {onViewStoryboard && (
+        <div className="px-4 py-2.5 border-t border-border/40">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onViewStoryboard}
+            className="w-full gap-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+          >
+            View Storyboard
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// =============================================================================
+// SCENE CARD — vertical card for the sidebar panel
+// =============================================================================
+
+function SceneCard({
+  scene,
+  isFirst,
+  timestamp,
+  isSelected,
+  onToggleSelect,
+  onClickFeedback,
+}: {
+  scene: StoryboardScene
+  isFirst: boolean
+  timestamp: { start: string; end: string }
+  isSelected: boolean
+  onToggleSelect: () => void
+  onClickFeedback?: () => void
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border transition-all',
+        isFirst ? 'border-amber-300/60 dark:border-amber-800/40' : 'border-border/40',
+        isSelected && 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10',
+        !isSelected && 'hover:shadow-sm hover:border-border/80'
+      )}
+    >
+      <div className="p-3 space-y-2">
+        {/* Top row: checkbox, scene number, timestamp */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSelect()
+            }}
+            className={cn(
+              'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
+              isSelected
+                ? 'bg-emerald-600 border-emerald-600'
+                : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
+            )}
+          >
+            {isSelected && (
+              <svg
+                className="w-2.5 h-2.5 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <span className="text-[11px] font-medium text-muted-foreground">
+            Scene {scene.sceneNumber}
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground/60 ml-auto">
+            {timestamp.start}
+          </span>
+          {isFirst && (
+            <Badge
+              variant="outline"
+              className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide"
+            >
+              Hook
+            </Badge>
+          )}
+        </div>
+
+        {/* Title */}
+        <h4 className="text-sm font-medium text-foreground leading-snug">{scene.title}</h4>
+
+        {/* Description */}
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+          {scene.description}
+        </p>
+
+        {/* Visual note */}
+        {scene.visualNote && (
+          <div className="flex items-start gap-1.5 text-muted-foreground/70">
+            <Eye className="h-3 w-3 mt-0.5 shrink-0" />
+            <span className="text-[11px] italic leading-relaxed">{scene.visualNote}</span>
+          </div>
+        )}
+
+        {/* Hook data — scene 1 only */}
+        {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
+
+        {/* Reference video link */}
+        {scene.referenceVideoId && (
+          <div className="flex items-center gap-1.5">
+            <Video className="h-3 w-3 text-primary" />
+            <span className="text-[11px] text-primary">Reference video linked</span>
+          </div>
+        )}
+
+        {/* Bottom row: duration + feedback */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[10px] text-muted-foreground">{scene.duration}</span>
+          {onClickFeedback && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClickFeedback()
+              }}
+              className="p-1 rounded text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              title="Give feedback on this scene"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// STORYBOARD PANEL — full vertical cards for the right sidebar
+// =============================================================================
+
+interface StoryboardPanelProps {
+  scenes: StoryboardScene[]
+  className?: string
+  onSceneClick?: (scene: StoryboardScene) => void
+  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
+}
+
+export function StoryboardPanel({
+  scenes,
+  className,
+  onSceneClick,
+  onMultiSceneFeedback,
+}: StoryboardPanelProps) {
+  const [selectedScenes, setSelectedScenes] = useState<number[]>([])
+
+  if (scenes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Film className="h-8 w-8 text-muted-foreground/40 mb-3" />
+        <p className="text-sm text-muted-foreground">Storyboard will appear here</p>
+      </div>
+    )
+  }
+
+  const totalDuration = scenes.reduce((acc, scene) => acc + parseDurationSeconds(scene.duration), 0)
+  const timestampRanges = computeTimestampRanges(scenes)
+
+  const toggleSelect = (sceneNumber: number) => {
+    setSelectedScenes((prev) =>
+      prev.includes(sceneNumber) ? prev.filter((n) => n !== sceneNumber) : [...prev, sceneNumber]
+    )
+  }
+
+  const handleMultiFeedback = () => {
+    if (selectedScenes.length === 0 || !onMultiSceneFeedback) return
+    const selected = scenes.filter((s) => selectedScenes.includes(s.sceneNumber))
+    onMultiSceneFeedback(selected)
+    setSelectedScenes([])
+  }
+
+  return (
+    <div className={cn('flex flex-col h-full', className)}>
+      {/* Header */}
+      <div className="shrink-0 px-4 py-3 border-b border-border/40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Film className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm font-semibold text-foreground">Storyboard</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
+            </span>
+            {totalDuration > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatTimestamp(totalDuration)}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable scene cards */}
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-3">
+          {scenes.map((scene, index) => (
+            <motion.div
+              key={scene.sceneNumber}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.04 }}
+            >
+              <SceneCard
+                scene={scene}
+                isFirst={index === 0}
+                timestamp={timestampRanges[index]}
+                isSelected={selectedScenes.includes(scene.sceneNumber)}
+                onToggleSelect={() => toggleSelect(scene.sceneNumber)}
+                onClickFeedback={onSceneClick ? () => onSceneClick(scene) : undefined}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </ScrollArea>
 
       {/* Sticky multi-select action bar */}
       <AnimatePresence>
@@ -357,7 +376,7 @@ export function StoryboardView({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="sticky bottom-0 px-4 py-3 border-t border-border/40 bg-background/95 backdrop-blur-sm flex items-center justify-between"
+            className="shrink-0 px-4 py-3 border-t border-border/40 bg-background/95 backdrop-blur-sm flex items-center justify-between"
           >
             <span className="text-sm text-muted-foreground">
               {selectedScenes.length} {selectedScenes.length === 1 ? 'scene' : 'scenes'} selected
@@ -369,6 +388,12 @@ export function StoryboardView({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   )
 }
+
+// =============================================================================
+// LEGACY EXPORT — kept for backward compatibility
+// =============================================================================
+
+export { StoryboardSummaryCard as StoryboardView }

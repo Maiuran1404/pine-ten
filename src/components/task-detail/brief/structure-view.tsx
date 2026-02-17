@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
-import { StoryboardView } from '@/components/chat/storyboard-view'
+import { StoryboardPanel } from '@/components/chat/storyboard-view'
 import type { StructureData } from '@/components/task-detail/types'
 import type {
   LayoutSection,
@@ -25,7 +25,7 @@ interface StructureViewProps {
 export function StructureView({ structure, className }: StructureViewProps) {
   switch (structure.type) {
     case 'storyboard':
-      return <StoryboardView scenes={structure.scenes} className={className} />
+      return <StoryboardPanel scenes={structure.scenes} className={className} />
 
     case 'layout':
       return <LayoutView sections={structure.sections} className={className} />

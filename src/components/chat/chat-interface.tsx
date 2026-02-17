@@ -206,6 +206,9 @@ export function ChatInterface({
     handleSceneClick,
     handleMultiSceneFeedback,
 
+    // Storyboard
+    storyboardScenes,
+
     // Handlers
     handleSend,
     handleSendOption,
@@ -270,6 +273,11 @@ export function ChatInterface({
       showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
       showBrief={seamlessTransition && !isTaskMode && showRightPanel}
       deliverableCategory={deliverableCategory}
+      storyboardScenes={
+        storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined
+      }
+      onSceneClick={handleSceneClick}
+      onMultiSceneFeedback={handleMultiSceneFeedback}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div
@@ -400,6 +408,9 @@ export function ChatInterface({
           briefingStage={briefingStage}
           onSceneClick={handleSceneClick}
           onMultiSceneFeedback={handleMultiSceneFeedback}
+          onViewStoryboard={() => {
+            // Panel auto-shows storyboard when data exists; no-op for now
+          }}
         />
 
         {/* Input area / Submit action bar */}

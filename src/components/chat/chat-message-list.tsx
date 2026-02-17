@@ -20,7 +20,7 @@ import { VideoReferenceGrid, type VideoReferenceStyle } from './video-reference-
 import { StyleSelectionGrid } from './style-selection-grid'
 import { InlineCollection } from './inline-collection'
 import { TaskProposalCard } from './task-proposal-card'
-import { StoryboardView } from './storyboard-view'
+import { StoryboardSummaryCard } from './storyboard-view'
 import { LayoutPreview } from './layout-preview'
 import { DesignSpecView } from './design-spec-view'
 import { ContentCalendar } from './brief-panel/content-calendar'
@@ -296,6 +296,9 @@ export interface ChatMessageListProps {
 
   // Multi-scene feedback handler
   onMultiSceneFeedback?: (scenes: { sceneNumber: number; title: string }[]) => void
+
+  // View storyboard in panel handler
+  onViewStoryboard?: () => void
 }
 
 // =============================================================================
@@ -340,8 +343,9 @@ export function ChatMessageList({
   handleEditLastMessage,
   onStrategicReviewAction,
   briefingStage,
-  onSceneClick,
-  onMultiSceneFeedback,
+  onSceneClick: _onSceneClick,
+  onMultiSceneFeedback: _onMultiSceneFeedback,
+  onViewStoryboard,
 }: ChatMessageListProps) {
   return (
     <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
@@ -587,7 +591,7 @@ export function ChatMessageList({
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.3, delay: 0.2 }}
-                              className="mt-5 ml-8"
+                              className="mt-5"
                             >
                               <VideoReferenceGrid
                                 videos={message.videoReferences}
@@ -609,10 +613,9 @@ export function ChatMessageList({
                               className="mt-4"
                             >
                               {message.structureData.type === 'storyboard' && (
-                                <StoryboardView
+                                <StoryboardSummaryCard
                                   scenes={message.structureData.scenes}
-                                  onSceneClick={onSceneClick}
-                                  onMultiSceneFeedback={onMultiSceneFeedback}
+                                  onViewStoryboard={onViewStoryboard}
                                 />
                               )}
                               {message.structureData.type === 'layout' && (

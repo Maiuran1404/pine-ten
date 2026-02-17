@@ -6,7 +6,6 @@ import { Palette, Type, Image as ImageIcon, Plus, X, Sparkles, EyeOff } from 'lu
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { VisualDirection } from './types'
 import type { DeliverableStyle } from '../types'
 
@@ -20,6 +19,8 @@ interface SelectedStylesProps {
 }
 
 function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+
   if (styles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-center border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
@@ -41,14 +42,22 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
           exit={{ opacity: 0, scale: 0.9 }}
           className="group relative aspect-square rounded-lg overflow-hidden border border-border"
         >
-          <OptimizedImage
-            src={style.imageUrl}
-            alt={style.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, 25vw"
-            showSkeleton={false}
-          />
+          {failedImages.has(style.id) ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-muted/40">
+              <Palette className="h-6 w-6 text-muted-foreground/40 mb-1" />
+              <p className="text-[10px] text-muted-foreground/60 truncate max-w-full px-2">
+                {style.name}
+              </p>
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={style.imageUrl}
+              alt={style.name}
+              className="w-full h-full object-cover"
+              onError={() => setFailedImages((prev) => new Set(prev).add(style.id))}
+            />
+          )}
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="absolute bottom-0 left-0 right-0 p-2">

@@ -98,6 +98,7 @@ export function useChatInterfaceData({
   const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
   const [sceneReference, setSceneReference] = useState<SceneReference | null>(null)
   const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
+  const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -488,6 +489,7 @@ export function useChatInterfaceData({
         // Track latest storyboard data
         if (data.structureData?.type === 'storyboard') {
           latestStoryboardRef.current = data.structureData
+          setStoryboardScenes(data.structureData)
         }
 
         const assistantMessage: Message = {
@@ -870,6 +872,7 @@ export function useChatInterfaceData({
       let resolvedStructureData: StructureData | undefined = data.structureData ?? undefined
       if (resolvedStructureData?.type === 'storyboard') {
         latestStoryboardRef.current = resolvedStructureData
+        setStoryboardScenes(resolvedStructureData)
       }
 
       // Re-attach storyboard when AI responds to scene feedback without new storyboard
@@ -1404,6 +1407,7 @@ export function useChatInterfaceData({
         // Track latest storyboard data
         if (data.structureData?.type === 'storyboard') {
           latestStoryboardRef.current = data.structureData
+          setStoryboardScenes(data.structureData)
         }
 
         const assistantMessage: Message = {
@@ -1808,6 +1812,9 @@ export function useChatInterfaceData({
     setSceneReference,
     handleSceneClick,
     handleMultiSceneFeedback,
+
+    // Storyboard
+    storyboardScenes,
 
     // Handlers
     handleSend,

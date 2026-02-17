@@ -13,6 +13,7 @@ import { CompactProgress } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { Palette } from 'lucide-react'
 import { UnifiedPanel } from './unified-panel'
+import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -34,6 +35,10 @@ interface ChatLayoutProps {
   isReadyForDesigner?: boolean
   // Deliverable category (used to hide irrelevant sections)
   deliverableCategory?: string | null
+  // Storyboard props
+  storyboardScenes?: StoryboardScene[]
+  onSceneClick?: (scene: StoryboardScene) => void
+  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -56,6 +61,9 @@ export function ChatLayout({
   onRequestSubmit,
   isReadyForDesigner,
   deliverableCategory,
+  storyboardScenes,
+  onSceneClick,
+  onMultiSceneFeedback,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -107,6 +115,9 @@ export function ChatLayout({
                       onRequestSubmit={onRequestSubmit}
                       isReadyForDesigner={isReadyForDesigner}
                       deliverableCategory={deliverableCategory}
+                      storyboardScenes={storyboardScenes}
+                      onSceneClick={onSceneClick}
+                      onMultiSceneFeedback={onMultiSceneFeedback}
                     />
                   </div>
                 </SheetContent>
@@ -149,7 +160,10 @@ export function ChatLayout({
               <motion.div
                 key="expanded"
                 initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 280, opacity: 1 }}
+                animate={{
+                  width: storyboardScenes && storyboardScenes.length > 0 ? 340 : 280,
+                  opacity: 1,
+                }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
@@ -219,6 +233,9 @@ export function ChatLayout({
                     onClearMoodboard={onClearMoodboard}
                     onRequestSubmit={onRequestSubmit}
                     isReadyForDesigner={isReadyForDesigner}
+                    storyboardScenes={storyboardScenes}
+                    onSceneClick={onSceneClick}
+                    onMultiSceneFeedback={onMultiSceneFeedback}
                   />
                 </div>
               </SheetContent>

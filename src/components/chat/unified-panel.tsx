@@ -22,6 +22,8 @@ import {
   isCurrentStage,
 } from '@/lib/chat-progress'
 import { getStageHint } from '@/lib/chat-progress'
+import { StoryboardPanel } from './storyboard-view'
+import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 // =============================================================================
 // TYPES
@@ -41,10 +43,13 @@ interface UnifiedPanelProps {
   onRequestSubmit?: () => void
   isReadyForDesigner?: boolean
   deliverableCategory?: string | null
+  storyboardScenes?: StoryboardScene[]
+  onSceneClick?: (scene: StoryboardScene) => void
+  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
   className?: string
 }
 
-type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline'
+type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline' | 'storyboard'
 
 interface SectionConfig {
   key: SectionKey
@@ -61,7 +66,8 @@ function getSectionsForStage(
   currentStage: ChatStage,
   brief: LiveBrief | null,
   moodboardItems: MoodboardItem[],
-  deliverableCategory?: string | null
+  deliverableCategory?: string | null,
+  hasStoryboard?: boolean
 ): SectionConfig[] {
   const moodboardCount = moodboardItems.length
   const outlineCount = brief?.contentOutline?.totalItems || 0
@@ -75,18 +81,22 @@ function getSectionsForStage(
     (brief?.visualDirection?.colorPalette.length || 0) +
     (brief?.visualDirection?.moodKeywords.length || 0)
 
+  let sections: SectionConfig[]
+
   switch (currentStage) {
     case 'brief':
-      return [{ key: 'brief', label: 'Brief', defaultOpen: true }]
+      sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }]
+      break
 
     case 'style':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
         { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
       ]
+      break
 
     case 'details':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
         {
@@ -96,9 +106,10 @@ function getSectionsForStage(
           itemCount: visualCount || undefined,
         },
       ]
+      break
 
     case 'strategic_review':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
         {
           key: 'visual',
@@ -118,9 +129,10 @@ function getSectionsForStage(
           : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
+      break
 
     case 'moodboard':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
         { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
         {
@@ -140,10 +152,11 @@ function getSectionsForStage(
             ]
           : []),
       ]
+      break
 
     case 'review':
     case 'deepen':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
         {
           key: 'visual',
@@ -163,9 +176,10 @@ function getSectionsForStage(
           : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
+      break
 
     case 'submit':
-      return [
+      sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
         {
           key: 'visual',
@@ -185,10 +199,19 @@ function getSectionsForStage(
           : []),
         { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
       ]
+      break
 
     default:
-      return [{ key: 'brief', label: 'Brief', defaultOpen: true }]
+      sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }]
+      break
   }
+
+  // Append storyboard section when data exists
+  if (hasStoryboard) {
+    sections.push({ key: 'storyboard', label: 'Storyboard', defaultOpen: true })
+  }
+
+  return sections
 }
 
 // =============================================================================
@@ -337,16 +360,7 @@ function MoodboardContent({
 
   return (
     <div className="px-4 pb-4 space-y-3">
-      {groupedItems.styles.length > 0 && (
-        <div>
-          <MoodboardSectionHeader title="Selected Styles" itemCount={groupedItems.styles.length} />
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {groupedItems.styles.map((item) => (
-              <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Styles are shown in Visual Direction — not duplicated here */}
 
       {groupedItems.colors.length > 0 && (
         <div>
@@ -393,6 +407,9 @@ export function UnifiedPanel({
   onRequestSubmit,
   isReadyForDesigner,
   deliverableCategory,
+  storyboardScenes,
+  onSceneClick,
+  onMultiSceneFeedback,
   className,
 }: UnifiedPanelProps) {
   // Track user-toggled open/close state per section
@@ -401,14 +418,17 @@ export function UnifiedPanel({
     moodboard: undefined,
     visual: undefined,
     outline: undefined,
+    storyboard: undefined,
   })
 
   // Track which sections have appeared before (for first-appearance defaultOpen)
   const [seenSections, setSeenSections] = useState<Set<SectionKey>>(new Set(['brief']))
 
+  const hasStoryboard = (storyboardScenes?.length ?? 0) > 0
   const sections = useMemo(
-    () => getSectionsForStage(currentStage, brief, moodboardItems, deliverableCategory),
-    [currentStage, brief, moodboardItems, deliverableCategory]
+    () =>
+      getSectionsForStage(currentStage, brief, moodboardItems, deliverableCategory, hasStoryboard),
+    [currentStage, brief, moodboardItems, deliverableCategory, hasStoryboard]
   )
 
   // Update seen sections when new ones appear
@@ -501,6 +521,15 @@ export function UnifiedPanel({
             />
           </div>
         )
+
+      case 'storyboard':
+        return storyboardScenes && storyboardScenes.length > 0 ? (
+          <StoryboardPanel
+            scenes={storyboardScenes}
+            onSceneClick={onSceneClick}
+            onMultiSceneFeedback={onMultiSceneFeedback}
+          />
+        ) : null
 
       default:
         return null
