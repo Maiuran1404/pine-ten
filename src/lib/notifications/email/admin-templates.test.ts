@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('@/lib/config', () => ({
   config: {
     app: { name: 'Crafted', url: 'https://getcrafted.ai' },
+    supabase: { url: 'https://test.supabase.co' },
     credits: { pricePerCredit: 4.9 },
     payouts: { creditValueUSD: 10 },
     notifications: {

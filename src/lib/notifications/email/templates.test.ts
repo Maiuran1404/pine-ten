@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/lib/config', () => ({
   config: {
     app: { name: 'Crafted', url: 'https://getcrafted.ai' },
+    supabase: { url: 'https://test.supabase.co' },
     credits: { pricePerCredit: 4.9 },
     notifications: {
       email: {

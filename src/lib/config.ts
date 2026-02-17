@@ -16,6 +16,9 @@ export const config = {
     url: requireEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
     baseDomain: process.env.NEXT_PUBLIC_BASE_DOMAIN || 'getcrafted.ai',
   },
+  supabase: {
+    url: requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+  },
   credits: {
     pricePerCredit: 4.9, // USD (1 credit = $4.90)
     currency: 'USD',

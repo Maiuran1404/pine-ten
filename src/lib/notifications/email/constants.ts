@@ -59,13 +59,15 @@ export const radii = {
   pill: '100px',
 } as const
 
-// Asset helpers
+// Asset helpers — hosted on Supabase Storage (public bucket) for reliable email delivery
+const SUPABASE_STORAGE_BASE = `${config.supabase.url}/storage/v1/object/public/uploads/email`
+
 export function logoUrl(): string {
-  return `${config.app.url}/craftedcombintedblack.png`
+  return `${SUPABASE_STORAGE_BASE}/logo-combined-black.png`
 }
 
 export function figureLogoUrl(): string {
-  return `${config.app.url}/craftedfigureblack.png`
+  return `${SUPABASE_STORAGE_BASE}/logo-figure-black.png`
 }
 
 export function appUrl(): string {
