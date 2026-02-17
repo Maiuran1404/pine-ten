@@ -154,7 +154,6 @@ export function useChatInterfaceData({
   const {
     briefingState: _briefingState,
     serializedState: serializedBriefingState,
-    quickOptions: stateMachineQuickOptions,
     syncFromServer: syncBriefingFromServer,
   } = useBriefingStateMachine(initialBriefingState, { draftId, brandAudiences })
 
@@ -189,11 +188,11 @@ export function useChatInterfaceData({
     taskSubmitted,
   ])
 
-  // Resolve quick options with priority: AI response > state machine > null
+  // Resolve quick options — only from AI response, never generic stage-based fallback
   const resolvedQuickOptions = useMemo(() => {
     if (isLoading || pendingTask) return null
 
-    // Priority 1: Quick options from the last assistant message (most contextual)
+    // Only show quick options the AI explicitly included in its response
     const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant')
     if (
       lastAssistantMessage?.quickOptions &&
@@ -202,13 +201,8 @@ export function useChatInterfaceData({
       return lastAssistantMessage.quickOptions
     }
 
-    // Priority 2: State machine quick options (reliable stage-based fallback)
-    if (stateMachineQuickOptions && stateMachineQuickOptions.options.length > 0) {
-      return stateMachineQuickOptions
-    }
-
     return null
-  }, [messages, isLoading, pendingTask, stateMachineQuickOptions])
+  }, [messages, isLoading, pendingTask])
 
   // Collapse left sidebar when chat starts
   useEffect(() => {
@@ -659,6 +653,20 @@ export function useChatInterfaceData({
     })
     return () => cancelAnimationFrame(frame1)
   }, [messages, isLoading, scrollToBottom])
+
+  // Continuously scroll during typing animation to keep up with growing content
+  useEffect(() => {
+    if (!animatingMessageId) return
+    const interval = setInterval(() => scrollToBottom(true), 200)
+    return () => clearInterval(interval)
+  }, [animatingMessageId, scrollToBottom])
+
+  // Final scroll when typing animation completes
+  useEffect(() => {
+    if (animatingMessageId === null && completedTypingIds.size > 0) {
+      scrollToBottom(true)
+    }
+  }, [animatingMessageId, completedTypingIds, scrollToBottom])
 
   // File upload logic
   const uploadFiles = useCallback(
