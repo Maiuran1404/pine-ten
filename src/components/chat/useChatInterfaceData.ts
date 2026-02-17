@@ -1317,6 +1317,28 @@ export function useChatInterfaceData({
     []
   )
 
+  // Handle multi-scene feedback from storyboard
+  const handleMultiSceneFeedback = useCallback(
+    (scenes: { sceneNumber: number; title: string }[]) => {
+      if (scenes.length === 1) {
+        // Single scene — use existing scene reference behavior
+        const scene = scenes[0]
+        setSceneReference({
+          sceneNumber: scene.sceneNumber,
+          title: scene.title,
+          description: '',
+          visualNote: '',
+        })
+      } else {
+        // Multiple scenes — compose a combined reference
+        const sceneList = scenes.map((s) => `Scene ${s.sceneNumber}: ${s.title}`).join(', ')
+        setInput(`Feedback on ${sceneList}: `)
+      }
+      inputRef.current?.focus()
+    },
+    []
+  )
+
   const lastUserMessageIndex = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'user') return i
@@ -1761,6 +1783,7 @@ export function useChatInterfaceData({
     sceneReference,
     setSceneReference,
     handleSceneClick,
+    handleMultiSceneFeedback,
 
     // Handlers
     handleSend,

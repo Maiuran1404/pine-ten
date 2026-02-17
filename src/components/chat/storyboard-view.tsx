@@ -1,10 +1,20 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Film, Clock, Eye, Target, Video, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Film,
+  Clock,
+  Eye,
+  Target,
+  Video,
+  ChevronDown,
+  ChevronRight,
+  MessageSquare,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { ImagePlaceholder, TextLines, CircleIcon, BlockRect } from '@/components/chat/wireframe'
+import { Button } from '@/components/ui/button'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 // =============================================================================
@@ -15,6 +25,7 @@ interface StoryboardViewProps {
   scenes: StoryboardScene[]
   className?: string
   onSceneClick?: (scene: StoryboardScene) => void
+  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
 }
 
 // =============================================================================
@@ -47,102 +58,34 @@ function computeTimestampRanges(scenes: StoryboardScene[]): { start: string; end
 }
 
 // =============================================================================
-// SCENE THUMBNAIL — wireframe shapes based on visualNote keywords
+// HOOK DATA (amber sub-section for Scene 1)
 // =============================================================================
 
-function SceneThumbnail({ visualNote }: { visualNote: string }) {
-  const note = visualNote.toLowerCase()
-
-  if (/close[\s-]?up|face|person/.test(note)) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <CircleIcon size="lg" className="w-16 h-16" />
-      </div>
-    )
-  }
-
-  if (/wide[\s-]?shot|landscape/.test(note)) {
-    return (
-      <div className="flex flex-col items-center justify-end h-full px-6 pb-4 gap-2">
-        <div className="w-full h-px bg-slate-300 dark:bg-slate-600" style={{ marginTop: '60%' }} />
-        <div className="flex items-end gap-3 w-full justify-center">
-          <BlockRect className="w-8 h-5" />
-          <BlockRect className="w-6 h-8" />
-          <BlockRect className="w-10 h-4" />
-        </div>
-      </div>
-    )
-  }
-
-  if (/product|object|screen/.test(note)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-2">
-        <BlockRect className="w-20 h-14" />
-        <div className="flex gap-2">
-          <div className="w-8 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
-          <div className="w-6 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
-        </div>
-      </div>
-    )
-  }
-
-  if (/text|title|overlay/.test(note)) {
-    return (
-      <div className="flex items-center justify-center h-full px-8">
-        <TextLines lines={3} widths={[70, 90, 50]} className="w-full" />
-      </div>
-    )
-  }
-
-  if (/montage|split|multiple/.test(note)) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="relative w-28 h-20">
-          <BlockRect className="absolute top-0 left-0 w-16 h-12 rotate-[-3deg]" />
-          <BlockRect className="absolute top-2 left-6 w-16 h-12 rotate-[2deg]" />
-          <BlockRect className="absolute top-4 left-12 w-16 h-12 rotate-[5deg]" />
-        </div>
-      </div>
-    )
-  }
-
-  // Fallback: diagonal X cross
+function HookDataInline({ hookData }: { hookData: NonNullable<StoryboardScene['hookData']> }) {
   return (
-    <div className="flex items-center justify-center h-full px-6 py-4">
-      <ImagePlaceholder className="w-full h-full" />
-    </div>
-  )
-}
-
-// =============================================================================
-// HOOK DATA CARD (amber sub-card for Scene 1)
-// =============================================================================
-
-function HookDataCard({ hookData }: { hookData: NonNullable<StoryboardScene['hookData']> }) {
-  return (
-    <div className="mt-3 rounded-lg border border-amber-200/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 p-3 space-y-2">
+    <div className="mt-2 rounded-md border border-amber-200/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2 space-y-1">
       <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
-        <Target className="h-3.5 w-3.5" />
-        <span className="text-xs font-semibold uppercase tracking-wide">Hook Strategy</span>
+        <Target className="h-3 w-3" />
+        <span className="text-[10px] font-semibold uppercase tracking-wide">Hook Strategy</span>
       </div>
-      <div className="grid gap-2">
-        <div className="flex items-start gap-2">
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider shrink-0 mt-0.5 w-16">
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
             Persona
           </span>
-          <span className="text-sm text-foreground">{hookData.targetPersona}</span>
+          <p className="text-foreground">{hookData.targetPersona}</p>
         </div>
-        <div className="flex items-start gap-2">
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider shrink-0 mt-0.5 w-16">
+        <div>
+          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
             Pain
           </span>
-          <span className="text-sm text-foreground">{hookData.painMetric}</span>
+          <p className="text-foreground">{hookData.painMetric}</p>
         </div>
-        <div className="flex items-start gap-2">
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider shrink-0 mt-0.5 w-16">
+        <div>
+          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
             Impact
           </span>
-          <span className="text-sm text-foreground font-medium">{hookData.quantifiableImpact}</span>
+          <p className="text-foreground font-medium">{hookData.quantifiableImpact}</p>
         </div>
       </div>
     </div>
@@ -150,101 +93,153 @@ function HookDataCard({ hookData }: { hookData: NonNullable<StoryboardScene['hoo
 }
 
 // =============================================================================
-// SCENE CARD
+// SCENE ROW — compact horizontal row with checkbox
 // =============================================================================
 
-function SceneCard({
+function SceneRow({
   scene,
   isFirst,
   timestamp,
-  onClick,
+  isSelected,
+  isExpanded,
+  onToggleSelect,
+  onToggleExpand,
+  onClickFeedback,
 }: {
   scene: StoryboardScene
   isFirst: boolean
   timestamp: { start: string; end: string }
-  onClick?: () => void
+  isSelected: boolean
+  isExpanded: boolean
+  onToggleSelect: () => void
+  onToggleExpand: () => void
+  onClickFeedback?: () => void
 }) {
   return (
     <div
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onClick()
-              }
-            }
-          : undefined
-      }
       className={cn(
-        'rounded-lg border overflow-hidden transition-all',
-        isFirst
-          ? 'border-amber-400 shadow-sm shadow-amber-200/20 dark:shadow-amber-900/20'
-          : 'border-border/60',
-        onClick &&
-          'cursor-pointer hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-200/20 dark:hover:shadow-emerald-900/20 group/scene'
+        'rounded-lg border transition-all',
+        isFirst ? 'border-amber-300/60 dark:border-amber-800/40' : 'border-border/40',
+        isSelected && 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'
       )}
     >
-      {/* 16:9 Thumbnail */}
-      <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden">
-        <SceneThumbnail visualNote={scene.visualNote} />
-      </div>
+      {/* Main row */}
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        {/* Checkbox */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          className={cn(
+            'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
+            isSelected
+              ? 'bg-emerald-600 border-emerald-600'
+              : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
+          )}
+        >
+          {isSelected && (
+            <svg
+              className="w-2.5 h-2.5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
 
-      {/* Content below thumbnail */}
-      <div className="p-3 space-y-2">
-        {/* Timestamp + title row */}
-        <div className="flex items-start gap-2">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-xs font-mono text-muted-foreground">
-              {timestamp.start}-{timestamp.end}
-            </span>
-            {isFirst && (
-              <Badge
-                variant="outline"
-                className="text-[10px] h-5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide"
-              >
-                Hook
-              </Badge>
-            )}
-          </div>
-          <h4 className="text-sm font-bold text-foreground leading-snug">{scene.title}</h4>
+        {/* Scene number + timestamp */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-mono text-muted-foreground w-10">{timestamp.start}</span>
+          {isFirst && (
+            <Badge
+              variant="outline"
+              className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide"
+            >
+              Hook
+            </Badge>
+          )}
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-muted-foreground leading-relaxed">{scene.description}</p>
+        {/* Title + truncated description */}
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="flex-1 min-w-0 text-left flex items-center gap-2"
+        >
+          <h4 className="text-sm font-medium text-foreground truncate">{scene.title}</h4>
+          <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+            {scene.description.length > 60
+              ? scene.description.slice(0, 60) + '...'
+              : scene.description}
+          </span>
+          {isExpanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          )}
+        </button>
 
-        {/* Visual note */}
-        {scene.visualNote && (
-          <div className="flex items-start gap-1.5 text-muted-foreground/80">
-            <Eye className="h-3 w-3 mt-0.5 shrink-0" />
-            <span className="text-xs">
-              <span className="italic text-muted-foreground/60">Visual:</span>{' '}
-              <span className="italic">{scene.visualNote}</span>
-            </span>
-          </div>
-        )}
+        {/* Duration */}
+        <span className="text-[10px] text-muted-foreground shrink-0">{scene.duration}</span>
 
-        {/* Hook data - only on scene 1 */}
-        {isFirst && scene.hookData && <HookDataCard hookData={scene.hookData} />}
-
-        {/* Reference video link */}
-        {scene.referenceVideoId && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <Video className="h-3 w-3 text-primary" />
-            <span className="text-xs text-primary">Reference video linked</span>
-          </div>
-        )}
-
-        {/* Click hint */}
-        {onClick && (
-          <div className="mt-2 opacity-0 group-hover/scene:opacity-100 transition-opacity text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-            Click to give feedback
-          </div>
+        {/* Single scene feedback button */}
+        {onClickFeedback && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClickFeedback()
+            }}
+            className="p-1 rounded text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors shrink-0"
+            title="Give feedback on this scene"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+          </button>
         )}
       </div>
+
+      {/* Expanded detail */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-0 ml-7 space-y-2 border-t border-border/30">
+              <p className="text-sm text-muted-foreground leading-relaxed pt-2">
+                {scene.description}
+              </p>
+
+              {/* Visual note */}
+              {scene.visualNote && (
+                <div className="flex items-start gap-1.5 text-muted-foreground/80">
+                  <Eye className="h-3 w-3 mt-0.5 shrink-0" />
+                  <span className="text-xs italic">{scene.visualNote}</span>
+                </div>
+              )}
+
+              {/* Hook data - only on scene 1 */}
+              {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
+
+              {/* Reference video link */}
+              {scene.referenceVideoId && (
+                <div className="flex items-center gap-1.5">
+                  <Video className="h-3 w-3 text-primary" />
+                  <span className="text-xs text-primary">Reference video linked</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -266,76 +261,114 @@ function StoryboardEmpty() {
 // MAIN COMPONENT
 // =============================================================================
 
-export function StoryboardView({ scenes, className, onSceneClick }: StoryboardViewProps) {
+export function StoryboardView({
+  scenes,
+  className,
+  onSceneClick,
+  onMultiSceneFeedback,
+}: StoryboardViewProps) {
+  const [selectedScenes, setSelectedScenes] = useState<number[]>([])
+  const [expandedScenes, setExpandedScenes] = useState<Set<number>>(new Set())
+
   if (scenes.length === 0) {
     return <StoryboardEmpty />
   }
 
   const totalDuration = scenes.reduce((acc, scene) => acc + parseDurationSeconds(scene.duration), 0)
   const timestampRanges = computeTimestampRanges(scenes)
-  const hasHookData = scenes[0]?.hookData != null
+
+  const toggleSelect = (sceneNumber: number) => {
+    setSelectedScenes((prev) =>
+      prev.includes(sceneNumber) ? prev.filter((n) => n !== sceneNumber) : [...prev, sceneNumber]
+    )
+  }
+
+  const toggleExpand = (sceneNumber: number) => {
+    setExpandedScenes((prev) => {
+      const next = new Set(prev)
+      if (next.has(sceneNumber)) {
+        next.delete(sceneNumber)
+      } else {
+        next.add(sceneNumber)
+      }
+      return next
+    })
+  }
+
+  const handleMultiFeedback = () => {
+    if (selectedScenes.length === 0 || !onMultiSceneFeedback) return
+    const selected = scenes.filter((s) => selectedScenes.includes(s.sceneNumber))
+    onMultiSceneFeedback(selected)
+    setSelectedScenes([])
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className={cn('rounded-xl border border-border/60 overflow-hidden', className)}
+      className={cn('rounded-lg border border-border/60 overflow-hidden', className)}
     >
-      {/* Header Banner */}
-      <div className="bg-emerald-900 px-5 py-3.5 flex items-center justify-between rounded-t-xl">
-        <span
-          className="text-white text-xl"
-          style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
-        >
-          Storyboard
-        </span>
-        <span className="text-white/70 text-xs uppercase tracking-widest font-medium">Crafted</span>
-      </div>
-
-      {/* Metadata Row */}
-      <div className="px-5 py-3 border-b border-border/40 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {scenes.length} {scenes.length === 1 ? 'Scene' : 'Scenes'}
+      {/* Header — simple icon + text + metadata on one line */}
+      <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Film className="h-4 w-4 text-emerald-600" />
+          <span className="text-sm font-semibold text-foreground">Storyboard</span>
+          <span className="text-xs text-muted-foreground">
+            {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
           </span>
-          {totalDuration > 0 && (
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span className="text-xs">{formatTimestamp(totalDuration)} total</span>
-            </div>
-          )}
         </div>
+        {totalDuration > 0 && (
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span className="text-xs">{formatTimestamp(totalDuration)}</span>
+          </div>
+        )}
       </div>
 
-      {/* Hook data missing warning */}
-      {!hasHookData && scenes.length > 0 && (
-        <div className="mx-5 mt-4 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-900/10 rounded-lg px-3 py-2 border border-amber-200/40 dark:border-amber-800/30">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-          <span>Scene 1 hook data not yet generated</span>
-        </div>
-      )}
-
-      {/* Scene Grid */}
-      <div className="p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {scenes.map((scene, index) => (
-            <motion.div
-              key={scene.sceneNumber}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: index * 0.05 }}
-            >
-              <SceneCard
-                scene={scene}
-                isFirst={index === 0}
-                timestamp={timestampRanges[index]}
-                onClick={onSceneClick ? () => onSceneClick(scene) : undefined}
-              />
-            </motion.div>
-          ))}
-        </div>
+      {/* Scene rows */}
+      <div className="p-3 space-y-1.5">
+        {scenes.map((scene, index) => (
+          <motion.div
+            key={scene.sceneNumber}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: index * 0.03 }}
+          >
+            <SceneRow
+              scene={scene}
+              isFirst={index === 0}
+              timestamp={timestampRanges[index]}
+              isSelected={selectedScenes.includes(scene.sceneNumber)}
+              isExpanded={expandedScenes.has(scene.sceneNumber)}
+              onToggleSelect={() => toggleSelect(scene.sceneNumber)}
+              onToggleExpand={() => toggleExpand(scene.sceneNumber)}
+              onClickFeedback={onSceneClick ? () => onSceneClick(scene) : undefined}
+            />
+          </motion.div>
+        ))}
       </div>
+
+      {/* Sticky multi-select action bar */}
+      <AnimatePresence>
+        {selectedScenes.length > 0 && onMultiSceneFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="sticky bottom-0 px-4 py-3 border-t border-border/40 bg-background/95 backdrop-blur-sm flex items-center justify-between"
+          >
+            <span className="text-sm text-muted-foreground">
+              {selectedScenes.length} {selectedScenes.length === 1 ? 'scene' : 'scenes'} selected
+            </span>
+            <Button size="sm" onClick={handleMultiFeedback} className="gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Give feedback
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
