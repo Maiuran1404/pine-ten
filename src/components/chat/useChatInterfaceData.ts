@@ -485,6 +485,11 @@ export function useChatInterfaceData({
           syncBriefingFromServer(data.briefingState)
         }
 
+        // Track latest storyboard data
+        if (data.structureData?.type === 'storyboard') {
+          latestStoryboardRef.current = data.structureData
+        }
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
