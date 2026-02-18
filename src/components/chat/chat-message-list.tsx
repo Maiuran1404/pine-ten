@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -347,6 +347,16 @@ export function ChatMessageList({
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
 }: ChatMessageListProps) {
+  const handleTypingComplete = useCallback(
+    (messageId: string) => {
+      if (animatingMessageId === messageId) {
+        setAnimatingMessageId(null)
+        setCompletedTypingIds((prev) => new Set(prev).add(messageId))
+      }
+    },
+    [animatingMessageId, setAnimatingMessageId, setCompletedTypingIds]
+  )
+
   return (
     <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
       <div className="space-y-4 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto">

@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Activity,
   ChevronRight,
+  Trash2,
 } from 'lucide-react'
 import { format, isToday, isYesterday } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -308,84 +309,120 @@ function TrendBars({ batches }: { batches: BatchSummary[] }) {
 }
 
 /** A single batch row in the history list. */
-function BatchRow({ batch }: { batch: BatchSummary }) {
+function BatchRow({
+  batch,
+  onDelete,
+}: {
+  batch: BatchSummary
+  onDelete?: (batchId: string) => void
+}) {
+  const [deleting, setDeleting] = useState(false)
   const status = batchStatus(batch)
   const rate = passRate(batch)
   const isActive = status === 'Running'
 
   return (
-    <Link href={`/admin/chat-tests/${batch.batchId}`} className="block group">
-      <div
-        className={cn(
-          'flex items-center gap-4 px-4 py-3.5 rounded-lg border bg-card',
-          'hover:bg-accent/50 transition-colors',
-          isActive && 'border-blue-200 bg-blue-50/30'
-        )}
-      >
-        {/* Pass rate indicator -- the most important info per row */}
-        <div className="shrink-0 w-12 text-center">
-          {isActive ? (
-            <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
-          ) : (
-            <span className={cn('text-lg font-bold tabular-nums', passRateColor(rate))}>
-              {rate}%
-            </span>
+    <div className="relative group">
+      <Link href={`/admin/chat-tests/${batch.batchId}`} className="block">
+        <div
+          className={cn(
+            'flex items-center gap-4 px-4 py-3.5 rounded-lg border bg-card',
+            'hover:bg-accent/50 transition-colors',
+            isActive && 'border-blue-200 bg-blue-50/30'
           )}
-        </div>
-
-        {/* Mini pass-rate bar */}
-        <div className="shrink-0 w-16">
-          <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
-            <div
-              className={cn('h-full rounded-full transition-all', passRateBg(rate))}
-              style={{ width: `${isActive ? 0 : rate}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
-            {batch.reachedReviewCount}/{batch.totalRuns}
-          </p>
-        </div>
-
-        {/* Middle: timestamp + status */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{formatTimestamp(batch.createdAt)}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full shrink-0',
-                  statusDotColor(status),
-                  isActive && 'animate-pulse'
-                )}
-              />
-              <span className="text-xs text-muted-foreground">{status}</span>
-            </span>
-            {batch.failedRuns > 0 && status !== 'Failed' && (
-              <span className="text-xs text-red-500">{batch.failedRuns} failed</span>
+        >
+          {/* Pass rate indicator -- the most important info per row */}
+          <div className="shrink-0 w-12 text-center">
+            {isActive ? (
+              <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
+            ) : (
+              <span className={cn('text-lg font-bold tabular-nums', passRateColor(rate))}>
+                {rate}%
+              </span>
             )}
           </div>
-        </div>
 
-        {/* Right: efficiency metrics */}
-        <div className="hidden sm:flex items-center gap-5 shrink-0">
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Turns</p>
-            <p className="text-sm font-medium tabular-nums">
-              {batch.avgTurns !== null ? batch.avgTurns : '--'}
+          {/* Mini pass-rate bar */}
+          <div className="shrink-0 w-16">
+            <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
+              <div
+                className={cn('h-full rounded-full transition-all', passRateBg(rate))}
+                style={{ width: `${isActive ? 0 : rate}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
+              {batch.reachedReviewCount}/{batch.totalRuns}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Duration</p>
-            <p className="text-sm font-medium tabular-nums">
-              {formatDurationShort(batch.avgDurationMs)}
-            </p>
-          </div>
-        </div>
 
-        {/* Arrow */}
-        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
-      </div>
-    </Link>
+          {/* Middle: timestamp + status */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{formatTimestamp(batch.createdAt)}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full shrink-0',
+                    statusDotColor(status),
+                    isActive && 'animate-pulse'
+                  )}
+                />
+                <span className="text-xs text-muted-foreground">{status}</span>
+              </span>
+              {batch.failedRuns > 0 && status !== 'Failed' && (
+                <span className="text-xs text-red-500">{batch.failedRuns} failed</span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: efficiency metrics */}
+          <div className="hidden sm:flex items-center gap-5 shrink-0">
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Turns</p>
+              <p className="text-sm font-medium tabular-nums">
+                {batch.avgTurns !== null ? batch.avgTurns : '--'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Duration</p>
+              <p className="text-sm font-medium tabular-nums">
+                {formatDurationShort(batch.avgDurationMs)}
+              </p>
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+        </div>
+      </Link>
+
+      {/* Delete button — appears on hover */}
+      {onDelete && !isActive && (
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (deleting) return
+            setDeleting(true)
+            onDelete(batch.batchId)
+          }}
+          disabled={deleting}
+          className={cn(
+            'absolute top-1/2 -translate-y-1/2 right-12 p-1.5 rounded-md',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'text-muted-foreground hover:text-red-600 hover:bg-red-50',
+            deleting && 'opacity-100 text-red-600'
+          )}
+          title="Delete batch"
+        >
+          {deleting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -562,6 +599,17 @@ export default function ChatTestsPage() {
     }
   }
 
+  async function deleteBatch(batchId: string) {
+    try {
+      const res = await fetch(`/api/admin/chat-tests/${batchId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete batch')
+      setBatches((prev) => prev.filter((b) => b.batchId !== batchId))
+      toast.success('Batch deleted')
+    } catch {
+      toast.error('Failed to delete batch')
+    }
+  }
+
   // Separate running batches from completed history
   const { activeBatches, historyBatches } = useMemo(() => {
     const active: BatchSummary[] = []
@@ -638,7 +686,7 @@ export default function ChatTestsPage() {
             In Progress
           </p>
           {activeBatches.map((batch) => (
-            <BatchRow key={batch.batchId} batch={batch} />
+            <BatchRow key={batch.batchId} batch={batch} onDelete={deleteBatch} />
           ))}
         </div>
       )}
@@ -665,7 +713,7 @@ export default function ChatTestsPage() {
         ) : (
           <div className="space-y-2">
             {historyBatches.map((batch) => (
-              <BatchRow key={batch.batchId} batch={batch} />
+              <BatchRow key={batch.batchId} batch={batch} onDelete={deleteBatch} />
             ))}
           </div>
         )}

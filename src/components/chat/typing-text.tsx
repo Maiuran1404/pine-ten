@@ -127,6 +127,15 @@ export function TypingText({
   const chunkIndexRef = useRef(0)
   const contentRef = useRef(textContent)
   const chunksRef = useRef<string[]>([])
+  const onCompleteRef = useRef(onComplete)
+  const speedRef = useRef(speed)
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
+  useEffect(() => {
+    speedRef.current = speed
+  }, [speed])
 
   useEffect(() => {
     // Clear any existing animation
@@ -163,10 +172,10 @@ export function TypingText({
       if (chunkIndexRef.current < chunksRef.current.length) {
         setDisplayedContent((prev) => prev + chunksRef.current[chunkIndexRef.current])
         chunkIndexRef.current++
-        animationRef.current = window.setTimeout(animateChunks, speed)
+        animationRef.current = window.setTimeout(animateChunks, speedRef.current)
       } else {
         setIsComplete(true)
-        onComplete?.()
+        onCompleteRef.current?.()
       }
     }
 
@@ -178,7 +187,7 @@ export function TypingText({
         clearTimeout(animationRef.current)
       }
     }
-  }, [textContent, animate, speed, onComplete])
+  }, [textContent, animate])
 
   // Handle option click for list items
   const handleListItemClick = useCallback(
