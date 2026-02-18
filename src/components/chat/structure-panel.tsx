@@ -1,6 +1,6 @@
 'use client'
 
-import { Film, Layout, Calendar, Palette, Loader2 } from 'lucide-react'
+import { Film, Layout, Calendar, Palette, Loader2, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
