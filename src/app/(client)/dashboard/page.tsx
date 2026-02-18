@@ -654,7 +654,7 @@ function DashboardContent() {
       )}
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[calc(100vh-4rem)] pb-8">
+      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[70vh] pb-8">
         {/* Welcome Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -662,7 +662,7 @@ function DashboardContent() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-10 sm:mb-14"
         >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-3 tracking-[-0.02em]">
+          <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-semibold text-foreground mb-3 tracking-tight leading-tight">
             Welcome back,{' '}
             <motion.span
               className="bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto]"
@@ -673,7 +673,7 @@ function DashboardContent() {
             </motion.span>
             !
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground font-light tracking-wide">
+          <p className="text-base sm:text-lg text-muted-foreground">
             What would you like to create <span className="font-medium text-foreground">today</span>
             ?
           </p>
@@ -808,15 +808,15 @@ function DashboardContent() {
           </div>
         </motion.div>
 
-        {/* Template System - Category Pills */}
+        {/* Template System - Compact Horizontal Pills */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-3xl mb-8"
         >
-          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, description }]) => (
+          <div className="flex items-center justify-center gap-2">
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => (
               <button
                 key={category}
                 onClick={() => {
@@ -824,19 +824,12 @@ function DashboardContent() {
                   setSelectedOption(null)
                   setModalNotes('')
                 }}
-                className="group flex items-center gap-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.97] transition-all duration-200 cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 transition-colors">
-                  <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-left">
-                  <span className="font-semibold text-sm text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                    {category}
-                  </span>
-                  <span className="hidden sm:inline text-xs text-muted-foreground ml-1.5">
-                    {description}
-                  </span>
-                </div>
+                <Icon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-medium text-xs text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors whitespace-nowrap">
+                  {category}
+                </span>
               </button>
             ))}
           </div>
@@ -1166,18 +1159,18 @@ function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-6 pb-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 pb-8">
       <div className="text-center mb-10 sm:mb-14">
-        <Skeleton className="h-12 w-80 mx-auto mb-3" />
-        <Skeleton className="h-6 w-56 mx-auto" />
+        <Skeleton className="h-10 w-72 mx-auto mb-3" />
+        <Skeleton className="h-5 w-52 mx-auto" />
       </div>
       <Skeleton className="h-36 w-full max-w-3xl rounded-3xl mb-6" />
-      <div className="flex flex-wrap justify-center gap-2.5 mb-12">
-        <Skeleton className="h-11 w-36 rounded-2xl" />
-        <Skeleton className="h-11 w-32 rounded-2xl" />
-        <Skeleton className="h-11 w-28 rounded-2xl" />
-        <Skeleton className="h-11 w-36 rounded-2xl" />
-        <Skeleton className="h-11 w-34 rounded-2xl" />
+      <div className="flex gap-2.5 overflow-hidden mb-12">
+        <Skeleton className="h-11 w-40 rounded-2xl shrink-0" />
+        <Skeleton className="h-11 w-36 rounded-2xl shrink-0" />
+        <Skeleton className="h-11 w-32 rounded-2xl shrink-0" />
+        <Skeleton className="h-11 w-38 rounded-2xl shrink-0" />
+        <Skeleton className="h-11 w-40 rounded-2xl shrink-0" />
       </div>
     </div>
   )

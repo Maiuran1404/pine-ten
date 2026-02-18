@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/dashboard/sidebar'
 import { FullPageLoader } from '@/components/shared/loading'
@@ -18,6 +18,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // Note: /dashboard/chat now redirects to /dashboard, but we keep this check
   // in case anyone lands on the redirect page briefly
   const isChatPage = pathname?.startsWith('/dashboard/chat')
+  const isDashboardRoot = pathname === '/dashboard'
+  const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot)
 
   // Redirect based on auth state only (NOT role)
   // Users stay on the subdomain they logged into - no role-based redirects
@@ -75,7 +77,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <CreditProvider>
       <SidebarProvider
-        defaultOpen={false}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
         className=""
         style={
           {
@@ -101,8 +104,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             sphereBlur={180}
             className="!fixed inset-0"
           />
-          {/* Mobile sidebar trigger */}
-          <div className="md:hidden sticky top-0 z-30 p-2">
+          {/* Sidebar trigger - always visible */}
+          <div className="sticky top-0 z-30 p-2">
             <SidebarTrigger />
           </div>
           <main className="relative z-10 flex-1 overflow-auto">{children}</main>
