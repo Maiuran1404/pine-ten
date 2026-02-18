@@ -611,9 +611,8 @@ export function ChatMessageList({
                             </motion.div>
                           )}
 
-                        {/* Structure components - show after typing completes (suppressed when panel is active) */}
+                        {/* Structure components - show after typing completes */}
                         {message.structureData &&
-                          !structurePanelVisible &&
                           (animatingMessageId !== message.id ||
                             completedTypingIds.has(message.id)) && (
                             <motion.div

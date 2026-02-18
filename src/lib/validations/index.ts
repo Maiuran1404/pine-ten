@@ -58,6 +58,8 @@ export const createTaskSchema = z.object({
     )
     .optional()
     .default([]),
+  // Structure data (storyboard, layout, calendar, design spec)
+  structureData: z.record(z.string(), z.unknown()).optional().nullable(),
   // Brief integration
   briefId: z.string().uuid().optional().nullable(),
   briefData: z.record(z.string(), z.unknown()).optional().nullable(),

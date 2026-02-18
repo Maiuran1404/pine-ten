@@ -1161,6 +1161,7 @@ export function useChatInterfaceData({
             name: item.name,
             metadata: item.metadata,
           })),
+          structureData: latestStoryboardRef.current ?? storyboardScenes ?? undefined,
         }),
       })
 
@@ -1398,6 +1399,35 @@ export function useChatInterfaceData({
       inputRef.current?.focus()
     },
     []
+  )
+
+  // Handle strategic review action (accept / override)
+  const handleStrategicReviewAction = useCallback(
+    (response: 'accept' | 'override') => {
+      // Mark the review as acted upon so buttons hide
+      setMessages((prev) => {
+        const updated = [...prev]
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (updated[i].strategicReviewData && !updated[i].strategicReviewData!.userOverride) {
+            updated[i] = {
+              ...updated[i],
+              strategicReviewData: { ...updated[i].strategicReviewData!, userOverride: true },
+            }
+            break
+          }
+        }
+        return updated
+      })
+
+      // Send a user message to advance the state machine past STRATEGIC_REVIEW
+      const messageText =
+        response === 'accept'
+          ? 'Looks good, let\u2019s continue with these improvements in mind.'
+          : 'I want to keep my current approach as-is. Let\u2019s move on.'
+
+      handleSendOption(messageText)
+    },
+    [handleSendOption]
   )
 
   // Reorder layout sections via drag-and-drop
@@ -1904,6 +1934,7 @@ export function useChatInterfaceData({
     storyboardScenes,
     structureType,
     structurePanelVisible,
+    handleStrategicReviewAction,
     handleSceneEdit,
     handleSectionReorder,
     handleRegenerateStoryboard,

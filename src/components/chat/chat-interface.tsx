@@ -210,6 +210,7 @@ export function ChatInterface({
     storyboardScenes,
     structureType,
     structurePanelVisible,
+    handleStrategicReviewAction,
     handleSceneEdit,
     handleSectionReorder,
     handleRegenerateStoryboard,
@@ -420,6 +421,7 @@ export function ChatInterface({
           handleRejectTask={handleRejectTask}
           handleRequestTaskSummary={handleRequestTaskSummary}
           handleEditLastMessage={handleEditLastMessage}
+          onStrategicReviewAction={handleStrategicReviewAction}
           briefingStage={briefingStage}
           onSceneClick={handleSceneClick}
           onMultiSceneFeedback={handleMultiSceneFeedback}

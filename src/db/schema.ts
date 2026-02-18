@@ -651,6 +651,7 @@ export const tasks = pgTable(
       >()
       .default([]),
     chatHistory: jsonb('chat_history').$type<object[]>().default([]),
+    structureData: jsonb('structure_data').$type<Record<string, unknown>>(),
     estimatedHours: decimal('estimated_hours', { precision: 5, scale: 2 }),
     creditsUsed: integer('credits_used').notNull().default(1),
     maxRevisions: integer('max_revisions').notNull().default(2),

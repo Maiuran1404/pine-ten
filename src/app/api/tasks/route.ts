@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
           completedAt: tasks.completedAt,
           moodboardItems: tasks.moodboardItems,
           styleReferences: tasks.styleReferences,
+          structureData: tasks.structureData,
           freelancerId: tasks.freelancerId,
           freelancerName: users.name,
           freelancerImage: users.image,
@@ -154,6 +155,7 @@ export async function GET(request: NextRequest) {
         completedAt: task.completedAt,
         moodboardItems: task.moodboardItems,
         styleReferences: task.styleReferences,
+        structureData: task.structureData,
         thumbnailUrl: thumbnailByTaskId.get(task.id) || null,
         freelancer: task.freelancerId
           ? {
@@ -222,6 +224,7 @@ export async function POST(request: NextRequest) {
         styleReferences,
         attachments,
         moodboardItems,
+        structureData,
         briefId,
       } = validatedData
 
@@ -287,6 +290,7 @@ export async function POST(request: NextRequest) {
             chatHistory: chatHistory || [],
             styleReferences: styleReferences || [],
             moodboardItems: moodboardItems || [],
+            structureData: structureData ?? undefined,
             deadline: taskDeadline,
             status: 'PENDING',
             complexity: taskComplexity,
