@@ -893,18 +893,18 @@ function DashboardContent() {
           </p>
         </motion.div>
 
-        {/* Template Pills */}
+        {/* Template Cards */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[640px] mt-4"
+          className="w-full max-w-[780px] mt-5"
         >
-          <p className="text-center text-xs text-muted-foreground/60 mb-3">
-            or choose from one of these
+          <p className="text-center text-xs text-muted-foreground/60 mb-4">
+            or choose from one of these examples
           </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => (
+          <div className="flex items-center justify-center gap-3">
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { options }]) => (
               <button
                 key={category}
                 onClick={() => {
@@ -912,10 +912,16 @@ function DashboardContent() {
                   setSelectedOption(null)
                   setModalNotes('')
                 }}
-                className="group flex items-center gap-2 px-3 py-2 rounded-xl border border-border/40 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800/80 hover:border-border hover:shadow-sm active:scale-[0.97] transition-all duration-150 cursor-pointer"
+                className="group relative w-[140px] h-[90px] rounded-xl overflow-hidden border border-white/10 dark:border-white/5 shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
               >
-                <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
-                <span className="font-medium text-xs text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={options[0].image}
+                  alt={category}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <span className="absolute bottom-2.5 left-3 right-3 text-white text-xs font-semibold leading-tight drop-shadow-md">
                   {category}
                 </span>
               </button>
