@@ -8,7 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { BatchProgress } from '@/components/admin/chat-tests/batch-progress'
+import { BatchProgress, type RunProgress } from '@/components/admin/chat-tests/batch-progress'
+import { ConversationReplay, type Message } from '@/components/admin/chat-tests/conversation-replay'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -47,15 +56,6 @@ interface BatchSummary {
   reachedReviewCount: number
   avgTurns: number | null
   avgDurationMs: number | null
-}
-
-interface RunProgress {
-  id: string
-  scenarioName: string
-  status: string
-  totalTurns: number
-  finalStage: string | null
-  reachedReview: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -479,7 +479,10 @@ export default function ChatTestsPage() {
   const [running, setRunning] = useState(false)
   const [activeRuns, setActiveRuns] = useState<RunProgress[]>([])
   const [chatCount, setChatCount] = useState('3')
+  const [runMessages, setRunMessages] = useState<Record<string, Message[]>>({})
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
   const abortRef = useRef(false)
+  const scrollEndRef = useRef<HTMLDivElement>(null)
 
   const fetchBatches = useCallback(async () => {
     try {
@@ -498,6 +501,12 @@ export default function ChatTestsPage() {
     fetchBatches()
   }, [fetchBatches])
 
+  // Auto-scroll to bottom when new messages arrive in the selected run
+  const selectedMessages = selectedRunId ? runMessages[selectedRunId] : undefined
+  useEffect(() => {
+    scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [selectedMessages?.length])
+
   async function stepUntilComplete(runId: string) {
     let isComplete = false
     while (!isComplete && !abortRef.current) {
@@ -513,6 +522,14 @@ export default function ChatTestsPage() {
         }
         const data = await res.json()
         isComplete = data.data.isComplete
+
+        // Capture latest messages for the live conversation view
+        if (data.data.latestMessages) {
+          setRunMessages((prev) => ({
+            ...prev,
+            [runId]: [...(prev[runId] ?? []), ...(data.data.latestMessages as Message[])],
+          }))
+        }
 
         if (data.data.run) {
           setActiveRuns((prev) =>
@@ -540,6 +557,8 @@ export default function ChatTestsPage() {
   async function runBatch() {
     setRunning(true)
     abortRef.current = false
+    setRunMessages({})
+    setSelectedRunId(null)
 
     try {
       const createRes = await fetch('/api/admin/chat-tests', {
@@ -593,7 +612,6 @@ export default function ChatTestsPage() {
       toast.error(`Batch failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setRunning(false)
-      setActiveRuns([])
     }
   }
 
@@ -671,7 +689,7 @@ export default function ChatTestsPage() {
       {/* ----------------------------------------------------------------- */}
       {activeRuns.length > 0 && (
         <div>
-          <BatchProgress runs={activeRuns} />
+          <BatchProgress runs={activeRuns} onRunClick={setSelectedRunId} />
         </div>
       )}
 
@@ -716,6 +734,40 @@ export default function ChatTestsPage() {
           </div>
         )}
       </div>
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Live conversation Sheet (right-side drawer)                        */}
+      {/* ----------------------------------------------------------------- */}
+      <Sheet open={!!selectedRunId} onOpenChange={(open) => !open && setSelectedRunId(null)}>
+        <SheetContent className="sm:max-w-lg p-0 flex flex-col">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <SheetTitle className="text-base">
+              {activeRuns.find((r) => r.id === selectedRunId)?.scenarioName ?? 'Conversation'}
+            </SheetTitle>
+            <SheetDescription className="text-xs">
+              {(() => {
+                const run = activeRuns.find((r) => r.id === selectedRunId)
+                if (!run) return 'No run selected'
+                return `${run.status === 'running' ? 'Running' : run.status} - ${run.totalTurns} turns${run.finalStage ? ` - ${run.finalStage}` : ''}`
+              })()}
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="flex-1 px-6 py-4">
+            {selectedRunId && (runMessages[selectedRunId]?.length ?? 0) > 0 ? (
+              <>
+                <ConversationReplay messages={runMessages[selectedRunId]} />
+                <div ref={scrollEndRef} />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+                {activeRuns.find((r) => r.id === selectedRunId)?.status === 'pending'
+                  ? 'Waiting to start...'
+                  : 'No messages yet'}
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

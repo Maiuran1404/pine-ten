@@ -864,6 +864,8 @@ export async function POST(request: NextRequest) {
         quickOptions,
         hasStructureData,
         hasStrategicReview,
+        structureData: (chatData.structureData as StructureData) ?? null,
+        strategicReviewData: (chatData.strategicReviewData as StrategicReviewData) ?? null,
         deliverableStyleCount,
         videoReferenceCount,
         durationMs: turnDuration,

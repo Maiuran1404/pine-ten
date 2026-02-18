@@ -211,6 +211,7 @@ export function ChatInterface({
     structureType,
     structurePanelVisible,
     handleSceneEdit,
+    handleSectionReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,
@@ -291,6 +292,7 @@ export function ChatInterface({
       onRegenerateStoryboard={handleRegenerateStoryboard}
       onRegenerateScene={handleRegenerateScene}
       onRegenerateField={handleRegenerateField}
+      onSectionReorder={handleSectionReorder}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div
@@ -424,6 +426,7 @@ export function ChatInterface({
           onViewStoryboard={() => {
             // Panel auto-shows storyboard when data exists; no-op for now
           }}
+          structurePanelVisible={structurePanelVisible}
         />
 
         {/* Input area / Submit action bar */}

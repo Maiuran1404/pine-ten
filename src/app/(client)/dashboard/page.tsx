@@ -22,6 +22,7 @@ import {
   Presentation,
   Palette,
   Eye,
+  PanelTop,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
@@ -199,6 +200,38 @@ const TEMPLATE_CATEGORIES = {
         prompt: 'Create social media ad creatives',
         image:
           'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=400&h=300&fit=crop&q=80',
+      },
+    ],
+  },
+  'Landing Page': {
+    icon: PanelTop,
+    description: 'High-converting web pages',
+    modalDescription:
+      "Pick a landing page style and tell us about my product or campaign. We'll design a page that drives action.",
+    options: [
+      {
+        title: 'Product Landing Page',
+        description:
+          'A conversion-focused page that showcases my product with compelling visuals, benefits, and a clear call to action.',
+        prompt: 'Design a product landing page',
+        image:
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80',
+      },
+      {
+        title: 'SaaS Landing Page',
+        description:
+          'A modern page built for software products with feature highlights, pricing, social proof, and sign-up flows.',
+        prompt: 'Design a SaaS landing page',
+        image:
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80',
+      },
+      {
+        title: 'Event Landing Page',
+        description:
+          'A dynamic page for events, launches, or campaigns with countdown timers, speaker bios, and registration.',
+        prompt: 'Design an event landing page',
+        image:
+          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop&q=80',
       },
     ],
   },

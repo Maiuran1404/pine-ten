@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Layout, Layers } from 'lucide-react'
+import { Layout, Layers, GripVertical, Lock, X, Plus, Pencil, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -25,6 +26,8 @@ import type { LayoutSection } from '@/lib/ai/briefing-state-machine'
 
 interface LayoutPreviewProps {
   sections: LayoutSection[]
+  mode?: 'readonly' | 'interactive'
+  onSectionReorder?: (sections: LayoutSection[]) => void
   className?: string
 }
 
@@ -56,6 +59,12 @@ function detectSectionType(sectionName: string): SectionType {
   if (/gallery|portfolio/.test(name)) return 'gallery'
 
   return 'fallback'
+}
+
+/** Whether a section type is pinned (not draggable) */
+function isPinnedSection(sectionName: string): boolean {
+  const type = detectSectionType(sectionName)
+  return type === 'hero' || type === 'footer'
 }
 
 // =============================================================================
@@ -201,7 +210,7 @@ function renderSectionWireframe(type: SectionType, sectionName: string) {
 }
 
 // =============================================================================
-// SECTION BLOCK
+// SECTION BLOCK (readonly)
 // =============================================================================
 
 function SectionBlock({ section, index }: { section: LayoutSection; index: number }) {
@@ -233,6 +242,214 @@ function SectionBlock({ section, index }: { section: LayoutSection; index: numbe
 }
 
 // =============================================================================
+// EDITABLE SECTION LABEL
+// =============================================================================
+
+function EditableSectionLabel({
+  name,
+  onRename,
+}: {
+  name: string
+  onRename: (newName: string) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(name)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [isEditing])
+
+  const commit = () => {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== name) {
+      onRename(trimmed)
+    } else {
+      setEditValue(name)
+    }
+    setIsEditing(false)
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-0.5">
+        <input
+          ref={inputRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commit()
+            if (e.key === 'Escape') {
+              setEditValue(name)
+              setIsEditing(false)
+            }
+          }}
+          className="text-[10px] font-semibold bg-white dark:bg-slate-800 border border-primary/40 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 w-28 text-foreground"
+        />
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault()
+            commit()
+          }}
+          className="p-0.5 rounded hover:bg-primary/10 text-primary"
+        >
+          <Check className="h-3 w-3" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => {
+        setEditValue(name)
+        setIsEditing(true)
+      }}
+      className="group/label flex items-center gap-1 cursor-text"
+    >
+      <WireframeLabel>{name}</WireframeLabel>
+      <Pencil className="h-2.5 w-2.5 text-muted-foreground/0 group-hover/label:text-muted-foreground/60 transition-colors" />
+    </button>
+  )
+}
+
+// =============================================================================
+// ADD SECTION BUTTON (inline between sections)
+// =============================================================================
+
+function AddSectionDivider({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="group/add relative flex items-center justify-center h-5 -my-1 z-10">
+      <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200/0 group-hover/add:border-slate-300 dark:group-hover/add:border-slate-600 transition-colors" />
+      <button
+        onClick={onClick}
+        className="relative flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium
+          text-muted-foreground/0 group-hover/add:text-muted-foreground/70
+          bg-transparent group-hover/add:bg-background
+          border border-transparent group-hover/add:border-border/60
+          hover:!text-primary hover:!border-primary/30 hover:!bg-primary/5
+          transition-all cursor-pointer"
+      >
+        <Plus className="h-3 w-3" />
+        <span>Add section</span>
+      </button>
+    </div>
+  )
+}
+
+// =============================================================================
+// INTERACTIVE SECTION BLOCK
+// =============================================================================
+
+interface InteractiveSectionBlockProps {
+  section: LayoutSection
+  index: number
+  pinned: boolean
+  isDragging: boolean
+  isDropTarget: boolean
+  dropPosition: 'above' | 'below' | null
+  onDragStart: (e: React.DragEvent, index: number) => void
+  onDragOver: (e: React.DragEvent, index: number) => void
+  onDragLeave: () => void
+  onDrop: (e: React.DragEvent) => void
+  onDragEnd: () => void
+  onRename: (newName: string) => void
+  onDelete: () => void
+}
+
+function InteractiveSectionBlock({
+  section,
+  index,
+  pinned,
+  isDragging,
+  isDropTarget,
+  dropPosition,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  onRename,
+  onDelete,
+}: InteractiveSectionBlockProps) {
+  const type = detectSectionType(section.sectionName)
+  const tooltip = [section.purpose, section.contentGuidance].filter(Boolean).join(' — ')
+
+  return (
+    <div
+      className={cn(
+        'relative group/section transition-all duration-150',
+        isDragging && 'opacity-30 scale-[0.98]',
+        !pinned && 'cursor-grab active:cursor-grabbing',
+        isDropTarget && 'bg-primary/[0.03]'
+      )}
+      title={tooltip}
+      draggable={!pinned}
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
+      {/* Drop indicator line — above */}
+      {isDropTarget && dropPosition === 'above' && (
+        <div className="absolute -top-px left-0 right-0 z-20 flex items-center">
+          <div className="w-2 h-2 rounded-full bg-primary -ml-1" />
+          <div className="flex-1 h-0.5 bg-primary" />
+          <div className="w-2 h-2 rounded-full bg-primary -mr-1" />
+        </div>
+      )}
+
+      {/* Section toolbar: drag handle / lock + label + delete */}
+      <div className="absolute top-1.5 left-1.5 right-1.5 z-10 flex items-center gap-1">
+        {/* Left: drag handle or lock + editable label */}
+        <div className="flex items-center gap-0.5 min-w-0">
+          {pinned ? (
+            <Lock className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+          ) : (
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+          )}
+          <EditableSectionLabel name={section.sectionName} onRename={onRename} />
+        </div>
+
+        {/* Right: delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="ml-auto p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-red-500 transition-colors shrink-0"
+          title="Remove section"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Divider between sections */}
+      {index > 0 && (
+        <div className="border-t border-dashed border-slate-200 dark:border-slate-700" />
+      )}
+
+      {/* Wireframe content */}
+      {renderSectionWireframe(type, section.sectionName)}
+
+      {/* Drop indicator line — below */}
+      {isDropTarget && dropPosition === 'below' && (
+        <div className="absolute -bottom-px left-0 right-0 z-20 flex items-center">
+          <div className="w-2 h-2 rounded-full bg-primary -ml-1" />
+          <div className="flex-1 h-0.5 bg-primary" />
+          <div className="w-2 h-2 rounded-full bg-primary -mr-1" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// =============================================================================
 // EMPTY STATE
 // =============================================================================
 
@@ -249,33 +466,231 @@ function LayoutEmpty() {
 }
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+/** Reassign sequential order values to a sections array */
+function reindex(sections: LayoutSection[]): LayoutSection[] {
+  return sections.map((s, i) => ({ ...s, order: i }))
+}
+
+// =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
-export function LayoutPreview({ sections, className }: LayoutPreviewProps) {
-  if (sections.length === 0) {
+export function LayoutPreview({
+  sections,
+  mode = 'readonly',
+  onSectionReorder,
+  className,
+}: LayoutPreviewProps) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
+  const [dropPosition, setDropPosition] = useState<'above' | 'below' | null>(null)
+
+  if (sections.length === 0 && mode === 'readonly') {
     return <LayoutEmpty />
   }
 
   const sortedSections = [...sections].sort((a, b) => a.order - b.order)
 
+  // ---- Readonly mode ----
+  if (mode === 'readonly') {
+    return (
+      <div className={cn('space-y-3', className)}>
+        <div className="flex items-center gap-2">
+          <Layout className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Page Layout</span>
+          <Badge variant="secondary" className="text-xs">
+            {sections.length} {sections.length === 1 ? 'section' : 'sections'}
+          </Badge>
+        </div>
+        <BrowserChrome>
+          {sortedSections.map((section, index) => (
+            <SectionBlock key={section.order} section={section} index={index} />
+          ))}
+        </BrowserChrome>
+      </div>
+    )
+  }
+
+  // ---- Interactive mode ----
+  const emit = (next: LayoutSection[]) => onSectionReorder?.(reindex(next))
+
+  // Split into pinned hero (top), draggable middle, pinned footer (bottom)
+  const heroSections: LayoutSection[] = []
+  const draggableSections: LayoutSection[] = []
+  const footerSections: LayoutSection[] = []
+
+  for (const section of sortedSections) {
+    const type = detectSectionType(section.sectionName)
+    if (type === 'hero') heroSections.push(section)
+    else if (type === 'footer') footerSections.push(section)
+    else draggableSections.push(section)
+  }
+
+  const displaySections = [...heroSections, ...draggableSections, ...footerSections]
+  const heroCount = heroSections.length
+
+  // -- Mutation helpers --
+  const handleRename = (displayIndex: number, newName: string) => {
+    const updated = displaySections.map((s, i) =>
+      i === displayIndex ? { ...s, sectionName: newName } : s
+    )
+    emit(updated)
+  }
+
+  const handleDelete = (displayIndex: number) => {
+    const updated = displaySections.filter((_, i) => i !== displayIndex)
+    emit(updated)
+  }
+
+  const handleAddAfter = (displayIndex: number) => {
+    const newSection: LayoutSection = {
+      sectionName: 'New Section',
+      purpose: '',
+      contentGuidance: '',
+      order: 0, // will be reindexed by emit
+    }
+    const updated = [...displaySections]
+    updated.splice(displayIndex + 1, 0, newSection)
+    emit(updated)
+  }
+
+  // -- Drag and drop --
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (isPinnedSection(displaySections[index].sectionName)) {
+      e.preventDefault()
+      return
+    }
+    setDragIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (dragIndex === null) return
+
+    if (isPinnedSection(displaySections[index].sectionName)) {
+      setDropTargetIndex(null)
+      setDropPosition(null)
+      return
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    const pos = e.clientY < midY ? 'above' : 'below'
+
+    setDropTargetIndex(index)
+    setDropPosition(pos)
+  }
+
+  const handleDragLeave = () => {
+    setDropTargetIndex(null)
+    setDropPosition(null)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    if (dragIndex === null || dropTargetIndex === null || !onSectionReorder) {
+      resetDragState()
+      return
+    }
+
+    const draggedSection = displaySections[dragIndex]
+    const newDraggable = [...draggableSections]
+    const dragLocalIndex = dragIndex - heroCount
+    const dropLocalIndex = dropTargetIndex - heroCount
+
+    newDraggable.splice(dragLocalIndex, 1)
+
+    let insertIndex = dropLocalIndex
+    if (dropPosition === 'below') insertIndex += 1
+    if (dragLocalIndex < dropLocalIndex) insertIndex -= 1
+    insertIndex = Math.max(0, Math.min(newDraggable.length, insertIndex))
+
+    newDraggable.splice(insertIndex, 0, draggedSection)
+
+    emit([...heroSections, ...newDraggable, ...footerSections])
+    resetDragState()
+  }
+
+  const handleDragEnd = () => resetDragState()
+
+  const resetDragState = () => {
+    setDragIndex(null)
+    setDropTargetIndex(null)
+    setDropPosition(null)
+  }
+
   return (
     <div className={cn('space-y-3', className)}>
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Layout className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-foreground">Page Layout</span>
         <Badge variant="secondary" className="text-xs">
-          {sections.length} {sections.length === 1 ? 'section' : 'sections'}
+          {displaySections.length} {displaySections.length === 1 ? 'section' : 'sections'}
         </Badge>
       </div>
-
-      {/* Figma-style browser wireframe */}
       <BrowserChrome>
-        {sortedSections.map((section, index) => (
-          <SectionBlock key={section.order} section={section} index={index} />
-        ))}
+        {displaySections.length === 0 ? (
+          <div className="py-6 flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground/60">No sections yet</p>
+            <button
+              onClick={() =>
+                emit([{ sectionName: 'New Section', purpose: '', contentGuidance: '', order: 0 }])
+              }
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add first section
+            </button>
+          </div>
+        ) : (
+          displaySections.map((section, index) => {
+            const pinned = isPinnedSection(section.sectionName)
+            return (
+              <div key={`${section.sectionName}-${index}`}>
+                <InteractiveSectionBlock
+                  section={section}
+                  index={index}
+                  pinned={pinned}
+                  isDragging={dragIndex === index}
+                  isDropTarget={dropTargetIndex === index && !pinned}
+                  dropPosition={dropTargetIndex === index ? dropPosition : null}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onDragEnd={handleDragEnd}
+                  onRename={(newName) => handleRename(index, newName)}
+                  onDelete={() => handleDelete(index)}
+                />
+                {/* Add-section divider between items */}
+                {index < displaySections.length - 1 && (
+                  <AddSectionDivider onClick={() => handleAddAfter(index)} />
+                )}
+              </div>
+            )
+          })
+        )}
       </BrowserChrome>
+
+      {/* Add section at the bottom */}
+      {displaySections.length > 0 && (
+        <button
+          onClick={() => handleAddAfter(displaySections.length - 1)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium w-full justify-center
+            text-muted-foreground/60 hover:text-primary
+            bg-transparent hover:bg-primary/5
+            border border-dashed border-border/40 hover:border-primary/30
+            transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add section
+        </button>
+      )}
     </div>
   )
 }

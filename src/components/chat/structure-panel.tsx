@@ -3,7 +3,7 @@
 import { Film, Layout, Calendar, Palette, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { StructureData, StoryboardScene } from '@/lib/ai/briefing-state-machine'
+import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
 import { RichStoryboardPanel } from './storyboard-view'
 import { LayoutPreview } from './layout-preview'
 import { ContentCalendar } from './brief-panel/content-calendar'
@@ -22,6 +22,7 @@ interface StructurePanelProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
+  onSectionReorder?: (sections: LayoutSection[]) => void
   className?: string
 }
 
@@ -108,6 +109,7 @@ export function StructurePanel({
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
+  onSectionReorder,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -139,7 +141,11 @@ export function StructurePanel({
       {structureData.type === 'layout' && (
         <ScrollArea className="flex-1">
           <div className="p-4">
-            <LayoutPreview sections={structureData.sections} />
+            <LayoutPreview
+              sections={structureData.sections}
+              mode="interactive"
+              onSectionReorder={onSectionReorder}
+            />
           </div>
         </ScrollArea>
       )}

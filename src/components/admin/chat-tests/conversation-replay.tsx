@@ -3,8 +3,14 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Bot, User, Zap, FileText, Cpu } from 'lucide-react'
+import type { StructureData, StrategicReviewData } from '@/lib/ai/briefing-state-machine'
+import { StoryboardSummaryCard } from '@/components/chat/storyboard-view'
+import { LayoutPreview } from '@/components/chat/layout-preview'
+import { ContentCalendar } from '@/components/chat/brief-panel/content-calendar'
+import { DesignSpecView } from '@/components/chat/design-spec-view'
+import { StrategicReviewCard } from '@/components/chat/strategic-review-card'
 
-interface Message {
+export interface Message {
   turn: number
   role: 'user' | 'assistant'
   content: string
@@ -12,6 +18,8 @@ interface Message {
   quickOptions?: { question: string; options: string[] } | null
   hasStructureData: boolean
   hasStrategicReview: boolean
+  structureData?: StructureData | null
+  strategicReviewData?: StrategicReviewData | null
   deliverableStyleCount: number
   videoReferenceCount: number
   generatedBy?: 'quick_option' | 'template' | 'haiku'
@@ -30,6 +38,23 @@ function generatedByLabel(method?: string) {
       return { label: 'Template', icon: FileText, color: 'text-blue-600' }
     case 'haiku':
       return { label: 'Haiku', icon: Cpu, color: 'text-purple-600' }
+    default:
+      return null
+  }
+}
+
+const noopAction = () => {}
+
+function RichStructureContent({ data }: { data: StructureData }) {
+  switch (data.type) {
+    case 'storyboard':
+      return <StoryboardSummaryCard scenes={data.scenes} className="mt-2" />
+    case 'layout':
+      return <LayoutPreview sections={data.sections} className="mt-2" />
+    case 'calendar':
+      return <ContentCalendar outline={data.outline} className="mt-2" />
+    case 'single_design':
+      return <DesignSpecView specification={data.specification} className="mt-2" />
     default:
       return null
   }
@@ -69,6 +94,21 @@ export function ConversationReplay({ messages }: ConversationReplayProps) {
                 <p className="text-sm whitespace-pre-wrap break-words">
                   {msg.content.length > 2000 ? msg.content.slice(0, 2000) + '...' : msg.content}
                 </p>
+
+                {/* Rich structure content */}
+                {msg.role === 'assistant' && msg.structureData && (
+                  <RichStructureContent data={msg.structureData} />
+                )}
+
+                {/* Strategic review content */}
+                {msg.role === 'assistant' && msg.strategicReviewData && (
+                  <StrategicReviewCard
+                    review={msg.strategicReviewData}
+                    onAction={noopAction}
+                    disabled
+                    className="mt-2"
+                  />
+                )}
 
                 {/* Metadata row */}
                 <div className="flex items-center gap-2 flex-wrap">

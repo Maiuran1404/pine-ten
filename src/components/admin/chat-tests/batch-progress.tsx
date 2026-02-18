@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { CheckCircle2, Loader2, XCircle, Clock, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface RunProgress {
+export interface RunProgress {
   id: string
   scenarioName: string
   status: string
@@ -19,6 +19,7 @@ interface RunProgress {
 interface BatchProgressProps {
   runs: RunProgress[]
   className?: string
+  onRunClick?: (runId: string) => void
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -73,7 +74,7 @@ function statusConfig(status: string, reachedReview: boolean) {
   }
 }
 
-export function BatchProgress({ runs, className }: BatchProgressProps) {
+export function BatchProgress({ runs, className, onRunClick }: BatchProgressProps) {
   const completed = runs.filter((r) => r.status === 'completed' || r.status === 'failed').length
   const passed = runs.filter((r) => r.reachedReview).length
   const failed = runs.filter((r) => r.status === 'failed').length
@@ -134,16 +135,19 @@ export function BatchProgress({ runs, className }: BatchProgressProps) {
                 return (
                   <Tooltip key={run.id}>
                     <TooltipTrigger asChild>
-                      <div
+                      <button
+                        type="button"
+                        onClick={() => onRunClick?.(run.id)}
                         className={cn(
                           'flex items-center justify-center rounded-md ring-1 ring-inset',
                           'h-9 transition-all',
                           config.ringColor,
-                          config.bgColor
+                          config.bgColor,
+                          onRunClick && 'cursor-pointer hover:ring-2 hover:brightness-95'
                         )}
                       >
                         {config.icon}
-                      </div>
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-48">
                       <p className="text-xs font-medium">{run.scenarioName}</p>

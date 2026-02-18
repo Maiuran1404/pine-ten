@@ -30,6 +30,7 @@ import {
   type StructureData,
 } from './types'
 import type { VideoReferenceStyle } from './video-reference-grid'
+import type { LayoutSection } from '@/lib/ai/briefing-state-machine'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
 import { useBrief } from '@/lib/hooks/use-brief'
 import { useBrandData } from '@/lib/hooks/use-brand-data'
@@ -1399,6 +1400,16 @@ export function useChatInterfaceData({
     []
   )
 
+  // Reorder layout sections via drag-and-drop
+  const handleSectionReorder = useCallback((sections: LayoutSection[]) => {
+    setStoryboardScenes((prev) => {
+      if (!prev || prev.type !== 'layout') return prev
+      const updated = { ...prev, sections }
+      latestStoryboardRef.current = updated
+      return updated
+    })
+  }, [])
+
   // Edit a scene field directly (user typed a change)
   const handleSceneEdit = useCallback((sceneNumber: number, field: string, value: string) => {
     setStoryboardScenes((prev) => {
@@ -1894,6 +1905,7 @@ export function useChatInterfaceData({
     structureType,
     structurePanelVisible,
     handleSceneEdit,
+    handleSectionReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,

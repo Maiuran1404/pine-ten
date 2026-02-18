@@ -13,7 +13,7 @@ import { CompactProgress } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel } from './structure-panel'
-import type { StructureData, StoryboardScene } from '@/lib/ai/briefing-state-machine'
+import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -47,6 +47,7 @@ interface ChatLayoutProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
+  onSectionReorder?: (sections: LayoutSection[]) => void
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -87,6 +88,7 @@ export function ChatLayout({
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
+  onSectionReorder,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -147,6 +149,7 @@ export function ChatLayout({
                 onRegenerateStoryboard={onRegenerateStoryboard}
                 onRegenerateScene={onRegenerateScene}
                 onRegenerateField={onRegenerateField}
+                onSectionReorder={onSectionReorder}
               />
             </div>
 
