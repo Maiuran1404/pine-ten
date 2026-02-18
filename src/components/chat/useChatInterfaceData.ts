@@ -207,8 +207,8 @@ export function useChatInterfaceData({
     return map[cat] ?? null
   }, [_briefingState?.deliverableCategory])
 
-  // Structure panel visible when we know the type or have data
-  const structurePanelVisible = structureType !== null || storyboardScenes !== null
+  // Structure panel visible only when we have actual structure data
+  const structurePanelVisible = storyboardScenes !== null
 
   // Stability: restore storyboard from briefing state when it exists but local state is null
   useEffect(() => {

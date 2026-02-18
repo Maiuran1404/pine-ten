@@ -118,8 +118,8 @@ export function ChatLayout({
             ================================================================ */}
         {structurePanelVisible ? (
           <>
-            {/* Left: Chat area (constrained width) */}
-            <div className="flex flex-col min-w-0 w-full lg:w-[40%] lg:min-w-[360px] lg:max-w-[500px] relative">
+            {/* Left: Chat area (60%) */}
+            <div className="flex flex-col min-w-0 w-full lg:w-[60%] lg:min-w-[400px] relative">
               {/* Mobile header */}
               <div className="lg:hidden shrink-0 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-end gap-2">
                 <Button
@@ -136,8 +136,8 @@ export function ChatLayout({
               <div className="flex-1 min-h-0">{children}</div>
             </div>
 
-            {/* Right: Structure panel (desktop) */}
-            <div className="hidden lg:flex flex-1 min-w-[400px] flex-col border-l border-border/50 bg-muted/20">
+            {/* Right: Structure panel (40%) */}
+            <div className="hidden lg:flex lg:w-[40%] min-w-[320px] flex-col border-l border-border/50 bg-muted/20">
               <StructurePanel
                 structureType={structureType ?? null}
                 structureData={structureData ?? null}
