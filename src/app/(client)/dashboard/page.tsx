@@ -18,7 +18,6 @@ import {
   X,
   Share2,
   Megaphone,
-  Search,
   Presentation,
   Palette,
   Eye,
@@ -483,7 +482,7 @@ function DashboardContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-background flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center"
           >
             <div className="text-center">
               {/* Animated logo/icon */}
@@ -1042,17 +1041,15 @@ function DashboardContent() {
                     }
 
                     return (
-                      <div key={groupKey} className="mb-12">
+                      <div key={groupKey} className={groupIndex > 0 ? 'mt-12' : ''}>
                         {/* Group Header */}
-                        <div
-                          className={`flex items-center gap-3 mb-5 ${
-                            groupIndex > 0 ? 'mt-10' : ''
-                          }`}
-                        >
+                        <div className="flex items-center gap-3 mb-5">
                           <span className="text-base">{icon}</span>
-                          <h3 className="text-sm font-medium text-foreground">{label}</h3>
+                          <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground">
+                            {label}
+                          </h3>
                           <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground tabular-nums">
                             {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
                           </span>
                         </div>
@@ -1062,7 +1059,7 @@ function DashboardContent() {
                             return (
                               <div
                                 key={ref.id}
-                                className="break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+                                className="break-inside-avoid rounded-2xl overflow-hidden ring-1 ring-black/[0.04] shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer"
                               >
                                 <ImageWithSkeleton
                                   src={variantUrls.preview}
@@ -1101,27 +1098,18 @@ function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col items-center min-h-screen px-6 pt-32 md:pt-40 pb-8">
-      <div className="text-center mb-8">
-        <Skeleton className="h-10 w-72 mx-auto mb-2" />
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-6 pb-8">
+      <div className="text-center mb-10 sm:mb-14">
+        <Skeleton className="h-12 w-80 mx-auto mb-3" />
         <Skeleton className="h-6 w-56 mx-auto" />
       </div>
-      <Skeleton className="h-36 w-full max-w-2xl rounded-2xl mb-6" />
-      <div className="flex gap-2 mb-12">
-        <Skeleton className="h-10 w-32 rounded-full" />
-        <Skeleton className="h-10 w-32 rounded-full" />
-        <Skeleton className="h-10 w-28 rounded-full" />
-        <Skeleton className="h-10 w-32 rounded-full" />
-      </div>
-      <Skeleton className="h-4 w-32 mb-4" />
-      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 space-y-3 w-full max-w-6xl">
-        {[...Array(15)].map((_, i) => (
-          <Skeleton
-            key={i}
-            className="break-inside-avoid rounded-xl"
-            style={{ height: `${150 + ((i * 37) % 100)}px` }}
-          />
-        ))}
+      <Skeleton className="h-36 w-full max-w-3xl rounded-3xl mb-6" />
+      <div className="flex flex-wrap justify-center gap-2.5 mb-12">
+        <Skeleton className="h-11 w-36 rounded-2xl" />
+        <Skeleton className="h-11 w-32 rounded-2xl" />
+        <Skeleton className="h-11 w-28 rounded-2xl" />
+        <Skeleton className="h-11 w-36 rounded-2xl" />
+        <Skeleton className="h-11 w-34 rounded-2xl" />
       </div>
     </div>
   )
