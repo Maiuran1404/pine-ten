@@ -350,6 +350,8 @@ export function DesignSpecView({ specification, className }: DesignSpecViewProps
         <PropertiesGrid
           keyElements={specification.keyElements}
           copyGuidance={specification.copyGuidance}
+          exactCopy={specification.exactCopy}
+          layoutNotes={specification.layoutNotes}
         />
       </motion.div>
     </motion.div>
