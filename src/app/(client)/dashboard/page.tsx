@@ -443,6 +443,74 @@ function DashboardContent() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {/* Animated texture background */}
+      <style jsx>{`
+        @keyframes drift1 {
+          0%,
+          100% {
+            transform: translate(0%, 0%) scale(1);
+          }
+          25% {
+            transform: translate(5%, 8%) scale(1.05);
+          }
+          50% {
+            transform: translate(-3%, 5%) scale(0.95);
+          }
+          75% {
+            transform: translate(8%, -3%) scale(1.02);
+          }
+        }
+        @keyframes drift2 {
+          0%,
+          100% {
+            transform: translate(0%, 0%) scale(1);
+          }
+          25% {
+            transform: translate(-8%, 5%) scale(1.03);
+          }
+          50% {
+            transform: translate(5%, -8%) scale(0.97);
+          }
+          75% {
+            transform: translate(-5%, 3%) scale(1.05);
+          }
+        }
+        @keyframes drift3 {
+          0%,
+          100% {
+            transform: translate(0%, 0%) scale(1.02);
+          }
+          25% {
+            transform: translate(6%, -6%) scale(0.98);
+          }
+          50% {
+            transform: translate(-4%, 7%) scale(1.04);
+          }
+          75% {
+            transform: translate(3%, 5%) scale(0.96);
+          }
+        }
+      `}</style>
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[#f8f8f6] dark:bg-[#0a0a0f]" />
+        <div
+          className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-[radial-gradient(circle,_rgba(168,200,175,0.25)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(30,40,55,0.8)_0%,_transparent_70%)] blur-[80px]"
+          style={{ animation: 'drift1 25s ease-in-out infinite' }}
+        />
+        <div
+          className="absolute -bottom-[15%] -right-[10%] w-[65%] h-[65%] rounded-full bg-[radial-gradient(circle,_rgba(180,195,170,0.2)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(20,30,50,0.7)_0%,_transparent_70%)] blur-[80px]"
+          style={{ animation: 'drift2 30s ease-in-out infinite' }}
+        />
+        <div
+          className="absolute top-[20%] right-[5%] w-[50%] h-[50%] rounded-full bg-[radial-gradient(circle,_rgba(195,210,185,0.15)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(15,25,45,0.6)_0%,_transparent_70%)] blur-[100px]"
+          style={{ animation: 'drift3 35s ease-in-out infinite' }}
+        />
+        <div
+          className="absolute -bottom-[25%] left-[15%] w-[55%] h-[55%] rounded-full bg-[radial-gradient(circle,_rgba(160,185,165,0.18)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(25,20,50,0.5)_0%,_transparent_70%)] blur-[90px]"
+          style={{ animation: 'drift1 40s ease-in-out infinite reverse' }}
+        />
+      </div>
+
       {/* Hidden file input */}
       <input
         type="file"
