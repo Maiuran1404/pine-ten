@@ -399,12 +399,7 @@ export function ChatMessageList({
                           content={message.content}
                           animate={animatingMessageId === message.id}
                           speed={25}
-                          onComplete={() => {
-                            if (animatingMessageId === message.id) {
-                              setAnimatingMessageId(null)
-                              setCompletedTypingIds((prev) => new Set(prev).add(message.id))
-                            }
-                          }}
+                          onComplete={() => handleTypingComplete(message.id)}
                           className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
                         />
 
