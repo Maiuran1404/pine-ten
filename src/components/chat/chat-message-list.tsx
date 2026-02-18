@@ -299,6 +299,9 @@ export interface ChatMessageListProps {
 
   // View storyboard in panel handler
   onViewStoryboard?: () => void
+
+  // Whether the structure panel is currently visible (suppresses inline structure rendering)
+  structurePanelVisible?: boolean
 }
 
 // =============================================================================
