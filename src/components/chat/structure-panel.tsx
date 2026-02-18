@@ -161,6 +161,36 @@ export function StructurePanel({
   // Active — render the appropriate view
   return (
     <div className={cn('flex flex-col h-full bg-background', className)}>
+      {/* Elaboration progress */}
+      {briefingStage === 'ELABORATE' &&
+        structureData &&
+        (() => {
+          const { done, total } = getElaborationProgress(structureData)
+          if (total === 0) return null
+          return (
+            <div className="shrink-0 px-4 py-2 border-b border-border/40 flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-blue-500" />
+              <span>
+                {done}/{total}{' '}
+                {structureData.type === 'storyboard'
+                  ? 'scenes'
+                  : structureData.type === 'layout'
+                    ? 'sections'
+                    : structureData.type === 'calendar'
+                      ? 'pillars'
+                      : 'specs'}{' '}
+                detailed
+              </span>
+              <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all"
+                  style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          )
+        })()}
+
       {structureData.type === 'storyboard' && (
         <RichStoryboardPanel
           scenes={structureData.scenes}
