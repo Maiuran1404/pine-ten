@@ -237,6 +237,25 @@ function SectionBlock({ section, index }: { section: LayoutSection; index: numbe
 
       {/* Wireframe content */}
       {renderSectionWireframe(type, section.sectionName)}
+
+      {/* Elaboration content preview */}
+      {(section.headline || section.draftContent || section.ctaText) && (
+        <div className="px-4 pb-2 space-y-1 border-t border-dashed border-slate-200 dark:border-slate-700 mt-1 pt-2">
+          {section.headline && (
+            <p className="text-[11px] font-semibold text-foreground truncate">{section.headline}</p>
+          )}
+          {section.draftContent && (
+            <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
+              {section.draftContent}
+            </p>
+          )}
+          {section.ctaText && (
+            <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+              {section.ctaText}
+            </span>
+          )}
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -436,6 +455,25 @@ function InteractiveSectionBlock({
 
       {/* Wireframe content */}
       {renderSectionWireframe(type, section.sectionName)}
+
+      {/* Elaboration content preview */}
+      {(section.headline || section.draftContent || section.ctaText) && (
+        <div className="px-4 pb-2 space-y-1 border-t border-dashed border-slate-200 dark:border-slate-700 mt-1 pt-2">
+          {section.headline && (
+            <p className="text-[11px] font-semibold text-foreground truncate">{section.headline}</p>
+          )}
+          {section.draftContent && (
+            <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
+              {section.draftContent}
+            </p>
+          )}
+          {section.ctaText && (
+            <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+              {section.ctaText}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Drop indicator line — below */}
       {isDropTarget && dropPosition === 'below' && (

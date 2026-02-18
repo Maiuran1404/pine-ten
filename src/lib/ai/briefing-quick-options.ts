@@ -154,6 +154,40 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
     }
   },
 
+  ELABORATE: (state) => {
+    const isFirstTurn = state.turnsInCurrentStage === 0
+    if (isFirstTurn) {
+      return {
+        question: 'How does the detail look?',
+        options: ['Looks great, continue', 'Adjust specific sections', 'Different approach'],
+      }
+    }
+    // Subsequent turns: deliverable-specific refinement
+    const category = state.deliverableCategory
+    switch (category) {
+      case 'video':
+        return {
+          question: 'What needs work?',
+          options: ['Rewrite a scene script', 'Adjust director notes', 'Good enough, move on'],
+        }
+      case 'website':
+        return {
+          question: 'What needs work?',
+          options: ['Rewrite a section', 'Adjust the hero copy', 'Good enough, move on'],
+        }
+      case 'content':
+        return {
+          question: 'What needs work?',
+          options: ['Rewrite post captions', 'Adjust pillar identity', 'Good enough, move on'],
+        }
+      default:
+        return {
+          question: 'What needs work?',
+          options: ['Refine the copy', 'Adjust the layout', 'Good enough, move on'],
+        }
+    }
+  },
+
   SUBMIT: () => null, // Single-pass stage
 }
 

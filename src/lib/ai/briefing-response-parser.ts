@@ -147,6 +147,7 @@ const VALID_STAGES: Set<string> = new Set([
   'INTENT',
   'INSPIRATION',
   'STRUCTURE',
+  'ELABORATE',
   'STRATEGIC_REVIEW',
   'MOODBOARD',
   'REVIEW',
@@ -437,6 +438,18 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
       getStringArray(scene, 'styleReferences') ??
       getStringArray(scene, 'style_references') ??
       undefined
+    const fullScript =
+      getString(scene, 'fullScript') ?? getString(scene, 'full_script') ?? undefined
+    const directorNotes =
+      getString(scene, 'directorNotes') ?? getString(scene, 'director_notes') ?? undefined
+    const referenceDescription =
+      getString(scene, 'referenceDescription') ??
+      getString(scene, 'reference_description') ??
+      undefined
+    const referenceImageIds =
+      getStringArray(scene, 'referenceImageIds') ??
+      getStringArray(scene, 'reference_image_ids') ??
+      undefined
 
     validScenes.push({
       sceneNumber: getNumber(scene, 'sceneNumber') ?? i + 1,
@@ -454,6 +467,10 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
       ...(transition ? { transition } : {}),
       ...(cameraNote ? { cameraNote } : {}),
       ...(sceneStyleRefs ? { styleReferences: sceneStyleRefs } : {}),
+      ...(fullScript ? { fullScript } : {}),
+      ...(directorNotes ? { directorNotes } : {}),
+      ...(referenceDescription ? { referenceDescription } : {}),
+      ...(referenceImageIds ? { referenceImageIds } : {}),
     })
   }
 
@@ -495,12 +512,27 @@ function validateLayout(parsed: Record<string, unknown> | unknown[]): StructureD
       getString(section, 'name')
     if (!name) continue
 
+    const draftContent =
+      getString(section, 'draftContent') ?? getString(section, 'draft_content') ?? undefined
+    const headline = getString(section, 'headline') ?? undefined
+    const subheadline = getString(section, 'subheadline') ?? undefined
+    const ctaText = getString(section, 'ctaText') ?? getString(section, 'cta_text') ?? undefined
+    const sectionRefDescription =
+      getString(section, 'referenceDescription') ??
+      getString(section, 'reference_description') ??
+      undefined
+
     validSections.push({
       sectionName: name,
       purpose: getString(section, 'purpose') ?? '',
       contentGuidance:
         getString(section, 'contentGuidance') ?? getString(section, 'content_guidance') ?? '',
       order: getNumber(section, 'order') ?? i + 1,
+      ...(draftContent ? { draftContent } : {}),
+      ...(headline ? { headline } : {}),
+      ...(subheadline ? { subheadline } : {}),
+      ...(ctaText ? { ctaText } : {}),
+      ...(sectionRefDescription ? { referenceDescription: sectionRefDescription } : {}),
     })
   }
 
@@ -531,10 +563,19 @@ function validateCalendar(parsed: Record<string, unknown> | unknown[]): Structur
       if (typeof pillar !== 'object' || pillar === null) return null
       const name = getString(pillar, 'name')
       if (!name) return null
+      const visualIdentity =
+        getString(pillar, 'visualIdentity') ?? getString(pillar, 'visual_identity') ?? undefined
+      const colorAccent =
+        getString(pillar, 'colorAccent') ?? getString(pillar, 'color_accent') ?? undefined
+      const toneNote = getString(pillar, 'toneNote') ?? getString(pillar, 'tone_note') ?? undefined
+
       return {
         name,
         description: getString(pillar, 'description') ?? '',
         percentage: getNumber(pillar, 'percentage') ?? 0,
+        ...(visualIdentity ? { visualIdentity } : {}),
+        ...(colorAccent ? { colorAccent } : {}),
+        ...(toneNote ? { toneNote } : {}),
       }
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
@@ -583,6 +624,15 @@ function validatePosts(posts: unknown[]): Array<{
     .map((p) => {
       const post = p as Record<string, unknown>
       if (typeof post !== 'object' || post === null) return null
+      const sampleCopy =
+        getString(post, 'sampleCopy') ?? getString(post, 'sample_copy') ?? undefined
+      const captionHook =
+        getString(post, 'captionHook') ?? getString(post, 'caption_hook') ?? undefined
+      const visualDescription =
+        getString(post, 'visualDescription') ?? getString(post, 'visual_description') ?? undefined
+      const hashtagStrategy =
+        getString(post, 'hashtagStrategy') ?? getString(post, 'hashtag_strategy') ?? undefined
+
       return {
         dayOfWeek:
           getString(post, 'dayOfWeek') ??
@@ -597,6 +647,10 @@ function validatePosts(posts: unknown[]): Array<{
         cta: getString(post, 'cta') ?? '',
         engagementTrigger:
           getString(post, 'engagementTrigger') ?? getString(post, 'engagement_trigger') ?? '',
+        ...(sampleCopy ? { sampleCopy } : {}),
+        ...(captionHook ? { captionHook } : {}),
+        ...(visualDescription ? { visualDescription } : {}),
+        ...(hashtagStrategy ? { hashtagStrategy } : {}),
       }
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
@@ -648,6 +702,15 @@ function validateDesignSpec(parsed: Record<string, unknown> | unknown[]): Struct
     })
     .filter((d): d is NonNullable<typeof d> => d !== null)
 
+  const exactCopy =
+    getStringArray(parsed, 'exactCopy') ?? getStringArray(parsed, 'exact_copy') ?? undefined
+  const layoutNotes =
+    getString(parsed, 'layoutNotes') ?? getString(parsed, 'layout_notes') ?? undefined
+  const designSpecRefDescription =
+    getString(parsed, 'referenceDescription') ??
+    getString(parsed, 'reference_description') ??
+    undefined
+
   return {
     type: 'single_design',
     specification: {
@@ -656,6 +719,9 @@ function validateDesignSpec(parsed: Record<string, unknown> | unknown[]): Struct
       keyElements:
         getStringArray(parsed, 'keyElements') ?? getStringArray(parsed, 'key_elements') ?? [],
       copyGuidance: getString(parsed, 'copyGuidance') ?? getString(parsed, 'copy_guidance') ?? '',
+      ...(exactCopy ? { exactCopy } : {}),
+      ...(layoutNotes ? { layoutNotes } : {}),
+      ...(designSpecRefDescription ? { referenceDescription: designSpecRefDescription } : {}),
     },
   }
 }
@@ -722,12 +788,26 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
     const scene = scenes[i]
     if (typeof scene === 'object' && scene !== null) {
       const s = scene as Record<string, unknown>
+      const fullScript = getString(s, 'fullScript') ?? getString(s, 'full_script') ?? undefined
+      const directorNotes =
+        getString(s, 'directorNotes') ?? getString(s, 'director_notes') ?? undefined
+      const referenceDescription =
+        getString(s, 'referenceDescription') ?? getString(s, 'reference_description') ?? undefined
+      const referenceImageIds =
+        getStringArray(s, 'referenceImageIds') ??
+        getStringArray(s, 'reference_image_ids') ??
+        undefined
+
       validScenes.push({
         sceneNumber: getNumber(s, 'sceneNumber') ?? i + 1,
         title: getString(s, 'title') ?? `Scene ${i + 1}`,
         description: getString(s, 'description') ?? '',
         duration: getString(s, 'duration') ?? '',
         visualNote: getString(s, 'visualNote') ?? '',
+        ...(fullScript ? { fullScript } : {}),
+        ...(directorNotes ? { directorNotes } : {}),
+        ...(referenceDescription ? { referenceDescription } : {}),
+        ...(referenceImageIds ? { referenceImageIds } : {}),
       })
     }
   }
@@ -745,11 +825,24 @@ function partialLayout(parsed: Record<string, unknown> | unknown[]): StructureDa
     const section = sections[i]
     if (typeof section === 'object' && section !== null) {
       const s = section as Record<string, unknown>
+      const draftContent =
+        getString(s, 'draftContent') ?? getString(s, 'draft_content') ?? undefined
+      const headline = getString(s, 'headline') ?? undefined
+      const subheadline = getString(s, 'subheadline') ?? undefined
+      const ctaText = getString(s, 'ctaText') ?? getString(s, 'cta_text') ?? undefined
+      const referenceDescription =
+        getString(s, 'referenceDescription') ?? getString(s, 'reference_description') ?? undefined
+
       validSections.push({
         sectionName: getString(s, 'sectionName') ?? getString(s, 'name') ?? `Section ${i + 1}`,
         purpose: getString(s, 'purpose') ?? '',
         contentGuidance: getString(s, 'contentGuidance') ?? '',
         order: getNumber(s, 'order') ?? i + 1,
+        ...(draftContent ? { draftContent } : {}),
+        ...(headline ? { headline } : {}),
+        ...(subheadline ? { subheadline } : {}),
+        ...(ctaText ? { ctaText } : {}),
+        ...(referenceDescription ? { referenceDescription } : {}),
       })
     }
   }
@@ -802,6 +895,15 @@ function partialDesignSpec(parsed: Record<string, unknown> | unknown[]): Structu
   const format = getString(parsed, 'format')
   if (!format) return null
 
+  const exactCopy =
+    getStringArray(parsed, 'exactCopy') ?? getStringArray(parsed, 'exact_copy') ?? undefined
+  const layoutNotes =
+    getString(parsed, 'layoutNotes') ?? getString(parsed, 'layout_notes') ?? undefined
+  const referenceDescription =
+    getString(parsed, 'referenceDescription') ??
+    getString(parsed, 'reference_description') ??
+    undefined
+
   return {
     type: 'single_design',
     specification: {
@@ -809,6 +911,9 @@ function partialDesignSpec(parsed: Record<string, unknown> | unknown[]): Structu
       dimensions: [],
       keyElements: getStringArray(parsed, 'keyElements') ?? [],
       copyGuidance: getString(parsed, 'copyGuidance') ?? '',
+      ...(exactCopy ? { exactCopy } : {}),
+      ...(layoutNotes ? { layoutNotes } : {}),
+      ...(referenceDescription ? { referenceDescription } : {}),
     },
   }
 }

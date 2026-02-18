@@ -65,6 +65,7 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
     case 'INSPIRATION':
       return 'style'
     case 'STRUCTURE':
+    case 'ELABORATE':
       return 'details'
     case 'STRATEGIC_REVIEW':
       return 'strategic_review'

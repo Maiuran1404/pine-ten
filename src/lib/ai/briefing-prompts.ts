@@ -264,6 +264,7 @@ function buildStageTask(state: BriefingState): string {
     INTENT: buildIntentTask,
     INSPIRATION: buildInspirationTask,
     STRUCTURE: buildStructureTask,
+    ELABORATE: buildElaborateTask,
     STRATEGIC_REVIEW: buildStrategicReviewTask,
     MOODBOARD: buildMoodboardTask,
     REVIEW: buildReviewTask,
@@ -278,6 +279,7 @@ function buildStageTask(state: BriefingState): string {
   // structured JSON output and tends to forget the metadata block
   const BRIEF_META_REMINDER: Partial<Record<BriefingStage, string>> = {
     STRUCTURE: 'After the structure block, include [BRIEF_META] and [QUICK_OPTIONS].',
+    ELABORATE: 'After the elaborated structure block, include [BRIEF_META] and [QUICK_OPTIONS].',
     STRATEGIC_REVIEW:
       'After the [STRATEGIC_REVIEW] block, include [BRIEF_META] and [QUICK_OPTIONS].',
     REVIEW: 'After your review, include [BRIEF_META] and [QUICK_OPTIONS].',
@@ -397,6 +399,89 @@ You MUST output the structure in the appropriate marker format ([STORYBOARD], [L
   }
 }
 
+function buildElaborateTask(state: BriefingState): string {
+  const category = state.deliverableCategory
+  const isFirstTurn = state.turnsInCurrentStage === 0
+
+  if (isFirstTurn) {
+    // First turn: auto-elaborate ALL sections immediately
+    switch (category) {
+      case 'video':
+        return `MANDATORY: Elaborate ALL scenes in the storyboard with full creative detail.
+For each scene, add:
+- fullScript: Complete narration/dialogue script (exact words to be spoken or shown)
+- directorNotes: Shooting direction, pacing, talent direction, mood cues
+- referenceDescription: Description of what the reference visual should look like
+
+Output the complete elaborated storyboard using [STORYBOARD]{json}[/STORYBOARD] with all existing fields PLUS the new detail fields.
+Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
+      case 'website':
+        return `MANDATORY: Elaborate ALL sections in the layout with real content.
+For each section, add:
+- headline: The actual headline copy for this section
+- subheadline: Supporting subheadline if appropriate
+- draftContent: Full body copy draft for this section
+- ctaText: The exact CTA button/link text
+- referenceDescription: Description of the visual style for this section
+
+Output the complete elaborated layout using [LAYOUT]{json}[/LAYOUT] with all existing fields PLUS the new detail fields.
+Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
+      case 'content':
+        return `MANDATORY: Elaborate the content calendar with real post content and pillar identity.
+For each content pillar, add:
+- visualIdentity: Visual style direction for this pillar (e.g., "bold typography on solid color backgrounds")
+- colorAccent: Suggested accent color for this pillar
+- toneNote: Tone direction specific to this pillar
+
+For each post, add:
+- sampleCopy: Full draft caption/post copy
+- captionHook: The opening hook line that stops the scroll
+- visualDescription: Description of what the visual should look like
+- hashtagStrategy: 3-5 relevant hashtags for this post
+
+Output the complete elaborated calendar using [CALENDAR]{json}[/CALENDAR] with all existing fields PLUS the new detail fields.
+Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
+      case 'design':
+      case 'brand':
+        return `MANDATORY: Elaborate the design specification with exact content and layout direction.
+Add to the specification:
+- exactCopy: Array of exact copy strings that should appear on the design (headlines, taglines, body text, CTAs)
+- layoutNotes: Detailed layout hierarchy description (what goes where, visual weight, reading flow)
+- referenceDescription: Description of reference designs that match the intended style
+
+Output the complete elaborated spec using [DESIGN_SPEC]{json}[/DESIGN_SPEC] with all existing fields PLUS the new detail fields.
+Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
+      default:
+        return `Elaborate the structure with full creative detail. Add real content, copy, and descriptions to every element.
+Output using the appropriate marker format ([STORYBOARD], [LAYOUT], [CALENDAR], or [DESIGN_SPEC]).
+Do NOT ask questions. Generate the creative content now.`
+    }
+  }
+
+  // Subsequent turns: refine based on user feedback
+  switch (category) {
+    case 'video':
+      return `The user is refining the elaborated storyboard. Apply their feedback to the specific scenes they mentioned.
+Regenerate the FULL [STORYBOARD] block with all scenes, updating only what was requested.
+Keep all existing detail (fullScript, directorNotes, referenceDescription) intact for scenes the user didn't mention.`
+    case 'website':
+      return `The user is refining the elaborated layout. Apply their feedback to the specific sections they mentioned.
+Regenerate the FULL [LAYOUT] block with all sections, updating only what was requested.
+Keep all existing detail (headline, draftContent, ctaText) intact for sections the user didn't mention.`
+    case 'content':
+      return `The user is refining the elaborated content calendar. Apply their feedback to the specific posts or pillars they mentioned.
+Regenerate the FULL [CALENDAR] block, updating only what was requested.
+Keep all existing detail intact for elements the user didn't mention.`
+    case 'design':
+    case 'brand':
+      return `The user is refining the elaborated design spec. Apply their feedback.
+Regenerate the FULL [DESIGN_SPEC] block, updating only what was requested.
+Keep all existing detail (exactCopy, layoutNotes) intact unless specifically changed.`
+    default:
+      return `Apply the user's feedback to refine the elaborated structure. Regenerate the full structure block with updates applied.`
+  }
+}
+
 function buildStrategicReviewTask(_state: BriefingState): string {
   return `Surface your strategic assessment of the brief so far.
 Lead with your honest assessment. If you have a flag, lead with it. Don't sandwich critique between praise.
@@ -491,7 +576,7 @@ function getDeepenOptionsForCategory(category: DeliverableCategory | null): stri
 // =============================================================================
 
 function buildDeliverableGuidance(state: BriefingState): string | null {
-  if (state.stage !== 'STRUCTURE') return null
+  if (state.stage !== 'STRUCTURE' && state.stage !== 'ELABORATE') return null
 
   if (state.deliverableCategory === 'video') {
     return VIDEO_HOOK_GUIDANCE

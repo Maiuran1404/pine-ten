@@ -90,6 +90,52 @@ function HookDataInline({ hookData }: { hookData: NonNullable<StoryboardScene['h
 }
 
 // =============================================================================
+// ELABORATION DETAIL (blue sub-section for elaborated scenes)
+// =============================================================================
+
+function ElaborationDetail({ scene }: { scene: StoryboardScene }) {
+  const hasDetail = scene.fullScript || scene.directorNotes || scene.referenceDescription
+  if (!hasDetail) return null
+
+  return (
+    <div className="mt-2 rounded-md border border-blue-200/60 dark:border-blue-800/40 bg-blue-50/50 dark:bg-blue-900/10 px-3 py-2 space-y-2">
+      <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400">
+        <Sparkles className="h-3 w-3" />
+        <span className="text-[10px] font-semibold uppercase tracking-wide">Elaboration</span>
+      </div>
+      {scene.fullScript && (
+        <div>
+          <span className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-wider">
+            Full Script
+          </span>
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+            {scene.fullScript}
+          </p>
+        </div>
+      )}
+      {scene.directorNotes && (
+        <div>
+          <span className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-wider">
+            Director Notes
+          </span>
+          <p className="text-xs text-foreground/80 italic leading-relaxed">{scene.directorNotes}</p>
+        </div>
+      )}
+      {scene.referenceDescription && (
+        <div>
+          <span className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-wider">
+            Reference Description
+          </span>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {scene.referenceDescription}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// =============================================================================
 // STORYBOARD SUMMARY CARD — compact inline chat component
 // =============================================================================
 
@@ -684,6 +730,9 @@ function RichSceneCard({
             />
           </div>
         )}
+
+        {/* Elaboration detail */}
+        <ElaborationDetail scene={scene} />
 
         {/* Hook data — scene 1 only */}
         {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}

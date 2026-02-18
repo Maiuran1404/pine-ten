@@ -349,7 +349,7 @@ export function ChatMessageList({
   onSceneClick: _onSceneClick,
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
-  structurePanelVisible = false,
+  structurePanelVisible: _structurePanelVisible = false,
 }: ChatMessageListProps) {
   const handleTypingComplete = useCallback(
     (messageId: string) => {

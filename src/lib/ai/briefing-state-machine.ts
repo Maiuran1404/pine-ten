@@ -25,6 +25,7 @@ export type BriefingStage =
   | 'INTENT'
   | 'INSPIRATION'
   | 'STRUCTURE'
+  | 'ELABORATE'
   | 'STRATEGIC_REVIEW'
   | 'MOODBOARD'
   | 'REVIEW'
@@ -55,6 +56,11 @@ export interface StoryboardScene {
   transition?: string
   cameraNote?: string
   styleReferences?: string[]
+  // Elaboration fields (populated during ELABORATE stage)
+  fullScript?: string
+  directorNotes?: string
+  referenceImageIds?: string[]
+  referenceDescription?: string
 }
 
 export interface VideoHookData {
@@ -68,6 +74,13 @@ export interface LayoutSection {
   purpose: string
   contentGuidance: string
   order: number
+  // Elaboration fields (populated during ELABORATE stage)
+  draftContent?: string
+  headline?: string
+  subheadline?: string
+  ctaText?: string
+  referenceDescription?: string
+  referenceStyleIds?: string[]
 }
 
 export interface ContentCalendarOutline {
@@ -84,6 +97,10 @@ export interface ContentPillar {
   name: string
   description: string
   percentage: number
+  // Elaboration fields (populated during ELABORATE stage)
+  visualIdentity?: string
+  colorAccent?: string
+  toneNote?: string
 }
 
 export interface ContentWeek {
@@ -100,6 +117,11 @@ export interface ContentPost {
   format: string
   cta: string
   engagementTrigger: string
+  // Elaboration fields (populated during ELABORATE stage)
+  sampleCopy?: string
+  visualDescription?: string
+  hashtagStrategy?: string
+  captionHook?: string
 }
 
 export interface CTAEscalationPlan {
@@ -113,6 +135,11 @@ export interface DesignSpec {
   dimensions: Dimension[]
   keyElements: string[]
   copyGuidance: string
+  // Elaboration fields (populated during ELABORATE stage)
+  exactCopy?: string[]
+  layoutNotes?: string
+  referenceDesignIds?: string[]
+  referenceDescription?: string
 }
 
 // =============================================================================
@@ -192,6 +219,7 @@ export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
     softNudgeAfter: null,
   },
   STRUCTURE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 4 },
+  ELABORATE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 5 },
   STRATEGIC_REVIEW: {
     maxTurnsBeforeNarrow: null,
     maxTurnsBeforeRecommend: null,
@@ -210,6 +238,7 @@ const STAGE_ORDER: BriefingStage[] = [
   'INTENT',
   'INSPIRATION',
   'STRUCTURE',
+  'ELABORATE',
   'STRATEGIC_REVIEW',
   'MOODBOARD',
   'REVIEW',
@@ -231,7 +260,8 @@ export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
     TASK_TYPE: ['TASK_TYPE', 'INTENT', 'INSPIRATION'],
     INTENT: ['INTENT', 'INSPIRATION'],
     INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
-    STRUCTURE: ['STRUCTURE', 'STRATEGIC_REVIEW'],
+    STRUCTURE: ['STRUCTURE', 'ELABORATE'],
+    ELABORATE: ['ELABORATE', 'STRATEGIC_REVIEW'],
     STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'MOODBOARD'],
     MOODBOARD: ['MOODBOARD', 'REVIEW'],
     REVIEW: ['REVIEW', 'DEEPEN', 'SUBMIT'],
@@ -354,12 +384,20 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'STRUCTURE': {
-      // STRATEGIC_REVIEW requires structure !== null, or force-advance after 3 turns
+      // ELABORATE requires structure !== null, or force-advance after 3 turns
       // to prevent permanent stuck state when structure markers are missing
       if (state.structure !== null || state.turnsInCurrentStage >= 3) {
-        return 'STRATEGIC_REVIEW'
+        return 'ELABORATE'
       }
       return 'STRUCTURE'
+    }
+
+    case 'ELABORATE': {
+      // Advance to STRATEGIC_REVIEW when elaboration is complete or after 5 turns
+      if (checkElaborationComplete(state) || state.turnsInCurrentStage >= 5) {
+        return 'STRATEGIC_REVIEW'
+      }
+      return 'ELABORATE'
     }
 
     case 'STRATEGIC_REVIEW': {
@@ -393,6 +431,45 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
 
     default:
       return state.stage
+  }
+}
+
+// =============================================================================
+// ELABORATION CHECK
+// =============================================================================
+
+/**
+ * Check if elaboration detail fields are populated on the current structure.
+ * Returns true if the structure has at least some elaboration data filled in.
+ */
+export function checkElaborationComplete(state: BriefingState): boolean {
+  if (!state.structure) return false
+
+  switch (state.structure.type) {
+    case 'storyboard': {
+      // Check if any scene has fullScript or directorNotes
+      return state.structure.scenes.some((s) => s.fullScript || s.directorNotes)
+    }
+    case 'layout': {
+      // Check if any section has headline or draftContent
+      return state.structure.sections.some((s) => s.headline || s.draftContent)
+    }
+    case 'calendar': {
+      // Check if any post has sampleCopy or captionHook
+      const hasPostDetail = state.structure.outline.weeks.some((w) =>
+        w.posts.some((p) => p.sampleCopy || p.captionHook)
+      )
+      // Check if any pillar has visualIdentity
+      const hasPillarDetail = state.structure.outline.contentPillars.some((p) => p.visualIdentity)
+      return hasPostDetail || hasPillarDetail
+    }
+    case 'single_design': {
+      // Check if exactCopy or layoutNotes are present
+      const spec = state.structure.specification
+      return (spec.exactCopy !== undefined && spec.exactCopy.length > 0) || !!spec.layoutNotes
+    }
+    default:
+      return false
   }
 }
 
@@ -453,10 +530,20 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
     newState.deepenSelections = null
   }
 
+  // Going back to ELABORATE: clear strategic review + downstream, keep structure
+  if (
+    targetIndex <= STAGE_ORDER.indexOf('ELABORATE') &&
+    targetIndex > STAGE_ORDER.indexOf('STRUCTURE')
+  ) {
+    newState.strategicReview = null
+    newState.sectionMoodboards = {}
+    newState.deepenSelections = null
+  }
+
   // Clear strategic review and downstream for anything at STRATEGIC_REVIEW or earlier
   if (
     targetIndex <= STAGE_ORDER.indexOf('STRATEGIC_REVIEW') &&
-    targetIndex > STAGE_ORDER.indexOf('STRUCTURE')
+    targetIndex > STAGE_ORDER.indexOf('ELABORATE')
   ) {
     newState.strategicReview = null
     newState.sectionMoodboards = {}

@@ -40,17 +40,22 @@ export function inferStageFromResponse(
 ): StageInference | null {
   const candidates: StageInference[] = []
 
-  // Detect structure markers → STRUCTURE
+  // Detect structure markers → STRUCTURE or ELABORATE
   if (
     /\[STORYBOARD\]/.test(aiResponse) ||
     /\[LAYOUT\]/.test(aiResponse) ||
     /\[CALENDAR\]/.test(aiResponse) ||
     /\[DESIGN_SPEC\]/.test(aiResponse)
   ) {
+    // During ELABORATE stage, structure markers indicate elaborated content, not a new structure
+    const inferredStage = currentStage === 'ELABORATE' ? 'ELABORATE' : 'STRUCTURE'
     candidates.push({
-      stage: 'STRUCTURE',
+      stage: inferredStage,
       confidence: 0.95,
-      reason: 'Structure marker detected',
+      reason:
+        currentStage === 'ELABORATE'
+          ? 'Elaborated structure marker detected'
+          : 'Structure marker detected',
     })
   }
 

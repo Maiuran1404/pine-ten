@@ -322,7 +322,10 @@ async function handler(request: NextRequest) {
           // Add scene feedback hint: when user gives feedback on specific scenes during STRUCTURE,
           // instruct the AI to regenerate the full storyboard with changes applied
           const lastUserContent = messages[messages.length - 1]?.content || ''
-          if (briefingState.stage === 'STRUCTURE' && /\[Feedback on Scene/.test(lastUserContent)) {
+          if (
+            (briefingState.stage === 'STRUCTURE' || briefingState.stage === 'ELABORATE') &&
+            /\[Feedback on Scene/.test(lastUserContent)
+          ) {
             systemPrompt +=
               '\n\nIMPORTANT: The user is giving feedback on specific storyboard scenes. ' +
               'Apply their feedback and regenerate the FULL [STORYBOARD] block with all scenes, ' +
@@ -657,13 +660,19 @@ async function handler(request: NextRequest) {
             const declaredStage = briefMetaResult.data.stage
             const legal = getLegalTransitions(briefingState.stage)
             if (legal.includes(declaredStage)) {
-              // Guard: Don't auto-advance to STRATEGIC_REVIEW in the same response
-              // that outputs structure data. User should interact with structure first.
+              // Guard: Don't skip ahead past ELABORATE. User should interact with
+              // structure/elaboration first before strategic review.
               const blockingAdvance =
-                briefingState.stage === 'STRUCTURE' && declaredStage === 'STRATEGIC_REVIEW'
+                (briefingState.stage === 'STRUCTURE' && declaredStage === 'STRATEGIC_REVIEW') ||
+                (briefingState.stage === 'STRUCTURE' &&
+                  declaredStage === 'ELABORATE' &&
+                  briefingState.turnsInCurrentStage === 0) ||
+                (briefingState.stage === 'ELABORATE' &&
+                  declaredStage === 'STRATEGIC_REVIEW' &&
+                  briefingState.turnsInCurrentStage === 0)
 
               if (blockingAdvance) {
-                // Stay in STRUCTURE — the advance will happen on the next user turn
+                // Stay in current stage — the advance will happen on the next user turn
                 briefingState.turnsInCurrentStage += 1
               } else if (declaredStage !== briefingState.stage) {
                 briefingState.stage = declaredStage
@@ -747,9 +756,13 @@ async function handler(request: NextRequest) {
                 'Stage inferred from response content (Tier 1)'
               )
               if (stageInference.stage !== briefingState.stage) {
-                // Preserve STRUCTURE→STRATEGIC_REVIEW blocking guard
+                // Preserve blocking guards for STRUCTURE/ELABORATE transitions
                 const blockingAdvance =
-                  briefingState.stage === 'STRUCTURE' && stageInference.stage === 'STRATEGIC_REVIEW'
+                  (briefingState.stage === 'STRUCTURE' &&
+                    stageInference.stage === 'STRATEGIC_REVIEW') ||
+                  (briefingState.stage === 'ELABORATE' &&
+                    stageInference.stage === 'STRATEGIC_REVIEW' &&
+                    briefingState.turnsInCurrentStage === 0)
                 if (blockingAdvance) {
                   briefingState.turnsInCurrentStage += 1
                 } else {
@@ -859,9 +872,12 @@ async function handler(request: NextRequest) {
           // 14-15. Auto-advance on structure/review parse
           // ================================================================
 
-          // NOTE: We intentionally do NOT auto-advance STRUCTURE -> STRATEGIC_REVIEW here.
-          // The structure response should stay in STRUCTURE stage so the user can interact
-          // with the storyboard/layout first. STRATEGIC_REVIEW comes on the next user turn.
+          // Auto-advance STRUCTURE -> ELABORATE when structure data was just parsed
+          // on a non-first turn (first turn stays in STRUCTURE for user interaction)
+          if (briefingState.stage === 'STRUCTURE' && structureData && turnsBeforeBriefMeta > 0) {
+            briefingState.stage = 'ELABORATE'
+            briefingState.turnsInCurrentStage = 0
+          }
 
           // Auto-advance STRATEGIC_REVIEW -> MOODBOARD when review data is parsed
           if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
@@ -929,6 +945,56 @@ async function handler(request: NextRequest) {
               }
             } catch (retryErr) {
               logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')
+            }
+          }
+
+          // ================================================================
+          // 16a. ELABORATE retry with format reinforcement (single attempt)
+          // ================================================================
+          if (
+            briefingState.stage === 'ELABORATE' &&
+            !structureData &&
+            structureType &&
+            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'ELABORATE')
+          ) {
+            logger.debug(
+              { structureType },
+              'Structure not parsed at ELABORATE stage — retrying with format reinforcement'
+            )
+            try {
+              const reinforcement = getFormatReinforcement(structureType)
+              const elaborateRetryBrandContext: BrandContext = {
+                companyName: company?.name,
+                industry: company?.industry ?? undefined,
+                brandDescription: company?.description ?? undefined,
+              }
+              const elaborateRetryOverride = {
+                systemPrompt: buildSystemPrompt(briefingState, elaborateRetryBrandContext),
+                stage: briefingState.stage,
+              }
+              const retryResponse = await chat(
+                [
+                  ...messages,
+                  { role: 'assistant', content: response.content },
+                  { role: 'user', content: reinforcement },
+                ],
+                session.user.id,
+                chatContext,
+                elaborateRetryOverride
+              )
+              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
+              if (retryParsed.success && retryParsed.data) {
+                structureData = retryParsed.data
+                briefingState.structure = retryParsed.data
+                logger.debug({ structureType }, 'ELABORATE structure retry succeeded')
+              } else {
+                logger.warn(
+                  { structureType, parseError: retryParsed.parseError },
+                  'ELABORATE structure retry also failed'
+                )
+              }
+            } catch (retryErr) {
+              logger.warn({ err: retryErr }, 'ELABORATE format reinforcement retry failed')
             }
           }
 
