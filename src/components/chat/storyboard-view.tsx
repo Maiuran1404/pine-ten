@@ -604,24 +604,22 @@ function EditableField({
 
 function SceneThumbnail({
   scene,
-  isFirst,
+  index,
   getImageUrl,
 }: {
   scene: StoryboardScene
-  isFirst: boolean
+  index: number
   getImageUrl?: (imageId: string) => string
 }) {
   const imageId = scene.referenceImageIds?.[0]
   const imageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
+  const gradient = getSceneGradient(index)
 
   return (
     <div
       className={cn(
         'relative aspect-video w-full rounded-t-lg overflow-hidden',
-        !imageUrl &&
-          (isFirst
-            ? 'bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/20'
-            : 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/10')
+        !imageUrl && `bg-gradient-to-br ${gradient.bg}`
       )}
     >
       {imageUrl ? (
@@ -634,24 +632,10 @@ function SceneThumbnail({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={cn(
-              'text-5xl font-bold select-none',
-              isFirst
-                ? 'text-amber-300/60 dark:text-amber-700/40'
-                : 'text-emerald-200/80 dark:text-emerald-800/30'
-            )}
-          >
+          <span className={cn('text-5xl font-bold select-none', gradient.number)}>
             {scene.sceneNumber}
           </span>
-          <Film
-            className={cn(
-              'absolute bottom-2 right-2 h-4 w-4',
-              isFirst
-                ? 'text-amber-300/50 dark:text-amber-700/30'
-                : 'text-emerald-200/60 dark:text-emerald-800/20'
-            )}
-          />
+          <Film className={cn('absolute bottom-2 right-2 h-4 w-4', gradient.icon)} />
         </div>
       )}
     </div>
@@ -707,7 +691,11 @@ function RichSceneCard({
     >
       {/* Thumbnail area with overlaid controls */}
       <div className="relative">
-        <SceneThumbnail scene={scene} isFirst={isFirst} getImageUrl={getImageUrl} />
+        <SceneThumbnail
+          scene={scene}
+          index={isFirst ? 0 : scene.sceneNumber - 1}
+          getImageUrl={getImageUrl}
+        />
 
         {/* Checkbox — top-left, hover-reveal (always visible when selected) */}
         <button
