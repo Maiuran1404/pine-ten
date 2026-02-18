@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { users, deliverableStyleReferences } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { withErrorHandling, successResponse } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 import { requireAuth } from '@/lib/require-auth'
 
 // Color distance calculation (simple RGB euclidean)
@@ -339,16 +340,20 @@ export async function GET(request: NextRequest) {
       }) => ref
     )
 
-    return successResponse({
-      data: cleanResult,
-      matchMethod: 'content_category',
-      brandColors,
-      brandColorFamilies: Array.from(brandColorFamilies),
-      groups: {
-        matchesBrand: brandMatches.length,
-        total: allReferences.length,
+    return cachedSuccessResponse(
+      {
+        data: cleanResult,
+        matchMethod: 'content_category',
+        brandColors,
+        brandColorFamilies: Array.from(brandColorFamilies),
+        groups: {
+          matchesBrand: brandMatches.length,
+          total: allReferences.length,
+        },
       },
-    })
+      CacheDurations.SHORT * 2, // 2 minutes — stable until brand colors change
+      { isPrivate: true, staleWhileRevalidate: CacheDurations.MEDIUM }
+    )
   })
 }
 

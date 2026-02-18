@@ -4,6 +4,8 @@ const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000, // 30 days — remote images are content-addressed
     remotePatterns: [
       {
         protocol: 'https',
@@ -36,11 +38,43 @@ const nextConfig: NextConfig = {
     ],
   },
   // Externalize pino and its dependencies to avoid Turbopack bundling issues
-  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
+  serverExternalPackages: [
+    'pino',
+    'pino-pretty',
+    'thread-stream',
+    'twilio',
+    '@slack/web-api',
+    'pdf-parse',
+    '@mendable/firecrawl-js',
+    'bcryptjs',
+    'sharp',
+  ],
 
   // Increase body size limit for file uploads (default 10MB)
   experimental: {
     proxyClientMaxBodySize: '50mb',
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-label',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-radio-group',
+      '@radix-ui/react-scroll-area',
+      '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+      'date-fns',
+    ],
   },
 
   // Security headers
