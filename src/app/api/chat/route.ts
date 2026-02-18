@@ -834,6 +834,16 @@ async function handler(request: NextRequest) {
             )
             try {
               const reinforcement = getFormatReinforcement(structureType)
+              // Rebuild system prompt for STRUCTURE stage (stateMachineOverride has stale INSPIRATION prompt)
+              const retryBrandContext: BrandContext = {
+                companyName: company?.name,
+                industry: company?.industry ?? undefined,
+                brandDescription: company?.description ?? undefined,
+              }
+              const structureRetryOverride = {
+                systemPrompt: buildSystemPrompt(briefingState, retryBrandContext),
+                stage: briefingState.stage,
+              }
               const retryResponse = await chat(
                 [
                   ...messages,
@@ -842,13 +852,30 @@ async function handler(request: NextRequest) {
                 ],
                 session.user.id,
                 chatContext,
-                stateMachineOverride
+                structureRetryOverride
               )
               const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
               if (retryParsed.success && retryParsed.data) {
                 structureData = retryParsed.data
                 briefingState.structure = retryParsed.data
+                logger.debug(
+                  {
+                    structureType,
+                    itemCount:
+                      'scenes' in retryParsed.data
+                        ? retryParsed.data.scenes.length
+                        : 'sections' in retryParsed.data
+                          ? retryParsed.data.sections.length
+                          : undefined,
+                  },
+                  'Structure retry succeeded'
+                )
                 // Stay in STRUCTURE — user should interact with the structure first
+              } else {
+                logger.warn(
+                  { structureType, parseError: retryParsed.parseError },
+                  'Structure retry also failed — no storyboard data'
+                )
               }
             } catch (retryErr) {
               logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')
@@ -875,6 +902,16 @@ async function handler(request: NextRequest) {
               )
               try {
                 const reinforcement = getStrategicReviewReinforcement()
+                // Rebuild system prompt for STRATEGIC_REVIEW stage (stateMachineOverride has stale pre-AI prompt)
+                const reviewBrandContext: BrandContext = {
+                  companyName: company?.name,
+                  industry: company?.industry ?? undefined,
+                  brandDescription: company?.description ?? undefined,
+                }
+                const reviewRetryOverride = {
+                  systemPrompt: buildSystemPrompt(briefingState, reviewBrandContext),
+                  stage: briefingState.stage,
+                }
                 const retryResponse = await chat(
                   [
                     ...messages,
@@ -883,15 +920,21 @@ async function handler(request: NextRequest) {
                   ],
                   session.user.id,
                   chatContext,
-                  stateMachineOverride
+                  reviewRetryOverride
                 )
                 const retryParsed = parseStrategicReview(retryResponse.content)
                 if (retryParsed.success && retryParsed.data) {
                   strategicReviewData = retryParsed.data
                   briefingState.strategicReview = retryParsed.data
+                  logger.debug('Strategic review retry succeeded')
                   // Auto-advance after successful retry
                   briefingState.stage = 'MOODBOARD'
                   briefingState.turnsInCurrentStage = 0
+                } else {
+                  logger.warn(
+                    { parseError: retryParsed.parseError },
+                    'Strategic review retry also failed — no review data'
+                  )
                 }
               } catch (retryErr) {
                 logger.warn({ err: retryErr }, 'Strategic review format reinforcement retry failed')
