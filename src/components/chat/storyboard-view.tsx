@@ -440,9 +440,6 @@ function EditableField({
     }
   }, [isEditing])
 
-  // Sync external value changes — use the prop value directly when not editing
-  const displayValue = isEditing ? editValue : value
-
   const handleCommit = () => {
     setIsEditing(false)
     if (editValue.trim() !== value) {
@@ -488,7 +485,10 @@ function EditableField({
         'group/edit inline-flex items-center gap-1 cursor-pointer rounded px-0.5 -mx-0.5 hover:bg-muted/50 transition-colors',
         className
       )}
-      onClick={() => setIsEditing(true)}
+      onClick={() => {
+        setEditValue(value)
+        setIsEditing(true)
+      }}
       title={fieldLabel ? `Click to edit ${fieldLabel}` : 'Click to edit'}
     >
       <span className="min-w-0">
