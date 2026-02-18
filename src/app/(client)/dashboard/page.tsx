@@ -941,12 +941,13 @@ function DashboardContent() {
       {/* Inspiration Gallery - Grouped by Content Type */}
       {(isLoadingStyles || styleReferences.length > 0) && (
         <div className="relative w-full pt-8">
-          {/* Continue to explore section */}
-          <div className="flex items-center justify-center mb-10">
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-lg hover:bg-white/80 dark:hover:bg-card/60 transition-all text-sm text-muted-foreground hover:text-foreground">
-              <Search className="h-4 w-4" />
-              <span>Continue to explore...</span>
-            </button>
+          {/* Explore divider - editorial style */}
+          <div className="flex items-center gap-4 max-w-7xl mx-auto px-4 sm:px-6 mb-10">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/60 to-border/60" />
+            <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              Explore styles
+            </span>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border/60 to-border/60" />
           </div>
 
           {/* Grouped Masonry Grid */}
