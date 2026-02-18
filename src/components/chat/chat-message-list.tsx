@@ -349,6 +349,7 @@ export function ChatMessageList({
   onSceneClick: _onSceneClick,
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
+  structurePanelVisible = false,
 }: ChatMessageListProps) {
   const handleTypingComplete = useCallback(
     (messageId: string) => {
@@ -610,8 +611,9 @@ export function ChatMessageList({
                             </motion.div>
                           )}
 
-                        {/* Structure components - show after typing completes */}
+                        {/* Structure components - show after typing completes (suppressed when panel is active) */}
                         {message.structureData &&
+                          !structurePanelVisible &&
                           (animatingMessageId !== message.id ||
                             completedTypingIds.has(message.id)) && (
                             <motion.div
