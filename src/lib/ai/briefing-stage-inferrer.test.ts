@@ -109,9 +109,15 @@ describe('inferStageFromResponse', () => {
     expect(result!.stage).toBe('STRUCTURE')
   })
 
-  it('allows STRATEGIC_REVIEW inference from STRUCTURE (legal transition)', () => {
+  it('does not allow STRATEGIC_REVIEW inference from STRUCTURE (not a legal transition)', () => {
     const response = `[STRATEGIC_REVIEW]{"strengths":["a"],"risks":["b"]}[/STRATEGIC_REVIEW]`
     const result = inferStageFromResponse(response, 'STRUCTURE')
+    expect(result).toBeNull()
+  })
+
+  it('allows STRATEGIC_REVIEW inference from ELABORATE (legal transition)', () => {
+    const response = `[STRATEGIC_REVIEW]{"strengths":["a"],"risks":["b"]}[/STRATEGIC_REVIEW]`
+    const result = inferStageFromResponse(response, 'ELABORATE')
     expect(result).not.toBeNull()
     expect(result!.stage).toBe('STRATEGIC_REVIEW')
   })

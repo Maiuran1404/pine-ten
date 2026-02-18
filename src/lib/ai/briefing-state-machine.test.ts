@@ -247,7 +247,7 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
   })
 
-  it('advances from STRUCTURE to STRATEGIC_REVIEW when structure set', () => {
+  it('advances from STRUCTURE to ELABORATE when structure set', () => {
     const state = createInitialBriefingState()
     state.stage = 'STRUCTURE'
     state.structure = {
@@ -262,15 +262,15 @@ describe('evaluateTransitions', () => {
         },
       ],
     }
-    expect(evaluateTransitions(state, makeInference())).toBe('STRATEGIC_REVIEW')
+    expect(evaluateTransitions(state, makeInference())).toBe('ELABORATE')
   })
 
-  it('force-advances from STRUCTURE to STRATEGIC_REVIEW after 3 turns even without structure', () => {
+  it('force-advances from STRUCTURE to ELABORATE after 3 turns even without structure', () => {
     const state = createInitialBriefingState()
     state.stage = 'STRUCTURE'
     state.structure = null
     state.turnsInCurrentStage = 3
-    expect(evaluateTransitions(state, makeInference())).toBe('STRATEGIC_REVIEW')
+    expect(evaluateTransitions(state, makeInference())).toBe('ELABORATE')
   })
 
   it('stays at STRUCTURE when structure is null and turns < 3', () => {
