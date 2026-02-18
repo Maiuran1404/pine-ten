@@ -45,7 +45,7 @@ import {
   detectTaskUrgency,
   isNightHours,
   DEFAULT_CONFIG,
-  type AlgorithmConfig,
+  type AlgorithmConfig as _AlgorithmConfig,
   type ArtistData,
   type TaskData,
 } from './assignment-algorithm'

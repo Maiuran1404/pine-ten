@@ -9,9 +9,9 @@ vi.mock('@/lib/require-auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
 }))
 
-const mockTxSelect = vi.fn()
-const mockTxInsert = vi.fn()
-const mockTxUpdate = vi.fn()
+const _mockTxSelect = vi.fn()
+const _mockTxInsert = vi.fn()
+const _mockTxUpdate = vi.fn()
 const mockWithTransaction = vi.fn()
 
 vi.mock('@/db', () => ({

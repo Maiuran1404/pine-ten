@@ -53,7 +53,7 @@ function makeRequest(body?: unknown, options: { url?: string } = {}) {
   } as never
 }
 
-const { GET, POST, PUT, DELETE } = await import('./route')
+const { GET, POST, PUT: _PUT, DELETE } = await import('./route')
 
 describe('GET /api/admin/security/runs', () => {
   beforeEach(() => {

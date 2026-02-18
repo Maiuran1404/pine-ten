@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { NextResponse } from 'next/server'
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
@@ -252,7 +251,7 @@ describe('POST /api/chat', () => {
     // For the client marker path, it goes directly to style fetching
     // without calling chat
     const response = await POST(makeRequest(body) as never)
-    const data = await response.json()
+    await response.json()
 
     expect(response.status).toBe(200)
   })

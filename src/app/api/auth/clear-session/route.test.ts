@@ -5,7 +5,7 @@ vi.mock('@/lib/logger', () => ({
 }))
 
 const mockDelete = vi.fn()
-const mockGetAll = vi.fn()
+const _mockGetAll = vi.fn()
 const mockCookies = vi.fn()
 
 vi.mock('next/headers', () => ({

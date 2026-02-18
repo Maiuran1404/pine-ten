@@ -1,6 +1,6 @@
 # Add, Commit & Push
 
-Stage ALL changes, run pre-push validation (typecheck + affected tests), write a detailed conventional commit message, commit, and push to the remote. NEVER leave dirty state behind.
+Stage ALL changes, run pre-push validation (lint + typecheck + affected tests), write a detailed conventional commit message, commit, and push to the remote. NEVER leave dirty state behind.
 
 ## Steps
 
@@ -13,9 +13,10 @@ Stage ALL changes, run pre-push validation (typecheck + affected tests), write a
    - Check for files that should NOT be committed (`.env`, credentials, large binaries, node_modules)
    - If any sensitive files are found, warn the user and exclude them
 5. **Pre-push validation** — run these checks BEFORE committing to catch issues early:
-   - Run `pnpm typecheck` — abort and fix any TypeScript errors before proceeding
-   - Run `pnpm vitest run --changed HEAD~1` — run tests affected by changed files
-   - If either check fails: report the errors, fix them, and re-run validation until both pass
+   - Run `npm run lint` — fix ALL errors and warnings (prefix unused vars with `_`, remove unused imports, etc.). Re-run lint until it passes cleanly with zero errors and zero warnings.
+   - Run `npm run typecheck` — abort and fix any TypeScript errors before proceeding
+   - Run `npx vitest run --changed HEAD~1` — run tests affected by changed files
+   - If ANY check fails: report the errors, fix them, and re-run validation until ALL THREE pass
    - Do NOT proceed to staging/committing until validation passes
 6. Stage ALL files using `git add` with specific file paths (avoid `git add -A` if sensitive files are present)
 7. Write a detailed conventional commit message following the project format:
@@ -46,7 +47,7 @@ The working tree MUST be clean after this command finishes. No modified files, n
 
 Report:
 
-- **Validation**: typecheck PASS/FAIL, affected tests PASS/FAIL (N passed, N failed)
+- **Validation**: lint PASS/FAIL, typecheck PASS/FAIL, affected tests PASS/FAIL (N passed, N failed)
 - **Branch**: name
 - **Commit**: hash(es) (short)
 - **Message**: commit message(s) used

@@ -50,7 +50,7 @@ vi.mock('drizzle-orm', () => ({
   isNotNull: vi.fn(),
 }))
 
-const { GET, POST, PATCH, DELETE } = await import('./route')
+const { GET, POST, PATCH: _PATCH, DELETE } = await import('./route')
 
 function makeRequest(body?: unknown, options: { url?: string } = {}) {
   return {

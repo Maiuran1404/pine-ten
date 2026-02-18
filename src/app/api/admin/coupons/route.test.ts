@@ -34,7 +34,7 @@ vi.mock('@/lib/stripe', () => ({
   },
 }))
 
-const { GET, POST, DELETE, PATCH } = await import('./route')
+const { GET, POST: _POST, DELETE, PATCH: _PATCH } = await import('./route')
 
 beforeEach(() => {
   vi.clearAllMocks()
