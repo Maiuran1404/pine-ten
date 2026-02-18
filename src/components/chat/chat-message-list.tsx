@@ -605,6 +605,8 @@ export function ChatMessageList({
                               <VideoReferenceGrid
                                 videos={message.videoReferences}
                                 onSelectVideo={handleSelectVideo}
+                                onShowMore={() => handleShowMoreStyles('video')}
+                                onShowDifferent={handleShowDifferentStyles}
                                 isLoading={isLoading}
                                 title="Video Style References"
                               />

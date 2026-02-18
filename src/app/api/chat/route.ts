@@ -137,12 +137,30 @@ async function handler(request: NextRequest) {
         (clientStyleMarker.type === 'more' || clientStyleMarker.type === 'different')
       ) {
         let deliverableStyles = undefined
+        let videoRefsResult: VideoReference[] | undefined = undefined
         const { type, deliverableType, styleAxis } = clientStyleMarker
         // Normalize deliverable type in case AI generated an alias
         const normalizedType = normalizeDeliverableType(deliverableType)
+        const isVideoType = isVideoDeliverableType(normalizedType)
 
         try {
-          if (type === 'more' && styleAxis) {
+          if (isVideoType) {
+            // Video type: fetch video references instead of image styles
+            // Fetch more than needed and offset to get fresh results for "more" requests
+            const lastUserMessage = messages[messages.length - 1]?.content || ''
+            const videoOffset = styleOffset || 0
+            const fetchLimit = videoOffset + 3
+            const allVideoRefs = await getVideoReferencesForChat(
+              normalizedType,
+              lastUserMessage,
+              fetchLimit
+            )
+            videoRefsResult = allVideoRefs.slice(videoOffset)
+            // If we've exhausted the pool, wrap around to the top results
+            if (videoRefsResult.length === 0 && allVideoRefs.length > 0) {
+              videoRefsResult = allVideoRefs.slice(0, 3)
+            }
+          } else if (type === 'more' && styleAxis) {
             // Use brand-aware scoring for more styles
             deliverableStyles = await getBrandAwareStylesOfAxis(
               normalizedType,
@@ -171,6 +189,7 @@ async function handler(request: NextRequest) {
         return NextResponse.json({
           content: '',
           deliverableStyles,
+          videoReferences: videoRefsResult,
           deliverableStyleMarker: clientStyleMarker,
           selectedStyles,
         })
@@ -658,24 +677,22 @@ async function handler(request: NextRequest) {
           if (briefMetaResult.success && briefMetaResult.data) {
             // 11. Validate declared stage against legal transitions
             const declaredStage = briefMetaResult.data.stage
+            // STRATEGIC_REVIEW is temporarily disabled — remap to MOODBOARD
+            const effectiveStage =
+              declaredStage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : declaredStage
             const legal = getLegalTransitions(briefingState.stage)
-            if (legal.includes(declaredStage)) {
-              // Guard: Don't skip ahead past ELABORATE. User should interact with
-              // structure/elaboration first before strategic review.
+            if (legal.includes(effectiveStage)) {
+              // Guard: Don't skip ahead past ELABORATE on the first turn.
               const blockingAdvance =
-                (briefingState.stage === 'STRUCTURE' && declaredStage === 'STRATEGIC_REVIEW') ||
-                (briefingState.stage === 'STRUCTURE' &&
-                  declaredStage === 'ELABORATE' &&
-                  briefingState.turnsInCurrentStage === 0) ||
-                (briefingState.stage === 'ELABORATE' &&
-                  declaredStage === 'STRATEGIC_REVIEW' &&
-                  briefingState.turnsInCurrentStage === 0)
+                briefingState.stage === 'STRUCTURE' &&
+                effectiveStage === 'ELABORATE' &&
+                briefingState.turnsInCurrentStage === 0
 
               if (blockingAdvance) {
                 // Stay in current stage — the advance will happen on the next user turn
                 briefingState.turnsInCurrentStage += 1
-              } else if (declaredStage !== briefingState.stage) {
-                briefingState.stage = declaredStage
+              } else if (effectiveStage !== briefingState.stage) {
+                briefingState.stage = effectiveStage
                 briefingState.turnsInCurrentStage = 0
               } else {
                 briefingState.turnsInCurrentStage += 1
@@ -756,18 +773,19 @@ async function handler(request: NextRequest) {
                 'Stage inferred from response content (Tier 1)'
               )
               if (stageInference.stage !== briefingState.stage) {
+                // STRATEGIC_REVIEW is temporarily disabled — skip it entirely
+                const inferredStage =
+                  stageInference.stage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : stageInference.stage
                 // Preserve blocking guards for STRUCTURE/ELABORATE transitions
                 const blockingAdvance =
-                  (briefingState.stage === 'STRUCTURE' &&
-                    stageInference.stage === 'STRATEGIC_REVIEW') ||
-                  (briefingState.stage === 'ELABORATE' &&
-                    stageInference.stage === 'STRATEGIC_REVIEW' &&
-                    briefingState.turnsInCurrentStage === 0)
+                  briefingState.stage === 'STRUCTURE' && inferredStage === 'ELABORATE'
                 if (blockingAdvance) {
                   briefingState.turnsInCurrentStage += 1
-                } else {
-                  briefingState.stage = stageInference.stage
+                } else if (inferredStage !== briefingState.stage) {
+                  briefingState.stage = inferredStage
                   briefingState.turnsInCurrentStage = 0
+                } else {
+                  briefingState.turnsInCurrentStage += 1
                 }
               } else {
                 briefingState.turnsInCurrentStage += 1

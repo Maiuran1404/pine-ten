@@ -115,11 +115,11 @@ describe('inferStageFromResponse', () => {
     expect(result).toBeNull()
   })
 
-  it('allows STRATEGIC_REVIEW inference from ELABORATE (legal transition)', () => {
+  it('rejects STRATEGIC_REVIEW inference from ELABORATE (stage disabled)', () => {
     const response = `[STRATEGIC_REVIEW]{"strengths":["a"],"risks":["b"]}[/STRATEGIC_REVIEW]`
     const result = inferStageFromResponse(response, 'ELABORATE')
-    expect(result).not.toBeNull()
-    expect(result!.stage).toBe('STRATEGIC_REVIEW')
+    // STRATEGIC_REVIEW is no longer a legal transition from ELABORATE
+    expect(result).toBeNull()
   })
 
   // ===========================================================================

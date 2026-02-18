@@ -16,11 +16,15 @@ import {
   RefreshCw,
   Pencil,
   Sparkles,
+  ChevronDown,
+  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 // =============================================================================
@@ -52,6 +56,42 @@ export function computeTimestampRanges(
     cumulative += dur
   }
   return ranges
+}
+
+// =============================================================================
+// SCENE GRADIENT PALETTE — per-scene soft gradients by index
+// =============================================================================
+
+const SCENE_GRADIENTS = [
+  {
+    bg: 'from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/10',
+    number: 'text-rose-300/60 dark:text-rose-700/40',
+    icon: 'text-rose-200/60 dark:text-rose-800/20',
+  },
+  {
+    bg: 'from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/10',
+    number: 'text-sky-300/60 dark:text-sky-700/40',
+    icon: 'text-sky-200/60 dark:text-sky-800/20',
+  },
+  {
+    bg: 'from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/10',
+    number: 'text-violet-300/60 dark:text-violet-700/40',
+    icon: 'text-violet-200/60 dark:text-violet-800/20',
+  },
+  {
+    bg: 'from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/10',
+    number: 'text-teal-300/60 dark:text-teal-700/40',
+    icon: 'text-teal-200/60 dark:text-teal-800/20',
+  },
+  {
+    bg: 'from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/10',
+    number: 'text-amber-300/60 dark:text-amber-700/40',
+    icon: 'text-amber-200/60 dark:text-amber-800/20',
+  },
+]
+
+function getSceneGradient(index: number) {
+  return SCENE_GRADIENTS[index % SCENE_GRADIENTS.length]
 }
 
 // =============================================================================
@@ -559,7 +599,67 @@ function EditableField({
 }
 
 // =============================================================================
-// RICH SCENE CARD — wider card with all fields + inline editing
+// SCENE THUMBNAIL — gradient placeholder or reference image
+// =============================================================================
+
+function SceneThumbnail({
+  scene,
+  isFirst,
+  getImageUrl,
+}: {
+  scene: StoryboardScene
+  isFirst: boolean
+  getImageUrl?: (imageId: string) => string
+}) {
+  const imageId = scene.referenceImageIds?.[0]
+  const imageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
+
+  return (
+    <div
+      className={cn(
+        'relative aspect-video w-full rounded-t-lg overflow-hidden',
+        !imageUrl &&
+          (isFirst
+            ? 'bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/20'
+            : 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/10')
+      )}
+    >
+      {imageUrl ? (
+        <OptimizedImage
+          src={imageUrl}
+          alt={`Scene ${scene.sceneNumber} thumbnail`}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 400px"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span
+            className={cn(
+              'text-5xl font-bold select-none',
+              isFirst
+                ? 'text-amber-300/60 dark:text-amber-700/40'
+                : 'text-emerald-200/80 dark:text-emerald-800/30'
+            )}
+          >
+            {scene.sceneNumber}
+          </span>
+          <Film
+            className={cn(
+              'absolute bottom-2 right-2 h-4 w-4',
+              isFirst
+                ? 'text-amber-300/50 dark:text-amber-700/30'
+                : 'text-emerald-200/60 dark:text-emerald-800/20'
+            )}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// =============================================================================
+// RICH SCENE CARD — thumbnail-first card with information hierarchy
 // =============================================================================
 
 function RichSceneCard({
@@ -572,6 +672,7 @@ function RichSceneCard({
   onSceneEdit,
   onRegenerateScene,
   onRegenerateField,
+  getImageUrl,
 }: {
   scene: StoryboardScene
   isFirst: boolean
@@ -582,211 +683,272 @@ function RichSceneCard({
   onSceneEdit?: (field: string, value: string) => void
   onRegenerateScene?: () => void
   onRegenerateField?: (field: string) => void
+  getImageUrl?: (imageId: string) => string
 }) {
+  const durSeconds = parseDurationSeconds(scene.duration)
+  const hasTertiaryContent =
+    scene.description ||
+    scene.cameraNote ||
+    (isFirst && scene.hookData) ||
+    scene.fullScript ||
+    scene.directorNotes ||
+    scene.referenceDescription ||
+    scene.referenceVideoId ||
+    (scene.styleReferences && scene.styleReferences.length > 0)
+
   return (
     <div
       className={cn(
-        'rounded-lg border transition-all',
+        'group/card rounded-lg border overflow-hidden transition-all',
         isFirst ? 'border-amber-300/60 dark:border-amber-800/40' : 'border-border/40',
         isSelected && 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10',
         !isSelected && 'hover:shadow-sm hover:border-border/80'
       )}
     >
-      <div className="p-4 space-y-3">
-        {/* Top row: checkbox, timestamp range, badge, regenerate */}
-        <div className="flex items-center gap-2">
+      {/* Thumbnail area with overlaid controls */}
+      <div className="relative">
+        <SceneThumbnail scene={scene} isFirst={isFirst} getImageUrl={getImageUrl} />
+
+        {/* Checkbox — top-left, hover-reveal (always visible when selected) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          className={cn(
+            'absolute top-2 left-2 w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-all',
+            isSelected
+              ? 'bg-emerald-600 border-emerald-600 opacity-100'
+              : 'border-white/80 bg-black/20 opacity-0 group-hover/card:opacity-100 hover:border-emerald-400'
+          )}
+        >
+          {isSelected && (
+            <svg
+              className="w-3 h-3 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+
+        {/* Scene number badge — top-right */}
+        <Badge
+          variant="secondary"
+          className="absolute top-2 right-2 text-[10px] h-5 px-1.5 bg-black/40 text-white border-0 backdrop-blur-sm"
+        >
+          Scene {scene.sceneNumber}
+        </Badge>
+
+        {/* Regenerate button — bottom-right of thumbnail, hover-reveal */}
+        {onRegenerateScene && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              onToggleSelect()
+              onRegenerateScene()
             }}
-            className={cn(
-              'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
-              isSelected
-                ? 'bg-emerald-600 border-emerald-600'
-                : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
-            )}
+            className="absolute bottom-2 right-2 p-1.5 rounded-md bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover/card:opacity-100 hover:bg-black/60 hover:text-white transition-all"
+            title="Regenerate this scene"
           >
-            {isSelected && (
-              <svg
-                className="w-2.5 h-2.5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
+            <Sparkles className="h-3.5 w-3.5" />
           </button>
-          <span className="text-xs font-mono text-muted-foreground/60">
-            {timestamp.start}–{timestamp.end}
-          </span>
-          <span className="text-xs text-muted-foreground/40">·</span>
-          <EditableField
-            value={scene.title}
-            onChange={(val) => onSceneEdit?.('title', val)}
-            className="text-sm font-medium text-foreground"
-            fieldLabel="title"
-          />
-          {isFirst && (
-            <Badge
-              variant="outline"
-              className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide ml-auto shrink-0"
-            >
-              Hook
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-3 space-y-2">
+        {/* Heading row: timestamp range + title + duration badge */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-mono text-muted-foreground/60 shrink-0">
+                {timestamp.start}–{timestamp.end}
+              </span>
+              <span className="text-xs text-muted-foreground/30">—</span>
+              <span className="text-sm font-medium text-foreground truncate">{scene.title}</span>
+              {isFirst && (
+                <Badge
+                  variant="outline"
+                  className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide shrink-0"
+                >
+                  Hook
+                </Badge>
+              )}
+            </div>
+          </div>
+          {durSeconds > 0 && (
+            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 shrink-0 font-mono">
+              {durSeconds}s
             </Badge>
           )}
-          {onRegenerateScene && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onRegenerateScene()
-              }}
-              className="ml-auto p-1 rounded text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-              title="Regenerate this scene"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-            </button>
+        </div>
+
+        {/* Summary lines: VO, Visual, Transition */}
+        <div className="space-y-1">
+          {scene.voiceover && (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              <span className="font-medium text-muted-foreground/80">VO:</span> {scene.voiceover}
+            </p>
+          )}
+          {scene.visualNote && (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              <span className="font-medium text-muted-foreground/80">Visual:</span>{' '}
+              {scene.visualNote}
+            </p>
+          )}
+          {scene.transition && (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <span className="font-medium text-muted-foreground/80">Transition:</span>{' '}
+              {scene.transition}
+            </p>
           )}
         </div>
 
-        {/* Description — full, no line clamp */}
-        <div className="text-xs text-muted-foreground leading-relaxed">
-          <EditableField
-            value={scene.description}
-            onChange={(val) => onSceneEdit?.('description', val)}
-            onRegenerateField={() => onRegenerateField?.('description')}
-            placeholder="Scene description..."
-            multiline
-            fieldLabel="description"
-          />
-        </div>
+        {/* Collapsible tertiary details */}
+        {hasTertiaryContent && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1 group/trigger">
+              <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]/trigger:rotate-180" />
+              <span>More details</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pt-2 space-y-3 border-t border-border/20 mt-1">
+                {/* Description — full editable */}
+                <div className="text-xs text-muted-foreground leading-relaxed">
+                  <EditableField
+                    value={scene.description}
+                    onChange={(val) => onSceneEdit?.('description', val)}
+                    onRegenerateField={() => onRegenerateField?.('description')}
+                    placeholder="Scene description..."
+                    multiline
+                    fieldLabel="description"
+                  />
+                </div>
 
-        {/* Camera note */}
-        {(scene.cameraNote || onSceneEdit) && (
-          <div className="flex items-start gap-1.5 text-muted-foreground/70">
-            <Camera className="h-3 w-3 mt-0.5 shrink-0" />
-            <EditableField
-              value={scene.cameraNote || ''}
-              onChange={(val) => onSceneEdit?.('cameraNote', val)}
-              onRegenerateField={() => onRegenerateField?.('cameraNote')}
-              placeholder="Camera direction..."
-              className="text-[11px] leading-relaxed"
-              fieldLabel="camera note"
-            />
-          </div>
+                {/* Camera note */}
+                {(scene.cameraNote || onSceneEdit) && (
+                  <div className="flex items-start gap-1.5 text-muted-foreground/70">
+                    <Camera className="h-3 w-3 mt-0.5 shrink-0" />
+                    <EditableField
+                      value={scene.cameraNote || ''}
+                      onChange={(val) => onSceneEdit?.('cameraNote', val)}
+                      onRegenerateField={() => onRegenerateField?.('cameraNote')}
+                      placeholder="Camera direction..."
+                      className="text-[11px] leading-relaxed"
+                      fieldLabel="camera note"
+                    />
+                  </div>
+                )}
+
+                {/* Voiceover — full editable */}
+                {(scene.voiceover || onSceneEdit) && (
+                  <div className="rounded-md bg-muted/40 px-3 py-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Mic className="h-3 w-3 text-muted-foreground/60" />
+                      <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+                        VO
+                      </span>
+                    </div>
+                    <EditableField
+                      value={scene.voiceover || ''}
+                      onChange={(val) => onSceneEdit?.('voiceover', val)}
+                      onRegenerateField={() => onRegenerateField?.('voiceover')}
+                      placeholder="Voiceover text..."
+                      multiline
+                      className="text-xs italic text-foreground/80 leading-relaxed"
+                      fieldLabel="voiceover"
+                    />
+                  </div>
+                )}
+
+                {/* Transition — editable */}
+                {(scene.transition || onSceneEdit) && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                    <ArrowRightLeft className="h-3 w-3 shrink-0" />
+                    <span className="text-[10px] uppercase tracking-wider font-medium">
+                      Transition:
+                    </span>
+                    <EditableField
+                      value={scene.transition || ''}
+                      onChange={(val) => onSceneEdit?.('transition', val)}
+                      placeholder="cut"
+                      className="text-[11px]"
+                      fieldLabel="transition"
+                    />
+                  </div>
+                )}
+
+                {/* Hook data — scene 1 only */}
+                {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
+
+                {/* Elaboration detail */}
+                <ElaborationDetail scene={scene} />
+
+                {/* Style references */}
+                {scene.styleReferences && scene.styleReferences.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium">
+                      Refs:
+                    </span>
+                    {scene.styleReferences.map((ref, i) => (
+                      <span
+                        key={i}
+                        className="text-[11px] text-primary/70 underline underline-offset-2 decoration-primary/20"
+                      >
+                        {ref}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reference video link */}
+                {scene.referenceVideoId && (
+                  <div className="flex items-center gap-1.5">
+                    <Video className="h-3 w-3 text-primary" />
+                    <span className="text-[11px] text-primary">Reference video linked</span>
+                  </div>
+                )}
+
+                {/* Duration — editable */}
+                <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                  <Clock className="h-3 w-3 shrink-0" />
+                  <span className="text-[10px] uppercase tracking-wider font-medium">
+                    Duration:
+                  </span>
+                  <EditableField
+                    value={scene.duration}
+                    onChange={(val) => onSceneEdit?.('duration', val)}
+                    placeholder="0s"
+                    className="text-[11px] font-mono"
+                    fieldLabel="duration"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
-        {/* Visual note */}
-        {(scene.visualNote || onSceneEdit) && (
-          <div className="flex items-start gap-1.5 text-muted-foreground/70">
-            <Eye className="h-3 w-3 mt-0.5 shrink-0" />
-            <EditableField
-              value={scene.visualNote}
-              onChange={(val) => onSceneEdit?.('visualNote', val)}
-              onRegenerateField={() => onRegenerateField?.('visualNote')}
-              placeholder="Visual note..."
-              className="text-[11px] italic leading-relaxed"
-              fieldLabel="visual note"
-            />
-          </div>
-        )}
-
-        {/* Voiceover */}
-        {(scene.voiceover || onSceneEdit) && (
-          <div className="rounded-md bg-muted/40 px-3 py-2">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Mic className="h-3 w-3 text-muted-foreground/60" />
-              <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
-                VO
-              </span>
-            </div>
-            <EditableField
-              value={scene.voiceover || ''}
-              onChange={(val) => onSceneEdit?.('voiceover', val)}
-              onRegenerateField={() => onRegenerateField?.('voiceover')}
-              placeholder="Voiceover text..."
-              multiline
-              className="text-xs italic text-foreground/80 leading-relaxed"
-              fieldLabel="voiceover"
-            />
-          </div>
-        )}
-
-        {/* Transition */}
-        {(scene.transition || onSceneEdit) && (
-          <div className="flex items-center gap-1.5 text-muted-foreground/60">
-            <ArrowRightLeft className="h-3 w-3 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wider font-medium">Transition:</span>
-            <EditableField
-              value={scene.transition || ''}
-              onChange={(val) => onSceneEdit?.('transition', val)}
-              placeholder="cut"
-              className="text-[11px]"
-              fieldLabel="transition"
-            />
-          </div>
-        )}
-
-        {/* Elaboration detail */}
-        <ElaborationDetail scene={scene} />
-
-        {/* Hook data — scene 1 only */}
-        {isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
-
-        {/* Reference video link */}
-        {scene.referenceVideoId && (
-          <div className="flex items-center gap-1.5">
-            <Video className="h-3 w-3 text-primary" />
-            <span className="text-[11px] text-primary">Reference video linked</span>
-          </div>
-        )}
-
-        {/* Style references */}
-        {scene.styleReferences && scene.styleReferences.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium">
-              Refs:
-            </span>
-            {scene.styleReferences.map((ref, i) => (
-              <span
-                key={i}
-                className="text-[11px] text-primary/70 underline underline-offset-2 decoration-primary/20"
-              >
-                {ref}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Bottom row: duration + feedback */}
-        <div className="flex items-center justify-between pt-1 border-t border-border/20">
-          <span className="text-[10px] text-muted-foreground">
-            <EditableField
-              value={scene.duration}
-              onChange={(val) => onSceneEdit?.('duration', val)}
-              placeholder="0s"
-              className="font-mono"
-              fieldLabel="duration"
-            />
-          </span>
-          {onClickFeedback && (
+        {/* Bottom row: feedback button (hover-revealed) */}
+        {onClickFeedback && (
+          <div className="flex items-center justify-end pt-1">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onClickFeedback()
               }}
-              className="p-1 rounded text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              className="p-1 rounded text-muted-foreground/50 opacity-0 group-hover/card:opacity-100 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all"
               title="Give feedback on this scene"
             >
               <MessageSquare className="h-3.5 w-3.5" />
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -805,6 +967,7 @@ interface RichStoryboardPanelProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
+  getImageUrl?: (imageId: string) => string
 }
 
 export function RichStoryboardPanel({
@@ -816,6 +979,7 @@ export function RichStoryboardPanel({
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
+  getImageUrl,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
 
@@ -881,7 +1045,7 @@ export function RichStoryboardPanel({
 
       {/* Scrollable rich scene cards */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
+        <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
           {scenes.map((scene, index) => (
             <motion.div
               key={scene.sceneNumber}
@@ -905,6 +1069,7 @@ export function RichStoryboardPanel({
                 onRegenerateField={
                   onRegenerateField ? (field) => onRegenerateField(scene, field) : undefined
                 }
+                getImageUrl={getImageUrl}
               />
             </motion.div>
           ))}

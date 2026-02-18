@@ -261,7 +261,7 @@ export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
     INTENT: ['INTENT', 'INSPIRATION'],
     INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
     STRUCTURE: ['STRUCTURE', 'ELABORATE'],
-    ELABORATE: ['ELABORATE', 'STRATEGIC_REVIEW'],
+    ELABORATE: ['ELABORATE', 'MOODBOARD'],
     STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'MOODBOARD'],
     MOODBOARD: ['MOODBOARD', 'REVIEW'],
     REVIEW: ['REVIEW', 'DEEPEN', 'SUBMIT'],
@@ -393,9 +393,10 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'ELABORATE': {
-      // Advance to STRATEGIC_REVIEW when elaboration is complete or after 5 turns
+      // Advance to MOODBOARD when elaboration is complete or after 5 turns
+      // (STRATEGIC_REVIEW stage is temporarily disabled)
       if (checkElaborationComplete(state) || state.turnsInCurrentStage >= 5) {
-        return 'STRATEGIC_REVIEW'
+        return 'MOODBOARD'
       }
       return 'ELABORATE'
     }

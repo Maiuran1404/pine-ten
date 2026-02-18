@@ -601,6 +601,7 @@ export function useChatInterfaceData({
         order: item.order,
         addedAt: item.addedAt.toISOString(),
       })),
+      briefingState: serializedBriefingState,
       pendingTask,
       createdAt: draftCreatedAt,
       updatedAt: new Date().toISOString(),
@@ -608,7 +609,15 @@ export function useChatInterfaceData({
 
     saveDraft(draft)
     onDraftUpdateRef.current?.()
-  }, [messages, selectedStyles, moodboardItems, pendingTask, draftId, isInitialized])
+  }, [
+    messages,
+    selectedStyles,
+    moodboardItems,
+    pendingTask,
+    draftId,
+    isInitialized,
+    serializedBriefingState,
+  ])
 
   // Handle payment success
   useEffect(() => {
@@ -1246,6 +1255,7 @@ export function useChatInterfaceData({
     messages,
     selectedStyles,
     moodboardItems,
+    storyboardScenes,
     draftId,
     onDraftUpdate,
     onTaskCreated,
@@ -1698,7 +1708,27 @@ export function useChatInterfaceData({
 
   const handleShowMoreStyles = useCallback(
     async (styleAxis: string) => {
-      if (!currentDeliverableType || isLoading) return
+      if (isLoading) return
+
+      // Derive deliverable type: use tracked value, or fall back to last message with styles/videos
+      let resolvedDeliverableType = currentDeliverableType
+      if (!resolvedDeliverableType) {
+        const lastStyleMsg = [...messages]
+          .reverse()
+          .find(
+            (m) =>
+              m.deliverableStyleMarker || m.videoReferences?.length || m.deliverableStyles?.length
+          )
+        resolvedDeliverableType =
+          lastStyleMsg?.deliverableStyleMarker?.deliverableType ||
+          lastStyleMsg?.videoReferences?.[0]?.deliverableType ||
+          lastStyleMsg?.deliverableStyles?.[0]?.deliverableType ||
+          null
+        if (resolvedDeliverableType) {
+          setCurrentDeliverableType(resolvedDeliverableType)
+        }
+      }
+      if (!resolvedDeliverableType) return
 
       const currentOffset = styleOffset[styleAxis] || 0
       const newOffset = currentOffset + 4
@@ -1715,7 +1745,7 @@ export function useChatInterfaceData({
             styleOffset: newOffset,
             deliverableStyleMarker: {
               type: 'more',
-              deliverableType: currentDeliverableType,
+              deliverableType: resolvedDeliverableType,
               styleAxis,
             },
           }),
@@ -1725,7 +1755,20 @@ export function useChatInterfaceData({
 
         const data = await response.json()
 
-        if (data.deliverableStyles && data.deliverableStyles.length > 0) {
+        if (data.videoReferences && data.videoReferences.length > 0) {
+          // Video response — show video references
+          const assistantMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `Here are more video style options:`,
+            timestamp: new Date(),
+            videoReferences: data.videoReferences,
+            deliverableStyleMarker: data.deliverableStyleMarker,
+          }
+
+          setMessages((prev) => [...prev, assistantMessage])
+          setAnimatingMessageId(assistantMessage.id)
+        } else if (data.deliverableStyles && data.deliverableStyles.length > 0) {
           const isCycled = data.deliverableStyles.some(
             (s: { matchReason?: string }) =>
               s.matchReason?.includes('Top') ||
@@ -1764,7 +1807,27 @@ export function useChatInterfaceData({
   )
 
   const handleShowDifferentStyles = useCallback(async () => {
-    if (!currentDeliverableType || isLoading) return
+    if (isLoading) return
+
+    // Derive deliverable type: use tracked value, or fall back to last message with styles/videos
+    let resolvedDeliverableType = currentDeliverableType
+    if (!resolvedDeliverableType) {
+      const lastStyleMsg = [...messages]
+        .reverse()
+        .find(
+          (m) =>
+            m.deliverableStyleMarker || m.videoReferences?.length || m.deliverableStyles?.length
+        )
+      resolvedDeliverableType =
+        lastStyleMsg?.deliverableStyleMarker?.deliverableType ||
+        lastStyleMsg?.videoReferences?.[0]?.deliverableType ||
+        lastStyleMsg?.deliverableStyles?.[0]?.deliverableType ||
+        null
+      if (resolvedDeliverableType) {
+        setCurrentDeliverableType(resolvedDeliverableType)
+      }
+    }
+    if (!resolvedDeliverableType) return
 
     const lastMessage = messages
       .filter((m) => m.deliverableStyles && m.deliverableStyles.length > 0)
@@ -1782,7 +1845,7 @@ export function useChatInterfaceData({
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           selectedStyles,
           excludeStyleAxes: newExcludedAxes,
-          deliverableStyleMarker: { type: 'different', deliverableType: currentDeliverableType },
+          deliverableStyleMarker: { type: 'different', deliverableType: resolvedDeliverableType },
         }),
       })
 
@@ -1790,7 +1853,20 @@ export function useChatInterfaceData({
 
       const data = await response.json()
 
-      if (data.deliverableStyles && data.deliverableStyles.length > 0) {
+      if (data.videoReferences && data.videoReferences.length > 0) {
+        // Video response — show video references
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'Here are some different video style directions:',
+          timestamp: new Date(),
+          videoReferences: data.videoReferences,
+          deliverableStyleMarker: data.deliverableStyleMarker,
+        }
+
+        setMessages((prev) => [...prev, assistantMessage])
+        setAnimatingMessageId(assistantMessage.id)
+      } else if (data.deliverableStyles && data.deliverableStyles.length > 0) {
         setExcludedStyleAxes(newExcludedAxes)
 
         const assistantMessage: Message = {

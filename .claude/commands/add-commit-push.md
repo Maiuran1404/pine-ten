@@ -13,7 +13,7 @@ Stage ALL changes, run pre-push validation (lint + typecheck + affected tests), 
    - Check for files that should NOT be committed (`.env`, credentials, large binaries, node_modules)
    - If any sensitive files are found, warn the user and exclude them
 5. **Pre-push validation** — run these checks BEFORE committing to catch issues early:
-   - Run `npm run lint` — fix ALL errors and warnings (prefix unused vars with `_`, remove unused imports, etc.). Re-run lint until it passes cleanly with zero errors and zero warnings.
+   - Run `npm run lint -- --max-warnings 0` — this mirrors the CI check exactly. Fix ALL errors and warnings (prefix unused vars with `_`, remove unused imports, etc.). Re-run lint until it passes cleanly with zero errors and zero warnings.
    - Run `npm run typecheck` — abort and fix any TypeScript errors before proceeding
    - Run `npx vitest run --changed HEAD~1` — run tests affected by changed files
    - If ANY check fails: report the errors, fix them, and re-run validation until ALL THREE pass
