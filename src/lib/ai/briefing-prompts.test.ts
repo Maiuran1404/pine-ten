@@ -278,6 +278,52 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Crafted designer who will build the deliverable')
   })
 
+  // BRIEF_META in closing instruction (moved from preamble for recency)
+  it('includes BRIEF_META format instruction in closing section', () => {
+    const state = makeState({ stage: 'EXTRACT' })
+    const prompt = buildSystemPrompt(state)
+    // Full BRIEF_META instruction should be in the closing, not just a reference
+    expect(prompt).toContain('STAGE DECLARATION (DO NOT SKIP)')
+    expect(prompt).toContain('[BRIEF_META]{"stage":"STAGE_NAME"')
+    expect(prompt).toContain('fieldsExtracted')
+  })
+
+  it('includes legal transitions in closing instruction', () => {
+    const state = makeState({ stage: 'STRUCTURE' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('Legal stages from STRUCTURE: STRUCTURE, STRATEGIC_REVIEW')
+  })
+
+  it('includes per-stage BRIEF_META reminder for STRUCTURE', () => {
+    const state = makeState({ stage: 'STRUCTURE', deliverableCategory: 'video' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('After the structure block, include [BRIEF_META] and [QUICK_OPTIONS]')
+  })
+
+  it('includes per-stage BRIEF_META reminder for STRATEGIC_REVIEW', () => {
+    const state = makeState({ stage: 'STRATEGIC_REVIEW' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain(
+      'After the [STRATEGIC_REVIEW] block, include [BRIEF_META] and [QUICK_OPTIONS]'
+    )
+  })
+
+  it('includes per-stage BRIEF_META reminder for REVIEW', () => {
+    const state = makeState({ stage: 'REVIEW' })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('After your review, include [BRIEF_META] and [QUICK_OPTIONS]')
+  })
+
+  it('preamble has only a short BRIEF_META reference (not the full instruction)', () => {
+    const state = makeState({ stage: 'EXTRACT' })
+    const prompt = buildSystemPrompt(state)
+    // The preamble should NOT contain the full format block anymore
+    const preambleEnd = prompt.indexOf('== CURRENT STATE ==')
+    const preamble = prompt.slice(0, preambleEnd)
+    expect(preamble).not.toContain('Format: [BRIEF_META]')
+    expect(preamble).toContain('STAGE DECLARATION')
+  })
+
   // Brand context
   it('injects brand context when provided', () => {
     const state = makeState({ stage: 'EXTRACT' })

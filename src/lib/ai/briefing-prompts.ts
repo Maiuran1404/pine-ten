@@ -118,16 +118,7 @@ RULES:
 - Match the user's energy and vocabulary level.
 - ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.
 
-STAGE DECLARATION (MANDATORY — DO NOT SKIP):
-You MUST include a [BRIEF_META] block in EVERY response. Without it, the progress bar cannot advance and the user sees no progress. This is a hard system requirement.
-
-Format: [BRIEF_META]{"stage":"STAGE_NAME","fieldsExtracted":{"taskType":"...","intent":"..."}}[/BRIEF_META]
-
-- "stage" = the stage this conversation should be at AFTER your response (pick from the legal transitions listed in CURRENT STATE)
-- "fieldsExtracted" = any brief fields you identified from the user's message (only include fields you detected)
-- Valid fieldsExtracted keys: taskType, intent, deliverableCategory, platform, topic
-- Place [BRIEF_META] BEFORE [QUICK_OPTIONS], near the end of your response.
-- NEVER omit this block. Every single response needs it.`
+STAGE DECLARATION: You MUST include [BRIEF_META] and [QUICK_OPTIONS] blocks in every response. Full format is specified in the CLOSING INSTRUCTION section at the end of this prompt.`
 
 // =============================================================================
 // CURRENT STATE
@@ -281,7 +272,22 @@ function buildStageTask(state: BriefingState): string {
   }
 
   const builder = taskMap[state.stage]
-  return `== YOUR TASK THIS TURN ==\n${builder(state)}`
+  let task = builder(state)
+
+  // Per-stage BRIEF_META reminders for complex stages where AI focuses on
+  // structured JSON output and tends to forget the metadata block
+  const BRIEF_META_REMINDER: Partial<Record<BriefingStage, string>> = {
+    STRUCTURE: 'After the structure block, include [BRIEF_META] and [QUICK_OPTIONS].',
+    STRATEGIC_REVIEW:
+      'After the [STRATEGIC_REVIEW] block, include [BRIEF_META] and [QUICK_OPTIONS].',
+    REVIEW: 'After your review, include [BRIEF_META] and [QUICK_OPTIONS].',
+  }
+  const reminder = BRIEF_META_REMINDER[state.stage]
+  if (reminder) {
+    task += `\n${reminder}`
+  }
+
+  return `== YOUR TASK THIS TURN ==\n${task}`
 }
 
 function buildExtractTask(_state: BriefingState): string {
@@ -363,9 +369,10 @@ If you have an open question about the primary action or audience, ask it before
     case 'video':
       return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
 - Generate 3-5 scenes. Scene 1 MUST have a hook with persona + pain metric.
-- Each scene: title, description, duration, visual note.
+- Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
+- Create a first-draft storyboard based on what you know so far. The user can edit individual scenes and regenerate parts later.
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
     case 'website':
       return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
@@ -584,9 +591,25 @@ function buildBrandSection(ctx: BrandContext): string {
 // =============================================================================
 
 function buildClosingInstruction(stage: BriefingStage): string {
+  const legalTransitions = getLegalTransitions(stage)
   const authorityStages: BriefingStage[] = ['STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW', 'SUBMIT']
-  if (authorityStages.includes(stage)) {
-    return 'CLOSING: End with a confident statement or clear next step. Do NOT end with a question like "What do you think?" or "Does this work?". You are the expert, state your assessment.'
-  }
-  return 'End with either a clear question or a confident direction. No wishy-washy "let me know" closings.'
+
+  const closingTone = authorityStages.includes(stage)
+    ? 'End with a confident statement or clear next step. Do NOT end with a question like "What do you think?" or "Does this work?". You are the expert, state your assessment.'
+    : 'End with either a clear question or a confident direction. No wishy-washy "let me know" closings.'
+
+  return `== CLOSING INSTRUCTION (MANDATORY) ==
+${closingTone}
+
+STAGE DECLARATION (DO NOT SKIP):
+You MUST include a [BRIEF_META] block in EVERY response. Without it, the progress bar cannot advance and the user sees no progress. This is a hard system requirement.
+
+Format: [BRIEF_META]{"stage":"STAGE_NAME","fieldsExtracted":{"taskType":"...","intent":"..."}}[/BRIEF_META]
+
+- "stage" = the stage this conversation should be at AFTER your response
+- Legal stages from ${stage}: ${legalTransitions.join(', ')}
+- "fieldsExtracted" = any brief fields you identified from the user's message (only include fields you detected)
+- Valid fieldsExtracted keys: taskType, intent, deliverableCategory, platform, topic
+- Place [BRIEF_META] BEFORE [QUICK_OPTIONS], near the end of your response.
+- NEVER omit this block. Every single response needs it.`
 }

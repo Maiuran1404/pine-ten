@@ -51,6 +51,10 @@ export interface StoryboardScene {
   visualNote: string
   hookData?: VideoHookData
   referenceVideoId?: string
+  voiceover?: string
+  transition?: string
+  cameraNote?: string
+  styleReferences?: string[]
 }
 
 export interface VideoHookData {
@@ -350,8 +354,12 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'STRUCTURE': {
-      // STRATEGIC_REVIEW requires structure !== null
-      return state.structure !== null ? 'STRATEGIC_REVIEW' : 'STRUCTURE'
+      // STRATEGIC_REVIEW requires structure !== null, or force-advance after 3 turns
+      // to prevent permanent stuck state when structure markers are missing
+      if (state.structure !== null || state.turnsInCurrentStage >= 3) {
+        return 'STRATEGIC_REVIEW'
+      }
+      return 'STRUCTURE'
     }
 
     case 'STRATEGIC_REVIEW': {

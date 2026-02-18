@@ -69,48 +69,46 @@ export function StageFunnel({ funnel, totalRuns }: StageFunnelProps) {
   const maxCount = funnel[0]?.count ?? totalRuns
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-end gap-0.5 h-28">
-        {funnel.map((item, i) => {
-          const prevCount = i > 0 ? funnel[i - 1].count : totalRuns
-          const dropOff = prevCount - item.count
+    <div className="flex items-end gap-0.5 h-20">
+      {funnel.map((item, i) => {
+        const prevCount = i > 0 ? funnel[i - 1].count : totalRuns
+        const dropOff = prevCount - item.count
 
-          return (
-            <div key={item.stage} className="flex-1 flex flex-col items-center gap-1">
-              {/* Drop-off indicator */}
-              {dropOff > 0 && i > 0 && (
-                <span className="text-[10px] font-medium text-red-500">-{dropOff}</span>
-              )}
+        return (
+          <div key={item.stage} className="flex-1 flex flex-col items-center gap-0.5">
+            {/* Drop-off indicator */}
+            {dropOff > 0 && i > 0 && (
+              <span className="text-[10px] font-medium text-red-500">-{dropOff}</span>
+            )}
 
-              {/* Bar */}
-              <div className="w-full flex flex-col items-center justify-end h-20">
-                <div
-                  className={cn(
-                    'w-full rounded-t-sm transition-all',
-                    getSegmentColor(item.percentage),
-                    i === 0 && 'rounded-tl-md',
-                    i === funnel.length - 1 && 'rounded-tr-md'
-                  )}
-                  style={{
-                    height: `${maxCount > 0 ? (item.count / maxCount) * 100 : 0}%`,
-                    minHeight: item.count > 0 ? '4px' : '0px',
-                  }}
-                />
-              </div>
-
-              {/* Count */}
-              <span className={cn('text-xs font-semibold', getTextColor(item.percentage))}>
-                {item.count}/{totalRuns}
-              </span>
-
-              {/* Label */}
-              <span className="text-[10px] text-muted-foreground text-center leading-tight">
-                {STAGE_LABELS[item.stage] ?? item.stage}
-              </span>
+            {/* Bar */}
+            <div className="w-full flex flex-col items-center justify-end h-12">
+              <div
+                className={cn(
+                  'w-full rounded-t-sm transition-all',
+                  getSegmentColor(item.percentage),
+                  i === 0 && 'rounded-tl-md',
+                  i === funnel.length - 1 && 'rounded-tr-md'
+                )}
+                style={{
+                  height: `${maxCount > 0 ? (item.count / maxCount) * 100 : 0}%`,
+                  minHeight: item.count > 0 ? '4px' : '0px',
+                }}
+              />
             </div>
-          )
-        })}
-      </div>
+
+            {/* Count */}
+            <span className={cn('text-[10px] font-semibold', getTextColor(item.percentage))}>
+              {item.count}/{totalRuns}
+            </span>
+
+            {/* Label */}
+            <span className="text-[9px] text-muted-foreground text-center leading-tight">
+              {STAGE_LABELS[item.stage] ?? item.stage}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

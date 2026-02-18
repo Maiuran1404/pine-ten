@@ -22,8 +22,6 @@ import {
   isCurrentStage,
 } from '@/lib/chat-progress'
 import { getStageHint } from '@/lib/chat-progress'
-import { StoryboardPanel } from './storyboard-view'
-import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 // =============================================================================
 // TYPES
@@ -43,13 +41,10 @@ interface UnifiedPanelProps {
   onRequestSubmit?: () => void
   isReadyForDesigner?: boolean
   deliverableCategory?: string | null
-  storyboardScenes?: StoryboardScene[]
-  onSceneClick?: (scene: StoryboardScene) => void
-  onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
   className?: string
 }
 
-type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline' | 'storyboard'
+type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline'
 
 interface SectionConfig {
   key: SectionKey
@@ -66,8 +61,7 @@ function getSectionsForStage(
   currentStage: ChatStage,
   brief: LiveBrief | null,
   moodboardItems: MoodboardItem[],
-  deliverableCategory?: string | null,
-  hasStoryboard?: boolean
+  deliverableCategory?: string | null
 ): SectionConfig[] {
   const moodboardCount = moodboardItems.length
   const outlineCount = brief?.contentOutline?.totalItems || 0
@@ -204,11 +198,6 @@ function getSectionsForStage(
     default:
       sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }]
       break
-  }
-
-  // Append storyboard section when data exists
-  if (hasStoryboard) {
-    sections.push({ key: 'storyboard', label: 'Storyboard', defaultOpen: true })
   }
 
   return sections
@@ -407,9 +396,6 @@ export function UnifiedPanel({
   onRequestSubmit,
   isReadyForDesigner,
   deliverableCategory,
-  storyboardScenes,
-  onSceneClick,
-  onMultiSceneFeedback,
   className,
 }: UnifiedPanelProps) {
   // Track user-toggled open/close state per section
@@ -418,17 +404,14 @@ export function UnifiedPanel({
     moodboard: undefined,
     visual: undefined,
     outline: undefined,
-    storyboard: undefined,
   })
 
   // Track which sections have appeared before (for first-appearance defaultOpen)
   const [seenSections, setSeenSections] = useState<Set<SectionKey>>(new Set(['brief']))
 
-  const hasStoryboard = (storyboardScenes?.length ?? 0) > 0
   const sections = useMemo(
-    () =>
-      getSectionsForStage(currentStage, brief, moodboardItems, deliverableCategory, hasStoryboard),
-    [currentStage, brief, moodboardItems, deliverableCategory, hasStoryboard]
+    () => getSectionsForStage(currentStage, brief, moodboardItems, deliverableCategory),
+    [currentStage, brief, moodboardItems, deliverableCategory]
   )
 
   // Update seen sections when new ones appear
@@ -521,15 +504,6 @@ export function UnifiedPanel({
             />
           </div>
         )
-
-      case 'storyboard':
-        return storyboardScenes && storyboardScenes.length > 0 ? (
-          <StoryboardPanel
-            scenes={storyboardScenes}
-            onSceneClick={onSceneClick}
-            onMultiSceneFeedback={onMultiSceneFeedback}
-          />
-        ) : null
 
       default:
         return null

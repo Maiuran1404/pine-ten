@@ -45,6 +45,7 @@ import {
   evaluateTransitions,
   getLegalTransitions,
 } from '@/lib/ai/briefing-state-machine'
+import { inferStageFromResponse } from '@/lib/ai/briefing-stage-inferrer'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
 import {
@@ -645,6 +646,11 @@ async function handler(request: NextRequest) {
           // ================================================================
           // 10. Parse [BRIEF_META] from AI response for stage transitions
           // ================================================================
+          // Snapshot turn count before BRIEF_META processing increments it,
+          // so retry guards can check whether this was truly the first turn.
+          const turnsBeforeBriefMeta = briefingState.turnsInCurrentStage
+          const stageBeforeBriefMeta = briefingState.stage
+
           const briefMetaResult = parseBriefMeta(response.content)
           if (briefMetaResult.success && briefMetaResult.data) {
             // 11. Validate declared stage against legal transitions
@@ -720,22 +726,48 @@ async function handler(request: NextRequest) {
               if (mapped) briefingState.deliverableCategory = mapped
             }
           } else {
-            // BRIEF_META missing or failed — fallback to evaluateTransitions()
+            // BRIEF_META missing or failed — tiered fallback
             console.warn(
-              `[chat/route] BRIEF_META missing from AI response at stage=${briefingState.stage}, turn=${briefingState.turnsInCurrentStage}. Falling back to evaluateTransitions.`
+              `[chat/route] BRIEF_META missing from AI response at stage=${briefingState.stage}, turn=${briefingState.turnsInCurrentStage}. Using tiered fallback.`
             )
             logger.debug(
               { parseError: briefMetaResult.parseError },
-              'BRIEF_META not found — falling back to evaluateTransitions'
+              'BRIEF_META not found — using tiered fallback'
             )
-            if (preAiInference) {
+
+            // Tier 1: Content-based stage inference
+            const stageInference = inferStageFromResponse(response.content, briefingState.stage)
+            if (stageInference) {
+              logger.debug(
+                {
+                  inferredStage: stageInference.stage,
+                  confidence: stageInference.confidence,
+                  reason: stageInference.reason,
+                },
+                'Stage inferred from response content (Tier 1)'
+              )
+              if (stageInference.stage !== briefingState.stage) {
+                // Preserve STRUCTURE→STRATEGIC_REVIEW blocking guard
+                const blockingAdvance =
+                  briefingState.stage === 'STRUCTURE' && stageInference.stage === 'STRATEGIC_REVIEW'
+                if (blockingAdvance) {
+                  briefingState.turnsInCurrentStage += 1
+                } else {
+                  briefingState.stage = stageInference.stage
+                  briefingState.turnsInCurrentStage = 0
+                }
+              } else {
+                briefingState.turnsInCurrentStage += 1
+              }
+            } else if (preAiInference) {
+              // Tier 2: Data-driven evaluateTransitions()
               const nextStage = evaluateTransitions(briefingState, preAiInference)
               if (nextStage !== briefingState.stage) {
                 briefingState.stage = nextStage
                 briefingState.turnsInCurrentStage = 0
               } else {
                 briefingState.turnsInCurrentStage += 1
-                // Force-advance if stuck in the same stage for too many turns
+                // Tier 3: Force-advance if stuck in the same stage for too many turns
                 if (briefingState.turnsInCurrentStage >= 3) {
                   const forceNext = evaluateTransitions(
                     { ...briefingState, turnsInCurrentStage: 999 },
@@ -795,6 +827,24 @@ async function handler(request: NextRequest) {
             if (parsed.success && parsed.data) {
               structureData = parsed.data
               briefingState.structure = parsed.data
+
+              // Category fallback: infer deliverableCategory from structure type
+              // when structure was parsed but category is still unknown
+              if (
+                !briefingState.deliverableCategory ||
+                briefingState.deliverableCategory === 'unknown'
+              ) {
+                const typeToCategory: Record<string, DeliverableCategory> = {
+                  storyboard: 'video',
+                  layout: 'website',
+                  calendar: 'content',
+                  single_design: 'design',
+                }
+                const inferred = typeToCategory[parsed.data.type]
+                if (inferred) {
+                  briefingState.deliverableCategory = inferred
+                }
+              }
             }
           }
 
@@ -826,7 +876,7 @@ async function handler(request: NextRequest) {
             briefingState.stage === 'STRUCTURE' &&
             !structureData &&
             structureType &&
-            briefingState.turnsInCurrentStage === 0
+            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'STRUCTURE')
           ) {
             logger.debug(
               { structureType },
@@ -888,7 +938,7 @@ async function handler(request: NextRequest) {
           if (
             briefingState.stage === 'STRATEGIC_REVIEW' &&
             !strategicReviewData &&
-            briefingState.turnsInCurrentStage === 0
+            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'STRATEGIC_REVIEW')
           ) {
             // Check if the AI wrote strategic assessment text without the marker
             const hasReviewText =

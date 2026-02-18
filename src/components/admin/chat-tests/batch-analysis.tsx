@@ -292,7 +292,6 @@ function buildAnalysisPrompt(runs: Run[], batchId: string, funnel: FunnelData[])
         )
       : null
 
-  const bottleneck = computeBottleneck(funnel)
   const allDropoffs = computeAllDropoffs(funnel)
   const methods = computeResponseMethods(runs)
   const totalMethods = methods.quickOption + methods.template + methods.haiku + methods.unknown
@@ -571,19 +570,17 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <XCircle className="h-4 w-4 text-red-500" />
-          Where Runs Failed
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <XCircle className="h-3.5 w-3.5 text-red-500" />
+          <span className="text-xs font-medium">Where Runs Failed</span>
+        </div>
+        <div className="space-y-2">
           {stageEntries.map(([stage, stageRuns]) => (
             <div key={stage}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium">{STAGE_LABELS[stage] ?? stage}</span>
-                <span className="text-xs text-red-500 font-medium">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium">{STAGE_LABELS[stage] ?? stage}</span>
+                <span className="text-[10px] text-red-500 font-medium">
                   {stageRuns.length} run{stageRuns.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -593,11 +590,13 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
                   return (
                     <div
                       key={run.id}
-                      className="text-xs bg-red-50 border border-red-100 rounded-md px-3 py-2 space-y-0.5"
+                      className="text-[11px] bg-red-50 border border-red-100 rounded px-2 py-1.5 space-y-0.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{run.scenarioName}</span>
-                        <span className="text-muted-foreground">{run.totalTurns} turns</span>
+                        <span className="font-medium truncate">{run.scenarioName}</span>
+                        <span className="text-muted-foreground shrink-0 ml-2">
+                          {run.totalTurns}t
+                        </span>
                       </div>
                       {stalls.length > 0 && (
                         <p className="text-amber-600">
@@ -642,83 +641,79 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Zap className="h-4 w-4 text-amber-500" />
-            Turn Heatmap
-          </CardTitle>
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm bg-emerald-200" /> 1-2
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-amber-500" />
+            <span className="text-xs font-medium">Turn Heatmap</span>
+          </div>
+          <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <span className="h-1.5 w-1.5 rounded-sm bg-emerald-200" /> 1-2
             </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm bg-amber-300" /> 3
+            <span className="flex items-center gap-0.5">
+              <span className="h-1.5 w-1.5 rounded-sm bg-amber-300" /> 3
             </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm bg-amber-500" /> 4-5
+            <span className="flex items-center gap-0.5">
+              <span className="h-1.5 w-1.5 rounded-sm bg-amber-500" /> 4-5
             </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm bg-red-500" /> 6+
+            <span className="flex items-center gap-0.5">
+              <span className="h-1.5 w-1.5 rounded-sm bg-red-500" /> 6+
             </span>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className="text-left font-medium text-muted-foreground pb-2 pr-3 min-w-[140px]">
-                  Scenario
+        <table className="w-full text-[11px] table-fixed">
+          <thead>
+            <tr>
+              <th className="text-left font-medium text-muted-foreground pb-1.5 w-[30%]">
+                Scenario
+              </th>
+              {STAGE_ORDER.map((stage) => (
+                <th
+                  key={stage}
+                  className="text-center font-medium text-muted-foreground pb-1.5 px-0.5"
+                >
+                  {abbreviations[stage] ?? stage.slice(0, 3)}
                 </th>
-                {STAGE_ORDER.map((stage) => (
-                  <th
-                    key={stage}
-                    className="text-center font-medium text-muted-foreground pb-2 px-1 w-10"
-                  >
-                    {abbreviations[stage] ?? stage.slice(0, 3)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {heatmap.map((row) => (
-                <tr key={row.scenarioName} className="border-t border-muted/50">
-                  <td className="py-1.5 pr-3">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          'h-1.5 w-1.5 rounded-full shrink-0',
-                          row.passed ? 'bg-emerald-500' : 'bg-red-500'
-                        )}
-                      />
-                      <span className="truncate max-w-[130px]" title={row.scenarioName}>
-                        {row.scenarioName}
-                      </span>
-                    </div>
-                  </td>
-                  {STAGE_ORDER.map((stage) => {
-                    const turns = row.stages[stage] ?? 0
-                    return (
-                      <td key={stage} className="py-1.5 px-1 text-center">
-                        <div
-                          className={cn(
-                            'h-7 w-full rounded-sm flex items-center justify-center font-medium',
-                            heatColor(turns),
-                            heatTextColor(turns)
-                          )}
-                        >
-                          {turns > 0 ? turns : ''}
-                        </div>
-                      </td>
-                    )
-                  })}
-                </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {heatmap.map((row) => (
+              <tr key={row.scenarioName} className="border-t border-muted/50">
+                <td className="py-1 pr-1">
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full shrink-0',
+                        row.passed ? 'bg-emerald-500' : 'bg-red-500'
+                      )}
+                    />
+                    <span className="truncate" title={row.scenarioName}>
+                      {row.scenarioName}
+                    </span>
+                  </div>
+                </td>
+                {STAGE_ORDER.map((stage) => {
+                  const turns = row.stages[stage] ?? 0
+                  return (
+                    <td key={stage} className="py-1 px-0.5 text-center">
+                      <div
+                        className={cn(
+                          'h-6 w-full rounded-sm flex items-center justify-center font-medium',
+                          heatColor(turns),
+                          heatTextColor(turns)
+                        )}
+                      >
+                        {turns > 0 ? turns : ''}
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </CardContent>
     </Card>
   )
@@ -762,100 +757,106 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Stage Funnel */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Stage Funnel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StageFunnel funnel={funnel} totalRuns={runs.length} />
-        </CardContent>
-      </Card>
-
-      {/* Key Insights Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Biggest Drop-off */}
+    <div className="space-y-3">
+      {/* Stage Funnel + Key Insights — single row */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="h-4 w-4 text-red-500" />
-              <span className="text-xs font-medium text-muted-foreground">Biggest Drop-off</span>
-            </div>
-            {bottleneck ? (
-              <div>
-                <p className="text-lg font-semibold">
-                  {STAGE_LABELS[bottleneck.stage] ?? bottleneck.stage}
-                </p>
-                <p className="text-xs text-red-500">-{bottleneck.dropOff} runs lost</p>
-              </div>
-            ) : (
-              <p className="text-lg font-semibold text-emerald-600">None</p>
-            )}
+          <CardHeader className="pb-1 pt-3 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground">
+              Stage Funnel
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-3">
+            <StageFunnel funnel={funnel} totalRuns={runs.length} />
           </CardContent>
         </Card>
 
-        {/* Avg Turns */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Timer className="h-4 w-4 text-blue-500" />
-              <span className="text-xs font-medium text-muted-foreground">Avg Turns</span>
-            </div>
-            <div className="flex items-baseline gap-3">
-              <div>
-                <p className="text-lg font-semibold text-emerald-600">{avgTurnsPassed}</p>
-                <p className="text-[10px] text-muted-foreground">passed</p>
+        {/* Stacked insight cards */}
+        <div className="flex flex-row lg:flex-col gap-2 lg:w-56">
+          {/* Biggest Drop-off */}
+          <Card className="flex-1">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  Biggest Drop-off
+                </span>
               </div>
-              <div className="text-muted-foreground/30">|</div>
-              <div>
-                <p className="text-lg font-semibold text-red-500">{avgTurnsFailed}</p>
-                <p className="text-[10px] text-muted-foreground">failed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Response Methods */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MousePointerClick className="h-4 w-4 text-violet-500" />
-              <span className="text-xs font-medium text-muted-foreground">Response Methods</span>
-            </div>
-            {totalMethods > 0 ? (
-              <div className="space-y-1.5">
-                <div className="flex h-2.5 rounded-full overflow-hidden">
-                  {qoPct > 0 && <div className="bg-violet-500" style={{ width: `${qoPct}%` }} />}
-                  {tplPct > 0 && <div className="bg-blue-400" style={{ width: `${tplPct}%` }} />}
-                  {haikuPct > 0 && (
-                    <div className="bg-amber-400" style={{ width: `${haikuPct}%` }} />
-                  )}
+              {bottleneck ? (
+                <div>
+                  <p className="text-sm font-semibold">
+                    {STAGE_LABELS[bottleneck.stage] ?? bottleneck.stage}
+                  </p>
+                  <p className="text-[10px] text-red-500">-{bottleneck.dropOff} runs lost</p>
                 </div>
-                <div className="flex gap-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
-                    Quick {qoPct}%
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                    Template {tplPct}%
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    Haiku {haikuPct}%
-                  </span>
+              ) : (
+                <p className="text-sm font-semibold text-emerald-600">None</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Avg Turns */}
+          <Card className="flex-1">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Timer className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-[10px] font-medium text-muted-foreground">Avg Turns</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-600">{avgTurnsPassed}</p>
+                  <p className="text-[10px] text-muted-foreground">passed</p>
+                </div>
+                <div className="text-muted-foreground/30">|</div>
+                <div>
+                  <p className="text-sm font-semibold text-red-500">{avgTurnsFailed}</p>
+                  <p className="text-[10px] text-muted-foreground">failed</p>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No data</p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Response Methods */}
+          <Card className="flex-1">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <MousePointerClick className="h-3.5 w-3.5 text-violet-500" />
+                <span className="text-[10px] font-medium text-muted-foreground">Methods</span>
+              </div>
+              {totalMethods > 0 ? (
+                <div className="space-y-1">
+                  <div className="flex h-2 rounded-full overflow-hidden">
+                    {qoPct > 0 && <div className="bg-violet-500" style={{ width: `${qoPct}%` }} />}
+                    {tplPct > 0 && <div className="bg-blue-400" style={{ width: `${tplPct}%` }} />}
+                    {haikuPct > 0 && (
+                      <div className="bg-amber-400" style={{ width: `${haikuPct}%` }} />
+                    )}
+                  </div>
+                  <div className="flex gap-2 text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                      {qoPct}%
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                      {tplPct}%
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      {haikuPct}%
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No data</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Failure Breakdown + Turn Heatmap */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <FailureBreakdown runs={runs} />
         <StageHeatmap runs={runs} />
       </div>
@@ -863,22 +864,22 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
       {/* Stalls Warning */}
       {runs.some((r) => detectStalls(r).length > 0) && (
         <Card className="border-amber-200">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-              <div className="space-y-1.5">
-                <p className="text-sm font-medium">Stall Warning</p>
-                <div className="space-y-1">
+          <CardContent className="p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-xs font-medium">Stall Warning</p>
+                <div className="space-y-0.5">
                   {runs
                     .filter((r) => detectStalls(r).length > 0)
                     .map((run) => {
                       const stalls = detectStalls(run)
                       return (
-                        <p key={run.id} className="text-xs text-muted-foreground">
+                        <p key={run.id} className="text-[11px] text-muted-foreground">
                           <span className="font-medium text-foreground">{run.scenarioName}</span>
                           {' -- '}
                           {stalls
-                            .map((s) => `${STAGE_LABELS[s.stage] ?? s.stage} (${s.turns} turns)`)
+                            .map((s) => `${STAGE_LABELS[s.stage] ?? s.stage} (${s.turns}t)`)
                             .join(', ')}
                         </p>
                       )
@@ -892,17 +893,15 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
 
       {/* Analysis Prompt */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Claude Code Prompt</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleCopyPrompt}>
-              <ClipboardCopy className="h-3.5 w-3.5 mr-1.5" />
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium">Claude Code Prompt</span>
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyPrompt}>
+              <ClipboardCopy className="h-3 w-3 mr-1" />
               Copy
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted/50 rounded-lg p-4 max-h-[600px] overflow-y-auto leading-relaxed">
+          <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap font-mono bg-muted/50 rounded-md p-3 max-h-[300px] overflow-y-auto leading-relaxed">
             {prompt}
           </pre>
         </CardContent>

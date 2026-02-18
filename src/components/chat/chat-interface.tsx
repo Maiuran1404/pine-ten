@@ -206,8 +206,14 @@ export function ChatInterface({
     handleSceneClick,
     handleMultiSceneFeedback,
 
-    // Storyboard
+    // Storyboard / Structure panel
     storyboardScenes,
+    structureType,
+    structurePanelVisible,
+    handleSceneEdit,
+    handleRegenerateStoryboard,
+    handleRegenerateScene,
+    handleRegenerateField,
 
     // Handlers
     handleSend,
@@ -278,6 +284,13 @@ export function ChatInterface({
       }
       onSceneClick={handleSceneClick}
       onMultiSceneFeedback={handleMultiSceneFeedback}
+      structurePanelVisible={structurePanelVisible}
+      structureType={structureType}
+      structureData={storyboardScenes}
+      onSceneEdit={handleSceneEdit}
+      onRegenerateStoryboard={handleRegenerateStoryboard}
+      onRegenerateScene={handleRegenerateScene}
+      onRegenerateField={handleRegenerateField}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div

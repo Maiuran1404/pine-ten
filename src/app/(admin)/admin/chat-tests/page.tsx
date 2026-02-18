@@ -322,96 +322,94 @@ function BatchRow({
   const isActive = status === 'Running'
 
   return (
-    <div className="relative group">
-      <Link href={`/admin/chat-tests/${batch.batchId}`} className="block">
-        <div
-          className={cn(
-            'flex items-center gap-4 px-4 py-3.5 rounded-lg border bg-card',
-            'hover:bg-accent/50 transition-colors',
-            isActive && 'border-blue-200 bg-blue-50/30'
+    <div
+      className={cn(
+        'flex items-center gap-4 px-4 py-3.5 rounded-lg border bg-card',
+        'hover:bg-accent/50 transition-colors',
+        isActive && 'border-blue-200 bg-blue-50/30'
+      )}
+    >
+      <Link
+        href={`/admin/chat-tests/${batch.batchId}`}
+        className="flex items-center gap-4 flex-1 min-w-0"
+      >
+        {/* Pass rate indicator */}
+        <div className="shrink-0 w-12 text-center">
+          {isActive ? (
+            <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
+          ) : (
+            <span className={cn('text-lg font-bold tabular-nums', passRateColor(rate))}>
+              {rate}%
+            </span>
           )}
-        >
-          {/* Pass rate indicator -- the most important info per row */}
-          <div className="shrink-0 w-12 text-center">
-            {isActive ? (
-              <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
-            ) : (
-              <span className={cn('text-lg font-bold tabular-nums', passRateColor(rate))}>
-                {rate}%
-              </span>
+        </div>
+
+        {/* Mini pass-rate bar */}
+        <div className="shrink-0 w-16">
+          <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
+            <div
+              className={cn('h-full rounded-full transition-all', passRateBg(rate))}
+              style={{ width: `${isActive ? 0 : rate}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
+            {batch.reachedReviewCount}/{batch.totalRuns}
+          </p>
+        </div>
+
+        {/* Middle: timestamp + status */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{formatTimestamp(batch.createdAt)}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full shrink-0',
+                  statusDotColor(status),
+                  isActive && 'animate-pulse'
+                )}
+              />
+              <span className="text-xs text-muted-foreground">{status}</span>
+            </span>
+            {batch.failedRuns > 0 && status !== 'Failed' && (
+              <span className="text-xs text-red-500">{batch.failedRuns} failed</span>
             )}
           </div>
+        </div>
 
-          {/* Mini pass-rate bar */}
-          <div className="shrink-0 w-16">
-            <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
-              <div
-                className={cn('h-full rounded-full transition-all', passRateBg(rate))}
-                style={{ width: `${isActive ? 0 : rate}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
-              {batch.reachedReviewCount}/{batch.totalRuns}
+        {/* Right: efficiency metrics */}
+        <div className="hidden sm:flex items-center gap-5 shrink-0">
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Turns</p>
+            <p className="text-sm font-medium tabular-nums">
+              {batch.avgTurns !== null ? batch.avgTurns : '--'}
             </p>
           </div>
-
-          {/* Middle: timestamp + status */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{formatTimestamp(batch.createdAt)}</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full shrink-0',
-                    statusDotColor(status),
-                    isActive && 'animate-pulse'
-                  )}
-                />
-                <span className="text-xs text-muted-foreground">{status}</span>
-              </span>
-              {batch.failedRuns > 0 && status !== 'Failed' && (
-                <span className="text-xs text-red-500">{batch.failedRuns} failed</span>
-              )}
-            </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Duration</p>
+            <p className="text-sm font-medium tabular-nums">
+              {formatDurationShort(batch.avgDurationMs)}
+            </p>
           </div>
-
-          {/* Right: efficiency metrics */}
-          <div className="hidden sm:flex items-center gap-5 shrink-0">
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Turns</p>
-              <p className="text-sm font-medium tabular-nums">
-                {batch.avgTurns !== null ? batch.avgTurns : '--'}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="text-sm font-medium tabular-nums">
-                {formatDurationShort(batch.avgDurationMs)}
-              </p>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
         </div>
+
+        {/* Arrow */}
+        <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
       </Link>
 
-      {/* Delete button — appears on hover */}
-      {onDelete && !isActive && (
+      {/* Delete button */}
+      {onDelete && (
         <button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
+          onClick={() => {
             if (deleting) return
             setDeleting(true)
             onDelete(batch.batchId)
           }}
           disabled={deleting}
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 right-12 p-1.5 rounded-md',
-            'opacity-0 group-hover:opacity-100 transition-opacity',
-            'text-muted-foreground hover:text-red-600 hover:bg-red-50',
-            deleting && 'opacity-100 text-red-600'
+            'shrink-0 p-1.5 rounded-md transition-colors',
+            'text-muted-foreground/40 hover:text-red-600 hover:bg-red-50',
+            deleting && 'text-red-600'
           )}
           title="Delete batch"
         >

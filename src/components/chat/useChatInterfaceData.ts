@@ -193,6 +193,31 @@ export function useChatInterfaceData({
     taskSubmitted,
   ])
 
+  // Compute structure type from deliverable category
+  const structureType = useMemo((): StructureData['type'] | null => {
+    const cat = _briefingState?.deliverableCategory
+    if (!cat) return null
+    const map: Record<string, StructureData['type']> = {
+      video: 'storyboard',
+      website: 'layout',
+      content: 'calendar',
+      design: 'single_design',
+      brand: 'single_design',
+    }
+    return map[cat] ?? null
+  }, [_briefingState?.deliverableCategory])
+
+  // Structure panel visible when we know the type or have data
+  const structurePanelVisible = structureType !== null || storyboardScenes !== null
+
+  // Stability: restore storyboard from briefing state when it exists but local state is null
+  useEffect(() => {
+    if (_briefingState?.structure && !storyboardScenes) {
+      setStoryboardScenes(_briefingState.structure)
+      latestStoryboardRef.current = _briefingState.structure
+    }
+  }, [_briefingState?.structure, storyboardScenes])
+
   // Resolve quick options — only from AI response, never generic stage-based fallback
   const resolvedQuickOptions = useMemo(() => {
     if (isLoading || pendingTask) return null
@@ -955,6 +980,18 @@ export function useChatInterfaceData({
           syncBriefingFromServer(data.briefingState)
         }
 
+        // Track latest storyboard data (mirrors handleSend logic)
+        let resolvedStructureData: StructureData | undefined = data.structureData ?? undefined
+        if (resolvedStructureData?.type === 'storyboard') {
+          latestStoryboardRef.current = resolvedStructureData
+          setStoryboardScenes(resolvedStructureData)
+        }
+
+        // Re-attach storyboard when response lacks new storyboard data
+        if (!resolvedStructureData && latestStoryboardRef.current) {
+          resolvedStructureData = latestStoryboardRef.current
+        }
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -966,7 +1003,7 @@ export function useChatInterfaceData({
           videoReferences: data.videoReferences,
           taskProposal: data.taskProposal,
           quickOptions: data.quickOptions ?? undefined,
-          structureData: data.structureData ?? undefined,
+          structureData: resolvedStructureData,
           strategicReviewData: data.strategicReviewData ?? undefined,
         }
 
@@ -987,6 +1024,7 @@ export function useChatInterfaceData({
       moodboardHasStyles,
       serializedBriefingState,
       syncBriefingFromServer,
+      setStoryboardScenes,
     ]
   )
 
@@ -1359,6 +1397,44 @@ export function useChatInterfaceData({
       inputRef.current?.focus()
     },
     []
+  )
+
+  // Edit a scene field directly (user typed a change)
+  const handleSceneEdit = useCallback((sceneNumber: number, field: string, value: string) => {
+    setStoryboardScenes((prev) => {
+      if (!prev || prev.type !== 'storyboard') return prev
+      const updated = {
+        ...prev,
+        scenes: prev.scenes.map((s) =>
+          s.sceneNumber === sceneNumber ? { ...s, [field]: value } : s
+        ),
+      }
+      latestStoryboardRef.current = updated
+      return updated
+    })
+  }, [])
+
+  // Trigger AI regeneration of whole storyboard
+  const handleRegenerateStoryboard = useCallback(() => {
+    handleSendOption('Regenerate the entire storyboard based on everything we have discussed')
+  }, [handleSendOption])
+
+  // Trigger AI regeneration of a specific scene
+  const handleRegenerateScene = useCallback(
+    (scene: { sceneNumber: number; title: string }) => {
+      handleSendOption(
+        `Regenerate Scene ${scene.sceneNumber}: "${scene.title}" — keep the overall story arc`
+      )
+    },
+    [handleSendOption]
+  )
+
+  // Trigger AI regeneration of a specific field on a scene
+  const handleRegenerateField = useCallback(
+    (scene: { sceneNumber: number; title: string }, field: string) => {
+      handleSendOption(`Rewrite the ${field} for Scene ${scene.sceneNumber}: "${scene.title}"`)
+    },
+    [handleSendOption]
   )
 
   const lastUserMessageIndex = useMemo(() => {
@@ -1813,8 +1889,14 @@ export function useChatInterfaceData({
     handleSceneClick,
     handleMultiSceneFeedback,
 
-    // Storyboard
+    // Storyboard / Structure panel
     storyboardScenes,
+    structureType,
+    structurePanelVisible,
+    handleSceneEdit,
+    handleRegenerateStoryboard,
+    handleRegenerateScene,
+    handleRegenerateField,
 
     // Handlers
     handleSend,

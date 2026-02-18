@@ -429,6 +429,15 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
 
     if (!title && !description) continue
 
+    const voiceover = getString(scene, 'voiceover') ?? getString(scene, 'vo') ?? undefined
+    const transition = getString(scene, 'transition') ?? undefined
+    const cameraNote =
+      getString(scene, 'cameraNote') ?? getString(scene, 'camera_note') ?? undefined
+    const sceneStyleRefs =
+      getStringArray(scene, 'styleReferences') ??
+      getStringArray(scene, 'style_references') ??
+      undefined
+
     validScenes.push({
       sceneNumber: getNumber(scene, 'sceneNumber') ?? i + 1,
       title: title ?? `Scene ${i + 1}`,
@@ -441,6 +450,10 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
       ...(typeof scene.referenceVideoId === 'string'
         ? { referenceVideoId: scene.referenceVideoId }
         : {}),
+      ...(voiceover ? { voiceover } : {}),
+      ...(transition ? { transition } : {}),
+      ...(cameraNote ? { cameraNote } : {}),
+      ...(sceneStyleRefs ? { styleReferences: sceneStyleRefs } : {}),
     })
   }
 
@@ -821,7 +834,7 @@ function partialStrategicReview(parsed: Record<string, unknown> | unknown[]): bo
 export function getFormatReinforcement(expectedType: StructureType): string {
   const marker = STRUCTURE_TO_MARKER[expectedType]
   const exampleMap: Record<StructureType, string> = {
-    storyboard: `[STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"...","duration":"5s","visualNote":"..."}]}[/STORYBOARD]`,
+    storyboard: `[STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"...","duration":"5s","visualNote":"...","voiceover":"...","transition":"cut","cameraNote":"close-up"}]}[/STORYBOARD]`,
     layout: `[LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"...","contentGuidance":"...","order":1}]}[/LAYOUT]`,
     calendar: `[CALENDAR]{"totalDuration":"4 weeks","postingCadence":"3x/week","platforms":["Instagram"],"contentPillars":[{"name":"...","description":"...","percentage":40}],"weeks":[],"ctaEscalation":{"awarenessPhase":{"weeks":[1,2],"ctaStyle":"soft"},"engagementPhase":{"weeks":[3],"ctaStyle":"engage"},"conversionPhase":{"weeks":[4],"ctaStyle":"direct"}}}[/CALENDAR]`,
     single_design: `[DESIGN_SPEC]{"format":"Social post","dimensions":[{"width":1080,"height":1080,"label":"Instagram square"}],"keyElements":["Logo","CTA"],"copyGuidance":"..."}[/DESIGN_SPEC]`,

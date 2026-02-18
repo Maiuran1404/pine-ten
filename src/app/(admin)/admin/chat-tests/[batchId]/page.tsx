@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConversationCard } from '@/components/admin/chat-tests/conversation-card'
 import { BatchAnalysis } from '@/components/admin/chat-tests/batch-analysis'
-import { ArrowLeft, CheckCircle2, XCircle, MessageSquare, Clock, Hash } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, XCircle, MessageSquare, Clock, Hash, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -80,9 +80,18 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
     }
   }, [batchId])
 
+  const isRunning = runs.some((r) => r.status === 'pending' || r.status === 'running')
+
   useEffect(() => {
     fetchBatch()
   }, [fetchBatch])
+
+  // Poll every 3s while any runs are still in progress
+  useEffect(() => {
+    if (!isRunning) return
+    const interval = setInterval(fetchBatch, 3000)
+    return () => clearInterval(interval)
+  }, [isRunning, fetchBatch])
 
   const passed = runs.filter((r) => r.reachedReview).length
   const failed = runs.filter((r) => r.status === 'failed').length
@@ -124,17 +133,25 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
   }, [runs, filter, sort])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Link href="/admin/chat-tests">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Batch Analysis</h1>
-          <p className="text-xs text-muted-foreground font-mono">{batchId}</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight">Batch Analysis</h1>
+            {isRunning && (
+              <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Live
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground font-mono">{batchId}</p>
         </div>
       </div>
 
@@ -160,52 +177,52 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
           <Card>
             <CardContent className="p-0">
               <div className="grid grid-cols-5 divide-x">
-                <div className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Total</span>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <Hash className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Total</span>
                   </div>
-                  <p className="text-xl font-semibold">{runs.length}</p>
+                  <p className="text-lg font-semibold">{runs.length}</p>
                 </div>
-                <div className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-xs text-muted-foreground">Passed</span>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                    <span className="text-[10px] text-muted-foreground">Passed</span>
                   </div>
-                  <p className="text-xl font-semibold text-emerald-600">{passed}</p>
+                  <p className="text-lg font-semibold text-emerald-600">{passed}</p>
                 </div>
-                <div className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <XCircle className="h-3.5 w-3.5 text-red-500" />
-                    <span className="text-xs text-muted-foreground">Failed</span>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <XCircle className="h-3 w-3 text-red-500" />
+                    <span className="text-[10px] text-muted-foreground">Failed</span>
                   </div>
-                  <p className="text-xl font-semibold text-red-500">{failed}</p>
+                  <p className="text-lg font-semibold text-red-500">{failed}</p>
                 </div>
-                <div className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-xs text-muted-foreground">Avg Turns</span>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <MessageSquare className="h-3 w-3 text-blue-500" />
+                    <span className="text-[10px] text-muted-foreground">Avg Turns</span>
                   </div>
-                  <p className="text-xl font-semibold">{avgTurns}</p>
+                  <p className="text-lg font-semibold">{avgTurns}</p>
                 </div>
-                <div className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="text-xs text-muted-foreground">Avg Duration</span>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <Clock className="h-3 w-3 text-amber-500" />
+                    <span className="text-[10px] text-muted-foreground">Avg Duration</span>
                   </div>
-                  <p className="text-xl font-semibold">{avgDuration ? `${avgDuration}s` : '-'}</p>
+                  <p className="text-lg font-semibold">{avgDuration ? `${avgDuration}s` : '-'}</p>
                 </div>
               </div>
               {/* Pass rate bar */}
-              <div className="px-4 pb-3">
+              <div className="px-3 pb-2">
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full transition-all"
                       style={{ width: `${passRate}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-muted-foreground">{passRate}%</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">{passRate}%</span>
                 </div>
               </div>
             </CardContent>
