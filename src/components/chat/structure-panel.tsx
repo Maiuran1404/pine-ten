@@ -16,6 +16,7 @@ import { DesignSpecView } from './design-spec-view'
 interface StructurePanelProps {
   structureType: StructureData['type'] | null
   structureData: StructureData | null
+  briefingStage?: string
   onSceneClick?: (scene: StoryboardScene) => void
   onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
