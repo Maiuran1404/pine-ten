@@ -201,9 +201,13 @@ function DimensionChips({
 function PropertiesGrid({
   keyElements,
   copyGuidance,
+  exactCopy,
+  layoutNotes,
 }: {
   keyElements: string[]
   copyGuidance: string
+  exactCopy?: string[]
+  layoutNotes?: string
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -240,6 +244,37 @@ function PropertiesGrid({
           <div className="border-l-2 border-primary/40 pl-3 py-1">
             <p className="text-xs text-muted-foreground italic leading-relaxed">{copyGuidance}</p>
           </div>
+        </div>
+      )}
+
+      {/* Exact Copy */}
+      {exactCopy && exactCopy.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Type className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Exact Copy</span>
+          </div>
+          <ul className="space-y-1">
+            {exactCopy.map((copy, i) => (
+              <li
+                key={i}
+                className="text-xs text-foreground border-l-2 border-blue-400/40 pl-2 py-0.5"
+              >
+                {copy}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Layout Notes */}
+      {layoutNotes && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Layout Notes</span>
+          </div>
+          <p className="text-xs text-muted-foreground italic leading-relaxed">{layoutNotes}</p>
         </div>
       )}
     </div>

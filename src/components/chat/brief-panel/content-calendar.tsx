@@ -133,6 +133,14 @@ function CalendarHeader({
                 className={cn('w-2 h-2 rounded-full', PILLAR_COLORS[i % PILLAR_COLORS.length])}
               />
               <span className="text-[10px] text-muted-foreground">{pillar.name}</span>
+              {pillar.visualIdentity && (
+                <span
+                  className="text-[9px] text-muted-foreground/60 truncate max-w-[120px]"
+                  title={pillar.visualIdentity}
+                >
+                  {pillar.visualIdentity}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -199,6 +207,16 @@ function PostNote({
           {post.engagementTrigger && (
             <p className="text-muted-foreground">
               <span className="font-medium">Trigger:</span> {post.engagementTrigger}
+            </p>
+          )}
+          {post.sampleCopy && (
+            <p className="text-muted-foreground line-clamp-3">
+              <span className="font-medium">Copy:</span> {post.sampleCopy}
+            </p>
+          )}
+          {post.captionHook && (
+            <p className="text-muted-foreground">
+              <span className="font-medium">Hook:</span> {post.captionHook}
             </p>
           )}
         </div>
