@@ -587,25 +587,39 @@ function DashboardContent() {
       )}
 
       {/* Main Content */}
-      <div className="flex flex-col items-center px-4 sm:px-6 pt-20 sm:pt-32 md:pt-40 pb-8">
+      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[calc(100vh-4rem)] pb-8">
         {/* Welcome Header */}
-        <div className="text-center mb-8 sm:mb-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-10 sm:mb-14"
+        >
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-3 tracking-[-0.02em]">
             Welcome back,{' '}
-            <span className="bg-gradient-to-r from-emerald-600 to-green-500 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
+            <motion.span
+              className="bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto]"
+              animate={{ backgroundPosition: ['0% center', '200% center'] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            >
               {userName}
-            </span>
+            </motion.span>
             !
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground">
-            What would you like to create{' '}
-            <span className="italic font-medium text-foreground">today</span>?
+          <p className="text-lg sm:text-xl text-muted-foreground font-light tracking-wide">
+            What would you like to create <span className="font-medium text-foreground">today</span>
+            ?
           </p>
-        </div>
+        </motion.div>
 
         {/* Main Input Card */}
-        <div className="w-full max-w-3xl mb-6 sm:mb-8">
-          <div className="bg-white dark:bg-card/60 backdrop-blur-xl rounded-2xl border border-border/40 shadow-xl shadow-black/5 overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-3xl mb-6 sm:mb-8"
+        >
+          <div className="bg-white dark:bg-card/60 backdrop-blur-xl rounded-3xl border border-border/40 ring-1 ring-black/[0.02] shadow-xl shadow-black/5 overflow-hidden transition-shadow duration-300 hover:shadow-emerald-500/[0.06]">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
               <div className="px-5 py-3 border-b border-border/30">
@@ -664,13 +678,13 @@ function DashboardContent() {
                     ? 'Add a message or just send...'
                     : 'Describe what you want to create...'
                 }
-                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base resize-none min-h-[32px] max-h-[150px]"
+                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base sm:text-lg leading-relaxed resize-none min-h-[48px] max-h-[150px]"
                 rows={1}
               />
             </div>
 
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-4 pt-2">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-4 pt-2 border-t border-border/20">
               {/* Left side - attachment icons and credits */}
               <div className="flex items-center gap-1">
                 <button
@@ -719,17 +733,22 @@ function DashboardContent() {
                 disabled={
                   isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
                 }
-                className="flex items-center justify-center px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+                className="flex items-center justify-center px-5 py-2.5 bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none min-w-[100px]"
               >
                 <span>Submit</span>
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Template System - Category Cards */}
-        <div className="w-full max-w-4xl mb-8 px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {/* Template System - Category Pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-3xl mb-8"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, description }]) => (
               <button
                 key={category}
@@ -738,24 +757,23 @@ function DashboardContent() {
                   setSelectedOption(null)
                   setModalNotes('')
                 }}
-                className="group flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl border-2 border-border/60 bg-white dark:bg-card/60 backdrop-blur-xl shadow-sm hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5 hover:border-emerald-500 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                className="group flex items-center gap-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.97] transition-all duration-200 cursor-pointer"
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-200">
-                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 transition-colors">
+                  <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <span className="font-semibold text-sm text-foreground mb-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                  {category}
-                </span>
-                <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
-                  {description}
-                </span>
-                <span className="mt-2 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wide">
-                  Select →
-                </span>
+                <div className="text-left">
+                  <span className="font-semibold text-sm text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                    {category}
+                  </span>
+                  <span className="hidden sm:inline text-xs text-muted-foreground ml-1.5">
+                    {description}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Category Options Modal */}
@@ -769,7 +787,7 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden bg-background rounded-2xl border-0 shadow-2xl">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-2xl rounded-3xl border-0 shadow-2xl">
           {selectedCategory &&
             (() => {
               const category =
@@ -812,7 +830,7 @@ function DashboardContent() {
                           }`}
                         >
                           {/* Image */}
-                          <div className="relative w-full h-24 overflow-hidden bg-muted/30">
+                          <div className="relative w-full h-28 overflow-hidden bg-muted/30">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={option.image}
@@ -908,7 +926,7 @@ function DashboardContent() {
                           }
                         }}
                         disabled={!selectedOption}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-2 bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:bg-muted disabled:from-muted disabled:to-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium shadow-md shadow-emerald-500/25 transition-all duration-200 text-sm disabled:cursor-not-allowed disabled:shadow-none"
                       >
                         Continue
                       </button>

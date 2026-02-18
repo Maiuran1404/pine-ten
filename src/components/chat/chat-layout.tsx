@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils'
 import { type ChatStage, type MoodboardItem } from './types'
 import { type LiveBrief } from './brief-panel/types'
 import { TopProgressBar } from './progress-stepper'
-import { CompactProgress } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel } from './structure-panel'
@@ -231,29 +230,16 @@ export function ChatLayout({
             {showRightPanel && (
               <AnimatePresence mode="wait">
                 {isRightPanelCollapsed ? (
-                  <motion.div
-                    key="collapsed"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 48, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="hidden lg:flex flex-col items-center py-4 gap-3 bg-card border-l border-border h-full"
-                  >
+                  <div key="collapsed" className="hidden lg:block relative">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="absolute top-3 right-3 h-8 w-8 z-10 bg-card shadow-sm"
                       onClick={() => setIsRightPanelCollapsed(false)}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <CompactProgress
-                      currentStage={currentStage}
-                      completedStages={completedStages}
-                      progressPercentage={progressPercentage}
-                      className="flex-col"
-                    />
-                  </motion.div>
+                  </div>
                 ) : (
                   <motion.div
                     key="expanded"
