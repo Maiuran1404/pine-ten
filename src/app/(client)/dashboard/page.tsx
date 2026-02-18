@@ -912,7 +912,7 @@ function DashboardContent() {
                   setSelectedOption(null)
                   setModalNotes('')
                 }}
-                className="group relative w-[140px] h-[90px] rounded-xl overflow-hidden border border-white/10 dark:border-white/5 shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
+                className="group relative w-[120px] h-[72px] rounded-lg overflow-hidden border border-white/10 dark:border-white/5 shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -941,50 +941,52 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-2xl rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-2xl border border-border/30 shadow-2xl shadow-black/10 bg-[#f8f7f3] dark:bg-zinc-900">
           {selectedCategory &&
             (() => {
               const category =
                 TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]
               const Icon = category?.icon
               const optionCount = category?.options.length || 0
-              // Responsive grid: 1 col on mobile, 2-3 cols on larger screens
-              // 6 options = 3 cols (2 rows), 3 options = 3 cols (1 row), 2 options = 2 cols
               const gridCols =
-                optionCount >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
+                optionCount >= 4
+                  ? 'grid-cols-2 sm:grid-cols-3'
+                  : optionCount >= 3
+                    ? 'grid-cols-1 sm:grid-cols-3'
+                    : 'grid-cols-1 sm:grid-cols-2'
               return (
                 <>
                   {/* Header */}
-                  <div className="px-6 pt-6 pb-2">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/25">
-                        {Icon && <Icon className="h-5 w-5 text-white" />}
+                  <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+                        {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
                       </div>
-                      <DialogTitle className="text-lg font-semibold text-foreground">
+                      <DialogTitle className="text-base font-semibold text-foreground tracking-tight">
                         {selectedCategory}
                       </DialogTitle>
                     </div>
-                    <p className="text-sm text-muted-foreground pl-[52px]">
+                    <p className="text-[13px] text-muted-foreground leading-relaxed pl-12">
                       {category?.modalDescription}
                     </p>
                   </div>
 
                   {/* Options Grid */}
-                  <div className={`px-5 py-4 grid ${gridCols} gap-3`}>
+                  <div className={`px-5 pb-4 grid ${gridCols} gap-2.5`}>
                     {category?.options.map((option, index) => {
                       const isSelected = selectedOption === option.title
                       return (
                         <button
                           key={index}
                           onClick={() => setSelectedOption(isSelected ? null : option.title)}
-                          className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left border-2 h-full overflow-hidden ${
+                          className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left h-full overflow-hidden ring-1 ring-inset ${
                             isSelected
-                              ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 shadow-md shadow-emerald-500/10'
-                              : 'border-border/50 hover:border-emerald-500/40 hover:bg-muted/20'
+                              ? 'ring-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm'
+                              : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-emerald-500/50 hover:shadow-sm'
                           }`}
                         >
                           {/* Image */}
-                          <div className="relative w-full h-28 overflow-hidden bg-muted/30">
+                          <div className="relative w-full h-24 overflow-hidden bg-muted/20">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={option.image}
@@ -993,14 +995,13 @@ function DashboardContent() {
                                 isSelected ? 'scale-105' : 'group-hover:scale-105'
                               }`}
                             />
-                            {/* Gradient overlay for better text contrast */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                            {/* Selection indicator */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                            {/* Check */}
                             <div
-                              className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 backdrop-blur-sm ${
+                              className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
                                 isSelected
-                                  ? 'border-emerald-500 bg-emerald-500'
-                                  : 'border-white/60 bg-white/20'
+                                  ? 'border-emerald-500 bg-emerald-500 scale-100'
+                                  : 'border-white/50 bg-black/10 backdrop-blur-sm scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
                               }`}
                             >
                               {isSelected && (
@@ -1023,7 +1024,7 @@ function DashboardContent() {
                           {/* Content */}
                           <div className="p-3 flex-1 flex flex-col">
                             <h3
-                              className={`font-semibold text-sm mb-1.5 transition-colors ${
+                              className={`font-semibold text-[13px] mb-1 transition-colors ${
                                 isSelected
                                   ? 'text-emerald-700 dark:text-emerald-400'
                                   : 'text-foreground'
@@ -1031,7 +1032,7 @@ function DashboardContent() {
                             >
                               {option.title}
                             </h3>
-                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                            <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
                               {option.description}
                             </p>
                           </div>
@@ -1040,9 +1041,9 @@ function DashboardContent() {
                     })}
                   </div>
 
-                  {/* Notes Input Section */}
-                  <div className="px-5 pb-5 pt-1">
-                    <div className="relative">
+                  {/* Notes + Continue */}
+                  <div className="px-5 pb-5 pt-1 border-t border-border/20">
+                    <div className="relative mt-3">
                       <input
                         type="text"
                         value={modalNotes}
@@ -1062,7 +1063,7 @@ function DashboardContent() {
                           }
                         }}
                         placeholder="Add any specific details or requirements..."
-                        className="w-full h-12 px-4 pr-32 rounded-xl border border-border/60 bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 text-sm transition-all"
+                        className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 text-sm transition-all"
                       />
                       <button
                         onClick={() => {
@@ -1080,7 +1081,7 @@ function DashboardContent() {
                           }
                         }}
                         disabled={!selectedOption}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-2 bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:bg-muted disabled:from-muted disabled:to-muted disabled:text-muted-foreground/50 text-white rounded-lg font-medium shadow-md shadow-emerald-500/25 transition-all duration-200 text-sm disabled:cursor-not-allowed disabled:shadow-none"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
                       >
                         Continue
                       </button>
