@@ -98,12 +98,45 @@ function PlaceholderState({ structureType }: { structureType: StructureData['typ
 }
 
 // =============================================================================
+// ELABORATION PROGRESS HELPER
+// =============================================================================
+
+function getElaborationProgress(data: StructureData): { done: number; total: number } {
+  switch (data.type) {
+    case 'storyboard': {
+      const total = data.scenes.length
+      const done = data.scenes.filter((s) => s.fullScript || s.directorNotes).length
+      return { done, total }
+    }
+    case 'layout': {
+      const total = data.sections.length
+      const done = data.sections.filter((s) => s.headline || s.draftContent).length
+      return { done, total }
+    }
+    case 'calendar': {
+      const total = data.outline.contentPillars.length
+      const done = data.outline.contentPillars.filter((p) => p.visualIdentity).length
+      return { done, total }
+    }
+    case 'single_design': {
+      const spec = data.specification
+      const hasExactCopy = spec.exactCopy && spec.exactCopy.length > 0
+      const hasLayoutNotes = !!spec.layoutNotes
+      return { done: (hasExactCopy ? 1 : 0) + (hasLayoutNotes ? 1 : 0), total: 2 }
+    }
+    default:
+      return { done: 0, total: 0 }
+  }
+}
+
+// =============================================================================
 // MAIN STRUCTURE PANEL
 // =============================================================================
 
 export function StructurePanel({
   structureType,
   structureData,
+  briefingStage,
   onSceneClick,
   onMultiSceneFeedback,
   onSceneEdit,
