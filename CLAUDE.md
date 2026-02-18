@@ -140,13 +140,15 @@ Only skip planning for trivial single-line fixes (typos, obvious bugs, small twe
 | `test-writer`      | Generate co-located Vitest tests               |
 | `db-migration`     | Safe schema → generate → review → migrate flow |
 | `refactor`         | DRY refactoring with project conventions       |
+| `perf-analyzer`    | Performance audit — config/infra only, no code |
 
-| Command        | Purpose                                   |
-| -------------- | ----------------------------------------- |
-| `/review`      | Review staged changes                     |
-| `/deep-review` | Deep review with security + perf analysis |
-| `/validate`    | Run full validation suite with summary    |
-| `/fix-types`   | Find and fix TypeScript errors            |
+| Command        | Purpose                                        |
+| -------------- | ---------------------------------------------- |
+| `/review`      | Review staged changes                          |
+| `/deep-review` | Deep review with security + perf analysis      |
+| `/validate`    | Run full validation suite with summary         |
+| `/fix-types`   | Find and fix TypeScript errors                 |
+| `/perf-audit`  | Run performance audit (config & infra focused) |
 
 ## Sub-Agent Dispatch Rules
 
