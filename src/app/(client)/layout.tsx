@@ -5,8 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/dashboard/sidebar'
 import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
-import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -90,25 +89,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       >
         <AppSidebar />
         <SidebarInset className="bg-transparent">
-          {/* Infinite Grid Background - covers entire viewport */}
-          <InfiniteGrid
-            gridSize={45}
-            speedX={0.2}
-            speedY={0.2}
-            spotlightRadius={280}
-            backgroundOpacity={0.04}
-            highlightOpacity={0.12}
-            showBlurSpheres={true}
-            sphereColors={['#A8D5BA', '#9AA48C', '#C5E8D5']}
-            sphereOpacity={0.25}
-            sphereBlur={180}
-            className="!fixed inset-0"
-          />
-          {/* Sidebar trigger - always visible */}
-          <div className="sticky top-0 z-30 p-2">
-            <SidebarTrigger />
-          </div>
-          <main className="relative z-10 flex-1 overflow-auto">{children}</main>
+          <main className="relative flex-1 overflow-auto">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </CreditProvider>

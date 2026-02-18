@@ -443,71 +443,138 @@ function DashboardContent() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Animated texture background */}
+      {/* Organic nature background */}
       <style jsx>{`
-        @keyframes drift1 {
+        @keyframes float1 {
           0%,
           100% {
-            transform: translate(0%, 0%) scale(1);
+            transform: translate(0, 0) rotate(0deg) scale(1);
           }
-          25% {
-            transform: translate(5%, 8%) scale(1.05);
+          33% {
+            transform: translate(3%, 5%) rotate(1deg) scale(1.02);
           }
-          50% {
-            transform: translate(-3%, 5%) scale(0.95);
-          }
-          75% {
-            transform: translate(8%, -3%) scale(1.02);
+          66% {
+            transform: translate(-2%, 3%) rotate(-0.5deg) scale(0.99);
           }
         }
-        @keyframes drift2 {
+        @keyframes float2 {
           0%,
           100% {
-            transform: translate(0%, 0%) scale(1);
+            transform: translate(0, 0) rotate(0deg) scale(1);
           }
-          25% {
-            transform: translate(-8%, 5%) scale(1.03);
+          33% {
+            transform: translate(-4%, -3%) rotate(-1deg) scale(1.01);
           }
-          50% {
-            transform: translate(5%, -8%) scale(0.97);
-          }
-          75% {
-            transform: translate(-5%, 3%) scale(1.05);
+          66% {
+            transform: translate(2%, -5%) rotate(0.5deg) scale(1.03);
           }
         }
-        @keyframes drift3 {
+        @keyframes float3 {
           0%,
           100% {
-            transform: translate(0%, 0%) scale(1.02);
-          }
-          25% {
-            transform: translate(6%, -6%) scale(0.98);
+            transform: translate(0, 0) scale(1);
           }
           50% {
-            transform: translate(-4%, 7%) scale(1.04);
+            transform: translate(5%, 2%) scale(1.04);
+          }
+        }
+        @keyframes float4 {
+          0%,
+          100% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          25% {
+            transform: translate(-3%, 4%) rotate(0.5deg);
+          }
+          50% {
+            transform: translate(1%, -2%) rotate(-0.5deg);
           }
           75% {
-            transform: translate(3%, 5%) scale(0.96);
+            transform: translate(4%, 1%) rotate(0.3deg);
+          }
+        }
+        @keyframes float5 {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translate(-2%, 3%) scale(1.02);
+            opacity: 1;
           }
         }
       `}</style>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[#f8f8f6] dark:bg-[#0a0a0f]" />
+        {/* Base warm tone */}
+        <div className="absolute inset-0 bg-[#f5f3ec] dark:bg-[#0b0d0f]" />
+
+        {/* Large sage-green wash — top left canopy */}
         <div
-          className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-[radial-gradient(circle,_rgba(168,200,175,0.25)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(30,40,55,0.8)_0%,_transparent_70%)] blur-[80px]"
-          style={{ animation: 'drift1 25s ease-in-out infinite' }}
+          className="absolute -top-[20%] -left-[15%] w-[90%] h-[85%] rounded-[40%_60%_55%_45%/50%_40%_60%_50%]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 40% 40%, rgba(140,190,130,0.35) 0%, rgba(160,200,150,0.18) 40%, transparent 70%)',
+            animation: 'float1 45s ease-in-out infinite',
+          }}
         />
+
+        {/* Warm golden bloom — morning sunlight */}
         <div
-          className="absolute -bottom-[15%] -right-[10%] w-[65%] h-[65%] rounded-full bg-[radial-gradient(circle,_rgba(180,195,170,0.2)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(20,30,50,0.7)_0%,_transparent_70%)] blur-[80px]"
-          style={{ animation: 'drift2 30s ease-in-out infinite' }}
+          className="absolute top-[5%] right-[-10%] w-[70%] h-[65%] rounded-[55%_45%_50%_50%/45%_55%_45%_55%]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 60% 50%, rgba(230,200,130,0.3) 0%, rgba(220,190,120,0.12) 50%, transparent 75%)',
+            animation: 'float2 55s ease-in-out infinite',
+          }}
         />
+
+        {/* Deep emerald — lower foliage */}
         <div
-          className="absolute top-[20%] right-[5%] w-[50%] h-[50%] rounded-full bg-[radial-gradient(circle,_rgba(195,210,185,0.15)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(15,25,45,0.6)_0%,_transparent_70%)] blur-[100px]"
-          style={{ animation: 'drift3 35s ease-in-out infinite' }}
+          className="absolute bottom-[-15%] left-[0%] w-[80%] h-[60%] rounded-[45%_55%_60%_40%/55%_45%_50%_50%]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 60%, rgba(100,170,120,0.28) 0%, rgba(120,180,130,0.1) 45%, transparent 70%)',
+            animation: 'float3 60s ease-in-out infinite',
+          }}
         />
+
+        {/* Soft mint accent — mid-page organic detail */}
         <div
-          className="absolute -bottom-[25%] left-[15%] w-[55%] h-[55%] rounded-full bg-[radial-gradient(circle,_rgba(160,185,165,0.18)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(25,20,50,0.5)_0%,_transparent_70%)] blur-[90px]"
-          style={{ animation: 'drift1 40s ease-in-out infinite reverse' }}
+          className="absolute top-[35%] left-[25%] w-[50%] h-[45%] rounded-[50%_50%_45%_55%/45%_55%_50%_50%]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 45% 50%, rgba(150,210,170,0.22) 0%, transparent 65%)',
+            animation: 'float4 50s ease-in-out infinite',
+          }}
+        />
+
+        {/* Warm peach bloom — like afternoon light */}
+        <div
+          className="absolute top-[2%] left-[45%] w-[45%] h-[35%] rounded-[50%]"
+          style={{
+            background: 'radial-gradient(circle, rgba(240,200,150,0.25) 0%, transparent 60%)',
+            animation: 'float5 35s ease-in-out infinite',
+          }}
+        />
+
+        {/* Bottom-right warm glow */}
+        <div
+          className="absolute bottom-[0%] right-[-5%] w-[55%] h-[50%] rounded-[50%_50%_40%_60%/40%_60%_50%_50%]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 60% 60%, rgba(200,180,130,0.2) 0%, transparent 65%)',
+            animation: 'float1 65s ease-in-out infinite reverse',
+          }}
+        />
+
+        {/* Grain overlay for organic texture */}
+        <div
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: '128px 128px',
+          }}
         />
       </div>
 
@@ -653,55 +720,46 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[70vh] pb-8">
+      {/* Main Content — vertically centered like Cardboard */}
+      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[calc(100vh-3rem)] pb-12">
         {/* Welcome Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center mb-10 sm:mb-14"
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-6"
         >
-          <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-semibold text-foreground mb-3 tracking-tight leading-tight">
-            Welcome back,{' '}
-            <motion.span
-              className="bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto]"
-              animate={{ backgroundPosition: ['0% center', '200% center'] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-            >
-              {userName}
-            </motion.span>
-            !
+          <h1 className="text-[1.7rem] sm:text-[2rem] font-medium text-foreground tracking-[-0.01em] leading-snug">
+            What are we creating today, {userName}?
           </h1>
-          <p className="text-base sm:text-lg text-muted-foreground">
-            What would you like to create <span className="font-medium text-foreground">today</span>
-            ?
+          <p className="text-[0.95rem] text-muted-foreground mt-2">
+            Bring in your ideas and let&apos;s get started.
           </p>
         </motion.div>
 
         {/* Main Input Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-3xl mb-6 sm:mb-8"
+          transition={{ duration: 0.6, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[780px] mb-3"
         >
-          <div className="bg-white dark:bg-card/60 backdrop-blur-xl rounded-3xl border border-border/40 ring-1 ring-black/[0.02] shadow-xl shadow-black/5 overflow-hidden transition-shadow duration-300 hover:shadow-emerald-500/[0.06]">
+          <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
-              <div className="px-5 py-3 border-b border-border/30">
+              <div className="px-4 py-3 border-b border-border/30">
                 <div className="flex flex-wrap gap-2">
                   {uploadedFiles.filter(Boolean).map((file) => (
                     <div
                       key={file.fileUrl}
-                      className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/50"
+                      className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
                     >
                       {file.fileType?.startsWith('image/') ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={file.fileUrl}
                           alt={file.fileName}
-                          className="h-6 w-6 rounded object-cover"
+                          className="h-5 w-5 rounded object-cover"
                         />
                       ) : (
                         <span className="[&>svg]:h-4 [&>svg]:w-4">
@@ -725,7 +783,7 @@ function DashboardContent() {
             )}
 
             {/* Text Input Area */}
-            <div className="px-5 sm:px-6 pt-5 pb-3">
+            <div className="px-4 sm:px-5 pt-4 pb-2">
               <textarea
                 ref={inputRef}
                 value={chatInput}
@@ -745,42 +803,46 @@ function DashboardContent() {
                     ? 'Add a message or just send...'
                     : 'Describe what you want to create...'
                 }
-                className="w-full bg-transparent py-1 text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base sm:text-lg leading-relaxed resize-none min-h-[48px] max-h-[150px]"
+                className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-[0.95rem] leading-relaxed resize-none min-h-[40px] max-h-[150px]"
                 rows={1}
               />
             </div>
 
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-4 pt-2 border-t border-border/20">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-3 pt-1">
               {/* Left side - attachment icons and credits */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Attach file"
                 >
-                  {isUploading ? <LoadingSpinner size="sm" /> : <Paperclip className="h-5 w-5" />}
+                  {isUploading ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Paperclip className="h-[18px] w-[18px]" />
+                  )}
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
                   title="Add image"
                 >
-                  <ImageIcon className="h-5 w-5" />
+                  <ImageIcon className="h-[18px] w-[18px]" />
                 </button>
 
-                <div className="w-px h-5 bg-border/60 mx-2" />
+                <div className="w-px h-4 bg-border/50 mx-2" />
 
                 {/* Credits indicator */}
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   {isLoadingCredits ? (
-                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3.5 w-24" />
                   ) : (
                     <>
                       <span
-                        className={`w-2 h-2 rounded-full ${
+                        className={`w-1.5 h-1.5 rounded-full ${
                           credits === 0
                             ? 'bg-red-500'
                             : credits <= 2
@@ -788,34 +850,60 @@ function DashboardContent() {
                               : 'bg-emerald-500'
                         }`}
                       />
-                      <span>{credits} credits available</span>
+                      <span>{credits} credits</span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Right side - Submit */}
+              {/* Right side - Submit arrow */}
               <button
                 onClick={() => handleSubmit()}
                 disabled={
                   isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
                 }
-                className="flex items-center justify-center px-5 py-2.5 bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none min-w-[100px]"
+                className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                <span>Submit</span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
               </button>
             </div>
           </div>
+
+          {/* Drag and drop hint */}
+          <p className="text-center text-xs text-muted-foreground/60 mt-2.5">
+            Drag and drop or{' '}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
+            >
+              click here
+            </button>{' '}
+            to add your images, videos or files.
+          </p>
         </motion.div>
 
-        {/* Template System - Compact Horizontal Pills */}
+        {/* Template Pills */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-3xl mb-8"
+          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[640px] mt-4"
         >
-          <div className="flex items-center justify-center gap-2">
+          <p className="text-center text-xs text-muted-foreground/60 mb-3">
+            or choose from one of these
+          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => (
               <button
                 key={category}
@@ -824,10 +912,10 @@ function DashboardContent() {
                   setSelectedOption(null)
                   setModalNotes('')
                 }}
-                className="group flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 bg-white/60 dark:bg-card/40 backdrop-blur-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 rounded-xl border border-border/40 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800/80 hover:border-border hover:shadow-sm active:scale-[0.97] transition-all duration-150 cursor-pointer"
               >
-                <Icon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-medium text-xs text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors whitespace-nowrap">
+                <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
+                <span className="font-medium text-xs text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
                   {category}
                 </span>
               </button>
@@ -999,7 +1087,7 @@ function DashboardContent() {
       </Dialog>
 
       {/* Inspiration Gallery - Grouped by Content Type */}
-      {(isLoadingStyles || styleReferences.length > 0) && (
+      {styleReferences.length > 0 && (
         <div className="relative w-full pt-8">
           {/* Explore divider - editorial style */}
           <div className="flex items-center gap-4 max-w-7xl mx-auto px-4 sm:px-6 mb-10">
@@ -1159,18 +1247,19 @@ function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 pb-8">
-      <div className="text-center mb-10 sm:mb-14">
-        <Skeleton className="h-10 w-72 mx-auto mb-3" />
-        <Skeleton className="h-5 w-52 mx-auto" />
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3rem)] px-6 pb-12">
+      <div className="text-center mb-6">
+        <Skeleton className="h-8 w-80 mx-auto mb-2" />
+        <Skeleton className="h-4 w-56 mx-auto" />
       </div>
-      <Skeleton className="h-36 w-full max-w-3xl rounded-3xl mb-6" />
-      <div className="flex gap-2.5 overflow-hidden mb-12">
-        <Skeleton className="h-11 w-40 rounded-2xl shrink-0" />
-        <Skeleton className="h-11 w-36 rounded-2xl shrink-0" />
-        <Skeleton className="h-11 w-32 rounded-2xl shrink-0" />
-        <Skeleton className="h-11 w-38 rounded-2xl shrink-0" />
-        <Skeleton className="h-11 w-40 rounded-2xl shrink-0" />
+      <Skeleton className="h-28 w-full max-w-[640px] rounded-2xl mb-3" />
+      <Skeleton className="h-3.5 w-64 mx-auto mb-6" />
+      <div className="flex gap-2 flex-wrap justify-center">
+        <Skeleton className="h-9 w-32 rounded-xl" />
+        <Skeleton className="h-9 w-28 rounded-xl" />
+        <Skeleton className="h-9 w-24 rounded-xl" />
+        <Skeleton className="h-9 w-30 rounded-xl" />
+        <Skeleton className="h-9 w-32 rounded-xl" />
       </div>
     </div>
   )

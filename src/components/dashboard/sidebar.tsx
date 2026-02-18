@@ -57,7 +57,7 @@ export function AppSidebar() {
     return (
       <Sidebar
         collapsible="icon"
-        className="border-r-0 bg-white dark:bg-zinc-950"
+        className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm"
         style={{ fontFamily: "'Satoshi', sans-serif" }}
       >
         <SidebarHeader className="p-2 flex items-center justify-center">
@@ -112,7 +112,7 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r-0 bg-white dark:bg-zinc-950 w-64"
+      className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm w-64"
       style={{ fontFamily: "'Satoshi', sans-serif" }}
     >
       {/* Logo and collapse toggle */}
