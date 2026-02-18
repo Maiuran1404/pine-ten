@@ -75,7 +75,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <CreditProvider>
       <SidebarProvider
-        defaultOpen={true}
+        defaultOpen={false}
         className=""
         style={
           {
