@@ -249,9 +249,11 @@ ${audiences
     } | null
     return `${i + 1}. ${a.name}${a.isPrimary ? ' (primary)' : ''}
    - Demographics: ${
-     demographics?.locations?.join(', ') || demographics?.ageRange
-       ? `${demographics.ageRange?.min}-${demographics.ageRange?.max}`
-       : 'Not specified'
+     demographics?.locations?.length
+       ? demographics.locations.join(', ')
+       : demographics?.ageRange?.min != null && demographics?.ageRange?.max != null
+         ? `${demographics.ageRange.min}-${demographics.ageRange.max}`
+         : 'Not specified'
    }
    - Pain points: ${psychographics?.painPoints?.join(', ') || 'Not specified'}
    - Goals: ${psychographics?.goals?.join(', ') || 'Not specified'}`

@@ -524,7 +524,7 @@ export async function getVideoReferencesForChat(
     subStyle: video.subStyle,
     semanticTags: video.semanticTags || [],
     brandMatchScore: video.calculatedScore,
-    matchReason: video.matchReasons[0],
+    matchReason: video.matchReasons?.[0] || 'Video style reference',
     isVideoReference: true as const,
   }))
 }
