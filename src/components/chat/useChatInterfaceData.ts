@@ -1023,6 +1023,7 @@ export function useChatInterfaceData({
       setMessages((prev) => [...prev, userMessage])
       setInput('')
       setIsLoading(true)
+      setLastSendError(null)
 
       try {
         const response = await fetch('/api/chat', {
@@ -1080,6 +1081,7 @@ export function useChatInterfaceData({
 
         if (data.taskProposal) setPendingTask(data.taskProposal)
       } catch {
+        setLastSendError('Failed to send message. Please try again.')
         toast.error('Failed to send message. Please try again.')
       } finally {
         setIsLoading(false)
