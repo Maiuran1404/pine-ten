@@ -429,14 +429,18 @@ export function StoryboardPanel({
 function SceneThumbnail({
   scene,
   index,
+  sceneImageUrl,
   getImageUrl,
 }: {
   scene: StoryboardScene
   index: number
+  sceneImageUrl?: string
   getImageUrl?: (imageId: string) => string
 }) {
   const imageId = scene.referenceImageIds?.[0]
-  const imageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
+  const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
+  // Prefer Pexels scene image, fall back to reference image
+  const imageUrl = sceneImageUrl || refImageUrl
   const gradient = getSceneGradient(index)
 
   return (
@@ -480,6 +484,7 @@ function RichSceneCard({
   onSceneEdit: _onSceneEdit,
   onRegenerateScene,
   onRegenerateField: _onRegenerateField,
+  sceneImageUrl,
   getImageUrl,
 }: {
   scene: StoryboardScene
@@ -491,6 +496,7 @@ function RichSceneCard({
   onSceneEdit?: (field: string, value: string) => void
   onRegenerateScene?: () => void
   onRegenerateField?: (field: string) => void
+  sceneImageUrl?: string
   getImageUrl?: (imageId: string) => string
 }) {
   const durSeconds = parseDurationSeconds(scene.duration)
@@ -508,7 +514,12 @@ function RichSceneCard({
     >
       {/* Thumbnail area with overlaid controls */}
       <div className="relative">
-        <SceneThumbnail scene={scene} index={index} getImageUrl={getImageUrl} />
+        <SceneThumbnail
+          scene={scene}
+          index={index}
+          sceneImageUrl={sceneImageUrl}
+          getImageUrl={getImageUrl}
+        />
 
         {/* Selected checkmark badge — top-left */}
         {isSelected && (
@@ -615,6 +626,7 @@ function RichSceneCard({
 interface RichStoryboardPanelProps {
   scenes: StoryboardScene[]
   className?: string
+  sceneImageUrls?: Map<number, string>
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
@@ -627,6 +639,7 @@ interface RichStoryboardPanelProps {
 export function RichStoryboardPanel({
   scenes,
   className,
+  sceneImageUrls,
   onSelectionChange,
   onSceneEdit,
   onRegenerateStoryboard,
@@ -723,11 +736,26 @@ export function RichStoryboardPanel({
                 onRegenerateField={
                   onRegenerateField ? (field) => onRegenerateField(scene, field) : undefined
                 }
+                sceneImageUrl={sceneImageUrls?.get(scene.sceneNumber)}
                 getImageUrl={getImageUrl}
               />
             </motion.div>
           ))}
         </div>
+
+        {/* Pexels attribution — shown when any scene has a Pexels image */}
+        {sceneImageUrls && sceneImageUrls.size > 0 && (
+          <div className="px-3 pb-3 pt-1 text-center">
+            <a
+              href="https://www.pexels.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            >
+              Photos provided by Pexels
+            </a>
+          </div>
+        )}
       </ScrollArea>
     </div>
   )

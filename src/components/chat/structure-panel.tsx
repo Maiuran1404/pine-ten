@@ -17,6 +17,7 @@ interface StructurePanelProps {
   structureType: StructureData['type'] | null
   structureData: StructureData | null
   briefingStage?: string
+  sceneImageUrls?: Map<number, string>
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
@@ -137,6 +138,7 @@ export function StructurePanel({
   structureType,
   structureData,
   briefingStage,
+  sceneImageUrls,
   onSceneClick,
   onSelectionChange,
   onSceneEdit,
@@ -194,6 +196,7 @@ export function StructurePanel({
       {structureData.type === 'storyboard' && (
         <RichStoryboardPanel
           scenes={structureData.scenes}
+          sceneImageUrls={sceneImageUrls}
           onSceneClick={onSceneClick}
           onSelectionChange={onSelectionChange}
           onSceneEdit={onSceneEdit}

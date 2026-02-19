@@ -48,6 +48,8 @@ interface ChatLayoutProps {
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
+  // Scene image URLs from Pexels
+  sceneImageUrls?: Map<number, string>
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
   // Optional customization
@@ -92,6 +94,7 @@ export function ChatLayout({
   onRegenerateScene,
   onRegenerateField,
   onSectionReorder,
+  sceneImageUrls,
   viewStructureRef,
   showProgress = true,
   showMoodboard = true,
@@ -159,6 +162,7 @@ export function ChatLayout({
               <StructurePanel
                 structureType={structureType ?? null}
                 structureData={structureData ?? null}
+                sceneImageUrls={sceneImageUrls}
                 onSceneClick={onSceneClick}
                 onSelectionChange={onSceneSelectionChange}
                 onSceneEdit={onSceneEdit}
@@ -176,6 +180,7 @@ export function ChatLayout({
                   <StructurePanel
                     structureType={structureType ?? null}
                     structureData={structureData ?? null}
+                    sceneImageUrls={sceneImageUrls}
                     onSceneClick={onSceneClick}
                     onSelectionChange={onSceneSelectionChange}
                     onSceneEdit={onSceneEdit}

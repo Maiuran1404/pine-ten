@@ -1078,6 +1078,7 @@ export function useChatInterfaceData({
       serializedBriefingState,
       syncBriefingFromServer,
       setStoryboardScenes,
+      processSceneImageMatches,
     ]
   )
 
