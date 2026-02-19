@@ -242,6 +242,12 @@ export function getDimensionsForPlatform(
     if (contentDims) return contentDims
   }
 
+  // For web platform without specific content type, default to hero dimensions
+  // (not ad banners which are only relevant for actual ad/banner requests)
+  if (platform === 'web') {
+    return platformDims['hero'] || []
+  }
+
   // Otherwise, return all dimensions for the platform (flattened, unique)
   const allDims: Dimension[] = []
   const seen = new Set<string>()
