@@ -462,13 +462,15 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, '')
     .replace(/\[SEARCH_STYLES: [^\]]+\]/g, '')
     .replace(/\[REFINE_STYLE: [^\]]+\]/g, '')
-    .replace(/\[ASSET_REQUEST\][\s\S]*?(?:\[\/ASSET_REQUEST\]|$)/g, '')
+    .replace(/\[ASSET_REQUEST\][\s\S]*?\[\/ASSET_REQUEST\]/g, '')
     .replace(/\[\/ASSET_REQUEST\]/g, '') // Orphaned closing tags
-    .replace(/\[QUICK_OPTIONS\][\s\S]*?(?:\[\/QUICK_OPTIONS\]|$)/g, '')
+    .replace(/\[ASSET_REQUEST\][^\n]*$/gm, '') // Unclosed at end of line
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
     .replace(/\[\/QUICK_OPTIONS\]/g, '') // Orphaned closing tags
-    .replace(/\[QUICK_OPTIONS[^\]]*$/gm, '') // Truncated opening tags at end of line
+    .replace(/\[QUICK_OPTIONS\][^\n]*$/gm, '') // Unclosed at end of line
     .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
     .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
+    .replace(/\[BRIEF_META\][^\n]*$/gm, '') // Unclosed at end of line
     .trim()
 
   // ========================================================================
