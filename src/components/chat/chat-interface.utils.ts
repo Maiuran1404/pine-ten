@@ -132,6 +132,15 @@ export function constructTaskFromConversation(messages: Message[]): TaskProposal
   let baseTitle = ''
 
   if (
+    contentLower.includes('calendar') ||
+    contentLower.includes('content plan') ||
+    contentLower.includes('posting schedule') ||
+    contentLower.includes('content schedule')
+  ) {
+    baseTitle = 'Content Calendar'
+  } else if (contentLower.includes('landing page') || contentLower.includes('landing-page')) {
+    baseTitle = 'Landing Page'
+  } else if (
     contentLower.includes('feature') &&
     (contentLower.includes('video') || contentLower.includes('explainer'))
   ) {
