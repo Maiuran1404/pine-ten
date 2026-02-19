@@ -382,12 +382,13 @@ If you have an open question about the primary action or audience, ask it before
   switch (category) {
     case 'video':
       return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
-- Generate 3-5 scenes. Scene 1 MUST have a hook with persona + pain metric.
+- Generate 4-6 scenes. Scene 1 MUST have a hook with persona + pain metric.
+- DURATION REQUIREMENT: The total video duration must be 30-60 seconds. Distribute scene durations so they sum to at least 30 seconds. Typical scene durations are 5-10 seconds each.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
 - Do NOT include imageSearchTerms yet. Images will be added after the inspiration stage.
 - Create a first-draft storyboard based on what you know so far. The user can edit individual scenes and regenerate parts later.
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"6s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]
 OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.`
     case 'website':
       return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
