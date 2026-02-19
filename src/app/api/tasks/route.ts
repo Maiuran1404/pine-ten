@@ -11,7 +11,7 @@ import {
   taskOffers,
   freelancerProfiles,
 } from '@/db/schema'
-import { eq, desc, and, sql, count, inArray, like } from 'drizzle-orm'
+import { eq, ne, desc, and, sql, count, inArray, like } from 'drizzle-orm'
 import {
   notify,
   adminNotifications,
@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
         if (rankedArtists.length > 0) {
           bestArtist = rankedArtists[0]
         } else {
-          // Fallback: Get ANY approved freelancer (ignore availability)
+          // Fallback: Get an approved freelancer (exclude client, non-vacation, by rating)
           const [fallbackArtist] = await tx
             .select({
               userId: freelancerProfiles.userId,
@@ -343,7 +343,15 @@ export async function POST(request: NextRequest) {
             })
             .from(freelancerProfiles)
             .innerJoin(users, eq(freelancerProfiles.userId, users.id))
-            .where(eq(freelancerProfiles.status, 'APPROVED'))
+            .where(
+              and(
+                eq(freelancerProfiles.status, 'APPROVED'),
+                ne(freelancerProfiles.userId, session.user.id),
+                eq(users.role, 'FREELANCER'),
+                eq(freelancerProfiles.vacationMode, false)
+              )
+            )
+            .orderBy(desc(freelancerProfiles.rating))
             .limit(1)
 
           if (fallbackArtist) {
