@@ -390,6 +390,11 @@ export function ChatMessageList({
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
   structurePanelVisible = false,
+  onInlineUpload,
+  isUploading = false,
+  uploadedFiles = [],
+  onRemoveUploadedFile,
+  onAddExternalLink,
 }: ChatMessageListProps) {
   const handleTypingComplete = useCallback(
     (messageId: string) => {
