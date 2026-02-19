@@ -1358,7 +1358,7 @@ export function useChatInterfaceData({
   }, [])
 
   const handleRequestTaskSummary = useCallback(async () => {
-    if (isLoading) return
+    if (isLoading || pendingTask) return
 
     setShowManualSubmit(false)
     setHasRequestedTaskSummary(true)
