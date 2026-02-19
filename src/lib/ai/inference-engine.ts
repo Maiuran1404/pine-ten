@@ -1012,11 +1012,23 @@ export function generateTaskSummary(inference: InferenceResult): string {
       .trim()
 
     if (cleanTopic.length > 3 && cleanTopic.length < 50) {
-      const formattedTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1)
-      if (parts.length > 0) {
-        parts.push(`- ${formattedTopic}`)
-      } else {
-        parts.push(formattedTopic)
+      // Skip if topic is redundant with existing parts (e.g., "Video" when "Video" already present)
+      const existingLower = parts.join(' ').toLowerCase()
+      const topicLower = cleanTopic.toLowerCase()
+      const isRedundant =
+        existingLower.includes(topicLower) ||
+        topicLower === 'video' ||
+        topicLower === 'content' ||
+        topicLower === 'platform' ||
+        topicLower === 'post'
+
+      if (!isRedundant) {
+        const formattedTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1)
+        if (parts.length > 0) {
+          parts.push(`- ${formattedTopic}`)
+        } else {
+          parts.push(formattedTopic)
+        }
       }
     }
   }
@@ -1296,7 +1308,23 @@ function extractTopicFallback(message: string): string | null {
       const captured = match.slice(1).filter(Boolean).pop()
       if (captured && captured.length > 2 && captured.length < 50) {
         const cleaned = captured.trim().replace(/^(my|our|the|a|an)\s+/i, '')
-        if (cleaned.length > 2) {
+        // Reject overly generic single-word topics
+        const genericWords = new Set([
+          'video',
+          'content',
+          'post',
+          'platform',
+          'page',
+          'design',
+          'project',
+          'brand',
+          'thing',
+          'stuff',
+          'something',
+          'product',
+          'service',
+        ])
+        if (cleaned.length > 2 && !genericWords.has(cleaned.toLowerCase())) {
           return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
         }
       }

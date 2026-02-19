@@ -5,6 +5,7 @@
  */
 
 import type { TaskProposal, ChatMessage as Message } from './types'
+import type { LiveBrief } from './brief-panel/types'
 
 /** Format a date into a relative time string (e.g. "5m ago", "2h ago"). */
 export function formatTimeAgo(date: Date): string {
@@ -110,13 +111,21 @@ export function getChatTitle(messages: Message[]): string | null {
 
 /**
  * Construct a task proposal from conversation messages.
- * Extracts title, description, category, and credits from conversation content.
+ * Prefers refined values from the LiveBrief when available,
+ * falls back to regex extraction from raw messages.
  */
-export function constructTaskFromConversation(messages: Message[]): TaskProposal {
+export function constructTaskFromConversation(
+  messages: Message[],
+  brief?: LiveBrief | null
+): TaskProposal {
   const userMessages = messages.filter((m) => m.role === 'user')
   const userContent = userMessages.map((m) => m.content).join(' ')
   const firstUserMsg = userMessages[0]?.content || ''
   const contentLower = userContent.toLowerCase()
+
+  // If brief has a refined taskSummary, use it as the title
+  const briefTitle = brief?.taskSummary?.value
+  const briefTopic = brief?.topic?.value
 
   // Extract product/brand name
   let productContext = ''
@@ -195,14 +204,19 @@ export function constructTaskFromConversation(messages: Message[]): TaskProposal
     }
   }
 
+  // Prefer brief's refined summary over regex-extracted title
+  if (briefTitle && briefTitle !== 'New Brief' && briefTitle !== 'New project request') {
+    title = briefTitle
+  }
+
   // Clean up title
   title = title.replace(/\s+/g, ' ').trim()
   if (title.length > 60) {
     title = title.substring(0, 57) + '...'
   }
 
-  // Build description
-  let description = firstUserMsg
+  // Build description — prefer brief topic over raw first message
+  let description = briefTopic && briefTopic.length >= 5 ? briefTopic : firstUserMsg
   if (description.length > 200) {
     description = description.substring(0, 197) + '...'
   }

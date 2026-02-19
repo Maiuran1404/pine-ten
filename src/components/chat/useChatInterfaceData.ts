@@ -724,7 +724,7 @@ export function useChatInterfaceData({
 
     if (!shouldConstruct) return
 
-    const constructedTask = constructTaskFromConversation(messages)
+    const constructedTask = constructTaskFromConversation(messages, _briefingState?.brief)
     setPendingTask(constructedTask)
 
     // Add the task proposal to the last assistant message so it renders inline
@@ -736,7 +736,7 @@ export function useChatInterfaceData({
       }
       return updated
     })
-  }, [_briefingState?.stage, pendingTask, isLoading, messages])
+  }, [_briefingState?.stage, _briefingState?.brief, pendingTask, isLoading, messages])
 
   // Scroll to bottom helper
   const scrollToBottom = useRef((smooth = false) => {
@@ -1371,7 +1371,7 @@ export function useChatInterfaceData({
     setShowManualSubmit(false)
     setHasRequestedTaskSummary(true)
 
-    const constructedTask = constructTaskFromConversation(messages)
+    const constructedTask = constructTaskFromConversation(messages, _briefingState?.brief)
 
     const summaryMessage: Message = {
       id: Date.now().toString(),
@@ -1395,7 +1395,7 @@ export function useChatInterfaceData({
         }
       }
     }, 100)
-  }, [isLoading, messages, pendingTask])
+  }, [isLoading, messages, pendingTask, _briefingState?.brief])
 
   const chatTitle = seamlessTransition ? getChatTitle(messages) : null
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
