@@ -454,6 +454,8 @@ export function ChatInterface({
             uploadedFiles={uploadedFiles}
             onRemoveUploadedFile={removeFile}
             onAddExternalLink={addExternalLink}
+            lastSendError={lastSendError}
+            onRetry={handleRetry}
           />
 
           {/* Input area / Submit action bar */}
