@@ -181,8 +181,8 @@ function LoadingIndicator({
       role="status"
       aria-label={loadingMessages[loadingStage]}
     >
-      {/* Minimal avatar - just a green circle */}
-      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 relative">
+      {/* Minimal avatar - brand gradient circle */}
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-crafted-green to-crafted-sage shadow-sm flex items-center justify-center shrink-0 relative">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -190,20 +190,20 @@ function LoadingIndicator({
         />
         <div className="w-2.5 h-2.5 rounded-full bg-white" />
       </div>
-      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-5 py-4 border border-border/30">
         <div className="flex items-center gap-3">
           {/* Animated dots */}
           <div className="flex gap-1">
             <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce motion-reduce:animate-none"
+              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: '0ms' }}
             />
             <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce motion-reduce:animate-none"
+              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: '150ms' }}
             />
             <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce motion-reduce:animate-none"
+              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: '300ms' }}
             />
           </div>
@@ -440,7 +440,7 @@ export function ChatMessageList({
     <>
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
         <div
-          className="space-y-4 pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto"
+          className="pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto"
           role="log"
           aria-label="Chat messages"
         >
@@ -460,31 +460,41 @@ export function ChatMessageList({
                   initial={seamlessTransition && index > 0 ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
+                  className={cn(
+                    'flex',
+                    message.role === 'user' ? 'justify-end' : 'justify-start',
+                    index > 0 && messages[index - 1]?.role !== message.role
+                      ? 'mt-6'
+                      : index > 0
+                        ? 'mt-2'
+                        : ''
+                  )}
                 >
                   {message.role === 'assistant' ? (
                     /* Assistant message - left aligned with sparkle avatar */
                     <div className="group max-w-[85%] flex items-start gap-3">
                       {/* Sparkle avatar */}
-                      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-crafted-green to-crafted-sage shadow-sm flex items-center justify-center shrink-0">
                         <Sparkles className="h-4 w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {/* Thinking time indicator */}
                         {message.thinkingTime && (
-                          <div className="flex items-center gap-1.5 mb-2 text-muted-foreground">
-                            <Lightbulb className="h-3.5 w-3.5" />
-                            <span className="text-xs">Thought for {message.thinkingTime}s</span>
+                          <div className="inline-flex items-center gap-1.5 mb-2 px-2.5 py-0.5 rounded-full bg-muted/60">
+                            <Lightbulb className="h-3.5 w-3.5 text-crafted-sage" />
+                            <span className="text-xs text-muted-foreground">
+                              Thought for {message.thinkingTime}s
+                            </span>
                           </div>
                         )}
                         {/* Message content - clean text without heavy borders */}
-                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/50">
+                        <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-5 py-4 border border-border/30">
                           <TypingText
                             content={message.content}
                             animate={animatingMessageId === message.id}
                             speed={25}
                             onComplete={() => handleTypingComplete(message.id)}
-                            className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 text-foreground"
+                            className="prose max-w-none dark:prose-invert [&>p]:mb-4 [&>p:first-child]:font-medium [&_strong]:text-foreground [&_strong]:font-semibold [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 leading-relaxed text-foreground"
                           />
 
                           {/* Attachments */}
@@ -793,7 +803,7 @@ export function ChatMessageList({
                       <div className="flex flex-col items-end">
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle && message.selectedStyle.imageUrl && (
-                          <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-emerald-300 dark:border-emerald-700 shadow-sm">
+                          <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-crafted-sage dark:border-crafted-green/50 shadow-sm">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={message.selectedStyle.imageUrl}
@@ -806,7 +816,7 @@ export function ChatMessageList({
                             />
                           </div>
                         )}
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30 w-fit">
+                        <div className="bg-crafted-mint/10 dark:bg-crafted-green/15 rounded-2xl px-5 py-3.5 relative border border-crafted-sage/25 dark:border-crafted-green/20 w-fit">
                           {(() => {
                             const { scenes, text } = parseSceneFeedback(message.content)
                             return (
@@ -816,7 +826,7 @@ export function ChatMessageList({
                                     {scenes.map((s) => (
                                       <span
                                         key={s.sceneNumber}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-800/40 text-xs font-medium text-emerald-700 dark:text-emerald-300"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-crafted-mint/20 dark:bg-crafted-green/20 text-xs font-medium text-crafted-forest dark:text-crafted-mint"
                                       >
                                         <Film className="h-3 w-3" />
                                         Scene {s.sceneNumber}: {s.title}

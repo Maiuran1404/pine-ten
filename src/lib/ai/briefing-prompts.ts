@@ -307,7 +307,6 @@ function buildExtractTask(_state: BriefingState): string {
 - Reference any style keywords or inspiration they mentioned.
 - IMPORTANT: Do NOT re-ask about things the user already stated clearly (e.g. if they said "new customers" or "driving traffic", their intent and audience are already clear. Confirm it and move to the next unknown).
 - Only ask about what's genuinely missing. If audience/goal/intent are clear, ask about something else (style preference, brand personality, specific requirements).
-- If the user mentions an existing product, app, or website they want to showcase, include an [ASSET_REQUEST] block to collect screenshots or visuals.
 - Be concise. Don't repeat back everything they said.`
 }
 
@@ -371,11 +370,6 @@ function resolveDeliverableTypeForMarker(state: BriefingState): string {
 function buildStructureTask(state: BriefingState): string {
   const category = state.deliverableCategory
   const isFirstTurn = state.turnsInCurrentStage === 0
-  const intentValue = state.brief.intent.value?.toLowerCase() ?? ''
-  const isLaunch =
-    intentValue.includes('launch') ||
-    (state.brief.topic.value?.toLowerCase().includes('launch') ?? false) ||
-    state.styleKeywords.includes('launch')
 
   // On first turn, acknowledge differentiator and optionally clarify
   const clarifyPrefix = isFirstTurn
@@ -383,42 +377,36 @@ function buildStructureTask(state: BriefingState): string {
 If you have an open question about the primary action or audience, ask it before building. Otherwise, go straight to the structure.\n\n`
     : ''
 
-  // For any launch intent, ask for latest assets and show the upload zone
-  const launchAssetPrompt = isLaunch
-    ? `\n- If the user is launching something and hasn't shared latest product screenshots, UI flows, or assets, ask for them and include an [ASSET_REQUEST] block so they can upload directly:
-[ASSET_REQUEST]{"prompt":"Share your latest product screenshots or UI flows","acceptTypes":["image","video","pdf","design"],"hint":"Upload files or paste a Google Drive / Dropbox link"}[/ASSET_REQUEST]`
-    : ''
-
   switch (category) {
     case 'video':
       return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
 - Generate 3-5 scenes. Scene 1 MUST have a hook with persona + pain metric.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
-- Each scene MUST include "imageSearchTerms": an array of 3-5 specific visual search keywords optimized for finding stock photos on Pexels. Focus on concrete subjects, composition, mood, and lighting. Example: for a scene with visualNote "Dark background with glowing red metrics rising", use imageSearchTerms: ["dark data dashboard", "analytics metrics glow", "tech dashboard dark mode"]. For a scene showing a person at a desk, use imageSearchTerms: ["professional working laptop", "modern office desk", "business person computer"].
+- Do NOT include imageSearchTerms yet. Images will be added after the inspiration stage.
 - Create a first-draft storyboard based on what you know so far. The user can edit individual scenes and regenerate parts later.
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","imageSearchTerms":["stressed executive office","cto working late","business pressure deadline"],"hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]`
     case 'website':
       return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
 - Each section: name, purpose, content guidance, order.
 - You MUST output the structure as [LAYOUT]{json}[/LAYOUT]. Without this marker the UI cannot render the layout.
-- Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1}]}[/LAYOUT]${launchAssetPrompt}`
+- Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1}]}[/LAYOUT]`
     case 'content':
       return `${clarifyPrefix}MANDATORY: Create a strategic content calendar.
 - Include: posting cadence, content pillars (with %), weekly arcs, CTA escalation.
 - Each post: day, pillar type, topic, format, CTA, engagement trigger.
 - You MUST output the structure as [CALENDAR]{json}[/CALENDAR]. Without this marker the UI cannot render the calendar.
-- Example: [CALENDAR]{"totalDuration":"4 weeks","postingCadence":"3x/week","platforms":["Instagram"],"contentPillars":[{"name":"Authority","description":"...","percentage":40}],"weeks":[],"ctaEscalation":{"awarenessPhase":{"weeks":[1,2],"ctaStyle":"soft"},"engagementPhase":{"weeks":[3],"ctaStyle":"engage"},"conversionPhase":{"weeks":[4],"ctaStyle":"direct"}}}[/CALENDAR]${launchAssetPrompt}`
+- Example: [CALENDAR]{"totalDuration":"4 weeks","postingCadence":"3x/week","platforms":["Instagram"],"contentPillars":[{"name":"Authority","description":"...","percentage":40}],"weeks":[],"ctaEscalation":{"awarenessPhase":{"weeks":[1,2],"ctaStyle":"soft"},"engagementPhase":{"weeks":[3],"ctaStyle":"engage"},"conversionPhase":{"weeks":[4],"ctaStyle":"direct"}}}[/CALENDAR]`
     case 'design':
     case 'brand':
       return `${clarifyPrefix}MANDATORY: Create a design specification.
 - Include: format, dimensions, key elements, copy guidance.
 - You MUST output the structure as [DESIGN_SPEC]{json}[/DESIGN_SPEC]. Without this marker the UI cannot render the spec.
-- Example: [DESIGN_SPEC]{"format":"Social post","dimensions":[{"width":1080,"height":1080,"label":"Instagram square"}],"keyElements":["Logo","CTA"],"copyGuidance":"Lead with benefit"}[/DESIGN_SPEC]${launchAssetPrompt}`
+- Example: [DESIGN_SPEC]{"format":"Social post","dimensions":[{"width":1080,"height":1080,"label":"Instagram square"}],"keyElements":["Logo","CTA"],"copyGuidance":"Lead with benefit"}[/DESIGN_SPEC]`
     default:
       return `${clarifyPrefix}Based on what we know, create the appropriate structure for this deliverable.
-You MUST output the structure in the appropriate marker format ([STORYBOARD], [LAYOUT], [CALENDAR], or [DESIGN_SPEC]).${launchAssetPrompt}`
+You MUST output the structure in the appropriate marker format ([STORYBOARD], [LAYOUT], [CALENDAR], or [DESIGN_SPEC]).`
   }
 }
 
@@ -435,6 +423,7 @@ For each scene, add:
 - fullScript: Complete narration/dialogue script (exact words to be spoken or shown)
 - directorNotes: Shooting direction, pacing, talent direction, mood cues
 - referenceDescription: Description of what the reference visual should look like
+- imageSearchTerms: An array of 3-5 specific visual search keywords optimized for finding stock photos on Pexels. Focus on concrete subjects, composition, mood, and lighting. Example: for a scene with visualNote "Dark background with glowing red metrics rising", use imageSearchTerms: ["dark data dashboard", "analytics metrics glow", "tech dashboard dark mode"]. For a scene showing a person at a desk, use imageSearchTerms: ["professional working laptop", "modern office desk", "business person computer"].
 
 Output the complete elaborated storyboard using [STORYBOARD]{json}[/STORYBOARD] with all existing fields PLUS the new detail fields.
 Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
@@ -541,6 +530,9 @@ function buildReviewTask(_state: BriefingState): string {
 - Name the strongest element in one sentence.
 - Name ONE thing to push.
 - Instead of "Does this look good?", state your assessment with confidence.
+- If the user hasn't shared product screenshots, UI flows, or visual assets yet, now is the time to ask. Include an [ASSET_REQUEST] block so they can upload directly:
+[ASSET_REQUEST]{"prompt":"Share your product screenshots, UI flows, or visual assets for the designer","acceptTypes":["image","video","pdf","design"],"hint":"Upload files or paste a Google Drive / Dropbox link"}[/ASSET_REQUEST]
+  The designer will need these to execute the brief. Frame it naturally: "One last thing before we hand this off: do you have any product screenshots or assets the designer should work with?"
 - If the user says "let's build" / "let's start" / "ready to go", frame it as submitting to a professional Crafted designer.
 - NEVER suggest they hire someone else or go to another platform.`
 }

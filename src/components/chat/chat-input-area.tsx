@@ -283,7 +283,7 @@ export function ChatInputArea({
         )}
 
       {/* Modern input box - matching design reference */}
-      <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm">
+      <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
         {/* Input field with auto-resize and ghost text */}
         <div className="relative">
           {/* Ghost text suggestion overlay */}
@@ -347,7 +347,7 @@ export function ChatInputArea({
                   : 'Type your message...'
             }
             rows={1}
-            className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:rounded-lg text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
+            className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
             style={{ height: 'auto', overflow: 'hidden' }}
           />
           {/* Tab hint - show different hints based on context */}

@@ -297,7 +297,7 @@ export function TypingText({
 
       {/* Blinking cursor while typing */}
       {!isComplete && (
-        <span className="inline-block w-0.5 h-4 bg-foreground/70 ml-0.5 animate-pulse motion-reduce:animate-none" />
+        <span className="inline-block w-0.5 h-5 bg-foreground/70 ml-0.5 animate-pulse motion-reduce:animate-none" />
       )}
     </div>
   )

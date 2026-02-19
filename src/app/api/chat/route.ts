@@ -990,9 +990,9 @@ async function handler(request: NextRequest) {
           // ================================================================
           if (
             briefingState.stage === 'STRUCTURE' &&
+            stageBeforeBriefMeta === 'STRUCTURE' &&
             !structureData &&
-            structureType &&
-            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'STRUCTURE')
+            structureType
           ) {
             logger.debug(
               { structureType },
@@ -1265,10 +1265,17 @@ async function handler(request: NextRequest) {
       // 17a. Pexels scene image search (non-blocking, storyboard only)
       // ================================================================
       let sceneImageMatches: PexelsSceneMatch[] | undefined = undefined
+      const scenesHaveSearchTerms =
+        structureData?.type === 'storyboard' &&
+        structureData.scenes.some(
+          (s: { imageSearchTerms?: string[] }) =>
+            s.imageSearchTerms && s.imageSearchTerms.length > 0
+        )
       if (
         structureData?.type === 'storyboard' &&
         structureData.scenes.length > 0 &&
-        process.env.PEXELS_API_KEY
+        process.env.PEXELS_API_KEY &&
+        scenesHaveSearchTerms
       ) {
         try {
           const pexelsResult = await searchPexelsForStoryboard(structureData.scenes)

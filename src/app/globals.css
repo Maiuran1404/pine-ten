@@ -42,6 +42,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-crafted-green: var(--crafted-green);
+  --color-crafted-green-light: var(--crafted-green-light);
+  --color-crafted-sage: var(--crafted-sage);
+  --color-crafted-mint: var(--crafted-mint);
+  --color-crafted-forest: var(--crafted-forest);
+  --color-ds-success: var(--ds-success);
+  --color-ds-warning: var(--ds-warning);
+  --color-ds-error: var(--ds-error);
 }
 
 :root {

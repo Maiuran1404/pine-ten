@@ -97,9 +97,14 @@ export function QuickDesignModal({ open, onOpenChange }: QuickDesignModalProps) 
         throw new Error(data.error || 'Failed to generate design')
       }
 
+      const designId = data?.design?.id
+      if (!designId) {
+        throw new Error('No design ID returned from server')
+      }
+
       toast.success('Design generated successfully!')
       onOpenChange(false)
-      router.push(`/dashboard/designs/${data.design.id}`)
+      router.push(`/dashboard/designs/${designId}`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate design')
     } finally {
