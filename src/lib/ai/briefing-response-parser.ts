@@ -793,6 +793,11 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
     const scene = scenes[i]
     if (typeof scene === 'object' && scene !== null) {
       const s = scene as Record<string, unknown>
+      const voiceover = getString(s, 'voiceover') ?? getString(s, 'vo') ?? undefined
+      const transition = getString(s, 'transition') ?? undefined
+      const cameraNote = getString(s, 'cameraNote') ?? getString(s, 'camera_note') ?? undefined
+      const sceneStyleRefs =
+        getStringArray(s, 'styleReferences') ?? getStringArray(s, 'style_references') ?? undefined
       const fullScript = getString(s, 'fullScript') ?? getString(s, 'full_script') ?? undefined
       const directorNotes =
         getString(s, 'directorNotes') ?? getString(s, 'director_notes') ?? undefined
@@ -812,7 +817,15 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
         title: getString(s, 'title') ?? `Scene ${i + 1}`,
         description: getString(s, 'description') ?? '',
         duration: getString(s, 'duration') ?? '',
-        visualNote: getString(s, 'visualNote') ?? '',
+        visualNote: getString(s, 'visualNote') ?? getString(s, 'visual_note') ?? '',
+        ...(s.hookData
+          ? { hookData: validateHookData(s.hookData as Record<string, unknown>) }
+          : {}),
+        ...(typeof s.referenceVideoId === 'string' ? { referenceVideoId: s.referenceVideoId } : {}),
+        ...(voiceover ? { voiceover } : {}),
+        ...(transition ? { transition } : {}),
+        ...(cameraNote ? { cameraNote } : {}),
+        ...(sceneStyleRefs ? { styleReferences: sceneStyleRefs } : {}),
         ...(fullScript ? { fullScript } : {}),
         ...(directorNotes ? { directorNotes } : {}),
         ...(referenceDescription ? { referenceDescription } : {}),
