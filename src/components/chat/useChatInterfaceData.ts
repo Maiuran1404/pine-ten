@@ -915,6 +915,7 @@ export function useChatInterfaceData({
     setUploadedFiles([])
     setSceneReferences([])
     setIsLoading(true)
+    setLastSendError(null)
     requestStartTimeRef.current = Date.now()
 
     if (userMessage.content) processBriefMessage(userMessage.content)
@@ -988,6 +989,7 @@ export function useChatInterfaceData({
 
       if (data.taskProposal) setPendingTask(data.taskProposal)
     } catch {
+      setLastSendError('Failed to send message. Please try again.')
       toast.error('Failed to send message. Please try again.')
     } finally {
       setIsLoading(false)

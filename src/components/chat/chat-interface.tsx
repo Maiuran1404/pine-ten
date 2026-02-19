@@ -445,6 +445,11 @@ export function ChatInterface({
               viewStructureRef.current?.()
             }}
             structurePanelVisible={structurePanelVisible}
+            onInlineUpload={uploadFiles}
+            isUploading={isUploading}
+            uploadedFiles={uploadedFiles}
+            onRemoveUploadedFile={removeFile}
+            onAddExternalLink={addExternalLink}
           />
 
           {/* Input area / Submit action bar */}
