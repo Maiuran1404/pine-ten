@@ -201,7 +201,7 @@ const TEMPLATE_CATEGORIES = {
   'Social Media': {
     icon: Share2,
     description: 'Ads, content & video edits',
-    modalDescription: 'Choose your platforms and posting frequency.',
+    modalDescription: 'Plan your content calendar, choose platforms, and set posting frequency.',
     options: [
       {
         title: 'Instagram Post',
@@ -1094,12 +1094,12 @@ function DashboardContent() {
                       {/* Notes + Continue for Social Media */}
                       <div className="px-5 pb-5 pt-1 border-t border-border/20">
                         <div className="relative mt-3">
-                          <input
-                            type="text"
+                          <textarea
                             value={modalNotes}
                             onChange={(e) => setModalNotes(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault()
                                 const enabledPlatforms = Object.entries(platformSelections).filter(
                                   ([, v]) => v.enabled
                                 )
@@ -1116,8 +1116,9 @@ function DashboardContent() {
                                 }
                               }
                             }}
+                            rows={2}
                             placeholder="Add any details or goals..."
-                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all"
+                            className="w-full min-h-[60px] px-4 py-2.5 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all resize-none"
                           />
                           <button
                             onClick={() => {
@@ -1212,12 +1213,12 @@ function DashboardContent() {
                       {/* Notes + Continue */}
                       <div className="px-5 pb-5 pt-1 border-t border-border/20">
                         <div className="relative mt-3">
-                          <input
-                            type="text"
+                          <textarea
                             value={modalNotes}
                             onChange={(e) => setModalNotes(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && selectedOption) {
+                              if (e.key === 'Enter' && !e.shiftKey && selectedOption) {
+                                e.preventDefault()
                                 const option = category?.options.find(
                                   (o) => o.title === selectedOption
                                 )
@@ -1232,8 +1233,9 @@ function DashboardContent() {
                                 }
                               }
                             }}
+                            rows={2}
                             placeholder="Add any specific details or requirements..."
-                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all"
+                            className="w-full min-h-[60px] px-4 py-2.5 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all resize-none"
                           />
                           <button
                             onClick={() => {
