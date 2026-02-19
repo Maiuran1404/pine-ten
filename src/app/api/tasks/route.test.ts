@@ -137,6 +137,7 @@ vi.mock('@/db/schema', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
+  ne: vi.fn(),
   and: vi.fn(),
   desc: vi.fn(),
   sql: vi.fn(),
