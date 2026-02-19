@@ -303,9 +303,9 @@ export function ChatInterface({
         structureType={structureType}
         structureData={storyboardScenes}
         onSceneEdit={handleSceneEdit}
-        onRegenerateStoryboard={handleRegenerateStoryboard}
-        onRegenerateScene={handleRegenerateScene}
-        onRegenerateField={handleRegenerateField}
+        onRegenerateStoryboard={showSubmissionSuccess ? undefined : handleRegenerateStoryboard}
+        onRegenerateScene={showSubmissionSuccess ? undefined : handleRegenerateScene}
+        onRegenerateField={showSubmissionSuccess ? undefined : handleRegenerateField}
         onSectionReorder={handleSectionReorder}
         onSectionEdit={handleSectionEdit}
         sceneImageUrls={sceneImageUrls}
@@ -458,45 +458,47 @@ export function ChatInterface({
             onRetry={handleRetry}
           />
 
-          {/* Input area / Submit action bar */}
-          <ChatInputArea
-            messages={messages}
-            input={input}
-            setInput={setInput}
-            isLoading={isLoading}
-            isUploading={isUploading}
-            uploadedFiles={uploadedFiles}
-            pendingTask={pendingTask}
-            isTaskMode={isTaskMode}
-            seamlessTransition={seamlessTransition}
-            ghostText={ghostText}
-            smartCompletion={smartCompletion}
-            setSmartCompletion={setSmartCompletion}
-            currentSuggestion={currentSuggestion}
-            fileInputRef={fileInputRef}
-            inputRef={inputRef}
-            userCredits={userCredits}
-            briefingStage={briefingStage}
-            moodboardItems={moodboardItems}
-            onConfirmTask={handleConfirmTask}
-            onMakeChanges={handleRejectTask}
-            onInsufficientCredits={handleInsufficientCredits}
-            isSubmitting={isLoading}
-            stateMachineQuickOptions={resolvedQuickOptions}
-            onQuickOptionClick={handleSendOption}
-            hasStrategicReviewCTA={(() => {
-              const last = [...messages].reverse().find((m) => m.role === 'assistant')
-              return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
-            })()}
-            handleSend={handleSend}
-            handleFileUpload={handleFileUpload}
-            handleRequestTaskSummary={handleRequestTaskSummary}
-            removeFile={removeFile}
-            sceneReferences={sceneReferences}
-            onRemoveSceneReference={(sceneNumber: number) =>
-              setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
-            }
-          />
+          {/* Input area / Submit action bar — hidden after successful submission */}
+          {!showSubmissionSuccess && (
+            <ChatInputArea
+              messages={messages}
+              input={input}
+              setInput={setInput}
+              isLoading={isLoading}
+              isUploading={isUploading}
+              uploadedFiles={uploadedFiles}
+              pendingTask={pendingTask}
+              isTaskMode={isTaskMode}
+              seamlessTransition={seamlessTransition}
+              ghostText={ghostText}
+              smartCompletion={smartCompletion}
+              setSmartCompletion={setSmartCompletion}
+              currentSuggestion={currentSuggestion}
+              fileInputRef={fileInputRef}
+              inputRef={inputRef}
+              userCredits={userCredits}
+              briefingStage={briefingStage}
+              moodboardItems={moodboardItems}
+              onConfirmTask={handleConfirmTask}
+              onMakeChanges={handleRejectTask}
+              onInsufficientCredits={handleInsufficientCredits}
+              isSubmitting={isLoading}
+              stateMachineQuickOptions={resolvedQuickOptions}
+              onQuickOptionClick={handleSendOption}
+              hasStrategicReviewCTA={(() => {
+                const last = [...messages].reverse().find((m) => m.role === 'assistant')
+                return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
+              })()}
+              handleSend={handleSend}
+              handleFileUpload={handleFileUpload}
+              handleRequestTaskSummary={handleRequestTaskSummary}
+              removeFile={removeFile}
+              sceneReferences={sceneReferences}
+              onRemoveSceneReference={(sceneNumber: number) =>
+                setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
+              }
+            />
+          )}
 
           {/* Submission success celebration overlay */}
           <AnimatePresence>
