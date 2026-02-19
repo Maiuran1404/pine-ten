@@ -335,6 +335,13 @@ export interface ChatMessageListProps {
 
   // Whether the structure panel is currently visible (suppresses inline structure rendering)
   structurePanelVisible?: boolean
+
+  // Inline upload zone
+  onInlineUpload?: (files: FileList | File[]) => Promise<void>
+  isUploading?: boolean
+  uploadedFiles?: UploadedFile[]
+  onRemoveUploadedFile?: (fileUrl: string) => void
+  onAddExternalLink?: (file: UploadedFile) => void
 }
 
 // =============================================================================
