@@ -217,6 +217,7 @@ export function ChatInterface({
     sceneImageUrls,
     handleStrategicReviewAction,
     handleSceneEdit,
+    handleSectionEdit,
     handleSectionReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,
@@ -300,6 +301,7 @@ export function ChatInterface({
       onRegenerateScene={handleRegenerateScene}
       onRegenerateField={handleRegenerateField}
       onSectionReorder={handleSectionReorder}
+      onSectionEdit={handleSectionEdit}
       sceneImageUrls={sceneImageUrls}
       isRegenerating={isLoading}
       viewStructureRef={viewStructureRef}

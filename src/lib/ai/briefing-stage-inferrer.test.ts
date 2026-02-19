@@ -90,10 +90,15 @@ describe('inferStageFromResponse', () => {
   // ===========================================================================
 
   it('returns null when inferred stage is not a legal transition', () => {
-    // EXTRACT cannot jump to STRUCTURE
+    // EXTRACT cannot jump to ELABORATE (skipping STRUCTURE and INSPIRATION)
     const response = `[STORYBOARD]{"scenes":[]}[/STORYBOARD]`
-    const result = inferStageFromResponse(response, 'EXTRACT')
-    expect(result).toBeNull()
+    const _result = inferStageFromResponse(response, 'ELABORATE')
+    // ELABORATE infers as ELABORATE (not STRUCTURE) since currentStage === ELABORATE
+    // Instead, test a truly illegal transition: INSPIRATION marker from EXTRACT
+    const styleResponse = `[DELIVERABLE_STYLES: video | search: tech dark modern]`
+    const styleResult = inferStageFromResponse(styleResponse, 'EXTRACT')
+    // INSPIRATION is not a legal transition from EXTRACT
+    expect(styleResult).toBeNull()
   })
 
   it('returns null when SUBMIT inferred but current stage is EXTRACT', () => {
@@ -102,11 +107,10 @@ describe('inferStageFromResponse', () => {
     expect(result).toBeNull()
   })
 
-  it('allows STRUCTURE inference from INSPIRATION (legal transition)', () => {
+  it('does not allow STRUCTURE inference from INSPIRATION (STRUCTURE is before INSPIRATION)', () => {
     const response = `[STORYBOARD]{"scenes":[]}[/STORYBOARD]`
     const result = inferStageFromResponse(response, 'INSPIRATION')
-    expect(result).not.toBeNull()
-    expect(result!.stage).toBe('STRUCTURE')
+    expect(result).toBeNull()
   })
 
   it('does not allow STRATEGIC_REVIEW inference from STRUCTURE (not a legal transition)', () => {

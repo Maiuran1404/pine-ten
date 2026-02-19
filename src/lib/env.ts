@@ -47,6 +47,9 @@ const envSchema = z.object({
   // Pexels (optional - for scene reference images in storyboard)
   PEXELS_API_KEY: z.string().min(1).optional(),
 
+  // Serper.dev (optional - for Google Images design reference search)
+  SERPER_API_KEY: z.string().min(1).optional(),
+
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 

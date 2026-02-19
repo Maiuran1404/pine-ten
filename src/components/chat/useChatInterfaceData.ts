@@ -939,10 +939,12 @@ export function useChatInterfaceData({
         syncBriefingFromServer(data.briefingState)
       }
 
-      // Track latest storyboard data
+      // Track latest structure data and activate panel
       let resolvedStructureData: StructureData | undefined = data.structureData ?? undefined
-      if (resolvedStructureData?.type === 'storyboard') {
-        latestStoryboardRef.current = resolvedStructureData
+      if (resolvedStructureData) {
+        if (resolvedStructureData.type === 'storyboard') {
+          latestStoryboardRef.current = resolvedStructureData
+        }
         setStoryboardScenes(resolvedStructureData)
       }
 
@@ -1506,6 +1508,19 @@ export function useChatInterfaceData({
     })
   }, [])
 
+  // Edit a layout section field directly (user typed a change)
+  const handleSectionEdit = useCallback((sectionIndex: number, field: string, value: string) => {
+    setStoryboardScenes((prev) => {
+      if (!prev || prev.type !== 'layout') return prev
+      const updated = {
+        ...prev,
+        sections: prev.sections.map((s, i) => (i === sectionIndex ? { ...s, [field]: value } : s)),
+      }
+      latestStoryboardRef.current = updated
+      return updated
+    })
+  }, [])
+
   // Edit a scene field directly (user typed a change)
   const handleSceneEdit = useCallback((sceneNumber: number, field: string, value: string) => {
     setStoryboardScenes((prev) => {
@@ -1806,6 +1821,8 @@ export function useChatInterfaceData({
               type: 'more',
               deliverableType: resolvedDeliverableType,
               styleAxis,
+              searchTerms: [...messages].reverse().find((m) => m.deliverableStyleMarker)
+                ?.deliverableStyleMarker?.searchTerms,
             },
           }),
         })
@@ -1904,7 +1921,12 @@ export function useChatInterfaceData({
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           selectedStyles,
           excludeStyleAxes: newExcludedAxes,
-          deliverableStyleMarker: { type: 'different', deliverableType: resolvedDeliverableType },
+          deliverableStyleMarker: {
+            type: 'different',
+            deliverableType: resolvedDeliverableType,
+            searchTerms: [...messages].reverse().find((m) => m.deliverableStyleMarker)
+              ?.deliverableStyleMarker?.searchTerms,
+          },
         }),
       })
 
@@ -2073,6 +2095,7 @@ export function useChatInterfaceData({
     sceneImageUrls: _sceneImageUrls,
     handleStrategicReviewAction,
     handleSceneEdit,
+    handleSectionEdit,
     handleSectionReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,

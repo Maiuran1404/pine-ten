@@ -83,6 +83,13 @@ function mapPhoto(photo: Photo): PexelsPhoto {
   }
 }
 
+export async function searchPexelsPhotos(
+  query: string,
+  perPage: number = 10
+): Promise<PexelsPhoto[]> {
+  return searchPexelsForScene(query, perPage)
+}
+
 async function searchPexelsForScene(query: string, perPage: number = 1): Promise<PexelsPhoto[]> {
   const cached = getCached(query)
   if (cached) return cached

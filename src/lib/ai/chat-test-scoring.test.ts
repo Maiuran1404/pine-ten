@@ -154,7 +154,7 @@ describe('calculateEfficiencyScore', () => {
   it('returns 100 for ideal number of turns with no stalls or force-advances', () => {
     // Design ideal = 7 turns, so 7 user messages
     const messages = makeMessages(
-      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION', 'STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW'],
+      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE', 'INSPIRATION', 'STRATEGIC_REVIEW', 'REVIEW'],
       1
     )
     const result = calculateEfficiencyScore(messages, 'design', 0)
@@ -167,7 +167,7 @@ describe('calculateEfficiencyScore', () => {
   it('reduces score for more turns than ideal', () => {
     // 14 user turns for design (ideal 7) = ~50% base
     const messages = makeMessages(
-      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION', 'STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW'],
+      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE', 'INSPIRATION', 'STRATEGIC_REVIEW', 'REVIEW'],
       2
     )
     const result = calculateEfficiencyScore(messages, 'design', 0)
@@ -184,7 +184,7 @@ describe('calculateEfficiencyScore', () => {
     expect(result.stalls[0].turns).toBe(3)
     // Score should be less than without stall
     const noStall = calculateEfficiencyScore(
-      makeMessages(['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION', 'STRUCTURE'], 1),
+      makeMessages(['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE', 'INSPIRATION'], 1),
       'design',
       0
     )
@@ -193,7 +193,7 @@ describe('calculateEfficiencyScore', () => {
 
   it('applies force advance penalty', () => {
     const messages = makeMessages(
-      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION', 'STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW'],
+      ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE', 'INSPIRATION', 'STRATEGIC_REVIEW', 'REVIEW'],
       1
     )
     const noForce = calculateEfficiencyScore(messages, 'design', 0)

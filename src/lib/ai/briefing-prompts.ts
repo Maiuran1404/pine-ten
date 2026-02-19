@@ -320,10 +320,22 @@ function buildIntentTask(state: BriefingState): string {
 
 function buildInspirationTask(state: BriefingState): string {
   const deliverableType = resolveDeliverableTypeForMarker(state)
-  return `Show visual style references that match the context.
+  const hasStructure = state.structure !== null
+  const structureNote = hasStructure
+    ? `\n- The structure has already been created. Show style references that would complement the ${state.structure?.type || 'deliverable'}'s visual direction.`
+    : ''
+  return `Show visual style references that match the context.${structureNote}
 - Frame the creative direction based on what you know about audience, industry, and intent.
 - The system will display style cards. Your job is to introduce them with context.
-- IMPORTANT: Include the marker [DELIVERABLE_STYLES: ${deliverableType}] in your response so the system knows which styles to show. Place it at the end of your message on its own line.
+- IMPORTANT: Include the marker with search context so the system can find relevant design references:
+  [DELIVERABLE_STYLES: ${deliverableType} | search: visual search terms for design references]
+  The search terms should describe the VISUAL STYLE you want to show:
+  - Include the design format (social media post, banner, ad, video)
+  - Include visual style (gradient, minimal, 3D, flat illustration)
+  - Include industry/topic (fintech, fitness, food)
+  - Keep to 5-8 words describing what the designs should look like
+  Example: [DELIVERABLE_STYLES: instagram_post | search: fintech app gradient modern UI design]
+  Place it at the end of your message on its own line.
 - If the user shared references, acknowledge them once and extract the principle. Don't keep citing the reference name.
 - Reference real campaigns from adjacent industries rather than abstract mood language.
 - Keep it to 1-2 sentences framing the direction.`

@@ -58,14 +58,14 @@ describe('evaluateTransitions', () => {
   })
 
   // Plan example #2: "Stripe launch videos for B2B SaaS, CTOs, clean minimal"
-  // taskType=video(0.85), intent=announcement(0.85) => INSPIRATION
-  it('lands on INSPIRATION when both taskType and intent are high-confidence (example #2)', () => {
+  // taskType=video(0.85), intent=announcement(0.85) => STRUCTURE
+  it('lands on STRUCTURE when both taskType and intent are high-confidence (example #2)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('single_asset', 0.85),
       intent: makeInferredField('announcement', 0.85),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #3: "30-day Instagram content plan, sustainable fashion"
@@ -89,47 +89,47 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, inference)).toBe('TASK_TYPE')
   })
 
-  // With 0.4 threshold: intent at 0.4+ with taskType at 0.4+ should land on INSPIRATION
-  it('lands on INSPIRATION when both taskType and intent are at 0.4 threshold', () => {
+  // With 0.4 threshold: intent at 0.4+ with taskType at 0.4+ should land on STRUCTURE
+  it('lands on STRUCTURE when both taskType and intent are at 0.4 threshold', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('single_asset', 0.4),
       intent: makeInferredField('announcement', 0.4),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #5: "Website landing page, bold, conversion-focused"
-  // taskType=website(0.85), intent=signups(0.75) => INSPIRATION
-  it('lands on INSPIRATION for website with known intent (example #5)', () => {
+  // taskType=website(0.85), intent=signups(0.75) => STRUCTURE
+  it('lands on STRUCTURE for website with known intent (example #5)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('single_asset', 0.85),
       intent: makeInferredField('signups', 0.75),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #6: "Logo for a yoga studio"
-  // taskType=single_asset(0.85), intent=default for brand => INSPIRATION
-  it('lands on INSPIRATION for logo with default intent (example #6)', () => {
+  // taskType=single_asset(0.85), intent=default for brand => STRUCTURE
+  it('lands on STRUCTURE for logo with default intent (example #6)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('single_asset', 0.85),
       intent: makeInferredField('awareness', 0.75),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #7: "3 Instagram reels, fitness app, Gymshark style"
-  // taskType=multi_asset(0.9), intent=signups(0.9) => INSPIRATION
-  it('lands on INSPIRATION for reels with known intent (example #7)', () => {
+  // taskType=multi_asset(0.9), intent=signups(0.9) => STRUCTURE
+  it('lands on STRUCTURE for reels with known intent (example #7)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('multi_asset_plan', 0.9),
       intent: makeInferredField('signups', 0.9),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #8: "Pitch deck for investor meeting next week"
@@ -144,14 +144,14 @@ describe('evaluateTransitions', () => {
   })
 
   // Plan example #9: "LinkedIn thought leadership, CEO, weekly posts"
-  // taskType=multi_asset(0.85), intent=authority(0.95) => INSPIRATION
-  it('lands on INSPIRATION for LinkedIn thought leadership (example #9)', () => {
+  // taskType=multi_asset(0.85), intent=authority(0.95) => STRUCTURE
+  it('lands on STRUCTURE for LinkedIn thought leadership (example #9)', () => {
     const state = createInitialBriefingState()
     const inference = makeInference({
       taskType: makeInferredField('multi_asset_plan', 0.85),
       intent: makeInferredField('authority', 0.95),
     })
-    expect(evaluateTransitions(state, inference)).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, inference)).toBe('STRUCTURE')
   })
 
   // Plan example #10: "Something cool for our new product"
@@ -176,19 +176,19 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, makeInference())).toBe('INTENT')
   })
 
-  it('advances from TASK_TYPE to INSPIRATION when both taskType and intent at 0.4+', () => {
+  it('advances from TASK_TYPE to STRUCTURE when both taskType and intent at 0.4+', () => {
     const state = createInitialBriefingState()
     state.stage = 'TASK_TYPE'
     state.brief.taskType = makeInferredField('single_asset', 0.4)
     state.brief.intent = makeInferredField('signups', 0.4)
-    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
   })
 
-  it('advances from INTENT to INSPIRATION when intent at 0.4+', () => {
+  it('advances from INTENT to STRUCTURE when intent at 0.4+', () => {
     const state = createInitialBriefingState()
     state.stage = 'INTENT'
     state.brief.intent = makeInferredField('awareness', 0.4)
-    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
   })
 
   it('auto-advances from TASK_TYPE after 2 turns with any non-null value', () => {
@@ -212,7 +212,7 @@ describe('evaluateTransitions', () => {
     state.stage = 'INTENT'
     state.brief.intent = makeInferredField('awareness', 0.15) // Below 0.4 threshold
     state.turnsInCurrentStage = 2
-    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+    expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
   })
 
   it('force-advances from INTENT after 2 turns even with null intent value', () => {
@@ -220,10 +220,36 @@ describe('evaluateTransitions', () => {
     state.stage = 'INTENT'
     state.turnsInCurrentStage = 2
     // intent.value is null — force advance anyway
+    expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
+  })
+
+  it('advances from STRUCTURE to INSPIRATION when structure set', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'STRUCTURE'
+    state.structure = {
+      type: 'storyboard',
+      scenes: [
+        {
+          sceneNumber: 1,
+          title: 'Hook',
+          description: 'Desc',
+          duration: '5s',
+          visualNote: 'Note',
+        },
+      ],
+    }
     expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
   })
 
-  it('advances from INSPIRATION to STRUCTURE when styles selected', () => {
+  it('force-advances from STRUCTURE to INSPIRATION after 3 turns even without structure', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'STRUCTURE'
+    state.structure = null
+    state.turnsInCurrentStage = 3
+    expect(evaluateTransitions(state, makeInference())).toBe('INSPIRATION')
+  })
+
+  it('advances from INSPIRATION to ELABORATE when styles selected', () => {
     const state = createInitialBriefingState()
     state.stage = 'INSPIRATION'
     state.brief.visualDirection = {
@@ -244,32 +270,6 @@ describe('evaluateTransitions', () => {
       typography: { primary: '', secondary: '' },
       avoidElements: [],
     }
-    expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
-  })
-
-  it('advances from STRUCTURE to ELABORATE when structure set', () => {
-    const state = createInitialBriefingState()
-    state.stage = 'STRUCTURE'
-    state.structure = {
-      type: 'storyboard',
-      scenes: [
-        {
-          sceneNumber: 1,
-          title: 'Hook',
-          description: 'Desc',
-          duration: '5s',
-          visualNote: 'Note',
-        },
-      ],
-    }
-    expect(evaluateTransitions(state, makeInference())).toBe('ELABORATE')
-  })
-
-  it('force-advances from STRUCTURE to ELABORATE after 3 turns even without structure', () => {
-    const state = createInitialBriefingState()
-    state.stage = 'STRUCTURE'
-    state.structure = null
-    state.turnsInCurrentStage = 3
     expect(evaluateTransitions(state, makeInference())).toBe('ELABORATE')
   })
 
@@ -350,15 +350,16 @@ describe('goBackTo', () => {
     expect(result.stage).toBe('STRUCTURE')
   })
 
-  it('clears selectedStyles when going back to INSPIRATION', () => {
+  it('clears visualDirection when going back to INSPIRATION, preserves structure', () => {
     const state = makeAdvancedState()
     const result = goBackTo(state, 'INSPIRATION')
     expect(result.stage).toBe('INSPIRATION')
     expect(result.brief.visualDirection).toBeNull()
     // Preserves intent/topic/audience
     expect(result.brief.intent.value).toBe('announcement')
-    // Clears structure and downstream
-    expect(result.structure).toBeNull()
+    // Preserves structure (STRUCTURE is before INSPIRATION in new order)
+    expect(result.structure).not.toBeNull()
+    // Clears downstream from INSPIRATION
     expect(result.strategicReview).toBeNull()
     expect(result.deepenSelections).toBeNull()
   })
@@ -383,7 +384,7 @@ describe('goBackTo', () => {
     expect(result.structure).toBeNull()
   })
 
-  it('clears structure and downstream when going back to STRUCTURE', () => {
+  it('clears structure, visualDirection, and downstream when going back to STRUCTURE', () => {
     const state = makeAdvancedState()
     const result = goBackTo(state, 'STRUCTURE')
     expect(result.stage).toBe('STRUCTURE')
@@ -392,8 +393,8 @@ describe('goBackTo', () => {
     expect(result.strategicReview).toBeNull()
     expect(result.sectionMoodboards).toEqual({})
     expect(result.deepenSelections).toBeNull()
-    // Preserves visual direction (selectedStyles)
-    expect(result.brief.visualDirection).not.toBeNull()
+    // Visual direction cleared (INSPIRATION is after STRUCTURE in new order)
+    expect(result.brief.visualDirection).toBeNull()
   })
 
   it('resets turnsInCurrentStage to 0', () => {

@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+
 import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
@@ -500,8 +500,14 @@ function RichSceneCard({
   sceneImageUrl?: string
   getImageUrl?: (imageId: string) => string
 }) {
+  const [isExpanded, setIsExpanded] = useState(isSelected)
   const durSeconds = parseDurationSeconds(scene.duration)
-  const hasExpandableContent = !!scene.description
+
+  // Sync expanded state with selection — selecting expands, deselecting collapses
+  useEffect(() => {
+    setIsExpanded(isSelected)
+  }, [isSelected])
+  const hasExpandableContent = !!scene.voiceover || !!scene.visualNote || !!scene.description
 
   return (
     <div
@@ -579,41 +585,54 @@ function RichSceneCard({
           )}
         </h4>
 
-        {/* Summary lines: Script, Visual */}
+        {/* Summary lines: Script, Visual — expand in-place when toggled */}
         <div className="space-y-1">
           {scene.voiceover && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+            <p
+              className={cn(
+                'text-xs text-muted-foreground leading-relaxed',
+                !isExpanded && 'line-clamp-2'
+              )}
+            >
               <span className="font-medium text-muted-foreground/80">Script:</span>{' '}
               {scene.voiceover}
             </p>
           )}
           {scene.visualNote && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+            <p
+              className={cn(
+                'text-xs text-muted-foreground leading-relaxed',
+                !isExpanded && 'line-clamp-2'
+              )}
+            >
               <span className="font-medium text-muted-foreground/80">Visual:</span>{' '}
               {scene.visualNote}
             </p>
           )}
+          {/* Description — only visible when expanded */}
+          {isExpanded && scene.description && (
+            <p className="text-xs text-muted-foreground leading-relaxed">{scene.description}</p>
+          )}
         </div>
 
-        {/* Collapsible — just expands the visual description */}
+        {/* Hook data — scene 1 only, shown when expanded */}
+        {isExpanded && isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
+
+        {/* Expand/collapse toggle */}
         {hasExpandableContent && (
-          <Collapsible>
-            <CollapsibleTrigger
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1 group/trigger"
-            >
-              <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]/trigger:rotate-180" />
-              <span>More details</span>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div
-                className="pt-2 border-t border-border/20 mt-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <p className="text-xs text-muted-foreground leading-relaxed">{scene.description}</p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsExpanded((prev) => !prev)
+            }}
+            className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1"
+          >
+            <ChevronDown
+              className={cn('h-3 w-3 transition-transform', isExpanded && 'rotate-180')}
+            />
+            <span>{isExpanded ? 'Less' : 'More details'}</span>
+          </button>
         )}
       </div>
     </div>

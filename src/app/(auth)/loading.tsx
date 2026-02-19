@@ -1,9 +1,5 @@
-import { Loader2 } from 'lucide-react'
+import { FullPageLoader } from '@/components/shared/loading'
 
 export default function AuthLoading() {
-  return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-    </div>
-  )
+  return <FullPageLoader />
 }

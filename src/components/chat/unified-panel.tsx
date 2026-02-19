@@ -82,21 +82,28 @@ function getSectionsForStage(
       sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }]
       break
 
-    case 'style':
-      sections = [
-        { key: 'brief', label: 'Brief', defaultOpen: false },
-        { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
-      ]
-      break
-
     case 'details':
+      // STRUCTURE stage (comes first): show brief + visual direction for structure preview
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
-        { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
         {
           key: 'visual',
           label: 'Visual Direction',
           defaultOpen: true,
+          itemCount: visualCount || undefined,
+        },
+      ]
+      break
+
+    case 'style':
+      // INSPIRATION stage (comes after STRUCTURE): show brief + moodboard + visual direction
+      sections = [
+        { key: 'brief', label: 'Brief', defaultOpen: false },
+        { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
+        {
+          key: 'visual',
+          label: 'Visual Direction',
+          defaultOpen: false,
           itemCount: visualCount || undefined,
         },
       ]

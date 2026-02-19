@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { Check, ArrowRight, RefreshCw, Shuffle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -20,88 +20,77 @@ interface StyleSelectionGridProps {
   className?: string
 }
 
-interface StyleCardProps {
+function StyleCard({
+  style,
+  index,
+  isSelected,
+  isBestMatch,
+  onClick,
+}: {
   style: DeliverableStyle
   index: number
   isSelected: boolean
-  isHero: boolean
   isBestMatch: boolean
   onClick: () => void
-}
-
-function StyleCard({ style, index, isSelected, isHero, isBestMatch, onClick }: StyleCardProps) {
-  const [isHovered, setIsHovered] = useState(false)
-
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.08 }}
-      className="flex flex-col gap-2"
+      transition={{
+        opacity: { duration: 0.2 },
+        y: { duration: 0.35, delay: index * 0.08 },
+      }}
+      className="flex flex-col gap-1.5"
     >
       <motion.button
         whileHover={{ scale: 1.03, y: -2 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         onClick={onClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          'relative overflow-hidden rounded-2xl transition-shadow duration-200 w-full',
-          isHero ? 'aspect-[16/9]' : 'aspect-[4/5]',
-          isSelected
-            ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl'
-            : 'hover:shadow-2xl hover:ring-2 hover:ring-primary/30 hover:ring-offset-2 hover:ring-offset-background'
+          'relative overflow-hidden rounded-2xl cursor-pointer group aspect-video w-full',
+          isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-primary/30'
         )}
       >
-        {/* Image */}
+        {/* Thumbnail */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={style.imageUrl}
           alt={style.name}
           className="w-full h-full object-cover"
           onError={(e) => {
-            ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x500?text=Style'
+            ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x225?text=Style'
           }}
         />
 
-        {/* Hover / selected overlay with gradient */}
-        <AnimatePresence>
-          {(isHovered || isSelected) && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"
-            />
+        {/* Subtle hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+
+        {/* Persistent bottom gradient with name + match reason */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
+          <p className="text-white text-xs font-medium truncate">{style.name}</p>
+          {style.matchReason && (
+            <p className="text-white/70 text-[10px] truncate mt-0.5">{style.matchReason}</p>
           )}
-        </AnimatePresence>
+        </div>
 
         {/* Best match badge */}
         {isBestMatch && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-medium">
-            <Sparkles className="w-3 h-3 text-yellow-400 shrink-0" />
+          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 bg-emerald-600 rounded-full text-[10px] text-white font-medium">
+            <Sparkles className="w-2.5 h-2.5" />
             Best match
           </div>
         )}
 
         {/* Selected indicator */}
         {isSelected && (
-          <div className="absolute top-2.5 right-2.5">
-            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
-              <Check className="w-4 h-4 text-primary-foreground" />
+          <div className="absolute top-1.5 right-1.5">
+            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg">
+              <Check className="w-3 h-3 text-primary-foreground" />
             </div>
           </div>
         )}
       </motion.button>
-
-      {/* Always-visible card info below the thumbnail */}
-      <div className="px-0.5">
-        <p className="text-sm font-semibold text-foreground leading-tight truncate">{style.name}</p>
-        {style.matchReason && (
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{style.matchReason}</p>
-        )}
-      </div>
     </motion.div>
   )
 }
@@ -138,18 +127,10 @@ export function StyleSelectionGrid({
     }
   }
 
-  // Limit to showing only 3 styles
   const displayedStyles = styles.slice(0, 3)
 
-  // Determine hero layout: only when top card leads by 10+ points
+  // Best match: top-scored card when brandMatchScore >= 70
   const topScore = displayedStyles[0]?.brandMatchScore ?? 0
-  const secondScore = displayedStyles[1]?.brandMatchScore ?? 0
-  const useHeroLayout = topScore - secondScore >= 10
-
-  const heroStyle = displayedStyles[0]
-  const supportingStyles = displayedStyles.slice(1)
-
-  // Best match = highest-scored card with brandMatchScore >= 70
   const bestMatchId =
     topScore >= 70
       ? displayedStyles.reduce((best, s) =>
@@ -158,100 +139,21 @@ export function StyleSelectionGrid({
       : null
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {useHeroLayout ? (
-        /* Hero + Supporting layout */
-        <div className="space-y-3 max-w-2xl">
-          {/* Hero card — full width */}
-          {heroStyle && (
-            <StyleCard
-              style={heroStyle}
-              index={0}
-              isSelected={selectedStyle?.id === heroStyle.id}
-              isHero={true}
-              isBestMatch={bestMatchId === heroStyle.id}
-              onClick={() => handleCardClick(heroStyle)}
-            />
-          )}
-
-          {/* Supporting cards — 2-column row */}
-          {supportingStyles.length > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              {supportingStyles.map((style, i) => (
-                <StyleCard
-                  key={style.id}
-                  style={style}
-                  index={i + 1}
-                  isSelected={selectedStyle?.id === style.id}
-                  isHero={false}
-                  isBestMatch={bestMatchId === style.id}
-                  onClick={() => handleCardClick(style)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Equal sizing — hero card still full width, supporting in 2-col, but hero uses same aspect as supporting */
-        <div className="space-y-3 max-w-2xl">
-          {heroStyle && (
-            <StyleCard
-              style={heroStyle}
-              index={0}
-              isSelected={selectedStyle?.id === heroStyle.id}
-              isHero={false}
-              isBestMatch={bestMatchId === heroStyle.id}
-              onClick={() => handleCardClick(heroStyle)}
-            />
-          )}
-          {supportingStyles.length > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              {supportingStyles.map((style, i) => (
-                <StyleCard
-                  key={style.id}
-                  style={style}
-                  index={i + 1}
-                  isSelected={selectedStyle?.id === style.id}
-                  isHero={false}
-                  isBestMatch={bestMatchId === style.id}
-                  onClick={() => handleCardClick(style)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Confirm button — shows when a style is selected */}
-      <AnimatePresence>
-        {selectedStyle && onConfirmSelection && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Button onClick={handleConfirm} disabled={isLoading} className="w-full sm:w-auto">
-              Continue with {selectedStyle.name}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Discovery buttons — always visible */}
-      {(onShowMore || onShowDifferent) && (
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+    <div className={cn('space-y-3', className)}>
+      {/* Header with discovery buttons inline */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-medium text-muted-foreground">Style References</h3>
+        <div className="flex items-center gap-2">
           {onShowMore && displayedStyles.length > 0 && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => onShowMore(displayedStyles[0].styleAxis)}
               disabled={isLoading}
-              className="rounded-full gap-2 px-4"
+              className="rounded-full gap-1.5 px-3 h-7 text-xs"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              More like these
+              <RefreshCw className="w-3 h-3" />
+              More
             </Button>
           )}
           {onShowDifferent && (
@@ -260,14 +162,69 @@ export function StyleSelectionGrid({
               size="sm"
               onClick={onShowDifferent}
               disabled={isLoading}
-              className="rounded-full gap-2 px-4"
+              className="rounded-full gap-1.5 px-3 h-7 text-xs text-muted-foreground"
             >
-              <Shuffle className="w-3.5 h-3.5" />
-              Show different styles
+              <Shuffle className="w-3 h-3" />
+              Different
             </Button>
           )}
         </div>
-      )}
+      </div>
+
+      {/* Compact 3-column grid on desktop / horizontal scroll on mobile */}
+      <LayoutGroup>
+        {/* Mobile: horizontal snap scroll */}
+        <div className="flex sm:hidden gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {displayedStyles.map((style, index) => (
+            <div key={style.id} className="min-w-[240px] snap-center shrink-0">
+              <StyleCard
+                style={style}
+                index={index}
+                isSelected={selectedStyle?.id === style.id}
+                isBestMatch={bestMatchId === style.id}
+                onClick={() => handleCardClick(style)}
+              />
+            </div>
+          ))}
+          <div className="min-w-[32px] shrink-0" aria-hidden />
+        </div>
+
+        {/* Desktop: compact 3-column grid */}
+        <div className="hidden sm:grid grid-cols-3 gap-3">
+          {displayedStyles.map((style, index) => (
+            <StyleCard
+              key={style.id}
+              style={style}
+              index={index}
+              isSelected={selectedStyle?.id === style.id}
+              isBestMatch={bestMatchId === style.id}
+              onClick={() => handleCardClick(style)}
+            />
+          ))}
+        </div>
+      </LayoutGroup>
+
+      {/* Compact confirm pill — appears below grid when a style is selected */}
+      <AnimatePresence>
+        {selectedStyle && onConfirmSelection && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button
+              size="sm"
+              onClick={handleConfirm}
+              disabled={isLoading}
+              className="rounded-full gap-1.5 px-4 h-8"
+            >
+              Continue with {selectedStyle.name}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

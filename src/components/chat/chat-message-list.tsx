@@ -656,17 +656,20 @@ export function ChatMessageList({
                                     onViewStoryboard={onViewStoryboard}
                                   />
                                 )}
-                              {message.structureData.type === 'layout' && (
-                                <LayoutPreview sections={message.structureData.sections} />
-                              )}
-                              {message.structureData.type === 'calendar' && (
-                                <ContentCalendar outline={message.structureData.outline} />
-                              )}
-                              {message.structureData.type === 'single_design' && (
-                                <DesignSpecView
-                                  specification={message.structureData.specification}
-                                />
-                              )}
+                              {message.structureData.type === 'layout' &&
+                                !structurePanelVisible && (
+                                  <LayoutPreview sections={message.structureData.sections} />
+                                )}
+                              {message.structureData.type === 'calendar' &&
+                                !structurePanelVisible && (
+                                  <ContentCalendar outline={message.structureData.outline} />
+                                )}
+                              {message.structureData.type === 'single_design' &&
+                                !structurePanelVisible && (
+                                  <DesignSpecView
+                                    specification={message.structureData.specification}
+                                  />
+                                )}
                             </motion.div>
                           )}
 

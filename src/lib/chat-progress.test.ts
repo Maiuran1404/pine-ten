@@ -16,7 +16,7 @@ import {
 
 describe('CHAT_STAGES', () => {
   it('contains all expected stages in order', () => {
-    expect(CHAT_STAGES).toEqual(['brief', 'style', 'details', 'review', 'submit'])
+    expect(CHAT_STAGES).toEqual(['brief', 'details', 'style', 'review', 'submit'])
   })
 })
 
@@ -182,12 +182,12 @@ describe('calculateChatStage', () => {
 })
 
 describe('getNextStage', () => {
-  it('returns style after brief', () => {
-    expect(getNextStage('brief')).toBe('style')
+  it('returns details after brief', () => {
+    expect(getNextStage('brief')).toBe('details')
   })
 
-  it('returns details after style', () => {
-    expect(getNextStage('style')).toBe('details')
+  it('returns style after details', () => {
+    expect(getNextStage('details')).toBe('style')
   })
 
   it('returns null for last stage', () => {

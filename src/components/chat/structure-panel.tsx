@@ -26,6 +26,7 @@ interface StructurePanelProps {
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
+  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   className?: string
 }
 
@@ -148,6 +149,7 @@ export function StructurePanel({
   onRegenerateScene,
   onRegenerateField,
   onSectionReorder,
+  onSectionEdit,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -215,6 +217,7 @@ export function StructurePanel({
               sections={structureData.sections}
               mode="interactive"
               onSectionReorder={onSectionReorder}
+              onSectionEdit={onSectionEdit}
             />
           </div>
         </ScrollArea>

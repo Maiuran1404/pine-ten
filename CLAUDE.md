@@ -133,22 +133,24 @@ Only skip planning for trivial single-line fixes (typos, obvious bugs, small twe
 
 ## Agents & Commands
 
-| Agent              | Purpose                                        |
-| ------------------ | ---------------------------------------------- |
-| `code-reviewer`    | PR review against project conventions          |
-| `security-auditor` | Auth, secrets, input validation audits         |
-| `test-writer`      | Generate co-located Vitest tests               |
-| `db-migration`     | Safe schema → generate → review → migrate flow |
-| `refactor`         | DRY refactoring with project conventions       |
-| `perf-analyzer`    | Performance audit — config/infra only, no code |
+| Agent               | Purpose                                              |
+| ------------------- | ---------------------------------------------------- |
+| `code-reviewer`     | PR review against project conventions                |
+| `frontend-designer` | Design-aware frontend builds with visual verify loop |
+| `security-auditor`  | Auth, secrets, input validation audits               |
+| `test-writer`       | Generate co-located Vitest tests                     |
+| `db-migration`      | Safe schema → generate → review → migrate flow       |
+| `refactor`          | DRY refactoring with project conventions             |
+| `perf-analyzer`     | Performance audit — config/infra only, no code       |
 
-| Command        | Purpose                                        |
-| -------------- | ---------------------------------------------- |
-| `/review`      | Review staged changes                          |
-| `/deep-review` | Deep review with security + perf analysis      |
-| `/validate`    | Run full validation suite with summary         |
-| `/fix-types`   | Find and fix TypeScript errors                 |
-| `/perf-audit`  | Run performance audit (config & infra focused) |
+| Command          | Purpose                                        |
+| ---------------- | ---------------------------------------------- |
+| `/review`        | Review staged changes                          |
+| `/deep-review`   | Deep review with security + perf analysis      |
+| `/design-review` | Design system, accessibility, and visual audit |
+| `/validate`      | Run full validation suite with summary         |
+| `/fix-types`     | Find and fix TypeScript errors                 |
+| `/perf-audit`    | Run performance audit (config & infra focused) |
 
 ## Multi-Fix Workflow
 

@@ -14,6 +14,7 @@ import {
   aiEnhancedStyleSearch,
   refineStyleSearch,
 } from '@/lib/ai/semantic-style-search'
+import { searchStyleImages } from '@/lib/ai/style-image-search'
 import {
   inferFromMessage,
   applyInferenceToBrief,
@@ -161,26 +162,55 @@ async function handler(request: NextRequest) {
             if (videoRefsResult.length === 0 && allVideoRefs.length > 0) {
               videoRefsResult = allVideoRefs.slice(0, 3)
             }
-          } else if (type === 'more' && styleAxis) {
-            // Use brand-aware scoring for more styles
-            deliverableStyles = await getBrandAwareStylesOfAxis(
-              normalizedType,
-              styleAxis as StyleAxis,
-              session.user.id,
-              styleOffset || 0
+          } else if (type === 'more') {
+            // Dynamic web search for more styles
+            const searchTerms = clientStyleMarker.searchTerms
+            deliverableStyles = await searchStyleImages(
+              {
+                searchTerms,
+                deliverableType: normalizedType,
+                styleAxis: styleAxis,
+              },
+              {
+                count: 6,
+                offset: styleOffset || 0,
+                styleContext,
+              }
             )
-          } else if (type === 'different') {
-            // For different styles, get brand-aware styles excluding already shown axes
-            deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
-              includeAllAxes: true,
-              limit: 4,
-              context: styleContext,
-            })
-            // Filter out excluded axes
-            if (excludeStyleAxes?.length) {
-              deliverableStyles = deliverableStyles.filter(
-                (s) => !excludeStyleAxes.includes(s.styleAxis)
+            // Fallback to DB if dynamic search returns nothing
+            if ((!deliverableStyles || deliverableStyles.length === 0) && styleAxis) {
+              deliverableStyles = await getBrandAwareStylesOfAxis(
+                normalizedType,
+                styleAxis as StyleAxis,
+                session.user.id,
+                styleOffset || 0
               )
+            }
+          } else if (type === 'different') {
+            // Dynamic web search with different terms
+            deliverableStyles = await searchStyleImages(
+              {
+                searchTerms: clientStyleMarker.searchTerms,
+                deliverableType: normalizedType,
+              },
+              {
+                count: 6,
+                styleContext,
+                excludeTerms: excludeStyleAxes,
+              }
+            )
+            // Fallback to DB if dynamic search returns nothing
+            if (!deliverableStyles || deliverableStyles.length === 0) {
+              deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
+                includeAllAxes: true,
+                limit: 4,
+                context: styleContext,
+              })
+              if (excludeStyleAxes?.length) {
+                deliverableStyles = deliverableStyles.filter(
+                  (s) => !excludeStyleAxes.includes(s.styleAxis)
+                )
+              }
             }
           }
         } catch (err) {
@@ -273,7 +303,7 @@ async function handler(request: NextRequest) {
           // 5b. Sync visualDirection from moodboard — the useBrief hook updates its own
           // brief.visualDirection but the state machine's brief is separate. When client
           // indicates moodboard has styles, populate state machine's visualDirection
-          // so INSPIRATION → STRUCTURE transition works.
+          // so INSPIRATION → ELABORATE transition works.
           if (moodboardHasStyles && briefingState.stage === 'INSPIRATION') {
             if (
               !briefingState.brief.visualDirection ||
@@ -449,35 +479,67 @@ async function handler(request: NextRequest) {
                 logger.debug('Skipping image styles for video type - will show video references')
                 break
               }
-              // Use brand-aware styles with one per axis, sorted by brand match
-              deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
-                includeAllAxes: true,
-                context: styleContext,
-              })
+              // Dynamic web image search using AI-provided search terms or context
+              deliverableStyles = await searchStyleImages(
+                {
+                  searchTerms: deliverableStyleMarker.searchTerms,
+                  deliverableType: normalizedType,
+                },
+                { count: 6, styleContext }
+              )
+              // Fallback to DB styles if dynamic search returns nothing
+              if (!deliverableStyles || deliverableStyles.length === 0) {
+                deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
+                  includeAllAxes: true,
+                  context: styleContext,
+                })
+              }
               break
             case 'more':
               // Skip image styles for video types
               if (isVideoType) break
-              deliverableStyles = await getBrandAwareStylesOfAxis(
-                normalizedType,
-                styleAxis as StyleAxis,
-                session.user.id,
-                styleOffset || 0
+              // Dynamic search for more of the same style
+              deliverableStyles = await searchStyleImages(
+                {
+                  searchTerms: deliverableStyleMarker.searchTerms,
+                  deliverableType: normalizedType,
+                  styleAxis: styleAxis,
+                },
+                { count: 6, offset: styleOffset || 0, styleContext }
               )
+              // Fallback to DB
+              if ((!deliverableStyles || deliverableStyles.length === 0) && styleAxis) {
+                deliverableStyles = await getBrandAwareStylesOfAxis(
+                  normalizedType,
+                  styleAxis as StyleAxis,
+                  session.user.id,
+                  styleOffset || 0
+                )
+              }
               break
             case 'different':
               // Skip image styles for video types
               if (isVideoType) break
-              deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
-                includeAllAxes: true,
-                limit: 4,
-                context: styleContext,
-              })
-              // Filter out excluded axes
-              if (excludeStyleAxes?.length) {
-                deliverableStyles = deliverableStyles.filter(
-                  (s) => !excludeStyleAxes.includes(s.styleAxis)
-                )
+              // Dynamic search with different style terms
+              deliverableStyles = await searchStyleImages(
+                {
+                  searchTerms: deliverableStyleMarker.searchTerms,
+                  deliverableType: normalizedType,
+                },
+                { count: 6, styleContext, excludeTerms: excludeStyleAxes }
+              )
+              // Fallback to DB
+              if (!deliverableStyles || deliverableStyles.length === 0) {
+                deliverableStyles = await getBrandAwareStyles(normalizedType, session.user.id, {
+                  includeAllAxes: true,
+                  limit: 4,
+                  context: styleContext,
+                })
+                if (excludeStyleAxes?.length) {
+                  deliverableStyles = deliverableStyles.filter(
+                    (s) => !excludeStyleAxes.includes(s.styleAxis)
+                  )
+                }
               }
               break
             case 'semantic':
@@ -702,10 +764,10 @@ async function handler(request: NextRequest) {
               declaredStage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : declaredStage
             const legal = getLegalTransitions(briefingState.stage)
             if (legal.includes(effectiveStage)) {
-              // Guard: Don't skip ahead past ELABORATE on the first turn.
+              // Guard: Don't skip ahead past INSPIRATION on the first turn.
               const blockingAdvance =
                 briefingState.stage === 'STRUCTURE' &&
-                effectiveStage === 'ELABORATE' &&
+                effectiveStage === 'INSPIRATION' &&
                 briefingState.turnsInCurrentStage === 0
 
               if (blockingAdvance) {
@@ -796,9 +858,9 @@ async function handler(request: NextRequest) {
                 // STRATEGIC_REVIEW is temporarily disabled — skip it entirely
                 const inferredStage =
                   stageInference.stage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : stageInference.stage
-                // Preserve blocking guards for STRUCTURE/ELABORATE transitions
+                // Preserve blocking guards for STRUCTURE/INSPIRATION transitions
                 const blockingAdvance =
-                  briefingState.stage === 'STRUCTURE' && inferredStage === 'ELABORATE'
+                  briefingState.stage === 'STRUCTURE' && inferredStage === 'INSPIRATION'
                 if (blockingAdvance) {
                   briefingState.turnsInCurrentStage += 1
                 } else if (inferredStage !== briefingState.stage) {
@@ -910,10 +972,10 @@ async function handler(request: NextRequest) {
           // 14-15. Auto-advance on structure/review parse
           // ================================================================
 
-          // Auto-advance STRUCTURE -> ELABORATE when structure data was just parsed
+          // Auto-advance STRUCTURE -> INSPIRATION when structure data was just parsed
           // on a non-first turn (first turn stays in STRUCTURE for user interaction)
           if (briefingState.stage === 'STRUCTURE' && structureData && turnsBeforeBriefMeta > 0) {
-            briefingState.stage = 'ELABORATE'
+            briefingState.stage = 'INSPIRATION'
             briefingState.turnsInCurrentStage = 0
           }
 
@@ -938,7 +1000,7 @@ async function handler(request: NextRequest) {
             )
             try {
               const reinforcement = getFormatReinforcement(structureType)
-              // Rebuild system prompt for STRUCTURE stage (stateMachineOverride has stale INSPIRATION prompt)
+              // Rebuild system prompt for STRUCTURE stage (stateMachineOverride has stale pre-transition prompt)
               const retryBrandContext: BrandContext = {
                 companyName: company?.name,
                 industry: company?.industry ?? undefined,

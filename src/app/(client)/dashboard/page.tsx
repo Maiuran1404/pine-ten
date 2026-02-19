@@ -22,6 +22,12 @@ import {
   Palette,
   Eye,
   PanelTop,
+  Instagram,
+  Linkedin,
+  Music,
+  Youtube,
+  Twitter,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
@@ -46,6 +52,48 @@ interface StyleReference {
   styleAxis: string | null
   contentCategory?: string
   colorTemperature?: string
+}
+
+const SOCIAL_MEDIA_PLATFORMS = [
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    icon: Instagram,
+    formats: ['Post', 'Story', 'Reels'],
+    defaultFrequency: '3x / week',
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    icon: Linkedin,
+    formats: ['Post', 'Carousel'],
+    defaultFrequency: '2x / week',
+  },
+  { id: 'tiktok', name: 'TikTok', icon: Music, formats: ['Video'], defaultFrequency: '3x / week' },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: Youtube,
+    formats: ['Shorts', 'Long-form'],
+    defaultFrequency: '1x / week',
+  },
+  { id: 'x', name: 'X', icon: Twitter, formats: ['Post', 'Thread'], defaultFrequency: 'Daily' },
+] as const
+
+const FREQUENCY_OPTIONS = [
+  'Daily',
+  '5x / week',
+  '3x / week',
+  '2x / week',
+  '1x / week',
+  '2x / month',
+  '1x / month',
+]
+
+interface PlatformSelection {
+  enabled: boolean
+  formats: string[]
+  frequency: string
 }
 
 // Template categories and sub-options based on service offerings
@@ -149,8 +197,7 @@ const TEMPLATE_CATEGORIES = {
   'Social Media': {
     icon: Share2,
     description: 'Ads, content & video edits',
-    modalDescription:
-      "Select the content type and platform. Share my goals and any assets, and we'll create scroll-stopping content.",
+    modalDescription: 'Choose your platforms and posting frequency.',
     options: [
       {
         title: 'Instagram Post',
@@ -252,6 +299,9 @@ function DashboardContent() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [modalNotes, setModalNotes] = useState('')
+  const [platformSelections, setPlatformSelections] = useState<Record<string, PlatformSelection>>(
+    {}
+  )
   const [tasksForReview, setTasksForReview] = useState<
     { id: string; title: string; description: string }[]
   >([])
@@ -570,7 +620,7 @@ function DashboardContent() {
 
         {/* Grain overlay for organic texture */}
         <div
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.08] dark:opacity-[0.1]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
             backgroundSize: '128px 128px',
@@ -920,11 +970,19 @@ function DashboardContent() {
                     setSelectedCategory(category)
                     setSelectedOption(null)
                     setModalNotes('')
+                    setPlatformSelections({})
                   }}
                   className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
                 >
                   <div
                     className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-90 group-hover:opacity-100 transition-opacity`}
+                  />
+                  <div
+                    className="absolute inset-0 opacity-[0.15]"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                      backgroundSize: '128px 128px',
+                    }}
                   />
                   <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
                   <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
@@ -945,6 +1003,7 @@ function DashboardContent() {
             setSelectedCategory(null)
             setSelectedOption(null)
             setModalNotes('')
+            setPlatformSelections({})
           }
         }}
       >
@@ -961,12 +1020,21 @@ function DashboardContent() {
                   : optionCount >= 3
                     ? 'grid-cols-1 sm:grid-cols-3'
                     : 'grid-cols-1 sm:grid-cols-2'
+              // Earthy gradient palette for option cards
+              const optionGradients = [
+                'from-[#6b7f5e] to-[#4a5c3f]',
+                'from-[#7a7968] to-[#5c5b4d]',
+                'from-[#5e7a72] to-[#425c55]',
+                'from-[#8a7e5e] to-[#6b6145]',
+                'from-[#6e7d5a] to-[#505c3e]',
+                'from-[#6a756e] to-[#4d5750]',
+              ]
               return (
                 <>
                   {/* Header */}
                   <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-[#5e7a62] flex items-center justify-center shrink-0">
                         {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
                       </div>
                       <DialogTitle className="text-base font-semibold text-foreground tracking-tight">
@@ -978,122 +1046,326 @@ function DashboardContent() {
                     </p>
                   </div>
 
-                  {/* Options Grid */}
-                  <div className={`px-5 pb-4 grid ${gridCols} gap-2.5`}>
-                    {category?.options.map((option, index) => {
-                      const isSelected = selectedOption === option.title
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedOption(isSelected ? null : option.title)}
-                          className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left h-full overflow-hidden ring-1 ring-inset ${
-                            isSelected
-                              ? 'ring-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm'
-                              : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-emerald-500/50 hover:shadow-sm'
-                          }`}
-                        >
-                          {/* Image */}
-                          <div className="relative w-full h-24 overflow-hidden bg-muted/20">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={option.image}
-                              alt={option.title}
-                              className={`w-full h-full object-cover transition-transform duration-300 ${
-                                isSelected ? 'scale-105' : 'group-hover:scale-105'
-                              }`}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                            {/* Check */}
+                  {selectedCategory === 'Social Media' ? (
+                    <>
+                      {/* Platform Picker */}
+                      <div className="px-5 pb-4 flex flex-col gap-2.5">
+                        {SOCIAL_MEDIA_PLATFORMS.map((platform) => {
+                          const sel = platformSelections[platform.id]
+                          const isEnabled = sel?.enabled ?? false
+                          const PlatformIcon = platform.icon
+                          return (
                             <div
-                              className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
-                                isSelected
-                                  ? 'border-emerald-500 bg-emerald-500 scale-100'
-                                  : 'border-white/50 bg-black/10 backdrop-blur-sm scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
+                              key={platform.id}
+                              className={`rounded-xl ring-1 ring-inset transition-all duration-200 ${
+                                isEnabled
+                                  ? 'ring-[#5e7a62] bg-[#5e7a62]/5 dark:bg-[#5e7a62]/10'
+                                  : 'ring-black/[0.06] dark:ring-white/[0.06]'
                               }`}
                             >
-                              {isSelected && (
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={3}
+                              <div
+                                className={`flex items-center gap-3 px-4 py-3 ${!isEnabled ? 'opacity-50' : ''}`}
+                              >
+                                {/* Checkbox + Icon + Name */}
+                                <button
+                                  onClick={() => {
+                                    setPlatformSelections((prev) => {
+                                      const current = prev[platform.id]
+                                      if (current?.enabled) {
+                                        const next = { ...prev }
+                                        delete next[platform.id]
+                                        return next
+                                      }
+                                      return {
+                                        ...prev,
+                                        [platform.id]: {
+                                          enabled: true,
+                                          formats: [...platform.formats],
+                                          frequency: platform.defaultFrequency,
+                                        },
+                                      }
+                                    })
+                                  }}
+                                  className="flex items-center gap-3 min-w-0 text-left shrink-0"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
+                                  <div
+                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
+                                      isEnabled
+                                        ? 'border-[#5e7a62] bg-[#5e7a62]'
+                                        : 'border-border/60 bg-white dark:bg-zinc-800'
+                                    }`}
+                                  >
+                                    {isEnabled && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <PlatformIcon
+                                    className={`h-4.5 w-4.5 shrink-0 ${isEnabled ? 'text-[#4a5c3f] dark:text-[#8aab7e]' : 'text-muted-foreground'}`}
                                   />
-                                </svg>
-                              )}
+                                  <span
+                                    className={`font-semibold text-sm ${isEnabled ? 'text-[#4a5c3f] dark:text-[#8aab7e]' : 'text-foreground'}`}
+                                  >
+                                    {platform.name}
+                                  </span>
+                                </button>
+
+                                {/* Format Pills + Frequency — pushed right, allowed to wrap */}
+                                <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+                                  {platform.formats.map((format) => {
+                                    const isFormatActive = sel?.formats.includes(format) ?? false
+                                    return (
+                                      <button
+                                        key={format}
+                                        disabled={!isEnabled}
+                                        onClick={() => {
+                                          if (!isEnabled) return
+                                          setPlatformSelections((prev) => {
+                                            const current = prev[platform.id]
+                                            if (!current) return prev
+                                            const currentFormats = current.formats
+                                            if (isFormatActive && currentFormats.length <= 1)
+                                              return prev
+                                            return {
+                                              ...prev,
+                                              [platform.id]: {
+                                                ...current,
+                                                formats: isFormatActive
+                                                  ? currentFormats.filter((f) => f !== format)
+                                                  : [...currentFormats, format],
+                                              },
+                                            }
+                                          })
+                                        }}
+                                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-150 ${
+                                          isEnabled && isFormatActive
+                                            ? 'bg-[#5e7a62]/10 text-[#4a5c3f] dark:text-[#8aab7e]'
+                                            : 'bg-muted text-muted-foreground'
+                                        } ${isEnabled ? 'cursor-pointer hover:bg-[#5e7a62]/15' : 'cursor-default'}`}
+                                      >
+                                        {format}
+                                      </button>
+                                    )
+                                  })}
+
+                                  {/* Frequency Select */}
+                                  <select
+                                    disabled={!isEnabled}
+                                    value={sel?.frequency ?? platform.defaultFrequency}
+                                    onChange={(e) => {
+                                      setPlatformSelections((prev) => {
+                                        const current = prev[platform.id]
+                                        if (!current) return prev
+                                        return {
+                                          ...prev,
+                                          [platform.id]: { ...current, frequency: e.target.value },
+                                        }
+                                      })
+                                    }}
+                                    className={`h-7 text-xs rounded-md border border-border/40 bg-white dark:bg-zinc-800 px-2 pr-6 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 transition-all appearance-none shrink-0 ${
+                                      !isEnabled
+                                        ? 'cursor-default text-muted-foreground'
+                                        : 'cursor-pointer text-foreground'
+                                    }`}
+                                    style={{
+                                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                                      backgroundRepeat: 'no-repeat',
+                                      backgroundPosition: 'right 6px center',
+                                    }}
+                                  >
+                                    {FREQUENCY_OPTIONS.map((freq) => (
+                                      <option key={freq} value={freq}>
+                                        {freq}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          {/* Content */}
-                          <div className="p-3 flex-1 flex flex-col">
-                            <h3
-                              className={`font-semibold text-[13px] mb-1 transition-colors ${
+                          )
+                        })}
+                      </div>
+
+                      {/* Notes + Continue for Social Media */}
+                      <div className="px-5 pb-5 pt-1 border-t border-border/20">
+                        <div className="relative mt-3">
+                          <input
+                            type="text"
+                            value={modalNotes}
+                            onChange={(e) => setModalNotes(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const enabledPlatforms = Object.entries(platformSelections).filter(
+                                  ([, v]) => v.enabled
+                                )
+                                if (enabledPlatforms.length > 0) {
+                                  const platformDescriptions = enabledPlatforms.map(([id, s]) => {
+                                    const p = SOCIAL_MEDIA_PLATFORMS.find((pl) => pl.id === id)
+                                    return `${p?.name} (${s.formats.join(', ')} — ${s.frequency})`
+                                  })
+                                  const prompt = `Create social media content. Platforms: ${platformDescriptions.join(', ')}.${modalNotes ? ` Additional notes: ${modalNotes}` : ''}`
+                                  handleSubmit(prompt)
+                                  setSelectedCategory(null)
+                                  setModalNotes('')
+                                  setPlatformSelections({})
+                                }
+                              }
+                            }}
+                            placeholder="Add any details or goals..."
+                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 text-sm transition-all"
+                          />
+                          <button
+                            onClick={() => {
+                              const enabledPlatforms = Object.entries(platformSelections).filter(
+                                ([, v]) => v.enabled
+                              )
+                              if (enabledPlatforms.length > 0) {
+                                const platformDescriptions = enabledPlatforms.map(([id, s]) => {
+                                  const p = SOCIAL_MEDIA_PLATFORMS.find((pl) => pl.id === id)
+                                  return `${p?.name} (${s.formats.join(', ')} — ${s.frequency})`
+                                })
+                                const prompt = `Create social media content. Platforms: ${platformDescriptions.join(', ')}.${modalNotes ? ` Additional notes: ${modalNotes}` : ''}`
+                                handleSubmit(prompt)
+                                setSelectedCategory(null)
+                                setModalNotes('')
+                                setPlatformSelections({})
+                              }
+                            }}
+                            disabled={
+                              Object.values(platformSelections).filter((v) => v.enabled).length ===
+                              0
+                            }
+                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#5e7a62] hover:bg-[#4a5c3f] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                          >
+                            Continue
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Options Grid (non-Social Media categories) */}
+                      <div className={`px-5 pb-4 grid ${gridCols} gap-2.5`}>
+                        {category?.options.map((option, index) => {
+                          const isSelected = selectedOption === option.title
+                          const optGradient = optionGradients[index % optionGradients.length]
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedOption(isSelected ? null : option.title)}
+                              className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left h-full overflow-hidden ring-1 ring-inset ${
                                 isSelected
-                                  ? 'text-emerald-700 dark:text-emerald-400'
-                                  : 'text-foreground'
+                                  ? 'ring-[#5e7a62] bg-[#5e7a62]/5 dark:bg-[#5e7a62]/10 shadow-sm'
+                                  : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-[#5e7a62]/50 hover:shadow-sm'
                               }`}
                             >
-                              {option.title}
-                            </h3>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                              {option.description}
-                            </p>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                              {/* Gradient area with grain */}
+                              <div className="relative w-full h-24 overflow-hidden flex items-center justify-center">
+                                <div
+                                  className={`absolute inset-0 bg-gradient-to-br ${optGradient}`}
+                                />
+                                <div
+                                  className="absolute inset-0 opacity-[0.15]"
+                                  style={{
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                                    backgroundSize: '128px 128px',
+                                  }}
+                                />
+                                {Icon && <Icon className="relative z-10 h-6 w-6 text-white/80" />}
+                                {/* Check */}
+                                <div
+                                  className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 z-10 ${
+                                    isSelected
+                                      ? 'border-white bg-white scale-100'
+                                      : 'border-white/40 bg-white/10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg
+                                      className="w-3 h-3 text-[#4a5c3f]"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={3}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Content */}
+                              <div className="p-3 flex-1 flex flex-col">
+                                <h3
+                                  className={`font-semibold text-[13px] mb-1 transition-colors ${
+                                    isSelected
+                                      ? 'text-[#4a5c3f] dark:text-[#8aab7e]'
+                                      : 'text-foreground'
+                                  }`}
+                                >
+                                  {option.title}
+                                </h3>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                                  {option.description}
+                                </p>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
 
-                  {/* Notes + Continue */}
-                  <div className="px-5 pb-5 pt-1 border-t border-border/20">
-                    <div className="relative mt-3">
-                      <input
-                        type="text"
-                        value={modalNotes}
-                        onChange={(e) => setModalNotes(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && selectedOption) {
-                            const option = category?.options.find((o) => o.title === selectedOption)
-                            if (option) {
-                              const fullPrompt = modalNotes
-                                ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                : `${option.prompt}. ${option.description}`
-                              handleSubmit(fullPrompt)
-                              setSelectedCategory(null)
-                              setSelectedOption(null)
-                              setModalNotes('')
-                            }
-                          }
-                        }}
-                        placeholder="Add any specific details or requirements..."
-                        className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 text-sm transition-all"
-                      />
-                      <button
-                        onClick={() => {
-                          if (selectedOption) {
-                            const option = category?.options.find((o) => o.title === selectedOption)
-                            if (option) {
-                              const fullPrompt = modalNotes
-                                ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                : `${option.prompt}. ${option.description}`
-                              handleSubmit(fullPrompt)
-                              setSelectedCategory(null)
-                              setSelectedOption(null)
-                              setModalNotes('')
-                            }
-                          }
-                        }}
-                        disabled={!selectedOption}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
-                      >
-                        Continue
-                      </button>
-                    </div>
-                  </div>
+                      {/* Notes + Continue */}
+                      <div className="px-5 pb-5 pt-1 border-t border-border/20">
+                        <div className="relative mt-3">
+                          <input
+                            type="text"
+                            value={modalNotes}
+                            onChange={(e) => setModalNotes(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && selectedOption) {
+                                const option = category?.options.find(
+                                  (o) => o.title === selectedOption
+                                )
+                                if (option) {
+                                  const fullPrompt = modalNotes
+                                    ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                    : `${option.prompt}. ${option.description}`
+                                  handleSubmit(fullPrompt)
+                                  setSelectedCategory(null)
+                                  setSelectedOption(null)
+                                  setModalNotes('')
+                                }
+                              }
+                            }}
+                            placeholder="Add any specific details or requirements..."
+                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 text-sm transition-all"
+                          />
+                          <button
+                            onClick={() => {
+                              if (selectedOption) {
+                                const option = category?.options.find(
+                                  (o) => o.title === selectedOption
+                                )
+                                if (option) {
+                                  const fullPrompt = modalNotes
+                                    ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                    : `${option.prompt}. ${option.description}`
+                                  handleSubmit(fullPrompt)
+                                  setSelectedCategory(null)
+                                  setSelectedOption(null)
+                                  setModalNotes('')
+                                }
+                              }
+                            }}
+                            disabled={!selectedOption}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#5e7a62] hover:bg-[#4a5c3f] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                          >
+                            Continue
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </>
               )
             })()}

@@ -82,6 +82,7 @@ export interface LayoutSection {
   ctaText?: string
   referenceDescription?: string
   referenceStyleIds?: string[]
+  userNotes?: string
 }
 
 export interface ContentCalendarOutline {
@@ -237,8 +238,8 @@ const STAGE_ORDER: BriefingStage[] = [
   'EXTRACT',
   'TASK_TYPE',
   'INTENT',
-  'INSPIRATION',
   'STRUCTURE',
+  'INSPIRATION',
   'ELABORATE',
   'STRATEGIC_REVIEW',
   'MOODBOARD',
@@ -257,11 +258,11 @@ const STAGE_ORDER: BriefingStage[] = [
  */
 export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
   const LEGAL: Record<BriefingStage, BriefingStage[]> = {
-    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'],
-    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'INSPIRATION'],
-    INTENT: ['INTENT', 'INSPIRATION'],
-    INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
-    STRUCTURE: ['STRUCTURE', 'ELABORATE'],
+    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE'],
+    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
+    INTENT: ['INTENT', 'STRUCTURE'],
+    STRUCTURE: ['STRUCTURE', 'INSPIRATION'],
+    INSPIRATION: ['INSPIRATION', 'ELABORATE'],
     ELABORATE: ['ELABORATE', 'MOODBOARD'],
     STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'MOODBOARD'],
     MOODBOARD: ['MOODBOARD', 'REVIEW'],
@@ -346,8 +347,8 @@ function evaluateExtractLanding(state: BriefingState, inference: InferenceResult
     return 'INTENT'
   }
 
-  // Both task type and intent are known — skip to INSPIRATION
-  return 'INSPIRATION'
+  // Both task type and intent are known — skip to STRUCTURE
+  return 'STRUCTURE'
 }
 
 /**
@@ -365,32 +366,32 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
       if (!hasTaskType && !forceAdvance) return 'TASK_TYPE'
 
       const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
-      return hasIntent ? 'INSPIRATION' : 'INTENT'
+      return hasIntent ? 'STRUCTURE' : 'INTENT'
     }
 
     case 'INTENT': {
       const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
       const forceAdvance =
         state.turnsInCurrentStage >= (STALL_CONFIG.INTENT.maxTurnsBeforeRecommend ?? Infinity)
-      return hasIntent || forceAdvance ? 'INSPIRATION' : 'INTENT'
+      return hasIntent || forceAdvance ? 'STRUCTURE' : 'INTENT'
+    }
+
+    case 'STRUCTURE': {
+      // INSPIRATION requires structure !== null, or force-advance after 3 turns
+      // to prevent permanent stuck state when structure markers are missing
+      if (state.structure !== null || state.turnsInCurrentStage >= 3) {
+        return 'INSPIRATION'
+      }
+      return 'STRUCTURE'
     }
 
     case 'INSPIRATION': {
-      // STRUCTURE requires selectedStyles.length > 0, or force-advance after 3 turns
+      // ELABORATE requires selectedStyles.length > 0, or force-advance after 3 turns
       const hasStyles =
         state.brief.visualDirection !== null &&
         state.brief.visualDirection.selectedStyles.length > 0
       const forceAdvance = state.turnsInCurrentStage >= 3
-      return hasStyles || forceAdvance ? 'STRUCTURE' : 'INSPIRATION'
-    }
-
-    case 'STRUCTURE': {
-      // ELABORATE requires structure !== null, or force-advance after 3 turns
-      // to prevent permanent stuck state when structure markers are missing
-      if (state.structure !== null || state.turnsInCurrentStage >= 3) {
-        return 'ELABORATE'
-      }
-      return 'STRUCTURE'
+      return hasStyles || forceAdvance ? 'ELABORATE' : 'INSPIRATION'
     }
 
     case 'ELABORATE': {
@@ -499,7 +500,7 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
   }
 
   // Clear fields based on target stage
-  // Going back to INSPIRATION: clears selectedStyles, preserves intent/topic/audience
+  // Going back to INSPIRATION or earlier: clears visualDirection
   if (targetIndex <= STAGE_ORDER.indexOf('INSPIRATION')) {
     newState.brief = {
       ...newState.brief,

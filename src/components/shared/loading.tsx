@@ -17,18 +17,29 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
   )
 }
 
+function GrainOverlay() {
+  return (
+    <span
+      className="loading-grain-wordmark pointer-events-none absolute inset-0 z-[2] flex select-none items-center justify-center font-satoshi text-2xl font-light tracking-[0.3em] text-foreground"
+      aria-hidden="true"
+    >
+      crafted
+    </span>
+  )
+}
+
 export function PageLoader() {
   return (
-    <div className="flex h-full min-h-[400px] w-full items-center justify-center">
-      <LoadingSpinner size="lg" />
+    <div className="loading-grain flex h-full min-h-[400px] w-full items-center justify-center">
+      <GrainOverlay />
     </div>
   )
 }
 
 export function FullPageLoader() {
   return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <LoadingSpinner size="lg" />
+    <div className="loading-grain flex h-screen w-full items-center justify-center">
+      <GrainOverlay />
     </div>
   )
 }

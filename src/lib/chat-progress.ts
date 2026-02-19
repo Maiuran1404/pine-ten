@@ -24,12 +24,12 @@ interface ProgressResult {
 /**
  * Stage definitions with descriptions
  */
-export const CHAT_STAGES: ChatStage[] = ['brief', 'style', 'details', 'review', 'submit']
+export const CHAT_STAGES: ChatStage[] = ['brief', 'details', 'style', 'review', 'submit']
 
 export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   brief: 'Describe your project',
   style: 'Choose your visual style',
-  details: 'Refine your requirements',
+  details: 'Define your structure',
   strategic_review: 'Strategic review',
   moodboard: 'Refine your moodboard',
   review: 'Review your request',
@@ -43,8 +43,8 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
  */
 export const BRIEFING_CHAT_STAGES: ChatStage[] = [
   'brief',
-  'style',
   'details',
+  'style',
   'strategic_review',
   'moodboard',
   'review',

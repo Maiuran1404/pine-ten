@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
-import { Check, Search, X, Eye } from 'lucide-react'
+import { Check, Search, X, Eye, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -23,6 +23,12 @@ export interface DeliverableStyle {
   matchReason?: string
   // Example output support
   exampleOutputUrl?: string | null
+  // Attribution for web-sourced images
+  attribution?: {
+    source: 'serper' | 'pexels' | 'db'
+    domain: string
+    sourceUrl: string
+  }
 }
 
 interface DeliverableStyleGridProps {
@@ -72,11 +78,15 @@ export function DeliverableStyleGrid({
   }
 
   // Calculate available axes for "show different" button
+  // With dynamic web search, always allow showing different results
+  const hasWebSourcedStyles = styles.some(
+    (s) => s.attribution?.source === 'serper' || s.attribution?.source === 'pexels'
+  )
   const currentAxes = new Set(styles.map((s) => s.styleAxis))
   const allKnownAxes = STYLE_AXES.map((a) => a.value)
   const seenAxes = new Set([...(shownAxes || []), ...currentAxes])
   const remainingAxes = allKnownAxes.filter((a) => !seenAxes.has(a))
-  const hasMoreDifferentStyles = remainingAxes.length > 0
+  const hasMoreDifferentStyles = hasWebSourcedStyles || remainingAxes.length > 0
 
   return (
     <div className="space-y-4">
@@ -159,10 +169,29 @@ export function DeliverableStyleGrid({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <p className="text-white text-sm font-medium truncate">{style.name}</p>
+                    {/* Source attribution on hover */}
+                    {style.attribution && isHovered && (
+                      <p className="text-white/60 text-[10px] mt-0.5 truncate">
+                        via {style.attribution.domain}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Source link button - only on hover for web-sourced images */}
+                  {style.attribution?.sourceUrl && isHovered && (
+                    <a
+                      href={style.attribution.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+
                   {/* Example output button - only on hover */}
-                  {style.exampleOutputUrl && isHovered && (
+                  {style.exampleOutputUrl && isHovered && !style.attribution?.sourceUrl && (
                     <button
                       className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-white/90 text-black hover:bg-white transition-colors"
                       onClick={(e) => {

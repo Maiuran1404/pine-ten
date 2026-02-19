@@ -1,8 +1,19 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Layout, Layers, GripVertical, Lock, X, Plus, Pencil, Check } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Layout,
+  Layers,
+  GripVertical,
+  Lock,
+  X,
+  Plus,
+  Pencil,
+  Check,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -28,6 +39,7 @@ interface LayoutPreviewProps {
   sections: LayoutSection[]
   mode?: 'readonly' | 'interactive'
   onSectionReorder?: (sections: LayoutSection[]) => void
+  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   className?: string
 }
 
@@ -68,10 +80,73 @@ function isPinnedSection(sectionName: string): boolean {
 }
 
 // =============================================================================
-// SECTION WIREFRAME RENDERERS
+// FRIENDLY NAME MAPPING
 // =============================================================================
 
-function HeroBlock() {
+function getFriendlyName(sectionName: string): string {
+  const type = detectSectionType(sectionName)
+  switch (type) {
+    case 'hero':
+      return 'First Impression'
+    case 'testimonials':
+      return 'Happy Customers'
+    case 'cta':
+      return 'Next Step'
+    case 'footer':
+      return 'Page Footer'
+    case 'faq':
+      return 'Common Questions'
+    case 'features':
+      return 'Why Choose You'
+    case 'pricing':
+      return 'Pricing'
+    case 'gallery':
+      return 'Gallery'
+    case 'fallback':
+      return sectionName
+  }
+}
+
+// =============================================================================
+// NOTE PLACEHOLDER MAPPING
+// =============================================================================
+
+function getNotePlaceholder(sectionType: SectionType): string {
+  switch (sectionType) {
+    case 'hero':
+      return 'What photo or message should grab attention?'
+    case 'features':
+      return 'What are your top selling points?'
+    case 'testimonials':
+      return 'Any favorite reviews or customer quotes?'
+    case 'cta':
+      return 'What should visitors do next?'
+    case 'faq':
+      return 'What do people always ask you?'
+    case 'gallery':
+      return 'What images or work should be showcased?'
+    case 'pricing':
+      return 'What plans or packages do you offer?'
+    default:
+      return 'Any thoughts or ideas for this section?'
+  }
+}
+
+// =============================================================================
+// SECTION WIREFRAME RENDERERS (compact for interactive mode)
+// =============================================================================
+
+function HeroBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="space-y-1.5 p-2">
+        <NavBar />
+        <ImagePlaceholder className="h-10 w-full" />
+        <TextLines lines={1} widths={[70]} size="sm" />
+        <ButtonShape width="w-14" />
+      </div>
+    )
+  }
   return (
     <div className="space-y-3 p-4">
       <NavBar />
@@ -82,7 +157,19 @@ function HeroBlock() {
   )
 }
 
-function FeaturesBlock() {
+function FeaturesBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="grid grid-cols-3 gap-1.5 p-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <CircleIcon size="sm" />
+            <TextLines lines={2} widths={[90, 60]} size="sm" />
+          </div>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-3 gap-3 p-4">
       {[1, 2, 3].map((i) => (
@@ -95,7 +182,16 @@ function FeaturesBlock() {
   )
 }
 
-function TestimonialsBlock() {
+function TestimonialsBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center gap-1 p-2">
+        <QuoteGlyph className="text-lg" />
+        <TextLines lines={1} widths={[70]} size="sm" className="w-3/4" />
+        <CircleIcon size="sm" />
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col items-center gap-2 p-4">
       <QuoteGlyph className="text-3xl" />
@@ -105,7 +201,14 @@ function TestimonialsBlock() {
   )
 }
 
-function CtaBlock() {
+function CtaBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800/50 border-y border-slate-300 dark:border-slate-600 py-2 px-2">
+        <ButtonShape width="w-16" />
+      </div>
+    )
+  }
   return (
     <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800/50 border-y border-slate-300 dark:border-slate-600 py-5 px-4">
       <ButtonShape width="w-28" />
@@ -113,7 +216,25 @@ function CtaBlock() {
   )
 }
 
-function FooterBlock() {
+function FooterBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="px-2 py-1.5 space-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            {[1, 2, 3].map((i) => (
+              <BlockRect key={i} className="w-3 h-3" />
+            ))}
+          </div>
+          <div className="flex gap-3">
+            {[1, 2].map((i) => (
+              <TextLines key={i} lines={2} widths={[100, 80]} size="sm" className="w-8" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
@@ -132,7 +253,25 @@ function FooterBlock() {
   )
 }
 
-function PricingBlock() {
+function PricingBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="grid grid-cols-3 gap-1 p-2">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="border border-slate-300 dark:border-slate-600 rounded-sm overflow-hidden"
+          >
+            <div className="h-2 bg-slate-200 dark:bg-slate-700 border-b border-slate-300 dark:border-slate-600" />
+            <div className="p-1 space-y-0.5">
+              <CheckRow />
+              <CheckRow />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-3 gap-2 p-4">
       {[1, 2, 3].map((i) => (
@@ -152,7 +291,16 @@ function PricingBlock() {
   )
 }
 
-function FaqBlock() {
+function FaqBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="space-y-1 p-2">
+        {[1, 2, 3].map((i) => (
+          <ChevronBar key={i} />
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="space-y-1.5 p-4">
       {[1, 2, 3, 4].map((i) => (
@@ -162,7 +310,16 @@ function FaqBlock() {
   )
 }
 
-function GalleryBlock() {
+function GalleryBlock({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="grid grid-cols-2 gap-1 p-2">
+        {[1, 2, 3, 4].map((i) => (
+          <ImagePlaceholder key={i} className="h-8 w-full" />
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-2 gap-2 p-4">
       {[1, 2, 3, 4].map((i) => (
@@ -172,7 +329,16 @@ function GalleryBlock() {
   )
 }
 
-function FallbackBlock({ sectionName }: { sectionName: string }) {
+function FallbackBlock({ sectionName, compact }: { sectionName: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="relative p-2">
+        <div className="h-8 w-full border rounded-sm border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+          <span className="text-[8px] text-slate-400 dark:text-slate-500">{sectionName}</span>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="relative p-4">
       <div className="h-16 w-full border rounded-sm border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
@@ -186,26 +352,26 @@ function FallbackBlock({ sectionName }: { sectionName: string }) {
 // SECTION WIREFRAME DISPATCHER
 // =============================================================================
 
-function renderSectionWireframe(type: SectionType, sectionName: string) {
+function renderSectionWireframe(type: SectionType, sectionName: string, compact?: boolean) {
   switch (type) {
     case 'hero':
-      return <HeroBlock />
+      return <HeroBlock compact={compact} />
     case 'features':
-      return <FeaturesBlock />
+      return <FeaturesBlock compact={compact} />
     case 'testimonials':
-      return <TestimonialsBlock />
+      return <TestimonialsBlock compact={compact} />
     case 'cta':
-      return <CtaBlock />
+      return <CtaBlock compact={compact} />
     case 'footer':
-      return <FooterBlock />
+      return <FooterBlock compact={compact} />
     case 'pricing':
-      return <PricingBlock />
+      return <PricingBlock compact={compact} />
     case 'faq':
-      return <FaqBlock />
+      return <FaqBlock compact={compact} />
     case 'gallery':
-      return <GalleryBlock />
+      return <GalleryBlock compact={compact} />
     case 'fallback':
-      return <FallbackBlock sectionName={sectionName} />
+      return <FallbackBlock sectionName={sectionName} compact={compact} />
   }
 }
 
@@ -307,7 +473,7 @@ function EditableSectionLabel({
               setIsEditing(false)
             }
           }}
-          className="text-[10px] font-semibold bg-white dark:bg-slate-800 border border-primary/40 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 w-28 text-foreground"
+          className="text-xs font-semibold bg-white dark:bg-slate-800 border border-primary/40 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 w-32 text-foreground"
         />
         <button
           onMouseDown={(e) => {
@@ -330,9 +496,86 @@ function EditableSectionLabel({
       }}
       className="group/label flex items-center gap-1 cursor-text"
     >
-      <WireframeLabel>{name}</WireframeLabel>
+      <span className="text-xs font-semibold text-foreground">{name}</span>
       <Pencil className="h-2.5 w-2.5 text-muted-foreground/0 group-hover/label:text-muted-foreground/60 transition-colors" />
     </button>
+  )
+}
+
+// =============================================================================
+// SECTION NOTE INPUT (ghost textarea)
+// =============================================================================
+
+function SectionNoteInput({
+  value,
+  placeholder,
+  onSave,
+}: {
+  value: string
+  placeholder: string
+  onSave: (value: string) => void
+}) {
+  const [localValue, setLocalValue] = useState(value)
+  const [showSaved, setShowSaved] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Sync from parent when value changes externally
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
+  // Auto-resize textarea
+  const resize = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [])
+
+  useEffect(() => {
+    resize()
+  }, [localValue, resize])
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onSave(localValue)
+      setShowSaved(true)
+      setTimeout(() => setShowSaved(false), 1500)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <textarea
+        ref={textareaRef}
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        rows={1}
+        className={cn(
+          'w-full resize-none bg-transparent text-xs leading-relaxed',
+          'placeholder:text-muted-foreground/40 text-foreground',
+          'border border-transparent rounded-md px-2.5 py-2',
+          'hover:border-border/40 focus:border-primary/30 focus:bg-muted/30',
+          'outline-none transition-colors',
+          'overflow-hidden'
+        )}
+      />
+      <AnimatePresence>
+        {showSaved && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute right-2 top-2 flex items-center gap-0.5 text-emerald-500"
+          >
+            <Check className="h-3 w-3" />
+            <span className="text-[10px] font-medium">Saved</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -361,12 +604,14 @@ function AddSectionDivider({ onClick }: { onClick: () => void }) {
 }
 
 // =============================================================================
-// INTERACTIVE SECTION BLOCK
+// INTERACTIVE SECTION BLOCK (redesigned)
 // =============================================================================
 
 interface InteractiveSectionBlockProps {
   section: LayoutSection
   index: number
+  displayIndex: number
+  totalSections: number
   pinned: boolean
   isDragging: boolean
   isDropTarget: boolean
@@ -378,11 +623,14 @@ interface InteractiveSectionBlockProps {
   onDragEnd: () => void
   onRename: (newName: string) => void
   onDelete: () => void
+  onNoteChange?: (value: string) => void
 }
 
 function InteractiveSectionBlock({
   section,
   index,
+  displayIndex,
+  totalSections: _totalSections,
   pinned,
   isDragging,
   isDropTarget,
@@ -394,19 +642,20 @@ function InteractiveSectionBlock({
   onDragEnd,
   onRename,
   onDelete,
+  onNoteChange,
 }: InteractiveSectionBlockProps) {
   const type = detectSectionType(section.sectionName)
-  const tooltip = [section.purpose, section.contentGuidance].filter(Boolean).join(' — ')
+  const friendlyName = getFriendlyName(section.sectionName)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const hasElaboration = !!(section.headline || section.draftContent || section.ctaText)
 
   return (
     <div
       className={cn(
         'relative group/section transition-all duration-150',
         isDragging && 'opacity-30 scale-[0.98]',
-        !pinned && 'cursor-grab active:cursor-grabbing',
         isDropTarget && 'bg-primary/[0.03]'
       )}
-      title={tooltip}
       draggable={!pinned}
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={(e) => onDragOver(e, index)}
@@ -423,57 +672,118 @@ function InteractiveSectionBlock({
         </div>
       )}
 
-      {/* Section toolbar: drag handle / lock + label + delete */}
-      <div className="absolute top-1.5 left-1.5 right-1.5 z-10 flex items-center gap-1">
-        {/* Left: drag handle or lock + editable label */}
-        <div className="flex items-center gap-0.5 min-w-0">
+      {/* Divider between sections */}
+      {index > 0 && <div className="border-t border-border/40" />}
+
+      {/* Section Header */}
+      <div className="px-3 py-2.5 flex items-center gap-2">
+        {/* Drag handle or lock */}
+        <div className={cn('shrink-0', !pinned && 'cursor-grab active:cursor-grabbing')}>
           {pinned ? (
-            <Lock className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+            <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />
           ) : (
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
           )}
-          <EditableSectionLabel name={section.sectionName} onRename={onRename} />
         </div>
 
-        {/* Right: delete button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="ml-auto p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-red-500 transition-colors shrink-0"
-          title="Remove section"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {/* Section number + friendly name */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="text-xs font-medium text-muted-foreground/50 shrink-0">
+            {displayIndex + 1}.
+          </span>
+          <EditableSectionLabel name={friendlyName} onRename={onRename} />
+        </div>
+
+        {/* Collapse toggle + delete */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-red-500 transition-colors"
+            title="Remove section"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground/40 transition-colors"
+          >
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-200',
+                isCollapsed && '-rotate-90'
+              )}
+            />
+          </button>
+        </div>
       </div>
 
-      {/* Divider between sections */}
-      {index > 0 && (
-        <div className="border-t border-dashed border-slate-200 dark:border-slate-700" />
-      )}
-
-      {/* Wireframe content */}
-      {renderSectionWireframe(type, section.sectionName)}
-
-      {/* Elaboration content preview */}
-      {(section.headline || section.draftContent || section.ctaText) && (
-        <div className="px-4 pb-2 space-y-1 border-t border-dashed border-slate-200 dark:border-slate-700 mt-1 pt-2">
-          {section.headline && (
-            <p className="text-[11px] font-semibold text-foreground truncate">{section.headline}</p>
-          )}
-          {section.draftContent && (
-            <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
-              {section.draftContent}
-            </p>
-          )}
-          {section.ctaText && (
-            <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
-              {section.ctaText}
-            </span>
-          )}
+      {/* Purpose line (always visible) */}
+      {section.purpose && (
+        <div className="px-3 pb-2 -mt-1">
+          <p className="text-[11px] text-muted-foreground/60 leading-relaxed pl-6">
+            {section.purpose}
+          </p>
         </div>
       )}
+
+      {/* Collapsible body */}
+      <AnimatePresence initial={false}>
+        {!isCollapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 space-y-2.5">
+              {/* Wireframe thumbnail (compact) */}
+              <div className="rounded-lg bg-muted/30 border border-border/30 overflow-hidden">
+                {renderSectionWireframe(type, section.sectionName, true)}
+              </div>
+
+              {/* User notes textarea */}
+              {onNoteChange && (
+                <SectionNoteInput
+                  value={section.userNotes ?? ''}
+                  placeholder={getNotePlaceholder(type)}
+                  onSave={onNoteChange}
+                />
+              )}
+
+              {/* AI Draft preview (elaboration content) */}
+              {hasElaboration && (
+                <div className="rounded-md border border-border/30 bg-muted/20 px-3 py-2 space-y-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Sparkles className="h-3 w-3 text-primary/50" />
+                    <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+                      AI Draft
+                    </span>
+                  </div>
+                  {section.headline && (
+                    <p className="text-[11px] font-semibold text-foreground truncate">
+                      {section.headline}
+                    </p>
+                  )}
+                  {section.draftContent && (
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
+                      {section.draftContent}
+                    </p>
+                  )}
+                  {section.ctaText && (
+                    <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+                      {section.ctaText}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Drop indicator line — below */}
       {isDropTarget && dropPosition === 'below' && (
@@ -520,6 +830,7 @@ export function LayoutPreview({
   sections,
   mode = 'readonly',
   onSectionReorder,
+  onSectionEdit,
   className,
 }: LayoutPreviewProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -662,14 +973,25 @@ export function LayoutPreview({
     setDropPosition(null)
   }
 
+  // Find the original sorted index for onSectionEdit callback
+  const findSortedIndex = (displayIndex: number): number => {
+    const section = displaySections[displayIndex]
+    return sortedSections.findIndex((s) => s === section)
+  }
+
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2">
-        <Layout className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">Page Layout</span>
-        <Badge variant="secondary" className="text-xs">
-          {displaySections.length} {displaySections.length === 1 ? 'section' : 'sections'}
-        </Badge>
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-2">
+          <Layout className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Your Website</span>
+          <Badge variant="secondary" className="text-xs">
+            {displaySections.length} {displaySections.length === 1 ? 'section' : 'sections'}
+          </Badge>
+        </div>
+        <p className="text-[11px] text-muted-foreground/50 pl-6">
+          Drag to reorder &middot; Click to add notes
+        </p>
       </div>
       <BrowserChrome>
         {displaySections.length === 0 ? (
@@ -693,6 +1015,8 @@ export function LayoutPreview({
                 <InteractiveSectionBlock
                   section={section}
                   index={index}
+                  displayIndex={index}
+                  totalSections={displaySections.length}
                   pinned={pinned}
                   isDragging={dragIndex === index}
                   isDropTarget={dropTargetIndex === index && !pinned}
@@ -704,6 +1028,11 @@ export function LayoutPreview({
                   onDragEnd={handleDragEnd}
                   onRename={(newName) => handleRename(index, newName)}
                   onDelete={() => handleDelete(index)}
+                  onNoteChange={
+                    onSectionEdit
+                      ? (value) => onSectionEdit(findSortedIndex(index), 'userNotes', value)
+                      : undefined
+                  }
                 />
                 {/* Add-section divider between items */}
                 {index < displaySections.length - 1 && (

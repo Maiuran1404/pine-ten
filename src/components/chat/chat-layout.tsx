@@ -48,6 +48,7 @@ interface ChatLayoutProps {
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
+  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   // Scene image URLs from Pexels
   sceneImageUrls?: Map<number, string>
   // Loading state for regeneration
@@ -96,6 +97,7 @@ export function ChatLayout({
   onRegenerateScene,
   onRegenerateField,
   onSectionReorder,
+  onSectionEdit,
   sceneImageUrls,
   isRegenerating,
   viewStructureRef,
@@ -174,6 +176,7 @@ export function ChatLayout({
                 onRegenerateScene={onRegenerateScene}
                 onRegenerateField={onRegenerateField}
                 onSectionReorder={onSectionReorder}
+                onSectionEdit={onSectionEdit}
               />
             </div>
 
@@ -192,6 +195,8 @@ export function ChatLayout({
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
                     onRegenerateField={onRegenerateField}
+                    onSectionReorder={onSectionReorder}
+                    onSectionEdit={onSectionEdit}
                   />
                 </div>
               </SheetContent>

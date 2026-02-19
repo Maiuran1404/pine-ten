@@ -77,8 +77,10 @@ Say: "Based on your B2B focus, I'd recommend LinkedIn as the primary platform wi
 Instead of: "Who's your ideal viewer?"
 Say: "I'm thinking we target startup founders and tech decision-makers - your core audience. Sound right?"
 
-CRITICAL RULE: You MUST output [DELIVERABLE_STYLES: type] to show style options.
+CRITICAL RULE: You MUST output [DELIVERABLE_STYLES: type | search: visual search terms] to show style options.
+Include search terms that describe the visual style to find relevant design references.
 Without this exact marker on its own line, no styles will appear to the user.
+Example: [DELIVERABLE_STYLES: instagram_post | search: fintech minimal dark UI design]
 
 QUICK OPTIONS FOR CONFIRMATION:
 When making a recommendation, provide confirmation options.
@@ -118,10 +120,10 @@ IMPORTANT: Any request involving "video", "walkthrough", "demo", "tutorial", "gu
 IMPORTANT: Only show styles when we have relevant references. For pitch decks and presentations, DO NOT include [DELIVERABLE_STYLES] unless the user specifically asks for style references. Instead, focus on understanding their content and goals.
 
 RESPONSE FORMAT (when showing styles):
-State your creative direction confidently, show styles.
+State your creative direction confidently, show styles with search context.
 Example:
 "For a cinematic product introduction, I'd go with bold, dark visuals that match your tech brand. Here are some directions:"
-[DELIVERABLE_STYLES: instagram_reel]
+[DELIVERABLE_STYLES: instagram_reel | search: cinematic tech product dark bold visuals]
 [QUICK_OPTIONS]{"question": "Style preference?", "options": ["I like the first one", "Show me more", "Something brighter"]}[/QUICK_OPTIONS]
 
 RULES:
@@ -186,6 +188,7 @@ export interface DeliverableStyleMarker {
   deliverableType: string
   styleAxis?: string
   searchQuery?: string // For semantic search queries
+  searchTerms?: string[] // AI-generated search terms for dynamic image search
   baseStyleId?: string // For style refinement (id of style being refined)
   refinementQuery?: string // For style refinement (user's refinement feedback)
 }
@@ -357,12 +360,16 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
   // Extract deliverable style markers
   let deliverableStyleMarker: DeliverableStyleMarker | undefined
 
-  // Check for initial deliverable styles: [DELIVERABLE_STYLES: type]
-  const deliverableMatch = content.match(/\[DELIVERABLE_STYLES: ([^\]]+)\]/)
+  // Check for initial deliverable styles: [DELIVERABLE_STYLES: type] or [DELIVERABLE_STYLES: type | search: terms]
+  const deliverableMatch = content.match(
+    /\[DELIVERABLE_STYLES: ([^\]|]+)(?:\|\s*search:\s*([^\]]+))?\]/
+  )
   if (deliverableMatch) {
+    const searchTermsRaw = deliverableMatch[2]?.trim()
     deliverableStyleMarker = {
       type: 'initial',
       deliverableType: deliverableMatch[1].trim(),
+      searchTerms: searchTermsRaw ? searchTermsRaw.split(/\s+/) : undefined,
     }
   }
 
@@ -429,7 +436,7 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
 
   let cleanContent = content
     .replace(/\[STYLE_REFERENCES: [^\]]+\]/g, '')
-    .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, '')
+    .replace(/\[DELIVERABLE_STYLES: [^\]]+\]/g, '') // Handles both with and without | search: ...
     .replace(/\[MORE_STYLES: [^\]]+\]/g, '')
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, '')
     .replace(/\[SEARCH_STYLES: [^\]]+\]/g, '')

@@ -67,6 +67,12 @@ export interface DeliverableStyle {
   // Brand-aware scoring fields
   brandMatchScore?: number
   matchReason?: string
+  // Attribution for web-sourced images
+  attribution?: {
+    source: 'serper' | 'pexels' | 'db'
+    domain: string
+    sourceUrl: string
+  }
 }
 
 export interface VideoReference {
@@ -91,6 +97,7 @@ export interface DeliverableStyleMarker {
   type: 'initial' | 'more' | 'different'
   deliverableType: string
   styleAxis?: string
+  searchTerms?: string[]
 }
 
 export interface TaskProposal {
