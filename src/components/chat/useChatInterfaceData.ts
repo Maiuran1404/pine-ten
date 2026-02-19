@@ -1241,7 +1241,10 @@ export function useChatInterfaceData({
       }
 
       const result = await response.json()
-      const taskId = result.data.taskId
+      const taskId = result.data?.taskId
+      if (!taskId) {
+        throw new Error('Task was created but no task ID was returned')
+      }
 
       setTaskSubmitted(true)
       deleteDraft(draftId)
@@ -1250,11 +1253,7 @@ export function useChatInterfaceData({
       const successMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `**Your task has been submitted!**\n\n${
-          result.data.assignedTo
-            ? `**${result.data.assignedTo}** has been assigned to work on your project.`
-            : "We're finding the perfect artist for your project."
-        } You'll receive updates as your design progresses.`,
+        content: `**Your task has been submitted!** You'll receive updates as your design progresses.`,
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, successMessage])
@@ -1338,8 +1337,10 @@ export function useChatInterfaceData({
   }, [])
 
   const handleViewProject = useCallback(() => {
-    if (submittedTaskId) {
+    if (submittedTaskId && submittedTaskId !== 'undefined') {
       router.push(`/dashboard/tasks/${submittedTaskId}`)
+    } else {
+      router.push('/dashboard/tasks')
     }
   }, [submittedTaskId, router])
 
