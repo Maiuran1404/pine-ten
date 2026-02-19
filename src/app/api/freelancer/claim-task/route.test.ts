@@ -20,9 +20,9 @@ vi.mock('@/lib/notifications', () => ({
 }))
 
 // Hoisted mock references via wrapper pattern
-const mockRequireAuth = vi.fn()
+const mockRequireApprovedFreelancer = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
-  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireApprovedFreelancer: (...args: unknown[]) => mockRequireApprovedFreelancer(...args),
 }))
 
 const mockSelect = vi.fn()
@@ -36,7 +36,6 @@ vi.mock('@/db', () => ({
 
 vi.mock('@/db/schema', () => ({
   tasks: { id: 'id', status: 'status', freelancerId: 'freelancerId', clientId: 'clientId' },
-  freelancerProfiles: { userId: 'userId', status: 'status' },
   users: { id: 'id' },
 }))
 
@@ -77,20 +76,28 @@ describe('POST /api/freelancer/claim-task', () => {
   const validBody = { taskId: '550e8400-e29b-41d4-a716-446655440000' }
 
   function setupAuth(user = { id: 'freelancer-1', name: 'Test Artist', email: 'artist@test.com' }) {
-    mockRequireAuth.mockResolvedValue({ user })
+    mockRequireApprovedFreelancer.mockResolvedValue({ user })
   }
 
   it('returns 401 when not authenticated', async () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
-    mockRequireAuth.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
+    mockRequireApprovedFreelancer.mockRejectedValue(
+      new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401)
+    )
 
     const response = await POST(makeRequest(validBody) as never)
     expect(response.status).toBe(401)
   })
 
   it('returns 403 when freelancer is not approved', async () => {
-    setupAuth()
-    mockSelect.mockReturnValueOnce(chainableSelect([{ status: 'PENDING' }]))
+    const { APIError, ErrorCodes } = await import('@/lib/errors')
+    mockRequireApprovedFreelancer.mockRejectedValue(
+      new APIError(
+        ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        'Your freelancer account is pending approval',
+        403
+      )
+    )
 
     const response = await POST(makeRequest(validBody) as never)
     expect(response.status).toBe(403)
@@ -98,7 +105,6 @@ describe('POST /api/freelancer/claim-task', () => {
 
   it('returns 400 when task is not available', async () => {
     setupAuth()
-    mockSelect.mockReturnValueOnce(chainableSelect([{ status: 'APPROVED' }]))
     mockSelect.mockReturnValueOnce(chainableSelect([]))
 
     const response = await POST(makeRequest(validBody) as never)
@@ -110,7 +116,6 @@ describe('POST /api/freelancer/claim-task', () => {
 
   it('successfully claims a task and returns 200', async () => {
     setupAuth()
-    mockSelect.mockReturnValueOnce(chainableSelect([{ status: 'APPROVED' }]))
     mockSelect.mockReturnValueOnce(
       chainableSelect([
         { id: validBody.taskId, title: 'Test Task', clientId: 'client-1', creditsUsed: 5 },
@@ -135,6 +140,7 @@ describe('POST /api/freelancer/claim-task', () => {
 
   it('returns 400 for invalid taskId format', async () => {
     setupAuth()
+    mockSelect.mockReturnValueOnce(chainableSelect([]))
 
     const response = await POST(makeRequest({ taskId: 'not-a-uuid' }) as never)
     expect(response.status).toBe(400)

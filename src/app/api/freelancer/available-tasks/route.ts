@@ -2,26 +2,15 @@ import 'server-only'
 
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { tasks, taskCategories, freelancerProfiles } from '@/db/schema'
+import { tasks, taskCategories } from '@/db/schema'
 import { eq, isNull, and } from 'drizzle-orm'
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { requireAuth } from '@/lib/require-auth'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireApprovedFreelancer } from '@/lib/require-auth'
 
 export async function GET(_request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const { user } = await requireAuth()
-
-      // Check if user is an approved freelancer
-      const profile = await db
-        .select()
-        .from(freelancerProfiles)
-        .where(eq(freelancerProfiles.userId, user.id))
-        .limit(1)
-
-      if (!profile.length || profile[0].status !== 'APPROVED') {
-        throw Errors.forbidden('Freelancer not approved')
-      }
+      await requireApprovedFreelancer()
 
       // Get available tasks (not assigned to anyone, status is PENDING)
       const availableTasks = await db

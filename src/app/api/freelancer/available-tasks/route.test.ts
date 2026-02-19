@@ -6,9 +6,9 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
-const mockRequireAuth = vi.fn()
+const mockRequireApprovedFreelancer = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
-  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireApprovedFreelancer: (...args: unknown[]) => mockRequireApprovedFreelancer(...args),
 }))
 
 const mockDbSelect = vi.fn()
@@ -21,7 +21,6 @@ vi.mock('@/db', () => ({
 vi.mock('@/db/schema', () => ({
   tasks: { id: 'id', status: 'status', freelancerId: 'freelancerId', categoryId: 'categoryId' },
   taskCategories: { id: 'id', name: 'name' },
-  freelancerProfiles: { userId: 'userId', status: 'status' },
 }))
 
 vi.mock('drizzle-orm', () => ({
@@ -63,30 +62,44 @@ describe('GET /api/freelancer/available-tasks', () => {
   }
 
   function setupAuth(userId = 'freelancer-1') {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireApprovedFreelancer.mockResolvedValue({
       user: { id: userId, name: 'Test Artist', email: 'artist@test.com' },
     })
   }
 
   it('returns 401 when not authenticated', async () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
-    mockRequireAuth.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
+    mockRequireApprovedFreelancer.mockRejectedValue(
+      new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401)
+    )
 
     const response = await GET(mockRequest as never)
     expect(response.status).toBe(401)
   })
 
   it('returns 403 when freelancer is not approved', async () => {
-    setupAuth()
-    mockDbSelect.mockReturnValueOnce(chainableSelect([{ status: 'PENDING' }]))
+    const { APIError, ErrorCodes } = await import('@/lib/errors')
+    mockRequireApprovedFreelancer.mockRejectedValue(
+      new APIError(
+        ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        'Your freelancer account is pending approval',
+        403
+      )
+    )
 
     const response = await GET(mockRequest as never)
     expect(response.status).toBe(403)
   })
 
   it('returns 403 when no freelancer profile exists', async () => {
-    setupAuth()
-    mockDbSelect.mockReturnValueOnce(chainableSelect([]))
+    const { APIError, ErrorCodes } = await import('@/lib/errors')
+    mockRequireApprovedFreelancer.mockRejectedValue(
+      new APIError(
+        ErrorCodes.INSUFFICIENT_PERMISSIONS,
+        'Your freelancer account is pending approval',
+        403
+      )
+    )
 
     const response = await GET(mockRequest as never)
     expect(response.status).toBe(403)
@@ -94,9 +107,7 @@ describe('GET /api/freelancer/available-tasks', () => {
 
   it('returns available tasks for approved freelancer', async () => {
     setupAuth()
-    // Profile lookup
-    mockDbSelect.mockReturnValueOnce(chainableSelect([{ status: 'APPROVED' }]))
-    // Available tasks query
+    // Available tasks query (no profile lookup needed - requireApprovedFreelancer handles it)
     mockDbSelect.mockReturnValueOnce(
       chainableSelectWithJoin([
         {
@@ -123,7 +134,6 @@ describe('GET /api/freelancer/available-tasks', () => {
 
   it('returns empty array when no tasks available', async () => {
     setupAuth()
-    mockDbSelect.mockReturnValueOnce(chainableSelect([{ status: 'APPROVED' }]))
     mockDbSelect.mockReturnValueOnce(chainableSelectWithJoin([]))
 
     const response = await GET(mockRequest as never)
