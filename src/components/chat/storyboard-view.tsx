@@ -460,11 +460,16 @@ function SceneThumbnail({
           sizes="(max-width: 768px) 100vw, 400px"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn('text-5xl font-bold select-none', gradient.number)}>
-            {scene.sceneNumber}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+          <Film className={cn('h-6 w-6 mb-1.5', gradient.icon)} />
+          <span
+            className={cn(
+              'text-xs font-semibold leading-tight line-clamp-2 select-none',
+              gradient.number
+            )}
+          >
+            {scene.title || `Scene ${scene.sceneNumber}`}
           </span>
-          <Film className={cn('absolute bottom-2 right-2 h-4 w-4', gradient.icon)} />
         </div>
       )}
     </div>
