@@ -904,28 +904,35 @@ function DashboardContent() {
             or choose from one of these examples
           </p>
           <div className="flex items-center justify-center gap-3">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { options }]) => (
-              <button
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category)
-                  setSelectedOption(null)
-                  setModalNotes('')
-                }}
-                className="group relative w-[120px] h-[72px] rounded-lg overflow-hidden border border-white/10 dark:border-white/5 shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={options[0].image}
-                  alt={category}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <span className="absolute bottom-2.5 left-3 right-3 text-white text-xs font-semibold leading-tight drop-shadow-md">
-                  {category}
-                </span>
-              </button>
-            ))}
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
+              const gradients: Record<string, string> = {
+                'Launch Videos': 'from-orange-500 to-rose-500',
+                'Pitch Deck': 'from-blue-500 to-indigo-600',
+                Branding: 'from-violet-500 to-fuchsia-500',
+                'Social Media': 'from-pink-500 to-rose-400',
+                'Landing Page': 'from-teal-500 to-emerald-500',
+              }
+              const gradient = gradients[category] || 'from-gray-500 to-gray-600'
+              return (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category)
+                    setSelectedOption(null)
+                    setModalNotes('')
+                  }}
+                  className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
+                >
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-90 group-hover:opacity-100 transition-opacity`}
+                  />
+                  <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
+                  <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
+                    {category}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </motion.div>
       </div>

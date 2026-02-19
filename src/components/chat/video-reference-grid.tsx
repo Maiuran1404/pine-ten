@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion, LayoutGroup } from 'framer-motion'
 import { Check, Play, ExternalLink, RefreshCw, Shuffle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export interface VideoReferenceStyle {
@@ -57,7 +56,7 @@ function extractYouTubeId(url: string | null | undefined): string | null {
   return null
 }
 
-// Video preview modal — fullscreen YouTube embed
+// Video preview modal — polished YouTube embed viewer
 function VideoPreviewModal({
   video,
   onClose,
@@ -73,13 +72,8 @@ function VideoPreviewModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle className="text-lg font-medium">{video.name}</DialogTitle>
-          {video.description && (
-            <p className="text-sm text-muted-foreground mt-1">{video.description}</p>
-          )}
-        </DialogHeader>
+      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden rounded-2xl border-border/30 shadow-2xl">
+        {/* Video embed — flush to top */}
         <div className="aspect-video w-full bg-black relative">
           {videoId ? (
             <iframe
@@ -103,26 +97,37 @@ function VideoPreviewModal({
             </div>
           )}
         </div>
-        <div className="p-4 flex items-center justify-between border-t gap-4">
-          <div className="flex flex-wrap gap-2 flex-1 min-w-0">
-            {video.videoTags?.slice(0, 4).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {video.videoUrl && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(video.videoUrl, '_blank')}
-                className="gap-1.5"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                YouTube
-              </Button>
+
+        {/* Info section below video */}
+        <div className="px-5 pt-4 pb-5 space-y-4">
+          {/* Title + description */}
+          <DialogHeader className="p-0 space-y-1">
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              {video.name}
+            </DialogTitle>
+            {video.description && (
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                {video.description}
+              </p>
             )}
+          </DialogHeader>
+
+          {/* Tags row */}
+          {video.videoTags && video.videoTags.length > 0 && (
+            <div className="flex gap-1.5 overflow-hidden">
+              {video.videoTags.slice(0, 5).map((tag) => (
+                <span
+                  key={tag}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-muted/60 text-muted-foreground text-[11px] font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-2.5 pt-1">
             {onSelect && (
               <Button
                 size="sm"
@@ -131,10 +136,21 @@ function VideoPreviewModal({
                   onClose()
                 }}
                 disabled={isLoading}
-                className="gap-1.5"
+                className="gap-1.5 rounded-full px-4 h-8"
               >
                 <Check className="w-3.5 h-3.5" />
                 Select this style
+              </Button>
+            )}
+            {video.videoUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open(video.videoUrl, '_blank')}
+                className="gap-1.5 rounded-full px-3 h-8 text-muted-foreground"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                YouTube
               </Button>
             )}
           </div>
@@ -229,13 +245,13 @@ function VideoCard({
         )}
       </motion.div>
 
-      {/* Tags below thumbnail — compact */}
+      {/* Tags below thumbnail — compact, single line */}
       {video.videoTags && video.videoTags.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-0.5">
+        <div className="flex gap-1 px-0.5 overflow-hidden">
           {video.videoTags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="inline-block px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] leading-tight"
+              className="inline-block shrink-0 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] leading-tight"
             >
               {tag}
             </span>
