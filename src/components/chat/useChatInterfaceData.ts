@@ -1597,6 +1597,7 @@ export function useChatInterfaceData({
       })
 
       setIsLoading(true)
+      setLastSendError(null)
 
       try {
         const response = await fetch('/api/chat', {
@@ -1651,6 +1652,7 @@ export function useChatInterfaceData({
 
         return data
       } catch {
+        setLastSendError('Failed to send message. Please try again.')
         toast.error('Failed to send message. Please try again.')
         return null
       } finally {
