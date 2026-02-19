@@ -1,3 +1,4 @@
+import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libraries'
 import { logger } from '@/lib/logger'

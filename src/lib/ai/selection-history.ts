@@ -1,3 +1,4 @@
+import 'server-only'
 import { db } from '@/db'
 import { styleSelectionHistory, deliverableStyleReferences } from '@/db/schema'
 import { eq, and, desc, sql, count } from 'drizzle-orm'

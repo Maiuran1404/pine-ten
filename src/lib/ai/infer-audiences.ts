@@ -3,6 +3,7 @@
  * Used when no website is provided or when website extraction didn't produce audiences
  */
 
+import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import { logger } from '@/lib/logger'
 
