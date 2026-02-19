@@ -97,7 +97,7 @@ export function useChatInterfaceData({
   const [taskSubmitted, setTaskSubmitted] = useState(false)
   const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false)
   const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
-  const [sceneReference, setSceneReference] = useState<SceneReference | null>(null)
+  const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
   const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -853,10 +853,20 @@ export function useChatInterfaceData({
       : currentFiles.length > 0
         ? `Attached ${currentFiles.length} file(s)`
         : ''
-    // Prefix with scene reference context if one is attached
-    const processedContent = sceneReference
-      ? `[Feedback on Scene ${sceneReference.sceneNumber}: ${sceneReference.title}] ${rawContent}`
-      : rawContent
+    // Prefix with scene reference context if any are attached
+    const processedContent =
+      sceneReferences.length > 0
+        ? `[Feedback on ${sceneReferences
+            .map((s) => {
+              // Avoid redundant "Scene 1: Scene 1" when title is generic
+              const genericPattern = /^Scene\s+\d+$/i
+              if (genericPattern.test(s.title)) {
+                return `Scene ${s.sceneNumber}`
+              }
+              return `Scene ${s.sceneNumber}: ${s.title}`
+            })
+            .join(', ')}] ${rawContent}`
+        : rawContent
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -868,7 +878,7 @@ export function useChatInterfaceData({
     setMessages((prev) => [...prev, userMessage])
     setInput('')
     setUploadedFiles([])
-    setSceneReference(null)
+    setSceneReferences([])
     setIsLoading(true)
     requestStartTimeRef.current = Date.now()
 
@@ -951,7 +961,7 @@ export function useChatInterfaceData({
     processBriefMessage,
     serializedBriefingState,
     syncBriefingFromServer,
-    sceneReference,
+    sceneReferences,
   ])
 
   // Send a specific message (for clickable options)
@@ -1378,12 +1388,14 @@ export function useChatInterfaceData({
   // Handle clicking a storyboard scene to reference it in chat
   const handleSceneClick = useCallback(
     (scene: { sceneNumber: number; title: string; description: string; visualNote: string }) => {
-      setSceneReference({
-        sceneNumber: scene.sceneNumber,
-        title: scene.title,
-        description: scene.description,
-        visualNote: scene.visualNote,
-      })
+      setSceneReferences([
+        {
+          sceneNumber: scene.sceneNumber,
+          title: scene.title,
+          description: scene.description,
+          visualNote: scene.visualNote,
+        },
+      ])
       inputRef.current?.focus()
     },
     []
@@ -1392,21 +1404,31 @@ export function useChatInterfaceData({
   // Handle multi-scene feedback from storyboard
   const handleMultiSceneFeedback = useCallback(
     (scenes: { sceneNumber: number; title: string }[]) => {
-      if (scenes.length === 1) {
-        // Single scene — use existing scene reference behavior
-        const scene = scenes[0]
-        setSceneReference({
-          sceneNumber: scene.sceneNumber,
-          title: scene.title,
+      setSceneReferences(
+        scenes.map((s) => ({
+          sceneNumber: s.sceneNumber,
+          title: s.title,
           description: '',
           visualNote: '',
-        })
-      } else {
-        // Multiple scenes — compose a combined reference
-        const sceneList = scenes.map((s) => `Scene ${s.sceneNumber}: ${s.title}`).join(', ')
-        setInput(`Feedback on ${sceneList}: `)
-      }
+        }))
+      )
       inputRef.current?.focus()
+    },
+    []
+  )
+
+  // Handle scene selection changes from storyboard panel (click-to-select)
+  const handleSceneSelectionChange = useCallback(
+    (scenes: { sceneNumber: number; title: string; description: string; visualNote: string }[]) => {
+      setSceneReferences(
+        scenes.map((s) => ({
+          sceneNumber: s.sceneNumber,
+          title: s.title,
+          description: s.description,
+          visualNote: s.visualNote,
+        }))
+      )
+      if (scenes.length > 0) inputRef.current?.focus()
     },
     []
   )
@@ -2000,11 +2022,12 @@ export function useChatInterfaceData({
     // Quick options
     resolvedQuickOptions,
 
-    // Scene reference
-    sceneReference,
-    setSceneReference,
+    // Scene references
+    sceneReferences,
+    setSceneReferences,
     handleSceneClick,
     handleMultiSceneFeedback,
+    handleSceneSelectionChange,
 
     // Storyboard / Structure panel
     storyboardScenes,
