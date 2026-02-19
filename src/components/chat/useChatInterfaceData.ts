@@ -711,24 +711,31 @@ export function useChatInterfaceData({
   // deterministically build one from the conversation (same as "You decide & submit").
   // Guard: once pendingTask is set, !pendingTask prevents re-firing — no prev-stage ref needed.
   useEffect(() => {
-    if (_briefingState?.stage === 'SUBMIT' && !pendingTask && !isLoading && messages.length > 0) {
-      const constructedTask = constructTaskFromConversation(messages)
-      setPendingTask(constructedTask)
+    if (pendingTask || isLoading || messages.length === 0) return
+    const stage = _briefingState?.stage
 
-      // Add the task proposal to the last assistant message so it renders inline
-      setMessages((prev) => {
-        const updated = [...prev]
-        const lastIdx = updated.length - 1
-        if (
-          lastIdx >= 0 &&
-          updated[lastIdx].role === 'assistant' &&
-          !updated[lastIdx].taskProposal
-        ) {
-          updated[lastIdx] = { ...updated[lastIdx], taskProposal: constructedTask }
-        }
-        return updated
-      })
-    }
+    // Auto-construct at SUBMIT stage (existing behavior)
+    // Also at REVIEW stage when the AI signals readiness (e.g. "Ready to submit?")
+    const shouldConstruct =
+      stage === 'SUBMIT' ||
+      (stage === 'REVIEW' &&
+        messages[messages.length - 1]?.role === 'assistant' &&
+        hasReadyIndicator(messages[messages.length - 1].content))
+
+    if (!shouldConstruct) return
+
+    const constructedTask = constructTaskFromConversation(messages)
+    setPendingTask(constructedTask)
+
+    // Add the task proposal to the last assistant message so it renders inline
+    setMessages((prev) => {
+      const updated = [...prev]
+      const lastIdx = updated.length - 1
+      if (lastIdx >= 0 && updated[lastIdx].role === 'assistant' && !updated[lastIdx].taskProposal) {
+        updated[lastIdx] = { ...updated[lastIdx], taskProposal: constructedTask }
+      }
+      return updated
+    })
   }, [_briefingState?.stage, pendingTask, isLoading, messages])
 
   // Scroll to bottom helper
@@ -1295,8 +1302,9 @@ export function useChatInterfaceData({
       }
 
       window.dispatchEvent(new CustomEvent('tasks-updated'))
+      const newCredits = userCredits - (normalizedTask.creditsRequired ?? 0)
       deductCredits(normalizedTask.creditsRequired)
-      dispatchCreditsUpdated()
+      dispatchCreditsUpdated(newCredits)
       onTaskCreated?.(taskId)
 
       // Show celebration overlay instead of immediate redirect
