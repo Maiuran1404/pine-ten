@@ -2,6 +2,7 @@
 
 import { FileIcon, XCircle } from 'lucide-react'
 import { UploadedFile } from './types'
+import { ExternalLinkCard } from './external-link-card'
 
 interface FileAttachmentProps {
   file: UploadedFile

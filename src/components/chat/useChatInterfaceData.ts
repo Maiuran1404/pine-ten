@@ -2016,6 +2016,10 @@ export function useChatInterfaceData({
     copiedMessageId,
     messageFeedback,
 
+    // Error state
+    lastSendError,
+    handleRetry,
+
     // Suggestions
     currentSuggestion,
     ghostText,
