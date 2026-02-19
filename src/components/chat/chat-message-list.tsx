@@ -26,7 +26,14 @@ import { LayoutPreview } from './layout-preview'
 import { DesignSpecView } from './design-spec-view'
 import { ContentCalendar } from './brief-panel/content-calendar'
 import { StrategicReviewCard } from './strategic-review-card'
-import type { ChatMessage as Message, DeliverableStyle, MoodboardItem, TaskProposal } from './types'
+import type {
+  ChatMessage as Message,
+  DeliverableStyle,
+  MoodboardItem,
+  TaskProposal,
+  UploadedFile,
+} from './types'
+import { InlineUploadZone } from './inline-upload-zone'
 
 // =============================================================================
 // SCENE FEEDBACK PARSER — extracts scene chips from [Feedback on ...] prefix
