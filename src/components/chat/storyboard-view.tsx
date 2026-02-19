@@ -456,6 +456,7 @@ function SceneThumbnail({
           alt={`Scene ${scene.sceneNumber} thumbnail`}
           fill
           className="object-cover"
+          containerClassName="absolute inset-0"
           sizes="(max-width: 768px) 100vw, 400px"
         />
       ) : (
