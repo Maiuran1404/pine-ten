@@ -628,6 +628,7 @@ interface RichStoryboardPanelProps {
   scenes: StoryboardScene[]
   className?: string
   sceneImageUrls?: Map<number, string>
+  isRegenerating?: boolean
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
@@ -641,6 +642,7 @@ export function RichStoryboardPanel({
   scenes,
   className,
   sceneImageUrls,
+  isRegenerating,
   onSelectionChange,
   onSceneEdit,
   onRegenerateStoryboard,
@@ -702,17 +704,27 @@ export function RichStoryboardPanel({
               variant="ghost"
               size="sm"
               onClick={onRegenerateStoryboard}
+              disabled={isRegenerating}
               className="gap-1.5 text-xs h-7 text-muted-foreground hover:text-primary"
             >
-              <RefreshCw className="h-3 w-3" />
-              Regenerate
+              <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
+              {isRegenerating ? 'Regenerating...' : 'Regenerate'}
             </Button>
           )}
         </div>
       </div>
 
       {/* Scrollable rich scene cards */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 relative">
+        {/* Loading overlay during regeneration */}
+        {isRegenerating && (
+          <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+              <span className="text-xs text-muted-foreground">Regenerating storyboard...</span>
+            </div>
+          </div>
+        )}
         <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
           {scenes.map((scene, index) => (
             <motion.div

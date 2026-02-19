@@ -301,6 +301,7 @@ export function ChatInterface({
       onRegenerateField={handleRegenerateField}
       onSectionReorder={handleSectionReorder}
       sceneImageUrls={sceneImageUrls}
+      isRegenerating={isLoading}
       viewStructureRef={viewStructureRef}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
