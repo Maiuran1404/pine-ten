@@ -114,6 +114,10 @@ export function ChatInterface({
     copiedMessageId: _copiedMessageId,
     messageFeedback: _messageFeedback,
 
+    // Error state
+    lastSendError,
+    handleRetry,
+
     // Suggestions
     currentSuggestion,
     ghostText,

@@ -17,6 +17,11 @@ export function FileAttachment({ file, showPreview = true, onRemove }: FileAttac
   // Guard against null/undefined file
   if (!file) return null
 
+  // External link files use ExternalLinkCard
+  if (file.isExternalLink) {
+    return <ExternalLinkCard file={file} onRemove={onRemove} />
+  }
+
   const isImage = file.fileType?.startsWith('image/') ?? false
   const fileSizeKB = ((file.fileSize || 0) / 1024).toFixed(1)
 
