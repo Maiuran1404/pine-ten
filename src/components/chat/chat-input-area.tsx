@@ -232,7 +232,9 @@ export function ChatInputArea({
                 key={file.fileUrl}
                 className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
               >
-                {file.fileType?.startsWith('image/') ? (
+                {file.isExternalLink ? (
+                  <Link2 className="h-5 w-5 text-muted-foreground" />
+                ) : file.fileType?.startsWith('image/') ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={file.fileUrl}

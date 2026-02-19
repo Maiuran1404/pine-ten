@@ -13,6 +13,8 @@ import {
   Lightbulb,
   Pencil,
   Film,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TypingText } from './typing-text'
