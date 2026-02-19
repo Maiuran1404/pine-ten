@@ -1436,6 +1436,12 @@ export function useChatInterfaceData({
     inputRef.current?.focus()
   }, [messages])
 
+  // Retry last failed send — clears the error and re-triggers auto-continue
+  const handleRetry = useCallback(() => {
+    setLastSendError(null)
+    setNeedsAutoContinue(true)
+  }, [])
+
   // Handle clicking a storyboard scene to reference it in chat
   const handleSceneClick = useCallback(
     (scene: { sceneNumber: number; title: string; description: string; visualNote: string }) => {
