@@ -415,6 +415,89 @@ function validateAndBuildStructure(
   }
 }
 
+/**
+ * Extract all scene fields from a raw object, supporting multiple field name aliases.
+ * The AI sometimes uses alternate names (e.g. "name" for "title", "script" for "voiceover").
+ */
+function extractSceneFields(s: Record<string, unknown>, index: number) {
+  const title =
+    getString(s, 'title') ??
+    getString(s, 'name') ??
+    getString(s, 'sceneTitle') ??
+    getString(s, 'scene_title')
+  const description =
+    getString(s, 'description') ??
+    getString(s, 'desc') ??
+    getString(s, 'sceneDescription') ??
+    getString(s, 'scene_description')
+  const visualNote =
+    getString(s, 'visualNote') ??
+    getString(s, 'visual_note') ??
+    getString(s, 'visual') ??
+    getString(s, 'visualDescription') ??
+    getString(s, 'visual_description')
+  const voiceover =
+    getString(s, 'voiceover') ??
+    getString(s, 'vo') ??
+    getString(s, 'script') ??
+    getString(s, 'narration') ??
+    undefined
+  const transition = getString(s, 'transition') ?? undefined
+  const cameraNote = getString(s, 'cameraNote') ?? getString(s, 'camera_note') ?? undefined
+  const sceneStyleRefs =
+    getStringArray(s, 'styleReferences') ?? getStringArray(s, 'style_references') ?? undefined
+  const fullScript = getString(s, 'fullScript') ?? getString(s, 'full_script') ?? undefined
+  const directorNotes = getString(s, 'directorNotes') ?? getString(s, 'director_notes') ?? undefined
+  const referenceDescription =
+    getString(s, 'referenceDescription') ?? getString(s, 'reference_description') ?? undefined
+  const referenceImageIds =
+    getStringArray(s, 'referenceImageIds') ?? getStringArray(s, 'reference_image_ids') ?? undefined
+  const imageSearchTerms =
+    getStringArray(s, 'imageSearchTerms') ?? getStringArray(s, 'image_search_terms') ?? undefined
+
+  return {
+    sceneNumber: getNumber(s, 'sceneNumber') ?? getNumber(s, 'scene_number') ?? index + 1,
+    title: title ?? `Scene ${index + 1}`,
+    description: description ?? '',
+    duration: getString(s, 'duration') ?? '',
+    visualNote: visualNote ?? '',
+    voiceover,
+    transition,
+    cameraNote,
+    sceneStyleRefs,
+    fullScript,
+    directorNotes,
+    referenceDescription,
+    referenceImageIds,
+    imageSearchTerms,
+    hookData: s.hookData ? validateHookData(s.hookData as Record<string, unknown>) : undefined,
+    referenceVideoId: typeof s.referenceVideoId === 'string' ? s.referenceVideoId : undefined,
+    hasContent: !!(title || description),
+  }
+}
+
+/** Build a StoryboardScene from extracted fields */
+function buildScene(f: ReturnType<typeof extractSceneFields>): StoryboardScene {
+  return {
+    sceneNumber: f.sceneNumber,
+    title: f.title,
+    description: f.description,
+    duration: f.duration,
+    visualNote: f.visualNote,
+    ...(f.hookData ? { hookData: f.hookData } : {}),
+    ...(f.referenceVideoId ? { referenceVideoId: f.referenceVideoId } : {}),
+    ...(f.voiceover ? { voiceover: f.voiceover } : {}),
+    ...(f.transition ? { transition: f.transition } : {}),
+    ...(f.cameraNote ? { cameraNote: f.cameraNote } : {}),
+    ...(f.sceneStyleRefs ? { styleReferences: f.sceneStyleRefs } : {}),
+    ...(f.fullScript ? { fullScript: f.fullScript } : {}),
+    ...(f.directorNotes ? { directorNotes: f.directorNotes } : {}),
+    ...(f.referenceDescription ? { referenceDescription: f.referenceDescription } : {}),
+    ...(f.referenceImageIds ? { referenceImageIds: f.referenceImageIds } : {}),
+    ...(f.imageSearchTerms ? { imageSearchTerms: f.imageSearchTerms } : {}),
+  }
+}
+
 function validateStoryboard(parsed: Record<string, unknown> | unknown[]): StructureData | null {
   // Accept array directly or object with scenes array
   const scenes = Array.isArray(parsed) ? parsed : getArray(parsed, 'scenes')
@@ -425,58 +508,10 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
     const scene = scenes[i] as Record<string, unknown>
     if (typeof scene !== 'object' || scene === null) continue
 
-    const title = getString(scene, 'title')
-    const description = getString(scene, 'description')
+    const fields = extractSceneFields(scene, i)
+    if (!fields.hasContent) continue
 
-    if (!title && !description) continue
-
-    const voiceover = getString(scene, 'voiceover') ?? getString(scene, 'vo') ?? undefined
-    const transition = getString(scene, 'transition') ?? undefined
-    const cameraNote =
-      getString(scene, 'cameraNote') ?? getString(scene, 'camera_note') ?? undefined
-    const sceneStyleRefs =
-      getStringArray(scene, 'styleReferences') ??
-      getStringArray(scene, 'style_references') ??
-      undefined
-    const fullScript =
-      getString(scene, 'fullScript') ?? getString(scene, 'full_script') ?? undefined
-    const directorNotes =
-      getString(scene, 'directorNotes') ?? getString(scene, 'director_notes') ?? undefined
-    const referenceDescription =
-      getString(scene, 'referenceDescription') ??
-      getString(scene, 'reference_description') ??
-      undefined
-    const referenceImageIds =
-      getStringArray(scene, 'referenceImageIds') ??
-      getStringArray(scene, 'reference_image_ids') ??
-      undefined
-    const imageSearchTerms =
-      getStringArray(scene, 'imageSearchTerms') ??
-      getStringArray(scene, 'image_search_terms') ??
-      undefined
-
-    validScenes.push({
-      sceneNumber: getNumber(scene, 'sceneNumber') ?? i + 1,
-      title: title ?? `Scene ${i + 1}`,
-      description: description ?? '',
-      duration: getString(scene, 'duration') ?? '',
-      visualNote: getString(scene, 'visualNote') ?? getString(scene, 'visual_note') ?? '',
-      ...(scene.hookData
-        ? { hookData: validateHookData(scene.hookData as Record<string, unknown>) }
-        : {}),
-      ...(typeof scene.referenceVideoId === 'string'
-        ? { referenceVideoId: scene.referenceVideoId }
-        : {}),
-      ...(voiceover ? { voiceover } : {}),
-      ...(transition ? { transition } : {}),
-      ...(cameraNote ? { cameraNote } : {}),
-      ...(sceneStyleRefs ? { styleReferences: sceneStyleRefs } : {}),
-      ...(fullScript ? { fullScript } : {}),
-      ...(directorNotes ? { directorNotes } : {}),
-      ...(referenceDescription ? { referenceDescription } : {}),
-      ...(referenceImageIds ? { referenceImageIds } : {}),
-      ...(imageSearchTerms ? { imageSearchTerms } : {}),
-    })
+    validScenes.push(buildScene(fields))
   }
 
   if (validScenes.length === 0) return null
@@ -792,46 +827,8 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i]
     if (typeof scene === 'object' && scene !== null) {
-      const s = scene as Record<string, unknown>
-      const voiceover = getString(s, 'voiceover') ?? getString(s, 'vo') ?? undefined
-      const transition = getString(s, 'transition') ?? undefined
-      const cameraNote = getString(s, 'cameraNote') ?? getString(s, 'camera_note') ?? undefined
-      const sceneStyleRefs =
-        getStringArray(s, 'styleReferences') ?? getStringArray(s, 'style_references') ?? undefined
-      const fullScript = getString(s, 'fullScript') ?? getString(s, 'full_script') ?? undefined
-      const directorNotes =
-        getString(s, 'directorNotes') ?? getString(s, 'director_notes') ?? undefined
-      const referenceDescription =
-        getString(s, 'referenceDescription') ?? getString(s, 'reference_description') ?? undefined
-      const referenceImageIds =
-        getStringArray(s, 'referenceImageIds') ??
-        getStringArray(s, 'reference_image_ids') ??
-        undefined
-      const imageSearchTerms =
-        getStringArray(s, 'imageSearchTerms') ??
-        getStringArray(s, 'image_search_terms') ??
-        undefined
-
-      validScenes.push({
-        sceneNumber: getNumber(s, 'sceneNumber') ?? i + 1,
-        title: getString(s, 'title') ?? `Scene ${i + 1}`,
-        description: getString(s, 'description') ?? '',
-        duration: getString(s, 'duration') ?? '',
-        visualNote: getString(s, 'visualNote') ?? getString(s, 'visual_note') ?? '',
-        ...(s.hookData
-          ? { hookData: validateHookData(s.hookData as Record<string, unknown>) }
-          : {}),
-        ...(typeof s.referenceVideoId === 'string' ? { referenceVideoId: s.referenceVideoId } : {}),
-        ...(voiceover ? { voiceover } : {}),
-        ...(transition ? { transition } : {}),
-        ...(cameraNote ? { cameraNote } : {}),
-        ...(sceneStyleRefs ? { styleReferences: sceneStyleRefs } : {}),
-        ...(fullScript ? { fullScript } : {}),
-        ...(directorNotes ? { directorNotes } : {}),
-        ...(referenceDescription ? { referenceDescription } : {}),
-        ...(referenceImageIds ? { referenceImageIds } : {}),
-        ...(imageSearchTerms ? { imageSearchTerms } : {}),
-      })
+      const fields = extractSceneFields(scene as Record<string, unknown>, i)
+      validScenes.push(buildScene(fields))
     }
   }
 
@@ -962,7 +959,7 @@ function partialStrategicReview(parsed: Record<string, unknown> | unknown[]): bo
 export function getFormatReinforcement(expectedType: StructureType): string {
   const marker = STRUCTURE_TO_MARKER[expectedType]
   const exampleMap: Record<StructureType, string> = {
-    storyboard: `[STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"...","duration":"5s","visualNote":"...","voiceover":"...","transition":"cut","cameraNote":"close-up"}]}[/STORYBOARD]`,
+    storyboard: `[STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Opening impact scene","duration":"5s","visualNote":"Close-up of frustrated founder at desk","voiceover":"Every decision feels critical...","transition":"cut","cameraNote":"close-up, handheld","imageSearchTerms":["frustrated business executive","office stress late night","entrepreneur overwhelmed"]}]}[/STORYBOARD]`,
     layout: `[LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"...","contentGuidance":"...","order":1}]}[/LAYOUT]`,
     calendar: `[CALENDAR]{"totalDuration":"4 weeks","postingCadence":"3x/week","platforms":["Instagram"],"contentPillars":[{"name":"...","description":"...","percentage":40}],"weeks":[],"ctaEscalation":{"awarenessPhase":{"weeks":[1,2],"ctaStyle":"soft"},"engagementPhase":{"weeks":[3],"ctaStyle":"engage"},"conversionPhase":{"weeks":[4],"ctaStyle":"direct"}}}[/CALENDAR]`,
     single_design: `[DESIGN_SPEC]{"format":"Social post","dimensions":[{"width":1080,"height":1080,"label":"Instagram square"}],"keyElements":["Logo","CTA"],"copyGuidance":"..."}[/DESIGN_SPEC]`,

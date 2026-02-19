@@ -906,11 +906,11 @@ function DashboardContent() {
           <div className="flex items-center justify-center gap-3">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
               const gradients: Record<string, string> = {
-                'Launch Videos': 'from-orange-500 to-rose-500',
-                'Pitch Deck': 'from-blue-500 to-indigo-600',
-                Branding: 'from-violet-500 to-fuchsia-500',
-                'Social Media': 'from-pink-500 to-rose-400',
-                'Landing Page': 'from-teal-500 to-emerald-500',
+                'Launch Videos': 'from-[#6b7f5e] to-[#4a5c3f]',
+                'Pitch Deck': 'from-[#7a7968] to-[#5c5b4d]',
+                Branding: 'from-[#8a7e5e] to-[#6b6145]',
+                'Social Media': 'from-[#5e7a72] to-[#425c55]',
+                'Landing Page': 'from-[#6e7d5a] to-[#505c3e]',
               }
               const gradient = gradients[category] || 'from-gray-500 to-gray-600'
               return (
