@@ -120,7 +120,9 @@ interface SceneInput {
   sceneNumber: number
   imageSearchTerms?: string[]
   visualNote?: string
+  description?: string
   title?: string
+  voiceover?: string
 }
 
 function buildSearchQuery(scene: SceneInput): string {
@@ -128,11 +130,14 @@ function buildSearchQuery(scene: SceneInput): string {
   if (scene.imageSearchTerms && scene.imageSearchTerms.length > 0) {
     return scene.imageSearchTerms.slice(0, 3).join(' ')
   }
-  // Fallback: combine visualNote + title
+  // Fallback: build from available scene content (prefer visual descriptions)
   const parts: string[] = []
   if (scene.visualNote) parts.push(scene.visualNote)
-  if (scene.title) parts.push(scene.title)
-  const combined = parts.join(' ').slice(0, 80) // Keep queries concise
+  if (scene.description) parts.push(scene.description)
+  if (parts.length === 0 && scene.title && !scene.title.startsWith('Scene ')) {
+    parts.push(scene.title)
+  }
+  const combined = parts.join(' ').slice(0, 100) // Keep queries concise
   return combined || 'cinematic scene'
 }
 
