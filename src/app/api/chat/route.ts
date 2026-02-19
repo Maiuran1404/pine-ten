@@ -691,6 +691,7 @@ async function handler(request: NextRequest) {
           const stageBeforeBriefMeta = briefingState.stage
           const lastContent = messages[messages.length - 1]?.content || ''
           const isSceneFeedback = /\[Feedback on Scene/.test(lastContent)
+          const isRegenerationRequest = /regenerate.*storyboard/i.test(lastContent)
 
           const briefMetaResult = parseBriefMeta(response.content)
           if (briefMetaResult.success && briefMetaResult.data) {
@@ -1078,6 +1079,52 @@ async function handler(request: NextRequest) {
               }
             } catch (retryErr) {
               logger.warn({ err: retryErr }, 'Scene feedback format reinforcement retry failed')
+            }
+          }
+
+          // ================================================================
+          // 16a-3. Regeneration retry: always retry when user requested
+          // storyboard regeneration but no storyboard was returned
+          // ================================================================
+          if (isRegenerationRequest && !structureData && structureType) {
+            logger.debug(
+              { structureType },
+              'Regeneration request detected but no storyboard returned — retrying with format reinforcement'
+            )
+            try {
+              const reinforcement = getFormatReinforcement(structureType)
+              const regenRetryBrandContext: BrandContext = {
+                companyName: company?.name,
+                industry: company?.industry ?? undefined,
+                brandDescription: company?.description ?? undefined,
+              }
+              const regenRetryOverride = {
+                systemPrompt: buildSystemPrompt(briefingState, regenRetryBrandContext),
+                stage: briefingState.stage,
+              }
+              const retryResponse = await chat(
+                [
+                  ...messages,
+                  { role: 'assistant', content: response.content },
+                  { role: 'user', content: reinforcement },
+                ],
+                session.user.id,
+                chatContext,
+                regenRetryOverride
+              )
+              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
+              if (retryParsed.success && retryParsed.data) {
+                structureData = retryParsed.data
+                briefingState.structure = retryParsed.data
+                logger.debug({ structureType }, 'Regeneration structure retry succeeded')
+              } else {
+                logger.warn(
+                  { structureType, parseError: retryParsed.parseError },
+                  'Regeneration structure retry also failed — no storyboard data'
+                )
+              }
+            } catch (retryErr) {
+              logger.warn({ err: retryErr }, 'Regeneration format reinforcement retry failed')
             }
           }
 
