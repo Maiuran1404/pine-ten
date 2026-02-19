@@ -181,32 +181,12 @@ function LoadingIndicator({
       role="status"
       aria-label={loadingMessages[loadingStage]}
     >
-      {/* Minimal avatar - brand gradient circle */}
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-crafted-green to-crafted-sage shadow-sm flex items-center justify-center shrink-0 relative">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/30"
-        />
-        <div className="w-2.5 h-2.5 rounded-full bg-white" />
+      {/* Avatar — pulled into gutter on lg+ to align with input */}
+      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-emerald-700 dark:to-emerald-500 shadow-md flex items-center justify-center shrink-0">
+        <Sparkles className="h-4 w-4 text-crafted-mint animate-pulse" />
       </div>
-      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-5 py-4 border border-border/30">
-        <div className="flex items-center gap-3">
-          {/* Animated dots */}
-          <div className="flex gap-1">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
-              style={{ animationDelay: '0ms' }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
-              style={{ animationDelay: '150ms' }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-crafted-green animate-bounce motion-reduce:animate-none"
-              style={{ animationDelay: '300ms' }}
-            />
-          </div>
+      <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/30">
+        <div className="flex items-center gap-2">
           {/* Progressive message with shimmer effect */}
           <motion.div
             key={loadingStage}
@@ -464,18 +444,18 @@ export function ChatMessageList({
                     'flex',
                     message.role === 'user' ? 'justify-end' : 'justify-start',
                     index > 0 && messages[index - 1]?.role !== message.role
-                      ? 'mt-6'
+                      ? 'mt-8'
                       : index > 0
-                        ? 'mt-2'
+                        ? 'mt-4'
                         : ''
                   )}
                 >
                   {message.role === 'assistant' ? (
                     /* Assistant message - left aligned with sparkle avatar */
                     <div className="group max-w-[85%] flex items-start gap-3">
-                      {/* Sparkle avatar */}
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-crafted-green to-crafted-sage shadow-sm flex items-center justify-center shrink-0">
-                        <Sparkles className="h-4 w-4 text-white" />
+                      {/* Sparkle avatar — pulled into gutter on lg+ to align content with input */}
+                      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-emerald-700 dark:to-emerald-500 shadow-md flex items-center justify-center shrink-0">
+                        <Sparkles className="h-4 w-4 text-crafted-mint" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {/* Thinking time indicator */}
@@ -494,7 +474,7 @@ export function ChatMessageList({
                             animate={animatingMessageId === message.id}
                             speed={25}
                             onComplete={() => handleTypingComplete(message.id)}
-                            className="prose max-w-none dark:prose-invert [&>p]:mb-4 [&>p:first-child]:font-medium [&_strong]:text-foreground [&_strong]:font-semibold [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 leading-relaxed text-foreground"
+                            className="prose prose-sm max-w-none dark:prose-invert [&>p]:mb-4 [&>p:first-child]:font-medium [&_strong]:text-foreground [&_strong]:font-semibold [&>ul]:mb-3 [&>ol]:mb-3 [&>p:last-child]:mb-0 leading-relaxed text-foreground"
                           />
 
                           {/* Attachments */}
@@ -847,7 +827,7 @@ export function ChatMessageList({
                             !pendingTask && (
                               <button
                                 onClick={handleEditLastMessage}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-emerald-200/50 dark:hover:bg-emerald-800/30 hover:text-foreground transition-all"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-crafted-mint/30 dark:hover:bg-crafted-green/20 hover:text-foreground transition-all"
                                 title="Edit this message"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -950,7 +930,7 @@ export function ChatMessageList({
                       disabled={isLoading}
                       size="sm"
                       variant="ghost"
-                      className="gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium"
+                      className="gap-1.5 text-crafted-green hover:text-crafted-green-light hover:bg-crafted-mint/10 dark:hover:bg-crafted-green/15 font-medium"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       Generate Summary
