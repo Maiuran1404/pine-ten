@@ -150,6 +150,14 @@ Only skip planning for trivial single-line fixes (typos, obvious bugs, small twe
 | `/fix-types`   | Find and fix TypeScript errors                 |
 | `/perf-audit`  | Run performance audit (config & infra focused) |
 
+## Multi-Fix Workflow
+
+When fixing multiple bugs or issues in a session, **always test, commit, and push between each fix**. Never batch unrelated fixes into a single commit. This ensures:
+
+- Each fix is isolated and revertable
+- Broken fixes don't block other changes
+- Git history stays clean and bisectable
+
 ## Sub-Agent Dispatch Rules
 
 - **Parallel**: independent file reads, linting + typechecking, test runs across modules
