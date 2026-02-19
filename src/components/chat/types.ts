@@ -9,6 +9,15 @@ export interface UploadedFile {
   fileUrl: string
   fileType: string
   fileSize: number
+  isExternalLink?: boolean
+  provider?: 'google_drive' | 'dropbox' | 'other'
+  isAccessible?: boolean
+}
+
+export interface AssetRequest {
+  prompt: string
+  acceptTypes: string[]
+  hint: string
 }
 
 /**
@@ -126,6 +135,7 @@ export interface ChatMessage {
   selectedStyle?: DeliverableStyle // Style selected by user from style grid
   structureData?: StructureData // Structured output (storyboard, layout, calendar, design spec)
   strategicReviewData?: StrategicReviewData // Strategic review card data
+  assetRequest?: AssetRequest // Inline upload zone prompt from AI
 }
 
 /**

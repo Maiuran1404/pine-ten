@@ -1296,6 +1296,8 @@ async function handler(request: NextRequest) {
         .replace(/\[STRATEGIC_REVIEW\][\s\S]*?\[\/STRATEGIC_REVIEW\]/g, '')
         .replace(/\[STYLE_CARDS\][\s\S]*?\[\/STYLE_CARDS\]/g, '')
         .replace(/\[DELIVERABLE_STYLES[^\]]*\]/g, '')
+        .replace(/\[ASSET_REQUEST\][\s\S]*?\[\/ASSET_REQUEST\]/g, '')
+        .replace(/\[\/ASSET_REQUEST\]/g, '') // Orphaned closing tags
         .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
         .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
         .trim()
@@ -1312,6 +1314,7 @@ async function handler(request: NextRequest) {
         structureData,
         strategicReviewData,
         sceneImageMatches,
+        assetRequest: response.assetRequest,
         briefingState: updatedBriefingState ?? clientBriefingState,
       })
     },

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ImageWithSkeleton, MasonryGridSkeleton } from '@/components/ui/skeletons'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   Paperclip,
   Image as ImageIcon,
@@ -28,6 +28,18 @@ import {
   Youtube,
   Twitter,
   Check,
+  Rocket,
+  Sparkles,
+  Smartphone,
+  TrendingUp,
+  Handshake,
+  Building2,
+  PackageOpen,
+  PenTool,
+  RefreshCw,
+  ShoppingBag,
+  Monitor,
+  CalendarDays,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
@@ -35,6 +47,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { getImageVariantUrls } from '@/lib/image/utils'
+import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
 
 interface UploadedFile {
@@ -109,24 +122,21 @@ const TEMPLATE_CATEGORIES = {
         description:
           'A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.',
         prompt: 'Create a product launch video',
-        image:
-          'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop&q=80',
+        icon: Rocket,
       },
       {
         title: 'Feature Highlight',
         description:
           'A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.',
         prompt: 'Create a feature highlight video',
-        image:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80',
+        icon: Sparkles,
       },
       {
         title: 'App Walkthrough',
         description:
           'A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.',
         prompt: 'Create an app walkthrough video',
-        image:
-          'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&q=80',
+        icon: Smartphone,
       },
     ],
   },
@@ -141,24 +151,21 @@ const TEMPLATE_CATEGORIES = {
         description:
           'A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.',
         prompt: 'Redesign my investor pitch deck',
-        image:
-          'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop&q=80',
+        icon: TrendingUp,
       },
       {
         title: 'Sales Deck',
         description:
           'A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.',
         prompt: 'Create a sales presentation deck',
-        image:
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80',
+        icon: Handshake,
       },
       {
         title: 'Company Overview',
         description:
           'A versatile introduction to my company that works for partners, clients, and new team members.',
         prompt: 'Design a company overview presentation',
-        image:
-          'https://images.unsplash.com/photo-1497215842964-222b430dc094?w=400&h=300&fit=crop&q=80',
+        icon: Building2,
       },
     ],
   },
@@ -173,24 +180,21 @@ const TEMPLATE_CATEGORIES = {
         description:
           'A complete visual identity system including logo design, color palette, typography, and brand guidelines.',
         prompt: 'Create a full brand package with logo and visual identity',
-        image:
-          'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop&q=80',
+        icon: PackageOpen,
       },
       {
         title: 'Logo Design',
         description:
           'A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.',
         prompt: 'Design a logo for my brand',
-        image:
-          'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&q=80',
+        icon: PenTool,
       },
       {
         title: 'Brand Refresh',
         description:
           'Modernize and elevate my existing brand while maintaining recognition with updated visual elements.',
         prompt: 'Refresh and modernize my existing brand',
-        image:
-          'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop&q=80',
+        icon: RefreshCw,
       },
     ],
   },
@@ -204,48 +208,42 @@ const TEMPLATE_CATEGORIES = {
         description:
           'Eye-catching static posts designed for maximum engagement in the 4:5 feed format.',
         prompt: 'Create Instagram post designs',
-        image:
-          'https://images.unsplash.com/photo-1611262588024-d12430b98920?w=400&h=300&fit=crop&q=80',
+        icon: Instagram,
       },
       {
         title: 'Instagram Story',
         description:
           'Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.',
         prompt: 'Create Instagram story designs',
-        image:
-          'https://images.unsplash.com/photo-1585247226801-bc613c441316?w=400&h=300&fit=crop&q=80',
+        icon: Instagram,
       },
       {
         title: 'Instagram Reels',
         description:
           'Short-form vertical video content designed to capture attention in the first second.',
         prompt: 'Create an Instagram Reels video',
-        image:
-          'https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=400&h=300&fit=crop&q=80',
+        icon: FileVideo,
       },
       {
         title: 'LinkedIn Content',
         description:
           'Professional content designed for B2B engagement including carousels and thought leadership.',
         prompt: 'Create LinkedIn content',
-        image:
-          'https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=400&h=300&fit=crop&q=80',
+        icon: Linkedin,
       },
       {
         title: 'Video Edit',
         description:
           'Transform raw footage into polished, platform-ready content with professional editing.',
         prompt: 'Edit my video footage for social media',
-        image:
-          'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=300&fit=crop&q=80',
+        icon: FileVideo,
       },
       {
         title: 'Ad Creatives',
         description:
           'Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.',
         prompt: 'Create social media ad creatives',
-        image:
-          'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=400&h=300&fit=crop&q=80',
+        icon: Megaphone,
       },
     ],
   },
@@ -260,24 +258,21 @@ const TEMPLATE_CATEGORIES = {
         description:
           'A conversion-focused page that showcases my product with compelling visuals, benefits, and a clear call to action.',
         prompt: 'Design a product landing page',
-        image:
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&q=80',
+        icon: ShoppingBag,
       },
       {
         title: 'SaaS Landing Page',
         description:
           'A modern page built for software products with feature highlights, pricing, social proof, and sign-up flows.',
         prompt: 'Design a SaaS landing page',
-        image:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80',
+        icon: Monitor,
       },
       {
         title: 'Event Landing Page',
         description:
           'A dynamic page for events, launches, or campaigns with countdown timers, speaker bios, and registration.',
         prompt: 'Design an event landing page',
-        image:
-          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop&q=80',
+        icon: CalendarDays,
       },
     ],
   },
@@ -308,6 +303,8 @@ function DashboardContent() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
+  const prefersReduced = useReducedMotion()
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const userName = session?.user?.name?.split(' ')[0] || 'there'
 
@@ -332,7 +329,7 @@ function DashboardContent() {
         const allTasks = data.data?.tasks || data.tasks || []
         setTasksForReview(allTasks.filter((t: { status: string }) => t.status === 'IN_REVIEW'))
       })
-      .catch(console.error)
+      .catch(() => setFetchError('Failed to load tasks'))
 
     // Fetch brand-matched style references (increased limit for all categories)
     setIsLoadingStyles(true)
@@ -343,7 +340,7 @@ function DashboardContent() {
           setStyleReferences(data.data)
         }
       })
-      .catch(console.error)
+      .catch(() => setFetchError('Failed to load style references'))
       .finally(() => setIsLoadingStyles(false))
   }, [])
 
@@ -494,70 +491,9 @@ function DashboardContent() {
       onDrop={handleDrop}
     >
       {/* Organic nature background */}
-      <style jsx>{`
-        @keyframes float1 {
-          0%,
-          100% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
-          }
-          33% {
-            transform: translate(3%, 5%) rotate(1deg) scale(1.02);
-          }
-          66% {
-            transform: translate(-2%, 3%) rotate(-0.5deg) scale(0.99);
-          }
-        }
-        @keyframes float2 {
-          0%,
-          100% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
-          }
-          33% {
-            transform: translate(-4%, -3%) rotate(-1deg) scale(1.01);
-          }
-          66% {
-            transform: translate(2%, -5%) rotate(0.5deg) scale(1.03);
-          }
-        }
-        @keyframes float3 {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          50% {
-            transform: translate(5%, 2%) scale(1.04);
-          }
-        }
-        @keyframes float4 {
-          0%,
-          100% {
-            transform: translate(0, 0) rotate(0deg);
-          }
-          25% {
-            transform: translate(-3%, 4%) rotate(0.5deg);
-          }
-          50% {
-            transform: translate(1%, -2%) rotate(-0.5deg);
-          }
-          75% {
-            transform: translate(4%, 1%) rotate(0.3deg);
-          }
-        }
-        @keyframes float5 {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-            opacity: 0.7;
-          }
-          50% {
-            transform: translate(-2%, 3%) scale(1.02);
-            opacity: 1;
-          }
-        }
-      `}</style>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         {/* Base warm tone */}
-        <div className="absolute inset-0 bg-[#f5f3ec] dark:bg-[#0b0d0f]" />
+        <div className="absolute inset-0 bg-background" />
 
         {/* Large sage-green wash — top left canopy */}
         <div
@@ -659,89 +595,22 @@ function DashboardContent() {
         )}
       </AnimatePresence>
 
-      {/* Submitting loading overlay */}
+      {/* Submitting loading overlay — grain effect */}
       <AnimatePresence>
         {isSending && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center"
+            transition={{ duration: 0.4 }}
+            className="loading-grain fixed inset-0 z-50"
           >
-            <div className="text-center">
-              {/* Animated logo/icon */}
-              <div className="relative mb-8">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-500/25"
-                >
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  >
-                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                  </motion.div>
-                </motion.div>
-
-                {/* Pulsing ring */}
-                <motion.div
-                  initial={{ scale: 1, opacity: 0.5 }}
-                  animate={{ scale: 1.5, opacity: 0 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
-                  className="absolute inset-0 w-20 h-20 mx-auto rounded-2xl bg-emerald-500"
-                />
-              </div>
-
-              {/* Text */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <h2 className="text-xl font-semibold text-foreground mb-2">
-                  Creating your request
-                </h2>
-                <p className="text-sm text-muted-foreground">Setting things up for you...</p>
-              </motion.div>
-
-              {/* Animated dots */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center justify-center gap-1.5 mt-6"
-              >
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                    className="w-2 h-2 rounded-full bg-emerald-500"
-                  />
-                ))}
-              </motion.div>
-            </div>
+            <span
+              className="loading-grain-wordmark pointer-events-none absolute inset-0 z-[2] flex select-none items-center justify-center font-satoshi text-2xl font-light tracking-[0.3em] text-foreground"
+              aria-hidden="true"
+            >
+              crafted
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -770,13 +639,34 @@ function DashboardContent() {
         </div>
       )}
 
+      {fetchError && (
+        <div className="px-4 sm:px-6 pt-6 max-w-3xl mx-auto w-full">
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--ds-error)]/30 bg-[var(--ds-error)]/5">
+            <div className="w-8 h-8 rounded-full bg-[var(--ds-error)]/10 flex items-center justify-center shrink-0">
+              <X className="h-4 w-4 text-[var(--ds-error)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">{fetchError}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Try refreshing the page</p>
+            </div>
+            <button
+              onClick={() => setFetchError(null)}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Dismiss error"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content — vertically centered like Cardboard */}
       <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[calc(100vh-3rem)] pb-12">
         {/* Welcome Header */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: prefersReduced ? 0 : 0.4, ease: [0.25, 0.1, 0.25, 1] }}
           className="text-center mb-6"
         >
           <h1 className="text-[1.7rem] sm:text-[2rem] font-medium text-foreground tracking-[-0.01em] leading-snug">
@@ -789,12 +679,16 @@ function DashboardContent() {
 
         {/* Main Input Card */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+          transition={{
+            duration: prefersReduced ? 0 : 0.4,
+            delay: prefersReduced ? 0 : 0.08,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}
           className="w-full max-w-[780px] mb-3"
         >
-          <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
+          <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
             {/* Uploaded files preview */}
             {uploadedFiles.length > 0 && (
               <div className="px-4 py-3 border-b border-border/30">
@@ -892,13 +786,14 @@ function DashboardContent() {
                   ) : (
                     <>
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full',
                           credits === 0
-                            ? 'bg-red-500'
+                            ? 'bg-[var(--ds-error)]'
                             : credits <= 2
-                              ? 'bg-yellow-500'
-                              : 'bg-emerald-500'
-                        }`}
+                              ? 'bg-[var(--ds-warning)]'
+                              : 'bg-[var(--ds-success)]'
+                        )}
                       />
                       <span>{credits} credits</span>
                     </>
@@ -912,6 +807,7 @@ function DashboardContent() {
                 disabled={
                   isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
                 }
+                aria-label="Send message"
                 className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg
@@ -945,9 +841,13 @@ function DashboardContent() {
 
         {/* Template Cards */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          transition={{
+            duration: prefersReduced ? 0 : 0.4,
+            delay: prefersReduced ? 0 : 0.2,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}
           className="w-full max-w-[780px] mt-5"
         >
           <p className="text-center text-xs text-muted-foreground/60 mb-4">
@@ -956,11 +856,11 @@ function DashboardContent() {
           <div className="flex items-center justify-center gap-3">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
               const gradients: Record<string, string> = {
-                'Launch Videos': 'from-[#6b7f5e] to-[#4a5c3f]',
-                'Pitch Deck': 'from-[#7a7968] to-[#5c5b4d]',
-                Branding: 'from-[#8a7e5e] to-[#6b6145]',
-                'Social Media': 'from-[#5e7a72] to-[#425c55]',
-                'Landing Page': 'from-[#6e7d5a] to-[#505c3e]',
+                'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
+                'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
+                Branding: 'from-[var(--crafted-sage)] to-[var(--crafted-green)]',
+                'Social Media': 'from-[var(--crafted-forest)] to-[var(--crafted-green)]',
+                'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
               }
               const gradient = gradients[category] || 'from-gray-500 to-gray-600'
               return (
@@ -975,7 +875,10 @@ function DashboardContent() {
                   className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
                 >
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-90 group-hover:opacity-100 transition-opacity`}
+                    className={cn(
+                      'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
+                      gradient
+                    )}
                   />
                   <div
                     className="absolute inset-0 opacity-[0.15]"
@@ -1007,34 +910,19 @@ function DashboardContent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-2xl border border-border/30 shadow-2xl shadow-black/10 bg-[#f8f7f3] dark:bg-zinc-900">
+        <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-2xl border border-border/30 shadow-2xl shadow-black/10 bg-card">
           {selectedCategory &&
             (() => {
               const category =
                 TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]
               const Icon = category?.icon
-              const optionCount = category?.options.length || 0
-              const gridCols =
-                optionCount >= 4
-                  ? 'grid-cols-2 sm:grid-cols-3'
-                  : optionCount >= 3
-                    ? 'grid-cols-1 sm:grid-cols-3'
-                    : 'grid-cols-1 sm:grid-cols-2'
-              // Earthy gradient palette for option cards
-              const optionGradients = [
-                'from-[#6b7f5e] to-[#4a5c3f]',
-                'from-[#7a7968] to-[#5c5b4d]',
-                'from-[#5e7a72] to-[#425c55]',
-                'from-[#8a7e5e] to-[#6b6145]',
-                'from-[#6e7d5a] to-[#505c3e]',
-                'from-[#6a756e] to-[#4d5750]',
-              ]
+
               return (
                 <>
                   {/* Header */}
                   <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-[#5e7a62] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-[var(--crafted-green)] flex items-center justify-center shrink-0">
                         {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
                       </div>
                       <DialogTitle className="text-base font-semibold text-foreground tracking-tight">
@@ -1057,14 +945,18 @@ function DashboardContent() {
                           return (
                             <div
                               key={platform.id}
-                              className={`rounded-xl ring-1 ring-inset transition-all duration-200 ${
+                              className={cn(
+                                'rounded-xl ring-1 ring-inset transition-all duration-200',
                                 isEnabled
-                                  ? 'ring-[#5e7a62] bg-[#5e7a62]/5 dark:bg-[#5e7a62]/10'
+                                  ? 'ring-[var(--crafted-green)] bg-[var(--crafted-green)]/5 dark:bg-[var(--crafted-green)]/10'
                                   : 'ring-black/[0.06] dark:ring-white/[0.06]'
-                              }`}
+                              )}
                             >
                               <div
-                                className={`flex items-center gap-3 px-4 py-3 ${!isEnabled ? 'opacity-50' : ''}`}
+                                className={cn(
+                                  'flex items-center gap-3 px-4 py-3',
+                                  !isEnabled && 'opacity-50'
+                                )}
                               >
                                 {/* Checkbox + Icon + Name */}
                                 <button
@@ -1089,19 +981,30 @@ function DashboardContent() {
                                   className="flex items-center gap-3 min-w-0 text-left shrink-0"
                                 >
                                   <div
-                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
+                                    className={cn(
+                                      'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150',
                                       isEnabled
-                                        ? 'border-[#5e7a62] bg-[#5e7a62]'
-                                        : 'border-border/60 bg-white dark:bg-zinc-800'
-                                    }`}
+                                        ? 'border-[var(--crafted-green)] bg-[var(--crafted-green)]'
+                                        : 'border-border/60 bg-card'
+                                    )}
                                   >
                                     {isEnabled && <Check className="w-3 h-3 text-white" />}
                                   </div>
                                   <PlatformIcon
-                                    className={`h-4.5 w-4.5 shrink-0 ${isEnabled ? 'text-[#4a5c3f] dark:text-[#8aab7e]' : 'text-muted-foreground'}`}
+                                    className={cn(
+                                      'h-4.5 w-4.5 shrink-0',
+                                      isEnabled
+                                        ? 'text-[var(--crafted-forest)] dark:text-[var(--crafted-sage)]'
+                                        : 'text-muted-foreground'
+                                    )}
                                   />
                                   <span
-                                    className={`font-semibold text-sm ${isEnabled ? 'text-[#4a5c3f] dark:text-[#8aab7e]' : 'text-foreground'}`}
+                                    className={cn(
+                                      'font-semibold text-sm',
+                                      isEnabled
+                                        ? 'text-[var(--crafted-forest)] dark:text-[var(--crafted-sage)]'
+                                        : 'text-foreground'
+                                    )}
                                   >
                                     {platform.name}
                                   </span>
@@ -1134,11 +1037,15 @@ function DashboardContent() {
                                             }
                                           })
                                         }}
-                                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-150 ${
+                                        className={cn(
+                                          'px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-150',
                                           isEnabled && isFormatActive
-                                            ? 'bg-[#5e7a62]/10 text-[#4a5c3f] dark:text-[#8aab7e]'
-                                            : 'bg-muted text-muted-foreground'
-                                        } ${isEnabled ? 'cursor-pointer hover:bg-[#5e7a62]/15' : 'cursor-default'}`}
+                                            ? 'bg-[var(--crafted-green)]/10 text-[var(--crafted-forest)] dark:text-[var(--crafted-sage)]'
+                                            : 'bg-muted text-muted-foreground',
+                                          isEnabled
+                                            ? 'cursor-pointer hover:bg-[var(--crafted-green)]/15'
+                                            : 'cursor-default'
+                                        )}
                                       >
                                         {format}
                                       </button>
@@ -1159,11 +1066,12 @@ function DashboardContent() {
                                         }
                                       })
                                     }}
-                                    className={`h-7 text-xs rounded-md border border-border/40 bg-white dark:bg-zinc-800 px-2 pr-6 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 transition-all appearance-none shrink-0 ${
+                                    className={cn(
+                                      'h-7 text-xs rounded-md border border-border/40 bg-card px-2 pr-6 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 transition-all appearance-none shrink-0',
                                       !isEnabled
                                         ? 'cursor-default text-muted-foreground'
                                         : 'cursor-pointer text-foreground'
-                                    }`}
+                                    )}
                                     style={{
                                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                                       backgroundRepeat: 'no-repeat',
@@ -1209,7 +1117,7 @@ function DashboardContent() {
                               }
                             }}
                             placeholder="Add any details or goals..."
-                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 text-sm transition-all"
+                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all"
                           />
                           <button
                             onClick={() => {
@@ -1232,7 +1140,7 @@ function DashboardContent() {
                               Object.values(platformSelections).filter((v) => v.enabled).length ===
                               0
                             }
-                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#5e7a62] hover:bg-[#4a5c3f] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
                           >
                             Continue
                           </button>
@@ -1241,73 +1149,60 @@ function DashboardContent() {
                     </>
                   ) : (
                     <>
-                      {/* Options Grid (non-Social Media categories) */}
-                      <div className={`px-5 pb-4 grid ${gridCols} gap-2.5`}>
-                        {category?.options.map((option, index) => {
+                      {/* Options List (non-Social Media categories) */}
+                      <div className="px-5 pb-4 flex flex-col gap-2">
+                        {category?.options.map((option) => {
                           const isSelected = selectedOption === option.title
-                          const optGradient = optionGradients[index % optionGradients.length]
                           return (
                             <button
-                              key={index}
+                              key={option.title}
                               onClick={() => setSelectedOption(isSelected ? null : option.title)}
-                              className={`group relative flex flex-col rounded-xl transition-all duration-200 text-left h-full overflow-hidden ring-1 ring-inset ${
+                              className={cn(
+                                'group relative flex items-start gap-4 rounded-xl px-4 py-3.5 text-left transition-all duration-150 ring-1 ring-inset',
                                 isSelected
-                                  ? 'ring-[#5e7a62] bg-[#5e7a62]/5 dark:bg-[#5e7a62]/10 shadow-sm'
-                                  : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-[#5e7a62]/50 hover:shadow-sm'
-                              }`}
+                                  ? 'ring-[var(--crafted-green)] bg-[var(--crafted-green)]/[0.06] dark:bg-[var(--crafted-green)]/10 shadow-sm'
+                                  : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-[var(--crafted-green)]/40 hover:bg-[var(--crafted-green)]/[0.02]'
+                              )}
                             >
-                              {/* Gradient area with grain */}
-                              <div className="relative w-full h-24 overflow-hidden flex items-center justify-center">
-                                <div
-                                  className={`absolute inset-0 bg-gradient-to-br ${optGradient}`}
-                                />
-                                <div
-                                  className="absolute inset-0 opacity-[0.15]"
-                                  style={{
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                                    backgroundSize: '128px 128px',
-                                  }}
-                                />
-                                {Icon && <Icon className="relative z-10 h-6 w-6 text-white/80" />}
-                                {/* Check */}
-                                <div
-                                  className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150 z-10 ${
-                                    isSelected
-                                      ? 'border-white bg-white scale-100'
-                                      : 'border-white/40 bg-white/10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
-                                  }`}
-                                >
-                                  {isSelected && (
-                                    <svg
-                                      className="w-3 h-3 text-[#4a5c3f]"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                      strokeWidth={3}
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M5 13l4 4L19 7"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
+                              {/* Icon */}
+                              <div
+                                className={cn(
+                                  'w-10 h-10 rounded-lg shrink-0 flex items-center justify-center transition-colors',
+                                  isSelected
+                                    ? 'bg-[var(--crafted-green)] text-white'
+                                    : 'bg-muted text-muted-foreground'
+                                )}
+                              >
+                                <option.icon className="w-5 h-5" />
                               </div>
                               {/* Content */}
-                              <div className="p-3 flex-1 flex flex-col">
+                              <div className="flex-1 min-w-0 pt-0.5">
                                 <h3
-                                  className={`font-semibold text-[13px] mb-1 transition-colors ${
+                                  className={cn(
+                                    'font-semibold text-sm leading-snug transition-colors',
                                     isSelected
-                                      ? 'text-[#4a5c3f] dark:text-[#8aab7e]'
+                                      ? 'text-[var(--crafted-forest)] dark:text-[var(--crafted-sage)]'
                                       : 'text-foreground'
-                                  }`}
+                                  )}
                                 >
                                   {option.title}
                                 </h3>
-                                <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                                <p className="text-[13px] text-muted-foreground leading-relaxed mt-1">
                                   {option.description}
                                 </p>
+                              </div>
+                              {/* Radio indicator */}
+                              <div
+                                className={cn(
+                                  'mt-1 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-all duration-150',
+                                  isSelected
+                                    ? 'border-[var(--crafted-green)] bg-[var(--crafted-green)]'
+                                    : 'border-black/15 dark:border-white/20 group-hover:border-[var(--crafted-green)]/50'
+                                )}
+                              >
+                                {isSelected && (
+                                  <div className="w-[6px] h-[6px] rounded-full bg-white" />
+                                )}
                               </div>
                             </button>
                           )
@@ -1338,7 +1233,7 @@ function DashboardContent() {
                               }
                             }}
                             placeholder="Add any specific details or requirements..."
-                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-white dark:bg-zinc-800 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[#5e7a62]/20 focus:border-[#5e7a62]/40 text-sm transition-all"
+                            className="w-full h-11 px-4 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all"
                           />
                           <button
                             onClick={() => {
@@ -1358,7 +1253,7 @@ function DashboardContent() {
                               }
                             }}
                             disabled={!selectedOption}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#5e7a62] hover:bg-[#4a5c3f] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
                           >
                             Continue
                           </button>

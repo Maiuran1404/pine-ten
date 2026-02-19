@@ -80,6 +80,7 @@ export function useChatInterfaceData({
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null)
+  const [lastSendError, setLastSendError] = useState<string | null>(null)
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
   const [hoveredStyleName, setHoveredStyleName] = useState<string | null>(null)
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<string[]>([])
@@ -510,6 +511,7 @@ export function useChatInterfaceData({
 
     const continueConversation = async () => {
       setIsLoading(true)
+      setLastSendError(null)
       requestStartTimeRef.current = Date.now()
 
       try {
@@ -558,6 +560,7 @@ export function useChatInterfaceData({
           quickOptions: data.quickOptions ?? undefined,
           structureData: data.structureData ?? undefined,
           strategicReviewData: data.strategicReviewData ?? undefined,
+          assetRequest: data.assetRequest ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -567,6 +570,7 @@ export function useChatInterfaceData({
         if (data.deliverableStyleMarker)
           setCurrentDeliverableType(data.deliverableStyleMarker.deliverableType)
       } catch {
+        setLastSendError('Failed to continue conversation. Please try again.')
         toast.error('Failed to continue conversation. Please try again.')
       } finally {
         setIsLoading(false)
@@ -869,6 +873,11 @@ export function useChatInterfaceData({
     setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl))
   }, [])
 
+  // Add an external link as an uploaded file
+  const addExternalLink = useCallback((file: UploadedFile) => {
+    setUploadedFiles((prev) => [...prev, file])
+  }, [])
+
   // Send message handler
   const handleSend = useCallback(async () => {
     if (!input.trim() && uploadedFiles.length === 0) return
@@ -971,6 +980,7 @@ export function useChatInterfaceData({
         quickOptions: data.quickOptions ?? undefined,
         structureData: resolvedStructureData,
         strategicReviewData: data.strategicReviewData ?? undefined,
+        assetRequest: data.assetRequest ?? undefined,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -1060,6 +1070,7 @@ export function useChatInterfaceData({
           quickOptions: data.quickOptions ?? undefined,
           structureData: resolvedStructureData,
           strategicReviewData: data.strategicReviewData ?? undefined,
+          assetRequest: data.assetRequest ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -1624,6 +1635,7 @@ export function useChatInterfaceData({
           quickOptions: data.quickOptions ?? undefined,
           structureData: data.structureData ?? undefined,
           strategicReviewData: data.strategicReviewData ?? undefined,
+          assetRequest: data.assetRequest ?? undefined,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -2133,6 +2145,7 @@ export function useChatInterfaceData({
     handleDragOver,
     handleDrop,
     removeFile,
+    addExternalLink,
     uploadFiles,
     refreshCredits,
     scrollToBottom,

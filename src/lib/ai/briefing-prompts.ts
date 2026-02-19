@@ -112,11 +112,19 @@ FEEDBACK STRUCTURE:
 Lead with your honest assessment. If you have a flag, lead with it. Don't sandwich critique between praise.
 
 RULES:
-- Be concise. No filler.
+- Be concise. No filler. Maximum 3 short paragraphs per response.
 - One question at a time unless grouping makes sense.
 - Never repeat what the user already told you.
 - Match the user's energy and vocabulary level.
 - ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.
+
+ASSET REQUESTS:
+When you need the user to share product screenshots, UI assets, brand files, or any visual material, include an [ASSET_REQUEST] block. This renders an inline upload zone in the chat.
+Format: [ASSET_REQUEST]{"prompt":"Share your product screenshots or UI assets","acceptTypes":["image","video","pdf","design"],"hint":"Drag files here or paste a Google Drive / Dropbox link"}[/ASSET_REQUEST]
+- "prompt": What to display as the main instruction (1 sentence)
+- "acceptTypes": Array of file categories: "image", "video", "pdf", "design"
+- "hint": Helper text shown below the prompt
+Use this when asking for launch assets, product screenshots, existing brand materials, or reference files. Do NOT use it for every response, only when you specifically need the user to share files.
 
 STAGE DECLARATION: You MUST include [BRIEF_META] and [QUICK_OPTIONS] blocks in every response. Full format is specified in the CLOSING INSTRUCTION section at the end of this prompt.`
 
@@ -299,6 +307,7 @@ function buildExtractTask(_state: BriefingState): string {
 - Reference any style keywords or inspiration they mentioned.
 - IMPORTANT: Do NOT re-ask about things the user already stated clearly (e.g. if they said "new customers" or "driving traffic", their intent and audience are already clear. Confirm it and move to the next unknown).
 - Only ask about what's genuinely missing. If audience/goal/intent are clear, ask about something else (style preference, brand personality, specific requirements).
+- If the user mentions an existing product, app, or website they want to showcase, include an [ASSET_REQUEST] block to collect screenshots or visuals.
 - Be concise. Don't repeat back everything they said.`
 }
 
@@ -374,9 +383,10 @@ function buildStructureTask(state: BriefingState): string {
 If you have an open question about the primary action or audience, ask it before building. Otherwise, go straight to the structure.\n\n`
     : ''
 
-  // For any launch intent, ask for latest assets
+  // For any launch intent, ask for latest assets and show the upload zone
   const launchAssetPrompt = isLaunch
-    ? `\n- If the user is launching something and hasn't shared latest product screenshots, UI flows, or assets, ask for them. Launch assets should reflect the latest version.`
+    ? `\n- If the user is launching something and hasn't shared latest product screenshots, UI flows, or assets, ask for them and include an [ASSET_REQUEST] block so they can upload directly:
+[ASSET_REQUEST]{"prompt":"Share your latest product screenshots or UI flows","acceptTypes":["image","video","pdf","design"],"hint":"Upload files or paste a Google Drive / Dropbox link"}[/ASSET_REQUEST]`
     : ''
 
   switch (category) {

@@ -208,6 +208,7 @@ export async function chat(
   styleReferences?: string[]
   quickOptions?: { question: string; options: string[] }
   deliverableStyleMarker?: DeliverableStyleMarker
+  assetRequest?: { prompt: string; acceptTypes: string[]; hint: string }
 }> {
   // Fetch data in parallel for faster response times
   const [user, styles, categories] = await Promise.all([
@@ -413,6 +414,24 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     }
   }
 
+  // Parse asset request from AI output: [ASSET_REQUEST]{json}[/ASSET_REQUEST]
+  let assetRequest: { prompt: string; acceptTypes: string[]; hint: string } | undefined = undefined
+  const assetRequestMatch = content.match(/\[ASSET_REQUEST\]\s*([\s\S]*?)\s*\[\/ASSET_REQUEST\]/)
+  if (assetRequestMatch) {
+    try {
+      const parsed = JSON.parse(assetRequestMatch[1])
+      if (parsed.prompt && Array.isArray(parsed.acceptTypes)) {
+        assetRequest = {
+          prompt: parsed.prompt,
+          acceptTypes: parsed.acceptTypes,
+          hint: parsed.hint || '',
+        }
+      }
+    } catch {
+      // Malformed JSON — skip asset request
+    }
+  }
+
   // Parse quick options from AI output: [QUICK_OPTIONS]{"question": "...", "options": [...]}[/QUICK_OPTIONS]
   let quickOptions: { question: string; options: string[] } | undefined = undefined
   const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]\s*([\s\S]*?)\s*\[\/QUICK_OPTIONS\]/)
@@ -441,6 +460,8 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     .replace(/\[DIFFERENT_STYLES: [^\]]+\]/g, '')
     .replace(/\[SEARCH_STYLES: [^\]]+\]/g, '')
     .replace(/\[REFINE_STYLE: [^\]]+\]/g, '')
+    .replace(/\[ASSET_REQUEST\][\s\S]*?(?:\[\/ASSET_REQUEST\]|$)/g, '')
+    .replace(/\[\/ASSET_REQUEST\]/g, '') // Orphaned closing tags
     .replace(/\[QUICK_OPTIONS\][\s\S]*?(?:\[\/QUICK_OPTIONS\]|$)/g, '')
     .replace(/\[\/QUICK_OPTIONS\]/g, '') // Orphaned closing tags
     .replace(/\[QUICK_OPTIONS[^\]]*$/gm, '') // Truncated opening tags at end of line
@@ -513,6 +534,7 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     styleReferences: mentionedStyles,
     quickOptions,
     deliverableStyleMarker,
+    assetRequest,
   }
 }
 

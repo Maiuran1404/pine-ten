@@ -344,7 +344,7 @@ export function ChatInputArea({
                   : 'Type your message...'
             }
             rows={1}
-            className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
+            className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:rounded-lg text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
             style={{ height: 'auto', overflow: 'hidden' }}
           />
           {/* Tab hint - show different hints based on context */}
@@ -395,7 +395,7 @@ export function ChatInputArea({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Attach files"
               >
                 {isUploading ? <LoadingSpinner size="sm" /> : <Paperclip className="h-4 w-4" />}
@@ -403,7 +403,7 @@ export function ChatInputArea({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Add image"
               >
                 <ImageIcon className="h-4 w-4" />

@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import { Check, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useReducedMotion } from '@/hooks/use-reduced-motion'
 
 interface TypingTextProps {
   content: string
@@ -117,6 +118,8 @@ export function TypingText({
   multiSelect = false,
   className,
 }: TypingTextProps) {
+  const prefersReducedMotion = useReducedMotion()
+
   // Use content directly - capitalization should be done server-side
   const textContent = content.trim()
 
@@ -149,8 +152,8 @@ export function TypingText({
       chunkIndexRef.current = 0
     }
 
-    // If not animating or no content, show full content immediately
-    if (!animate || !textContent) {
+    // If not animating, reduced motion preferred, or no content, show full content immediately
+    if (!animate || prefersReducedMotion || !textContent) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayedContent(textContent)
 
@@ -187,7 +190,7 @@ export function TypingText({
         clearTimeout(animationRef.current)
       }
     }
-  }, [textContent, animate])
+  }, [textContent, animate, prefersReducedMotion])
 
   // Handle option click for list items
   const handleListItemClick = useCallback(
@@ -294,7 +297,7 @@ export function TypingText({
 
       {/* Blinking cursor while typing */}
       {!isComplete && (
-        <span className="inline-block w-0.5 h-4 bg-foreground/70 ml-0.5 animate-pulse" />
+        <span className="inline-block w-0.5 h-4 bg-foreground/70 ml-0.5 animate-pulse motion-reduce:animate-none" />
       )}
     </div>
   )
