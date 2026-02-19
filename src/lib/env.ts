@@ -44,6 +44,9 @@ const envSchema = z.object({
   // Orshot (optional - for quick design generation)
   ORSHOT_API_KEY: z.string().min(1).optional(),
 
+  // Pexels (optional - for scene reference images in storyboard)
+  PEXELS_API_KEY: z.string().min(1).optional(),
+
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 

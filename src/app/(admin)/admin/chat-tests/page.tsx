@@ -56,6 +56,10 @@ interface BatchSummary {
   reachedReviewCount: number
   avgTurns: number | null
   avgDurationMs: number | null
+  avgCompositeScore: number | null
+  minCompositeScore: number | null
+  maxCompositeScore: number | null
+  scoredRunCount: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +94,32 @@ function passRateBgMuted(rate: number): string {
   if (rate >= 80) return 'bg-emerald-100'
   if (rate >= 50) return 'bg-amber-100'
   return 'bg-red-100'
+}
+
+function scoreColor(score: number): string {
+  if (score >= 75) return 'text-emerald-600'
+  if (score >= 50) return 'text-amber-600'
+  return 'text-red-600'
+}
+
+function scoreBg(score: number): string {
+  if (score >= 75) return 'bg-emerald-500'
+  if (score >= 50) return 'bg-amber-500'
+  return 'bg-red-500'
+}
+
+function scoreBgMuted(score: number): string {
+  if (score >= 75) return 'bg-emerald-100'
+  if (score >= 50) return 'bg-amber-100'
+  return 'bg-red-100'
+}
+
+/** Get the display score for a batch (composite score, or fall back to pass rate) */
+function batchDisplayScore(batch: BatchSummary): { value: number; isScore: boolean } {
+  if (batch.avgCompositeScore !== null && batch.avgCompositeScore !== undefined) {
+    return { value: batch.avgCompositeScore, isScore: true }
+  }
+  return { value: passRate(batch), isScore: false }
 }
 
 function statusDotColor(status: string): string {
@@ -149,16 +179,20 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
 
   const latest = completedBatches[0]
   const previous = completedBatches.length > 1 ? completedBatches[1] : null
-  const latestRate = passRate(latest)
-  const previousRate = previous ? passRate(previous) : null
-  const trend = previousRate !== null ? latestRate - previousRate : null
+  const latestDisplay = batchDisplayScore(latest)
+  const previousDisplay = previous ? batchDisplayScore(previous) : null
+  const trend = previousDisplay !== null ? latestDisplay.value - previousDisplay.value : null
 
   // Compute rolling average from last 5 completed batches
   const recentBatches = completedBatches.slice(0, 5)
-  const rollingRate =
+  const rollingValue =
     recentBatches.length > 0
-      ? Math.round(recentBatches.reduce((sum, b) => sum + passRate(b), 0) / recentBatches.length)
-      : latestRate
+      ? Math.round(
+          recentBatches.reduce((sum, b) => sum + batchDisplayScore(b).value, 0) /
+            recentBatches.length
+        )
+      : latestDisplay.value
+  const hasScores = latestDisplay.isScore
 
   const avgTurns =
     recentBatches.length > 0
@@ -182,14 +216,19 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
     <Card>
       <CardContent className="pt-6 pb-5 px-6">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] gap-6 items-center">
-          {/* Latest pass rate -- the hero number */}
+          {/* Latest score -- the hero number */}
           <div className="text-center sm:text-left">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Latest Pass Rate
+              {hasScores ? 'Latest Score' : 'Latest Pass Rate'}
             </p>
             <div className="flex items-baseline gap-2 justify-center sm:justify-start">
-              <span className={cn('text-4xl font-bold tabular-nums', passRateColor(latestRate))}>
-                {latestRate}%
+              <span
+                className={cn(
+                  'text-4xl font-bold tabular-nums',
+                  hasScores ? scoreColor(latestDisplay.value) : passRateColor(latestDisplay.value)
+                )}
+              >
+                {latestDisplay.value}
               </span>
               {trend !== null && (
                 <span
@@ -215,7 +254,9 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {latest.reachedReviewCount} of {latest.totalRuns} reached review
+              {hasScores
+                ? `${latest.scoredRunCount ?? 0} of ${latest.totalRuns} scored`
+                : `${latest.reachedReviewCount} of ${latest.totalRuns} reached review`}
             </p>
           </div>
 
@@ -226,8 +267,14 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               5-Batch Average
             </p>
-            <span className={cn('text-2xl font-bold tabular-nums', passRateColor(rollingRate))}>
-              {rollingRate}%
+            <span
+              className={cn(
+                'text-2xl font-bold tabular-nums',
+                hasScores ? scoreColor(rollingValue) : passRateColor(rollingValue)
+              )}
+            >
+              {rollingValue}
+              {!hasScores && '%'}
             </span>
             <p className="text-xs text-muted-foreground mt-1">
               across {recentBatches.length} batch{recentBatches.length !== 1 ? 'es' : ''}
@@ -271,14 +318,14 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
   )
 }
 
-/** A row of small vertical bars showing pass rates over time. */
+/** A row of small vertical bars showing composite scores (or pass rates) over time. */
 function TrendBars({ batches }: { batches: BatchSummary[] }) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="flex items-end gap-1 h-10">
         {batches.map((batch) => {
-          const rate = passRate(batch)
-          const heightPct = Math.max(rate, 4) // minimum visible height
+          const display = batchDisplayScore(batch)
+          const heightPct = Math.max(display.value, 4) // minimum visible height
           return (
             <Tooltip key={batch.batchId}>
               <TooltipTrigger asChild>
@@ -286,7 +333,7 @@ function TrendBars({ batches }: { batches: BatchSummary[] }) {
                   <div
                     className={cn(
                       'w-full rounded-sm transition-all',
-                      passRateBg(rate),
+                      display.isScore ? scoreBg(display.value) : passRateBg(display.value),
                       'opacity-80 hover:opacity-100'
                     )}
                     style={{ height: `${heightPct}%` }}
@@ -294,7 +341,9 @@ function TrendBars({ batches }: { batches: BatchSummary[] }) {
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                <p className="font-medium">{rate}% pass rate</p>
+                <p className="font-medium">
+                  {display.isScore ? `Score: ${display.value}` : `${display.value}% pass rate`}
+                </p>
                 <p className="text-muted-foreground">
                   {batch.reachedReviewCount}/{batch.totalRuns} passed
                 </p>
@@ -333,10 +382,16 @@ function BatchRow({
         href={`/admin/chat-tests/${batch.batchId}`}
         className="flex items-center gap-4 flex-1 min-w-0"
       >
-        {/* Pass rate indicator */}
+        {/* Score / pass rate indicator */}
         <div className="shrink-0 w-12 text-center">
           {isActive ? (
             <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
+          ) : batch.avgCompositeScore !== null && batch.avgCompositeScore !== undefined ? (
+            <span
+              className={cn('text-lg font-bold tabular-nums', scoreColor(batch.avgCompositeScore))}
+            >
+              {batch.avgCompositeScore}
+            </span>
           ) : (
             <span className={cn('text-lg font-bold tabular-nums', passRateColor(rate))}>
               {rate}%
@@ -344,17 +399,41 @@ function BatchRow({
           )}
         </div>
 
-        {/* Mini pass-rate bar */}
+        {/* Mini score/pass-rate bar */}
         <div className="shrink-0 w-16">
-          <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
-            <div
-              className={cn('h-full rounded-full transition-all', passRateBg(rate))}
-              style={{ width: `${isActive ? 0 : rate}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
-            {batch.reachedReviewCount}/{batch.totalRuns}
-          </p>
+          {batch.avgCompositeScore !== null && batch.avgCompositeScore !== undefined ? (
+            <>
+              <div
+                className={cn(
+                  'h-1.5 rounded-full overflow-hidden',
+                  scoreBgMuted(batch.avgCompositeScore)
+                )}
+              >
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all',
+                    scoreBg(batch.avgCompositeScore)
+                  )}
+                  style={{ width: `${isActive ? 0 : batch.avgCompositeScore}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
+                {rate}% pass
+              </p>
+            </>
+          ) : (
+            <>
+              <div className={cn('h-1.5 rounded-full overflow-hidden', passRateBgMuted(rate))}>
+                <div
+                  className={cn('h-full rounded-full transition-all', passRateBg(rate))}
+                  style={{ width: `${isActive ? 0 : rate}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-center tabular-nums">
+                {batch.reachedReviewCount}/{batch.totalRuns}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Middle: timestamp + status */}

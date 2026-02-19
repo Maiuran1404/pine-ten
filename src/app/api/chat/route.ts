@@ -63,6 +63,7 @@ import {
   getStrategicReviewReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
+import { searchPexelsForStoryboard, type PexelsSceneMatch } from '@/lib/ai/pexels-image-search'
 import type { InferredAudience } from '@/components/onboarding/types'
 
 async function handler(request: NextRequest) {
@@ -339,16 +340,32 @@ async function handler(request: NextRequest) {
           let systemPrompt = buildSystemPrompt(briefingState, brandContext)
 
           // Add scene feedback hint: when user gives feedback on specific scenes during STRUCTURE,
-          // instruct the AI to regenerate the full storyboard with changes applied
+          // instruct the AI to regenerate the full storyboard with changes applied.
+          // Include the current storyboard state so the AI can preserve and improve existing text.
           const lastUserContent = messages[messages.length - 1]?.content || ''
           if (
             (briefingState.stage === 'STRUCTURE' || briefingState.stage === 'ELABORATE') &&
             /\[Feedback on Scene/.test(lastUserContent)
           ) {
-            systemPrompt +=
+            let feedbackHint =
               '\n\nIMPORTANT: The user is giving feedback on specific storyboard scenes. ' +
-              'Apply their feedback and regenerate the FULL [STORYBOARD] block with all scenes, ' +
-              'incorporating the requested changes. Always output the complete updated storyboard.'
+              'IMPROVE the existing text based on their feedback — do NOT blank out, remove, or shorten existing content. ' +
+              'Preserve all existing fields (title, description, voiceover, visualNote, duration, transition, cameraNote, hookData, fullScript, directorNotes) for scenes the user did NOT mention. ' +
+              'For scenes the user DID mention, apply their feedback while keeping any fields they did not specifically ask to change. ' +
+              'Regenerate the FULL [STORYBOARD] block with ALL scenes. Always output the complete updated storyboard.'
+
+            // Include current storyboard state so the AI has existing content to work with
+            if (
+              briefingState.structure &&
+              briefingState.structure.type === 'storyboard' &&
+              briefingState.structure.scenes.length > 0
+            ) {
+              feedbackHint +=
+                '\n\nHere is the current storyboard that you must use as the base (preserve all fields, only modify what the user requested):\n' +
+                `[STORYBOARD]${JSON.stringify(briefingState.structure)}[/STORYBOARD]`
+            }
+
+            systemPrompt += feedbackHint
           }
 
           stateMachineOverride = { systemPrompt, stage: briefingState.stage }
@@ -672,6 +689,8 @@ async function handler(request: NextRequest) {
           // so retry guards can check whether this was truly the first turn.
           const turnsBeforeBriefMeta = briefingState.turnsInCurrentStage
           const stageBeforeBriefMeta = briefingState.stage
+          const lastContent = messages[messages.length - 1]?.content || ''
+          const isSceneFeedback = /\[Feedback on Scene/.test(lastContent)
 
           const briefMetaResult = parseBriefMeta(response.content)
           if (briefMetaResult.success && briefMetaResult.data) {
@@ -1017,6 +1036,52 @@ async function handler(request: NextRequest) {
           }
 
           // ================================================================
+          // 16a-2. Scene feedback retry: always retry when scene feedback
+          // was given but no storyboard was returned, regardless of turn count
+          // ================================================================
+          if (isSceneFeedback && !structureData && structureType) {
+            logger.debug(
+              { structureType },
+              'Scene feedback detected but no storyboard returned — retrying with format reinforcement'
+            )
+            try {
+              const reinforcement = getFormatReinforcement(structureType)
+              const feedbackRetryBrandContext: BrandContext = {
+                companyName: company?.name,
+                industry: company?.industry ?? undefined,
+                brandDescription: company?.description ?? undefined,
+              }
+              const feedbackRetryOverride = {
+                systemPrompt: buildSystemPrompt(briefingState, feedbackRetryBrandContext),
+                stage: briefingState.stage,
+              }
+              const retryResponse = await chat(
+                [
+                  ...messages,
+                  { role: 'assistant', content: response.content },
+                  { role: 'user', content: reinforcement },
+                ],
+                session.user.id,
+                chatContext,
+                feedbackRetryOverride
+              )
+              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
+              if (retryParsed.success && retryParsed.data) {
+                structureData = retryParsed.data
+                briefingState.structure = retryParsed.data
+                logger.debug({ structureType }, 'Scene feedback structure retry succeeded')
+              } else {
+                logger.warn(
+                  { structureType, parseError: retryParsed.parseError },
+                  'Scene feedback structure retry also failed — no storyboard data'
+                )
+              }
+            } catch (retryErr) {
+              logger.warn({ err: retryErr }, 'Scene feedback format reinforcement retry failed')
+            }
+          }
+
+          // ================================================================
           // 16b. Strategic review retry with format reinforcement (single attempt)
           // ================================================================
           if (
@@ -1088,6 +1153,29 @@ async function handler(request: NextRequest) {
       }
 
       // ================================================================
+      // 17a. Pexels scene image search (non-blocking, storyboard only)
+      // ================================================================
+      let sceneImageMatches: PexelsSceneMatch[] | undefined = undefined
+      if (
+        structureData?.type === 'storyboard' &&
+        structureData.scenes.length > 0 &&
+        process.env.PEXELS_API_KEY
+      ) {
+        try {
+          const pexelsResult = await searchPexelsForStoryboard(structureData.scenes)
+          if (pexelsResult.sceneMatches.length > 0) {
+            sceneImageMatches = pexelsResult.sceneMatches
+            logger.debug(
+              { matchCount: sceneImageMatches.length, duration: pexelsResult.totalDuration },
+              'Pexels scene images attached to response'
+            )
+          }
+        } catch (pexelsErr) {
+          logger.warn({ err: pexelsErr }, 'Pexels search failed — continuing without scene images')
+        }
+      }
+
+      // ================================================================
       // 17. Strip markers from displayed content (including BRIEF_META)
       // ================================================================
       let cleanContent = response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '')
@@ -1114,6 +1202,7 @@ async function handler(request: NextRequest) {
         videoReferences,
         structureData,
         strategicReviewData,
+        sceneImageMatches,
         briefingState: updatedBriefingState ?? clientBriefingState,
       })
     },

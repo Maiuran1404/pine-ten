@@ -100,6 +100,7 @@ export function useChatInterfaceData({
   const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
   const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
+  const [_sceneImageUrls, setSceneImageUrls] = useState<Map<number, string>>(new Map())
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -107,6 +108,28 @@ export function useChatInterfaceData({
   const requestStartTimeRef = useRef<number | null>(null)
   const chatStartedRef = useRef(false)
   const latestStoryboardRef = useRef<StructureData | null>(null)
+
+  // Helper: process Pexels scene image matches from API response
+  const processSceneImageMatches = useCallback(
+    (
+      sceneImageMatches?: Array<{
+        sceneNumber: number
+        photos: Array<{ url: string }>
+      }>
+    ) => {
+      if (!sceneImageMatches || sceneImageMatches.length === 0) return
+      const urlMap = new Map<number, string>()
+      for (const match of sceneImageMatches) {
+        if (match.photos.length > 0) {
+          urlMap.set(match.sceneNumber, match.photos[0].url)
+        }
+      }
+      if (urlMap.size > 0) {
+        setSceneImageUrls(urlMap)
+      }
+    },
+    []
+  )
 
   // Moodboard state management
   const {
@@ -518,6 +541,9 @@ export function useChatInterfaceData({
           setStoryboardScenes(data.structureData)
         }
 
+        // Process Pexels scene image matches
+        processSceneImageMatches(data.sceneImageMatches)
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -920,6 +946,9 @@ export function useChatInterfaceData({
         setStoryboardScenes(resolvedStructureData)
       }
 
+      // Process Pexels scene image matches
+      processSceneImageMatches(data.sceneImageMatches)
+
       // Re-attach storyboard when AI responds to scene feedback without new storyboard
       const isSceneFeedback = processedContent.startsWith('[Feedback on Scene')
       if (isSceneFeedback && !resolvedStructureData && latestStoryboardRef.current) {
@@ -962,6 +991,7 @@ export function useChatInterfaceData({
     serializedBriefingState,
     syncBriefingFromServer,
     sceneReferences,
+    processSceneImageMatches,
   ])
 
   // Send a specific message (for clickable options)
@@ -1006,6 +1036,9 @@ export function useChatInterfaceData({
           latestStoryboardRef.current = resolvedStructureData
           setStoryboardScenes(resolvedStructureData)
         }
+
+        // Process Pexels scene image matches
+        processSceneImageMatches(data.sceneImageMatches)
 
         // Re-attach storyboard when response lacks new storyboard data
         if (!resolvedStructureData && latestStoryboardRef.current) {
@@ -1559,6 +1592,9 @@ export function useChatInterfaceData({
           setStoryboardScenes(data.structureData)
         }
 
+        // Process Pexels scene image matches
+        processSceneImageMatches(data.sceneImageMatches)
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -1589,7 +1625,7 @@ export function useChatInterfaceData({
         setIsLoading(false)
       }
     },
-    [messages, serializedBriefingState, syncBriefingFromServer]
+    [messages, serializedBriefingState, syncBriefingFromServer, processSceneImageMatches]
   )
 
   // Handle style submissions
@@ -2033,6 +2069,7 @@ export function useChatInterfaceData({
     storyboardScenes,
     structureType,
     structurePanelVisible,
+    sceneImageUrls: _sceneImageUrls,
     handleStrategicReviewAction,
     handleSceneEdit,
     handleSectionReorder,

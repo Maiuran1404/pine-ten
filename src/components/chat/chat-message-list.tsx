@@ -12,6 +12,7 @@ import {
   Sparkles,
   Lightbulb,
   Pencil,
+  Film,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TypingText } from './typing-text'
@@ -26,6 +27,31 @@ import { DesignSpecView } from './design-spec-view'
 import { ContentCalendar } from './brief-panel/content-calendar'
 import { StrategicReviewCard } from './strategic-review-card'
 import type { ChatMessage as Message, DeliverableStyle, MoodboardItem, TaskProposal } from './types'
+
+// =============================================================================
+// SCENE FEEDBACK PARSER — extracts scene chips from [Feedback on ...] prefix
+// =============================================================================
+
+function parseSceneFeedback(content: string): {
+  scenes: { sceneNumber: string; title: string }[]
+  text: string
+} {
+  const match = content.match(/^\[Feedback on (.*?)\]\s*([\s\S]*)$/)
+  if (!match) return { scenes: [], text: content }
+
+  const scenePart = match[1]
+  const text = match[2]
+  const scenes: { sceneNumber: string; title: string }[] = []
+
+  // Parse "Scene 1: Hook, Scene 2: Problem Context" etc.
+  const sceneRegex = /Scene\s+(\d+):\s*([^,]+)/g
+  let sceneMatch
+  while ((sceneMatch = sceneRegex.exec(scenePart)) !== null) {
+    scenes.push({ sceneNumber: sceneMatch[1], title: sceneMatch[2].trim() })
+  }
+
+  return { scenes, text }
+}
 
 // =============================================================================
 // STAGE-AWARE LOADING MESSAGES
@@ -349,7 +375,7 @@ export function ChatMessageList({
   onSceneClick: _onSceneClick,
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
-  structurePanelVisible: _structurePanelVisible = false,
+  structurePanelVisible = false,
 }: ChatMessageListProps) {
   const handleTypingComplete = useCallback(
     (messageId: string) => {
@@ -623,12 +649,13 @@ export function ChatMessageList({
                               transition={{ duration: 0.3 }}
                               className="mt-4"
                             >
-                              {message.structureData.type === 'storyboard' && (
-                                <StoryboardSummaryCard
-                                  scenes={message.structureData.scenes}
-                                  onViewStoryboard={onViewStoryboard}
-                                />
-                              )}
+                              {message.structureData.type === 'storyboard' &&
+                                !structurePanelVisible && (
+                                  <StoryboardSummaryCard
+                                    scenes={message.structureData.scenes}
+                                    onViewStoryboard={onViewStoryboard}
+                                  />
+                                )}
                               {message.structureData.type === 'layout' && (
                                 <LayoutPreview sections={message.structureData.sections} />
                               )}
@@ -697,9 +724,27 @@ export function ChatMessageList({
                         </div>
                       )}
                       <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 relative border border-emerald-200/50 dark:border-emerald-800/30 w-fit">
-                        <p className="text-sm text-foreground whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                        {(() => {
+                          const { scenes, text } = parseSceneFeedback(message.content)
+                          return (
+                            <>
+                              {scenes.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                  {scenes.map((s) => (
+                                    <span
+                                      key={s.sceneNumber}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-800/40 text-xs font-medium text-emerald-700 dark:text-emerald-300"
+                                    >
+                                      <Film className="h-3 w-3" />
+                                      Scene {s.sceneNumber}: {s.title}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{text}</p>
+                            </>
+                          )
+                        })()}
                         {/* Edit icon - appears on hover for last message */}
                         {index === lastUserMessageIndex &&
                           !isLoading &&

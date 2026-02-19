@@ -450,6 +450,10 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
       getStringArray(scene, 'referenceImageIds') ??
       getStringArray(scene, 'reference_image_ids') ??
       undefined
+    const imageSearchTerms =
+      getStringArray(scene, 'imageSearchTerms') ??
+      getStringArray(scene, 'image_search_terms') ??
+      undefined
 
     validScenes.push({
       sceneNumber: getNumber(scene, 'sceneNumber') ?? i + 1,
@@ -471,6 +475,7 @@ function validateStoryboard(parsed: Record<string, unknown> | unknown[]): Struct
       ...(directorNotes ? { directorNotes } : {}),
       ...(referenceDescription ? { referenceDescription } : {}),
       ...(referenceImageIds ? { referenceImageIds } : {}),
+      ...(imageSearchTerms ? { imageSearchTerms } : {}),
     })
   }
 
@@ -797,6 +802,10 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
         getStringArray(s, 'referenceImageIds') ??
         getStringArray(s, 'reference_image_ids') ??
         undefined
+      const imageSearchTerms =
+        getStringArray(s, 'imageSearchTerms') ??
+        getStringArray(s, 'image_search_terms') ??
+        undefined
 
       validScenes.push({
         sceneNumber: getNumber(s, 'sceneNumber') ?? i + 1,
@@ -808,6 +817,7 @@ function partialStoryboard(parsed: Record<string, unknown> | unknown[]): Structu
         ...(directorNotes ? { directorNotes } : {}),
         ...(referenceDescription ? { referenceDescription } : {}),
         ...(referenceImageIds ? { referenceImageIds } : {}),
+        ...(imageSearchTerms ? { imageSearchTerms } : {}),
       })
     }
   }

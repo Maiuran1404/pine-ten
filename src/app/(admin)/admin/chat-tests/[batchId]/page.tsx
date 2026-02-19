@@ -8,7 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConversationCard } from '@/components/admin/chat-tests/conversation-card'
 import { BatchAnalysis } from '@/components/admin/chat-tests/batch-analysis'
-import { ArrowLeft, CheckCircle2, XCircle, MessageSquare, Clock, Hash, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  MessageSquare,
+  Clock,
+  Hash,
+  Loader2,
+  Target,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -29,6 +38,8 @@ interface Run {
   reachedReview: boolean
   errorMessage: string | null
   durationMs: number | null
+  compositeScore: number | null
+  scores: import('@/db/schema').ChatTestScores | null
   createdAt: string
   messages?: Message[]
   scenarioConfig: {
@@ -109,6 +120,13 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
             1000
         )
       : null
+  const scoredRuns = runs.filter((r) => r.compositeScore !== null && r.compositeScore !== undefined)
+  const avgScore =
+    scoredRuns.length > 0
+      ? Math.round(
+          scoredRuns.reduce((sum, r) => sum + (r.compositeScore ?? 0), 0) / scoredRuns.length
+        )
+      : null
 
   const filteredRuns = useMemo(() => {
     let result = [...runs]
@@ -176,13 +194,33 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
           {/* Summary Stats Strip */}
           <Card>
             <CardContent className="p-0">
-              <div className="grid grid-cols-5 divide-x">
+              <div className="grid grid-cols-6 divide-x">
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
                     <Hash className="h-3 w-3 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground">Total</span>
                   </div>
                   <p className="text-lg font-semibold">{runs.length}</p>
+                </div>
+                <div className="px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <Target className="h-3 w-3 text-violet-500" />
+                    <span className="text-[10px] text-muted-foreground">Avg Score</span>
+                  </div>
+                  <p
+                    className={cn(
+                      'text-lg font-semibold',
+                      avgScore !== null
+                        ? avgScore >= 75
+                          ? 'text-emerald-600'
+                          : avgScore >= 50
+                            ? 'text-amber-600'
+                            : 'text-red-600'
+                        : ''
+                    )}
+                  >
+                    {avgScore ?? '-'}
+                  </p>
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
@@ -213,8 +251,8 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                   <p className="text-lg font-semibold">{avgDuration ? `${avgDuration}s` : '-'}</p>
                 </div>
               </div>
-              {/* Pass rate bar */}
-              <div className="px-3 pb-2">
+              {/* Pass rate bar + composite score bar */}
+              <div className="px-3 pb-2 space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                     <div
@@ -222,8 +260,30 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                       style={{ width: `${passRate}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">{passRate}%</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {passRate}% pass
+                  </span>
                 </div>
+                {avgScore !== null && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all',
+                          avgScore >= 75
+                            ? 'bg-emerald-500'
+                            : avgScore >= 50
+                              ? 'bg-amber-500'
+                              : 'bg-red-500'
+                        )}
+                        style={{ width: `${avgScore}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      {avgScore} score
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

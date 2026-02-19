@@ -607,7 +607,7 @@ function extractTopic(text: string): InferredField<string> {
 
   // Extract product/service/app names - more patterns
   const productPatterns = [
-    /(?:my|our|the|a|an)\s+([\w\s]+?)\s+(?:app|product|service|platform|business|company|brand|tool)/i,
+    /\b(?:my|our|the|a|an)\s+([\w\s]+?)\s+(?:app|product|service|platform|business|company|brand|tool)/i,
     /(?:video|content|post)\s+(?:that\s+)?(?:introduces?|showcases?|presents?|highlights?)\s+(?:my|our|the|a|an)?\s*([\w\s]+?)(?:\s+to|\s*$|\.)/i,
   ]
 

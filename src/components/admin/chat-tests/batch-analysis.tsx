@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   XCircle,
   Zap,
+  BarChart3,
 } from 'lucide-react'
 import { StageFunnel, computeFunnel } from './stage-funnel'
 import type { FunnelData } from './stage-funnel'
@@ -61,6 +62,8 @@ interface Run {
   reachedReview: boolean
   errorMessage: string | null
   durationMs: number | null
+  compositeScore: number | null
+  scores: import('@/db/schema').ChatTestScores | null
   messages?: Message[]
   scenarioConfig: {
     name: string
@@ -247,6 +250,7 @@ interface StageHeatRow {
   scenarioName: string
   passed: boolean
   stages: Record<string, number>
+  compositeScore: number | null
 }
 
 function computeStageHeatmap(runs: Run[]): StageHeatRow[] {
@@ -254,6 +258,7 @@ function computeStageHeatmap(runs: Run[]): StageHeatRow[] {
     scenarioName: run.scenarioName,
     passed: run.reachedReview,
     stages: computePerStageTurns(run),
+    compositeScore: run.compositeScore ?? null,
   }))
 }
 
@@ -665,8 +670,11 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
         <table className="w-full text-[11px] table-fixed">
           <thead>
             <tr>
-              <th className="text-left font-medium text-muted-foreground pb-1.5 w-[30%]">
+              <th className="text-left font-medium text-muted-foreground pb-1.5 w-[25%]">
                 Scenario
+              </th>
+              <th className="text-center font-medium text-muted-foreground pb-1.5 px-0.5 w-[5%]">
+                Score
               </th>
               {STAGE_ORDER.map((stage) => (
                 <th
@@ -694,6 +702,24 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
                     </span>
                   </div>
                 </td>
+                <td className="py-1 px-0.5 text-center">
+                  {row.compositeScore !== null ? (
+                    <span
+                      className={cn(
+                        'font-semibold',
+                        row.compositeScore >= 75
+                          ? 'text-emerald-600'
+                          : row.compositeScore >= 50
+                            ? 'text-amber-600'
+                            : 'text-red-600'
+                      )}
+                    >
+                      {row.compositeScore}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/40">-</span>
+                  )}
+                </td>
                 {STAGE_ORDER.map((stage) => {
                   const turns = row.stages[stage] ?? 0
                   return (
@@ -714,6 +740,86 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
             ))}
           </tbody>
         </table>
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Dimension breakdown bars showing average scores per scoring dimension */
+function DimensionBreakdown({ runs }: { runs: Run[] }) {
+  const scoredRuns = runs.filter((r) => r.scores)
+  if (scoredRuns.length === 0) return null
+
+  const dimensions = [
+    { key: 'efficiency', label: 'Efficiency', weight: '25%', color: 'bg-blue-500' },
+    { key: 'extraction', label: 'Extraction', weight: '25%', color: 'bg-violet-500' },
+    { key: 'quality', label: 'Quality', weight: '30%', color: 'bg-amber-500' },
+    { key: 'completeness', label: 'Completeness', weight: '20%', color: 'bg-emerald-500' },
+  ] as const
+
+  const averages = dimensions.map((dim) => {
+    const runsWithDim = scoredRuns.filter((r) => {
+      if (dim.key === 'quality') return r.scores?.quality && !r.scores.quality.error
+      return r.scores?.[dim.key]
+    })
+    const avg =
+      runsWithDim.length > 0
+        ? Math.round(
+            runsWithDim.reduce((sum, r) => {
+              const dimScores = r.scores?.[dim.key]
+              return sum + (dimScores ? dimScores.score : 0)
+            }, 0) / runsWithDim.length
+          )
+        : null
+    return { ...dim, avg, count: runsWithDim.length }
+  })
+
+  return (
+    <Card>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-1.5 mb-3">
+          <BarChart3 className="h-3.5 w-3.5 text-violet-500" />
+          <span className="text-xs font-medium">Scoring Dimensions</span>
+          <span className="text-[10px] text-muted-foreground ml-auto">
+            {scoredRuns.length} scored run{scoredRuns.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="space-y-2.5">
+          {averages.map((dim) => (
+            <div key={dim.key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium">
+                  {dim.label}{' '}
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    ({dim.weight})
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    'text-xs font-semibold tabular-nums',
+                    dim.avg === null
+                      ? 'text-muted-foreground'
+                      : dim.avg >= 75
+                        ? 'text-emerald-600'
+                        : dim.avg >= 50
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                  )}
+                >
+                  {dim.avg ?? '-'}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                {dim.avg !== null && (
+                  <div
+                    className={cn('h-full rounded-full transition-all', dim.color)}
+                    style={{ width: `${dim.avg}%` }}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
@@ -855,7 +961,8 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
         </div>
       </div>
 
-      {/* Failure Breakdown + Turn Heatmap */}
+      {/* Dimension Breakdown + Failure Breakdown + Turn Heatmap */}
+      <DimensionBreakdown runs={runs} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <FailureBreakdown runs={runs} />
         <StageHeatmap runs={runs} />

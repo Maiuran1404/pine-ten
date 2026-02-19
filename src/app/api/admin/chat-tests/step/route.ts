@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { generateSyntheticReply, isRunComplete } from '@/lib/ai/chat-test-engine'
+import { scoreCompletedRun } from '@/lib/ai/chat-test-scoring'
 import { getEnv } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import {
@@ -199,11 +200,12 @@ function ensureScenarioDataSeeded(
   state: SerializedBriefingState,
   scenario: ChatTestScenario,
   turnsInStage: number
-): SerializedBriefingState {
+): { state: SerializedBriefingState; seededFields: string[] } {
   const updated = { ...state, brief: { ...state.brief } }
+  const seededFields: string[] = []
 
   // After 3+ turns in any stage, force-seed missing fields from scenario
-  if (turnsInStage < 3) return updated
+  if (turnsInStage < 3) return { state: updated, seededFields }
 
   // Seed taskType if missing
   if (!updated.brief.taskType.value || updated.brief.taskType.confidence < 0.75) {
@@ -216,6 +218,7 @@ function ensureScenarioDataSeeded(
           source: 'inferred' as const,
         },
       }
+      seededFields.push('taskType')
     }
   }
 
@@ -249,6 +252,7 @@ function ensureScenarioDataSeeded(
             source: 'inferred' as const,
           },
         }
+        seededFields.push('intent')
       }
     }
   }
@@ -279,6 +283,7 @@ function ensureScenarioDataSeeded(
             source: 'inferred' as const,
           },
         }
+        seededFields.push('platform')
       }
     }
   }
@@ -286,9 +291,10 @@ function ensureScenarioDataSeeded(
   // Seed deliverableCategory if missing
   if (!updated.deliverableCategory || updated.deliverableCategory === 'unknown') {
     updated.deliverableCategory = scenarioToCategory(scenario)
+    seededFields.push('deliverableCategory')
   }
 
-  return updated
+  return { state: updated, seededFields }
 }
 
 // =============================================================================
@@ -593,16 +599,22 @@ export async function POST(request: NextRequest) {
       let pendingAction: PendingAction | null =
         (runMeta._pendingAction as PendingAction | null) ?? null
       let moodboardHasStyles: boolean = (runMeta._moodboardHasStyles as boolean) ?? false
+      let forceAdvanceCount: number = (runMeta._forceAdvanceCount as number) ?? 0
+      let forceSeededFields: string[] = (runMeta._forceSeededFields as string[]) ?? []
 
       // Strip our metadata keys from the briefing state before sending to /api/chat
       if (currentBriefingState && '_pendingAction' in currentBriefingState) {
         const {
           _pendingAction: _,
           _moodboardHasStyles: __,
+          _forceAdvanceCount: ___,
+          _forceSeededFields: ____,
           ...cleanState
         } = currentBriefingState as SerializedBriefingState & {
           _pendingAction?: unknown
           _moodboardHasStyles?: unknown
+          _forceAdvanceCount?: unknown
+          _forceSeededFields?: unknown
         }
         currentBriefingState = cleanState as SerializedBriefingState
       }
@@ -705,11 +717,15 @@ export async function POST(request: NextRequest) {
 
       // Seed scenario data into briefingState when stuck (prevents infinite loops)
       if (currentBriefingState && turnsInStage >= 3) {
-        currentBriefingState = ensureScenarioDataSeeded(
+        const seedResult = ensureScenarioDataSeeded(
           currentBriefingState,
           run.scenarioConfig as ChatTestScenario,
           turnsInStage
         )
+        currentBriefingState = seedResult.state
+        if (seedResult.seededFields.length > 0) {
+          forceSeededFields = [...new Set([...forceSeededFields, ...seedResult.seededFields])]
+        }
       }
 
       // 5. Call the real /api/chat endpoint (Fix 3+4: send full body like real client)
@@ -827,6 +843,7 @@ export async function POST(request: NextRequest) {
           run.scenarioConfig as ChatTestScenario
         )
         updatedStage = newBriefingState.stage
+        forceAdvanceCount++
       }
 
       // Fix 2A: Determine pending action for next turn
@@ -838,6 +855,8 @@ export async function POST(request: NextRequest) {
             ...newBriefingState,
             _pendingAction: nextPendingAction,
             _moodboardHasStyles: moodboardHasStyles,
+            _forceAdvanceCount: forceAdvanceCount,
+            _forceSeededFields: forceSeededFields,
           }
         : null
 
@@ -885,7 +904,27 @@ export async function POST(request: NextRequest) {
           : 'completed'
         : 'running'
 
-      // 7. Update DB
+      // 7. Score the run if completed (not failed from safety cap)
+      let scoringResult: {
+        compositeScore: number
+        scores: import('@/db/schema').ChatTestScores
+      } | null = null
+      if (complete && newStatus === 'completed') {
+        try {
+          scoringResult = await scoreCompletedRun(
+            updatedMessages,
+            newBriefingState,
+            run.scenarioConfig as ChatTestScenario,
+            newBriefingState?.deliverableCategory ?? null,
+            forceAdvanceCount,
+            forceSeededFields
+          )
+        } catch (err) {
+          logger.error({ err, runId: run.id }, 'Scoring failed, proceeding without scores')
+        }
+      }
+
+      // 8. Update DB
       await db
         .update(chatTestRuns)
         .set({
@@ -901,6 +940,11 @@ export async function POST(request: NextRequest) {
           }),
           ...(reason === 'safety_cap_exceeded' && {
             errorMessage: `Conversation did not reach SUBMIT within ${newTotalTurns} turns (stuck at ${updatedStage})`,
+          }),
+          ...(scoringResult && {
+            compositeScore: scoringResult.compositeScore,
+            scores: scoringResult.scores,
+            scoredAt: new Date(),
           }),
         })
         .where(eq(chatTestRuns.id, run.id))

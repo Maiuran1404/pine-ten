@@ -56,6 +56,7 @@ export interface StoryboardScene {
   transition?: string
   cameraNote?: string
   styleReferences?: string[]
+  imageSearchTerms?: string[] // AI-generated visual search keywords for Pexels
   // Elaboration fields (populated during ELABORATE stage)
   fullScript?: string
   directorNotes?: string

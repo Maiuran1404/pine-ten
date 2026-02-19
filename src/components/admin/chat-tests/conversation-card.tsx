@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CheckCircle2, XCircle, Clock, MessageSquare, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StagePipeline } from './stage-pipeline'
+import type { ChatTestScores } from '@/db/schema'
 
 interface ConversationRowProps {
   run: {
@@ -16,6 +18,8 @@ interface ConversationRowProps {
     reachedReview: boolean
     errorMessage: string | null
     durationMs: number | null
+    compositeScore?: number | null
+    scores?: ChatTestScores | null
     messages?: Array<{ stage?: string }>
     scenarioConfig: {
       industry: string
@@ -47,6 +51,8 @@ function getStagesReached(messages?: Array<{ stage?: string }>): string[] {
 export function ConversationCard({ run }: ConversationRowProps) {
   const stagesReached = getStagesReached(run.messages)
 
+  const hasScore = run.compositeScore !== null && run.compositeScore !== undefined
+
   return (
     <Link href={`/admin/chat-tests/runs/${run.id}`}>
       <div
@@ -56,14 +62,45 @@ export function ConversationCard({ run }: ConversationRowProps) {
           run.status === 'failed' && 'border-red-200/60'
         )}
       >
-        {/* Status icon */}
-        <div className="shrink-0">
+        {/* Status icon + score badge */}
+        <div className="shrink-0 flex items-center gap-2">
           {run.reachedReview ? (
             <CheckCircle2 className="h-5 w-5 text-emerald-500" />
           ) : run.status === 'failed' ? (
             <XCircle className="h-5 w-5 text-red-500" />
           ) : (
             <Clock className="h-5 w-5 text-muted-foreground" />
+          )}
+          {hasScore && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2',
+                      run.compositeScore! >= 75
+                        ? 'border-emerald-500 text-emerald-700 bg-emerald-50'
+                        : run.compositeScore! >= 50
+                          ? 'border-amber-500 text-amber-700 bg-amber-50'
+                          : 'border-red-500 text-red-700 bg-red-50'
+                    )}
+                  >
+                    {run.compositeScore}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs space-y-1">
+                  <p className="font-semibold">Score: {run.compositeScore}</p>
+                  {run.scores && (
+                    <>
+                      <p>Efficiency: {run.scores.efficiency.score}</p>
+                      <p>Extraction: {run.scores.extraction.score}</p>
+                      <p>Quality: {run.scores.quality ? run.scores.quality.score : 'N/A'}</p>
+                      <p>Completeness: {run.scores.completeness.score}</p>
+                    </>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
 

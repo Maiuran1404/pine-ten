@@ -372,9 +372,10 @@ If you have an open question about the primary action or audience, ask it before
       return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
 - Generate 3-5 scenes. Scene 1 MUST have a hook with persona + pain metric.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
+- Each scene MUST include "imageSearchTerms": an array of 3-5 specific visual search keywords optimized for finding stock photos on Pexels. Focus on concrete subjects, composition, mood, and lighting. Example: for a scene with visualNote "Dark background with glowing red metrics rising", use imageSearchTerms: ["dark data dashboard", "analytics metrics glow", "tech dashboard dark mode"]. For a scene showing a person at a desk, use imageSearchTerms: ["professional working laptop", "modern office desk", "business person computer"].
 - Create a first-draft storyboard based on what you know so far. The user can edit individual scenes and regenerate parts later.
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"5s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","imageSearchTerms":["stressed executive office","cto working late","business pressure deadline"],"hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]${launchAssetPrompt}`
     case 'website':
       return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.

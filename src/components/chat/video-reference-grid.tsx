@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { useState } from 'react'
+import { motion, LayoutGroup } from 'framer-motion'
 import { Check, Play, ExternalLink, RefreshCw, Shuffle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -149,69 +149,36 @@ function VideoCard({
   video,
   index,
   isBestMatch,
-  isExpanded,
-  isDimmed,
-  onExpand,
-  onCollapse,
-  onSelect,
-  onWatchFullscreen,
-  isLoading,
+  onClick,
 }: {
   video: VideoReferenceStyle
   index: number
   isBestMatch: boolean
-  isExpanded: boolean
-  isDimmed: boolean
-  onExpand: () => void
-  onCollapse: () => void
-  onSelect?: (video: VideoReferenceStyle) => void
-  onWatchFullscreen: () => void
+  onClick: () => void
   isLoading?: boolean
 }) {
-  const cardRef = useRef<HTMLDivElement>(null)
   const videoId = extractYouTubeId(video.videoUrl)
   const thumbnailUrl =
     video.videoThumbnailUrl ||
     video.imageUrl ||
     (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '')
 
-  // Collapse when clicking outside the expanded card
-  useEffect(() => {
-    if (!isExpanded) return
-
-    function handlePointerDown(e: PointerEvent) {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        onCollapse()
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => document.removeEventListener('pointerdown', handlePointerDown)
-  }, [isExpanded, onCollapse])
-
   return (
     <motion.div
-      ref={cardRef}
-      layout
       key={video.id}
       initial={{ opacity: 0, y: 12 }}
-      animate={{
-        opacity: isDimmed ? 0.6 : 1,
-        y: 0,
-      }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
         opacity: { duration: 0.2 },
         y: { duration: 0.35, delay: index * 0.08 },
-        layout: { type: 'spring', stiffness: 320, damping: 30 },
       }}
       className="flex flex-col gap-1.5"
     >
       {/* Thumbnail area */}
       <motion.div
-        layout
-        whileHover={isExpanded ? {} : { scale: 1.03, y: -2 }}
+        whileHover={{ scale: 1.03, y: -2 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        onClick={isExpanded ? undefined : onExpand}
+        onClick={onClick}
         className="relative overflow-hidden rounded-2xl cursor-pointer group aspect-video"
       >
         {/* Thumbnail image */}
@@ -228,19 +195,15 @@ function VideoCard({
           }}
         />
 
-        {/* Dark overlay when not expanded */}
-        {!isExpanded && (
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
-        )}
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
 
         {/* Play button — hover only */}
-        {!isExpanded && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-              <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
-            </div>
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
           </div>
-        )}
+        </div>
 
         {/* Name overlay at bottom — always visible via gradient */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
@@ -264,36 +227,6 @@ function VideoCard({
             Best match
           </div>
         )}
-
-        {/* Expanded: YouTube inline embed */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, delay: 0.1 }}
-              className="absolute inset-0 bg-black"
-            >
-              {videoId ? (
-                <iframe
-                  key={`inline-${videoId}`}
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-                  title={video.name}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full border-0"
-                  style={{ border: 0 }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center flex-col gap-2">
-                  <p className="text-white/60 text-sm">Unable to load video</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
 
       {/* Tags below thumbnail — compact */}
@@ -309,40 +242,6 @@ function VideoCard({
           ))}
         </div>
       )}
-
-      {/* Expanded: action row below card */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center gap-2 px-0.5"
-          >
-            {onSelect && (
-              <Button
-                size="sm"
-                onClick={() => onSelect(video)}
-                disabled={isLoading}
-                className="gap-1.5 flex-1"
-              >
-                <Check className="w-3.5 h-3.5" />
-                Select
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onWatchFullscreen}
-              className="gap-1.5 shrink-0"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Fullscreen
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   )
 }
@@ -355,7 +254,6 @@ export function VideoReferenceGrid({
   isLoading,
   title = 'Video Style References',
 }: VideoReferenceGridProps) {
-  const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null)
   const [fullscreenVideo, setFullscreenVideo] = useState<VideoReferenceStyle | null>(null)
 
   if (!videos || videos.length === 0) {
@@ -370,15 +268,7 @@ export function VideoReferenceGrid({
   const topScore = displayed[0]?.brandMatchScore ?? 0
   const bestMatchId = topScore >= 70 ? displayed[0]?.id : null
 
-  const handleExpand = (videoId: string) => {
-    setExpandedVideoId((prev) => (prev === videoId ? null : videoId))
-  }
-
-  const handleCollapse = () => {
-    setExpandedVideoId(null)
-  }
-
-  const handleWatchFullscreen = (video: VideoReferenceStyle) => {
+  const handleCardClick = (video: VideoReferenceStyle) => {
     setFullscreenVideo(video)
   }
 
@@ -425,12 +315,7 @@ export function VideoReferenceGrid({
                 video={video}
                 index={index}
                 isBestMatch={video.id === bestMatchId}
-                isExpanded={expandedVideoId === video.id}
-                isDimmed={expandedVideoId !== null && expandedVideoId !== video.id}
-                onExpand={() => handleExpand(video.id)}
-                onCollapse={handleCollapse}
-                onSelect={onSelectVideo}
-                onWatchFullscreen={() => handleWatchFullscreen(video)}
+                onClick={() => handleCardClick(video)}
                 isLoading={isLoading}
               />
             </div>
@@ -446,12 +331,7 @@ export function VideoReferenceGrid({
               video={video}
               index={index}
               isBestMatch={video.id === bestMatchId}
-              isExpanded={expandedVideoId === video.id}
-              isDimmed={expandedVideoId !== null && expandedVideoId !== video.id}
-              onExpand={() => handleExpand(video.id)}
-              onCollapse={handleCollapse}
-              onSelect={onSelectVideo}
-              onWatchFullscreen={() => handleWatchFullscreen(video)}
+              onClick={() => handleCardClick(video)}
               isLoading={isLoading}
             />
           ))}

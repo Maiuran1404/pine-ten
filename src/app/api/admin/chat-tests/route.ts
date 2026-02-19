@@ -97,6 +97,22 @@ export async function GET() {
             sql<number>`ROUND(AVG(${chatTestRuns.durationMs}) FILTER (WHERE ${chatTestRuns.status} = 'completed'))::int`.as(
               'avg_duration_ms'
             ),
+          avgCompositeScore:
+            sql<number>`ROUND(AVG(${chatTestRuns.compositeScore}) FILTER (WHERE ${chatTestRuns.compositeScore} IS NOT NULL))::int`.as(
+              'avg_composite_score'
+            ),
+          minCompositeScore:
+            sql<number>`MIN(${chatTestRuns.compositeScore}) FILTER (WHERE ${chatTestRuns.compositeScore} IS NOT NULL)::int`.as(
+              'min_composite_score'
+            ),
+          maxCompositeScore:
+            sql<number>`MAX(${chatTestRuns.compositeScore}) FILTER (WHERE ${chatTestRuns.compositeScore} IS NOT NULL)::int`.as(
+              'max_composite_score'
+            ),
+          scoredRunCount:
+            sql<number>`COUNT(*) FILTER (WHERE ${chatTestRuns.compositeScore} IS NOT NULL)::int`.as(
+              'scored_run_count'
+            ),
         })
         .from(chatTestRuns)
         .groupBy(chatTestRuns.batchId, chatTestRuns.triggeredBy)

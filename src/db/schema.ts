@@ -2171,6 +2171,38 @@ export const earlyAccessCodeUsagesRelations = relations(earlyAccessCodeUsages, (
 // Chat QA Testing Tables
 // ============================================
 
+export interface ChatTestScores {
+  efficiency: {
+    score: number
+    totalTurns: number
+    stalls: Array<{ stage: string; turns: number }>
+    forceAdvances: number
+    idealTurns: number
+  }
+  extraction: {
+    score: number
+    fields: Array<{ field: string; expected: string; actual: string | null; organic: boolean }>
+    organicAccuracy: number
+    totalAccuracy: number
+  }
+  quality: {
+    score: number
+    coherence: number
+    redundancy: number
+    helpfulness: number
+    tone: number
+    evaluatedAt: string
+    model: string
+    error?: string
+  } | null
+  completeness: {
+    score: number
+    organicCompletion: number
+    totalCompletion: number
+    fieldStatus: Array<{ field: string; filled: boolean; organic: boolean }>
+  }
+}
+
 export const chatTestRuns = pgTable(
   'chat_test_runs',
   {
@@ -2216,6 +2248,9 @@ export const chatTestRuns = pgTable(
     reachedReview: boolean('reached_review').notNull().default(false),
     errorMessage: text('error_message'),
     durationMs: integer('duration_ms'),
+    compositeScore: integer('composite_score'),
+    scores: jsonb('scores').$type<ChatTestScores>(),
+    scoredAt: timestamp('scored_at'),
     startedAt: timestamp('started_at'),
     completedAt: timestamp('completed_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -2223,6 +2258,7 @@ export const chatTestRuns = pgTable(
   (table) => [
     index('chat_test_runs_batch_id_idx').on(table.batchId),
     index('chat_test_runs_created_at_idx').on(table.createdAt),
+    index('chat_test_runs_composite_score_idx').on(table.compositeScore),
   ]
 )
 

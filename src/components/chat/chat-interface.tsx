@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -91,6 +92,8 @@ export function ChatInterface({
   showRightPanel = true,
   onChatStart,
 }: ChatInterfaceProps) {
+  const viewStructureRef = useRef<(() => void) | null>(null)
+
   const {
     // Router/session
     router: _router,
@@ -200,11 +203,12 @@ export function ChatInterface({
     // Quick options
     resolvedQuickOptions,
 
-    // Scene reference
-    sceneReference,
-    setSceneReference,
+    // Scene references
+    sceneReferences,
+    setSceneReferences,
     handleSceneClick,
     handleMultiSceneFeedback,
+    handleSceneSelectionChange,
 
     // Storyboard / Structure panel
     storyboardScenes,
@@ -286,6 +290,7 @@ export function ChatInterface({
       }
       onSceneClick={handleSceneClick}
       onMultiSceneFeedback={handleMultiSceneFeedback}
+      onSceneSelectionChange={handleSceneSelectionChange}
       structurePanelVisible={structurePanelVisible}
       structureType={structureType}
       structureData={storyboardScenes}
@@ -294,6 +299,7 @@ export function ChatInterface({
       onRegenerateScene={handleRegenerateScene}
       onRegenerateField={handleRegenerateField}
       onSectionReorder={handleSectionReorder}
+      viewStructureRef={viewStructureRef}
       className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
     >
       <div
@@ -426,7 +432,8 @@ export function ChatInterface({
           onSceneClick={handleSceneClick}
           onMultiSceneFeedback={handleMultiSceneFeedback}
           onViewStoryboard={() => {
-            // Panel auto-shows storyboard when data exists; no-op for now
+            // On mobile/tablet, open the structure bottom sheet
+            viewStructureRef.current?.()
           }}
           structurePanelVisible={structurePanelVisible}
         />
@@ -465,8 +472,10 @@ export function ChatInterface({
           handleFileUpload={handleFileUpload}
           handleRequestTaskSummary={handleRequestTaskSummary}
           removeFile={removeFile}
-          sceneReference={sceneReference}
-          onRemoveSceneReference={() => setSceneReference(null)}
+          sceneReferences={sceneReferences}
+          onRemoveSceneReference={(sceneNumber: number) =>
+            setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
+          }
         />
 
         {/* Submission success celebration overlay */}

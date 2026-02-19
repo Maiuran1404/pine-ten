@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,7 @@ interface ChatLayoutProps {
   storyboardScenes?: StoryboardScene[]
   onSceneClick?: (scene: StoryboardScene) => void
   onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
+  onSceneSelectionChange?: (scenes: StoryboardScene[]) => void
   // Structure panel props (new split layout)
   structurePanelVisible?: boolean
   structureType?: StructureData['type'] | null
@@ -47,6 +48,8 @@ interface ChatLayoutProps {
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
+  // Imperative handle to open the structure view from children
+  viewStructureRef?: MutableRefObject<(() => void) | null>
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -79,7 +82,8 @@ export function ChatLayout({
   deliverableCategory,
   storyboardScenes: _storyboardScenes,
   onSceneClick,
-  onMultiSceneFeedback,
+  onMultiSceneFeedback: _onMultiSceneFeedback,
+  onSceneSelectionChange,
   structurePanelVisible = false,
   structureType,
   structureData,
@@ -88,6 +92,7 @@ export function ChatLayout({
   onRegenerateScene,
   onRegenerateField,
   onSectionReorder,
+  viewStructureRef,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -96,6 +101,18 @@ export function ChatLayout({
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false)
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
   const [isMobileStructureOpen, setIsMobileStructureOpen] = useState(false)
+
+  // Expose imperative handle so children can open the structure view
+  useEffect(() => {
+    if (viewStructureRef) {
+      viewStructureRef.current = () => {
+        setIsMobileStructureOpen(true)
+      }
+    }
+    return () => {
+      if (viewStructureRef) viewStructureRef.current = null
+    }
+  }, [viewStructureRef])
 
   const showRightPanel = showMoodboard || showBrief
   const StructureIcon = structureType ? STRUCTURE_ICONS[structureType] || Film : Film
@@ -143,7 +160,7 @@ export function ChatLayout({
                 structureType={structureType ?? null}
                 structureData={structureData ?? null}
                 onSceneClick={onSceneClick}
-                onMultiSceneFeedback={onMultiSceneFeedback}
+                onSelectionChange={onSceneSelectionChange}
                 onSceneEdit={onSceneEdit}
                 onRegenerateStoryboard={onRegenerateStoryboard}
                 onRegenerateScene={onRegenerateScene}
@@ -160,7 +177,7 @@ export function ChatLayout({
                     structureType={structureType ?? null}
                     structureData={structureData ?? null}
                     onSceneClick={onSceneClick}
-                    onMultiSceneFeedback={onMultiSceneFeedback}
+                    onSelectionChange={onSceneSelectionChange}
                     onSceneEdit={onSceneEdit}
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
