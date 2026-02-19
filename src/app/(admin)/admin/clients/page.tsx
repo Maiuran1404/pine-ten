@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +36,7 @@ import {
   TrendingUp,
   DollarSign,
   UserCheck,
+  ArrowUpDown,
 } from 'lucide-react'
 import { StatCard } from '@/components/admin/stat-card'
 
@@ -49,7 +50,11 @@ interface Client {
   totalTasks: number
   completedTasks: number
   totalCreditsPurchased: number
+  lastActiveAt: string | null
 }
+
+type SortField = 'lastActiveAt' | 'createdAt' | 'credits' | 'totalTasks'
+type SortDirection = 'asc' | 'desc'
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -63,6 +68,8 @@ export default function ClientsPage() {
   const [sendNotification, setSendNotification] = useState(true)
   const [isGranting, setIsGranting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [sortField, setSortField] = useState<SortField>('lastActiveAt')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   useEffect(() => {
     fetchClients()
@@ -88,6 +95,53 @@ export default function ClientsPage() {
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+
+  const sortedClients = useMemo(() => {
+    return [...filteredClients].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1
+
+      const aVal = a[sortField]
+      const bVal = b[sortField]
+
+      // Nulls always sort to the bottom
+      if (aVal === null && bVal === null) return 0
+      if (aVal === null) return 1
+      if (bVal === null) return -1
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return aVal < bVal ? -dir : aVal > bVal ? dir : 0
+      }
+
+      return ((aVal as number) - (bVal as number)) * dir
+    })
+  }, [filteredClients, sortField, sortDirection])
+
+  const formatRelativeTime = (dateString: string | null) => {
+    if (!dateString) return 'Never'
+    const now = Date.now()
+    const then = new Date(dateString).getTime()
+    const diffMs = now - then
+
+    const minutes = Math.floor(diffMs / 60_000)
+    const hours = Math.floor(diffMs / 3_600_000)
+    const days = Math.floor(diffMs / 86_400_000)
+
+    if (minutes < 1) return 'Just now'
+    if (minutes < 60) return `${minutes}m ago`
+    if (hours < 24) return `${hours}h ago`
+    if (days < 30) return `${days}d ago`
+
+    return formatDate(dateString)
+  }
 
   const openGrantDialog = (client: Client) => {
     setSelectedClient(client)
@@ -259,15 +313,48 @@ export default function ClientsPage() {
                   <TableRow>
                     <TableHead>Client</TableHead>
                     <TableHead>Onboarded</TableHead>
-                    <TableHead>Credits</TableHead>
-                    <TableHead>Tasks</TableHead>
+                    <TableHead>
+                      <button
+                        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground"
+                        onClick={() => toggleSort('credits')}
+                      >
+                        Credits
+                        <ArrowUpDown className="h-3 w-3" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground"
+                        onClick={() => toggleSort('totalTasks')}
+                      >
+                        Tasks
+                        <ArrowUpDown className="h-3 w-3" />
+                      </button>
+                    </TableHead>
                     <TableHead>Total Purchased</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>
+                      <button
+                        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground"
+                        onClick={() => toggleSort('lastActiveAt')}
+                      >
+                        Last Active
+                        <ArrowUpDown className="h-3 w-3" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground"
+                        onClick={() => toggleSort('createdAt')}
+                      >
+                        Joined
+                        <ArrowUpDown className="h-3 w-3" />
+                      </button>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.map((client) => (
+                  {sortedClients.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell>
                         <div>
@@ -298,6 +385,9 @@ export default function ClientsPage() {
                         <span className="text-muted-foreground text-sm ml-1">
                           (${client.totalCreditsPurchased * 49})
                         </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatRelativeTime(client.lastActiveAt)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(client.createdAt)}

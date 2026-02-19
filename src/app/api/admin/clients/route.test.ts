@@ -27,13 +27,14 @@ vi.mock('@/db/schema', () => ({
   },
   tasks: { clientId: 'clientId', status: 'status' },
   creditTransactions: { userId: 'userId', type: 'type', amount: 'amount' },
+  sessions: { userId: 'userId', updatedAt: 'updatedAt' },
 }))
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
-  desc: vi.fn(),
   count: vi.fn(),
   sum: vi.fn(),
+  max: vi.fn(),
 }))
 
 const { GET } = await import('./route')
@@ -55,20 +56,18 @@ describe('GET /api/admin/clients', () => {
     mockRequireAdmin.mockResolvedValue({
       user: { id: 'admin-1', name: 'Admin', email: 'admin@test.com' },
     })
-    // Clients query
+    // Clients query (no orderBy — sorting is now client-side)
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue([
-            {
-              id: 'user-1',
-              name: 'Client A',
-              email: 'a@test.com',
-              credits: 10,
-              createdAt: new Date(),
-            },
-          ]),
-        }),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: 'user-1',
+            name: 'Client A',
+            email: 'a@test.com',
+            credits: 10,
+            createdAt: new Date(),
+          },
+        ]),
       }),
     })
     // Task counts
@@ -93,6 +92,16 @@ describe('GET /api/admin/clients', () => {
         }),
       }),
     })
+    // Last active (sessions)
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        groupBy: vi
+          .fn()
+          .mockResolvedValue([
+            { userId: 'user-1', lastActiveAt: new Date('2026-02-18T10:00:00Z') },
+          ]),
+      }),
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -103,38 +112,47 @@ describe('GET /api/admin/clients', () => {
     expect(data.data.clients[0].totalTasks).toBe(5)
     expect(data.data.clients[0].completedTasks).toBe(3)
     expect(data.data.clients[0].totalCreditsPurchased).toBe(50)
+    expect(data.data.clients[0].lastActiveAt).toBeDefined()
   })
 
   it('returns zero stats for clients with no tasks', async () => {
     mockRequireAdmin.mockResolvedValue({
       user: { id: 'admin-1', name: 'Admin', email: 'admin@test.com' },
     })
+    // Clients query
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue([
-            {
-              id: 'user-2',
-              name: 'New Client',
-              email: 'new@test.com',
-              credits: 0,
-              createdAt: new Date(),
-            },
-          ]),
-        }),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: 'user-2',
+            name: 'New Client',
+            email: 'new@test.com',
+            credits: 0,
+            createdAt: new Date(),
+          },
+        ]),
       }),
     })
+    // Task counts
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({ groupBy: vi.fn().mockResolvedValue([]) }),
     })
+    // Completed task counts
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({ groupBy: vi.fn().mockResolvedValue([]) }),
       }),
     })
+    // Credits purchased
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({ groupBy: vi.fn().mockResolvedValue([]) }),
+      }),
+    })
+    // Last active (sessions) — no sessions for this user
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        groupBy: vi.fn().mockResolvedValue([]),
       }),
     })
 
@@ -145,5 +163,6 @@ describe('GET /api/admin/clients', () => {
     expect(data.data.clients[0].totalTasks).toBe(0)
     expect(data.data.clients[0].completedTasks).toBe(0)
     expect(data.data.clients[0].totalCreditsPurchased).toBe(0)
+    expect(data.data.clients[0].lastActiveAt).toBeNull()
   })
 })

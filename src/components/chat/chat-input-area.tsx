@@ -147,7 +147,7 @@ export function ChatInputArea({
 
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
-      {/* State machine quick option chips + "You decide & submit" grouped */}
+      {/* State machine quick option chips + "I'm ready to submit" grouped */}
       <AnimatePresence>
         {stateMachineQuickOptions &&
           stateMachineQuickOptions.options.length > 0 &&
@@ -186,7 +186,7 @@ export function ChatInputArea({
                       className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3 shrink-0"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
-                      You decide & submit
+                      I&apos;m ready to submit
                     </Button>
                   )}
               </div>
@@ -200,10 +200,10 @@ export function ChatInputArea({
           {sceneReferences.map((ref) => (
             <div
               key={ref.sceneNumber}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/40 text-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-crafted-mint/10 dark:bg-crafted-green/15 border border-crafted-sage/25 dark:border-crafted-green/20 text-sm"
             >
-              <Film className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+              <Film className="h-3.5 w-3.5 text-crafted-green dark:text-crafted-mint shrink-0" />
+              <span className="text-crafted-forest dark:text-crafted-mint font-medium">
                 {/^Scene\s+\d+$/i.test(ref.title)
                   ? `Scene ${ref.sceneNumber}`
                   : `Scene ${ref.sceneNumber}: ${ref.title}`}
@@ -212,7 +212,7 @@ export function ChatInputArea({
                 <button
                   type="button"
                   onClick={() => onRemoveSceneReference(ref.sceneNumber)}
-                  className="ml-1 text-emerald-400 hover:text-emerald-600 dark:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+                  className="ml-1 text-crafted-sage hover:text-crafted-green dark:text-crafted-sage dark:hover:text-crafted-mint transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -277,13 +277,13 @@ export function ChatInputArea({
               className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              You decide & submit
+              I&apos;m ready to submit
             </Button>
           </div>
         )}
 
       {/* Modern input box - matching design reference */}
-      <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
+      <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
         {/* Input field with auto-resize and ghost text */}
         <div className="relative">
           {/* Ghost text suggestion overlay */}
@@ -383,9 +383,9 @@ export function ChatInputArea({
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20 rounded-b-2xl">
           {/* Left toolbar */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0 overflow-hidden">
             <div className="flex items-center gap-1">
               <input
                 type="file"
@@ -420,10 +420,10 @@ export function ChatInputArea({
                 className={cn(
                   'w-2 h-2 rounded-full',
                   userCredits === 0
-                    ? 'bg-red-500'
+                    ? 'bg-ds-error'
                     : userCredits < 15
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-600'
+                      ? 'bg-ds-warning'
+                      : 'bg-ds-success'
                 )}
               />
               <span className="text-muted-foreground">{userCredits} credits available</span>
@@ -441,9 +441,11 @@ export function ChatInputArea({
                 if (wordCount >= greatPromptWords) {
                   return (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10">
-                        <Check className="h-3 w-3 text-emerald-600" />
-                        <span className="text-xs font-medium text-emerald-600">Great detail!</span>
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-crafted-mint/15 dark:bg-crafted-green/10">
+                        <Check className="h-3 w-3 text-crafted-green" />
+                        <span className="text-xs font-medium text-crafted-green">
+                          Great detail!
+                        </span>
                       </div>
                     </div>
                   )
@@ -453,7 +455,7 @@ export function ChatInputArea({
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
+                          className="h-full rounded-full bg-gradient-to-r from-ds-warning to-ds-success transition-all duration-300"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -468,7 +470,7 @@ export function ChatInputArea({
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-rose-400 to-amber-400 transition-all duration-300"
+                          className="h-full rounded-full bg-gradient-to-r from-ds-error to-ds-warning transition-all duration-300"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -482,11 +484,11 @@ export function ChatInputArea({
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 ml-3">
             <Button
               onClick={handleSend}
               disabled={isLoading || (!input.trim() && uploadedFiles.length === 0)}
-              className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+              className="h-9 px-5 bg-crafted-green hover:bg-crafted-green-light text-white rounded-full"
             >
               {isLoading ? (
                 <>
@@ -546,12 +548,12 @@ export function ChatInputArea({
                 className={cn(
                   'flex items-start gap-3 p-3 rounded-xl border transition-all text-left group',
                   'bg-white/60 dark:bg-card/60 backdrop-blur-sm',
-                  'hover:border-emerald-500/50 hover:bg-white dark:hover:bg-card hover:shadow-md',
+                  'hover:border-crafted-sage/50 hover:bg-white dark:hover:bg-card hover:shadow-md',
                   'border-border/50'
                 )}
               >
-                <div className="w-8 h-8 rounded-lg bg-emerald-600/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-600/20 transition-colors">
-                  <item.icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-8 h-8 rounded-lg bg-crafted-green/10 flex items-center justify-center shrink-0 group-hover:bg-crafted-green/20 transition-colors">
+                  <item.icon className="h-4 w-4 text-crafted-green dark:text-crafted-mint" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{item.label}</p>

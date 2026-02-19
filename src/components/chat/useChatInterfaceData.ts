@@ -1395,7 +1395,7 @@ export function useChatInterfaceData({
         }
       }
     }, 100)
-  }, [isLoading, messages])
+  }, [isLoading, messages, pendingTask])
 
   const chatTitle = seamlessTransition ? getChatTitle(messages) : null
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)

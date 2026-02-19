@@ -1,6 +1,6 @@
 import { db } from '@/db'
-import { users, tasks, creditTransactions } from '@/db/schema'
-import { eq, desc, count, sum } from 'drizzle-orm'
+import { users, tasks, creditTransactions, sessions } from '@/db/schema'
+import { eq, count, sum, max } from 'drizzle-orm'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 
@@ -21,7 +21,6 @@ export async function GET() {
         })
         .from(users)
         .where(eq(users.role, 'CLIENT'))
-        .orderBy(desc(users.createdAt))
 
       // Get task counts for each client - use a safer approach
       const taskCountsRaw = await db
@@ -52,11 +51,23 @@ export async function GET() {
         .where(eq(creditTransactions.type, 'PURCHASE'))
         .groupBy(creditTransactions.userId)
 
+      // Get last active time from sessions
+      const lastActiveRaw = await db
+        .select({
+          userId: sessions.userId,
+          lastActiveAt: max(sessions.updatedAt),
+        })
+        .from(sessions)
+        .groupBy(sessions.userId)
+
       // Create lookup maps
       const taskCountMap = new Map(taskCountsRaw.map((tc) => [tc.clientId, tc.count]))
       const completedTaskMap = new Map(completedTasksRaw.map((tc) => [tc.clientId, tc.count]))
       const creditsMap = new Map(
         creditsPurchasedRaw.map((cp) => [cp.userId, Number(cp.total) || 0])
+      )
+      const lastActiveMap = new Map(
+        lastActiveRaw.map((la) => [la.userId, la.lastActiveAt?.toISOString() ?? null])
       )
 
       // Combine data
@@ -65,6 +76,7 @@ export async function GET() {
         totalTasks: taskCountMap.get(client.id) || 0,
         completedTasks: completedTaskMap.get(client.id) || 0,
         totalCreditsPurchased: creditsMap.get(client.id) || 0,
+        lastActiveAt: lastActiveMap.get(client.id) ?? null,
       }))
 
       return successResponse({ clients: clientsWithStats })

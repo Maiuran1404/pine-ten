@@ -69,13 +69,13 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
                 'whitespace-nowrap cursor-pointer',
                 isMultiSelect && isSelected
                   ? // Selected state for multi-select
-                    'border-[#7C9A7C] bg-[#E5EFE5] text-[#3D5A3D]'
+                    'border-crafted-green bg-crafted-mint/20 text-crafted-forest'
                   : // Default state
-                    'border-gray-200/70 bg-gray-50/50 text-gray-600 dark:border-gray-700 dark:bg-card dark:text-gray-200',
+                    'border-border bg-muted/40 text-foreground/80 dark:border-border dark:bg-card dark:text-foreground/80',
                 // Hover: light sage green with shadow
-                'hover:border-[#B8D4B8] hover:bg-[#F0F7F0] hover:shadow-sm hover:text-[#3D5A3D] dark:hover:bg-[#2A3F2A] dark:hover:border-[#4A6B4A]',
+                'hover:border-crafted-sage hover:bg-crafted-mint/10 hover:shadow-sm hover:text-crafted-forest dark:hover:bg-crafted-green/10 dark:hover:border-crafted-sage/50',
                 // Active: stronger sage green with scale
-                'active:border-[#7C9A7C] active:bg-[#E5EFE5] active:scale-[0.97] dark:active:bg-[#3A4F3A]'
+                'active:border-crafted-green active:bg-crafted-mint/20 active:scale-[0.97] dark:active:bg-crafted-green/15'
               )}
             >
               {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}

@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Plus } from 'lucide-react'
 
 interface SubmissionSuccessProps {
   taskId: string
@@ -99,6 +100,7 @@ export function SubmissionSuccess({
   assignedArtist,
   onViewProject,
 }: SubmissionSuccessProps) {
+  const router = useRouter()
   const [showContent, setShowContent] = useState(false)
 
   useEffect(() => {
@@ -150,6 +152,7 @@ export function SubmissionSuccess({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-3"
             >
               <Button
                 size="lg"
@@ -158,6 +161,15 @@ export function SubmissionSuccess({
               >
                 View Your Project
                 <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => router.push('/dashboard')}
+                className="gap-2 rounded-xl px-8 font-semibold h-12"
+              >
+                <Plus className="h-4 w-4" />
+                Start Another Project
               </Button>
             </motion.div>
           </>

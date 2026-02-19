@@ -755,7 +755,37 @@ async function handler(request: NextRequest) {
           const isSceneFeedback = /\[Feedback on Scene/.test(lastContent)
           const isRegenerationRequest = /regenerate.*storyboard/i.test(lastContent)
 
-          const briefMetaResult = parseBriefMeta(response.content)
+          let briefMetaResult = parseBriefMeta(response.content)
+
+          // BRIEF_META retry: if missing, attempt a single retry with reinforcement
+          if (!briefMetaResult.success) {
+            logger.debug('BRIEF_META not found — attempting single retry with reinforcement')
+            try {
+              const metaRetryResponse = await chat(
+                [
+                  ...messages,
+                  { role: 'assistant', content: response.content },
+                  {
+                    role: 'user',
+                    content: `You forgot the required [BRIEF_META] block. Reply with ONLY the block. Format: [BRIEF_META]{"stage":"${briefingState.stage}","fieldsExtracted":{}}[/BRIEF_META]`,
+                  },
+                ],
+                session.user.id,
+                chatContext,
+                stateMachineOverride
+              )
+              const retryMetaResult = parseBriefMeta(metaRetryResponse.content)
+              if (retryMetaResult.success) {
+                briefMetaResult = retryMetaResult
+                logger.debug('BRIEF_META retry succeeded')
+              } else {
+                logger.debug('BRIEF_META retry did not produce valid meta — using tiered fallback')
+              }
+            } catch (retryErr) {
+              logger.warn({ err: retryErr }, 'BRIEF_META retry failed')
+            }
+          }
+
           if (briefMetaResult.success && briefMetaResult.data) {
             // 11. Validate declared stage against legal transitions
             const declaredStage = briefMetaResult.data.stage
