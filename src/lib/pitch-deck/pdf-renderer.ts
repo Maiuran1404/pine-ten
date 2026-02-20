@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import fs from 'fs'
 import path from 'path'
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
@@ -26,7 +25,8 @@ function readLogoAsBase64(filename: string): string {
   }
 }
 
-export function renderPitchDeckHTML(data: PitchDeckFormData): string {
+export async function renderPitchDeckHTML(data: PitchDeckFormData): Promise<string> {
+  const { renderToStaticMarkup } = await import('react-dom/server')
   const combinedWhiteLogo = readLogoAsBase64('craftedcombinedwhite.png')
   const figureWhiteLogo = readLogoAsBase64('craftedfigurewhite.png')
 

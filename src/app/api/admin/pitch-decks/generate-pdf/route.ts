@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
       const body = await request.json()
       const data = pitchDeckSchema.parse(body)
-      const html = renderPitchDeckHTML(data)
+      const html = await renderPitchDeckHTML(data)
 
       let browser
       try {
