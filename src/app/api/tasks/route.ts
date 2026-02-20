@@ -276,6 +276,20 @@ export async function POST(request: NextRequest) {
         briefId,
       } = validatedData
 
+      // Idempotency: if a task already exists for this briefId, return it
+      if (briefId) {
+        const existingBrief = await db.query.briefs.findFirst({
+          where: and(eq(briefs.id, briefId), sql`${briefs.taskId} IS NOT NULL`),
+          columns: { taskId: true },
+        })
+        if (existingBrief?.taskId) {
+          return successResponse(
+            { taskId: existingBrief.taskId, status: 'ALREADY_EXISTS', duplicate: true },
+            200
+          )
+        }
+      }
+
       // Use transaction to prevent race conditions
       const result = await withTransaction(async (tx) => {
         // Get user's current credits and companyId with row lock
