@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '20')
+    const preferredType = searchParams.get('type') // e.g. 'presentation_slide', 'instagram_post'
 
     // Get user with company
     const user = await db.query.users.findFirst({
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     if (!user?.company || allReferences.length === 0) {
       // Return references grouped by color family if no brand data
-      return successResponse(groupByColorFamilyData(allReferences, limit, null))
+      return successResponse(groupByColorFamilyData(allReferences, limit, null, preferredType))
     }
 
     const company = user.company
@@ -196,7 +197,9 @@ export async function GET(request: NextRequest) {
 
     if (brandColorsForMatching.length === 0) {
       // Return references grouped by color family if no meaningful colors
-      return successResponse(groupByColorFamilyData(allReferences, limit, brandColors))
+      return successResponse(
+        groupByColorFamilyData(allReferences, limit, brandColors, preferredType)
+      )
     }
 
     // Get brand color families for matching
@@ -291,7 +294,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Define display order for deliverable types
+    // Define display order for deliverable types (preferred type first)
     const typeOrder = [
       'instagram_post',
       'instagram_story',
@@ -306,6 +309,15 @@ export async function GET(request: NextRequest) {
       'presentation_slide',
       'video_ad',
     ]
+    if (preferredType) {
+      const idx = typeOrder.indexOf(preferredType)
+      if (idx > 0) {
+        typeOrder.splice(idx, 1)
+        typeOrder.unshift(preferredType)
+      } else if (idx === -1) {
+        typeOrder.unshift(preferredType)
+      }
+    }
 
     // Build result grouped by deliverable type
     const result: Array<(typeof scoredReferences)[0] & { contentCategory: string }> = []
@@ -361,7 +373,8 @@ export async function GET(request: NextRequest) {
 function groupByColorFamilyData(
   references: (typeof deliverableStyleReferences.$inferSelect)[],
   limit: number,
-  brandColors: string[] | null
+  brandColors: string[] | null,
+  preferredType?: string | null
 ) {
   // Group by deliverable type
   const deliverableTypeGroups: Record<string, typeof references> = {}
@@ -379,7 +392,7 @@ function groupByColorFamilyData(
     deliverableTypeGroups[type].sort(() => 0.5 - Math.random())
   }
 
-  // Define display order for deliverable types
+  // Define display order for deliverable types (preferred type first)
   const typeOrder = [
     'instagram_post',
     'instagram_story',
@@ -394,6 +407,15 @@ function groupByColorFamilyData(
     'presentation_slide',
     'video_ad',
   ]
+  if (preferredType) {
+    const idx = typeOrder.indexOf(preferredType)
+    if (idx > 0) {
+      typeOrder.splice(idx, 1)
+      typeOrder.unshift(preferredType)
+    } else if (idx === -1) {
+      typeOrder.unshift(preferredType)
+    }
+  }
 
   const result: Array<(typeof references)[0] & { contentCategory: string }> = []
 
