@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { db } from '@/db'
 import { orshotTemplates } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { updateOrshotTemplateSchema } from '@/lib/validations'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -46,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       await requireAdmin()
 
       const { id } = await params
-      const body = await request.json()
+      const validated = updateOrshotTemplateSchema.parse(await request.json())
 
       // Check if template exists
       const [existingTemplate] = await db
@@ -64,31 +65,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         updatedAt: new Date(),
       }
 
-      if (body.name !== undefined) updateData.name = body.name
-      if (body.description !== undefined) updateData.description = body.description
-      if (body.category !== undefined) {
-        const validCategories = ['social_media', 'marketing', 'brand_assets']
-        if (!validCategories.includes(body.category)) {
-          throw Errors.badRequest(`Category must be one of: ${validCategories.join(', ')}`)
-        }
-        updateData.category = body.category
-      }
-      if (body.orshotTemplateId !== undefined) {
-        if (typeof body.orshotTemplateId !== 'number' || body.orshotTemplateId <= 0) {
-          throw Errors.badRequest('orshotTemplateId must be a positive number')
-        }
-        updateData.orshotTemplateId = body.orshotTemplateId
-      }
-      if (body.previewImageUrl !== undefined) updateData.previewImageUrl = body.previewImageUrl
-      if (body.parameterMapping !== undefined) updateData.parameterMapping = body.parameterMapping
-      if (body.outputFormat !== undefined) {
-        const validFormats = ['png', 'jpg', 'webp', 'pdf']
-        if (!validFormats.includes(body.outputFormat)) {
-          throw Errors.badRequest(`Output format must be one of: ${validFormats.join(', ')}`)
-        }
-        updateData.outputFormat = body.outputFormat
-      }
-      if (body.isActive !== undefined) updateData.isActive = body.isActive
+      if (validated.name !== undefined) updateData.name = validated.name
+      if (validated.description !== undefined) updateData.description = validated.description
+      if (validated.category !== undefined) updateData.category = validated.category
+      if (validated.orshotTemplateId !== undefined)
+        updateData.orshotTemplateId = validated.orshotTemplateId
+      if (validated.previewImageUrl !== undefined)
+        updateData.previewImageUrl = validated.previewImageUrl
+      if (validated.parameterMapping !== undefined)
+        updateData.parameterMapping = validated.parameterMapping
+      if (validated.outputFormat !== undefined) updateData.outputFormat = validated.outputFormat
+      if (validated.isActive !== undefined) updateData.isActive = validated.isActive
 
       const [updatedTemplate] = await db
         .update(orshotTemplates)

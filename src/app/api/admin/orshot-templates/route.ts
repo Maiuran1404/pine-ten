@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { db } from '@/db'
 import { orshotTemplates } from '@/db/schema'
 import { desc, eq } from 'drizzle-orm'
+import { createOrshotTemplateSchema } from '@/lib/validations'
 
 /**
  * GET /api/admin/orshot-templates
@@ -34,7 +35,6 @@ export async function POST(request: NextRequest) {
     async () => {
       await requireAdmin()
 
-      const body = await request.json()
       const {
         name,
         description,
@@ -43,31 +43,7 @@ export async function POST(request: NextRequest) {
         previewImageUrl,
         parameterMapping,
         outputFormat,
-      } = body
-
-      // Validate required fields
-      if (!name || !category || !orshotTemplateId || !parameterMapping) {
-        throw Errors.badRequest(
-          'Name, category, orshotTemplateId, and parameterMapping are required'
-        )
-      }
-
-      // Validate orshotTemplateId is a number
-      if (typeof orshotTemplateId !== 'number' || orshotTemplateId <= 0) {
-        throw Errors.badRequest('orshotTemplateId must be a positive number')
-      }
-
-      // Validate category
-      const validCategories = ['social_media', 'marketing', 'brand_assets']
-      if (!validCategories.includes(category)) {
-        throw Errors.badRequest(`Category must be one of: ${validCategories.join(', ')}`)
-      }
-
-      // Validate outputFormat
-      const validFormats = ['png', 'jpg', 'webp', 'pdf']
-      if (outputFormat && !validFormats.includes(outputFormat)) {
-        throw Errors.badRequest(`Output format must be one of: ${validFormats.join(', ')}`)
-      }
+      } = createOrshotTemplateSchema.parse(await request.json())
 
       const [newTemplate] = await db
         .insert(orshotTemplates)

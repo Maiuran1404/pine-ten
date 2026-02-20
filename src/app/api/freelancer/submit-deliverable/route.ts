@@ -9,22 +9,15 @@ import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { submitDeliverableSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
       const { user } = await requireAuth()
 
-      const body = await request.json()
+      const body = submitDeliverableSchema.parse(await request.json())
       const { taskId, files, message } = body
-
-      if (!taskId) {
-        throw Errors.badRequest('Task ID is required')
-      }
-
-      if (!files || !Array.isArray(files) || files.length === 0) {
-        throw Errors.badRequest('At least one file is required')
-      }
 
       // Verify the task exists and is assigned to this freelancer
       const [task] = await db

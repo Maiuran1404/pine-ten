@@ -553,6 +553,130 @@ export const updateInviteCodeSchema = z.object({
   expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
 })
 
+// ============ Freelancer Payout Schema ============
+
+export const requestPayoutSchema = z.object({
+  creditsAmount: z
+    .number({ message: 'Credits amount must be a number' })
+    .int({ message: 'Credits amount must be a whole number' })
+    .min(1, 'Credits amount must be at least 1'),
+})
+
+// ============ Brief Save Schema ============
+
+export const saveBriefSchema = z.object({
+  brief: z.record(z.string(), z.unknown()).refine((val) => Object.keys(val).length > 0, {
+    message: 'Brief data is required',
+  }),
+  draftId: z.string().optional(),
+})
+
+// ============ Style History Schemas ============
+
+export const recordStyleSelectionSchema = z.object({
+  styleId: z.string().min(1, 'Style ID is required'),
+  deliverableType: z.string().min(1, 'Deliverable type is required'),
+  styleAxis: z.string().min(1, 'Style axis is required'),
+  selectionContext: z.enum(['chat', 'browse', 'refinement']).optional().default('chat'),
+  wasConfirmed: z.boolean().optional().default(false),
+  draftId: z.string().optional(),
+})
+
+export const confirmStyleSelectionSchema = z.object({
+  styleId: z.string().min(1, 'Style ID is required'),
+  draftId: z.string().optional(),
+})
+
+// ============ Brand Reference Match Schema ============
+
+export const matchBrandReferencesSchema = z.object({
+  feelPlayfulSerious: z.number().min(0).max(100).optional(),
+  feelBoldMinimal: z.number().min(0).max(100).optional(),
+  signalTone: z.number().min(0).max(100).optional(),
+  signalDensity: z.number().min(0).max(100).optional(),
+  signalWarmth: z.number().min(0).max(100).optional(),
+  signalEnergy: z.number().min(0).max(100).optional(),
+  visualStyle: z.string().max(100).optional(),
+  limit: z.number().int().min(1).max(100).optional().default(12),
+  offset: z.number().int().min(0).optional().default(0),
+})
+
+// ============ Orshot Generate Schema ============
+
+export const generateOrshotDesignSchema = z.object({
+  templateId: z.string().uuid('Template ID must be a valid UUID'),
+})
+
+// ============ Admin Brand Reference Update Schema ============
+
+export const updateBrandReferenceSchema = createBrandReferenceSchema.partial().extend({
+  isActive: z.boolean().optional(),
+})
+
+// ============ Admin Deliverable Style Update Schema ============
+
+export const updateDeliverableStyleSchema = createDeliverableStyleSchema.partial().extend({
+  isActive: z.boolean().optional(),
+})
+
+// ============ Admin Orshot Template Schema ============
+
+export const createOrshotTemplateSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  description: z.string().max(1000).optional().nullable(),
+  category: z.enum(['social_media', 'marketing', 'brand_assets']),
+  orshotTemplateId: z.number().int().positive('Orshot template ID must be a positive number'),
+  previewImageUrl: z.string().url().optional().nullable(),
+  parameterMapping: z.record(z.string(), z.any()),
+  outputFormat: z.enum(['png', 'jpg', 'webp', 'pdf']).optional().default('png'),
+})
+
+export const updateOrshotTemplateSchema = createOrshotTemplateSchema.partial().extend({
+  isActive: z.boolean().optional(),
+})
+
+// ============ Admin Verify Deliverable Schema ============
+
+export const verifyDeliverableSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  feedback: z.string().max(2000).optional(),
+})
+
+// ============ Artist Decline Task Schema ============
+
+export const declineTaskSchema = z.object({
+  reason: z
+    .enum([
+      'TOO_BUSY',
+      'SKILL_MISMATCH',
+      'DEADLINE_TOO_TIGHT',
+      'LOW_CREDITS',
+      'PERSONAL_CONFLICT',
+      'OTHER',
+    ])
+    .optional(),
+  note: z.string().max(500).optional(),
+})
+
+// ============ Chat Route Schema ============
+
+export const chatRouteSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string().min(1).max(50000),
+    })
+  ),
+  selectedStyles: z.array(z.any()).optional(),
+  excludeStyleAxes: z.array(z.string()).optional(),
+  styleOffset: z.number().int().min(0).optional(),
+  // Complex objects cast to specific types downstream
+  deliverableStyleMarker: z.any().optional().nullable(),
+  moodboardHasStyles: z.boolean().optional(),
+  brief: z.any().optional().nullable(),
+  briefingState: z.any().optional().nullable(),
+})
+
 // ============ Helper Types ============
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>

@@ -67,7 +67,7 @@ describe('POST /api/style-history', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('Missing required')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('records style selection', async () => {
@@ -105,7 +105,7 @@ describe('PUT /api/style-history', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('styleId')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('confirms style selection', async () => {

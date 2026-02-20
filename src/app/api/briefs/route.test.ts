@@ -163,7 +163,7 @@ describe('POST /api/briefs', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('brief')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('creates a new brief', async () => {

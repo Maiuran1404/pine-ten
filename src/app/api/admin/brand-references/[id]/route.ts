@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { db } from '@/db'
 import { brandReferences } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { updateBrandReferenceSchema } from '@/lib/validations'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return withErrorHandling(
@@ -11,41 +12,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       await requireAdmin()
 
       const { id } = await params
-      const body = await request.json()
-
-      const {
-        name,
-        description,
-        imageUrl,
-        toneBucket,
-        energyBucket,
-        densityBucket,
-        colorBucket,
-        premiumBucket,
-        colorSamples,
-        visualStyles,
-        industries,
-        displayOrder,
-        isActive,
-      } = body
+      const validated = updateBrandReferenceSchema.parse(await request.json())
 
       const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       }
 
-      if (name !== undefined) updateData.name = name
-      if (description !== undefined) updateData.description = description
-      if (imageUrl !== undefined) updateData.imageUrl = imageUrl
-      if (toneBucket !== undefined) updateData.toneBucket = toneBucket
-      if (energyBucket !== undefined) updateData.energyBucket = energyBucket
-      if (densityBucket !== undefined) updateData.densityBucket = densityBucket
-      if (colorBucket !== undefined) updateData.colorBucket = colorBucket
-      if (premiumBucket !== undefined) updateData.premiumBucket = premiumBucket
-      if (colorSamples !== undefined) updateData.colorSamples = colorSamples
-      if (visualStyles !== undefined) updateData.visualStyles = visualStyles
-      if (industries !== undefined) updateData.industries = industries
-      if (displayOrder !== undefined) updateData.displayOrder = displayOrder
-      if (isActive !== undefined) updateData.isActive = isActive
+      if (validated.name !== undefined) updateData.name = validated.name
+      if (validated.description !== undefined) updateData.description = validated.description
+      if (validated.imageUrl !== undefined) updateData.imageUrl = validated.imageUrl
+      if (validated.toneBucket !== undefined) updateData.toneBucket = validated.toneBucket
+      if (validated.energyBucket !== undefined) updateData.energyBucket = validated.energyBucket
+      if (validated.densityBucket !== undefined) updateData.densityBucket = validated.densityBucket
+      if (validated.colorBucket !== undefined) updateData.colorBucket = validated.colorBucket
+      if (validated.premiumBucket !== undefined) updateData.premiumBucket = validated.premiumBucket
+      if (validated.colorSamples !== undefined) updateData.colorSamples = validated.colorSamples
+      if (validated.visualStyles !== undefined) updateData.visualStyles = validated.visualStyles
+      if (validated.industries !== undefined) updateData.industries = validated.industries
+      if (validated.displayOrder !== undefined) updateData.displayOrder = validated.displayOrder
+      if (validated.isActive !== undefined) updateData.isActive = validated.isActive
 
       const [updatedReference] = await db
         .update(brandReferences)

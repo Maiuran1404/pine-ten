@@ -13,6 +13,7 @@ import {
 } from '@/lib/stripe-connect'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { requestPayoutSchema } from '@/lib/validations'
 
 export async function GET(_request: NextRequest) {
   return withErrorHandling(
@@ -298,13 +299,12 @@ export async function POST(request: NextRequest) {
       const { user } = await requireAuth()
 
       const userId = user.id
-      const body = await request.json()
-      const { creditsAmount } = body
+      const { creditsAmount } = requestPayoutSchema.parse(await request.json())
 
       // Get payout settings from database
       const payoutSettings = await getPayoutSettings()
 
-      if (!creditsAmount || creditsAmount < payoutSettings.minimumPayoutCredits) {
+      if (creditsAmount < payoutSettings.minimumPayoutCredits) {
         throw Errors.badRequest(`Minimum payout is ${payoutSettings.minimumPayoutCredits} credits`)
       }
 

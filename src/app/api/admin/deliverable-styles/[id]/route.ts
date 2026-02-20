@@ -4,6 +4,7 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { db } from '@/db'
 import { deliverableStyleReferences } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { updateDeliverableStyleSchema } from '@/lib/validations'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return withErrorHandling(
@@ -11,35 +12,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       await requireAdmin()
 
       const { id } = await params
-      const body = await request.json()
-
-      const {
-        name,
-        description,
-        imageUrl,
-        deliverableType,
-        styleAxis,
-        subStyle,
-        semanticTags,
-        featuredOrder,
-        displayOrder,
-        isActive,
-      } = body
+      const validated = updateDeliverableStyleSchema.parse(await request.json())
 
       const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       }
 
-      if (name !== undefined) updateData.name = name
-      if (description !== undefined) updateData.description = description
-      if (imageUrl !== undefined) updateData.imageUrl = imageUrl
-      if (deliverableType !== undefined) updateData.deliverableType = deliverableType
-      if (styleAxis !== undefined) updateData.styleAxis = styleAxis
-      if (subStyle !== undefined) updateData.subStyle = subStyle
-      if (semanticTags !== undefined) updateData.semanticTags = semanticTags
-      if (featuredOrder !== undefined) updateData.featuredOrder = featuredOrder
-      if (displayOrder !== undefined) updateData.displayOrder = displayOrder
-      if (isActive !== undefined) updateData.isActive = isActive
+      if (validated.name !== undefined) updateData.name = validated.name
+      if (validated.description !== undefined) updateData.description = validated.description
+      if (validated.imageUrl !== undefined) updateData.imageUrl = validated.imageUrl
+      if (validated.deliverableType !== undefined)
+        updateData.deliverableType = validated.deliverableType
+      if (validated.styleAxis !== undefined) updateData.styleAxis = validated.styleAxis
+      if (validated.subStyle !== undefined) updateData.subStyle = validated.subStyle
+      if (validated.semanticTags !== undefined) updateData.semanticTags = validated.semanticTags
+      if (validated.featuredOrder !== undefined) updateData.featuredOrder = validated.featuredOrder
+      if (validated.displayOrder !== undefined) updateData.displayOrder = validated.displayOrder
+      if (validated.isActive !== undefined) updateData.isActive = validated.isActive
 
       const [updatedStyle] = await db
         .update(deliverableStyleReferences)

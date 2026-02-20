@@ -11,6 +11,7 @@ import {
 import { logger } from '@/lib/logger'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { generateOrshotDesignSchema } from '@/lib/validations'
 
 /**
  * POST /api/orshot/generate
@@ -25,12 +26,7 @@ export async function POST(request: NextRequest) {
       throw Errors.badRequest('Quick Design feature is not configured')
     }
 
-    const body = await request.json()
-    const { templateId } = body
-
-    if (!templateId) {
-      throw Errors.badRequest('Template ID is required')
-    }
+    const { templateId } = generateOrshotDesignSchema.parse(await request.json())
 
     // Fetch the template
     const [template] = await db

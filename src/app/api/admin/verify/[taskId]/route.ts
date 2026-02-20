@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import { adminNotifications } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
+import { verifyDeliverableSchema } from '@/lib/validations'
 
 // GET - Fetch task details for verification
 export async function GET(
@@ -93,12 +94,7 @@ export async function POST(
       await requireAdmin()
 
       const { taskId } = await params
-      const body = await request.json()
-      const { action, feedback } = body
-
-      if (!action || !['approve', 'reject'].includes(action)) {
-        throw Errors.badRequest("Invalid action. Must be 'approve' or 'reject'")
-      }
+      const { action, feedback } = verifyDeliverableSchema.parse(await request.json())
 
       // Fetch the task
       const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1)

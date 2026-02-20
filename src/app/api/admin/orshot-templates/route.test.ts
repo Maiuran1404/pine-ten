@@ -102,7 +102,7 @@ describe('POST /api/admin/orshot-templates', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('required')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('should return 400 for invalid category', async () => {
@@ -118,7 +118,7 @@ describe('POST /api/admin/orshot-templates', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('Category must be one of')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('should return 400 for non-numeric orshotTemplateId', async () => {
@@ -134,7 +134,7 @@ describe('POST /api/admin/orshot-templates', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('positive number')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('should create template with valid data', async () => {

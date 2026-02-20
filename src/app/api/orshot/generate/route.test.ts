@@ -72,7 +72,9 @@ describe('POST /api/orshot/generate', () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
     mockRequireAuth.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-1' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: '123e4567-e89b-12d3-a456-426614174000' }) as never
+    )
     expect(response.status).toBe(401)
   })
 
@@ -80,7 +82,9 @@ describe('POST /api/orshot/generate', () => {
     setupAuth()
     mockIsOrshotEnabled.mockReturnValue(false)
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-1' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: '123e4567-e89b-12d3-a456-426614174000' }) as never
+    )
     expect(response.status).toBe(400)
     const data = await response.json()
     expect(data.error.message).toContain('not configured')
@@ -99,7 +103,9 @@ describe('POST /api/orshot/generate', () => {
     mockIsOrshotEnabled.mockReturnValue(true)
     mockDbSelect.mockReturnValueOnce(chainableSelect([]))
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-missing' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }) as never
+    )
     expect(response.status).toBe(404)
   })
 
@@ -109,7 +115,7 @@ describe('POST /api/orshot/generate', () => {
     mockDbSelect.mockReturnValueOnce(
       chainableSelect([
         {
-          id: 'tmpl-1',
+          id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Logo',
           isActive: false,
           orshotTemplateId: 'orshot-1',
@@ -120,7 +126,9 @@ describe('POST /api/orshot/generate', () => {
       ])
     )
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-1' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: '123e4567-e89b-12d3-a456-426614174000' }) as never
+    )
     expect(response.status).toBe(400)
     const data = await response.json()
     expect(data.error.message).toContain('not available')
@@ -133,7 +141,7 @@ describe('POST /api/orshot/generate', () => {
     mockDbSelect.mockReturnValueOnce(
       chainableSelect([
         {
-          id: 'tmpl-1',
+          id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Logo',
           isActive: true,
           orshotTemplateId: 'orshot-1',
@@ -146,7 +154,9 @@ describe('POST /api/orshot/generate', () => {
     // User has no company
     mockDbSelect.mockReturnValueOnce(chainableSelect([{ companyId: null }]))
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-1' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: '123e4567-e89b-12d3-a456-426614174000' }) as never
+    )
     expect(response.status).toBe(400)
     const data = await response.json()
     expect(data.error.message).toContain('brand profile')
@@ -159,7 +169,7 @@ describe('POST /api/orshot/generate', () => {
     mockDbSelect.mockReturnValueOnce(
       chainableSelect([
         {
-          id: 'tmpl-1',
+          id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Social Post',
           isActive: true,
           orshotTemplateId: 'orshot-1',
@@ -208,7 +218,9 @@ describe('POST /api/orshot/generate', () => {
       }),
     })
 
-    const response = await POST(makeRequest({ templateId: 'tmpl-1' }) as never)
+    const response = await POST(
+      makeRequest({ templateId: '123e4567-e89b-12d3-a456-426614174000' }) as never
+    )
     const data = await response.json()
 
     expect(response.status).toBe(200)

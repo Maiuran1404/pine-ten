@@ -8,25 +8,15 @@ import type { DeliverableType } from '@/lib/constants/reference-libraries'
 import { DELIVERABLE_TYPES } from '@/lib/constants/reference-libraries'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { recordStyleSelectionSchema, confirmStyleSelectionSchema } from '@/lib/validations'
 
 // POST - Record a style selection
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     const session = await requireAuth()
 
-    const body = await request.json()
-    const {
-      styleId,
-      deliverableType,
-      styleAxis,
-      selectionContext = 'chat',
-      wasConfirmed = false,
-      draftId,
-    } = body
-
-    if (!styleId || !deliverableType || !styleAxis) {
-      throw Errors.badRequest('Missing required fields: styleId, deliverableType, styleAxis')
-    }
+    const { styleId, deliverableType, styleAxis, selectionContext, wasConfirmed, draftId } =
+      recordStyleSelectionSchema.parse(await request.json())
 
     await recordStyleSelection({
       userId: session.user.id,
@@ -47,12 +37,7 @@ export async function PUT(request: NextRequest) {
   return withErrorHandling(async () => {
     const session = await requireAuth()
 
-    const body = await request.json()
-    const { styleId, draftId } = body
-
-    if (!styleId) {
-      throw Errors.badRequest('Missing required field: styleId')
-    }
+    const { styleId, draftId } = confirmStyleSelectionSchema.parse(await request.json())
 
     await confirmStyleSelection(session.user.id, styleId, draftId)
 

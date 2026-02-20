@@ -7,6 +7,7 @@ import { calculateBriefCompletion } from '@/components/chat/brief-panel/types'
 import { logger } from '@/lib/logger'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { saveBriefSchema } from '@/lib/validations'
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -76,13 +77,11 @@ export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     const session = await requireAuth()
 
-    const body = await request.json()
+    const body = saveBriefSchema.parse(await request.json())
     logger.debug({ bodyKeys: Object.keys(body) }, 'POST /api/briefs - received body keys')
 
-    const { brief: liveBrief, draftId } = body as {
-      brief: LiveBrief
-      draftId?: string
-    }
+    const { brief: liveBriefRaw, draftId } = body
+    const liveBrief = liveBriefRaw as unknown as LiveBrief
 
     logger.debug(
       { liveBriefKeys: liveBrief ? Object.keys(liveBrief) : null, draftId },

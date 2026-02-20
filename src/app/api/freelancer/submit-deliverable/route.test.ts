@@ -81,11 +81,11 @@ beforeEach(() => {
 
 describe('POST /api/freelancer/submit-deliverable', () => {
   const validBody = {
-    taskId: 'task-1',
+    taskId: '123e4567-e89b-12d3-a456-426614174000',
     files: [
       {
         fileName: 'design.png',
-        fileUrl: 'https://storage/design.png',
+        fileUrl: 'https://storage.example.com/design.png',
         fileType: 'image/png',
         fileSize: 1024,
       },
@@ -120,17 +120,19 @@ describe('POST /api/freelancer/submit-deliverable', () => {
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('Task ID is required')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('returns 400 when files array is empty', async () => {
     setupAuth()
 
-    const response = await POST(makeRequest({ taskId: 'task-1', files: [] }) as never)
+    const response = await POST(
+      makeRequest({ taskId: '123e4567-e89b-12d3-a456-426614174000', files: [] }) as never
+    )
     const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('At least one file')
+    expect(data.error.message).toBe('Validation failed')
   })
 
   it('returns 404 when task not found or not assigned to user', async () => {

@@ -13,14 +13,7 @@ import {
 import { notify, adminNotifications } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { requireRole } from '@/lib/require-auth'
-
-type DeclineReason =
-  | 'TOO_BUSY'
-  | 'SKILL_MISMATCH'
-  | 'DEADLINE_TOO_TIGHT'
-  | 'LOW_CREDITS'
-  | 'PERSONAL_CONFLICT'
-  | 'OTHER'
+import { declineTaskSchema } from '@/lib/validations'
 
 /**
  * POST /api/artist/tasks/[taskId]/decline
@@ -35,8 +28,7 @@ export async function POST(
       const { user } = await requireRole('FREELANCER', 'ADMIN')
 
       const { taskId } = await params
-      const body = await request.json().catch(() => ({}))
-      const { reason, note } = body as { reason?: DeclineReason; note?: string }
+      const { reason, note } = declineTaskSchema.parse(await request.json().catch(() => ({})))
 
       const algorithmConfig = await getActiveConfig()
 

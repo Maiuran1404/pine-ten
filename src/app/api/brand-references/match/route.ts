@@ -14,12 +14,12 @@ import {
 } from '@/lib/constants/reference-libraries'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { matchBrandReferencesSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     await requireAuth()
 
-    const body = await request.json()
     const {
       // Accept both old and new parameter names for backwards compatibility
       feelPlayfulSerious,
@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
       signalWarmth,
       signalEnergy,
       visualStyle,
-      limit = 12,
-      offset = 0,
-    } = body
+      limit,
+      offset,
+    } = matchBrandReferencesSchema.parse(await request.json())
 
     // Determine buckets from slider values (0-100 scale)
     // Use new names if provided, fall back to old names for backwards compatibility
