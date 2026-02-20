@@ -71,61 +71,81 @@ const STAGE_LOADING_MESSAGES: Record<string, string[]> = {
     'Understanding your vision...',
     'Piecing together the details...',
     'Getting the full picture...',
-    'Almost there...',
+    'Mapping out your brief fields...',
+    'Refining the details...',
+    'Wrapping up the analysis...',
   ],
   TASK_TYPE: [
     'Figuring out the best format...',
     'Matching your idea to the right medium...',
     'Narrowing down the approach...',
-    'Almost there...',
+    'Evaluating deliverable options...',
+    'Selecting the ideal format...',
+    'Finalizing the recommendation...',
   ],
   INTENT: [
     'Identifying your goal...',
     'Aligning with your strategy...',
     'Connecting the dots...',
-    'Almost there...',
+    'Fine-tuning the direction...',
+    'Locking in the strategy...',
+    'Wrapping up...',
   ],
   INSPIRATION: [
     'Scouting visual references...',
     'Curating styles that fit...',
     'Pulling together inspiration...',
-    'Almost there...',
+    'Comparing reference styles...',
+    'Selecting the best matches...',
+    'Finalizing your options...',
   ],
   STRUCTURE: [
-    'Drafting the blueprint...',
+    'Designing your storyboard...',
     'Building out the structure...',
-    'Shaping the deliverable...',
-    'Almost there...',
+    'Crafting each scene...',
+    'Adding visual direction...',
+    'Polishing the narrative flow...',
+    'Putting the finishing touches...',
   ],
   STRATEGIC_REVIEW: [
     'Reviewing your strategy...',
     'Spotting strengths and risks...',
     'Refining the approach...',
-    'Almost there...',
+    'Running competitive analysis...',
+    'Compiling recommendations...',
+    'Preparing the review...',
   ],
   MOODBOARD: [
     'Mapping out your moodboard...',
     'Curating the perfect visuals...',
     'Locking in the aesthetic...',
-    'Almost there...',
+    'Refining color and tone...',
+    'Assembling the final board...',
+    'Wrapping up...',
   ],
   REVIEW: [
     'Running a final review...',
     'Checking every detail...',
     'Polishing the brief...',
-    'Almost there...',
+    'Ensuring consistency...',
+    'Making final adjustments...',
+    'Almost ready...',
   ],
   DEEPEN: [
     'Digging deeper...',
     'Adding layers of detail...',
     'Expanding the brief...',
-    'Almost there...',
+    'Enriching the specifics...',
+    'Refining nuances...',
+    'Putting it all together...',
   ],
   SUBMIT: [
     'Packaging everything up...',
     'Preparing your submission...',
+    'Running final checks...',
+    'Validating the brief...',
     'Final touches...',
-    'Almost there...',
+    'Almost ready to submit...',
   ],
 }
 
@@ -133,7 +153,9 @@ const DEFAULT_LOADING_MESSAGES = [
   'Thinking about your project...',
   'Working on a response...',
   'Putting ideas together...',
-  'Almost there...',
+  'Crafting the perfect reply...',
+  'Refining the details...',
+  'Almost done...',
 ]
 
 // =============================================================================
@@ -161,10 +183,12 @@ function LoadingIndicator({
         const elapsed = Math.floor((Date.now() - requestStartTime) / 1000)
         setElapsedTime(elapsed)
 
-        // Progress through stages based on time
-        if (elapsed >= 8) setLoadingStage(3)
-        else if (elapsed >= 5) setLoadingStage(2)
-        else if (elapsed >= 2) setLoadingStage(1)
+        // Progress through stages based on time (6 stages for long waits)
+        if (elapsed >= 25) setLoadingStage(5)
+        else if (elapsed >= 18) setLoadingStage(4)
+        else if (elapsed >= 12) setLoadingStage(3)
+        else if (elapsed >= 7) setLoadingStage(2)
+        else if (elapsed >= 3) setLoadingStage(1)
         else setLoadingStage(0)
       }
     }, 500)
