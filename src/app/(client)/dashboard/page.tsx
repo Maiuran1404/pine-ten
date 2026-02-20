@@ -1155,23 +1155,27 @@ function DashboardContent() {
                               const enabledPlatforms = Object.entries(platformSelections).filter(
                                 ([, v]) => v.enabled
                               )
-                              if (enabledPlatforms.length > 0) {
-                                const platformDescriptions = enabledPlatforms.map(([id, s]) => {
-                                  const p = SOCIAL_MEDIA_PLATFORMS.find((pl) => pl.id === id)
-                                  return `${p?.name} (${s.formats.join(', ')} — ${s.frequency})`
-                                })
-                                const prompt = `Create social media content. Platforms: ${platformDescriptions.join(', ')}.${modalNotes ? ` Additional notes: ${modalNotes}` : ''}`
-                                handleSubmit(prompt)
-                                setSelectedCategory(null)
-                                setModalNotes('')
-                                setPlatformSelections({})
+                              if (enabledPlatforms.length === 0) {
+                                toast.error('Select at least one platform to continue')
+                                return
                               }
+                              const platformDescriptions = enabledPlatforms.map(([id, s]) => {
+                                const p = SOCIAL_MEDIA_PLATFORMS.find((pl) => pl.id === id)
+                                return `${p?.name} (${s.formats.join(', ')} — ${s.frequency})`
+                              })
+                              const prompt = `Create social media content. Platforms: ${platformDescriptions.join(', ')}.${modalNotes ? ` Additional notes: ${modalNotes}` : ''}`
+                              handleSubmit(prompt)
+                              setSelectedCategory(null)
+                              setModalNotes('')
+                              setPlatformSelections({})
                             }}
-                            disabled={
+                            className={cn(
+                              'absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 text-white rounded-md font-medium text-sm transition-all duration-150',
                               Object.values(platformSelections).filter((v) => v.enabled).length ===
-                              0
-                            }
-                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                                0
+                                ? 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                                : 'bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)]'
+                            )}
                           >
                             Continue
                           </button>
@@ -1269,23 +1273,29 @@ function DashboardContent() {
                           />
                           <button
                             onClick={() => {
-                              if (selectedOption) {
-                                const option = category?.options.find(
-                                  (o) => o.title === selectedOption
-                                )
-                                if (option) {
-                                  const fullPrompt = modalNotes
-                                    ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                    : `${option.prompt}. ${option.description}`
-                                  handleSubmit(fullPrompt)
-                                  setSelectedCategory(null)
-                                  setSelectedOption(null)
-                                  setModalNotes('')
-                                }
+                              if (!selectedOption) {
+                                toast.error('Select an option to continue')
+                                return
+                              }
+                              const option = category?.options.find(
+                                (o) => o.title === selectedOption
+                              )
+                              if (option) {
+                                const fullPrompt = modalNotes
+                                  ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                  : `${option.prompt}. ${option.description}`
+                                handleSubmit(fullPrompt)
+                                setSelectedCategory(null)
+                                setSelectedOption(null)
+                                setModalNotes('')
                               }
                             }}
-                            disabled={!selectedOption}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)] disabled:bg-muted disabled:text-muted-foreground/40 text-white rounded-md font-medium text-sm transition-all duration-150 disabled:cursor-not-allowed"
+                            className={cn(
+                              'absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 text-white rounded-md font-medium text-sm transition-all duration-150',
+                              !selectedOption
+                                ? 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                                : 'bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)]'
+                            )}
                           >
                             Continue
                           </button>
