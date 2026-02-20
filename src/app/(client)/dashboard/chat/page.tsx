@@ -113,6 +113,17 @@ export default function ChatPage() {
     draftUpdateTimer.current = setTimeout(() => setDrafts(getDrafts()), 500)
   }, [])
 
+  // Warn before leaving if user has an active chat session
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    if (hasUrlParams) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    }
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUrlParams])
+
   // Get user credits from context
   const { credits: userCredits } = useCredits()
 
