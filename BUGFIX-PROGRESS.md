@@ -58,7 +58,7 @@
 | UX-010 | Show specific intent instead of generic               | [x]    |
 | UX-011 | Handle missing audience data                          | [x]    |
 | UX-012 | Explain revision count                                | [x]    |
-| UX-013 | Add pre-submission brief review                       | [ ]    |
+| UX-013 | Add pre-submission brief review                       | [x]    |
 | UX-014 | Add "Start Another Project" to success screen         | [x]    |
 | UX-015 | Improve "Get Credits to Submit" messaging             | [x]    |
 | UX-016 | Move radio buttons to left-aligned                    | [x]    |
@@ -312,12 +312,15 @@
 - **Fix**: Updated description to mention content calendar planning
 - **Commit**: `7cdad72`
 
----
-
-## Remaining Items
-
 ### UX-013: Add pre-submission brief review
 
-- **Status**: NOT STARTED
-- **Description**: Before "Confirm & Submit", show an expandable summary of the full brief (summary, audience, platform, structure, visual direction) that users can review and edit inline.
-- **Complexity**: Medium — requires adding a review panel to the submit action bar that pulls data from the LiveBrief. Consider adding a collapsible section between the task title and the stats cards in the expanded SubmitActionBar.
+- **Status**: COMPLETE
+- **Files**: `src/components/chat/submit-action-bar.tsx`, `src/components/chat/chat-input-area.tsx`, `src/components/chat/chat-interface.tsx`
+- **Fix**: Added collapsible `BriefReviewSection` component in the expanded SubmitActionBar. Shows topic, goal, platform, audience, and visual direction from LiveBrief. Threaded `brief` prop through ChatInputArea from ChatInterface.
+- **Commit**: `3d2565c`
+
+---
+
+## All Items Complete
+
+All bugs and UX improvements from BUGFIX-REPORT.md have been addressed. Two items were skipped due to architectural constraints (BUG-007) or non-reproducibility (UX-002).
