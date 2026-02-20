@@ -31,7 +31,7 @@ vi.mock('drizzle-orm', () => ({
 
 const { GET } = await import('./route')
 
-function chainableSelect(result: unknown[]) {
+function _chainableSelect(result: unknown[]) {
   return {
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
