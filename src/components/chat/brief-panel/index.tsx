@@ -332,27 +332,39 @@ Topic: ${brief.topic.value || 'TBD'}
             )}
           </button>
         </div>
-        {/* Progress bar */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1 rounded-full bg-border/30 overflow-hidden">
-            <motion.div
+        {/* Progress bar with label */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span
               className={cn(
-                'h-full rounded-full',
-                isReady ? 'bg-emerald-500' : 'bg-emerald-500/50'
+                'text-[11px] font-medium',
+                isReady ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/70'
               )}
-              initial={{ width: 0 }}
-              animate={{ width: `${completion}%` }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-            />
+            >
+              {isReady ? 'Ready to submit' : `${completion}% complete`}
+            </span>
           </div>
-          <span
-            className={cn(
-              'text-[10px] tabular-nums',
-              isReady ? 'text-emerald-500' : 'text-muted-foreground/50'
-            )}
-          >
-            {completion}%
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1.5 rounded-full bg-border/30 overflow-hidden">
+              <motion.div
+                className={cn(
+                  'h-full rounded-full',
+                  isReady ? 'bg-emerald-500' : 'bg-emerald-500/50'
+                )}
+                initial={{ width: 0 }}
+                animate={{ width: `${completion}%` }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              />
+            </div>
+            <span
+              className={cn(
+                'text-[10px] tabular-nums font-medium',
+                isReady ? 'text-emerald-500' : 'text-muted-foreground/50'
+              )}
+            >
+              {completion}%
+            </span>
+          </div>
         </div>
       </div>
 
