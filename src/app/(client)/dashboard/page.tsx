@@ -880,7 +880,7 @@ function DashboardContent() {
           className="w-full max-w-[780px] mt-5"
         >
           <p className="text-center text-xs text-muted-foreground/60 mb-4">
-            or choose from one of these examples
+            or start from a template
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
