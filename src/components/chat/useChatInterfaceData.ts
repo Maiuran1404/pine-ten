@@ -143,6 +143,48 @@ export function useChatInterfaceData({
     }
   }, [moodboardItems, syncMoodboardToVisualDirection])
 
+  // ─── Sync server brief into client brief panel ─────────────
+  // The server state machine extracts richer field values via AI.
+  // Merge those into the client-side brief so the panel shows them.
+  const lastSyncedBriefRef = useRef<string | null>(null)
+  useEffect(() => {
+    const serverBrief = _briefingState?.brief
+    if (!serverBrief) return
+
+    // Deduplicate: only sync when the server brief actually changed
+    const syncKey = serverBrief.updatedAt?.toString() ?? ''
+    if (lastSyncedBriefRef.current === syncKey) return
+    lastSyncedBriefRef.current = syncKey
+
+    updateBrief({
+      ...brief,
+      // Only overwrite fields where the server has higher-confidence data
+      ...(serverBrief.taskSummary.value &&
+      serverBrief.taskSummary.confidence > brief.taskSummary.confidence
+        ? { taskSummary: serverBrief.taskSummary }
+        : {}),
+      ...(serverBrief.taskType.value && serverBrief.taskType.confidence > brief.taskType.confidence
+        ? { taskType: serverBrief.taskType }
+        : {}),
+      ...(serverBrief.intent.value && serverBrief.intent.confidence > brief.intent.confidence
+        ? { intent: serverBrief.intent }
+        : {}),
+      ...(serverBrief.platform.value && serverBrief.platform.confidence > brief.platform.confidence
+        ? { platform: serverBrief.platform }
+        : {}),
+      ...(serverBrief.audience.value && serverBrief.audience.confidence > brief.audience.confidence
+        ? { audience: serverBrief.audience }
+        : {}),
+      ...(serverBrief.topic.value && serverBrief.topic.confidence > brief.topic.confidence
+        ? { topic: serverBrief.topic }
+        : {}),
+      ...(serverBrief.dimensions.length > 0 ? { dimensions: serverBrief.dimensions } : {}),
+      ...(serverBrief.contentOutline ? { contentOutline: serverBrief.contentOutline } : {}),
+      updatedAt: new Date(),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_briefingState?.brief?.updatedAt])
+
   // ─── Storyboard / Structure panel ────────────────────────────
   // We need a forward ref for handleSendOption, which is created by useChatMessages
   // below. We use a placeholder callback that gets populated after useChatMessages is
