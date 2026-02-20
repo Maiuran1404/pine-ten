@@ -489,6 +489,7 @@ export function ChatInterface({
                 const last = [...messages].reverse().find((m) => m.role === 'assistant')
                 return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
               })()}
+              animatingMessageId={animatingMessageId}
               handleSend={handleSend}
               handleFileUpload={handleFileUpload}
               handleRequestTaskSummary={handleRequestTaskSummary}

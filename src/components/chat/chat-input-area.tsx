@@ -79,6 +79,9 @@ export interface ChatInputAreaProps {
   // When true, a strategic review card with its own CTA is showing — hide quick option chips
   hasStrategicReviewCTA?: boolean
 
+  // Typing animation state — when set, quick options are hidden until animation completes
+  animatingMessageId?: string | null
+
   // Scene references
   sceneReferences?: { sceneNumber: number; title: string }[]
   onRemoveSceneReference?: (sceneNumber: number) => void
@@ -123,6 +126,7 @@ export function ChatInputArea({
   stateMachineQuickOptions,
   onQuickOptionClick,
   hasStrategicReviewCTA = false,
+  animatingMessageId = null,
   sceneReferences = [],
   onRemoveSceneReference,
   handleSend,
@@ -153,6 +157,7 @@ export function ChatInputArea({
           stateMachineQuickOptions.options.length > 0 &&
           onQuickOptionClick &&
           !isLoading &&
+          !animatingMessageId &&
           !input.trim() &&
           !hasStrategicReviewCTA &&
           sceneReferences.length === 0 && (
@@ -174,6 +179,7 @@ export function ChatInputArea({
                     options={stateMachineQuickOptions}
                     onSelect={onQuickOptionClick}
                     disabled={isLoading}
+                    showSkip={briefingStage !== 'EXTRACT'}
                   />
                 </div>
                 {messages.length > 0 &&
