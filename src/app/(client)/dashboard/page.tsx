@@ -366,7 +366,7 @@ function DashboardContent() {
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && data?.data) {
-          setStyleReferences(data.data)
+          setStyleReferences(data.data.data ?? data.data)
         }
       })
       .catch(() => setFetchError('Failed to load style references'))
