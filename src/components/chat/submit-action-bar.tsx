@@ -12,16 +12,25 @@ import {
   RotateCcw,
   Pencil,
   ChevronDown,
+  ChevronRight,
   ShoppingCart,
+  FileText,
+  Users,
+  Target,
+  Monitor,
+  Palette,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type TaskProposal, type MoodboardItem, getDeliveryDateString } from './types'
+import type { LiveBrief } from './brief-panel/types'
+import { INTENT_DESCRIPTIONS, PLATFORM_DISPLAY_NAMES } from './brief-panel/types'
 
 interface SubmitActionBarProps {
   taskProposal: TaskProposal
   moodboardItems: MoodboardItem[]
   userCredits: number
   isSubmitting: boolean
+  brief?: LiveBrief | null
   onConfirm: () => Promise<void>
   onMakeChanges: () => void
   onInsufficientCredits: () => void
@@ -32,11 +41,13 @@ export function SubmitActionBar({
   moodboardItems,
   userCredits,
   isSubmitting,
+  brief,
   onConfirm,
   onMakeChanges,
   onInsufficientCredits,
 }: SubmitActionBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isBriefReviewOpen, setIsBriefReviewOpen] = useState(false)
 
   const creditsRequired = taskProposal.creditsRequired ?? 15
   const deliveryDays = taskProposal.deliveryDays ?? 3
@@ -179,9 +190,18 @@ export function SubmitActionBar({
               <h3 className="text-lg font-bold text-foreground mb-1">
                 {taskProposal.title || 'Your Design Brief'}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                 {taskProposal.description}
               </p>
+
+              {/* Brief review section */}
+              {brief && (
+                <BriefReviewSection
+                  brief={brief}
+                  isOpen={isBriefReviewOpen}
+                  onToggle={() => setIsBriefReviewOpen((v) => !v)}
+                />
+              )}
 
               {/* Moodboard thumbnails */}
               {moodboardImages.length > 0 && (
@@ -295,5 +315,93 @@ export function SubmitActionBar({
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  )
+}
+
+// =============================================================================
+// BRIEF REVIEW SECTION
+// =============================================================================
+
+function BriefReviewSection({
+  brief,
+  isOpen,
+  onToggle,
+}: {
+  brief: LiveBrief
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const intentValue = brief.intent.value ? INTENT_DESCRIPTIONS[brief.intent.value] : null
+  const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
+  const audienceName = brief.audience.value?.name || null
+  const audienceDemographics = brief.audience.value?.demographics || null
+  const topicValue = brief.topic.value || null
+  const styleCount = brief.visualDirection?.selectedStyles.length ?? 0
+  const dimensionCount = brief.dimensions.length
+
+  const fields = [
+    { icon: FileText, label: 'Topic', value: topicValue },
+    { icon: Target, label: 'Goal', value: intentValue },
+    { icon: Monitor, label: 'Platform', value: platformValue },
+    {
+      icon: Users,
+      label: 'Audience',
+      value: audienceName
+        ? audienceDemographics
+          ? `${audienceName} — ${audienceDemographics}`
+          : audienceName
+        : null,
+    },
+    {
+      icon: Palette,
+      label: 'Visual direction',
+      value: styleCount > 0 ? `${styleCount} style${styleCount > 1 ? 's' : ''} selected` : null,
+    },
+  ].filter((f) => f.value)
+
+  if (fields.length === 0) return null
+
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+      >
+        <ChevronRight
+          className={cn('h-3.5 w-3.5 transition-transform duration-200', isOpen && 'rotate-90')}
+        />
+        Review brief details
+        {dimensionCount > 0 && (
+          <span className="text-[10px] text-muted-foreground/60">
+            ({dimensionCount} size{dimensionCount > 1 ? 's' : ''})
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+              {fields.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-2">
+                  <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+                    <p className="text-xs text-foreground leading-snug line-clamp-2">{value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

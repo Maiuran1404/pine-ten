@@ -28,6 +28,7 @@ import type {
 } from './types'
 import { QuickOptions } from './quick-options'
 import { SubmitActionBar } from './submit-action-bar'
+import type { LiveBrief } from './brief-panel/types'
 
 // =============================================================================
 // PROPS
@@ -75,6 +76,7 @@ export interface ChatInputAreaProps {
   onMakeChanges?: () => void
   onInsufficientCredits?: () => void
   isSubmitting?: boolean
+  brief?: LiveBrief | null
 
   // When true, a strategic review card with its own CTA is showing — hide quick option chips
   hasStrategicReviewCTA?: boolean
@@ -123,6 +125,7 @@ export function ChatInputArea({
   onMakeChanges,
   onInsufficientCredits,
   isSubmitting = false,
+  brief,
   stateMachineQuickOptions,
   onQuickOptionClick,
   hasStrategicReviewCTA = false,
@@ -142,6 +145,7 @@ export function ChatInputArea({
         moodboardItems={moodboardItems}
         userCredits={userCredits}
         isSubmitting={isSubmitting}
+        brief={brief}
         onConfirm={onConfirmTask}
         onMakeChanges={onMakeChanges}
         onInsufficientCredits={onInsufficientCredits}

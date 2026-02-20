@@ -483,6 +483,7 @@ export function ChatInterface({
               onMakeChanges={handleRejectTask}
               onInsufficientCredits={handleInsufficientCredits}
               isSubmitting={isLoading}
+              brief={brief}
               stateMachineQuickOptions={resolvedQuickOptions}
               onQuickOptionClick={handleSendOption}
               hasStrategicReviewCTA={(() => {
