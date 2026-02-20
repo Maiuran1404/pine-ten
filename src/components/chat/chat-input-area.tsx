@@ -99,6 +99,9 @@ export interface ChatInputAreaProps {
 // COMPONENT
 // =============================================================================
 
+// Stages too early for "I'm ready to submit" — not enough brief info yet
+const EARLY_STAGES = new Set(['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'])
+
 export function ChatInputArea({
   messages,
   input,
@@ -188,7 +191,7 @@ export function ChatInputArea({
                 </div>
                 {messages.length > 0 &&
                   !pendingTask &&
-                  (!briefingStage || briefingStage !== 'EXTRACT') && (
+                  (!briefingStage || !EARLY_STAGES.has(briefingStage)) && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -273,7 +276,7 @@ export function ChatInputArea({
       {messages.length > 0 &&
         !pendingTask &&
         !isLoading &&
-        (!briefingStage || briefingStage !== 'EXTRACT') &&
+        (!briefingStage || !EARLY_STAGES.has(briefingStage)) &&
         !(
           stateMachineQuickOptions &&
           stateMachineQuickOptions.options.length > 0 &&
