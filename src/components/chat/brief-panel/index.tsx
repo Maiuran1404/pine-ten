@@ -7,7 +7,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { LiveBrief, FieldSource } from './types'
-import { PLATFORM_DISPLAY_NAMES, calculateBriefCompletion, isBriefReadyForDesigner } from './types'
+import {
+  PLATFORM_DISPLAY_NAMES,
+  INTENT_DESCRIPTIONS,
+  calculateBriefCompletion,
+  isBriefReadyForDesigner,
+} from './types'
 
 // =============================================================================
 // SLEEK FIELD ROW - With suggestions and status indicators
@@ -122,9 +127,7 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
   // Get display values
   const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
   const audienceValue = brief.audience.value?.name || null
-  const intentValue = brief.intent.value
-    ? brief.intent.value.charAt(0).toUpperCase() + brief.intent.value.slice(1)
-    : null
+  const intentValue = brief.intent.value ? INTENT_DESCRIPTIONS[brief.intent.value] : null
 
   // Handlers to apply suggestions
   const applySuggestion = useCallback(
@@ -155,7 +158,7 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
         value={intentValue}
         source={brief.intent.source}
         confidence={brief.intent.confidence}
-        suggestion={!brief.intent.value ? 'Launch / Promote / Engage' : null}
+        suggestion={!brief.intent.value ? "What's the goal of this project?" : null}
         onUseSuggestion={() =>
           applySuggestion('intent', {
             value: 'launch',
@@ -183,7 +186,7 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
         value={audienceValue}
         source={brief.audience.source}
         confidence={brief.audience.confidence}
-        suggestion={brief.audience.value?.name ? null : 'From your brand profile'}
+        suggestion={brief.audience.value?.name ? null : 'Tell us about your audience'}
       />
       <SleekField
         label="Topic"
@@ -293,9 +296,7 @@ Topic: ${brief.topic.value || 'TBD'}
   // Get display values
   const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
   const audienceValue = brief.audience.value?.name || null
-  const intentValue = brief.intent.value
-    ? brief.intent.value.charAt(0).toUpperCase() + brief.intent.value.slice(1)
-    : null
+  const intentValue = brief.intent.value ? INTENT_DESCRIPTIONS[brief.intent.value] : null
 
   // Handlers to apply suggestions
   const applySuggestion = useCallback(
@@ -370,7 +371,7 @@ Topic: ${brief.topic.value || 'TBD'}
             value={intentValue}
             source={brief.intent.source}
             confidence={brief.intent.confidence}
-            suggestion={!brief.intent.value ? 'Launch / Promote / Engage' : null}
+            suggestion={!brief.intent.value ? "What's the goal of this project?" : null}
             onUseSuggestion={() =>
               applySuggestion('intent', {
                 value: 'launch',
@@ -398,7 +399,7 @@ Topic: ${brief.topic.value || 'TBD'}
             value={audienceValue}
             source={brief.audience.source}
             confidence={brief.audience.confidence}
-            suggestion={brief.audience.value?.name ? null : 'From your brand profile'}
+            suggestion={brief.audience.value?.name ? null : 'Tell us about your audience'}
           />
           <SleekField
             label="Topic"
