@@ -1,15 +1,41 @@
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { db } from '@/db'
 import { users, tasks, creditTransactions, sessions } from '@/db/schema'
-import { eq, count, sum, max } from 'drizzle-orm'
+import { eq, count, sum, max, and, or, ilike } from 'drizzle-orm'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 
-export async function GET() {
+const querySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
+  search: z.string().optional(),
+})
+
+export async function GET(request: NextRequest) {
   return withErrorHandling(
     async () => {
       await requireAdmin()
 
-      // Get all clients
+      const searchParams = request.nextUrl.searchParams
+      const { page, pageSize, search } = querySchema.parse({
+        page: searchParams.get('page') ?? undefined,
+        pageSize: searchParams.get('pageSize') ?? undefined,
+        search: searchParams.get('search') ?? undefined,
+      })
+
+      // Build where conditions
+      const conditions = [eq(users.role, 'CLIENT')]
+      if (search) {
+        conditions.push(or(ilike(users.name, `%${search}%`), ilike(users.email, `%${search}%`))!)
+      }
+
+      const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions)
+
+      // Get total count of matching clients
+      const [{ total }] = await db.select({ total: count() }).from(users).where(whereClause)
+
+      // Get paginated clients
       const clients = await db
         .select({
           id: users.id,
@@ -20,7 +46,9 @@ export async function GET() {
           createdAt: users.createdAt,
         })
         .from(users)
-        .where(eq(users.role, 'CLIENT'))
+        .where(whereClause)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
 
       // Get task counts for each client - use a safer approach
       const taskCountsRaw = await db
@@ -79,7 +107,15 @@ export async function GET() {
         lastActiveAt: lastActiveMap.get(client.id) ?? null,
       }))
 
-      return successResponse({ clients: clientsWithStats })
+      const totalPages = Math.ceil(total / pageSize)
+
+      return successResponse({
+        clients: clientsWithStats,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      })
     },
     { endpoint: 'GET /api/admin/clients' }
   )
