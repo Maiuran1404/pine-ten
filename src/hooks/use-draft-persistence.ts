@@ -94,6 +94,12 @@ export function useDraftPersistence({
   const [isInitialized, setIsInitialized] = useState(false)
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false)
 
+  // Ref to access current messages without creating dependency cycles
+  const messagesRef = useRef(messages)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
   // Load draft when draftId changes
   useEffect(() => {
     if (isTaskMode && taskData?.chatHistory) {
@@ -182,8 +188,9 @@ export function useDraftPersistence({
     if (!initialMessage || initialMessageProcessed || !isInitialized) return
     setInitialMessageProcessed(true) // eslint-disable-line react-hooks/set-state-in-effect -- one-time guard requires synchronous flag
 
-    if (messages.length > 0) {
-      const firstUserMessage = messages.find((m) => m.role === 'user')
+    const currentMessages = messagesRef.current
+    if (currentMessages.length > 0) {
+      const firstUserMessage = currentMessages.find((m) => m.role === 'user')
       if (firstUserMessage && firstUserMessage.content === initialMessage) {
         const url = new URL(window.location.href)
         url.searchParams.delete('message')
@@ -191,7 +198,7 @@ export function useDraftPersistence({
         window.history.replaceState({}, '', url.toString())
         return
       }
-      const hasAssistantResponse = messages.some((m) => m.role === 'assistant')
+      const hasAssistantResponse = currentMessages.some((m) => m.role === 'assistant')
       if (hasAssistantResponse) {
         const url = new URL(window.location.href)
         url.searchParams.delete('message')
@@ -241,7 +248,6 @@ export function useDraftPersistence({
     initialMessageProcessed,
     isInitialized,
     seamlessTransition,
-    messages,
     draftId,
     processBriefMessage,
     setMessages,

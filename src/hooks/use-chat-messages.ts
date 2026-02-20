@@ -71,6 +71,10 @@ export function useChatMessages({
   const [needsAutoContinue, setNeedsAutoContinue] = useState(false)
   const requestStartTimeRef = useRef<number | null>(null)
 
+  // Ref to access current messages without creating dependency cycles in callbacks
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
+
   // Process API response into assistant message
   const processApiResponse = useCallback(
     (data: ChatApiResponse, resolvedStructureDataOverride?: StructureData) => {
@@ -157,7 +161,7 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messages, userMessage].map((m) => ({
+            messages: [...messagesRef.current, userMessage].map((m) => ({
               role: m.role,
               content: m.content,
               attachments: m.attachments,
@@ -190,7 +194,6 @@ export function useChatMessages({
       }
     },
     [
-      messages,
       selectedStyles,
       moodboardHasStyles,
       processBriefMessage,
@@ -222,7 +225,7 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messages, userMessage].map((m) => ({
+            messages: [...messagesRef.current, userMessage].map((m) => ({
               role: m.role,
               content: m.content,
             })),
@@ -252,7 +255,6 @@ export function useChatMessages({
     },
     [
       isLoading,
-      messages,
       selectedStyles,
       moodboardHasStyles,
       serializedBriefingState,
@@ -284,7 +286,7 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messages, userMessage].map((m) => ({
+            messages: [...messagesRef.current, userMessage].map((m) => ({
               role: m.role,
               content: m.content,
             })),
@@ -306,13 +308,14 @@ export function useChatMessages({
         setIsLoading(false)
       }
     },
-    [messages, serializedBriefingState, processApiResponse]
+    [serializedBriefingState, processApiResponse]
   )
 
   // Auto-continue conversation if last message was from user
   const runAutoContinue = useCallback(async () => {
-    if (isLoading || messages.length === 0) return
-    const lastMessage = messages[messages.length - 1]
+    const currentMessages = messagesRef.current
+    if (isLoading || currentMessages.length === 0) return
+    const lastMessage = currentMessages[currentMessages.length - 1]
     if (lastMessage.role !== 'user') return
 
     setIsLoading(true)
@@ -324,7 +327,7 @@ export function useChatMessages({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: currentMessages.map((m) => ({ role: m.role, content: m.content })),
           selectedStyles,
           moodboardHasStyles,
           briefingState: serializedBriefingState,
@@ -342,14 +345,7 @@ export function useChatMessages({
       setIsLoading(false)
       requestStartTimeRef.current = null
     }
-  }, [
-    isLoading,
-    messages,
-    selectedStyles,
-    moodboardHasStyles,
-    serializedBriefingState,
-    processApiResponse,
-  ])
+  }, [isLoading, selectedStyles, moodboardHasStyles, serializedBriefingState, processApiResponse])
 
   const handleCopyMessage = useCallback(async (content: string, messageId: string) => {
     try {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   type MoodboardItem,
   type DeliverableStyle,
@@ -33,6 +33,12 @@ export function useMoodboard(options: UseMoodboardOptions = {}): UseMoodboardRet
   const { initialItems = [], onItemsChange } = options
   const [items, setItems] = useState<MoodboardItem[]>(initialItems)
 
+  // Ref to access current items without creating dependency cycles
+  const itemsRef = useRef(items)
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
   // Notify parent when items change
   useEffect(() => {
     onItemsChange?.(items)
@@ -44,17 +50,13 @@ export function useMoodboard(options: UseMoodboardOptions = {}): UseMoodboardRet
 
   const addItem = useCallback(
     (item: Omit<MoodboardItem, 'id' | 'order' | 'addedAt'>): MoodboardItem => {
-      const newItem: MoodboardItem = {
-        ...item,
-        id: generateId(),
-        order: items.length,
-        addedAt: new Date(),
-      }
-
-      setItems((prev) => [...prev, newItem])
+      const id = generateId()
+      const addedAt = new Date()
+      const newItem: MoodboardItem = { ...item, id, order: 0, addedAt }
+      setItems((prev) => [...prev, { ...newItem, order: prev.length }])
       return newItem
     },
-    [items.length, generateId]
+    [generateId]
   )
 
   const removeItem = useCallback((id: string) => {
@@ -85,16 +87,13 @@ export function useMoodboard(options: UseMoodboardOptions = {}): UseMoodboardRet
     setItems([])
   }, [])
 
-  const hasItem = useCallback(
-    (id: string) => {
-      return items.some((item) => item.id === id || item.metadata?.styleId === id)
-    },
-    [items]
-  )
+  const hasItem = useCallback((id: string) => {
+    return itemsRef.current.some((item) => item.id === id || item.metadata?.styleId === id)
+  }, [])
 
   const getItemCount = useCallback(() => {
-    return items.length
-  }, [items])
+    return itemsRef.current.length
+  }, [])
 
   /**
    * Add a deliverable style to the moodboard

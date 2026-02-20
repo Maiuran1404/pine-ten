@@ -1,56 +1,53 @@
 'use client'
 
 import * as React from 'react'
-import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
 
 import { cn } from '@/lib/utils'
 
-function ScrollArea({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+/**
+ * Native scroll area replacement for @radix-ui/react-scroll-area.
+ *
+ * Radix ScrollArea has a React 19 incompatibility: its internal
+ * `useComposedRefs(forwardedRef, (node) => setScrollArea(node))` creates an
+ * unstable callback ref on every render, causing an infinite
+ * setState → re-render → ref detach/reattach loop that crashes with
+ * "Maximum update depth exceeded".
+ *
+ * This native implementation provides the same API surface (className, ref,
+ * children) with identical data-slot attributes so existing querySelector
+ * calls (e.g. `[data-radix-scroll-area-viewport]`) continue to work.
+ */
+function ScrollArea({ className, children, ref, ...props }: React.ComponentPropsWithRef<'div'>) {
   return (
-    <ScrollAreaPrimitive.Root
+    <div
+      ref={ref}
       data-slot="scroll-area"
-      className={cn('relative', className)}
+      className={cn('relative overflow-hidden', className)}
       {...props}
     >
-      <ScrollAreaPrimitive.Viewport
+      <div
         data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
+        data-radix-scroll-area-viewport=""
+        className="size-full overflow-y-auto overflow-x-hidden rounded-[inherit]"
       >
         {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
+      </div>
+    </div>
   )
 }
 
 function ScrollBar({
   className,
   orientation = 'vertical',
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
-  return (
-    <ScrollAreaPrimitive.ScrollAreaScrollbar
-      data-slot="scroll-area-scrollbar"
-      orientation={orientation}
-      className={cn(
-        'flex touch-none p-px transition-colors select-none',
-        orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
-        orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
-        className
-      )}
-      {...props}
-    >
-      <ScrollAreaPrimitive.ScrollAreaThumb
-        data-slot="scroll-area-thumb"
-        className="bg-border relative flex-1 rounded-full"
-      />
-    </ScrollAreaPrimitive.ScrollAreaScrollbar>
-  )
+}: {
+  className?: string
+  orientation?: 'vertical' | 'horizontal'
+}) {
+  // Native scrollbars are used instead of custom Radix scrollbars.
+  // This component is kept for API compatibility but renders nothing.
+  void className
+  void orientation
+  return null
 }
 
 export { ScrollArea, ScrollBar }

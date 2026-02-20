@@ -31,6 +31,7 @@ import {
   constructTaskFromConversation,
 } from './chat-interface.utils'
 import type { TaskData } from './chat-interface'
+import type { TaskProposal } from './types'
 
 interface UseChatInterfaceDataOptions {
   draftId: string
@@ -59,6 +60,26 @@ export function useChatInterfaceData({
   const chatStartedRef = useRef(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showStartOverDialog, setShowStartOverDialog] = useState(false)
+
+  // Stable no-op callbacks for draft persistence (styleOffset and excludedAxes
+  // are internal to useStyleSelection — these avoid re-creating () => {} each render)
+  const noopSetStyleOffset = useCallback(() => {}, [])
+  const noopSetExcludedStyleAxes = useCallback(() => {}, [])
+
+  // Forward-reference refs for callbacks that target hooks defined later in the
+  // composition chain (useTaskSubmission, useStyleSelection).  Without refs the
+  // inline arrow closures would be new on every render, destabilising
+  // processApiResponse and every callback that depends on it.
+  const taskSetPendingRef = useRef<(proposal: TaskProposal) => void>(() => {})
+  const styleSetDeliverableTypeRef = useRef<(type: string) => void>(() => {})
+  const stableOnTaskProposal = useCallback(
+    (proposal: TaskProposal) => taskSetPendingRef.current(proposal),
+    []
+  )
+  const stableOnDeliverableTypeChange = useCallback(
+    (type: string) => styleSetDeliverableTypeRef.current(type),
+    []
+  )
 
   // ─── Moodboard ───────────────────────────────────────────────
   const {
@@ -141,8 +162,8 @@ export function useChatInterfaceData({
     serializedBriefingState,
     syncBriefingFromServer,
     processBriefMessage,
-    onTaskProposal: (proposal) => task.setPendingTask(proposal),
-    onDeliverableTypeChange: (type) => styleSelection.setCurrentDeliverableType(type),
+    onTaskProposal: stableOnTaskProposal,
+    onDeliverableTypeChange: stableOnDeliverableTypeChange,
     onStructureData: storyboard.updateStructureData,
     onSceneImageMatches: storyboard.processSceneImageMatches,
     latestStoryboardRef: storyboard.latestStoryboardRef,
@@ -196,6 +217,9 @@ export function useChatInterfaceData({
   })
 
   // ─── Task submission ─────────────────────────────────────────
+  // Wire up forward-reference refs now that task/styleSelection are available
+  styleSetDeliverableTypeRef.current = styleSelection.setCurrentDeliverableType
+
   const task = useTaskSubmission({
     draftId,
     messages: chatMessages.messages,
@@ -211,6 +235,9 @@ export function useChatInterfaceData({
     briefingState: _briefingState,
     scrollAreaRef,
   })
+
+  // Wire up task forward-reference ref
+  taskSetPendingRef.current = task.setPendingTask
 
   // ─── Smart completion ───────────────────────────────────────
   const smartCompletion = useSmartCompletion({
@@ -232,8 +259,8 @@ export function useChatInterfaceData({
     setPendingTask: task.setPendingTask,
     setCompletedTypingIds: chatMessages.setCompletedTypingIds,
     setCurrentDeliverableType: styleSelection.setCurrentDeliverableType,
-    setStyleOffset: () => {}, // style offset is internal to useStyleSelection
-    setExcludedStyleAxes: () => {}, // excluded axes is internal to useStyleSelection
+    setStyleOffset: noopSetStyleOffset,
+    setExcludedStyleAxes: noopSetExcludedStyleAxes,
     setNeedsAutoContinue: chatMessages.setNeedsAutoContinue,
     setShowSubmissionModal: task.setShowSubmissionModal,
     clearMoodboard,
@@ -297,21 +324,27 @@ export function useChatInterfaceData({
     }
   }, [chatMessages.messages.length, onChatStart])
 
+  // ─── Messages ref (avoids dependency cycles in effects below) ─
+  const messagesRef = useRef(chatMessages.messages)
+  useEffect(() => {
+    messagesRef.current = chatMessages.messages
+  }, [chatMessages.messages])
+
   // ─── Auto-continue ──────────────────────────────────────────
   useEffect(() => {
     if (
       !chatMessages.needsAutoContinue ||
       chatMessages.isLoading ||
-      chatMessages.messages.length === 0
+      messagesRef.current.length === 0
     )
       return
-    const lastMessage = chatMessages.messages[chatMessages.messages.length - 1]
+    const lastMessage = messagesRef.current[messagesRef.current.length - 1]
     if (lastMessage.role !== 'user') return
 
     chatMessages.setNeedsAutoContinue(false)
     chatMessages.runAutoContinue()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatMessages.needsAutoContinue, chatMessages.isLoading, chatMessages.messages])
+  }, [chatMessages.needsAutoContinue, chatMessages.isLoading])
 
   // ─── Stability: restore storyboard from briefing state ──────
   useEffect(() => {
@@ -324,37 +357,36 @@ export function useChatInterfaceData({
 
   // ─── Detect "ready to execute" patterns ─────────────────────
   useEffect(() => {
-    const lastMessage = chatMessages.messages[chatMessages.messages.length - 1]
+    const lastMessage = messagesRef.current[messagesRef.current.length - 1]
     task.checkReadyIndicator(lastMessage)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatMessages.messages])
+  }, [chatMessages.messages.length])
 
   // ─── Auto-construct task proposal at SUBMIT stage ───────────
   useEffect(() => {
-    if (task.pendingTask || chatMessages.isLoading || chatMessages.messages.length === 0) return
+    const msgs = messagesRef.current
+    if (task.pendingTask || chatMessages.isLoading || msgs.length === 0) return
     const stage = _briefingState?.stage
 
     const shouldConstruct =
       stage === 'SUBMIT' ||
       (stage === 'REVIEW' &&
-        chatMessages.messages[chatMessages.messages.length - 1]?.role === 'assistant' &&
-        hasReadyIndicator(chatMessages.messages[chatMessages.messages.length - 1].content))
+        msgs[msgs.length - 1]?.role === 'assistant' &&
+        hasReadyIndicator(msgs[msgs.length - 1].content))
 
     if (!shouldConstruct) return
 
-    const constructedTask = constructTaskFromConversation(
-      chatMessages.messages,
-      _briefingState?.brief
-    )
+    const constructedTask = constructTaskFromConversation(msgs, _briefingState?.brief)
     task.setPendingTask(constructedTask)
 
     chatMessages.setMessages((prev) => {
-      const updated = [...prev]
-      const lastIdx = updated.length - 1
-      if (lastIdx >= 0 && updated[lastIdx].role === 'assistant' && !updated[lastIdx].taskProposal) {
+      const lastIdx = prev.length - 1
+      if (lastIdx >= 0 && prev[lastIdx].role === 'assistant' && !prev[lastIdx].taskProposal) {
+        const updated = [...prev]
         updated[lastIdx] = { ...updated[lastIdx], taskProposal: constructedTask }
+        return updated
       }
-      return updated
+      return prev
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -362,7 +394,7 @@ export function useChatInterfaceData({
     _briefingState?.brief,
     task.pendingTask,
     chatMessages.isLoading,
-    chatMessages.messages,
+    chatMessages.messages.length,
   ])
 
   // ─── Sync taskData state with initialTaskData prop ──────────
