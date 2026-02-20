@@ -97,9 +97,15 @@ vi.mock('@/lib/validations', () => ({
 // -- DB mocks (transaction-level) --
 const mockWithTransaction = vi.fn()
 const mockSelect = vi.fn()
+const mockBriefsFindFirst = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/db', () => ({
   db: {
     select: (...args: unknown[]) => mockSelect(...args),
+    query: {
+      briefs: {
+        findFirst: (...args: unknown[]) => mockBriefsFindFirst(...args),
+      },
+    },
   },
   withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }))
