@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -20,11 +21,13 @@ import {
   PanelLeft,
   Building2,
   User,
+  MessageSquare,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
+import { getDrafts } from '@/lib/chat-drafts'
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -32,6 +35,14 @@ export function AppSidebar() {
   const { credits } = useCredits()
   const { state, setOpen } = useSidebar()
   const isCollapsed = state === 'collapsed'
+
+  // Load recent drafts (only when expanded)
+  const drafts = useMemo(() => {
+    if (isCollapsed) return []
+    const allDrafts = getDrafts()
+    // Show up to 5 recent drafts that have at least one user message
+    return allDrafts.filter((d) => d.messages.some((m) => m.role === 'user')).slice(0, 5)
+  }, [isCollapsed, pathname]) // Re-fetch when navigating back to sidebar
 
   const handleStartNewChat = () => {
     router.push('/dashboard')
@@ -191,6 +202,30 @@ export function AppSidebar() {
             ))}
           </nav>
         </div>
+
+        {/* Recent Drafts section */}
+        {drafts.length > 0 && (
+          <div className="px-4 pb-2">
+            <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+              Recent Drafts
+            </p>
+            <nav className="space-y-0.5">
+              {drafts.map((draft) => (
+                <Link
+                  key={draft.id}
+                  href={`/dashboard/chat?draft=${draft.id}`}
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
+                    'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{draft.title || 'Untitled draft'}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </SidebarContent>
 
       {/* Theme toggle and Credits card at bottom */}
