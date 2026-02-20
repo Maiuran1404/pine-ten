@@ -333,8 +333,9 @@ export function useChatInterfaceData({
       pendingTask: task.pendingTask,
       taskSubmitted: task.taskSubmitted,
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    _briefingState,
+    _briefingState?.stage,
     chatMessages.messages,
     styleSelection.selectedStyles,
     styleSelection.selectedDeliverableStyles,
