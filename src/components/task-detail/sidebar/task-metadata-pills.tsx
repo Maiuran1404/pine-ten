@@ -1,5 +1,3 @@
-'use client'
-
 import { Coins, RefreshCw, Calendar, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TaskDetailData } from '@/components/task-detail/types'

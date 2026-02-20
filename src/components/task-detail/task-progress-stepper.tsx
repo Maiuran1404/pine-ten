@@ -1,5 +1,3 @@
-'use client'
-
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PROGRESS_STEPS, STATUS_CONFIG } from '@/components/task-detail/types'

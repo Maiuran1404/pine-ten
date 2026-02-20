@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * Floating organic blob shapes for background decoration
  * Automatically adapts colors for light and dark modes

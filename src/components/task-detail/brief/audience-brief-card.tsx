@@ -1,5 +1,3 @@
-'use client'
-
 import { Users } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

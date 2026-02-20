@@ -1,5 +1,3 @@
-'use client'
-
 import { Shield, CheckCircle2, AlertTriangle, Lightbulb } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import type { StrategicReviewData } from '@/components/task-detail/types'

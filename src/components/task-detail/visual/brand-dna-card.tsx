@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { Type } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'

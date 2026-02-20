@@ -1,5 +1,3 @@
-'use client'
-
 interface ColorPaletteRowProps {
   colors: string[]
 }
