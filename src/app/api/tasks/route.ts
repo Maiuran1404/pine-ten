@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       const offset = parseInt(searchParams.get('offset') || '0')
       const status = searchParams.get('status')
       const view = searchParams.get('view') // 'client' or 'freelancer' to force a specific view
+      const includeDeliverables = searchParams.get('includeDeliverables') === 'true'
 
       // Build conditions based on user role or explicit view parameter
       const user = session.user as { role?: string }
@@ -148,6 +149,43 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Batch-fetch deliverable files when requested (fixes N+1 in designs library)
+      type DeliverableFile = {
+        id: string
+        taskId: string
+        fileName: string
+        fileUrl: string
+        fileType: string
+        fileSize: number
+        isDeliverable: boolean
+        createdAt: Date
+      }
+      const deliverablesByTaskId = new Map<string, DeliverableFile[]>()
+      if (includeDeliverables && taskIds.length > 0) {
+        const deliverableFiles = await db
+          .select({
+            id: taskFiles.id,
+            taskId: taskFiles.taskId,
+            fileName: taskFiles.fileName,
+            fileUrl: taskFiles.fileUrl,
+            fileType: taskFiles.fileType,
+            fileSize: taskFiles.fileSize,
+            isDeliverable: taskFiles.isDeliverable,
+            createdAt: taskFiles.createdAt,
+          })
+          .from(taskFiles)
+          .where(and(inArray(taskFiles.taskId, taskIds), eq(taskFiles.isDeliverable, true)))
+
+        for (const file of deliverableFiles) {
+          const existing = deliverablesByTaskId.get(file.taskId)
+          if (existing) {
+            existing.push(file)
+          } else {
+            deliverablesByTaskId.set(file.taskId, [file])
+          }
+        }
+      }
+
       // Transform to include nested freelancer object
       const taskList = taskListRaw.map((task) => ({
         id: task.id,
@@ -173,6 +211,7 @@ export async function GET(request: NextRequest) {
               image: task.freelancerImage,
             }
           : null,
+        ...(includeDeliverables ? { files: deliverablesByTaskId.get(task.id) || [] } : {}),
       }))
 
       // Get stats

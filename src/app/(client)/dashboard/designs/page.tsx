@@ -257,8 +257,8 @@ export default function LibraryPage() {
         allFiles.push(...designs.map(designToLibraryFile))
       }
 
-      // Fetch tasks with deliverables (completed + in review)
-      const tasksResponse = await fetch('/api/tasks?view=client&limit=50')
+      // Fetch tasks with deliverables in a single batched request (includes files via inArray)
+      const tasksResponse = await fetch('/api/tasks?view=client&limit=50&includeDeliverables=true')
       if (tasksResponse.ok) {
         const tasksData = await tasksResponse.json()
         const tasks = tasksData.data?.tasks || tasksData.tasks || []
@@ -266,33 +266,30 @@ export default function LibraryPage() {
           ['COMPLETED', 'IN_REVIEW'].includes(t.status)
         )
 
-        // For each task with deliverables, fetch its files
-        for (const task of completedTasks.slice(0, 20)) {
-          try {
-            const taskResponse = await fetch(`/api/tasks/${task.id}`)
-            if (taskResponse.ok) {
-              const taskData = await taskResponse.json()
-              const taskDetail = taskData.data?.task || taskData.task
-              const taskFiles = taskDetail?.files || []
+        // Deliverable files are already included in each task via the batched query
+        for (const task of completedTasks) {
+          const taskFiles: {
+            id: string
+            fileName: string
+            fileUrl: string
+            fileSize: number
+            isDeliverable: boolean
+            createdAt: string
+          }[] = task.files || []
 
-              // Add deliverables to assets
-              for (const file of taskFiles) {
-                if (file.isDeliverable) {
-                  allFiles.push({
-                    id: file.id,
-                    name: file.fileName,
-                    size: formatFileSize(file.fileSize || 0),
-                    type: 'file',
-                    fileType: getFileExtension(file.fileName),
-                    createdAt: formatDate(file.createdAt),
-                    permission: 'Editor',
-                    url: file.fileUrl,
-                  })
-                }
-              }
+          for (const file of taskFiles) {
+            if (file.isDeliverable) {
+              allFiles.push({
+                id: file.id,
+                name: file.fileName,
+                size: formatFileSize(file.fileSize || 0),
+                type: 'file',
+                fileType: getFileExtension(file.fileName),
+                createdAt: formatDate(file.createdAt),
+                permission: 'Editor',
+                url: file.fileUrl,
+              })
             }
-          } catch (err) {
-            console.error(`Failed to fetch task ${task.id}:`, err)
           }
         }
       }
