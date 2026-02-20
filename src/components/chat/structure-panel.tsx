@@ -4,6 +4,7 @@ import { Film, Layout, Calendar, Palette, Loader2, Sparkles } from 'lucide-react
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
+import type { SceneImageData } from '@/hooks/use-storyboard'
 import { RichStoryboardPanel } from './storyboard-view'
 import { LayoutPreview } from './layout-preview'
 import { ContentCalendar } from './brief-panel/content-calendar'
@@ -17,7 +18,7 @@ interface StructurePanelProps {
   structureType: StructureData['type'] | null
   structureData: StructureData | null
   briefingStage?: string
-  sceneImageUrls?: Map<number, string>
+  sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
@@ -140,7 +141,7 @@ export function StructurePanel({
   structureType,
   structureData,
   briefingStage,
-  sceneImageUrls,
+  sceneImageData,
   isRegenerating,
   onSceneClick,
   onSelectionChange,
@@ -200,7 +201,7 @@ export function StructurePanel({
       {structureData.type === 'storyboard' && (
         <RichStoryboardPanel
           scenes={structureData.scenes}
-          sceneImageUrls={sceneImageUrls}
+          sceneImageData={sceneImageData}
           isRegenerating={isRegenerating}
           onSceneClick={onSceneClick}
           onSelectionChange={onSelectionChange}

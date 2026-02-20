@@ -630,7 +630,7 @@ export function useChatInterfaceData({
     storyboardScenes: storyboard.storyboardScenes,
     structureType: storyboard.structureType,
     structurePanelVisible: storyboard.structurePanelVisible,
-    sceneImageUrls: storyboard.sceneImageUrls,
+    sceneImageData: storyboard.sceneImageData,
     handleStrategicReviewAction,
     handleSceneEdit: storyboard.handleSceneEdit,
     handleSectionEdit: storyboard.handleSectionEdit,

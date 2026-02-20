@@ -218,7 +218,7 @@ export function ChatInterface({
     storyboardScenes,
     structureType,
     structurePanelVisible,
-    sceneImageUrls,
+    sceneImageData,
     handleStrategicReviewAction,
     handleSceneEdit,
     handleSectionEdit,
@@ -308,7 +308,7 @@ export function ChatInterface({
         onRegenerateField={showSubmissionSuccess ? undefined : handleRegenerateField}
         onSectionReorder={handleSectionReorder}
         onSectionEdit={handleSectionEdit}
-        sceneImageUrls={sceneImageUrls}
+        sceneImageData={sceneImageData}
         isRegenerating={isLoading}
         viewStructureRef={viewStructureRef}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
