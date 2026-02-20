@@ -214,7 +214,7 @@ describe('POST /api/admin/algorithm/publish', () => {
     const updateCallOrder: Array<{ operation: string }> = []
     let updateCallIndex = 0
     const mockTxUpdate = vi.fn().mockImplementation(() => {
-      const currentCall = updateCallIndex++
+      const _currentCall = updateCallIndex++
       return {
         set: vi.fn().mockImplementation((values: Record<string, unknown>) => {
           if (values.isActive === false) {

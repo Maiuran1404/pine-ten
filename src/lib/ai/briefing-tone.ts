@@ -229,6 +229,7 @@ function buildDefaultTone(): ToneProfile {
       'Use a clear, warm, conversational tone. ' +
       'Be direct without being cold. Show genuine engagement with their project. ' +
       'Vary sentence length. Match the energy of the user. ' +
+      'Use simple, everyday words. If there is a simpler way to say something, use it. No jargon or consultant-speak. ' +
       `Do NOT use: ${GLOBAL_ANTI_PATTERNS.join(', ')}.`,
   }
 }
@@ -254,18 +255,21 @@ function buildToneDescription(
   // Technical depth
   parts.push(`Technical depth: ${profile.technicalDepth}.`)
 
-  // Emotional resonance
-  parts.push(`Emotional resonance: ${profile.emotionalIntensity}.`)
+  // Emotional warmth
+  parts.push(`Emotional warmth: ${profile.emotionalIntensity}.`)
 
-  // Vocabulary
+  // Words to lean on
   if (vocabularyHints.length > 0) {
-    parts.push(`Vocabulary register: ${vocabularyHints.join(', ')}.`)
+    parts.push(`Words to lean on: ${vocabularyHints.join(', ')}.`)
   }
 
   // Anti-patterns
   if (antiPatterns.length > 0) {
     parts.push(`Do NOT use: ${antiPatterns.join(', ')}.`)
   }
+
+  // Simple language reminder for all tone profiles
+  parts.push('Use simple, everyday words. If there is a simpler way to say something, use it.')
 
   return parts.join(' ')
 }

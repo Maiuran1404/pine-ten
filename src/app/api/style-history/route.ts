@@ -6,7 +6,7 @@ import {
 } from '@/lib/ai/selection-history'
 import type { DeliverableType } from '@/lib/constants/reference-libraries'
 import { DELIVERABLE_TYPES } from '@/lib/constants/reference-libraries'
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { withErrorHandling, successResponse } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
 import { recordStyleSelectionSchema, confirmStyleSelectionSchema } from '@/lib/validations'
 

@@ -107,6 +107,12 @@ ANTI-JARGON:
 - No stacked adjectives ("clean, trust-forward, conversion-focused"). Pick one. Make it count.
 - No hollow phrases: "elevates the narrative", "positions you as", "speaks to the audience", "resonates deeply", "heartbeat of the campaign".
 
+SIMPLE LANGUAGE:
+- Use plain, everyday words. No big words when a small one works.
+- Talk like a person, not a textbook. If a 10-year-old wouldn't understand the word, pick a simpler one.
+- Instead of "competitive differentiation", say "what makes you different". Instead of "quantifiable impact", say "a real number that shows results".
+- Short sentences. Clear ideas. No consultant-speak.
+
 REFERENCES:
 When the user shares a reference (e.g., "I want something like Stripe"), acknowledge it once, extract the principle (e.g., "clean hierarchy, product-first"), and move on. Do not keep citing the reference name.
 
@@ -324,7 +330,7 @@ function buildIntentTask(state: BriefingState): string {
   return `We know WHAT they're making (${state.brief.taskType.value || 'TBD'}). We need to know WHY.
 - Infer the business goal from context, or ask directly.
 - Common intents: drive signups, build authority, increase awareness, boost sales, educate.
-- Frame it naturally: "What should this make people do?" or "What's the conversion goal?"
+- Frame it naturally: "What should this get people to do?" or "What's the end goal here?"
 - One question. Be brief.`
 }
 
@@ -382,7 +388,7 @@ If you have an open question about the primary action or audience, ask it before
   switch (category) {
     case 'video':
       return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
-- Generate 4-6 scenes. Scene 1 MUST have a hook with persona + pain metric.
+- Generate 4-6 scenes. Scene 1 MUST have a hook with who it's for + their problem.
 - DURATION REQUIREMENT: The total video duration must be 30-60 seconds. Distribute scene durations so they sum to at least 30 seconds. Typical scene durations are 5-10 seconds each.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
 - Do NOT include imageSearchTerms yet. Images will be added after the inspiration stage.
@@ -507,7 +513,7 @@ function buildStrategicReviewTask(_state: BriefingState): string {
 Lead with your honest assessment. If you have a flag, lead with it. Don't sandwich critique between praise.
 - Lead with risks (1-2 risks or blind spots).
 - Then strengths (1-2 max).
-- Then one concrete optimization.
+- Then one thing to make it better.
 - Check if the inspiration fits the audience (the system provides fit data).
 - Don't repeat reference names. No filler like "This positions you as..."
 - Frame as expert assessment, not a question.
@@ -614,12 +620,12 @@ function buildDeliverableGuidance(state: BriefingState): string | null {
 
 const VIDEO_HOOK_GUIDANCE = `== HOOK GENERATION (SCENE 1) ==
 The opening hook MUST include:
-1. Target persona: Reference the specific role ("CTO", "Head of Growth", "Founder")
+1. Who it's for: Name the specific role ("CTO", "Head of Growth", "Founder")
    NOT generic ("business leaders", "professionals")
-2. Pain metric: Name a specific operational consequence
+2. Their problem: Name a specific, real problem they face
    NOT vague ("struggling with growth")
    YES specific ("losing 40% of pipeline to manual follow-up")
-3. Quantifiable impact: Include a number or metric where data supports it
+3. A real number: Include a number or result where data supports it
    "Teams using X ship 2x faster" not "Teams using X are more productive"
 The hook should feel like it was written by someone who worked in the target industry.`
 
@@ -672,12 +678,12 @@ function buildCompetitivePrompt(state: BriefingState): string | null {
   if (!['website', 'brand'].includes(state.deliverableCategory ?? '')) return null
   if (state.competitiveDifferentiation) return null // Already captured
 
-  return `== COMPETITIVE DIFFERENTIATION (OPTIONAL) ==
+  return `== WHAT MAKES YOU DIFFERENT (OPTIONAL) ==
 If the user hasn't mentioned competitors and this is a website/brand/product launch:
-If you can identify a known adjacent player based on their industry/audience, suggest one:
-"In your space, [Player X] is the closest comparison I can think of. How would you describe where you sit relative to them?"
+If you can identify a known similar company based on their industry/audience, suggest one:
+"In your space, [Player X] is probably the closest comparison. What makes you different from them?"
 Make it concrete. If you can't identify a player, ask:
-"Who comes to mind when you think about the companies your audience is already familiar with?"
+"Who are the companies your audience already knows about in this space?"
 This is optional. If the user ignores it, move on. If they engage, note it.`
 }
 

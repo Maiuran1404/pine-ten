@@ -319,13 +319,15 @@ export function useChatInterfaceData({
       storyboard.setStoryboardScenes(_briefingState.structure)
       storyboard.latestStoryboardRef.current = _briefingState.structure
     }
-  }, [_briefingState?.structure, storyboard.storyboardScenes, storyboard])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_briefingState?.structure, storyboard.storyboardScenes])
 
   // ─── Detect "ready to execute" patterns ─────────────────────
   useEffect(() => {
     const lastMessage = chatMessages.messages[chatMessages.messages.length - 1]
     task.checkReadyIndicator(lastMessage)
-  }, [chatMessages.messages, task])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatMessages.messages])
 
   // ─── Auto-construct task proposal at SUBMIT stage ───────────
   useEffect(() => {
@@ -354,14 +356,13 @@ export function useChatInterfaceData({
       }
       return updated
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     _briefingState?.stage,
     _briefingState?.brief,
     task.pendingTask,
     chatMessages.isLoading,
     chatMessages.messages,
-    task,
-    chatMessages,
   ])
 
   // ─── Sync taskData state with initialTaskData prop ──────────
@@ -369,7 +370,8 @@ export function useChatInterfaceData({
     if (initialTaskData) {
       task.setTaskData(initialTaskData)
     }
-  }, [initialTaskData, task])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTaskData])
 
   // ─── Derived values ─────────────────────────────────────────
   const userName = session?.user?.name || 'You'
@@ -417,12 +419,21 @@ export function useChatInterfaceData({
     storyboard.setSceneReferences([])
 
     await chatMessages.handleSend(processedContent, currentFiles)
-  }, [chatMessages, fileUpload, storyboard])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    chatMessages.input,
+    chatMessages.handleSend,
+    fileUpload.uploadedFiles,
+    fileUpload.setUploadedFiles,
+    storyboard.sceneReferences,
+    storyboard.setSceneReferences,
+  ])
 
   const handleDiscard = useCallback(() => {
     chatMessages.setInput('')
     fileUpload.setUploadedFiles([])
-  }, [chatMessages, fileUpload])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatMessages.setInput, fileUpload.setUploadedFiles])
 
   const handleEditLastMessage = useCallback(() => {
     const msgs = chatMessages.messages
@@ -437,14 +448,22 @@ export function useChatInterfaceData({
     task.setPendingTask(null)
     task.setShowManualSubmit(false)
     inputRef.current?.focus()
-  }, [chatMessages, task])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    chatMessages.messages,
+    chatMessages.setInput,
+    chatMessages.setMessages,
+    task.setPendingTask,
+    task.setShowManualSubmit,
+  ])
 
   // Wrap strategic review action to pass setMessages
   const handleStrategicReviewAction = useCallback(
     (response: 'accept' | 'override') => {
       storyboard.handleStrategicReviewAction(response, chatMessages.setMessages)
     },
-    [storyboard, chatMessages.setMessages]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [storyboard.handleStrategicReviewAction, chatMessages.setMessages]
   )
 
   // ─── Return the full interface (backward compatible) ────────

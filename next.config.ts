@@ -52,6 +52,8 @@ const nextConfig: NextConfig = {
     '@mendable/firecrawl-js',
     'bcryptjs',
     'sharp',
+    'puppeteer-core',
+    '@sparticuz/chromium-min',
   ],
 
   // Increase body size limit for file uploads (default 10MB)
