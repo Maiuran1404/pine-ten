@@ -11,6 +11,7 @@ interface QuickOptionsProps {
   options: QuickOptionsType
   onSelect: (option: string) => void
   disabled?: boolean
+  showSkip?: boolean
 }
 
 /**
@@ -18,7 +19,12 @@ interface QuickOptionsProps {
  * Compact horizontal layout with max 5 options
  * Sage green hover/active states matching brand
  */
-export function QuickOptions({ options, onSelect, disabled = false }: QuickOptionsProps) {
+export function QuickOptions({
+  options,
+  onSelect,
+  disabled = false,
+  showSkip = false,
+}: QuickOptionsProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const isMultiSelect = options.multiSelect === true
 
@@ -50,7 +56,7 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {displayOptions.map((option, idx) => {
           const isSelected = selectedOptions.includes(option)
 
@@ -83,6 +89,19 @@ export function QuickOptions({ options, onSelect, disabled = false }: QuickOptio
             </motion.button>
           )
         })}
+        {showSkip && !isMultiSelect && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: displayOptions.length * 0.04 }}
+            type="button"
+            onClick={() => onSelect('Skip this question')}
+            disabled={disabled}
+            className="px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            Skip
+          </motion.button>
+        )}
       </div>
 
       {isMultiSelect && selectedOptions.length > 0 && (
