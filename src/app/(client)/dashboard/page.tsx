@@ -247,6 +247,35 @@ const TEMPLATE_CATEGORIES = {
       },
     ],
   },
+  'Content Calendar': {
+    icon: CalendarDays,
+    description: 'Strategic content planning',
+    modalDescription:
+      'Plan your content calendar with posting schedules, content pillars, and platform strategy.',
+    options: [
+      {
+        title: 'Social Media Calendar',
+        description:
+          'A strategic posting schedule across your social platforms with content pillars, weekly themes, and engagement tactics.',
+        prompt: 'Create a social media content calendar',
+        icon: Share2,
+      },
+      {
+        title: 'Multi-Platform Campaign',
+        description:
+          'A coordinated content plan spanning multiple platforms with consistent messaging and CTA escalation.',
+        prompt: 'Plan a multi-platform content campaign',
+        icon: Megaphone,
+      },
+      {
+        title: 'Launch Content Plan',
+        description:
+          'A pre-launch to post-launch content timeline with teasers, announcements, and follow-up content.',
+        prompt: 'Create a product launch content plan',
+        icon: Rocket,
+      },
+    ],
+  },
   'Landing Page': {
     icon: PanelTop,
     description: 'High-converting web pages',
@@ -853,13 +882,14 @@ function DashboardContent() {
           <p className="text-center text-xs text-muted-foreground/60 mb-4">
             or choose from one of these examples
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
             {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
               const gradients: Record<string, string> = {
                 'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
                 'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
                 Branding: 'from-[var(--crafted-sage)] to-[var(--crafted-green)]',
                 'Social Media': 'from-[var(--crafted-forest)] to-[var(--crafted-green)]',
+                'Content Calendar': 'from-[var(--crafted-green)] to-[var(--crafted-sage)]',
                 'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
               }
               const gradient = gradients[category] || 'from-gray-500 to-gray-600'
@@ -1165,6 +1195,19 @@ function DashboardContent() {
                                   : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-[var(--crafted-green)]/40 hover:bg-[var(--crafted-green)]/[0.02]'
                               )}
                             >
+                              {/* Radio indicator (left-aligned) */}
+                              <div
+                                className={cn(
+                                  'mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-all duration-150',
+                                  isSelected
+                                    ? 'border-[var(--crafted-green)] bg-[var(--crafted-green)]'
+                                    : 'border-black/15 dark:border-white/20 group-hover:border-[var(--crafted-green)]/50'
+                                )}
+                              >
+                                {isSelected && (
+                                  <div className="w-[6px] h-[6px] rounded-full bg-white" />
+                                )}
+                              </div>
                               {/* Icon */}
                               <div
                                 className={cn(
@@ -1191,19 +1234,6 @@ function DashboardContent() {
                                 <p className="text-[13px] text-muted-foreground leading-relaxed mt-1">
                                   {option.description}
                                 </p>
-                              </div>
-                              {/* Radio indicator */}
-                              <div
-                                className={cn(
-                                  'mt-1 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-all duration-150',
-                                  isSelected
-                                    ? 'border-[var(--crafted-green)] bg-[var(--crafted-green)]'
-                                    : 'border-black/15 dark:border-white/20 group-hover:border-[var(--crafted-green)]/50'
-                                )}
-                              >
-                                {isSelected && (
-                                  <div className="w-[6px] h-[6px] rounded-full bg-white" />
-                                )}
                               </div>
                             </button>
                           )
