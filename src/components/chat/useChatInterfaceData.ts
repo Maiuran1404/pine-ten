@@ -363,9 +363,12 @@ export function useChatInterfaceData({
   }, [chatMessages.messages.length])
 
   // ─── Auto-construct task proposal at SUBMIT stage ───────────
+  // Track which stage we last constructed for to avoid infinite re-renders
+  const lastConstructedStageRef = useRef<string | null>(null)
+
   useEffect(() => {
     const msgs = messagesRef.current
-    if (task.pendingTask || chatMessages.isLoading || msgs.length === 0) return
+    if (chatMessages.isLoading || msgs.length === 0) return
     const stage = _briefingState?.stage
 
     const shouldConstruct =
@@ -375,6 +378,11 @@ export function useChatInterfaceData({
         hasReadyIndicator(msgs[msgs.length - 1].content))
 
     if (!shouldConstruct) return
+
+    // Avoid re-constructing for the same stage + message count
+    const constructKey = `${stage}-${msgs.length}`
+    if (lastConstructedStageRef.current === constructKey) return
+    lastConstructedStageRef.current = constructKey
 
     const constructedTask = constructTaskFromConversation(msgs, _briefingState?.brief)
     task.setPendingTask(constructedTask)
@@ -392,7 +400,6 @@ export function useChatInterfaceData({
   }, [
     _briefingState?.stage,
     _briefingState?.brief,
-    task.pendingTask,
     chatMessages.isLoading,
     chatMessages.messages.length,
   ])
