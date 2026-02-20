@@ -318,5 +318,3 @@ function MessageBubble({
     </motion.div>
   )
 }
-
-export default CreativeIntakeChat

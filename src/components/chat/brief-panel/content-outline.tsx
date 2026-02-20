@@ -516,5 +516,3 @@ export function generateOutlineFromItems(
     weekGroups,
   }
 }
-
-export default ContentOutlinePanel

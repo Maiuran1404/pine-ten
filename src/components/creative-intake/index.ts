@@ -11,4 +11,3 @@ export {
   NextStepIndicator,
 } from './intake-summary'
 export { CreativeIntakeChat } from './creative-intake-chat'
-export { default } from './creative-intake-chat'

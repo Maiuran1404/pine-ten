@@ -264,5 +264,3 @@ export const InfiniteGrid = ({
     </div>
   )
 }
-
-export default InfiniteGrid

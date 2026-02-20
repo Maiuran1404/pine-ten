@@ -519,5 +519,3 @@ export function CollapsibleBriefPanel({
     </motion.div>
   )
 }
-
-export default BriefPanel

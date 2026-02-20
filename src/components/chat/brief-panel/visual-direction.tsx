@@ -559,5 +559,3 @@ export function VisualDirectionPanel({ visualDirection, onUpdate }: VisualDirect
     </div>
   )
 }
-
-export default VisualDirectionPanel
