@@ -216,10 +216,13 @@ export function SubmitActionBar({
                   <p className="text-base font-bold text-foreground">{deliveryDate}</p>
                   <p className="text-xs text-muted-foreground">delivery</p>
                 </div>
-                <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">
+                <div
+                  className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center"
+                  title="Includes 2 rounds of revisions with your designer"
+                >
                   <RotateCcw className="h-4 w-4 mx-auto mb-1 text-purple-600" />
                   <p className="text-base font-bold text-foreground">2</p>
-                  <p className="text-xs text-muted-foreground">revisions</p>
+                  <p className="text-xs text-muted-foreground">revisions included</p>
                 </div>
               </div>
 
