@@ -181,9 +181,9 @@ describe('buildSystemPrompt', () => {
     })
     const prompt = buildSystemPrompt(state)
     expect(prompt).toContain('HOOK GENERATION')
-    expect(prompt).toContain('Target persona')
-    expect(prompt).toContain('Pain metric')
-    expect(prompt).toContain('Quantifiable impact')
+    expect(prompt).toContain("Who it's for")
+    expect(prompt).toContain('Their problem')
+    expect(prompt).toContain('A real number')
   })
 
   // Content calendar guidance
@@ -244,7 +244,7 @@ describe('buildSystemPrompt', () => {
       deliverableCategory: 'website',
     })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('COMPETITIVE DIFFERENTIATION')
+    expect(prompt).toContain('WHAT MAKES YOU DIFFERENT')
   })
 
   it('does not inject competitive prompt when already captured', () => {
@@ -254,7 +254,7 @@ describe('buildSystemPrompt', () => {
       competitiveDifferentiation: 'Better than X',
     })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).not.toContain('COMPETITIVE DIFFERENTIATION (OPTIONAL)')
+    expect(prompt).not.toContain('WHAT MAKES YOU DIFFERENT (OPTIONAL)')
   })
 
   // Platform context and never-deflect rules
