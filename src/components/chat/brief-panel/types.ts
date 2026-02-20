@@ -87,6 +87,7 @@ export interface InferenceResult {
   intent: InferredField<Intent>
   platform: InferredField<Platform>
   contentType: InferredField<ContentType>
+  allContentTypes?: ContentType[] // All matched content types for multi-format summaries
   quantity: InferredField<number>
   duration: InferredField<string> // "30 days", "1 week", etc.
   topic: InferredField<string> // Main topic/subject

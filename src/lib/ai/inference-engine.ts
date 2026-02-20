@@ -461,6 +461,24 @@ function inferFromPatterns<T extends string>(
   }
 }
 
+/**
+ * Collect all distinct matched values from patterns (for multi-format detection).
+ * Returns unique values with confidence above a threshold.
+ */
+function collectAllMatches<T extends string>(
+  text: string,
+  patterns: PatternMatch[],
+  threshold = 0.5
+): T[] {
+  const matched = new Set<T>()
+  for (const { pattern, value, confidence } of patterns) {
+    if (confidence >= threshold && pattern.test(text)) {
+      matched.add(value as T)
+    }
+  }
+  return Array.from(matched)
+}
+
 // =============================================================================
 // QUANTITY EXTRACTION
 // =============================================================================
@@ -897,11 +915,15 @@ export function inferFromMessage(input: InferenceInput): InferenceResult {
     platform.source = platform.confidence >= CONFIDENCE_THRESHOLD ? 'inferred' : 'pending'
   }
 
+  // Collect all matched content types (for multi-format summaries like "Post, Story & Reels")
+  const allContentTypes = collectAllMatches<ContentType>(fullContext, CONTENT_TYPE_PATTERNS)
+
   return {
     taskType,
     intent,
     platform,
     contentType,
+    allContentTypes,
     quantity,
     duration,
     topic,
@@ -982,7 +1004,18 @@ export function generateTaskSummary(inference: InferenceResult): string {
       poster: 'Poster',
       video: 'Video',
     }
-    parts.push(contentNames[inference.contentType.value])
+    // Use all matched content types for multi-format summaries (e.g., "Post, Story & Reels")
+    const allTypes = inference.allContentTypes
+    if (allTypes && allTypes.length > 1) {
+      const names = allTypes.map((t) => contentNames[t]).filter(Boolean)
+      if (names.length > 1) {
+        parts.push(names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1])
+      } else {
+        parts.push(names[0] || contentNames[inference.contentType.value])
+      }
+    } else {
+      parts.push(contentNames[inference.contentType.value])
+    }
   } else if (inference.platform.value && parts.length === 1) {
     // If we only have platform, add generic "Content"
     parts.push('Content')
