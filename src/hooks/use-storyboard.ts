@@ -1,7 +1,7 @@
 /**
  * Hook for managing storyboard/structure panel state and interactions.
  * Handles scene editing, section reordering, regeneration,
- * scene references for feedback, and scene image URLs.
+ * scene references for feedback, and scene image data (multi-source).
  */
 'use client'
 
@@ -12,6 +12,21 @@ import {
   type ChatMessage as Message,
 } from '@/components/chat/types'
 import type { LayoutSection, BriefingState } from '@/lib/ai/briefing-state-machine'
+import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
+
+export interface SceneImageData {
+  primaryUrl: string
+  primarySource: ImageSource
+  primaryMediaType: ImageMediaType
+  attribution: {
+    sourceName: string
+    sourceUrl: string
+    filmTitle?: string
+    photographer?: string
+    techniqueName?: string
+  }
+  techniqueRef?: { name: string; url: string } // Eyecannndy technique link (if present)
+}
 
 interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
@@ -22,7 +37,7 @@ interface UseStoryboardOptions {
 export function useStoryboard({ inputRef, handleSendOption, briefingState }: UseStoryboardOptions) {
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
-  const [_sceneImageUrls, setSceneImageUrls] = useState<Map<number, string>>(new Map())
+  const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
 
   // Compute structure type from deliverable category
@@ -42,23 +57,54 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   // Structure panel visible only when we have actual structure data
   const structurePanelVisible = storyboardScenes !== null
 
-  // Helper: process Pexels scene image matches from API response
+  // Helper: process multi-source scene image matches from API response
   const processSceneImageMatches = useCallback(
     (
       sceneImageMatches?: Array<{
         sceneNumber: number
-        photos: Array<{ url: string }>
+        images: Array<{
+          url: string
+          source: ImageSource
+          mediaType: ImageMediaType
+          attribution: {
+            sourceName: string
+            sourceUrl: string
+            filmTitle?: string
+            photographer?: string
+            techniqueName?: string
+          }
+        }>
+        primaryIndex: number
       }>
     ) => {
       if (!sceneImageMatches || sceneImageMatches.length === 0) return
-      const urlMap = new Map<number, string>()
+      const dataMap = new Map<number, SceneImageData>()
       for (const match of sceneImageMatches) {
-        if (match.photos.length > 0) {
-          urlMap.set(match.sceneNumber, match.photos[0].url)
-        }
+        if (match.images.length === 0) continue
+
+        const primaryIdx = Math.min(match.primaryIndex, match.images.length - 1)
+        const primary = match.images[primaryIdx >= 0 ? primaryIdx : 0]
+
+        // Find the first Eyecannndy technique reference if any
+        const techniqueImg = match.images.find(
+          (img) => img.source === 'eyecannndy' && img.attribution.techniqueName
+        )
+
+        dataMap.set(match.sceneNumber, {
+          primaryUrl: primary.url,
+          primarySource: primary.source,
+          primaryMediaType: primary.mediaType,
+          attribution: primary.attribution,
+          techniqueRef: techniqueImg
+            ? {
+                name: techniqueImg.attribution.techniqueName!,
+                url: techniqueImg.attribution.sourceUrl,
+              }
+            : undefined,
+        })
       }
-      if (urlMap.size > 0) {
-        setSceneImageUrls(urlMap)
+      if (dataMap.size > 0) {
+        setSceneImageData(dataMap)
       }
     },
     []
@@ -218,7 +264,7 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     setStoryboardScenes,
     sceneReferences,
     setSceneReferences,
-    sceneImageUrls: _sceneImageUrls,
+    sceneImageData: _sceneImageData,
     latestStoryboardRef,
     structureType,
     structurePanelVisible,

@@ -14,6 +14,25 @@ import {
   type StructureData,
 } from '@/components/chat/types'
 import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
+import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
+
+/** Shape of a scene image match from the multi-source orchestrator */
+export interface ApiSceneImageMatch {
+  sceneNumber: number
+  images: Array<{
+    url: string
+    source: ImageSource
+    mediaType: ImageMediaType
+    attribution: {
+      sourceName: string
+      sourceUrl: string
+      filmTitle?: string
+      photographer?: string
+      techniqueName?: string
+    }
+  }>
+  primaryIndex: number
+}
 
 export interface ChatApiResponse {
   content: string
@@ -27,10 +46,7 @@ export interface ChatApiResponse {
   structureData?: StructureData
   strategicReviewData?: Message['strategicReviewData']
   assetRequest?: Message['assetRequest']
-  sceneImageMatches?: Array<{
-    sceneNumber: number
-    photos: Array<{ url: string }>
-  }>
+  sceneImageMatches?: ApiSceneImageMatch[]
 }
 
 interface UseChatMessagesOptions {
@@ -42,9 +58,7 @@ interface UseChatMessagesOptions {
   onTaskProposal: (proposal: TaskProposal) => void
   onDeliverableTypeChange: (type: string) => void
   onStructureData: (data: StructureData) => void
-  onSceneImageMatches: (
-    matches?: Array<{ sceneNumber: number; photos: Array<{ url: string }> }>
-  ) => void
+  onSceneImageMatches: (matches?: ApiSceneImageMatch[]) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
 }
 

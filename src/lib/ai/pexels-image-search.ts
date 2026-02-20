@@ -90,7 +90,10 @@ export async function searchPexelsPhotos(
   return searchPexelsForScene(query, perPage)
 }
 
-async function searchPexelsForScene(query: string, perPage: number = 1): Promise<PexelsPhoto[]> {
+export async function searchPexelsForScene(
+  query: string,
+  perPage: number = 1
+): Promise<PexelsPhoto[]> {
   const cached = getCached(query)
   if (cached) return cached
 

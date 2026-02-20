@@ -64,7 +64,7 @@ import {
   getStrategicReviewReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
-import { searchPexelsForStoryboard, type PexelsSceneMatch } from '@/lib/ai/pexels-image-search'
+import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboard-image-search'
 import type { InferredAudience } from '@/components/onboarding/types'
 
 async function handler(request: NextRequest) {
@@ -1292,32 +1292,39 @@ async function handler(request: NextRequest) {
       }
 
       // ================================================================
-      // 17a. Pexels scene image search (non-blocking, storyboard only)
+      // 17a. Multi-source scene image search (non-blocking, storyboard only)
       // ================================================================
-      let sceneImageMatches: PexelsSceneMatch[] | undefined = undefined
-      const scenesHaveSearchTerms =
+      let sceneImageMatches: SceneImageMatch[] | undefined = undefined
+      const scenesHaveSearchData =
         structureData?.type === 'storyboard' &&
         structureData.scenes.some(
-          (s: { imageSearchTerms?: string[] }) =>
-            s.imageSearchTerms && s.imageSearchTerms.length > 0
+          (s: { imageSearchTerms?: string[]; filmTitleSuggestions?: string[] }) =>
+            (s.imageSearchTerms && s.imageSearchTerms.length > 0) ||
+            (s.filmTitleSuggestions && s.filmTitleSuggestions.length > 0)
         )
       if (
         structureData?.type === 'storyboard' &&
         structureData.scenes.length > 0 &&
-        process.env.PEXELS_API_KEY &&
-        scenesHaveSearchTerms
+        scenesHaveSearchData
       ) {
         try {
-          const pexelsResult = await searchPexelsForStoryboard(structureData.scenes)
-          if (pexelsResult.sceneMatches.length > 0) {
-            sceneImageMatches = pexelsResult.sceneMatches
+          const imageResult = await searchStoryboardImages(structureData.scenes)
+          if (imageResult.sceneMatches.length > 0) {
+            sceneImageMatches = imageResult.sceneMatches
             logger.debug(
-              { matchCount: sceneImageMatches.length, duration: pexelsResult.totalDuration },
-              'Pexels scene images attached to response'
+              {
+                matchCount: sceneImageMatches.length,
+                sourcesUsed: imageResult.sourcesUsed,
+                duration: imageResult.totalDuration,
+              },
+              'Multi-source scene images attached to response'
             )
           }
-        } catch (pexelsErr) {
-          logger.warn({ err: pexelsErr }, 'Pexels search failed — continuing without scene images')
+        } catch (imageErr) {
+          logger.warn(
+            { err: imageErr },
+            'Storyboard image search failed — continuing without scene images'
+          )
         }
       }
 

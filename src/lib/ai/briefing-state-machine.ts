@@ -57,6 +57,8 @@ export interface StoryboardScene {
   cameraNote?: string
   styleReferences?: string[]
   imageSearchTerms?: string[] // AI-generated visual search keywords for Pexels
+  filmTitleSuggestions?: string[] // AI-generated film titles for Film-Grab cinematic stills
+  visualTechniques?: string[] // Camera/editing techniques for Eyecannndy (e.g. dutch-angle, tracking)
   // Elaboration fields (populated during ELABORATE stage)
   fullScript?: string
   directorNotes?: string

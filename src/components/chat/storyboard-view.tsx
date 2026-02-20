@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
+import type { SceneImageData } from '@/hooks/use-storyboard'
 
 // =============================================================================
 // HELPERS
@@ -429,19 +430,30 @@ export function StoryboardPanel({
 function SceneThumbnail({
   scene,
   index,
-  sceneImageUrl,
+  sceneImageData,
   getImageUrl,
 }: {
   scene: StoryboardScene
   index: number
-  sceneImageUrl?: string
+  sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
 }) {
   const imageId = scene.referenceImageIds?.[0]
   const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
-  // Prefer Pexels scene image, fall back to reference image
-  const imageUrl = sceneImageUrl || refImageUrl
+  // Prefer multi-source scene image, fall back to reference image
+  const imageUrl = sceneImageData?.primaryUrl || refImageUrl
+  const isGif = sceneImageData?.primaryMediaType === 'gif'
   const gradient = getSceneGradient(index)
+
+  // Source display name for badge
+  const sourceLabel = sceneImageData
+    ? {
+        'film-grab': 'Film-Grab',
+        'flim-ai': 'Flim.ai',
+        pexels: 'Pexels',
+        eyecannndy: 'Eyecannndy',
+      }[sceneImageData.primarySource]
+    : null
 
   return (
     <div
@@ -451,14 +463,24 @@ function SceneThumbnail({
       )}
     >
       {imageUrl ? (
-        <OptimizedImage
-          src={imageUrl}
-          alt={`Scene ${scene.sceneNumber} thumbnail`}
-          fill
-          className="object-cover"
-          containerClassName="absolute inset-0"
-          sizes="(max-width: 768px) 100vw, 400px"
-        />
+        isGif ? (
+          // Native <img> for GIFs — Next.js Image strips animation
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={`Scene ${scene.sceneNumber} thumbnail`}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <OptimizedImage
+            src={imageUrl}
+            alt={`Scene ${scene.sceneNumber} thumbnail`}
+            fill
+            className="object-cover"
+            containerClassName="absolute inset-0"
+            sizes="(max-width: 768px) 100vw, 400px"
+          />
+        )
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
           <Film className={cn('h-6 w-6 mb-1.5', gradient.icon)} />
@@ -471,6 +493,27 @@ function SceneThumbnail({
             {scene.title || `Scene ${scene.sceneNumber}`}
           </span>
         </div>
+      )}
+
+      {/* Source badge — bottom-left */}
+      {imageUrl && sourceLabel && (
+        <span className="absolute bottom-1.5 left-1.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-black/50 text-white/80 backdrop-blur-sm">
+          {sourceLabel}
+        </span>
+      )}
+
+      {/* Technique badge — bottom-right */}
+      {sceneImageData?.techniqueRef && (
+        <a
+          href={sceneImageData.techniqueRef.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-1.5 right-1.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-700/70 text-white/90 backdrop-blur-sm hover:bg-emerald-600/80 transition-colors flex items-center gap-0.5"
+        >
+          <Video className="h-2.5 w-2.5" />
+          {sceneImageData.techniqueRef.name}
+        </a>
       )}
     </div>
   )
@@ -490,7 +533,7 @@ function RichSceneCard({
   onSceneEdit: _onSceneEdit,
   onRegenerateScene,
   onRegenerateField: _onRegenerateField,
-  sceneImageUrl,
+  sceneImageData,
   getImageUrl,
 }: {
   scene: StoryboardScene
@@ -502,7 +545,7 @@ function RichSceneCard({
   onSceneEdit?: (field: string, value: string) => void
   onRegenerateScene?: () => void
   onRegenerateField?: (field: string) => void
-  sceneImageUrl?: string
+  sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
 }) {
   const [isExpanded, setIsExpanded] = useState(isSelected)
@@ -529,7 +572,7 @@ function RichSceneCard({
         <SceneThumbnail
           scene={scene}
           index={index}
-          sceneImageUrl={sceneImageUrl}
+          sceneImageData={sceneImageData}
           getImageUrl={getImageUrl}
         />
 
@@ -645,13 +688,55 @@ function RichSceneCard({
 }
 
 // =============================================================================
+// DYNAMIC ATTRIBUTION — shows unique sources used
+// =============================================================================
+
+const SOURCE_LINKS: Record<string, { name: string; url: string }> = {
+  'film-grab': { name: 'Film-Grab', url: 'https://film-grab.com' },
+  'flim-ai': { name: 'Flim.ai', url: 'https://flim.ai' },
+  pexels: { name: 'Pexels', url: 'https://www.pexels.com' },
+  eyecannndy: { name: 'Eyecannndy', url: 'https://eyecannndy.com' },
+}
+
+function DynamicAttribution({ sceneImageData }: { sceneImageData: Map<number, SceneImageData> }) {
+  const uniqueSources = new Set<string>()
+  for (const data of sceneImageData.values()) {
+    uniqueSources.add(data.primarySource)
+    if (data.techniqueRef) uniqueSources.add('eyecannndy')
+  }
+
+  const sourceEntries = [...uniqueSources].map((s) => SOURCE_LINKS[s]).filter(Boolean)
+
+  if (sourceEntries.length === 0) return null
+
+  return (
+    <span className="text-[10px] text-muted-foreground/50">
+      Images from{' '}
+      {sourceEntries.map((source, i) => (
+        <span key={source.name}>
+          {i > 0 && (i === sourceEntries.length - 1 ? ' & ' : ', ')}
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-muted-foreground transition-colors"
+          >
+            {source.name}
+          </a>
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// =============================================================================
 // RICH STORYBOARD PANEL — full panel for the structure panel
 // =============================================================================
 
 interface RichStoryboardPanelProps {
   scenes: StoryboardScene[]
   className?: string
-  sceneImageUrls?: Map<number, string>
+  sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
@@ -665,7 +750,7 @@ interface RichStoryboardPanelProps {
 export function RichStoryboardPanel({
   scenes,
   className,
-  sceneImageUrls,
+  sceneImageData,
   isRegenerating,
   onSelectionChange,
   onSceneEdit,
@@ -773,24 +858,17 @@ export function RichStoryboardPanel({
                 onRegenerateField={
                   onRegenerateField ? (field) => onRegenerateField(scene, field) : undefined
                 }
-                sceneImageUrl={sceneImageUrls?.get(scene.sceneNumber)}
+                sceneImageData={sceneImageData?.get(scene.sceneNumber)}
                 getImageUrl={getImageUrl}
               />
             </motion.div>
           ))}
         </div>
 
-        {/* Pexels attribution — shown when any scene has a Pexels image */}
-        {sceneImageUrls && sceneImageUrls.size > 0 && (
+        {/* Dynamic attribution — shows unique sources used across all scenes */}
+        {sceneImageData && sceneImageData.size > 0 && (
           <div className="px-3 pb-3 pt-1 text-center">
-            <a
-              href="https://www.pexels.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            >
-              Photos provided by Pexels
-            </a>
+            <DynamicAttribution sceneImageData={sceneImageData} />
           </div>
         )}
       </ScrollArea>

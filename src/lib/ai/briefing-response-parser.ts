@@ -454,6 +454,12 @@ function extractSceneFields(s: Record<string, unknown>, index: number) {
     getStringArray(s, 'referenceImageIds') ?? getStringArray(s, 'reference_image_ids') ?? undefined
   const imageSearchTerms =
     getStringArray(s, 'imageSearchTerms') ?? getStringArray(s, 'image_search_terms') ?? undefined
+  const filmTitleSuggestions =
+    getStringArray(s, 'filmTitleSuggestions') ??
+    getStringArray(s, 'film_title_suggestions') ??
+    undefined
+  const visualTechniques =
+    getStringArray(s, 'visualTechniques') ?? getStringArray(s, 'visual_techniques') ?? undefined
 
   return {
     sceneNumber: getNumber(s, 'sceneNumber') ?? getNumber(s, 'scene_number') ?? index + 1,
@@ -470,6 +476,8 @@ function extractSceneFields(s: Record<string, unknown>, index: number) {
     referenceDescription,
     referenceImageIds,
     imageSearchTerms,
+    filmTitleSuggestions,
+    visualTechniques,
     hookData: s.hookData ? validateHookData(s.hookData as Record<string, unknown>) : undefined,
     referenceVideoId: typeof s.referenceVideoId === 'string' ? s.referenceVideoId : undefined,
     hasContent: !!(title || description),
@@ -495,6 +503,8 @@ function buildScene(f: ReturnType<typeof extractSceneFields>): StoryboardScene {
     ...(f.referenceDescription ? { referenceDescription: f.referenceDescription } : {}),
     ...(f.referenceImageIds ? { referenceImageIds: f.referenceImageIds } : {}),
     ...(f.imageSearchTerms ? { imageSearchTerms: f.imageSearchTerms } : {}),
+    ...(f.filmTitleSuggestions ? { filmTitleSuggestions: f.filmTitleSuggestions } : {}),
+    ...(f.visualTechniques ? { visualTechniques: f.visualTechniques } : {}),
   }
 }
 

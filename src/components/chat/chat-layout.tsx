@@ -13,6 +13,7 @@ import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel } from './structure-panel'
 import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
+import type { SceneImageData } from '@/hooks/use-storyboard'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -49,8 +50,8 @@ interface ChatLayoutProps {
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
-  // Scene image URLs from Pexels
-  sceneImageUrls?: Map<number, string>
+  // Scene image data from multi-source search (Film-Grab, Flim.ai, Pexels, Eyecannndy)
+  sceneImageData?: Map<number, SceneImageData>
   // Loading state for regeneration
   isRegenerating?: boolean
   // Imperative handle to open the structure view from children
@@ -98,7 +99,7 @@ export function ChatLayout({
   onRegenerateField,
   onSectionReorder,
   onSectionEdit,
-  sceneImageUrls,
+  sceneImageData,
   isRegenerating,
   viewStructureRef,
   showProgress = true,
@@ -167,7 +168,7 @@ export function ChatLayout({
               <StructurePanel
                 structureType={structureType ?? null}
                 structureData={structureData ?? null}
-                sceneImageUrls={sceneImageUrls}
+                sceneImageData={sceneImageData}
                 isRegenerating={isRegenerating}
                 onSceneClick={onSceneClick}
                 onSelectionChange={onSceneSelectionChange}
@@ -187,7 +188,7 @@ export function ChatLayout({
                   <StructurePanel
                     structureType={structureType ?? null}
                     structureData={structureData ?? null}
-                    sceneImageUrls={sceneImageUrls}
+                    sceneImageData={sceneImageData}
                     isRegenerating={isRegenerating}
                     onSceneClick={onSceneClick}
                     onSelectionChange={onSceneSelectionChange}

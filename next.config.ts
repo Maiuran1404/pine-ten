@@ -39,6 +39,16 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.pexels.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'film-grab.com',
+        pathname: '/wp-content/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'flim-1-0-2.s3.eu-central-1.amazonaws.com',
+        pathname: '/thumbs/**',
+      },
     ],
   },
   // Externalize pino and its dependencies to avoid Turbopack bundling issues
