@@ -18,6 +18,7 @@ import {
   notifyAdminWhatsApp,
   adminWhatsAppTemplates,
 } from '@/lib/notifications'
+import { sendNotificationEmail } from '@/lib/notifications/safe-send'
 import { config } from '@/lib/config'
 import { createTaskSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
@@ -87,25 +88,31 @@ export async function GET(request: NextRequest) {
           : eq(tasks.clientId, session.user.id)
       }
 
+      // Lightweight projection for list views — excludes heavy JSONB columns
+      // (moodboardItems, styleReferences, structureData, chatHistory, briefData, deliverables)
+      const taskListSelect = {
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        clientId: tasks.clientId,
+        freelancerId: tasks.freelancerId,
+        categoryId: tasks.categoryId,
+        creditsUsed: tasks.creditsUsed,
+        estimatedHours: tasks.estimatedHours,
+        deadline: tasks.deadline,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        priority: tasks.priority,
+        requirements: tasks.requirements,
+        assignedAt: tasks.assignedAt,
+        completedAt: tasks.completedAt,
+        freelancerName: users.name,
+        freelancerImage: users.image,
+      }
+
       const taskListRaw = await db
-        .select({
-          id: tasks.id,
-          title: tasks.title,
-          description: tasks.description,
-          status: tasks.status,
-          createdAt: tasks.createdAt,
-          creditsUsed: tasks.creditsUsed,
-          estimatedHours: tasks.estimatedHours,
-          deadline: tasks.deadline,
-          assignedAt: tasks.assignedAt,
-          completedAt: tasks.completedAt,
-          moodboardItems: tasks.moodboardItems,
-          styleReferences: tasks.styleReferences,
-          structureData: tasks.structureData,
-          freelancerId: tasks.freelancerId,
-          freelancerName: users.name,
-          freelancerImage: users.image,
-        })
+        .select(taskListSelect)
         .from(tasks)
         .leftJoin(users, eq(tasks.freelancerId, users.id))
         .where(conditions)
@@ -147,15 +154,17 @@ export async function GET(request: NextRequest) {
         title: task.title,
         description: task.description,
         status: task.status,
+        clientId: task.clientId,
+        categoryId: task.categoryId,
         createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
         creditsUsed: task.creditsUsed,
         estimatedHours: task.estimatedHours,
         deadline: task.deadline,
+        priority: task.priority,
+        requirements: task.requirements,
         assignedAt: task.assignedAt,
         completedAt: task.completedAt,
-        moodboardItems: task.moodboardItems,
-        styleReferences: task.styleReferences,
-        structureData: task.structureData,
         thumbnailUrl: thumbnailByTaskId.get(task.id) || null,
         freelancer: task.freelancerId
           ? {
@@ -564,30 +573,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Notify client that their task has been assigned
-        try {
-          const { sendEmail, emailTemplates } = await import('@/lib/notifications/email')
-          const [clientUser] = await db
-            .select({ name: users.name, email: users.email })
-            .from(users)
-            .where(eq(users.id, session.user.id))
-            .limit(1)
-
-          if (clientUser?.email) {
-            const emailData = emailTemplates.taskAssignedToClient(
-              clientUser.name || 'there',
-              title,
-              result.assignedTo.artist.name || 'A designer',
-              `${config.app.url}/dashboard/tasks/${result.task.id}`
-            )
-            await sendEmail({
-              to: clientUser.email,
-              subject: emailData.subject,
-              html: emailData.html,
-            })
-          }
-        } catch (error) {
-          logger.error({ err: error }, 'Failed to send client assignment email')
-        }
+        const designerName = result.assignedTo.artist.name || 'A designer'
+        const taskUrl = `${config.app.url}/dashboard/tasks/${result.task.id}`
+        await sendNotificationEmail({
+          userId: session.user.id,
+          template: (t, user) =>
+            t.taskAssignedToClient(user.name || 'there', title, designerName, taskUrl),
+          context: 'client assignment email',
+        })
       }
 
       logger.info(
