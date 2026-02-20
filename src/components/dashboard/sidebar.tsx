@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
 
@@ -61,43 +62,54 @@ export function AppSidebar() {
         style={{ fontFamily: "'Satoshi', sans-serif" }}
       >
         <SidebarHeader className="p-2 flex items-center justify-center">
-          <button
-            onClick={() => setOpen(true)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="Expand sidebar"
-          >
-            <PanelLeft className="h-5 w-5" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setOpen(true)}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <PanelLeft className="h-5 w-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
         </SidebarHeader>
         <SidebarContent className="px-2 flex flex-col items-center">
           {/* New Chat button - icon only, centered */}
           <div className="py-2 flex justify-center w-full">
-            <Button
-              onClick={handleStartNewChat}
-              variant="outline"
-              size="icon"
-              className="w-10 h-10 border-border hover:bg-muted"
-              title="New Chat"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleStartNewChat}
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 border-border hover:bg-muted"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">New Chat</TooltipContent>
+            </Tooltip>
           </div>
           {/* Feature icons - centered */}
           <nav className="space-y-1 py-2 w-full">
             {features.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={cn(
-                  'flex items-center justify-center p-2.5 rounded-lg transition-colors',
-                  isActive(item.href)
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                    : 'text-foreground hover:bg-muted'
-                )}
-                title={item.label}
-              >
-                <item.icon className="h-5 w-5" />
-              </Link>
+              <Tooltip key={item.label}>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      'flex items-center justify-center p-2.5 rounded-lg transition-colors',
+                      isActive(item.href)
+                        ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                        : 'text-foreground hover:bg-muted'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
             ))}
           </nav>
           {/* Theme toggle */}
