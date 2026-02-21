@@ -11,14 +11,38 @@ export function SlidePricing({ data, logoSrc }: SlidePricingProps) {
     <SlideWrapper backgroundColor="#ffffff">
       <SlideHeader date={data.coverDate} clientName={data.clientName} logoSrc={logoSrc} />
 
-      <div style={{ padding: '32px 100px 0' }}>
+      <div style={{ padding: '60px 100px 0' }}>
+        {/* Large "Pricing / For projects" title at top */}
+        <div style={{ marginBottom: 40 }}>
+          <div
+            style={{
+              fontSize: 80,
+              fontWeight: 900,
+              color: '#2B2B2B',
+              lineHeight: 1.0,
+              letterSpacing: '-3px',
+            }}
+          >
+            {data.pricingTitle}
+          </div>
+          <div
+            style={{
+              fontSize: 36,
+              fontWeight: 300,
+              color: '#aaa',
+              marginTop: 4,
+            }}
+          >
+            {data.pricingSubtitle}
+          </div>
+        </div>
+
         {/* Pricing cards row */}
         <div
           style={{
             display: 'flex',
             gap: 40,
             justifyContent: 'center',
-            marginBottom: 40,
           }}
         >
           {data.pricingCards.map((card, i) => (
@@ -155,31 +179,6 @@ export function SlidePricing({ data, logoSrc }: SlidePricingProps) {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Large "Pricing / For projects" text at bottom left */}
-        <div>
-          <div
-            style={{
-              fontSize: 80,
-              fontWeight: 900,
-              color: '#2B2B2B',
-              lineHeight: 1.0,
-              letterSpacing: '-3px',
-            }}
-          >
-            {data.pricingTitle}
-          </div>
-          <div
-            style={{
-              fontSize: 36,
-              fontWeight: 300,
-              color: '#aaa',
-              marginTop: 4,
-            }}
-          >
-            {data.pricingSubtitle}
-          </div>
         </div>
       </div>
 

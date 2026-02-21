@@ -1,5 +1,5 @@
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
-import { SlideWrapper } from './slide-wrapper'
+import { SlideWrapper, SlideHeader } from './slide-wrapper'
 import { ClientLogos } from './client-logos'
 
 interface SlideAboutProps {
@@ -17,79 +17,14 @@ export function SlideAbout({
 }: SlideAboutProps) {
   return (
     <SlideWrapper backgroundColor="#ffffff">
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          padding: '60px 100px 0',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end' }}>
-          <div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 400,
-                color: '#aaa',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                marginBottom: 4,
-              }}
-            >
-              PROVIDED BY
-            </div>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 900,
-                color: '#2B2B2B',
-                textTransform: 'uppercase',
-              }}
-            >
-              CRAFTED AI
-            </div>
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 400,
-                color: '#aaa',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                marginBottom: 4,
-              }}
-            >
-              LAST UPDATED
-            </div>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 900,
-                color: '#2B2B2B',
-                textTransform: 'uppercase',
-              }}
-            >
-              {data.coverDate}
-            </div>
-          </div>
-        </div>
-        {logoSrc && (
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} alt="Crafted" style={{ height: 52, objectFit: 'contain' }} />
-          </div>
-        )}
-      </div>
+      <SlideHeader date={data.coverDate} logoSrc={logoSrc} />
 
       {/* Main content */}
       <div style={{ padding: '60px 100px 0' }}>
         {/* Title */}
         <h2
           style={{
-            fontSize: 72,
+            fontSize: 80,
             fontWeight: 900,
             color: '#2B2B2B',
             margin: 0,
@@ -126,7 +61,6 @@ export function SlideAbout({
             border: '1px solid #e5e5e5',
             backgroundColor: '#ffffff',
             boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-            marginBottom: 56,
           }}
         >
           <div
@@ -200,21 +134,28 @@ export function SlideAbout({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Client logos section */}
-        <div>
-          <p
-            style={{
-              fontSize: 16,
-              fontWeight: 600,
-              color: '#2B2B2B',
-              marginBottom: 28,
-            }}
-          >
-            Our team has crafted for clients such as:
-          </p>
-          <ClientLogos logoBasePath={clientLogoBasePath} logoDataMap={clientLogoDataMap} />
-        </div>
+      {/* Client logos pinned to bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 100,
+          right: 100,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 16,
+            fontWeight: 600,
+            color: '#2B2B2B',
+            marginBottom: 28,
+          }}
+        >
+          Our team has crafted for clients such as:
+        </p>
+        <ClientLogos logoBasePath={clientLogoBasePath} logoDataMap={clientLogoDataMap} />
       </div>
     </SlideWrapper>
   )

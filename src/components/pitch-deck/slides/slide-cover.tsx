@@ -9,7 +9,7 @@ interface SlideCoverProps {
 export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
   return (
     <SlideWrapper backgroundColor="#33422E">
-      {/* Main gradient background matching Figma: #4B793A → #77926E → #33422E */}
+      {/* Base fill from Figma */}
       <div
         style={{
           position: 'absolute',
@@ -17,7 +17,19 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
           left: 0,
           width: '100%',
           height: '100%',
-          background: `linear-gradient(135deg, #4B793A 0%, #5E7A63 30%, #77926E 50%, #5E7A63 70%, #33422E 100%)`,
+          backgroundColor: '#5E7A63',
+        }}
+      />
+
+      {/* Linear gradient layer: #4B793A → #77926E → #33422E */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(135deg, #4B793A 0%, #77926E 50%, #33422E 100%)',
         }}
       />
 
@@ -74,14 +86,13 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
         </div>
       </div>
 
-      {/* Large gecko/figure logo on right side - positioned per Figma reference */}
+      {/* Large gecko/figure logo - head in focus, bleeds off right and bottom */}
       {figureLogoSrc && (
         <div
           style={{
             position: 'absolute',
-            top: '46%',
-            right: -80,
-            transform: 'translateY(-50%)',
+            top: -20,
+            right: -280,
             zIndex: 1,
           }}
         >
@@ -89,7 +100,7 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
           <img
             src={figureLogoSrc}
             alt="Crafted figure"
-            style={{ height: 780, objectFit: 'contain', opacity: 0.95 }}
+            style={{ height: 1400, objectFit: 'contain', opacity: 0.95 }}
           />
         </div>
       )}
@@ -136,7 +147,7 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
             style={{
               fontSize: 9,
               fontWeight: 700,
-              color: '#86DD65',
+              color: '#BDF945',
               textTransform: 'uppercase',
               letterSpacing: '2px',
               marginBottom: 5,
@@ -159,7 +170,7 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
             style={{
               fontSize: 9,
               fontWeight: 700,
-              color: '#86DD65',
+              color: '#BDF945',
               textTransform: 'uppercase',
               letterSpacing: '2px',
               marginBottom: 5,

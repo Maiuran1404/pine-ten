@@ -101,7 +101,7 @@ export const defaultPitchDeckContent: PitchDeckFormData = {
   pricingCards: [
     {
       label: 'Custom offer',
-      price: "$5'000",
+      price: '50 000 NOK',
       priceDescription: 'Pricing for landing page + communication',
       ctaText: "Let's work together!",
       includedItems: [
@@ -113,7 +113,7 @@ export const defaultPitchDeckContent: PitchDeckFormData = {
     },
     {
       label: 'Custom offer',
-      price: '$2,000/mo',
+      price: '20 000 NOK/mo',
       priceDescription: 'Pricing for content',
       ctaText: "Let's work together!",
       includedItems: [

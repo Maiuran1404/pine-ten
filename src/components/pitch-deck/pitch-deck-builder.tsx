@@ -8,23 +8,10 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { pitchDeckSchema, type PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 import { defaultPitchDeckContent } from '@/lib/pitch-deck/default-content'
-import { PitchDeckForm } from './pitch-deck-form'
+import { PitchDeckChat } from './pitch-deck-chat'
 import { PitchDeckPreview } from './pitch-deck-preview'
 
-const SLIDE_TAB_MAP: Record<string, number> = {
-  global: 0,
-  cover: 0,
-  about: 2,
-  project: 3,
-  overview: 4,
-  scope: 5,
-  timeline: 6,
-  pricing: 7,
-  back: 8,
-}
-
 export function PitchDeckBuilder() {
-  const [activeTab, setActiveTab] = useState('cover')
   const [activeSlide, setActiveSlide] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -36,23 +23,8 @@ export function PitchDeckBuilder() {
 
   const formValues = form.watch()
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
-    const slideIndex = SLIDE_TAB_MAP[tab]
-    if (slideIndex !== undefined) {
-      setActiveSlide(slideIndex)
-    }
-  }
-
   const handleSlideChange = (index: number) => {
     setActiveSlide(index)
-    // Find the matching tab for this slide index
-    const tab = Object.entries(SLIDE_TAB_MAP).find(
-      ([key, value]) => value === index && key !== 'global'
-    )
-    if (tab) {
-      setActiveTab(tab[0])
-    }
   }
 
   const handleGeneratePDF = async () => {
@@ -97,13 +69,13 @@ export function PitchDeckBuilder() {
   return (
     <div className="h-[calc(100vh-5rem)] -mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
       <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-0 h-full">
-        {/* Left panel - Form */}
-        <div className="flex flex-col min-h-0 border-r bg-background px-5 py-4">
+        {/* Left panel - Chat */}
+        <div className="flex flex-col min-h-0 border-r bg-background">
           <div className="flex-1 overflow-hidden">
-            <PitchDeckForm form={form} activeTab={activeTab} onTabChange={handleTabChange} />
+            <PitchDeckChat form={form} />
           </div>
 
-          <div className="pt-3 border-t mt-3">
+          <div className="px-5 py-3 border-t">
             <Button
               onClick={handleGeneratePDF}
               disabled={isGenerating}

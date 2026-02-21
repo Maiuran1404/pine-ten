@@ -39,8 +39,11 @@ export function PitchDeckPreview({ data, activeSlide, onSlideChange }: PitchDeck
   const calculateScale = useCallback(() => {
     if (!containerRef.current) return
     const containerWidth = containerRef.current.offsetWidth - 32
-    const newScale = Math.min(containerWidth / 1920, 0.55)
-    setScale(newScale)
+    // Reserve ~140px for navigation + thumbnail strip below the preview
+    const containerHeight = containerRef.current.offsetHeight - 140
+    const scaleByWidth = containerWidth / 1920
+    const scaleByHeight = containerHeight / 1080
+    setScale(Math.max(0.15, Math.min(scaleByWidth, scaleByHeight) * 0.75))
   }, [])
 
   useEffect(() => {
