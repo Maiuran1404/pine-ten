@@ -1,26 +1,26 @@
 import { z } from 'zod'
 
-export const serviceItemSchema = z.object({
-  name: z.string().min(1, 'Service name is required'),
-  description: z.string().min(1, 'Service description is required'),
+export const projectDetailColumnSchema = z.object({
+  title: z.string().min(1, 'Column title is required'),
+  description: z.string().min(1, 'Column description is required'),
 })
 
-export const scopeItemSchema = z.object({
-  title: z.string().min(1, 'Scope item title is required'),
-  description: z.string().min(1, 'Scope item description is required'),
-  included: z.boolean(),
+export const scopeCategorySchema = z.object({
+  title: z.string().min(1, 'Category title is required'),
+  items: z.array(z.string()),
 })
 
 export const milestoneSchema = z.object({
-  phase: z.string().min(1, 'Phase name is required'),
-  description: z.string().min(1, 'Phase description is required'),
-  duration: z.string().min(1, 'Duration is required'),
+  date: z.string().min(1, 'Date is required'),
+  description: z.string().min(1, 'Description is required'),
 })
 
-export const pricingItemSchema = z.object({
-  item: z.string().min(1, 'Item name is required'),
-  description: z.string().min(1, 'Item description is required'),
+export const pricingCardSchema = z.object({
+  label: z.string(),
   price: z.string().min(1, 'Price is required'),
+  priceDescription: z.string(),
+  ctaText: z.string(),
+  includedItems: z.array(z.string()),
 })
 
 export const pitchDeckSchema = z.object({
@@ -30,33 +30,23 @@ export const pitchDeckSchema = z.object({
   accentColor: z.string(),
 
   // Cover (Slide 1)
-  coverTitle: z.string().min(1, 'Cover title is required'),
-  coverSubtitle: z.string(),
   coverDate: z.string(),
 
-  // About (Slide 2)
+  // About (Slide 3)
   aboutTitle: z.string(),
   aboutBody: z.string(),
-  aboutHighlights: z.array(z.string()),
-
-  // Services (Slide 3)
-  servicesTitle: z.string(),
-  services: z.array(serviceItemSchema),
 
   // Project Details (Slide 4)
   projectDetailsTitle: z.string(),
-  projectName: z.string(),
-  projectDescription: z.string(),
-  projectObjectives: z.array(z.string()),
+  projectDetailsColumns: z.array(projectDetailColumnSchema),
 
   // Overview (Slide 5)
   overviewTitle: z.string(),
   overviewBody: z.string(),
-  overviewKeyPoints: z.array(z.string()),
 
   // Scope (Slide 6)
   scopeTitle: z.string(),
-  scopeItems: z.array(scopeItemSchema),
+  scopeCategories: z.array(scopeCategorySchema),
 
   // Timeline (Slide 7)
   timelineTitle: z.string(),
@@ -64,19 +54,20 @@ export const pitchDeckSchema = z.object({
 
   // Pricing (Slide 8)
   pricingTitle: z.string(),
-  pricingItems: z.array(pricingItemSchema),
-  pricingTotal: z.string(),
-  pricingNotes: z.string(),
+  pricingSubtitle: z.string(),
+  pricingCards: z.array(pricingCardSchema),
 
   // Back Cover (Slide 9)
   backCoverMessage: z.string(),
+  backCoverBody: z.string(),
+  contactName: z.string(),
   contactEmail: z.string(),
   contactPhone: z.string(),
   contactWebsite: z.string(),
 })
 
 export type PitchDeckFormData = z.infer<typeof pitchDeckSchema>
-export type ServiceItem = z.infer<typeof serviceItemSchema>
-export type ScopeItem = z.infer<typeof scopeItemSchema>
+export type ProjectDetailColumn = z.infer<typeof projectDetailColumnSchema>
+export type ScopeCategory = z.infer<typeof scopeCategorySchema>
 export type Milestone = z.infer<typeof milestoneSchema>
-export type PricingItem = z.infer<typeof pricingItemSchema>
+export type PricingCard = z.infer<typeof pricingCardSchema>

@@ -7,14 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Switch } from '@/components/ui/switch'
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 
 const SLIDE_TABS = [
   { value: 'global', label: 'Settings', slideIndex: -1 },
   { value: 'cover', label: 'Cover', slideIndex: 0 },
-  { value: 'about', label: 'About', slideIndex: 1 },
-  { value: 'services', label: 'Services', slideIndex: 2 },
+  { value: 'about', label: 'About', slideIndex: 2 },
   { value: 'project', label: 'Project', slideIndex: 3 },
   { value: 'overview', label: 'Overview', slideIndex: 4 },
   { value: 'scope', label: 'Scope', slideIndex: 5 },
@@ -57,7 +55,7 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
           <FieldGroup label="Client Name">
             <Input {...register('clientName')} placeholder="Client name" />
           </FieldGroup>
-          <FieldGroup label="Primary Color (Background)">
+          <FieldGroup label="Primary Color (Cover Background)">
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -67,7 +65,7 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
               <Input {...register('primaryColor')} className="flex-1" />
             </div>
           </FieldGroup>
-          <FieldGroup label="Accent Color">
+          <FieldGroup label="Accent Color (Buttons & Highlights)">
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -81,34 +79,23 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
 
         {/* Cover */}
         <TabsContent value="cover" className="space-y-4 mt-0">
-          <FieldGroup label="Title">
-            <Input {...register('coverTitle')} placeholder="Design Proposal" />
-          </FieldGroup>
-          <FieldGroup label="Subtitle">
-            <Input {...register('coverSubtitle')} placeholder="Interior Design Services" />
-          </FieldGroup>
           <FieldGroup label="Date">
-            <Input {...register('coverDate')} placeholder="February 2026" />
+            <Input {...register('coverDate')} placeholder="Feb 2026" />
           </FieldGroup>
+          <p className="text-xs text-muted-foreground">
+            The cover displays &quot;[Client] x Crafted&quot; automatically from the client name in
+            Settings.
+          </p>
         </TabsContent>
 
         {/* About */}
         <TabsContent value="about" className="space-y-4 mt-0">
-          <FieldGroup label="Section Title">
-            <Input {...register('aboutTitle')} placeholder="About Us" />
+          <FieldGroup label="Headline">
+            <Input {...register('aboutTitle')} placeholder="Marketing done by AI..." />
           </FieldGroup>
           <FieldGroup label="Body Text">
             <Textarea {...register('aboutBody')} placeholder="Company description..." rows={4} />
           </FieldGroup>
-          <AboutHighlightsField form={form} />
-        </TabsContent>
-
-        {/* Services */}
-        <TabsContent value="services" className="space-y-4 mt-0">
-          <FieldGroup label="Section Title">
-            <Input {...register('servicesTitle')} placeholder="Our Services" />
-          </FieldGroup>
-          <ServicesField form={form} />
         </TabsContent>
 
         {/* Project Details */}
@@ -116,17 +103,7 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
           <FieldGroup label="Section Title">
             <Input {...register('projectDetailsTitle')} placeholder="Project Details" />
           </FieldGroup>
-          <FieldGroup label="Project Name">
-            <Input {...register('projectName')} placeholder="Living Space Redesign" />
-          </FieldGroup>
-          <FieldGroup label="Project Description">
-            <Textarea
-              {...register('projectDescription')}
-              placeholder="Project description..."
-              rows={3}
-            />
-          </FieldGroup>
-          <ObjectivesField form={form} />
+          <ProjectColumnsField form={form} />
         </TabsContent>
 
         {/* Overview */}
@@ -138,24 +115,23 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
             <Textarea
               {...register('overviewBody')}
               placeholder="Overview description..."
-              rows={4}
+              rows={6}
             />
           </FieldGroup>
-          <KeyPointsField form={form} />
         </TabsContent>
 
         {/* Scope */}
         <TabsContent value="scope" className="space-y-4 mt-0">
           <FieldGroup label="Section Title">
-            <Input {...register('scopeTitle')} placeholder="Scope of Work" />
+            <Input {...register('scopeTitle')} placeholder="Scope Of Work" />
           </FieldGroup>
-          <ScopeField form={form} />
+          <ScopeCategoriesField form={form} />
         </TabsContent>
 
         {/* Timeline */}
         <TabsContent value="timeline" className="space-y-4 mt-0">
           <FieldGroup label="Section Title">
-            <Input {...register('timelineTitle')} placeholder="Project Timeline" />
+            <Input {...register('timelineTitle')} placeholder="Timeline" />
           </FieldGroup>
           <MilestonesField form={form} />
         </TabsContent>
@@ -163,38 +139,33 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
         {/* Pricing */}
         <TabsContent value="pricing" className="space-y-4 mt-0">
           <FieldGroup label="Section Title">
-            <Input {...register('pricingTitle')} placeholder="Investment" />
+            <Input {...register('pricingTitle')} placeholder="Pricing" />
           </FieldGroup>
-          <PricingField form={form} />
-          <FieldGroup label="Total">
-            <Input {...register('pricingTotal')} placeholder="$9,000" />
+          <FieldGroup label="Subtitle">
+            <Input {...register('pricingSubtitle')} placeholder="For projects" />
           </FieldGroup>
-          <FieldGroup label="Notes">
-            <Textarea
-              {...register('pricingNotes')}
-              placeholder="Additional pricing notes..."
-              rows={2}
-            />
-          </FieldGroup>
+          <PricingCardsField form={form} />
         </TabsContent>
 
         {/* Back Cover */}
         <TabsContent value="back" className="space-y-4 mt-0">
-          <FieldGroup label="Closing Message">
-            <Textarea
-              {...register('backCoverMessage')}
-              placeholder="Thank you message..."
-              rows={2}
-            />
+          <FieldGroup label="Heading">
+            <Input {...register('backCoverMessage')} placeholder="Thank you" />
+          </FieldGroup>
+          <FieldGroup label="Body Text">
+            <Textarea {...register('backCoverBody')} placeholder="Thank you message..." rows={3} />
+          </FieldGroup>
+          <FieldGroup label="Project Manager Name">
+            <Input {...register('contactName')} placeholder="Name" />
           </FieldGroup>
           <FieldGroup label="Contact Email">
-            <Input {...register('contactEmail')} placeholder="hello@crafted.design" />
+            <Input {...register('contactEmail')} placeholder="email@getcrafted.ai" />
           </FieldGroup>
           <FieldGroup label="Contact Phone">
-            <Input {...register('contactPhone')} placeholder="+61 400 000 000" />
+            <Input {...register('contactPhone')} placeholder="+47 48198693" />
           </FieldGroup>
           <FieldGroup label="Website">
-            <Input {...register('contactWebsite')} placeholder="www.crafted.design" />
+            <Input {...register('contactWebsite')} placeholder="getcrafted.ai" />
           </FieldGroup>
         </TabsContent>
       </div>
@@ -204,73 +175,33 @@ export function PitchDeckForm({ form, activeTab, onTabChange }: PitchDeckFormPro
 
 // ---- Dynamic array fields ----
 
-function AboutHighlightsField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
+function ProjectColumnsField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'aboutHighlights' as never,
-  })
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Highlights</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append('' as never)}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
-      </div>
-      {fields.map((field, i) => (
-        <div key={field.id} className="flex gap-2">
-          <Input
-            {...form.register(`aboutHighlights.${i}` as const)}
-            placeholder={`Highlight ${i + 1}`}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => remove(i)}
-            className="cursor-pointer flex-shrink-0 text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ServicesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'services',
+    name: 'projectDetailsColumns',
   })
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Services</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ name: '', description: '' })}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
+        <Label>Columns</Label>
+        {fields.length < 4 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ title: '', description: '' })}
+            className="cursor-pointer"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
+        )}
       </div>
       {fields.map((field, i) => (
         <div key={field.id} className="space-y-2 p-3 border rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Service {i + 1}</span>
+            <span className="text-xs text-muted-foreground font-medium">Column {i + 1}</span>
             <Button
               type="button"
               variant="ghost"
@@ -281,11 +212,14 @@ function ServicesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-          <Input {...form.register(`services.${i}.name`)} placeholder="Service name" />
+          <Input
+            {...form.register(`projectDetailsColumns.${i}.title`)}
+            placeholder="Column title"
+          />
           <Textarea
-            {...form.register(`services.${i}.description`)}
+            {...form.register(`projectDetailsColumns.${i}.description`)}
             placeholder="Description"
-            rows={2}
+            rows={3}
           />
         </div>
       ))}
@@ -293,139 +227,98 @@ function ServicesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
   )
 }
 
-function ObjectivesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
+function ScopeCategoriesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'projectObjectives' as never,
-  })
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Objectives</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append('' as never)}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
-      </div>
-      {fields.map((field, i) => (
-        <div key={field.id} className="flex gap-2">
-          <Input
-            {...form.register(`projectObjectives.${i}` as const)}
-            placeholder={`Objective ${i + 1}`}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => remove(i)}
-            className="cursor-pointer flex-shrink-0 text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function KeyPointsField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'overviewKeyPoints' as never,
-  })
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Key Points</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append('' as never)}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
-      </div>
-      {fields.map((field, i) => (
-        <div key={field.id} className="flex gap-2">
-          <Input
-            {...form.register(`overviewKeyPoints.${i}` as const)}
-            placeholder={`Key point ${i + 1}`}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => remove(i)}
-            className="cursor-pointer flex-shrink-0 text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ScopeField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'scopeItems',
+    name: 'scopeCategories',
   })
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Scope Items</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ title: '', description: '', included: true })}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
+        <Label>Categories</Label>
+        {fields.length < 4 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ title: '', items: [''] })}
+            className="cursor-pointer"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Category
+          </Button>
+        )}
       </div>
       {fields.map((field, i) => (
-        <div key={field.id} className="space-y-2 p-3 border rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.watch(`scopeItems.${i}.included`)}
-                onCheckedChange={(checked) => form.setValue(`scopeItems.${i}.included`, checked)}
-              />
-              <span className="text-xs text-muted-foreground">Included</span>
-            </div>
+        <ScopeCategoryItem key={field.id} form={form} index={i} onRemove={() => remove(i)} />
+      ))}
+    </div>
+  )
+}
+
+function ScopeCategoryItem({
+  form,
+  index,
+  onRemove,
+}: {
+  form: UseFormReturn<PitchDeckFormData>
+  index: number
+  onRemove: () => void
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: `scopeCategories.${index}.items` as never,
+  })
+
+  return (
+    <div className="space-y-2 p-3 border rounded-lg">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground font-medium">Category {index + 1}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="cursor-pointer h-6 w-6 text-destructive"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+      <Input {...form.register(`scopeCategories.${index}.title`)} placeholder="Category title" />
+      <div className="space-y-1 ml-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Items</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => append('' as never)}
+            className="cursor-pointer h-6 text-xs"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Item
+          </Button>
+        </div>
+        {fields.map((itemField, j) => (
+          <div key={itemField.id} className="flex gap-1">
+            <Input
+              {...form.register(`scopeCategories.${index}.items.${j}` as const)}
+              placeholder={`Item ${j + 1}`}
+              className="text-sm"
+            />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => remove(i)}
-              className="cursor-pointer h-6 w-6 text-destructive"
+              onClick={() => remove(j)}
+              className="cursor-pointer flex-shrink-0 h-9 w-9 text-destructive"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-          <Input {...form.register(`scopeItems.${i}.title`)} placeholder="Scope item title" />
-          <Textarea
-            {...form.register(`scopeItems.${i}.description`)}
-            placeholder="Description"
-            rows={2}
-          />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
@@ -444,7 +337,7 @@ function MilestonesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ phase: '', description: '', duration: '' })}
+          onClick={() => append({ date: '', description: '' })}
           className="cursor-pointer"
         >
           <Plus className="h-3 w-3 mr-1" />
@@ -454,7 +347,7 @@ function MilestonesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
       {fields.map((field, i) => (
         <div key={field.id} className="space-y-2 p-3 border rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Phase {i + 1}</span>
+            <span className="text-xs text-muted-foreground font-medium">Milestone {i + 1}</span>
             <Button
               type="button"
               variant="ghost"
@@ -465,63 +358,123 @@ function MilestonesField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-          <Input {...form.register(`milestones.${i}.phase`)} placeholder="Phase name" />
-          <Textarea
-            {...form.register(`milestones.${i}.description`)}
-            placeholder="Description"
-            rows={2}
-          />
-          <Input {...form.register(`milestones.${i}.duration`)} placeholder="e.g., 2 weeks" />
+          <Input {...form.register(`milestones.${i}.date`)} placeholder="e.g., Sunday 8th" />
+          <Input {...form.register(`milestones.${i}.description`)} placeholder="Description" />
         </div>
       ))}
     </div>
   )
 }
 
-function PricingField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
+function PricingCardsField({ form }: { form: UseFormReturn<PitchDeckFormData> }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'pricingItems',
+    name: 'pricingCards',
   })
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Line Items</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ item: '', description: '', price: '' })}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
+        <Label>Pricing Cards</Label>
+        {fields.length < 3 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              append({
+                label: 'Custom offer',
+                price: '',
+                priceDescription: '',
+                ctaText: "Let's work together!",
+                includedItems: [''],
+              })
+            }
+            className="cursor-pointer"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Card
+          </Button>
+        )}
       </div>
       {fields.map((field, i) => (
-        <div key={field.id} className="space-y-2 p-3 border rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Item {i + 1}</span>
+        <PricingCardItem key={field.id} form={form} index={i} onRemove={() => remove(i)} />
+      ))}
+    </div>
+  )
+}
+
+function PricingCardItem({
+  form,
+  index,
+  onRemove,
+}: {
+  form: UseFormReturn<PitchDeckFormData>
+  index: number
+  onRemove: () => void
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: `pricingCards.${index}.includedItems` as never,
+  })
+
+  return (
+    <div className="space-y-2 p-3 border rounded-lg">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground font-medium">Card {index + 1}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="cursor-pointer h-6 w-6 text-destructive"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+      <Input {...form.register(`pricingCards.${index}.label`)} placeholder="Card label" />
+      <Input {...form.register(`pricingCards.${index}.price`)} placeholder="$5,000" />
+      <Input
+        {...form.register(`pricingCards.${index}.priceDescription`)}
+        placeholder="Pricing for..."
+      />
+      <Input
+        {...form.register(`pricingCards.${index}.ctaText`)}
+        placeholder="Let's work together!"
+      />
+      <div className="space-y-1 ml-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Included Items</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => append('' as never)}
+            className="cursor-pointer h-6 text-xs"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Item
+          </Button>
+        </div>
+        {fields.map((itemField, j) => (
+          <div key={itemField.id} className="flex gap-1">
+            <Input
+              {...form.register(`pricingCards.${index}.includedItems.${j}` as const)}
+              placeholder={`Item ${j + 1}`}
+              className="text-sm"
+            />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => remove(i)}
-              className="cursor-pointer h-6 w-6 text-destructive"
+              onClick={() => remove(j)}
+              className="cursor-pointer flex-shrink-0 h-9 w-9 text-destructive"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-          <Input {...form.register(`pricingItems.${i}.item`)} placeholder="Item name" />
-          <Textarea
-            {...form.register(`pricingItems.${i}.description`)}
-            placeholder="Description"
-            rows={2}
-          />
-          <Input {...form.register(`pricingItems.${i}.price`)} placeholder="$0,000" />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

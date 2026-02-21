@@ -76,8 +76,7 @@
     radial-gradient(ellipse at 30% 70%, #4a7c4a 0%, transparent 50%),
     linear-gradient(180deg, #4a7c4a 0%, #6b9b6b 35%, #8bb58b 65%, #a8d4a8 100%);
 
-  /* Crafted Font */
-  --font-satoshi: 'Satoshi', sans-serif;
+  /* Crafted Font - loaded via next/font/local, var(--font-satoshi) is the font family */
 
   /* Light Mode - Soft Pastel Green/Mint */
   --background: #f8faf8;

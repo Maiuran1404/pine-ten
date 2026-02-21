@@ -1,5 +1,5 @@
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
-import { SlideWrapper } from './slide-wrapper'
+import { SlideWrapper, SlideHeader, SlideFooter } from './slide-wrapper'
 
 interface SlideScopeProps {
   data: PitchDeckFormData
@@ -8,115 +8,82 @@ interface SlideScopeProps {
 
 export function SlideScope({ data, logoSrc }: SlideScopeProps) {
   return (
-    <SlideWrapper backgroundColor={data.primaryColor}>
-      {/* Logo top-right */}
-      {logoSrc && (
-        <div style={{ position: 'absolute', top: 60, right: 80 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} alt="Logo" style={{ height: 32, objectFit: 'contain' }} />
-        </div>
-      )}
+    <SlideWrapper backgroundColor="#ffffff">
+      <SlideHeader date={data.coverDate} clientName={data.clientName} logoSrc={logoSrc} />
 
-      {/* Content */}
-      <div style={{ padding: '80px 80px 60px' }}>
-        {/* Section label */}
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            color: data.accentColor,
-            marginBottom: 16,
-          }}
-        >
-          Deliverables
-        </div>
-
+      <div style={{ padding: '80px 100px 0' }}>
         {/* Title */}
         <h2
           style={{
-            fontSize: 52,
-            fontWeight: 700,
+            fontSize: 72,
+            fontWeight: 900,
+            color: '#2B2B2B',
             margin: 0,
-            marginBottom: 60,
-            color: '#ffffff',
-            lineHeight: 1.2,
+            marginBottom: 56,
+            lineHeight: 1.05,
+            letterSpacing: '-2.5px',
           }}
         >
           {data.scopeTitle}
         </h2>
 
-        {/* Scope items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {data.scopeItems.map((item, i) => (
+        {/* Three category columns */}
+        <div style={{ display: 'flex', gap: 0 }}>
+          {data.scopeCategories.map((category, i) => (
             <div
               key={i}
               style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 24,
-                padding: '28px 36px',
-                borderRadius: 16,
-                backgroundColor: '#ffffff06',
-                border: `1px solid ${item.included ? data.accentColor + '30' : '#ffffff10'}`,
+                flex: 1,
+                padding: '0 40px',
+                borderLeft: i > 0 ? '2px solid #e8e8e8' : 'none',
+                paddingLeft: i === 0 ? 0 : 40,
               }}
             >
-              {/* Checkbox indicator */}
-              <div
+              <h3
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  backgroundColor: item.included ? data.accentColor : 'transparent',
-                  border: `2px solid ${item.included ? data.accentColor : '#ffffff30'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  marginTop: 2,
+                  fontSize: 22,
+                  fontWeight: 900,
+                  color: '#2B2B2B',
+                  margin: 0,
+                  marginBottom: 24,
                 }}
               >
-                {item.included && (
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8L6.5 11.5L13 5"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    marginBottom: 8,
-                  }}
-                >
-                  {item.title}
-                </div>
-                <p
-                  style={{
-                    fontSize: 17,
-                    lineHeight: 1.5,
-                    color: '#ffffff99',
-                    margin: 0,
-                    fontWeight: 300,
-                  }}
-                >
-                  {item.description}
-                </p>
-              </div>
+                {category.title}
+              </h3>
+              <ul
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}
+              >
+                {category.items.map((item, j) => (
+                  <li
+                    key={j}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      fontSize: 18,
+                      lineHeight: 1.55,
+                      color: '#666',
+                      fontWeight: 300,
+                    }}
+                  >
+                    <span style={{ marginTop: 2, flexShrink: 0 }}>•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
       </div>
+
+      <SlideFooter pageNumber="06" />
     </SlideWrapper>
   )
 }

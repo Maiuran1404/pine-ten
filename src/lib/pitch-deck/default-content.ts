@@ -2,149 +2,135 @@ import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 
 export const defaultPitchDeckContent: PitchDeckFormData = {
   // Global
-  clientName: 'Client Name',
-  primaryColor: '#1a1a2e',
-  accentColor: '#e94560',
+  clientName: 'Arcline',
+  primaryColor: '#5E7A63',
+  accentColor: '#395C2D',
 
   // Cover
-  coverTitle: 'Design Proposal',
-  coverSubtitle: 'Interior Design Services',
   coverDate: new Date().toLocaleDateString('en-US', {
-    month: 'long',
+    month: 'short',
     year: 'numeric',
   }),
 
   // About
-  aboutTitle: 'About Crafted',
+  aboutTitle: 'Marketing done by AI and with human experts',
   aboutBody:
-    'We are a design studio specializing in creating beautiful, functional spaces that reflect your unique style and vision. Our team of experienced designers brings creativity and precision to every project.',
-  aboutHighlights: [
-    '50+ projects completed',
-    'Award-winning design team',
-    'End-to-end project management',
-    'Sustainable design practices',
-  ],
-
-  // Services
-  servicesTitle: 'Our Services',
-  services: [
-    {
-      name: 'Interior Design',
-      description: 'Full-service interior design from concept to completion',
-    },
-    {
-      name: 'Space Planning',
-      description: 'Optimized layouts that maximize your space potential',
-    },
-    {
-      name: '3D Visualization',
-      description: 'Photorealistic renders to preview your space before construction',
-    },
-    {
-      name: 'Project Management',
-      description: 'Seamless coordination of all trades and deliveries',
-    },
-  ],
+    'We combine AI-driven speed with experienced human experts to deliver consistent, professional work across branding, marketing, and content. Our model is simple: clients describe what they need, and we handle everything from structure and execution to refinement and delivery.',
 
   // Project Details
   projectDetailsTitle: 'Project Details',
-  projectName: 'Living Space Redesign',
-  projectDescription:
-    'A comprehensive redesign of the living areas, focused on creating an open, inviting atmosphere that balances modern aesthetics with comfort and functionality.',
-  projectObjectives: [
-    'Create an open-plan living area',
-    'Maximize natural lighting',
-    'Incorporate sustainable materials',
-    'Design for entertaining and daily living',
+  projectDetailsColumns: [
+    {
+      title: 'PROJECT DETAILS',
+      description:
+        "We're building a clear and effective landing page for Arcline. This includes fixing and improving visual assets, shaping the messaging, and making sure everything works well together. We'll also help create LinkedIn content and provide regular status updates during the project.",
+    },
+    {
+      title: 'CREATIVE VISION',
+      description:
+        'Clean, modern, and easy to understand. The design and language should feel professional and confident without being complicated. Everything should help explain what Arcline does in a clear and trustworthy way.',
+    },
+    {
+      title: 'PROJECT OBJECTIVES',
+      description:
+        'Create a landing page that clearly explains Arcline and converts visitors. Improve and align all visuals and copy used on the page. Support Arcline with clear LinkedIn communication. Keep the project on track with regular updates and progress reports.',
+    },
   ],
 
   // Overview
   overviewTitle: 'Project Overview',
   overviewBody:
-    'This project encompasses a full transformation of your living space, bringing together thoughtful design principles with your personal style preferences.',
-  overviewKeyPoints: [
-    'Contemporary design with warm accents',
-    'Custom furniture selections',
-    'Lighting design plan',
-    'Material and finish specifications',
-  ],
+    "This project refreshes Arcline's landing page and brand foundation to support both enterprise sales and startup self-serve growth. We'll rewrite and polish platform communication to fit both audiences, and create new visual assets from scratch to strengthen Arcline's branding for upcoming rounds. We'll also plan, film, and edit LinkedIn content, supported by a shared playbook document that outlines topics, messaging, and required inputs. Finally, we'll refine Arcline's communication across its key channels to ensure everything feels consistent, clear, and on-brand.",
 
   // Scope
-  scopeTitle: 'Scope of Work',
-  scopeItems: [
+  scopeTitle: 'Scope Of Work',
+  scopeCategories: [
     {
-      title: 'Concept Development',
-      description: 'Mood boards, color palettes, and initial design concepts',
-      included: true,
+      title: 'Landing Page',
+      items: [
+        'Landing page re-design and publish',
+        'New design assets created from scratch',
+        'Consistent brand system created for future use',
+        'Asset preparation for upcoming funding rounds',
+      ],
     },
     {
-      title: 'Detailed Design',
-      description: 'Floor plans, elevations, and 3D visualizations',
-      included: true,
+      title: 'Communication',
+      items: [
+        'Clear messaging for both enterprise and self-serve users',
+        'Refined value proposition and page structure',
+        "Polished communication across Arcline's platforms",
+        'Alignment between visuals, copy, and positioning',
+      ],
     },
     {
-      title: 'Procurement',
-      description: 'Sourcing and ordering of all furniture and materials',
-      included: true,
-    },
-    {
-      title: 'Installation',
-      description: 'On-site coordination and final styling',
-      included: true,
+      title: 'Content & Social',
+      items: [
+        'LinkedIn content planning and direction',
+        'Filming and editing of short-form content',
+        'Shared content prep document (topics, structure, inputs)',
+        'Ongoing coordination and progress updates',
+      ],
     },
   ],
 
   // Timeline
-  timelineTitle: 'Project Timeline',
+  timelineTitle: 'Timeline',
   milestones: [
     {
-      phase: 'Discovery & Brief',
-      description: 'Initial consultation and requirements gathering',
-      duration: '1 week',
+      date: 'Sunday 8th',
+      description: 'Start Designing.',
     },
     {
-      phase: 'Concept Design',
-      description: 'Mood boards, concepts, and initial presentations',
-      duration: '2 weeks',
+      date: 'Saturday 14th',
+      description: 'First delivery of landing page, Communication & content documents.',
     },
     {
-      phase: 'Design Development',
-      description: 'Detailed plans, 3D renders, and material selections',
-      duration: '3 weeks',
+      date: 'Sunday 15th',
+      description: 'Rapid iterations based on feedback',
     },
     {
-      phase: 'Implementation',
-      description: 'Procurement, installation, and final styling',
-      duration: '4 weeks',
+      date: 'Tuesday 17th',
+      description: 'Final delivery of Landing page + blocking out filming days.',
     },
   ],
 
   // Pricing
-  pricingTitle: 'Investment',
-  pricingItems: [
+  pricingTitle: 'Pricing',
+  pricingSubtitle: 'For projects',
+  pricingCards: [
     {
-      item: 'Design Fee',
-      description: 'Concept through to detailed design documentation',
-      price: '$5,000',
+      label: 'Custom offer',
+      price: "$5'000",
+      priceDescription: 'Pricing for landing page + communication',
+      ctaText: "Let's work together!",
+      includedItems: [
+        'New landing page',
+        'Asset development',
+        'UX & Communication',
+        'Project Management',
+      ],
     },
     {
-      item: 'Project Management',
-      description: 'Coordination of all trades and procurement',
-      price: '$2,500',
-    },
-    {
-      item: '3D Visualization',
-      description: 'Photorealistic renders of key spaces',
-      price: '$1,500',
+      label: 'Custom offer',
+      price: '$2,000/mo',
+      priceDescription: 'Pricing for content',
+      ctaText: "Let's work together!",
+      includedItems: [
+        'Filming & editing',
+        'Content strategy',
+        'Editing of content',
+        'Project Management',
+      ],
     },
   ],
-  pricingTotal: '$9,000',
-  pricingNotes:
-    'Excludes furniture, fixtures, and construction costs. 50% deposit required to commence.',
 
   // Back Cover
-  backCoverMessage: "Let's create something beautiful together.",
-  contactEmail: 'hello@crafted.design',
-  contactPhone: '+61 400 000 000',
-  contactWebsite: 'www.crafted.design',
+  backCoverMessage: 'Thank you',
+  backCoverBody:
+    "Thank you for your time and consideration. If Crafted feels like the right partner, we'd love to discuss your goals and recommend the best next steps.",
+  contactName: 'Maiuran Loganthan',
+  contactEmail: 'Maiuran@getcrafted.ai',
+  contactPhone: '+47 48198693',
+  contactWebsite: 'getcrafted.ai',
 }

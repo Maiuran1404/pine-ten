@@ -1,5 +1,5 @@
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
-import { SlideWrapper } from './slide-wrapper'
+import { SlideWrapper, SlideHeader, SlideFooter } from './slide-wrapper'
 
 interface SlideProjectDetailsProps {
   data: PitchDeckFormData
@@ -8,123 +8,67 @@ interface SlideProjectDetailsProps {
 
 export function SlideProjectDetails({ data, logoSrc }: SlideProjectDetailsProps) {
   return (
-    <SlideWrapper backgroundColor={data.primaryColor}>
-      {/* Background decoration */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -100,
-          right: -100,
-          width: 500,
-          height: 500,
-          borderRadius: '50%',
-          border: `1px solid ${data.accentColor}15`,
-        }}
-      />
+    <SlideWrapper backgroundColor="#ffffff">
+      <SlideHeader date={data.coverDate} clientName={data.clientName} logoSrc={logoSrc} />
 
-      {/* Logo top-right */}
-      {logoSrc && (
-        <div style={{ position: 'absolute', top: 60, right: 80 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} alt="Logo" style={{ height: 32, objectFit: 'contain' }} />
-        </div>
-      )}
-
-      {/* Content */}
-      <div style={{ padding: '80px 80px 60px' }}>
-        {/* Section label */}
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            color: data.accentColor,
-            marginBottom: 16,
-          }}
-        >
-          The Project
-        </div>
-
+      <div style={{ padding: '80px 100px 0' }}>
         {/* Title */}
         <h2
           style={{
-            fontSize: 52,
-            fontWeight: 700,
+            fontSize: 72,
+            fontWeight: 900,
+            color: '#2B2B2B',
             margin: 0,
-            marginBottom: 60,
-            color: '#ffffff',
-            lineHeight: 1.2,
+            marginBottom: 64,
+            lineHeight: 1.05,
+            letterSpacing: '-2.5px',
           }}
         >
           {data.projectDetailsTitle}
         </h2>
 
-        <div style={{ display: 'flex', gap: 80 }}>
-          {/* Left - project info */}
-          <div style={{ flex: 1 }}>
-            {/* Project name */}
+        {/* Three columns */}
+        <div style={{ display: 'flex', gap: 0 }}>
+          {data.projectDetailsColumns.map((column, i) => (
             <div
+              key={i}
               style={{
-                fontSize: 32,
-                fontWeight: 600,
-                color: '#ffffff',
-                marginBottom: 24,
+                flex: 1,
+                padding: '0 40px',
+                borderLeft: i > 0 ? '2px solid #e8e8e8' : 'none',
+                paddingLeft: i === 0 ? 0 : 40,
               }}
             >
-              {data.projectName}
-            </div>
-
-            {/* Description */}
-            <p
-              style={{
-                fontSize: 20,
-                lineHeight: 1.7,
-                color: '#ffffffcc',
-                margin: 0,
-                fontWeight: 300,
-              }}
-            >
-              {data.projectDescription}
-            </p>
-          </div>
-
-          {/* Right - objectives */}
-          {data.projectObjectives.length > 0 && (
-            <div style={{ flex: 1 }}>
-              <div
+              <h3
                 style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  marginBottom: 24,
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: '#2B2B2B',
+                  margin: 0,
+                  marginBottom: 18,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
                 }}
               >
-                Key Objectives
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {data.projectObjectives.map((objective, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: data.accentColor,
-                        flexShrink: 0,
-                        marginTop: 8,
-                      }}
-                    />
-                    <span style={{ fontSize: 18, color: '#ffffffcc', lineHeight: 1.5 }}>
-                      {objective}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                {column.title}
+              </h3>
+              <p
+                style={{
+                  fontSize: 18,
+                  lineHeight: 1.75,
+                  color: '#666',
+                  margin: 0,
+                  fontWeight: 300,
+                }}
+              >
+                {column.description}
+              </p>
             </div>
-          )}
+          ))}
         </div>
       </div>
+
+      <SlideFooter pageNumber="04" />
     </SlideWrapper>
   )
 }

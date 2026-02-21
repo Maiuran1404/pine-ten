@@ -14,8 +14,7 @@ import { PitchDeckPreview } from './pitch-deck-preview'
 const SLIDE_TAB_MAP: Record<string, number> = {
   global: 0,
   cover: 0,
-  about: 1,
-  services: 2,
+  about: 2,
   project: 3,
   overview: 4,
   scope: 5,
@@ -96,15 +95,15 @@ export function PitchDeckBuilder() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)]">
-      <div className="grid grid-cols-1 lg:grid-cols-[440px_1fr] gap-6 h-full">
+    <div className="h-[calc(100vh-5rem)] -mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-0 h-full">
         {/* Left panel - Form */}
-        <div className="flex flex-col min-h-0">
+        <div className="flex flex-col min-h-0 border-r bg-background px-5 py-4">
           <div className="flex-1 overflow-hidden">
             <PitchDeckForm form={form} activeTab={activeTab} onTabChange={handleTabChange} />
           </div>
 
-          <div className="pt-4 border-t mt-4">
+          <div className="pt-3 border-t mt-3">
             <Button
               onClick={handleGeneratePDF}
               disabled={isGenerating}
@@ -127,7 +126,7 @@ export function PitchDeckBuilder() {
         </div>
 
         {/* Right panel - Preview */}
-        <div className="min-h-0">
+        <div className="min-h-0 bg-muted/20 p-4">
           <PitchDeckPreview
             data={formValues}
             activeSlide={activeSlide}

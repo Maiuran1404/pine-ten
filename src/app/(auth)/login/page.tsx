@@ -251,7 +251,7 @@ function LoginContent() {
           <div className="text-center mb-8">
             <h1
               className="text-2xl font-semibold text-white mb-2"
-              style={{ fontFamily: "'Satoshi', sans-serif" }}
+              style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
             >
               {isSuperadmin
                 ? 'Admin Access'

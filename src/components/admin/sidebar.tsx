@@ -199,7 +199,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
     <Sidebar
       collapsible="icon"
       className="border-r-0"
-      style={{ fontFamily: "'Satoshi', sans-serif" }}
+      style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
     >
       <SidebarHeader className="h-16 justify-center">
         <div className="flex items-center gap-2">

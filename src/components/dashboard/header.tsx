@@ -25,7 +25,7 @@ export function Header({ onMenuClick, basePath = '/dashboard', showUpgrade = tru
     <>
       <header
         className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 sm:px-6 bg-background/30 backdrop-blur-2xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-border/10 after:to-transparent"
-        style={{ fontFamily: "'Satoshi', sans-serif" }}
+        style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
       >
         {onMenuClick ? (
           <Button

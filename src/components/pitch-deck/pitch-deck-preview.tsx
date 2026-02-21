@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 import { SlideCover } from './slides/slide-cover'
+import { SlideToc } from './slides/slide-toc'
 import { SlideAbout } from './slides/slide-about'
-import { SlideServices } from './slides/slide-services'
 import { SlideProjectDetails } from './slides/slide-project-details'
 import { SlideOverview } from './slides/slide-overview'
 import { SlideScope } from './slides/slide-scope'
@@ -16,9 +16,9 @@ import { SlideBackCover } from './slides/slide-back-cover'
 
 const SLIDE_NAMES = [
   'Cover',
+  'Contents',
   'About',
-  'Services',
-  'Project',
+  'Project Details',
   'Overview',
   'Scope',
   'Timeline',
@@ -52,16 +52,19 @@ export function PitchDeckPreview({ data, activeSlide, onSlideChange }: PitchDeck
     return () => observer.disconnect()
   }, [calculateScale])
 
+  const combinedBlackLogo = '/craftedcombintedblack.png'
+  const figureWhiteLogo = '/craftedfigurewhite.png'
+
   const slides = [
-    <SlideCover key="cover" data={data} logoSrc="/craftedcombinedwhite.png" />,
-    <SlideAbout key="about" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideServices key="services" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideProjectDetails key="project" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideOverview key="overview" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideScope key="scope" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideTimeline key="timeline" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlidePricing key="pricing" data={data} logoSrc="/craftedfigurewhite.png" />,
-    <SlideBackCover key="back" data={data} logoSrc="/craftedcombinedwhite.png" />,
+    <SlideCover key="cover" data={data} figureLogoSrc={figureWhiteLogo} />,
+    <SlideToc key="toc" />,
+    <SlideAbout key="about" data={data} logoSrc={combinedBlackLogo} />,
+    <SlideProjectDetails key="project" data={data} logoSrc={combinedBlackLogo} />,
+    <SlideOverview key="overview" data={data} logoSrc={combinedBlackLogo} />,
+    <SlideScope key="scope" data={data} logoSrc={combinedBlackLogo} />,
+    <SlideTimeline key="timeline" data={data} logoSrc={combinedBlackLogo} />,
+    <SlidePricing key="pricing" data={data} logoSrc={combinedBlackLogo} />,
+    <SlideBackCover key="back" data={data} logoSrc={combinedBlackLogo} />,
   ]
 
   return (

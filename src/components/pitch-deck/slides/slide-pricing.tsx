@@ -1,5 +1,5 @@
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
-import { SlideWrapper } from './slide-wrapper'
+import { SlideWrapper, SlideHeader, SlideFooter } from './slide-wrapper'
 
 interface SlidePricingProps {
   data: PitchDeckFormData
@@ -8,169 +8,182 @@ interface SlidePricingProps {
 
 export function SlidePricing({ data, logoSrc }: SlidePricingProps) {
   return (
-    <SlideWrapper backgroundColor={data.primaryColor}>
-      {/* Logo top-right */}
-      {logoSrc && (
-        <div style={{ position: 'absolute', top: 60, right: 80 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} alt="Logo" style={{ height: 32, objectFit: 'contain' }} />
-        </div>
-      )}
+    <SlideWrapper backgroundColor="#ffffff">
+      <SlideHeader date={data.coverDate} clientName={data.clientName} logoSrc={logoSrc} />
 
-      {/* Content */}
-      <div style={{ padding: '80px 80px 60px' }}>
-        {/* Section label */}
+      <div style={{ padding: '32px 100px 0' }}>
+        {/* Pricing cards row */}
         <div
           style={{
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            color: data.accentColor,
-            marginBottom: 16,
+            display: 'flex',
+            gap: 40,
+            justifyContent: 'center',
+            marginBottom: 40,
           }}
         >
-          Pricing
-        </div>
-
-        {/* Title */}
-        <h2
-          style={{
-            fontSize: 52,
-            fontWeight: 700,
-            margin: 0,
-            marginBottom: 60,
-            color: '#ffffff',
-            lineHeight: 1.2,
-          }}
-        >
-          {data.pricingTitle}
-        </h2>
-
-        {/* Pricing table */}
-        <div
-          style={{
-            borderRadius: 16,
-            overflow: 'hidden',
-            border: '1px solid #ffffff12',
-          }}
-        >
-          {/* Header row */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 2fr 1fr',
-              padding: '20px 36px',
-              backgroundColor: '#ffffff08',
-              borderBottom: '1px solid #ffffff12',
-            }}
-          >
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#ffffff66',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-              }}
-            >
-              Item
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#ffffff66',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-              }}
-            >
-              Description
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#ffffff66',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                textAlign: 'right',
-              }}
-            >
-              Price
-            </div>
-          </div>
-
-          {/* Line items */}
-          {data.pricingItems.map((item, i) => (
+          {data.pricingCards.map((card, i) => (
             <div
               key={i}
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 2fr 1fr',
-                padding: '24px 36px',
-                borderBottom: i < data.pricingItems.length - 1 ? '1px solid #ffffff08' : 'none',
+                width: 420,
+                padding: '36px 36px 40px',
+                borderRadius: 18,
+                border: '1px solid #e0e0e0',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 500, color: '#ffffff' }}>{item.item}</div>
-              <div style={{ fontSize: 16, color: '#ffffff99', fontWeight: 300 }}>
-                {item.description}
-              </div>
+              {/* Card label */}
               <div
                 style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  textAlign: 'right',
+                  fontSize: 17,
+                  color: '#888',
+                  marginBottom: 14,
+                  fontWeight: 400,
                 }}
               >
-                {item.price}
+                {card.label}
+              </div>
+
+              {/* Price */}
+              <div
+                style={{
+                  fontSize: 44,
+                  fontWeight: 900,
+                  color: '#2B2B2B',
+                  marginBottom: 8,
+                  letterSpacing: '-1.5px',
+                }}
+              >
+                {card.price}
+              </div>
+
+              {/* Price description */}
+              <div
+                style={{
+                  fontSize: 15,
+                  color: '#999',
+                  marginBottom: 24,
+                  fontWeight: 300,
+                }}
+              >
+                {card.priceDescription}
+              </div>
+
+              {/* CTA Button */}
+              <div
+                style={{
+                  width: '100%',
+                  padding: '14px 0',
+                  borderRadius: 10,
+                  backgroundColor: '#395C2D',
+                  color: '#ffffff',
+                  fontSize: 17,
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  marginBottom: 28,
+                }}
+              >
+                {card.ctaText}
+              </div>
+
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #d0d0d0',
+                  marginBottom: 20,
+                }}
+              />
+
+              {/* Included label */}
+              <div
+                style={{
+                  fontSize: 14,
+                  color: '#aaa',
+                  marginBottom: 18,
+                  fontWeight: 400,
+                }}
+              >
+                Included in the pricing
+              </div>
+
+              {/* Included items */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {card.includedItems.map((item, j) => (
+                  <div
+                    key={j}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    {/* Green checkmark circle */}
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        backgroundColor: '#395C2D',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M3 8L6.5 11.5L13 5"
+                          stroke="white"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        color: '#444',
+                        fontWeight: 400,
+                      }}
+                    >
+                      {item}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
-
-          {/* Total row */}
-          {data.pricingTotal && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 2fr 1fr',
-                padding: '24px 36px',
-                backgroundColor: `${data.accentColor}15`,
-                borderTop: `2px solid ${data.accentColor}40`,
-              }}
-            >
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#ffffff' }}>Total</div>
-              <div />
-              <div
-                style={{
-                  fontSize: 28,
-                  fontWeight: 700,
-                  color: data.accentColor,
-                  textAlign: 'right',
-                }}
-              >
-                {data.pricingTotal}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Notes */}
-        {data.pricingNotes && (
-          <p
+        {/* Large "Pricing / For projects" text at bottom left */}
+        <div>
+          <div
             style={{
-              fontSize: 15,
-              color: '#ffffff66',
-              marginTop: 24,
-              fontStyle: 'italic',
-              fontWeight: 300,
+              fontSize: 80,
+              fontWeight: 900,
+              color: '#2B2B2B',
+              lineHeight: 1.0,
+              letterSpacing: '-3px',
             }}
           >
-            {data.pricingNotes}
-          </p>
-        )}
+            {data.pricingTitle}
+          </div>
+          <div
+            style={{
+              fontSize: 36,
+              fontWeight: 300,
+              color: '#aaa',
+              marginTop: 4,
+            }}
+          >
+            {data.pricingSubtitle}
+          </div>
+        </div>
       </div>
+
+      <SlideFooter pageNumber="08" />
     </SlideWrapper>
   )
 }

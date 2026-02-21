@@ -63,7 +63,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <SidebarProvider
           defaultOpen={false}
           className=""
-          style={{ fontFamily: "'Satoshi', sans-serif" } as React.CSSProperties}
+          style={
+            { fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" } as React.CSSProperties
+          }
         >
           <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
             {children}
@@ -81,7 +83,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         className=""
         style={
           {
-            fontFamily: "'Satoshi', sans-serif",
+            fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
             '--sidebar-width': '16rem',
             '--sidebar-width-icon': '4.5rem',
           } as React.CSSProperties

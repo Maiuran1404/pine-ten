@@ -152,7 +152,10 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex" style={{ fontFamily: "'Satoshi', sans-serif" }}>
+    <div
+      className="fixed inset-0 z-50 flex"
+      style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
+    >
       {/* Left side - Form content */}
       <div className="flex-1 flex flex-col bg-background overflow-y-auto">
         {/* Header with progress */}

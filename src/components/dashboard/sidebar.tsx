@@ -70,7 +70,7 @@ export function AppSidebar() {
       <Sidebar
         collapsible="icon"
         className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm"
-        style={{ fontFamily: "'Satoshi', sans-serif" }}
+        style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
       >
         <SidebarHeader className="p-2 flex items-center justify-center">
           <Tooltip>
@@ -136,7 +136,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm w-64"
-      style={{ fontFamily: "'Satoshi', sans-serif" }}
+      style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
     >
       {/* Logo and collapse toggle */}
       <SidebarHeader className="flex flex-row items-center justify-between p-4">

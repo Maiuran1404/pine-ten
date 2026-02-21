@@ -3,26 +3,13 @@ import { SlideWrapper } from './slide-wrapper'
 
 interface SlideCoverProps {
   data: PitchDeckFormData
-  logoSrc?: string
+  figureLogoSrc?: string
 }
 
-export function SlideCover({ data, logoSrc }: SlideCoverProps) {
+export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
   return (
-    <SlideWrapper backgroundColor={data.primaryColor}>
-      {/* Accent diagonal stripe */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '55%',
-          height: '100%',
-          background: `linear-gradient(135deg, transparent 0%, ${data.accentColor}15 50%, ${data.accentColor}30 100%)`,
-          clipPath: 'polygon(30% 0, 100% 0, 100% 100%, 0% 100%)',
-        }}
-      />
-
-      {/* Subtle grid pattern */}
+    <SlideWrapper backgroundColor="#33422E">
+      {/* Main gradient background matching Figma: #4B793A → #77926E → #33422E */}
       <div
         style={{
           position: 'absolute',
@@ -30,97 +17,166 @@ export function SlideCover({ data, logoSrc }: SlideCoverProps) {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundImage: `radial-gradient(circle, ${data.accentColor}08 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
+          background: `linear-gradient(135deg, #4B793A 0%, #5E7A63 30%, #77926E 50%, #5E7A63 70%, #33422E 100%)`,
         }}
       />
 
-      {/* Logo top-left */}
-      {logoSrc && (
-        <div style={{ position: 'absolute', top: 60, left: 80 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} alt="Logo" style={{ height: 40, objectFit: 'contain' }} />
-        </div>
-      )}
-
-      {/* Main content */}
+      {/* Soft white glow - top left */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
-          left: 80,
-          transform: 'translateY(-50%)',
-          maxWidth: '60%',
+          top: -150,
+          left: 50,
+          width: 800,
+          height: 800,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 40%, transparent 65%)',
+        }}
+      />
+
+      {/* Secondary glow - center left */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 150,
+          left: 250,
+          width: 500,
+          height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 60%)',
+        }}
+      />
+
+      {/* "Crafted with care™" pill badge */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 100,
+          zIndex: 2,
         }}
       >
-        {/* Client name label */}
         <div
           style={{
-            fontSize: 18,
-            fontWeight: 500,
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            color: data.accentColor,
-            marginBottom: 24,
+            display: 'inline-block',
+            padding: '10px 22px',
+            borderRadius: 24,
+            border: '1px solid rgba(255,255,255,0.35)',
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            fontSize: 15,
+            fontWeight: 400,
+            color: 'rgba(255,255,255,0.9)',
+            letterSpacing: '0.3px',
           }}
         >
-          Prepared for {data.clientName}
+          Crafted with care™
         </div>
+      </div>
 
-        {/* Title */}
+      {/* Large gecko/figure logo on right side - positioned per Figma reference */}
+      {figureLogoSrc && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '46%',
+            right: -80,
+            transform: 'translateY(-50%)',
+            zIndex: 1,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={figureLogoSrc}
+            alt="Crafted figure"
+            style={{ height: 780, objectFit: 'contain', opacity: 0.95 }}
+          />
+        </div>
+      )}
+
+      {/* Main title text */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 100,
+          bottom: 260,
+          maxWidth: '50%',
+          zIndex: 2,
+        }}
+      >
         <h1
           style={{
-            fontSize: 72,
-            fontWeight: 700,
-            lineHeight: 1.1,
+            fontSize: 110,
+            fontWeight: 900,
+            lineHeight: 0.95,
             margin: 0,
-            marginBottom: 20,
             color: '#ffffff',
+            letterSpacing: '-3px',
           }}
         >
-          {data.coverTitle}
+          {data.clientName} x<br />
+          Crafted
         </h1>
+      </div>
 
-        {/* Subtitle */}
-        {data.coverSubtitle && (
-          <p
+      {/* Bottom info */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 70,
+          left: 100,
+          display: 'flex',
+          gap: 40,
+          alignItems: 'flex-end',
+          zIndex: 2,
+        }}
+      >
+        <div>
+          <div
             style={{
-              fontSize: 28,
-              fontWeight: 300,
-              color: '#ffffff99',
-              margin: 0,
-              marginBottom: 40,
-              lineHeight: 1.4,
+              fontSize: 9,
+              fontWeight: 700,
+              color: '#86DD65',
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              marginBottom: 5,
             }}
           >
-            {data.coverSubtitle}
-          </p>
-        )}
-
-        {/* Accent line */}
-        <div
-          style={{
-            width: 80,
-            height: 4,
-            backgroundColor: data.accentColor,
-            borderRadius: 2,
-            marginBottom: 24,
-          }}
-        />
-
-        {/* Date */}
-        {data.coverDate && (
-          <p
+            PROVIDED BY
+          </div>
+          <div
             style={{
-              fontSize: 16,
-              color: '#ffffff66',
-              margin: 0,
-              fontWeight: 400,
+              fontSize: 17,
+              fontWeight: 900,
+              color: '#ffffff',
+            }}
+          >
+            Crafted NO
+          </div>
+        </div>
+        <div>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              color: '#86DD65',
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              marginBottom: 5,
+            }}
+          >
+            LAST UPDATED
+          </div>
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 900,
+              color: '#ffffff',
             }}
           >
             {data.coverDate}
-          </p>
-        )}
+          </div>
+        </div>
       </div>
     </SlideWrapper>
   )

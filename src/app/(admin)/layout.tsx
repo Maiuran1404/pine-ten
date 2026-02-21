@@ -87,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className="bg-background outline-none focus:outline-none"
         style={
           {
-            fontFamily: "'Satoshi', sans-serif",
+            fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
             '--sidebar-width': '16rem',
             '--sidebar-width-icon': '3rem',
           } as React.CSSProperties

@@ -3870,7 +3870,7 @@ function OnboardingContent() {
     <motion.div
       className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden"
       style={{
-        fontFamily: "'Satoshi', sans-serif",
+        fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
         backgroundColor: '#0a0a0a',
       }}
       initial={{ opacity: 1 }}
