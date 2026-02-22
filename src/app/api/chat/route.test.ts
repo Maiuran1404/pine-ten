@@ -262,14 +262,20 @@ describe('POST /api/chat', () => {
       content: 'What kind of design?',
       styleReferences: [],
       deliverableStyleMarker: undefined,
-      quickOptions: ['Logo', 'Banner', 'Social Post'],
+      quickOptions: {
+        question: 'What kind of design?',
+        options: ['Logo', 'Banner', 'Social Post'],
+      },
     })
 
     const response = await POST(makeRequest(validBody) as never)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.quickOptions).toEqual(['Logo', 'Banner', 'Social Post'])
+    expect(data.quickOptions).toEqual({
+      question: 'What kind of design?',
+      options: ['Logo', 'Banner', 'Social Post'],
+    })
   })
 
   it('accepts briefing state in request body', async () => {
