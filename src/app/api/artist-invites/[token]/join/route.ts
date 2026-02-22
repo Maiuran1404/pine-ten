@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server'
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { NextRequest, NextResponse } from 'next/server'
+import { withErrorHandling, Errors } from '@/lib/errors'
 import { db, artistInvites, users, freelancerProfiles } from '@/db'
 import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -152,20 +152,31 @@ export async function POST(
 
       logger.info({ userId, inviteId: invite.id, email }, 'Artist joined via invite link')
 
-      // 9. Return success
-      return successResponse(
+      // 9. Return success + invalidate Better Auth session cache cookie
+      // The client-side signUp.email() set a session cache cookie with role=CLIENT.
+      // We updated the DB to FREELANCER, so we must clear the cache cookie to force
+      // the next session read to query the DB for fresh data.
+      const response = NextResponse.json(
         {
           success: true,
-          redirectUrl: '/portal',
-          user: {
-            id: userId,
-            name,
-            email: email.toLowerCase().trim(),
-            role: 'FREELANCER',
+          data: {
+            success: true,
+            redirectUrl: '/portal',
+            user: {
+              id: userId,
+              name,
+              email: email.toLowerCase().trim(),
+              role: 'FREELANCER',
+            },
           },
         },
-        201
+        { status: 201 }
       )
+      response.cookies.set('crafted.session_data', '', {
+        maxAge: 0,
+        path: '/',
+      })
+      return response
     },
     { endpoint: 'POST /api/artist-invites/[token]/join' }
   )

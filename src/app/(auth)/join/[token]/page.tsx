@@ -114,7 +114,7 @@ function CardLogo() {
 function JoinContent() {
   const router = useRouter()
   const { token } = useParams<{ token: string }>()
-  const { data: session, isPending: sessionPending } = useSession()
+  const { data: session, isPending: sessionPending, refetch: refetchSession } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -211,6 +211,10 @@ function JoinContent() {
         router.push('/portal')
         return
       }
+
+      // Refresh session to pick up the updated role (FREELANCER) from the DB.
+      // The join API clears the session cache cookie, so this will fetch fresh data.
+      await refetchSession()
 
       toast.success('Welcome to Crafted!')
       router.push(result.data?.redirectUrl || '/portal')
