@@ -56,6 +56,38 @@ export const whatsappTemplates = {
 
   newTaskAvailable: (taskTitle: string, credits: number, taskUrl: string) =>
     `*New Task Available*\n\n${taskTitle}\nCredits: ${credits}\n\nClaim now: ${taskUrl}`,
+
+  artistInvite: (name: string, joinUrl: string) =>
+    `Hi ${name}! You've been invited to join Crafted as a designer.\n\n` +
+    `Sign up here: ${joinUrl}\n\n` +
+    `It takes less than 30 seconds.`,
+
+  artistWelcome: (name: string, portalUrl: string) =>
+    `Welcome to Crafted, ${name}!\n\n` +
+    `Your artist account is active and ready to go.\n\n` +
+    `Access your portal: ${portalUrl}`,
+
+  artistApproved: (name: string, portalUrl: string) =>
+    `Great news, ${name}! Your Crafted artist profile has been approved.\n\n` +
+    `You'll now start receiving task notifications matching your skills.\n\n` +
+    `Your portal: ${portalUrl}`,
+
+  taskOffered: (taskTitle: string, credits: number, expiresIn: string, taskUrl: string) =>
+    `*New Task Offer*\n\n` +
+    `${taskTitle}\n` +
+    `Credits: ${credits}\n` +
+    `Expires in: ${expiresIn}\n\n` +
+    `Accept or decline: ${taskUrl}`,
+
+  deliverableApproved: (taskTitle: string, taskUrl: string) =>
+    `*Deliverable Approved*\n\n` +
+    `Your work on "${taskTitle}" has been approved by the admin and sent to the client.\n\n` +
+    `View: ${taskUrl}`,
+
+  payoutReady: (amount: string, payoutUrl: string) =>
+    `*Payout Ready*\n\n` +
+    `You have a payout of ${amount} ready for processing.\n\n` +
+    `View details: ${payoutUrl}`,
 }
 
 // Admin WhatsApp notification templates
@@ -81,4 +113,8 @@ export const adminWhatsAppTemplates = {
     `*Email:* ${data.email}\n` +
     `*Role:* ${data.role}\n` +
     (data.signupUrl ? `\nView: ${data.signupUrl}` : ''),
+
+  artistInviteAccepted: (data: { name: string; email: string }) =>
+    `*Artist Invite Accepted*\n\n` +
+    `${data.name} (${data.email}) has accepted your invite and joined Crafted.`,
 }

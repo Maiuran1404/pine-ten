@@ -232,4 +232,36 @@ export const emailTemplates = {
       ${paragraph(`&mdash; The ${config.app.name} Team`, { muted: true, align: 'center' })}
     `),
   }),
+
+  artistInvite: (name: string, inviterName: string, joinUrl: string) => ({
+    subject: `You've been invited to join ${config.app.name}`,
+    html: wrapUserEmail(`
+      ${heading(`You're Invited!`, { color: colors.primary })}
+      ${paragraph(`Hi ${name},`)}
+      ${paragraph(`<strong>${inviterName}</strong> has invited you to join ${config.app.name} as a designer.`)}
+      ${callout(`${config.app.name} connects talented designers with clients who need creative work. Set up your account in under 30 seconds.`, 'info')}
+      ${button('Accept Invite', joinUrl)}
+      ${spacer(8)}
+      ${paragraph(`&mdash; The ${config.app.name} Team`, { muted: true })}
+    `),
+  }),
+
+  artistWelcomeInvited: (name: string, portalUrl: string) => ({
+    subject: `Welcome to ${config.app.name}, ${name}!`,
+    html: wrapUserEmail(`
+      ${heading(`Welcome to ${config.app.name}!`, { color: colors.primary })}
+      ${paragraph(`Hi ${name},`)}
+      ${paragraph(`Your artist account is active and ready to go. You've been approved to start receiving task offers right away.`)}
+      ${divider()}
+      ${heading("What's next:", { level: 3 })}
+      ${infoCard([
+        { label: 'Step 1', value: 'Explore your artist portal' },
+        { label: 'Step 2', value: 'Update your profile and skills when you have a moment' },
+        { label: 'Step 3', value: 'Start receiving and accepting task offers' },
+      ])}
+      ${button('Go to Portal', portalUrl)}
+      ${spacer(8)}
+      ${paragraph(`&mdash; The ${config.app.name} Team`, { muted: true })}
+    `),
+  }),
 }

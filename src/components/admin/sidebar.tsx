@@ -32,6 +32,7 @@ import {
   KeyRound,
   FlaskConical,
   FileText,
+  UserPlus,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -88,6 +89,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Artists',
         href: '/admin/freelancers',
         icon: UserCheck,
+      },
+      {
+        name: 'Artist Invites',
+        href: '/admin/artist-invites',
+        icon: UserPlus,
       },
     ],
   },

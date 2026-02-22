@@ -99,6 +99,13 @@ export const notificationChannelEnum = pgEnum('notification_channel', [
   'IN_APP',
 ])
 
+// Artist invite status enum
+export const artistInviteStatusEnum = pgEnum('artist_invite_status', [
+  'PENDING',
+  'ACCEPTED',
+  'EXPIRED',
+])
+
 // Early access enums
 export const waitlistStatusEnum = pgEnum('waitlist_status', ['PENDING', 'INVITED', 'REGISTERED'])
 
@@ -158,6 +165,31 @@ export const earlyAccessCodeUsages = pgTable(
   (table) => [
     index('early_access_code_usages_code_id_idx').on(table.codeId),
     index('early_access_code_usages_user_id_idx').on(table.userId),
+  ]
+)
+
+// Artist invites (personalized invite links for artist onboarding)
+export const artistInvites = pgTable(
+  'artist_invites',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    token: text('token').notNull().unique(),
+    email: text('email').notNull(),
+    name: text('name').notNull(),
+    whatsappNumber: text('whatsapp_number'),
+    note: text('note'),
+    status: artistInviteStatusEnum('status').notNull().default('PENDING'),
+    invitedBy: text('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    acceptedBy: text('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    acceptedAt: timestamp('accepted_at'),
+    expiresAt: timestamp('expires_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('artist_invites_token_idx').on(table.token),
+    index('artist_invites_email_idx').on(table.email),
+    index('artist_invites_status_idx').on(table.status),
   ]
 )
 
@@ -2164,6 +2196,20 @@ export const earlyAccessCodeUsagesRelations = relations(earlyAccessCodeUsages, (
   user: one(users, {
     fields: [earlyAccessCodeUsages.userId],
     references: [users.id],
+  }),
+}))
+
+// Artist invite relations
+export const artistInvitesRelations = relations(artistInvites, ({ one }) => ({
+  inviter: one(users, {
+    fields: [artistInvites.invitedBy],
+    references: [users.id],
+    relationName: 'invitedArtists',
+  }),
+  acceptedByUser: one(users, {
+    fields: [artistInvites.acceptedBy],
+    references: [users.id],
+    relationName: 'acceptedInvites',
   }),
 }))
 

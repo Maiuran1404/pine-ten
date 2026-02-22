@@ -677,6 +677,29 @@ export const chatRouteSchema = z.object({
   briefingState: z.any().optional().nullable(),
 })
 
+// ============ Artist Invite Schemas ============
+
+export const createArtistInviteSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  email: z.string().email('Valid email is required'),
+  whatsappNumber: z.string().max(30).optional(),
+  note: z.string().max(500).optional(),
+})
+
+export const createArtistInviteBatchSchema = z.object({
+  invites: z
+    .array(createArtistInviteSchema)
+    .min(1, 'At least one invite is required')
+    .max(50, 'Maximum 50 invites at a time'),
+})
+
+export const joinViaInviteSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(200),
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  whatsappNumber: z.string().min(1, 'WhatsApp number is required').max(30),
+})
+
 // ============ Helper Types ============
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>

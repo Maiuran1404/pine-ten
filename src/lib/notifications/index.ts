@@ -16,6 +16,10 @@ type NotificationType =
   | 'FREELANCER_APPROVED'
   | 'NEW_TASK_AVAILABLE'
   | 'NEW_MESSAGE'
+  | 'ARTIST_INVITED'
+  | 'ARTIST_WELCOME'
+  | 'DELIVERABLE_APPROVED'
+  | 'PAYOUT_READY'
 
 interface NotifyParams {
   userId: string
@@ -158,6 +162,8 @@ function getEmailTemplate(
       return emailTemplates.lowCredits(data.userName, data.remainingCredits || 0, data.taskUrl)
     case 'FREELANCER_APPROVED':
       return emailTemplates.freelancerApproved(data.userName, data.taskUrl)
+    case 'ARTIST_WELCOME':
+      return emailTemplates.artistWelcomeInvited(data.userName, data.taskUrl)
     default:
       return null
   }
@@ -180,6 +186,8 @@ function getWhatsAppMessage(
       return whatsappTemplates.revisionRequested(data.taskTitle, data.taskUrl)
     case 'NEW_TASK_AVAILABLE':
       return whatsappTemplates.newTaskAvailable(data.taskTitle, data.credits || 0, data.taskUrl)
+    case 'DELIVERABLE_APPROVED':
+      return whatsappTemplates.deliverableApproved(data.taskTitle, data.taskUrl)
     default:
       return null
   }
