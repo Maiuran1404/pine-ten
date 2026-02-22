@@ -770,35 +770,6 @@ async function handler(request: NextRequest) {
       // indiscriminately at all stages and duplicates the style grid cards
       let quickOptions = response.quickOptions
 
-      // Enrich INSPIRATION stage quick options with representative images from Pexels
-      if (quickOptions && quickOptions.options.length >= 2 && currentStage === 'INSPIRATION') {
-        try {
-          const enriched = await Promise.all(
-            quickOptions.options.map(async (option) => {
-              const label = typeof option === 'string' ? option : option.label
-              // Skip non-style options (confirmations like "That works", "Skip")
-              if (/^(that works|skip|yes|no|sure|go ahead|sounds good)/i.test(label)) {
-                return option
-              }
-              const query = `${label} design style aesthetic`
-              const photos = await searchPexelsForScene(query, 1)
-              if (photos.length > 0) {
-                return { label, imageUrl: photos[0].url }
-              }
-              return option
-            })
-          )
-          const hasImages = enriched.some(
-            (o) => typeof o === 'object' && o !== null && 'imageUrl' in o && o.imageUrl
-          )
-          if (hasImages) {
-            quickOptions = { ...quickOptions, options: enriched }
-          }
-        } catch (enrichErr) {
-          logger.debug({ err: enrichErr }, 'Quick option image enrichment failed — using text-only')
-        }
-      }
-
       // Parse structured output from AI response when state machine is at STRUCTURE or STRATEGIC_REVIEW
       let structureData = undefined
       let strategicReviewData = undefined
@@ -1434,6 +1405,54 @@ async function handler(request: NextRequest) {
         .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
         .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
         .trim()
+
+      // Enrich style-direction quick options with representative Pexels images.
+      // Detection is content-based (not stage-based) because the state machine
+      // can advance past INSPIRATION in a single turn.
+      const isStyleDirection =
+        quickOptions &&
+        quickOptions.options.length >= 2 &&
+        (() => {
+          // Check 1: question text mentions style/visual/direction keywords
+          const q = (quickOptions.question || '').toLowerCase()
+          if (/style|visual|direction|aesthetic|look and feel|inspiration/.test(q)) return true
+          // Check 2: at least 2 options are multi-word descriptive labels
+          // (not simple actions like "Sounds good", "Skip", "Show me more")
+          const ACTION_RE =
+            /^(sounds good|that works|skip|yes|no|sure|go ahead|show me|i like|something different|something else|submit|done|make changes|go deeper|looks good|ready|tweak|adjust|keep|different|continue|refine|i need)/i
+          const descriptiveCount = quickOptions.options.filter((o) => {
+            const label = typeof o === 'string' ? o : o.label
+            return label.trim().split(/\s+/).length >= 3 && !ACTION_RE.test(label)
+          }).length
+          return descriptiveCount >= 2
+        })()
+      if (isStyleDirection && quickOptions) {
+        try {
+          const enriched = await Promise.all(
+            quickOptions.options.map(async (option) => {
+              const label = typeof option === 'string' ? option : option.label
+              // Skip non-style options (confirmations like "That works", "Skip")
+              if (/^(that works|skip|yes|no|sure|go ahead|sounds good)/i.test(label)) {
+                return option
+              }
+              const query = `${label} design style aesthetic`
+              const photos = await searchPexelsForScene(query, 1)
+              if (photos.length > 0) {
+                return { label, imageUrl: photos[0].url }
+              }
+              return option
+            })
+          )
+          const hasImages = enriched.some(
+            (o) => typeof o === 'object' && o !== null && 'imageUrl' in o && o.imageUrl
+          )
+          if (hasImages) {
+            quickOptions = { question: quickOptions.question, options: enriched }
+          }
+        } catch (enrichErr) {
+          logger.debug({ err: enrichErr }, 'Quick option image enrichment failed — using text-only')
+        }
+      }
 
       return NextResponse.json({
         content: cleanContent,
