@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { joinViaInviteSchema } from '@/lib/validations'
 import { db, artistInvites, users, freelancerProfiles } from '@/db'
 import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -8,8 +7,15 @@ import { headers as getHeaders } from 'next/headers'
 import { config } from '@/lib/config'
 import { safeAsync } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
+import { z } from 'zod'
 
-// POST - Signup via invite: create user, auto-approve, create session
+const joinBodySchema = z.object({
+  email: z.string().email(),
+  whatsappNumber: z.string().min(1, 'WhatsApp number is required').max(30),
+})
+
+// POST - Complete invite setup: set role, create profile, mark invite accepted
+// Called AFTER the client-side signUp.email() has already created the user + session
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -18,16 +24,29 @@ export async function POST(
     async () => {
       const { token } = await params
 
+      // 1. Get authenticated session (user just signed up client-side)
+      const session = await auth.api.getSession({
+        headers: await getHeaders(),
+      })
+      if (!session?.user?.id) {
+        throw Errors.unauthorized()
+      }
+
       const body = await request.json()
-      const parseResult = joinViaInviteSchema.safeParse(body)
+      const parseResult = joinBodySchema.safeParse(body)
       if (!parseResult.success) {
         const firstError = parseResult.error.issues[0]
         throw Errors.badRequest(firstError?.message || 'Invalid input')
       }
 
-      const { name, email, password, whatsappNumber } = parseResult.data
+      const { email, whatsappNumber } = parseResult.data
 
-      // 1. Validate token
+      // 2. Verify the session user matches the submitted email
+      if (session.user.email?.toLowerCase() !== email.toLowerCase().trim()) {
+        throw Errors.badRequest('Email does not match authenticated user')
+      }
+
+      // 3. Validate token
       const inviteRows = await db
         .select()
         .from(artistInvites)
@@ -50,40 +69,12 @@ export async function POST(
         throw Errors.badRequest('This invite has expired')
       }
 
-      // 2. Validate email matches invite (case-insensitive)
+      // 4. Validate email matches invite (case-insensitive)
       if (email.toLowerCase().trim() !== invite.email.toLowerCase().trim()) {
         throw Errors.badRequest('Email does not match the invite')
       }
 
-      // 3. Check if user already exists
-      const existingUser = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, email.toLowerCase().trim()))
-        .limit(1)
-
-      if (existingUser.length) {
-        throw Errors.badRequest(
-          'An account with this email already exists. Please sign in instead.'
-        )
-      }
-
-      // 4. Create user via Better Auth signUp (server-side)
-      //    This creates the user + account + session
-      const signUpResult = await auth.api.signUpEmail({
-        headers: await getHeaders(),
-        body: {
-          email: email.toLowerCase().trim(),
-          password,
-          name: name.trim(),
-        },
-      })
-
-      if (!signUpResult?.user?.id) {
-        throw Errors.internal('Failed to create user account')
-      }
-
-      const newUserId = signUpResult.user.id
+      const userId = session.user.id
 
       // 5. Update user: set role to FREELANCER, mark onboarding complete, set phone
       await db
@@ -94,11 +85,11 @@ export async function POST(
           phone: whatsappNumber,
           updatedAt: new Date(),
         })
-        .where(eq(users.id, newUserId))
+        .where(eq(users.id, userId))
 
       // 6. Create freelancer profile with APPROVED status
       await db.insert(freelancerProfiles).values({
-        userId: newUserId,
+        userId,
         status: 'APPROVED',
         whatsappNumber,
         skills: [],
@@ -111,7 +102,7 @@ export async function POST(
         .update(artistInvites)
         .set({
           status: 'ACCEPTED',
-          acceptedBy: newUserId,
+          acceptedBy: userId,
           acceptedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -119,6 +110,7 @@ export async function POST(
 
       // 8. Fire-and-forget notifications
       const portalUrl = `${config.app.url}/portal`
+      const name = session.user.name || invite.name
 
       // Welcome WhatsApp to artist
       safeAsync(
@@ -158,29 +150,22 @@ export async function POST(
         { context: 'artist-welcome-email' }
       )
 
-      logger.info(
-        { userId: newUserId, inviteId: invite.id, email },
-        'Artist joined via invite link'
-      )
+      logger.info({ userId, inviteId: invite.id, email }, 'Artist joined via invite link')
 
-      // 9. Return success with session info
-      //    The Better Auth signUp already set the session cookie via the response headers,
-      //    but we need to forward them. Create a response that includes the auth cookies.
-      const response = successResponse(
+      // 9. Return success
+      return successResponse(
         {
           success: true,
           redirectUrl: '/portal',
           user: {
-            id: newUserId,
-            name: name.trim(),
+            id: userId,
+            name,
             email: email.toLowerCase().trim(),
             role: 'FREELANCER',
           },
         },
         201
       )
-
-      return response
     },
     { endpoint: 'POST /api/artist-invites/[token]/join' }
   )

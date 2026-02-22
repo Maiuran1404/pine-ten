@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
 
 import { LoadingSpinner, FullPageLoader } from '@/components/shared/loading'
-import { signIn, useSession } from '@/lib/auth-client'
+import { signUp, signIn, useSession } from '@/lib/auth-client'
 
 const joinSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -181,22 +181,38 @@ function JoinContent() {
     setIsLoading(true)
 
     try {
+      // Step 1: Create user via client-side Better Auth (sets session cookies)
+      const authResult = await signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      })
+
+      if (authResult.error) {
+        toast.error(authResult.error.message || 'Failed to create account')
+        setIsLoading(false)
+        return
+      }
+
+      // Step 2: Complete invite setup (set role, create profile, mark invite)
       const response = await fetch(`/api/artist-invites/${token}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ email: data.email, whatsappNumber: data.whatsappNumber }),
       })
 
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        toast.error(result.error?.message || 'Failed to create account')
-        setIsLoading(false)
+        // User was created but invite setup failed — still redirect to portal
+        toast.error(
+          result.error?.message || 'Account created but setup incomplete. Please contact support.'
+        )
+        router.push('/portal')
         return
       }
 
       toast.success('Welcome to Crafted!')
-      // The join endpoint sets auth cookies, so we can redirect
       router.push(result.data?.redirectUrl || '/portal')
     } catch {
       toast.error('An error occurred. Please try again.')
