@@ -34,7 +34,7 @@ export interface ChatDraft {
     }[]
     quickOptions?: {
       question: string
-      options: string[]
+      options: (string | { label: string; imageUrl?: string })[]
       multiSelect?: boolean
     }
     deliverableStyles?: {

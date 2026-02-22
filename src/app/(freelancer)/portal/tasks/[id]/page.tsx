@@ -40,6 +40,7 @@ import { LoadingSpinner } from '@/components/shared/loading'
 import { BrandDNA } from '@/components/freelancer/brand-dna'
 import { PreviousDeliverables } from '@/components/freelancer/previous-deliverables'
 import { calculateWorkingDeadline, getDeadlineUrgency, cn } from '@/lib/utils'
+import { calculateArtistDeadline } from '@/lib/deadline'
 
 interface UploadedFile {
   fileName: string
@@ -1006,21 +1007,11 @@ export default function FreelancerTaskDetailPage() {
               </div>
 
               {(() => {
-                // Calculate artist deadline at 50% of the total time window
-                const assignedDate = task.assignedAt ? new Date(task.assignedAt) : null
-                const clientDeadline = task.deadline ? new Date(task.deadline) : null
-
-                // Compute the artist deadline: 50% of (assigned → client deadline)
-                // Fallback: use estimatedHours from assignedAt if no client deadline
-                let artistDeadline: Date | null = null
-                if (assignedDate && clientDeadline) {
-                  const totalMs = clientDeadline.getTime() - assignedDate.getTime()
-                  artistDeadline = new Date(assignedDate.getTime() + totalMs * 0.5)
-                } else if (assignedDate && task.estimatedHours) {
-                  // Fallback: use estimated hours as the artist deadline
-                  const estMs = parseFloat(task.estimatedHours) * 60 * 60 * 1000
-                  artistDeadline = new Date(assignedDate.getTime() + estMs)
-                }
+                const artistDeadline = calculateArtistDeadline(
+                  task.assignedAt,
+                  task.deadline,
+                  task.estimatedHours
+                )
 
                 if (!artistDeadline) return null
 

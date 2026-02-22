@@ -24,9 +24,11 @@ vi.mock('@/db/schema', () => ({
     title: 'title',
     clientId: 'clientId',
     freelancerId: 'freelancerId',
+    categoryId: 'categoryId',
     createdAt: 'createdAt',
   },
   users: { id: 'id', name: 'name' },
+  taskCategories: { id: 'id', name: 'name' },
   taskFiles: { taskId: 'taskId' },
   taskMessages: { taskId: 'taskId' },
 }))
@@ -75,18 +77,20 @@ describe('GET /api/admin/tasks', () => {
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockResolvedValue([
-                  {
-                    id: 'task-1',
-                    title: 'Logo Design',
-                    status: 'IN_PROGRESS',
-                    clientName: 'Client A',
-                    freelancerName: 'Designer B',
-                    createdAt: new Date(),
-                  },
-                ]),
+            leftJoin: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  offset: vi.fn().mockResolvedValue([
+                    {
+                      id: 'task-1',
+                      title: 'Logo Design',
+                      status: 'IN_PROGRESS',
+                      clientName: 'Client A',
+                      freelancerName: 'Designer B',
+                      createdAt: new Date(),
+                    },
+                  ]),
+                }),
               }),
             }),
           }),

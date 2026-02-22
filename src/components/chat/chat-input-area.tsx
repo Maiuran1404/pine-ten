@@ -11,7 +11,6 @@ import {
   XCircle,
   X,
   Film,
-  Sparkles,
   Share2,
   Megaphone,
   Bookmark,
@@ -88,6 +87,12 @@ export interface ChatInputAreaProps {
   sceneReferences?: { sceneNumber: number; title: string }[]
   onRemoveSceneReference?: (sceneNumber: number) => void
 
+  // Deliverable category (for type detection badge)
+  deliverableCategory?: string | null
+
+  // Whether a storyboard exists (for video submission guard)
+  hasStoryboard?: boolean
+
   // Handlers
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -135,9 +140,11 @@ export function ChatInputArea({
   animatingMessageId = null,
   sceneReferences = [],
   onRemoveSceneReference,
+  deliverableCategory,
+  hasStoryboard: _hasStoryboard = true,
   handleSend,
   handleFileUpload,
-  handleRequestTaskSummary,
+  handleRequestTaskSummary: _handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
   // When a pending task exists, render the submit action bar instead of the input
@@ -180,29 +187,12 @@ export function ChatInputArea({
                   {stateMachineQuickOptions.question}
                 </p>
               )}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <QuickOptions
-                    options={stateMachineQuickOptions}
-                    onSelect={onQuickOptionClick}
-                    disabled={isLoading}
-                    showSkip={briefingStage !== 'EXTRACT'}
-                  />
-                </div>
-                {messages.length > 0 &&
-                  !pendingTask &&
-                  (!briefingStage || !EARLY_STAGES.has(briefingStage)) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRequestTaskSummary}
-                      className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3 shrink-0"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      I&apos;m ready to submit
-                    </Button>
-                  )}
-              </div>
+              <QuickOptions
+                options={stateMachineQuickOptions}
+                onSelect={onQuickOptionClick}
+                disabled={isLoading}
+                showSkip={false}
+              />
             </motion.div>
           )}
       </AnimatePresence>
@@ -271,29 +261,6 @@ export function ChatInputArea({
           })}
         </div>
       )}
-
-      {/* Quick submit button - only when no quick options are showing */}
-      {messages.length > 0 &&
-        !pendingTask &&
-        !isLoading &&
-        (!briefingStage || !EARLY_STAGES.has(briefingStage)) &&
-        !(
-          stateMachineQuickOptions &&
-          stateMachineQuickOptions.options.length > 0 &&
-          !input.trim()
-        ) && (
-          <div className="flex justify-end mb-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRequestTaskSummary}
-              className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-7 px-3"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              I&apos;m ready to submit
-            </Button>
-          </div>
-        )}
 
       {/* Modern input box - matching design reference */}
       <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
@@ -428,7 +395,10 @@ export function ChatInputArea({
             {/* Divider */}
             <div className="h-4 w-px bg-border" />
             {/* Credits indicator */}
-            <div className="flex items-center gap-1.5 text-sm">
+            <div
+              className="flex items-center gap-1.5 text-sm"
+              title="Credits are used when you submit a brief to a designer, not during chat."
+            >
               <span
                 className={cn(
                   'w-2 h-2 rounded-full',
@@ -441,6 +411,15 @@ export function ChatInputArea({
               />
               <span className="text-muted-foreground">{userCredits} credits available</span>
             </div>
+            {/* Deliverable type detection badge */}
+            {deliverableCategory &&
+              !EARLY_STAGES.has(briefingStage ?? '') &&
+              briefingStage !== 'STRUCTURE' && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/50 text-[11px] text-muted-foreground">
+                  <Film className="h-3 w-3" />
+                  <span className="capitalize">{deliverableCategory} detected</span>
+                </div>
+              )}
             {/* Word count hint - only show when user starts typing */}
             {input.trim().length > 0 &&
               (() => {

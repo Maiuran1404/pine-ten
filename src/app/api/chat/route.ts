@@ -65,6 +65,7 @@ import {
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
 import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboard-image-search'
+import { searchPexelsForScene } from '@/lib/ai/pexels-image-search'
 import type { InferredAudience } from '@/components/onboarding/types'
 
 async function handler(request: NextRequest) {
@@ -82,6 +83,7 @@ async function handler(request: NextRequest) {
         moodboardHasStyles, // Client indicates if moodboard already has style items
         brief, // Brief data for confirmed fields
         briefingState: clientBriefingState, // Serialized state machine state (Phase 2)
+        latestStoryboard: clientLatestStoryboard, // Client-side storyboard with local edits
       } = body
 
       // Extract context from messages for content-aware style filtering
@@ -235,11 +237,21 @@ async function handler(request: NextRequest) {
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
       let preAiInference: ReturnType<typeof inferFromMessage> | undefined
+      let styleHint: string | undefined
 
       if (clientBriefingState) {
         try {
           const lastUserMessage = messages[messages.length - 1]?.content || ''
           const briefingState: BriefingState = deserialize(clientBriefingState)
+
+          // Sync client-side storyboard edits into briefingState so the server has the latest
+          if (
+            clientLatestStoryboard?.type === 'storyboard' &&
+            Array.isArray(clientLatestStoryboard.scenes) &&
+            clientLatestStoryboard.scenes.length > 0
+          ) {
+            briefingState.structure = clientLatestStoryboard
+          }
 
           // 1. Run inference on latest user message (field population only, NOT for transitions)
           const inference = inferFromMessage({
@@ -269,7 +281,8 @@ async function handler(request: NextRequest) {
             briefingState.brief,
             inference,
             brandAudiences,
-            lastUserMessage
+            lastUserMessage,
+            briefingState.deliverableCategory
           )
 
           // 4. Extract additional signals
@@ -382,17 +395,24 @@ async function handler(request: NextRequest) {
               'IMPROVE the existing text based on their feedback — do NOT blank out, remove, or shorten existing content. ' +
               'Preserve all existing fields (title, description, voiceover, visualNote, duration, transition, cameraNote, hookData, fullScript, directorNotes) for scenes the user did NOT mention. ' +
               'For scenes the user DID mention, apply their feedback while keeping any fields they did not specifically ask to change. ' +
-              'Regenerate the FULL [STORYBOARD] block with ALL scenes. Always output the complete updated storyboard.'
+              'Regenerate the FULL [STORYBOARD] block. If the user asked to merge, combine, remove, or reduce scenes, output ONLY the resulting scenes (fewer than before). ' +
+              "If the user asked to add or split scenes, include the new scenes. Always output the complete updated storyboard reflecting the user's changes."
+
+            // Prefer client-sent storyboard (includes local edits) over server briefingState
+            const storyboardForHint =
+              (clientLatestStoryboard?.type === 'storyboard' && clientLatestStoryboard) ||
+              (briefingState.structure?.type === 'storyboard' && briefingState.structure) ||
+              null
 
             // Include current storyboard state so the AI has existing content to work with
             if (
-              briefingState.structure &&
-              briefingState.structure.type === 'storyboard' &&
-              briefingState.structure.scenes.length > 0
+              storyboardForHint &&
+              'scenes' in storyboardForHint &&
+              (storyboardForHint as { scenes?: unknown[] }).scenes?.length
             ) {
               feedbackHint +=
                 '\n\nHere is the current storyboard that you must use as the base (preserve all fields, only modify what the user requested):\n' +
-                `[STORYBOARD]${JSON.stringify(briefingState.structure)}[/STORYBOARD]`
+                `[STORYBOARD]${JSON.stringify(storyboardForHint)}[/STORYBOARD]`
             }
 
             systemPrompt += feedbackHint
@@ -402,6 +422,22 @@ async function handler(request: NextRequest) {
 
           // 9. Serialize updated state for response
           updatedBriefingState = serialize(briefingState)
+
+          // 9b. Build style hint for style-aware image search
+          const styleHintParts: string[] = []
+          const selectedStyles = briefingState.brief.visualDirection?.selectedStyles
+          if (selectedStyles && selectedStyles.length > 0) {
+            styleHintParts.push(...selectedStyles.map((s) => s.name))
+          }
+          if (briefingState.styleKeywords.length > 0) {
+            styleHintParts.push(...briefingState.styleKeywords)
+          }
+          if (briefingState.inspirationRefs.length > 0) {
+            styleHintParts.push(...briefingState.inspirationRefs)
+          }
+          if (styleHintParts.length > 0) {
+            styleHint = styleHintParts.join(' ')
+          }
         } catch (err) {
           logger.error({ err }, 'State machine pipeline failed — using default AI prompt')
           // On error, clear override so default prompt is used
@@ -732,7 +768,36 @@ async function handler(request: NextRequest) {
 
       // Use AI-generated quick options only — style fallback removed as it fires
       // indiscriminately at all stages and duplicates the style grid cards
-      const quickOptions = response.quickOptions
+      let quickOptions = response.quickOptions
+
+      // Enrich INSPIRATION stage quick options with representative images from Pexels
+      if (quickOptions && quickOptions.options.length >= 2 && currentStage === 'INSPIRATION') {
+        try {
+          const enriched = await Promise.all(
+            quickOptions.options.map(async (option) => {
+              const label = typeof option === 'string' ? option : option.label
+              // Skip non-style options (confirmations like "That works", "Skip")
+              if (/^(that works|skip|yes|no|sure|go ahead|sounds good)/i.test(label)) {
+                return option
+              }
+              const query = `${label} design style aesthetic`
+              const photos = await searchPexelsForScene(query, 1)
+              if (photos.length > 0) {
+                return { label, imageUrl: photos[0].url }
+              }
+              return option
+            })
+          )
+          const hasImages = enriched.some(
+            (o) => typeof o === 'object' && o !== null && 'imageUrl' in o && o.imageUrl
+          )
+          if (hasImages) {
+            quickOptions = { ...quickOptions, options: enriched }
+          }
+        } catch (enrichErr) {
+          logger.debug({ err: enrichErr }, 'Quick option image enrichment failed — using text-only')
+        }
+      }
 
       // Parse structured output from AI response when state machine is at STRUCTURE or STRATEGIC_REVIEW
       let structureData = undefined
@@ -743,6 +808,18 @@ async function handler(request: NextRequest) {
           const briefingState: BriefingState = deserialize(
             updatedBriefingState ?? clientBriefingState
           )
+
+          // Sync client-side storyboard edits into briefingState (post-AI path)
+          if (
+            clientLatestStoryboard?.type === 'storyboard' &&
+            Array.isArray(clientLatestStoryboard.scenes) &&
+            clientLatestStoryboard.scenes.length > 0 &&
+            (!briefingState.structure ||
+              briefingState.structure.type !== 'storyboard' ||
+              !('scenes' in briefingState.structure))
+          ) {
+            briefingState.structure = clientLatestStoryboard
+          }
 
           // ================================================================
           // 10. Parse [BRIEF_META] from AI response for stage transitions
@@ -931,14 +1008,26 @@ async function handler(request: NextRequest) {
 
             // Detect explicit submit intent as additional fallback
             const lastMsg = messages[messages.length - 1]?.content || ''
+            const isVideoWithoutStoryboard =
+              briefingState.deliverableCategory === 'video' &&
+              (!briefingState.structure ||
+                briefingState.structure.type !== 'storyboard' ||
+                !('scenes' in briefingState.structure) ||
+                (briefingState.structure as { scenes?: unknown[] }).scenes?.length === 0)
             if (
               (briefingState.stage === 'REVIEW' || briefingState.stage === 'DEEPEN') &&
               /\b(yes|yeah|yep|sure|go ahead|do it|ready|let'?s?\s*(go|submit|do)|submit\s*(this|it|now|the|my)?|send\s*(this|it)|confirm|looks?\s*good)\b/i.test(
                 lastMsg
               )
             ) {
-              briefingState.stage = 'SUBMIT'
-              briefingState.turnsInCurrentStage = 0
+              if (isVideoWithoutStoryboard) {
+                // Don't advance to SUBMIT — force storyboard generation first
+                briefingState.stage = 'STRUCTURE'
+                briefingState.turnsInCurrentStage = 0
+              } else {
+                briefingState.stage = 'SUBMIT'
+                briefingState.turnsInCurrentStage = 0
+              }
             }
           }
 
@@ -1308,7 +1397,7 @@ async function handler(request: NextRequest) {
         scenesHaveSearchData
       ) {
         try {
-          const imageResult = await searchStoryboardImages(structureData.scenes)
+          const imageResult = await searchStoryboardImages(structureData.scenes, { styleHint })
           if (imageResult.sceneMatches.length > 0) {
             sceneImageMatches = imageResult.sceneMatches
             logger.debug(

@@ -118,11 +118,11 @@ export function TaskProgressCard({
                   value={timeProgress}
                   className={`h-3 ${timeProgress > 100 ? '[&>div]:bg-destructive' : ''}`}
                 />
-                {/* Working deadline marker at 70% */}
+                {/* Working deadline marker at 50% */}
                 <div
                   className="absolute top-0 h-3 w-0.5 bg-orange-500"
-                  style={{ left: '70%' }}
-                  title="Artist Deadline (70%)"
+                  style={{ left: '50%' }}
+                  title="Artist Deadline (50%)"
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">

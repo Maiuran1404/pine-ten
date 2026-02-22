@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/require-auth'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { db } from '@/db'
-import { tasks, users, taskFiles, taskMessages } from '@/db/schema'
+import { tasks, users, taskCategories, taskFiles, taskMessages } from '@/db/schema'
 import { eq, desc, inArray } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
@@ -30,12 +30,20 @@ export async function GET(request: NextRequest) {
           createdAt: tasks.createdAt,
           deadline: tasks.deadline,
           assignedAt: tasks.assignedAt,
+          urgency: tasks.urgency,
+          priority: tasks.priority,
+          complexity: tasks.complexity,
+          estimatedHours: tasks.estimatedHours,
           clientName: clients.name,
+          clientImage: clients.image,
           freelancerName: freelancers.name,
+          freelancerImage: freelancers.image,
+          categoryName: taskCategories.name,
         })
         .from(tasks)
         .leftJoin(clients, eq(tasks.clientId, clients.id))
         .leftJoin(freelancers, eq(tasks.freelancerId, freelancers.id))
+        .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
         .orderBy(desc(tasks.createdAt))
         .limit(limit)
         .offset(offset)

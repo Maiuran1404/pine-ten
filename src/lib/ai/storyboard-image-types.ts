@@ -2,7 +2,13 @@
 // STORYBOARD IMAGE TYPES — shared across all search modules and frontend
 // =============================================================================
 
-export type ImageSource = 'film-grab' | 'flim-ai' | 'eyecannndy' | 'pexels'
+export type ImageSource =
+  | 'film-grab'
+  | 'flim-ai'
+  | 'eyecannndy'
+  | 'pexels'
+  | 'unsplash'
+  | 'dribbble'
 export type ImageMediaType = 'still' | 'gif'
 
 export interface StoryboardImageAttribution {

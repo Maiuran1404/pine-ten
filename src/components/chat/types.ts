@@ -51,9 +51,14 @@ export type ChatStage =
   | 'deepen'
   | 'submit'
 
+export interface QuickOptionItem {
+  label: string
+  imageUrl?: string
+}
+
 export interface QuickOptions {
   question: string
-  options: string[]
+  options: (string | QuickOptionItem)[]
   multiSelect?: boolean
 }
 

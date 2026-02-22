@@ -12,7 +12,7 @@ import {
 import {
   LayoutDashboard,
   Users,
-  FolderOpen,
+  Columns3,
   UserCheck,
   Settings,
   Tags,
@@ -60,9 +60,9 @@ const navigationGroups: NavigationGroup[] = [
     label: 'Operations',
     items: [
       {
-        name: 'All Tasks',
+        name: 'Tasks',
         href: '/admin/tasks',
-        icon: FolderOpen,
+        icon: Columns3,
       },
       {
         name: 'Verify',

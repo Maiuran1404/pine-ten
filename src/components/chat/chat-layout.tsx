@@ -54,6 +54,8 @@ interface ChatLayoutProps {
   sceneImageData?: Map<number, SceneImageData>
   // Loading state for regeneration
   isRegenerating?: boolean
+  // Changed scene numbers for visual diff highlighting
+  changedScenes?: Set<number>
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
   // Optional customization
@@ -101,6 +103,7 @@ export function ChatLayout({
   onSectionEdit,
   sceneImageData,
   isRegenerating,
+  changedScenes,
   viewStructureRef,
   showProgress = true,
   showMoodboard = true,
@@ -170,6 +173,7 @@ export function ChatLayout({
                 structureData={structureData ?? null}
                 sceneImageData={sceneImageData}
                 isRegenerating={isRegenerating}
+                changedScenes={changedScenes}
                 onSceneClick={onSceneClick}
                 onSelectionChange={onSceneSelectionChange}
                 onSceneEdit={onSceneEdit}
@@ -190,6 +194,7 @@ export function ChatLayout({
                     structureData={structureData ?? null}
                     sceneImageData={sceneImageData}
                     isRegenerating={isRegenerating}
+                    changedScenes={changedScenes}
                     onSceneClick={onSceneClick}
                     onSelectionChange={onSceneSelectionChange}
                     onSceneEdit={onSceneEdit}

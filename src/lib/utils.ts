@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Calculate the "working deadline" for artists - 70% of the actual deadline
+ * Calculate the "working deadline" for artists - 50% of the actual deadline
  * This gives buffer time for review and revisions before the real deadline
  */
 export function calculateWorkingDeadline(
@@ -18,9 +18,9 @@ export function calculateWorkingDeadline(
   const assignedDate = new Date(assignedAt)
   const deadlineDate = new Date(deadline)
 
-  // Calculate 70% of the total time
+  // Calculate 50% of the total time
   const totalTimeMs = deadlineDate.getTime() - assignedDate.getTime()
-  const workingTimeMs = totalTimeMs * 0.7
+  const workingTimeMs = totalTimeMs * 0.5
 
   return new Date(assignedDate.getTime() + workingTimeMs)
 }

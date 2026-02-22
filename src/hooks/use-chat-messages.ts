@@ -184,6 +184,7 @@ export function useChatMessages({
             selectedStyles,
             moodboardHasStyles,
             briefingState: serializedBriefingState,
+            latestStoryboard: latestStoryboardRef.current,
           }),
         })
 
@@ -246,6 +247,7 @@ export function useChatMessages({
             selectedStyles,
             moodboardHasStyles,
             briefingState: serializedBriefingState,
+            latestStoryboard: latestStoryboardRef.current,
           }),
         })
 
@@ -305,6 +307,7 @@ export function useChatMessages({
               content: m.content,
             })),
             briefingState: serializedBriefingState,
+            latestStoryboard: latestStoryboardRef.current,
             ...extraBody,
           }),
         })
@@ -322,7 +325,7 @@ export function useChatMessages({
         setIsLoading(false)
       }
     },
-    [serializedBriefingState, processApiResponse]
+    [serializedBriefingState, processApiResponse, latestStoryboardRef]
   )
 
   // Auto-continue conversation if last message was from user
@@ -345,6 +348,7 @@ export function useChatMessages({
           selectedStyles,
           moodboardHasStyles,
           briefingState: serializedBriefingState,
+          latestStoryboard: latestStoryboardRef.current,
         }),
       })
 
@@ -359,7 +363,14 @@ export function useChatMessages({
       setIsLoading(false)
       requestStartTimeRef.current = null
     }
-  }, [isLoading, selectedStyles, moodboardHasStyles, serializedBriefingState, processApiResponse])
+  }, [
+    isLoading,
+    selectedStyles,
+    moodboardHasStyles,
+    serializedBriefingState,
+    processApiResponse,
+    latestStoryboardRef,
+  ])
 
   const handleCopyMessage = useCallback(async (content: string, messageId: string) => {
     try {

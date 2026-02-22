@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { Logo } from '@/components/shared/logo'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { LayoutDashboard, CheckCircle, Settings, X, Lock, Wallet } from 'lucide-react'
+import { LayoutDashboard, Columns3, CheckCircle, Settings, X, Lock, Wallet } from 'lucide-react'
 import type { FreelancerProfileState } from '@/types'
 
 const navigation = [
@@ -15,6 +15,12 @@ const navigation = [
     href: '/portal',
     icon: LayoutDashboard,
     requiresApproval: false,
+  },
+  {
+    name: 'Board',
+    href: '/portal/board',
+    icon: Columns3,
+    requiresApproval: true,
   },
   {
     name: 'My Tasks',

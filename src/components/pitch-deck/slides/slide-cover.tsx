@@ -8,7 +8,7 @@ interface SlideCoverProps {
 
 export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
   return (
-    <SlideWrapper backgroundColor="#33422E">
+    <SlideWrapper backgroundColor="#293525">
       {/* Base fill from Figma */}
       <div
         style={{
@@ -17,11 +17,11 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: '#5E7A63',
+          backgroundColor: '#4B624F',
         }}
       />
 
-      {/* Linear gradient layer: #4B793A → #77926E → #33422E */}
+      {/* Linear gradient layer: #3C612E → #5F7558 → #293525 */}
       <div
         style={{
           position: 'absolute',
@@ -29,7 +29,7 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
           left: 0,
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #4B793A 0%, #77926E 50%, #33422E 100%)',
+          background: 'linear-gradient(135deg, #3C612E 0%, #5F7558 50%, #293525 100%)',
         }}
       />
 

@@ -452,6 +452,8 @@ function SceneThumbnail({
         'flim-ai': 'Flim.ai',
         pexels: 'Pexels',
         eyecannndy: 'Eyecannndy',
+        unsplash: 'Unsplash',
+        dribbble: 'Dribbble',
       }[sceneImageData.primarySource]
     : null
 
@@ -529,6 +531,7 @@ function RichSceneCard({
   isFirst,
   timestamp,
   isSelected,
+  isChanged,
   onToggleSelect,
   onSceneEdit: _onSceneEdit,
   onRegenerateScene,
@@ -541,6 +544,7 @@ function RichSceneCard({
   isFirst: boolean
   timestamp: { start: string; end: string }
   isSelected: boolean
+  isChanged?: boolean
   onToggleSelect: () => void
   onSceneEdit?: (field: string, value: string) => void
   onRegenerateScene?: () => void
@@ -564,7 +568,8 @@ function RichSceneCard({
         'group/card rounded-lg border overflow-hidden transition-all cursor-pointer',
         'border-border/50',
         isSelected && 'ring-2 ring-primary bg-primary/5',
-        !isSelected && 'hover:shadow-sm hover:border-border/80'
+        isChanged && !isSelected && 'ring-2 ring-emerald-400/60 animate-pulse',
+        !isSelected && !isChanged && 'hover:shadow-sm hover:border-border/80'
       )}
     >
       {/* Thumbnail area with overlaid controls */}
@@ -590,6 +595,16 @@ function RichSceneCard({
         >
           Scene {scene.sceneNumber}
         </Badge>
+
+        {/* Updated badge — visual diff indicator (U1) */}
+        {isChanged && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 left-2 text-[9px] h-4 px-1.5 bg-emerald-600/80 text-white border-0 backdrop-blur-sm animate-pulse"
+          >
+            Updated
+          </Badge>
+        )}
 
         {/* Regenerate button — bottom-right of thumbnail, hover-reveal */}
         {onRegenerateScene && (
@@ -738,6 +753,7 @@ interface RichStoryboardPanelProps {
   className?: string
   sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
+  changedScenes?: Set<number>
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
@@ -747,11 +763,36 @@ interface RichStoryboardPanelProps {
   getImageUrl?: (imageId: string) => string
 }
 
+// Duration targets (common video ad lengths in seconds)
+const DURATION_TARGETS = [15, 30, 60, 90, 120]
+
+function getDurationIndicator(totalDuration: number): {
+  color: 'green' | 'amber' | null
+  target: number | null
+} {
+  for (const target of DURATION_TARGETS) {
+    const diff = Math.abs(totalDuration - target)
+    if (diff <= 5) return { color: 'green', target }
+    if (diff <= 10) return { color: 'amber', target }
+  }
+  return { color: null, target: null }
+}
+
+// Rotating loading messages for regeneration (U2)
+const REGEN_LOADING_MESSAGES = [
+  'Analyzing your feedback...',
+  'Updating scenes...',
+  'Refining the narrative...',
+  'Generating visuals...',
+  'Polishing transitions...',
+]
+
 export function RichStoryboardPanel({
   scenes,
   className,
   sceneImageData,
   isRegenerating,
+  changedScenes,
   onSelectionChange,
   onSceneEdit,
   onRegenerateStoryboard,
@@ -760,6 +801,27 @@ export function RichStoryboardPanel({
   getImageUrl,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
+  const [regenConfirm, setRegenConfirm] = useState(false)
+  const [regenLoadingMsg, setRegenLoadingMsg] = useState(0)
+
+  // Rotate loading messages during regeneration (U2)
+  useEffect(() => {
+    if (!isRegenerating) return
+    const interval = setInterval(() => {
+      setRegenLoadingMsg((prev) => (prev + 1) % REGEN_LOADING_MESSAGES.length)
+    }, 3000)
+    return () => {
+      clearInterval(interval)
+      setRegenLoadingMsg(0)
+    }
+  }, [isRegenerating])
+
+  // Auto-reset regenerate confirmation after 3s (U15)
+  useEffect(() => {
+    if (!regenConfirm) return
+    const timeout = setTimeout(() => setRegenConfirm(false), 3000)
+    return () => clearTimeout(timeout)
+  }, [regenConfirm])
 
   // Notify parent whenever selection changes
   useEffect(() => {
@@ -798,26 +860,59 @@ export function RichStoryboardPanel({
             <span className="text-xs text-muted-foreground">
               {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
             </span>
-            {totalDuration > 0 && (
-              <>
-                <span className="text-muted-foreground/30">·</span>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatTimestamp(totalDuration)}</span>
-                </div>
-              </>
-            )}
+            {totalDuration > 0 &&
+              (() => {
+                const indicator = getDurationIndicator(totalDuration)
+                return (
+                  <>
+                    <span className="text-muted-foreground/30">·</span>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatTimestamp(totalDuration)}</span>
+                      {indicator.color === 'green' && indicator.target && (
+                        <span
+                          className="flex items-center gap-0.5 text-emerald-600"
+                          title={`Within 5s of ${indicator.target}s target`}
+                        >
+                          <Check className="h-3 w-3" />
+                          <span className="text-[10px]">{indicator.target}s</span>
+                        </span>
+                      )}
+                      {indicator.color === 'amber' && indicator.target && (
+                        <span
+                          className="text-amber-500 text-[10px]"
+                          title={`${Math.abs(totalDuration - indicator.target)}s from ${indicator.target}s target`}
+                        >
+                          ~{indicator.target}s
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
           </div>
           {onRegenerateStoryboard && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={onRegenerateStoryboard}
+              onClick={() => {
+                if (regenConfirm) {
+                  setRegenConfirm(false)
+                  onRegenerateStoryboard()
+                } else {
+                  setRegenConfirm(true)
+                }
+              }}
               disabled={isRegenerating}
-              className="gap-1.5 text-xs h-7 text-muted-foreground hover:text-primary"
+              className={cn(
+                'gap-1.5 text-xs h-7',
+                regenConfirm
+                  ? 'text-amber-600 hover:text-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
             >
               <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
-              {isRegenerating ? 'Regenerating...' : 'Regenerate'}
+              {isRegenerating ? 'Regenerating...' : regenConfirm ? 'Confirm?' : 'Regenerate'}
             </Button>
           )}
         </div>
@@ -825,12 +920,14 @@ export function RichStoryboardPanel({
 
       {/* Scrollable rich scene cards */}
       <ScrollArea className="flex-1 relative">
-        {/* Loading overlay during regeneration */}
+        {/* Loading overlay during regeneration (U2: rotating messages) */}
         {isRegenerating && (
           <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <RefreshCw className="h-5 w-5 text-primary animate-spin" />
-              <span className="text-xs text-muted-foreground">Regenerating storyboard...</span>
+              <span className="text-xs text-muted-foreground transition-opacity duration-300">
+                {REGEN_LOADING_MESSAGES[regenLoadingMsg]}
+              </span>
             </div>
           </div>
         )}
@@ -848,6 +945,7 @@ export function RichStoryboardPanel({
                 isFirst={index === 0}
                 timestamp={timestampRanges[index]}
                 isSelected={selectedScenes.includes(scene.sceneNumber)}
+                isChanged={changedScenes?.has(scene.sceneNumber)}
                 onToggleSelect={() => toggleSelect(scene.sceneNumber)}
                 onSceneEdit={
                   onSceneEdit

@@ -70,9 +70,9 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
         onClose={() => setSidebarOpen(false)}
         profileStatus={profileStatus}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Header onMenuClick={() => setSidebarOpen(true)} basePath="/portal" showUpgrade={false} />
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 min-w-0">{children}</main>
       </div>
     </div>
   )

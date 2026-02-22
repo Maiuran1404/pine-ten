@@ -1,39 +1,13 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
 import type { StoryboardImage } from '@/lib/ai/storyboard-image-types'
+import { createTTLCache } from './ttl-cache'
 
 // =============================================================================
 // FILM-GRAB CLIENT — HD film stills via free WordPress REST API
 // =============================================================================
 
-// In-memory cache: 200 entries, 15-minute TTL
-interface CacheEntry {
-  images: StoryboardImage[]
-  timestamp: number
-}
-
-const CACHE_MAX_SIZE = 200
-const CACHE_TTL_MS = 15 * 60 * 1000
-
-const cache = new Map<string, CacheEntry>()
-
-function getCached(key: string): StoryboardImage[] | null {
-  const entry = cache.get(key)
-  if (!entry) return null
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-    cache.delete(key)
-    return null
-  }
-  return entry.images
-}
-
-function setCache(key: string, images: StoryboardImage[]) {
-  if (cache.size >= CACHE_MAX_SIZE) {
-    const oldestKey = cache.keys().next().value
-    if (oldestKey) cache.delete(oldestKey)
-  }
-  cache.set(key, { images, timestamp: Date.now() })
-}
+const cache = createTTLCache<StoryboardImage[]>(200, 15 * 60 * 1000)
 
 // WordPress REST API post shape (minimal)
 interface WpPost {
@@ -58,7 +32,7 @@ export async function searchFilmGrabForScene(
   if (!filmTitles || filmTitles.length === 0) return []
 
   const cacheKey = filmTitles.join('|')
-  const cached = getCached(cacheKey)
+  const cached = cache.get(cacheKey)
   if (cached) return cached
 
   const results: StoryboardImage[] = []
@@ -110,7 +84,7 @@ export async function searchFilmGrabForScene(
     }
   }
 
-  setCache(cacheKey, results)
+  cache.set(cacheKey, results)
 
   logger.debug(
     { titleCount: filmTitles.length, resultCount: results.length },

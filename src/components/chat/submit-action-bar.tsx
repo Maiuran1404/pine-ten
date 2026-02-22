@@ -224,6 +224,16 @@ export function SubmitActionBar({
                 </div>
               )}
 
+              {/* What happens next */}
+              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border/50">
+                <p className="text-xs font-medium text-foreground mb-1.5">After submission</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>Upload brand assets, logos, and product screenshots</li>
+                  <li>A matched designer starts working on your brief</li>
+                  <li>First draft delivered by {deliveryDate}</li>
+                </ul>
+              </div>
+
               {/* Stats cards */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
                 <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">

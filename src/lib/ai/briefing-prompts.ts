@@ -122,10 +122,11 @@ Lead with your honest assessment. If you have a flag, lead with it. Don't sandwi
 
 RULES:
 - Be concise. No filler. Maximum 3 short paragraphs per response.
-- One question at a time unless grouping makes sense.
+- STRICTLY one question per response. Never ask two questions. If you need files AND style direction, ask for style direction first. Files come later.
 - Never repeat what the user already told you.
 - Match the user's energy and vocabulary level.
 - ALWAYS end your response with [QUICK_OPTIONS]{"question": "short label", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS] providing 2-4 contextual next-step options that directly relate to what you just asked.
+- NEVER include "submit", "ready to submit", or "submit to designer" as a quick option. The submission flow is handled by the system automatically. Your quick options should guide the user to the NEXT creative step (e.g., style direction, scene adjustments, elaboration).
 
 ASSET REQUESTS:
 When you need the user to share product screenshots, UI assets, brand files, or any visual material, include an [ASSET_REQUEST] block. This renders an inline upload zone in the chat.
@@ -134,6 +135,7 @@ Format: [ASSET_REQUEST]{"prompt":"Share your product screenshots or UI assets","
 - "acceptTypes": Array of file categories: "image", "video", "pdf", "design"
 - "hint": Helper text shown below the prompt
 Use this when asking for launch assets, product screenshots, existing brand materials, or reference files. Do NOT use it for every response, only when you specifically need the user to share files.
+IMPORTANT: Do NOT request asset uploads during the briefing conversation. Brand assets, logos, product screenshots, and other files will be collected after the brief is submitted. Never include [ASSET_REQUEST] in your responses.
 
 STAGE DECLARATION: You MUST include [BRIEF_META] and [QUICK_OPTIONS] blocks in every response. Full format is specified in the CLOSING INSTRUCTION section at the end of this prompt.`
 
@@ -425,15 +427,43 @@ OUTPUT FORMAT: The structure block with valid JSON markers is the primary delive
   }
 }
 
+function buildStyleContext(state: BriefingState): string {
+  const parts: string[] = []
+
+  const selectedStyles = state.brief.visualDirection?.selectedStyles
+  if (selectedStyles && selectedStyles.length > 0) {
+    const styleNames = selectedStyles.map((s) => s.name).join(', ')
+    parts.push(`The user selected these visual styles: ${styleNames}.`)
+  }
+
+  if (state.styleKeywords.length > 0) {
+    parts.push(`Style keywords: ${state.styleKeywords.join(', ')}.`)
+  }
+
+  if (state.inspirationRefs.length > 0) {
+    parts.push(`Inspiration references: ${state.inspirationRefs.join(', ')}.`)
+  }
+
+  if (parts.length === 0) return ''
+
+  return `
+VISUAL STYLE CONTEXT:
+${parts.join(' ')}
+You MUST align imageSearchTerms with this visual direction. For minimal/clean styles, use terms like "clean minimal interface", "white product photography", "modern simple design". For cinematic/dramatic styles, use "dramatic lighting scene", "moody cinematic". For corporate/professional styles, use "professional business", "modern corporate office". Align filmTitleSuggestions accordingly — minimal styles should reference films like "Her", "A Single Man", "Lost in Translation"; cinematic styles can use "Blade Runner 2049", "Ex Machina"; warm/lifestyle styles should use "Moonrise Kingdom", "The Grand Budapest Hotel".
+`
+}
+
 function buildElaborateTask(state: BriefingState): string {
   const category = state.deliverableCategory
   const isFirstTurn = state.turnsInCurrentStage === 0
+  const styleContext = buildStyleContext(state)
 
   if (isFirstTurn) {
     // First turn: auto-elaborate ALL sections immediately
     switch (category) {
       case 'video':
         return `MANDATORY: Elaborate ALL scenes in the storyboard with full creative detail.
+${styleContext}
 For each scene, add:
 - fullScript: Complete narration/dialogue script (exact words to be spoken or shown)
 - directorNotes: Shooting direction, pacing, talent direction, mood cues
@@ -547,9 +577,6 @@ function buildReviewTask(_state: BriefingState): string {
 - Name the strongest element in one sentence.
 - Name ONE thing to push.
 - Instead of "Does this look good?", state your assessment with confidence.
-- If the user hasn't shared product screenshots, UI flows, or visual assets yet, now is the time to ask. Include an [ASSET_REQUEST] block so they can upload directly:
-[ASSET_REQUEST]{"prompt":"Share your product screenshots, UI flows, or visual assets for the designer","acceptTypes":["image","video","pdf","design"],"hint":"Upload files or paste a Google Drive / Dropbox link"}[/ASSET_REQUEST]
-  The designer will need these to execute the brief. Frame it naturally: "One last thing before we hand this off: do you have any product screenshots or assets the designer should work with?"
 - If the user says "let's build" / "let's start" / "ready to go", frame it as submitting to a professional Crafted designer.
 - NEVER suggest they hire someone else or go to another platform.`
 }

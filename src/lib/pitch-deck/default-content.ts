@@ -3,8 +3,8 @@ import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 export const defaultPitchDeckContent: PitchDeckFormData = {
   // Global
   clientName: 'Arcline',
-  primaryColor: '#5E7A63',
-  accentColor: '#395C2D',
+  primaryColor: '#4B624F',
+  accentColor: '#2E4A24',
 
   // Cover
   coverDate: new Date().toLocaleDateString('en-US', {

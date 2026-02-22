@@ -1,5 +1,6 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
+import { createTTLCache } from './ttl-cache'
 
 // =============================================================================
 // TYPES
@@ -30,34 +31,7 @@ interface SerperImageResponse {
 // IN-MEMORY CACHE (500 entries, 30-minute TTL)
 // =============================================================================
 
-interface CacheEntry {
-  results: SerperImageResult[]
-  timestamp: number
-}
-
-const CACHE_MAX_SIZE = 500
-const CACHE_TTL_MS = 30 * 60 * 1000 // 30 minutes
-
-const cache = new Map<string, CacheEntry>()
-
-function getCached(query: string): SerperImageResult[] | null {
-  const entry = cache.get(query)
-  if (!entry) return null
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-    cache.delete(query)
-    return null
-  }
-  return entry.results
-}
-
-function setCache(query: string, results: SerperImageResult[]) {
-  // Evict oldest entries if at capacity
-  if (cache.size >= CACHE_MAX_SIZE) {
-    const oldestKey = cache.keys().next().value
-    if (oldestKey) cache.delete(oldestKey)
-  }
-  cache.set(query, { results, timestamp: Date.now() })
-}
+const cache = createTTLCache<SerperImageResult[]>(500, 30 * 60 * 1000)
 
 // =============================================================================
 // SERPER CLIENT
@@ -77,7 +51,7 @@ export async function searchDesignReferences(
 ): Promise<SerperImageResult[]> {
   // Check cache first
   const cacheKey = `${query}:${count}`
-  const cached = getCached(cacheKey)
+  const cached = cache.get(cacheKey)
   if (cached) return cached
 
   const apiKey = getApiKey()
@@ -110,7 +84,7 @@ export async function searchDesignReferences(
     const data: SerperImageResponse = await response.json()
     const results = data.images || []
 
-    setCache(cacheKey, results)
+    cache.set(cacheKey, results)
 
     logger.debug({ query, resultCount: results.length }, 'Serper image search complete')
 

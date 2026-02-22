@@ -1,6 +1,7 @@
 import 'server-only'
 import { createClient, type PhotosWithTotalResults, type Photo } from 'pexels'
 import { logger } from '@/lib/logger'
+import { createTTLCache } from './ttl-cache'
 
 // =============================================================================
 // TYPES
@@ -29,34 +30,7 @@ export interface StoryboardImageResult {
 // IN-MEMORY CACHE (200 entries, 10-minute TTL)
 // =============================================================================
 
-interface CacheEntry {
-  photos: PexelsPhoto[]
-  timestamp: number
-}
-
-const CACHE_MAX_SIZE = 200
-const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
-
-const cache = new Map<string, CacheEntry>()
-
-function getCached(query: string): PexelsPhoto[] | null {
-  const entry = cache.get(query)
-  if (!entry) return null
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-    cache.delete(query)
-    return null
-  }
-  return entry.photos
-}
-
-function setCache(query: string, photos: PexelsPhoto[]) {
-  // Evict oldest entries if at capacity
-  if (cache.size >= CACHE_MAX_SIZE) {
-    const oldestKey = cache.keys().next().value
-    if (oldestKey) cache.delete(oldestKey)
-  }
-  cache.set(query, { photos, timestamp: Date.now() })
-}
+const cache = createTTLCache<PexelsPhoto[]>(200, 10 * 60 * 1000)
 
 // =============================================================================
 // PEXELS CLIENT
@@ -94,7 +68,7 @@ export async function searchPexelsForScene(
   query: string,
   perPage: number = 1
 ): Promise<PexelsPhoto[]> {
-  const cached = getCached(query)
+  const cached = cache.get(query)
   if (cached) return cached
 
   const client = getPexelsClient()
@@ -114,7 +88,7 @@ export async function searchPexelsForScene(
     }
 
     const photos = (result as PhotosWithTotalResults).photos.map(mapPhoto)
-    setCache(query, photos)
+    cache.set(query, photos)
     return photos
   } catch (err) {
     logger.error({ err, query }, 'Pexels API call failed')

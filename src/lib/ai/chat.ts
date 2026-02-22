@@ -208,7 +208,7 @@ export async function chat(
 ): Promise<{
   content: string
   styleReferences?: string[]
-  quickOptions?: { question: string; options: string[] }
+  quickOptions?: { question: string; options: (string | { label: string; imageUrl?: string })[] }
   deliverableStyleMarker?: DeliverableStyleMarker
   assetRequest?: { prompt: string; acceptTypes: string[]; hint: string }
 }> {
@@ -437,7 +437,9 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
   }
 
   // Parse quick options from AI output: [QUICK_OPTIONS]{"question": "...", "options": [...]}[/QUICK_OPTIONS]
-  let quickOptions: { question: string; options: string[] } | undefined = undefined
+  let quickOptions:
+    | { question: string; options: (string | { label: string; imageUrl?: string })[] }
+    | undefined = undefined
   const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]\s*([\s\S]*?)\s*\[\/QUICK_OPTIONS\]/)
   if (quickOptionsMatch) {
     try {
@@ -445,7 +447,14 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
       if (parsed.options && Array.isArray(parsed.options) && parsed.options.length > 0) {
         quickOptions = {
           question: parsed.question || '',
-          options: parsed.options.filter((o: unknown) => typeof o === 'string' && o.trim()),
+          options: parsed.options.filter(
+            (o: unknown) =>
+              (typeof o === 'string' && o.trim()) ||
+              (typeof o === 'object' &&
+                o !== null &&
+                'label' in o &&
+                typeof (o as { label: unknown }).label === 'string')
+          ),
         }
       }
     } catch {

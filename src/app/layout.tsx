@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
@@ -11,14 +10,16 @@ import { SkipLink } from '@/components/shared/skip-link'
 import { DevAgentation } from '@/components/dev-agentation'
 import './globals.css'
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: '../fonts/Geist-Latin.woff2',
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  display: 'swap',
 })
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: '../fonts/GeistMono-Latin.woff2',
   variable: '--font-geist-mono',
-  subsets: ['latin'],
+  display: 'swap',
 })
 
 const satoshi = localFont({

@@ -218,6 +218,7 @@ export function ChatInterface({
     storyboardScenes,
     structureType,
     structurePanelVisible,
+    changedScenes,
     sceneImageData,
     handleStrategicReviewAction,
     handleSceneEdit,
@@ -310,6 +311,7 @@ export function ChatInterface({
         onSectionEdit={handleSectionEdit}
         sceneImageData={sceneImageData}
         isRegenerating={isLoading}
+        changedScenes={changedScenes}
         viewStructureRef={viewStructureRef}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
@@ -449,6 +451,9 @@ export function ChatInterface({
               viewStructureRef.current?.()
             }}
             structurePanelVisible={structurePanelVisible}
+            latestStoryboardScenes={
+              storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined
+            }
             onInlineUpload={uploadFiles}
             isUploading={isUploading}
             uploadedFiles={uploadedFiles}
@@ -498,6 +503,14 @@ export function ChatInterface({
               sceneReferences={sceneReferences}
               onRemoveSceneReference={(sceneNumber: number) =>
                 setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
+              }
+              deliverableCategory={deliverableCategory}
+              hasStoryboard={
+                !!(
+                  storyboardScenes &&
+                  storyboardScenes.type === 'storyboard' &&
+                  storyboardScenes.scenes.length > 0
+                )
               }
             />
           )}

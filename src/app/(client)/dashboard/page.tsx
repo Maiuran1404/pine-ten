@@ -902,7 +902,7 @@ function DashboardContent() {
                     setModalNotes('')
                     setPlatformSelections({})
                   }}
-                  className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.04] active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
+                  className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
                 >
                   <div
                     className={cn(

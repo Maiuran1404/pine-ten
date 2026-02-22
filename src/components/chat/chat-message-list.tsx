@@ -344,6 +344,9 @@ export interface ChatMessageListProps {
   // Whether the structure panel is currently visible (suppresses inline structure rendering)
   structurePanelVisible?: boolean
 
+  // Latest live storyboard scenes (for keeping inline summary cards up to date)
+  latestStoryboardScenes?: import('@/lib/ai/briefing-state-machine').StoryboardScene[]
+
   // Inline upload zone
   onInlineUpload?: (files: FileList | File[]) => Promise<void>
   isUploading?: boolean
@@ -402,6 +405,7 @@ export function ChatMessageList({
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
   structurePanelVisible = false,
+  latestStoryboardScenes,
   onInlineUpload,
   isUploading = false,
   uploadedFiles = [],
@@ -721,7 +725,9 @@ export function ChatMessageList({
                                 {message.structureData.type === 'storyboard' &&
                                   !structurePanelVisible && (
                                     <StoryboardSummaryCard
-                                      scenes={message.structureData.scenes}
+                                      scenes={
+                                        latestStoryboardScenes ?? message.structureData.scenes
+                                      }
                                       onViewStoryboard={onViewStoryboard}
                                     />
                                   )}

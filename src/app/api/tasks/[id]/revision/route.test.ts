@@ -38,9 +38,15 @@ vi.mock('@/db', () => ({
   },
 }))
 
+vi.mock('@/lib/deadline', () => ({
+  calculateRevisionExtension: vi.fn().mockReturnValue(2),
+  extendDeadline: vi.fn().mockReturnValue(new Date('2025-03-01T00:00:00Z')),
+}))
+
 vi.mock('@/db/schema', () => ({
   tasks: { id: 'id', clientId: 'clientId', status: 'status' },
   taskMessages: {},
+  taskActivityLog: {},
 }))
 
 vi.mock('drizzle-orm', () => ({

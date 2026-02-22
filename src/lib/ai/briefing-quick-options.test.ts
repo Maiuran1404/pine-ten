@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { generateQuickOptions } from './briefing-quick-options'
 import { createInitialBriefingState } from './briefing-state-machine'
 import type { BriefingState } from './briefing-state-machine'
+import type { QuickOptionItem } from '@/components/chat/types'
 
 // =============================================================================
 // HELPERS
@@ -9,6 +10,10 @@ import type { BriefingState } from './briefing-state-machine'
 
 function makeState(overrides: Partial<BriefingState> = {}): BriefingState {
   return { ...createInitialBriefingState(), ...overrides }
+}
+
+function getLabel(option: string | QuickOptionItem): string {
+  return typeof option === 'string' ? option : option.label
 }
 
 // =============================================================================
@@ -50,7 +55,7 @@ describe('generateQuickOptions', () => {
     const opts = generateQuickOptions(makeState({ stage: 'TASK_TYPE', turnsInCurrentStage: 2 }))
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Sounds good')
-    expect(opts!.options.some((o) => o.includes('think'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).includes('think'))).toBe(true)
   })
 
   // INTENT — turn 1: full options
@@ -98,8 +103,8 @@ describe('generateQuickOptions', () => {
     const opts = generateQuickOptions(makeState({ stage: 'STRATEGIC_REVIEW' }))
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Looks good, continue')
-    expect(opts!.options.some((o) => o.includes('adjust'))).toBe(true)
-    expect(opts!.options.some((o) => o.includes('keep it as-is'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).includes('adjust'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).includes('keep it as-is'))).toBe(true)
   })
 
   // MOODBOARD
@@ -124,7 +129,7 @@ describe('generateQuickOptions', () => {
     const opts = generateQuickOptions(makeState({ stage: 'DEEPEN', deliverableCategory: 'video' }))
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Done, submit now')
-    expect(opts!.options.some((o) => o.toLowerCase().includes('script'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).toLowerCase().includes('script'))).toBe(true)
   })
 
   // DEEPEN — website
@@ -134,7 +139,7 @@ describe('generateQuickOptions', () => {
     )
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Done, submit now')
-    expect(opts!.options.some((o) => o.toLowerCase().includes('copy'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).toLowerCase().includes('copy'))).toBe(true)
   })
 
   // DEEPEN — content
@@ -144,7 +149,7 @@ describe('generateQuickOptions', () => {
     )
     expect(opts).not.toBeNull()
     expect(opts!.options).toContain('Done, submit now')
-    expect(opts!.options.some((o) => o.toLowerCase().includes('messaging'))).toBe(true)
+    expect(opts!.options.some((o) => getLabel(o).toLowerCase().includes('messaging'))).toBe(true)
   })
 
   // DEEPEN — design

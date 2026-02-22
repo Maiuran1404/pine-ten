@@ -20,6 +20,7 @@ interface StructurePanelProps {
   briefingStage?: string
   sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
+  changedScenes?: Set<number>
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
@@ -143,6 +144,7 @@ export function StructurePanel({
   briefingStage,
   sceneImageData,
   isRegenerating,
+  changedScenes,
   onSceneClick,
   onSelectionChange,
   onSceneEdit,
@@ -203,6 +205,7 @@ export function StructurePanel({
           scenes={structureData.scenes}
           sceneImageData={sceneImageData}
           isRegenerating={isRegenerating}
+          changedScenes={changedScenes}
           onSceneClick={onSceneClick}
           onSelectionChange={onSelectionChange}
           onSceneEdit={onSceneEdit}

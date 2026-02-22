@@ -521,7 +521,7 @@ export function TasksContent() {
                                                 />
                                                 <div
                                                   className="absolute top-0 h-1.5 w-px bg-orange-500"
-                                                  style={{ left: '70%' }}
+                                                  style={{ left: '50%' }}
                                                 />
                                               </div>
                                             )}

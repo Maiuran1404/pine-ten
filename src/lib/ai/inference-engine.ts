@@ -15,7 +15,10 @@ import type {
   AudienceBrief,
   LiveBrief,
 } from '@/components/chat/brief-panel/types'
-import { getDimensionsForPlatform } from '@/lib/constants/platform-dimensions'
+import {
+  getDimensionsForPlatform,
+  getVideoDimensionsForPlatform,
+} from '@/lib/constants/platform-dimensions'
 import type { InferredAudience } from '@/components/onboarding/types'
 
 // =============================================================================
@@ -1160,7 +1163,8 @@ export function applyInferenceToBrief(
   brief: LiveBrief,
   inference: InferenceResult,
   brandAudiences?: InferredAudience[],
-  messageText?: string
+  messageText?: string,
+  deliverableCategory?: string | null
 ): LiveBrief {
   const updated = { ...brief, updatedAt: new Date() }
 
@@ -1198,11 +1202,14 @@ export function applyInferenceToBrief(
         source: inference.platform.confidence >= 0.5 ? 'inferred' : 'pending',
       }
 
-      // Auto-apply dimensions
-      const dimensions = getDimensionsForPlatform(
-        inference.platform.value,
-        inference.contentType.value || undefined
-      )
+      // Auto-apply dimensions — use video dimensions when category is video
+      const dimensions =
+        deliverableCategory === 'video'
+          ? getVideoDimensionsForPlatform(inference.platform.value)
+          : getDimensionsForPlatform(
+              inference.platform.value,
+              inference.contentType.value || undefined
+            )
       updated.dimensions = dimensions
     }
   }

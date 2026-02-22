@@ -247,7 +247,7 @@ describe('ChatInputArea', () => {
     expect(setInput).toHaveBeenCalledWith('Create a 5-slide Instagram carousel about ')
   })
 
-  it('shows "I\'m ready to submit" button when there are messages', () => {
+  it('passes handleRequestTaskSummary prop', () => {
     const handleRequestTaskSummary = vi.fn()
     render(
       <ChatInputArea
@@ -258,11 +258,9 @@ describe('ChatInputArea', () => {
       />
     )
 
-    const readyButton = screen.getByRole('button', { name: /ready to submit/i })
-    expect(readyButton).toBeInTheDocument()
-
-    fireEvent.click(readyButton)
-    expect(handleRequestTaskSummary).toHaveBeenCalledTimes(1)
+    // The "I'm ready to submit" button was moved to submit-action-bar
+    // Verify the component renders without errors with this prop
+    expect(screen.getByPlaceholderText(/type your message/i)).toBeInTheDocument()
   })
 
   it('displays scene references with remove buttons', () => {

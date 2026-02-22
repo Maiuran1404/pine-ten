@@ -106,6 +106,30 @@ export const complexityMultipliers = {
   PREMIUM: 3,
 } as const
 
+// Delivery time matrix: business days by category slug and complexity
+export const deliveryDaysMatrix: Record<string, Record<string, number>> = {
+  'static-ads': { SIMPLE: 2, INTERMEDIATE: 3, ADVANCED: 4, EXPERT: 5 },
+  'video-motion': { SIMPLE: 5, INTERMEDIATE: 7, ADVANCED: 8, EXPERT: 10 },
+  'social-media': { SIMPLE: 2, INTERMEDIATE: 3, ADVANCED: 4, EXPERT: 5 },
+  'ui-ux': { SIMPLE: 5, INTERMEDIATE: 7, ADVANCED: 8, EXPERT: 10 },
+}
+
+// Urgency multipliers for delivery time
+export const urgencyMultipliers: Record<string, number> = {
+  CRITICAL: 0.5,
+  URGENT: 0.75,
+  STANDARD: 1,
+  FLEXIBLE: 1.25,
+}
+
+// Revision extension matrix: business days added per revision by complexity
+export const revisionExtensionDays: Record<string, number> = {
+  SIMPLE: 1,
+  INTERMEDIATE: 2,
+  ADVANCED: 3,
+  EXPERT: 4,
+}
+
 // Style reference categories for seeding
 export const styleReferenceCategories = [
   'Minimalist',

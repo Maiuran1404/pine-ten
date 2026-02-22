@@ -40,6 +40,10 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
 
+  // Visual diff tracking (U1): track which scenes changed after a revision
+  const [changedScenes, setChangedScenes] = useState<Set<number>>(new Set())
+  const previousScenesRef = useRef<StructureData | null>(null)
+
   // Compute structure type from deliverable category
   const structureType = useMemo((): StructureData['type'] | null => {
     const cat = briefingState?.deliverableCategory
@@ -253,6 +257,33 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
 
   // Update structure data from API response
   const updateStructureData = useCallback((data: StructureData) => {
+    // Visual diff detection (U1): compare old vs new scenes
+    if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
+      const oldScenes = previousScenesRef.current.scenes
+      const changed = new Set<number>()
+      for (const newScene of data.scenes) {
+        const oldScene = oldScenes.find((s) => s.sceneNumber === newScene.sceneNumber)
+        if (!oldScene) {
+          // New scene added
+          changed.add(newScene.sceneNumber)
+        } else if (
+          oldScene.title !== newScene.title ||
+          oldScene.description !== newScene.description ||
+          oldScene.duration !== newScene.duration ||
+          oldScene.voiceover !== newScene.voiceover ||
+          oldScene.visualNote !== newScene.visualNote
+        ) {
+          changed.add(newScene.sceneNumber)
+        }
+      }
+      if (changed.size > 0) {
+        setChangedScenes(changed)
+        // Clear after 5 seconds
+        setTimeout(() => setChangedScenes(new Set()), 5000)
+      }
+    }
+
+    previousScenesRef.current = data
     setStoryboardScenes(data)
     if (data.type === 'storyboard') {
       latestStoryboardRef.current = data
@@ -268,6 +299,7 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     latestStoryboardRef,
     structureType,
     structurePanelVisible,
+    changedScenes,
     processSceneImageMatches,
     handleSceneClick,
     handleMultiSceneFeedback,

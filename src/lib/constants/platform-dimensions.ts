@@ -206,6 +206,23 @@ export const PRESENTATION_DIMENSIONS: Record<string, Dimension[]> = {
 }
 
 // =============================================================================
+// VIDEO DIMENSIONS (generic — used when deliverableCategory is 'video')
+// =============================================================================
+
+export const VIDEO_DIMENSIONS: Record<string, Dimension[]> = {
+  standard: [
+    { label: 'Full HD (16:9)', width: 1920, height: 1080, aspectRatio: '16:9', isDefault: true },
+    { label: '4K (16:9)', width: 3840, height: 2160, aspectRatio: '16:9' },
+  ],
+  vertical: [
+    { label: 'Vertical (9:16)', width: 1080, height: 1920, aspectRatio: '9:16', isDefault: true },
+  ],
+  square: [
+    { label: 'Square (1:1)', width: 1080, height: 1080, aspectRatio: '1:1', isDefault: true },
+  ],
+}
+
+// =============================================================================
 // MASTER PLATFORM-DIMENSION MAP
 // =============================================================================
 
@@ -469,4 +486,39 @@ export function formatDimension(dim: Dimension): string {
  */
 export function formatDimensionsList(dims: Dimension[]): string {
   return dims.map((d) => `${d.label}: ${d.width}×${d.height}`).join(', ')
+}
+
+/**
+ * Get video dimensions based on platform context.
+ * Maps platform to the most appropriate video aspect ratio.
+ */
+export function getVideoDimensionsForPlatform(platform?: string | null): Dimension[] {
+  if (!platform) {
+    // Default: return standard HD landscape
+    return VIDEO_DIMENSIONS['standard']
+  }
+
+  const p = platform.toLowerCase()
+
+  // Vertical-first platforms
+  if (['tiktok', 'instagram', 'snapchat'].some((v) => p.includes(v))) {
+    // Check if specifically a reel/story (vertical) vs feed post (could be square)
+    if (p.includes('reel') || p.includes('story') || p.includes('short')) {
+      return VIDEO_DIMENSIONS['vertical']
+    }
+    return [...VIDEO_DIMENSIONS['vertical'], ...VIDEO_DIMENSIONS['square']]
+  }
+
+  // Landscape-first platforms
+  if (['youtube', 'vimeo', 'tv', 'cinema', 'broadcast'].some((v) => p.includes(v))) {
+    return VIDEO_DIMENSIONS['standard']
+  }
+
+  // Square-friendly
+  if (p.includes('facebook') || p.includes('linkedin')) {
+    return [...VIDEO_DIMENSIONS['standard'], ...VIDEO_DIMENSIONS['square']]
+  }
+
+  // Default: all standard video sizes
+  return VIDEO_DIMENSIONS['standard']
 }

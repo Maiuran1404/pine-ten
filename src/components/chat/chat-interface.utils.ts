@@ -6,6 +6,7 @@
 
 import type { TaskProposal, ChatMessage as Message } from './types'
 import type { LiveBrief } from './brief-panel/types'
+import { calculateDeliveryDays } from '@/lib/deadline'
 
 /** Format a date into a relative time string (e.g. "5m ago", "2h ago"). */
 export function formatTimeAgo(date: Date): string {
@@ -274,12 +275,72 @@ export function constructTaskFromConversation(
 
   creditsRequired = Math.min(creditsRequired, 100)
 
+  // Map category to slug for delivery calculation
+  const categorySlugMap: Record<string, string> = {
+    'Social Media': 'social-media',
+    Advertising: 'static-ads',
+    Video: 'video-motion',
+    'Logo Design': 'ui-ux',
+    Branding: 'ui-ux',
+  }
+  const deliveryCategorySlug = categorySlugMap[category] || 'social-media'
+
+  // Detect complexity from content
+  let complexity = 'INTERMEDIATE'
+  if (
+    contentLower.includes('simple') ||
+    contentLower.includes('basic') ||
+    contentLower.includes('quick')
+  ) {
+    complexity = 'SIMPLE'
+  } else if (
+    contentLower.includes('complex') ||
+    contentLower.includes('advanced') ||
+    contentLower.includes('premium')
+  ) {
+    complexity = 'ADVANCED'
+  } else if (
+    contentLower.includes('expert') ||
+    contentLower.includes('enterprise') ||
+    contentLower.includes('custom')
+  ) {
+    complexity = 'EXPERT'
+  }
+
+  // Detect urgency from content
+  let urgency = 'STANDARD'
+  if (
+    contentLower.includes('rush') ||
+    contentLower.includes('urgent') ||
+    contentLower.includes('asap') ||
+    contentLower.includes('emergency')
+  ) {
+    urgency = 'URGENT'
+  } else if (contentLower.includes('flexible') || contentLower.includes('no rush')) {
+    urgency = 'FLEXIBLE'
+  }
+
+  // Detect quantity
+  let quantity = 1
+  for (const pattern of quantityPatterns) {
+    const match = userContent.match(pattern)
+    if (match) {
+      const count = parseInt(match[1], 10)
+      if (count > 1 && count <= 20) {
+        quantity = count
+        break
+      }
+    }
+  }
+
+  const deliveryDays = calculateDeliveryDays(deliveryCategorySlug, complexity, urgency, quantity)
+
   return {
     title,
     description,
     category,
     estimatedHours: 24,
-    deliveryDays: 3,
+    deliveryDays,
     creditsRequired,
   }
 }

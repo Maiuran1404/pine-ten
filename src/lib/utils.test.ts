@@ -53,14 +53,14 @@ describe('calculateWorkingDeadline', () => {
     expect(calculateWorkingDeadline(null, null)).toBeNull()
   })
 
-  it('should calculate 70% of the time window', () => {
+  it('should calculate 50% of the time window', () => {
     const assigned = new Date('2025-01-01T00:00:00Z')
     const deadline = new Date('2025-01-11T00:00:00Z') // 10 days later
     const result = calculateWorkingDeadline(assigned.toISOString(), deadline.toISOString())
 
     expect(result).not.toBeNull()
-    // 70% of 10 days = 7 days
-    const expectedDate = new Date('2025-01-08T00:00:00Z')
+    // 50% of 10 days = 5 days
+    const expectedDate = new Date('2025-01-06T00:00:00Z')
     expect(result!.getTime()).toBe(expectedDate.getTime())
   })
 

@@ -50,6 +50,9 @@ const envSchema = z.object({
   // Serper.dev (optional - for Google Images design reference search)
   SERPER_API_KEY: z.string().min(1).optional(),
 
+  // Unsplash (optional - for high-quality stock photos in storyboard)
+  UNSPLASH_ACCESS_KEY: z.string().min(1).optional(),
+
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 

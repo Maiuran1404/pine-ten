@@ -56,6 +56,12 @@ vi.mock('@/lib/assignment-algorithm', () => ({
   detectTaskUrgency: (...args: unknown[]) => mockDetectTaskUrgency(...args),
 }))
 
+// Mock deadline calculations
+vi.mock('@/lib/deadline', () => ({
+  calculateDeliveryDays: vi.fn().mockReturnValue(3),
+  calculateDeadlineFromNow: vi.fn().mockReturnValue(new Date('2025-02-25T00:00:00Z')),
+}))
+
 // Mock validations
 vi.mock('@/lib/validations', () => ({
   createTaskSchema: {

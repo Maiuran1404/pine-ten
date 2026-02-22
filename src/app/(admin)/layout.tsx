@@ -94,9 +94,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
       >
         <AdminSidebar recentTasks={recentTasks} />
-        <SidebarInset className="bg-background outline-none focus:outline-none">
+        <SidebarInset className="bg-background outline-none focus:outline-none min-w-0">
           <Header />
-          <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none">
+          <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none min-w-0">
             {children}
           </main>
         </SidebarInset>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -348,7 +348,8 @@ function MoodboardContent({
     return (
       <div className="px-4 pb-4 text-center py-4">
         <p className="text-xs text-muted-foreground/50">
-          Styles will appear here as you select them
+          Colors and uploads will appear here as you add them. Style references appear in Visual
+          Direction below.
         </p>
       </div>
     )
@@ -421,6 +422,14 @@ export function UnifiedPanel({
     [currentStage, brief, moodboardItems, deliverableCategory]
   )
 
+  // Track previous item counts for auto-expand
+  const prevItemCountsRef = useRef<Record<SectionKey, number>>({
+    brief: 0,
+    moodboard: 0,
+    visual: 0,
+    outline: 0,
+  })
+
   // Update seen sections when new ones appear
   const currentSectionKeys = useMemo(() => sections.map((s) => s.key), [sections])
   useMemo(() => {
@@ -435,6 +444,20 @@ export function UnifiedPanel({
     if (changed) setSeenSections(newSeen)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSectionKeys])
+
+  // Auto-expand sections when they first gain content (U9)
+  useEffect(() => {
+    const prev = prevItemCountsRef.current
+    for (const section of sections) {
+      const count = section.itemCount ?? 0
+      const prevCount = prev[section.key] ?? 0
+      // Section just gained its first content — auto-expand by resetting user toggle
+      if (prevCount === 0 && count > 0 && userToggles[section.key] === false) {
+        setUserToggles((t) => ({ ...t, [section.key]: undefined }))
+      }
+      prev[section.key] = count
+    }
+  }, [sections, userToggles])
 
   const isSectionOpen = useCallback(
     (section: SectionConfig): boolean => {

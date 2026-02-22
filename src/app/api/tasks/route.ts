@@ -12,6 +12,7 @@ import {
   freelancerProfiles,
 } from '@/db/schema'
 import { eq, ne, desc, and, sql, count, inArray, like } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import {
   notify,
   adminNotifications,
@@ -32,6 +33,7 @@ import {
   type TaskData,
   type ArtistScore,
 } from '@/lib/assignment-algorithm'
+import { calculateDeliveryDays, calculateDeadlineFromNow } from '@/lib/deadline'
 
 export async function GET(request: NextRequest) {
   // Check rate limit (100 req/min)
@@ -91,6 +93,8 @@ export async function GET(request: NextRequest) {
 
       // Lightweight projection for list views — excludes heavy JSONB columns
       // (moodboardItems, styleReferences, structureData, chatHistory, briefData, deliverables)
+      const clients = alias(users, 'clients')
+
       const taskListSelect = {
         id: tasks.id,
         title: tasks.title,
@@ -105,17 +109,22 @@ export async function GET(request: NextRequest) {
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         priority: tasks.priority,
+        urgency: tasks.urgency,
         requirements: tasks.requirements,
         assignedAt: tasks.assignedAt,
         completedAt: tasks.completedAt,
         freelancerName: users.name,
         freelancerImage: users.image,
+        clientName: clients.name,
+        categoryName: taskCategories.name,
       }
 
       const taskListRaw = await db
         .select(taskListSelect)
         .from(tasks)
         .leftJoin(users, eq(tasks.freelancerId, users.id))
+        .leftJoin(clients, eq(tasks.clientId, clients.id))
+        .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
         .where(conditions)
         .orderBy(desc(tasks.createdAt))
         .limit(limit)
@@ -337,6 +346,13 @@ export async function POST(request: NextRequest) {
         )
         const taskUrgency = detectTaskUrgency(taskDeadline)
 
+        // Auto-calculate deadline if not provided by client
+        let computedDeadline = taskDeadline
+        if (!computedDeadline && categorySlug) {
+          const businessDays = calculateDeliveryDays(categorySlug, taskComplexity, taskUrgency, 1)
+          computedDeadline = calculateDeadlineFromNow(businessDays)
+        }
+
         // Create the task first (without assignment)
         const [newTask] = await tx
           .insert(tasks)
@@ -353,7 +369,7 @@ export async function POST(request: NextRequest) {
             styleReferences: styleReferences || [],
             moodboardItems: moodboardItems || [],
             structureData: structureData ?? undefined,
-            deadline: taskDeadline,
+            deadline: computedDeadline,
             status: 'PENDING',
             complexity: taskComplexity,
             urgency: taskUrgency,

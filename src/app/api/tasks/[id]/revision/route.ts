@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { tasks, taskMessages } from '@/db/schema'
+import { tasks, taskMessages, taskActivityLog } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { notify } from '@/lib/notifications'
 import { config } from '@/lib/config'
@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger'
 import { taskRevisionSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { calculateRevisionExtension, extendDeadline } from '@/lib/deadline'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return withErrorHandling(async () => {
@@ -41,15 +42,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw Errors.badRequest('Maximum revisions reached. Please contact support.')
     }
 
-    // Update task status to REVISION_REQUESTED and increment revision count
+    // Calculate deadline extension based on complexity
+    const taskComplexity =
+      ((task as Record<string, unknown>).complexity as string) || 'INTERMEDIATE'
+    const extensionDays = calculateRevisionExtension(taskComplexity)
+    const newDeadline = task.deadline ? extendDeadline(task.deadline, extensionDays) : null
+
+    // Update task status to REVISION_REQUESTED, increment revision count, and extend deadline
     await db
       .update(tasks)
       .set({
         status: 'REVISION_REQUESTED',
         revisionsUsed: task.revisionsUsed + 1,
         updatedAt: new Date(),
+        ...(newDeadline ? { deadline: newDeadline } : {}),
       })
       .where(eq(tasks.id, id))
+
+    // Log the deadline extension
+    if (newDeadline) {
+      await db.insert(taskActivityLog).values({
+        taskId: id,
+        actorId: session.user.id,
+        actorType: 'client',
+        action: 'deadline_extended',
+        metadata: {
+          reason: 'revision_requested',
+          extensionDays,
+          newDeadline: newDeadline.toISOString(),
+        },
+      })
+    }
 
     // Add the revision feedback as a message
     await db.insert(taskMessages).values({
@@ -84,6 +107,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       message: 'Revision requested successfully',
       revisionsUsed: task.revisionsUsed + 1,
       maxRevisions: task.maxRevisions,
+      ...(newDeadline ? { newDeadline: newDeadline.toISOString() } : {}),
     })
   })
 }
