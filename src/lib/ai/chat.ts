@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { styleReferences, taskCategories, users, audiences as audiencesTable } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
+import { APIError, ErrorCodes } from '@/lib/errors'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -346,15 +347,28 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     maxTokens = 300
   }
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: maxTokens,
-    system: finalSystemPrompt,
-    messages: messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    })),
-  })
+  let response: Anthropic.Message
+  try {
+    response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: finalSystemPrompt,
+      messages: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    })
+  } catch (error) {
+    if (error instanceof Anthropic.APIError) {
+      logger.error({ err: error, type: 'anthropic_api_error', status: error.status })
+      throw new APIError(
+        ErrorCodes.EXTERNAL_SERVICE_ERROR,
+        'The AI service is currently unavailable. Please try again later.',
+        503
+      )
+    }
+    throw error
+  }
 
   const content = response.content[0].type === 'text' ? response.content[0].text : ''
 

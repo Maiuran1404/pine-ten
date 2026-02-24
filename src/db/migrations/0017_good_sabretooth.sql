@@ -1,1 +1,0 @@
-ALTER TABLE "companies" ADD COLUMN "industry_archetype" text;

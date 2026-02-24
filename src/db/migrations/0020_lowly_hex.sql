@@ -1,1 +1,0 @@
-ALTER TABLE "freelancer_profiles" ADD COLUMN "timezone" text;
