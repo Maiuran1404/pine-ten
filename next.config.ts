@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -146,4 +147,31 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: 'crafted-0d',
+  project: 'javascript-nextjs',
+  silent: !process.env.CI,
+
+  // Delete source maps after upload so they're not served to clients
+  sourcemaps: {
+    filesToDeleteAfterUpload: ['.next/static/**/*.map'],
+  },
+
+  // Release tracking
+  release: {
+    name: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA,
+    deploy: {
+      env: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    },
+  },
+
+  widenClientFileUpload: true,
+  tunnelRoute: '/monitoring',
+
+  webpack: {
+    automaticVercelMonitors: true,
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
+})

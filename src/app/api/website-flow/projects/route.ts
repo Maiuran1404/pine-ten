@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
           companyId: session.user.companyId ?? undefined,
           selectedInspirations: validated.selectedInspirations,
           userNotes: validated.userNotes,
-          phase: 'INSPIRATION',
+          phase: validated.phase ?? 'INSPIRATION',
           status: 'DRAFT',
         })
         .returning()

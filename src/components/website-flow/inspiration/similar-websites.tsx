@@ -83,7 +83,11 @@ export function SimilarWebsites({
         <p className="text-sm text-muted-foreground">
           Select inspirations above, then click &quot;Find Similar&quot; to discover more.
         </p>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Select from the gallery to find similar websites. Custom URLs can&apos;t be matched yet.
+        </p>
+      )}
     </div>
   )
 }

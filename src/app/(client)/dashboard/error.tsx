@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -12,6 +13,7 @@ export default function DashboardError({
   reset: () => void
 }) {
   useEffect(() => {
+    Sentry.captureException(error, { tags: { route_group: 'client' } })
     console.error('Dashboard error:', error)
   }, [error])
 

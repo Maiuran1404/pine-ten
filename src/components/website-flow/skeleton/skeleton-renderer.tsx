@@ -2,6 +2,7 @@
 
 import { SectionBlock } from './section-block'
 import { FidelityIndicator } from './fidelity-indicator'
+import type { GlobalStyles } from './high-fidelity-section'
 
 interface SkeletonSection {
   id: string
@@ -15,6 +16,7 @@ interface SkeletonSection {
 
 interface SkeletonRendererProps {
   sections: SkeletonSection[]
+  globalStyles?: GlobalStyles
   onRemoveSection?: (id: string) => void
   onMoveSection?: (id: string, direction: 'up' | 'down') => void
   className?: string
@@ -22,6 +24,7 @@ interface SkeletonRendererProps {
 
 export function SkeletonRenderer({
   sections,
+  globalStyles,
   onRemoveSection,
   onMoveSection,
   className,
@@ -70,6 +73,7 @@ export function SkeletonRenderer({
               <SectionBlock
                 key={section.id}
                 section={section}
+                globalStyles={globalStyles}
                 onRemove={onRemoveSection ? () => onRemoveSection(section.id) : undefined}
                 onMoveUp={onMoveSection ? () => onMoveSection(section.id, 'up') : undefined}
                 onMoveDown={onMoveSection ? () => onMoveSection(section.id, 'down') : undefined}

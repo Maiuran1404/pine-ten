@@ -40,8 +40,10 @@ export function InspirationGallery({
 
   if (inspirations.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
-        No inspirations found. Try adjusting your filters.
+      <div className="flex flex-col items-center justify-center h-48 text-center px-4">
+        <p className="text-sm text-muted-foreground">
+          Our curated gallery is coming soon. Paste your favorite website URLs above to get started.
+        </p>
       </div>
     )
   }

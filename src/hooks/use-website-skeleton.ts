@@ -48,5 +48,35 @@ export function useWebsiteSkeleton() {
     },
   })
 
-  return { sendMessage }
+  const generateFromTemplate = useMutation({
+    mutationFn: async ({
+      projectId,
+      industry,
+    }: {
+      projectId: string
+      industry: string
+    }): Promise<SkeletonChatResult> => {
+      const response = await csrfFetch('/api/website-flow/skeleton', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          message: 'Generate from template',
+          useTemplate: true,
+          industry,
+        }),
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error?.message || 'Failed to generate template')
+      }
+      const data = await response.json()
+      return data.data
+    },
+    onSuccess: (_data, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.websiteFlow.project(projectId) })
+    },
+  })
+
+  return { sendMessage, generateFromTemplate }
 }

@@ -11,6 +11,12 @@ interface MilestoneCardProps {
   isLast?: boolean
 }
 
+function formatEstimatedDate(daysFromNow: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + daysFromNow)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 export function MilestoneCard({
   title,
   description,
@@ -55,7 +61,9 @@ export function MilestoneCard({
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-muted-foreground">
-            Day {daysFromStart}
+            {daysFromStart === 0 ? 'Today' : `Day ${daysFromStart}`}
+            {' \u00b7 '}
+            {formatEstimatedDate(daysFromStart)}
           </span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">{description}</p>

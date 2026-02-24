@@ -7,6 +7,14 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireClient } from '@/lib/require-auth'
 import { skeletonChatSchema } from '@/lib/validations/website-flow-schemas'
 import { buildWebsiteFlowSystemPrompt } from '@/lib/ai/website-flow-prompts'
+import {
+  shouldAdvanceStage,
+  advanceSkeletonStage,
+  WEBSITE_SKELETON_STAGES,
+  type WebsiteSkeletonStage,
+  type WebsiteSkeletonState,
+} from '@/lib/ai/website-state-machine'
+import { generateSkeletonFromTemplate } from '@/lib/website/skeleton-generator'
 import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
@@ -57,6 +65,10 @@ function parseSkeletonUpdates(responseText: string): {
   return { cleanedContent, skeletonUpdates, styleUpdate, readyForApproval, stage }
 }
 
+function isValidStage(stage: string): stage is WebsiteSkeletonStage {
+  return (WEBSITE_SKELETON_STAGES as readonly string[]).includes(stage)
+}
+
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
@@ -78,6 +90,48 @@ export async function POST(request: NextRequest) {
 
       if (project.userId !== session.user.id) {
         throw Errors.forbidden('You do not have permission to modify this project')
+      }
+
+      // Template branch: generate skeleton from industry template without AI
+      if (validated.useTemplate && validated.industry) {
+        const templateSkeleton = generateSkeletonFromTemplate(validated.industry)
+
+        const chatHistory = project.chatHistory ?? []
+        const templateMessageId = `msg-${crypto.randomUUID()}`
+        const templateAssistantId = `msg-${crypto.randomUUID()}`
+        const updatedChatHistory = [
+          ...chatHistory,
+          {
+            id: templateMessageId,
+            role: 'user' as const,
+            content: validated.message,
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: templateAssistantId,
+            role: 'assistant' as const,
+            content: `I've generated a ${validated.industry} website template with ${templateSkeleton.sections.length} sections. You can now customize each section or ask me to make changes.`,
+            timestamp: new Date().toISOString(),
+            skeletonDelta: { sections: templateSkeleton.sections },
+          },
+        ]
+
+        await db
+          .update(websiteProjects)
+          .set({
+            skeleton: templateSkeleton,
+            skeletonStage: 'SECTION_FEEDBACK',
+            chatHistory: updatedChatHistory,
+            updatedAt: new Date(),
+          })
+          .where(eq(websiteProjects.id, validated.projectId))
+
+        return successResponse({
+          message: `I've generated a ${validated.industry} website template with ${templateSkeleton.sections.length} sections. You can now customize each section or ask me to make changes.`,
+          skeletonUpdates: { sections: templateSkeleton.sections },
+          styleUpdate: templateSkeleton.globalStyles ?? null,
+          readyForApproval: false,
+        })
       }
 
       // Build the system prompt
@@ -140,8 +194,8 @@ export async function POST(request: NextRequest) {
         parseSkeletonUpdates(responseText)
 
       // Build updated chat history
-      const newMessageId = `msg-${Date.now()}`
-      const assistantMessageId = `msg-${Date.now() + 1}`
+      const newMessageId = `msg-${crypto.randomUUID()}`
+      const assistantMessageId = `msg-${crypto.randomUUID()}`
       const updatedChatHistory = [
         ...chatHistory,
         {
@@ -175,9 +229,34 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Update skeleton stage if provided
-      if (stage) {
-        updateValues.skeletonStage = stage
+      // Determine the authoritative stage using the state machine
+      const currentStage: WebsiteSkeletonStage =
+        project.skeletonStage && isValidStage(project.skeletonStage)
+          ? project.skeletonStage
+          : 'INITIAL_GENERATION'
+
+      const currentSections = project.skeleton?.sections ?? []
+      const userMessageCount = updatedChatHistory.filter((m) => m.role === 'user').length
+
+      const skeletonState: WebsiteSkeletonState = {
+        stage: currentStage,
+        chatTurns: userMessageCount,
+        sectionsConfirmed: currentSections.length,
+        totalSections: currentSections.length,
+        hasStylePreferences: !!styleUpdate || !!project.skeleton?.globalStyles?.primaryColor,
+        hasFeedback: userMessageCount > 1,
+      }
+
+      // Use AI-suggested stage if valid, otherwise compute from state machine
+      let nextStage = currentStage
+      if (stage && isValidStage(stage)) {
+        nextStage = stage
+      } else if (shouldAdvanceStage(skeletonState)) {
+        nextStage = advanceSkeletonStage(skeletonState).stage
+      }
+
+      if (nextStage !== currentStage) {
+        updateValues.skeletonStage = nextStage
       }
 
       // If ready for approval, advance phase

@@ -48,3 +48,6 @@ next-env.d.ts
 
 # claude code local settings (may contain sensitive permissions)
 .claude/settings.local.json
+
+# Sentry Config File
+.env.sentry-build-plugin

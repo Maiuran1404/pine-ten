@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Check, Loader2, Coins } from 'lucide-react'
 
@@ -8,6 +9,7 @@ interface ApproveButtonProps {
   userCredits: number
   onApprove: () => void
   isApproving?: boolean
+  disabled?: boolean
 }
 
 export function ApproveButton({
@@ -15,6 +17,7 @@ export function ApproveButton({
   userCredits,
   onApprove,
   isApproving,
+  disabled,
 }: ApproveButtonProps) {
   const hasEnoughCredits = userCredits >= creditsCost
 
@@ -34,13 +37,21 @@ export function ApproveButton({
         </span>
       </div>
       {!hasEnoughCredits && (
-        <p className="text-xs text-red-500">
-          You need {creditsCost - userCredits} more credits to approve this project.
-        </p>
+        <div className="space-y-1">
+          <p className="text-xs text-red-500">
+            You need {creditsCost - userCredits} more credits to approve this project.
+          </p>
+          <Link
+            href="/dashboard/credits"
+            className="text-xs text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 underline"
+          >
+            Purchase Credits
+          </Link>
+        </div>
       )}
       <Button
         onClick={onApprove}
-        disabled={!hasEnoughCredits || isApproving}
+        disabled={!hasEnoughCredits || isApproving || disabled}
         className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-base"
       >
         {isApproving ? (

@@ -60,6 +60,7 @@ export function useCreateWebsiteProject() {
         isUserSubmitted?: boolean
       }>
       userNotes?: string
+      phase?: 'INSPIRATION' | 'SKELETON'
     }): Promise<WebsiteProject> => {
       const response = await csrfFetch('/api/website-flow/projects', {
         method: 'POST',

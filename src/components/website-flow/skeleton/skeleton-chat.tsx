@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Send, Loader2 } from 'lucide-react'
-import { AiRecommendationCard } from './ai-recommendation-card'
+import Markdown from 'react-markdown'
 import { cn } from '@/lib/utils'
 
 interface ChatMessage {
@@ -11,6 +11,7 @@ interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   timestamp: string
+  isPending?: boolean
 }
 
 interface SkeletonChatProps {
@@ -22,36 +23,108 @@ interface SkeletonChatProps {
 
 export function SkeletonChat({ messages, onSendMessage, isLoading, className }: SkeletonChatProps) {
   const [input, setInput] = useState('')
+  const [pendingContent, setPendingContent] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Derive: if loading is done and we have a pending message that now appears in server data, clear it
+  const pendingAlreadyInServer = pendingContent
+    ? messages.some((m) => m.role === 'user' && m.content === pendingContent)
+    : false
+
+  const activePending =
+    pendingContent && !pendingAlreadyInServer && isLoading ? pendingContent : null
+
+  const allMessages: ChatMessage[] = activePending
+    ? [
+        ...messages,
+        {
+          id: 'pending-optimistic',
+          role: 'user' as const,
+          content: activePending,
+          timestamp: '',
+          isPending: true,
+        },
+      ]
+    : messages
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [allMessages.length])
+
+  const autoResize = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`
+  }, [])
 
   const handleSubmit = () => {
     if (!input.trim() || isLoading) return
-    onSendMessage(input.trim())
+    const message = input.trim()
+
+    // Track pending message for optimistic display
+    setPendingContent(message)
+
+    onSendMessage(message)
     setInput('')
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
   }
+
+  // Clear pending content when loading finishes
+  if (!isLoading && pendingContent && pendingAlreadyInServer) {
+    setPendingContent(null)
+  }
+
+  const emptyState = allMessages.length === 0 && !isLoading
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4 space-y-3">
-        {messages.length === 0 && (
-          <AiRecommendationCard recommendation="I've generated a website skeleton based on your inspirations. Feel free to ask me to add, remove, or modify any sections!" />
+        {emptyState && (
+          <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3">
+            <p className="text-sm text-green-800 dark:text-green-300">
+              Generating your website skeleton based on your inspirations. This may take a moment...
+            </p>
+          </div>
         )}
-        {messages.map((msg) => (
+        {allMessages.map((msg) => (
           <div
             key={msg.id}
             className={cn(
               'max-w-[85%] rounded-lg px-3 py-2 text-sm',
               msg.role === 'user'
                 ? 'ml-auto bg-green-600 text-white'
-                : 'bg-gray-100 dark:bg-zinc-800 text-foreground'
+                : 'bg-gray-100 dark:bg-zinc-800 text-foreground',
+              msg.isPending && 'opacity-70'
             )}
           >
-            {msg.content}
+            {msg.role === 'assistant' ? (
+              <Markdown
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                  ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
+                  li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                  h3: ({ children }) => (
+                    <h3 className="font-semibold text-sm mb-1 mt-2">{children}</h3>
+                  ),
+                  h4: ({ children }) => (
+                    <h4 className="font-semibold text-sm mb-1 mt-1">{children}</h4>
+                  ),
+                }}
+              >
+                {msg.content}
+              </Markdown>
+            ) : (
+              msg.content
+            )}
           </div>
         ))}
         {isLoading && (
@@ -67,8 +140,12 @@ export function SkeletonChat({ messages, onSendMessage, isLoading, className }: 
       <div className="border-t border-border p-3">
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value)
+              autoResize()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()

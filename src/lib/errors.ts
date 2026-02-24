@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { logger } from './logger'
 
 /**
@@ -154,7 +155,12 @@ export async function withErrorHandling<T>(
       return errorResponse(error.code, error.message, error.statusCode, error.details)
     }
 
-    // Handle unknown errors
+    // Handle unknown errors — report to Sentry
+    Sentry.captureException(error, {
+      extra: context,
+      tags: { error_type: 'unhandled_api_error' },
+    })
+
     const message = error instanceof Error ? error.message : 'An unexpected error occurred'
 
     logger.error({

@@ -7,6 +7,7 @@ import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
+import { SentryProvider } from '@/providers/sentry-provider'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -61,41 +62,45 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // Chat and website project pages have their own full-screen layout
   if (isFullScreenPage) {
     return (
-      <CreditProvider>
-        <SidebarProvider
-          defaultOpen={false}
-          className=""
-          style={
-            { fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" } as React.CSSProperties
-          }
-        >
-          <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
-            {children}
-          </div>
-        </SidebarProvider>
-      </CreditProvider>
+      <SentryProvider>
+        <CreditProvider>
+          <SidebarProvider
+            defaultOpen={false}
+            className=""
+            style={
+              { fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" } as React.CSSProperties
+            }
+          >
+            <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
+              {children}
+            </div>
+          </SidebarProvider>
+        </CreditProvider>
+      </SentryProvider>
     )
   }
 
   return (
-    <CreditProvider>
-      <SidebarProvider
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-        className=""
-        style={
-          {
-            fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
-            '--sidebar-width': '16rem',
-            '--sidebar-width-icon': '4.5rem',
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar />
-        <SidebarInset className="bg-transparent">
-          <main className="relative flex-1 overflow-auto">{children}</main>
-        </SidebarInset>
-      </SidebarProvider>
-    </CreditProvider>
+    <SentryProvider>
+      <CreditProvider>
+        <SidebarProvider
+          open={sidebarOpen}
+          onOpenChange={setSidebarOpen}
+          className=""
+          style={
+            {
+              fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
+              '--sidebar-width': '16rem',
+              '--sidebar-width-icon': '4.5rem',
+            } as React.CSSProperties
+          }
+        >
+          <AppSidebar />
+          <SidebarInset className="bg-transparent">
+            <main className="relative flex-1 overflow-auto">{children}</main>
+          </SidebarInset>
+        </SidebarProvider>
+      </CreditProvider>
+    </SentryProvider>
   )
 }

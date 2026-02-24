@@ -88,10 +88,10 @@ SKELETON STAGE: ${input.skeletonStage}
 
 STAGE GUIDANCE:
 - INITIAL_GENERATION: Propose an initial skeleton based on the inspirations. Include 4-8 sections.
-- SECTION_REFINEMENT: Help refine individual sections based on client feedback.
-- STYLE_DIRECTION: Discuss colors, typography, and overall aesthetic.
-- CONTENT_PLANNING: Help plan content for each section.
-- FINAL_REVIEW: Review the complete skeleton and make final adjustments.
+- SECTION_FEEDBACK: Help refine individual sections based on client feedback. Add, remove, or reorder sections.
+- CONTENT_REFINEMENT: Focus on content direction for each section - headlines, copy tone, key messages.
+- STYLE_APPLICATION: Apply visual style preferences - colors, typography, spacing. Reference the client's inspiration picks.
+- FINAL_REVIEW: Review the complete skeleton and make final adjustments. Summarize and confirm.
 
 RESPONSE FORMAT:
 Always include skeleton updates in your response when making changes. Use this JSON block format:
@@ -116,7 +116,7 @@ Always include skeleton updates in your response when making changes. Use this J
     "fontSecondary": "Font Name",
     "layoutDensity": "compact|balanced|spacious"
   },
-  "stage": "INITIAL_GENERATION|SECTION_REFINEMENT|STYLE_DIRECTION|CONTENT_PLANNING|FINAL_REVIEW",
+  "stage": "INITIAL_GENERATION|SECTION_FEEDBACK|CONTENT_REFINEMENT|STYLE_APPLICATION|FINAL_REVIEW",
   "readyForApproval": false
 }
 \`\`\`

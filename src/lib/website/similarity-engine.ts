@@ -91,3 +91,60 @@ export function findSimilar(
     .slice(0, limit)
     .filter((r) => r.score > 0)
 }
+
+/**
+ * Find similar website inspirations using pgvector cosine distance.
+ * Falls back to empty results if embeddings are not available.
+ *
+ * Takes pre-computed embedding vectors from selected inspirations, averages them
+ * into a single query vector, then uses pgvector's cosine distance operator (<=>)
+ * to find the closest matches.
+ */
+export async function findSimilarByEmbedding(
+  sourceVectors: number[][],
+  excludeIds: string[],
+  limit: number = 5
+): Promise<Array<{ id: string; score: number }>> {
+  const { db } = await import('@/db')
+  const { sql } = await import('drizzle-orm')
+
+  if (sourceVectors.length === 0) return []
+
+  // Average the source vectors to create a query vector
+  const dimensions = sourceVectors[0].length
+  const avgVector = new Array<number>(dimensions).fill(0)
+  for (const vec of sourceVectors) {
+    for (let i = 0; i < dimensions; i++) {
+      avgVector[i] += vec[i] / sourceVectors.length
+    }
+  }
+
+  // Format as pgvector literal: '[0.1,0.2,...]'
+  const vectorStr = `[${avgVector.join(',')}]`
+
+  try {
+    // Build exclusion clause — excludeIds are UUID-validated upstream via Zod
+    const exclusionClause =
+      excludeIds.length > 0 ? `AND id NOT IN (${excludeIds.map((id) => `'${id}'`).join(',')})` : ''
+
+    const result = (await db.execute(
+      sql.raw(`
+        SELECT id, 1 - (embedding_vector <=> '${vectorStr}'::vector) as similarity_score
+        FROM website_inspirations
+        WHERE is_active = true
+          AND embedding_vector IS NOT NULL
+          ${exclusionClause}
+        ORDER BY embedding_vector <=> '${vectorStr}'::vector
+        LIMIT ${limit}
+      `)
+    )) as unknown as Array<{ id: string; similarity_score: number }>
+
+    return result.map((row) => ({
+      id: row.id,
+      score: Math.round(Number(row.similarity_score) * 100) / 100,
+    }))
+  } catch {
+    // pgvector not available or column doesn't exist — return empty
+    return []
+  }
+}

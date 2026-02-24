@@ -45,13 +45,20 @@ export function ComparisonView({ inspirations, onRemove, onUpdateNotes }: Compar
               </Button>
             </div>
             <p className="text-xs font-medium truncate">{insp.name}</p>
-            <textarea
-              value={insp.notes || ''}
-              onChange={(e) => onUpdateNotes(insp.id, e.target.value)}
-              placeholder="What do you like about this site?"
-              className="w-full text-xs p-2 rounded border border-border bg-background resize-none h-16 focus:outline-none focus:ring-1 focus:ring-green-500"
-              maxLength={500}
-            />
+            <div>
+              <textarea
+                value={insp.notes || ''}
+                onChange={(e) => onUpdateNotes(insp.id, e.target.value)}
+                placeholder="What do you like about this site?"
+                className="w-full text-xs p-2 rounded border border-border bg-background resize-none h-16 focus:outline-none focus:ring-1 focus:ring-green-500"
+                maxLength={500}
+              />
+              {(insp.notes?.length ?? 0) > 0 && (
+                <p className="text-[10px] text-muted-foreground text-right mt-0.5">
+                  {insp.notes?.length ?? 0}/500
+                </p>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { ImageOff } from 'lucide-react'
 
 interface ScreenshotFrameProps {
   src: string
@@ -10,7 +12,18 @@ interface ScreenshotFrameProps {
   onClick?: () => void
 }
 
+function getHostname(urlOrText: string): string {
+  try {
+    const withProtocol = urlOrText.startsWith('http') ? urlOrText : `https://${urlOrText}`
+    return new URL(withProtocol).hostname
+  } catch {
+    return urlOrText
+  }
+}
+
 export function ScreenshotFrame({ src, alt, className, selected, onClick }: ScreenshotFrameProps) {
+  const [hasError, setHasError] = useState(false)
+
   return (
     <div
       className={cn(
@@ -31,14 +44,27 @@ export function ScreenshotFrame({ src, alt, className, selected, onClick }: Scre
         </div>
         <div className="flex-1 mx-2">
           <div className="bg-white dark:bg-zinc-700 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
-            {alt}
+            {getHostname(alt)}
           </div>
         </div>
       </div>
       {/* Screenshot */}
       <div className="relative aspect-[16/10] bg-gray-50 dark:bg-zinc-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="w-full h-full object-cover object-top" loading="lazy" />
+        {hasError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+            <ImageOff className="w-8 h-8 mb-1" />
+            <span className="text-[10px]">Preview unavailable</span>
+          </div>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+            onError={() => setHasError(true)}
+          />
+        )}
       </div>
     </div>
   )

@@ -7,6 +7,7 @@ import { Header } from '@/components/dashboard/header'
 import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { logger } from '@/lib/logger'
+import { SentryProvider } from '@/providers/sentry-provider'
 import type { FreelancerProfileState } from '@/types'
 
 export default function FreelancerLayout({ children }: { children: React.ReactNode }) {
@@ -64,16 +65,18 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <FreelancerSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        profileStatus={profileStatus}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <Header onMenuClick={() => setSidebarOpen(true)} basePath="/portal" showUpgrade={false} />
-        <main className="flex-1 overflow-auto p-4 sm:p-6 min-w-0">{children}</main>
+    <SentryProvider>
+      <div className="flex h-screen overflow-hidden">
+        <FreelancerSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          profileStatus={profileStatus}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+          <Header onMenuClick={() => setSidebarOpen(true)} basePath="/portal" showUpgrade={false} />
+          <main className="flex-1 overflow-auto p-4 sm:p-6 min-w-0">{children}</main>
+        </div>
       </div>
-    </div>
+    </SentryProvider>
   )
 }

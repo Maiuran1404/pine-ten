@@ -1,11 +1,43 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
 import { websiteInspirations } from '@/db/schema'
-import { eq, and, inArray, notInArray } from 'drizzle-orm'
+import { eq, and, inArray, notInArray, sql } from 'drizzle-orm'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
 import { similarWebsitesSchema } from '@/lib/validations/website-flow-schemas'
-import { findSimilar } from '@/lib/website/similarity-engine'
+import { findSimilar, findSimilarByEmbedding } from '@/lib/website/similarity-engine'
+import { logger } from '@/lib/logger'
+
+/**
+ * Try to load embedding vectors for the given inspiration IDs.
+ * Returns empty array if pgvector is not available or no embeddings exist.
+ */
+async function loadEmbeddingVectors(
+  inspirationIds: string[]
+): Promise<Array<{ id: string; vector: number[] }>> {
+  try {
+    const idList = inspirationIds.map((id) => `'${id}'`).join(',')
+    const result = (await db.execute(
+      sql.raw(`
+        SELECT id, embedding_vector::text as vector_text
+        FROM website_inspirations
+        WHERE id IN (${idList})
+          AND embedding_vector IS NOT NULL
+      `)
+    )) as unknown as Array<{ id: string; vector_text: string }>
+
+    return result
+      .filter((row) => row.vector_text)
+      .map((row) => ({
+        id: row.id,
+        // Parse pgvector text representation: "[0.1,0.2,...]"
+        vector: row.vector_text.replace(/^\[/, '').replace(/]$/, '').split(',').map(Number),
+      }))
+  } catch {
+    // pgvector extension not installed or column doesn't exist
+    return []
+  }
+}
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
@@ -25,6 +57,62 @@ export async function POST(request: NextRequest) {
             inArray(websiteInspirations.id, validated.inspirationIds)
           )
         )
+
+      // Try embedding-based search first (if vectors are available)
+      const embeddingVectors = await loadEmbeddingVectors(validated.inspirationIds)
+
+      if (embeddingVectors.length > 0) {
+        logger.debug(
+          { count: embeddingVectors.length, total: validated.inspirationIds.length },
+          'Using embedding-based similarity search'
+        )
+
+        const embeddingResults = await findSimilarByEmbedding(
+          embeddingVectors.map((ev) => ev.vector),
+          validated.inspirationIds,
+          validated.limit
+        )
+
+        if (embeddingResults.length > 0) {
+          // Load full inspiration data for the embedding results
+          const resultIds = embeddingResults.map((r) => r.id)
+          const resultInspirations = await db
+            .select()
+            .from(websiteInspirations)
+            .where(inArray(websiteInspirations.id, resultIds))
+
+          // Map scores onto full inspiration data
+          const scoreMap = new Map(embeddingResults.map((r) => [r.id, r.score]))
+          const similar = resultInspirations
+            .map((insp) => ({
+              inspiration: {
+                id: insp.id,
+                name: insp.name,
+                styleTags: insp.styleTags ?? [],
+                industry: insp.industry ?? [],
+                colorSamples: insp.colorSamples ?? [],
+                sectionTypes: insp.sectionTypes ?? [],
+                layoutStyle: insp.layoutStyle,
+                typography: insp.typography,
+              },
+              score: scoreMap.get(insp.id) ?? 0,
+              breakdown: {
+                styleScore: 0,
+                industryScore: 0,
+                colorScore: 0,
+                layoutScore: 0,
+                sectionScore: 0,
+              },
+              method: 'embedding' as const,
+            }))
+            .sort((a, b) => b.score - a.score)
+
+          return successResponse({ similar })
+        }
+      }
+
+      // Fallback: Jaccard tag-based similarity
+      logger.debug('Falling back to Jaccard tag-based similarity search')
 
       // Load all other active inspirations as candidates
       const candidates = await db

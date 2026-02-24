@@ -9,6 +9,10 @@ import {
   ButtonShape,
   NavBar,
 } from '@/components/chat/wireframe/wireframe-shapes'
+import { ProgressiveSection } from './progressive-section'
+import { MidFidelitySection } from './mid-fidelity-section'
+import { HighFidelitySection } from './high-fidelity-section'
+import type { GlobalStyles } from './high-fidelity-section'
 
 interface SectionBlockProps {
   section: {
@@ -20,6 +24,7 @@ interface SectionBlockProps {
     fidelity: 'low' | 'mid' | 'high'
     content?: Record<string, unknown>
   }
+  globalStyles?: GlobalStyles
   onRemove?: () => void
   onMoveUp?: () => void
   onMoveDown?: () => void
@@ -159,6 +164,7 @@ function LowFidelitySection({ type }: { type: string }) {
 
 export function SectionBlock({
   section,
+  globalStyles,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -207,7 +213,15 @@ export function SectionBlock({
 
       {/* Wireframe content */}
       <div className="pt-8">
-        <LowFidelitySection type={section.type} />
+        <ProgressiveSection
+          section={section}
+          globalStyles={globalStyles}
+          lowFidelityRenderer={<LowFidelitySection type={section.type} />}
+          midFidelityRenderer={<MidFidelitySection type={section.type} />}
+          highFidelityRenderer={
+            <HighFidelitySection type={section.type} globalStyles={globalStyles} />
+          }
+        />
       </div>
     </div>
   )

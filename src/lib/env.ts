@@ -57,8 +57,21 @@ const envSchema = z.object({
   SCREENSHOT_API_KEY: z.string().min(1).optional(),
   SCREENSHOT_API_URL: z.string().url().optional(),
 
+  // CLIP embeddings (optional - for visual similarity search)
+  CLIP_API_KEY: z.string().min(1).optional(),
+  CLIP_API_URL: z.string().url().optional(),
+
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
+
+  // Framer (optional — for website delivery integration)
+  FRAMER_API_KEY: z.string().min(1).optional(),
+  FRAMER_TEMPLATE_PROJECT_URL: z.string().url().optional(),
+  FRAMER_WEBHOOK_SECRET: z.string().min(1).optional(),
+
+  // Sentry (optional — DSN can be unset to disable Sentry)
+  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
 
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { QuickOptions } from '@/components/chat/types'
+import * as Sentry from '@sentry/nextjs'
 import {
   type BriefingState,
   type BriefingStage,
@@ -95,6 +96,13 @@ export function useBriefingStateMachine(
 
   const dispatch = useCallback(
     (action: BriefingAction) => {
+      Sentry.addBreadcrumb({
+        category: 'briefing',
+        message: `Briefing action: ${action.type}`,
+        data: { from: state.stage, action: action.type },
+        level: 'info',
+      })
+
       let newState: BriefingState
 
       switch (action.type) {

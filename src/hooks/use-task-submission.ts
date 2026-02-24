@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import * as Sentry from '@sentry/nextjs'
 import { toast } from 'sonner'
 import { useCredits, dispatchCreditsUpdated } from '@/providers/credit-provider'
 import {
@@ -90,9 +91,22 @@ export function useTaskSubmission({
     }
 
     if (userCredits < normalizedTask.creditsRequired) {
+      Sentry.addBreadcrumb({
+        category: 'task-submission',
+        message: 'Insufficient credits',
+        data: { required: normalizedTask.creditsRequired, available: userCredits },
+        level: 'warning',
+      })
       setShowCreditDialog(true)
       return
     }
+
+    Sentry.addBreadcrumb({
+      category: 'task-submission',
+      message: 'Creating task',
+      data: { credits: normalizedTask.creditsRequired },
+      level: 'info',
+    })
 
     setIsLoading(true)
 
@@ -184,6 +198,13 @@ export function useTaskSubmission({
       } catch {
         // Task was created but we couldn't fetch details
       }
+
+      Sentry.addBreadcrumb({
+        category: 'task-submission',
+        message: 'Task created successfully',
+        data: { taskId },
+        level: 'info',
+      })
 
       window.dispatchEvent(new CustomEvent('tasks-updated'))
       const newCredits = userCredits - (normalizedTask.creditsRequired ?? 0)

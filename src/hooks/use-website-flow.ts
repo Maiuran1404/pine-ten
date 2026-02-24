@@ -1,7 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useWebsiteInspirations, useSimilarWebsites } from './use-website-inspirations'
+import { useState, useCallback, useMemo } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import * as Sentry from '@sentry/nextjs'
+import { toast } from 'sonner'
+import { useWebsiteInspirations } from './use-website-inspirations'
+import { useVisualSimilarity } from './use-visual-similarity'
 import { useWebsiteSkeleton } from './use-website-skeleton'
 import { useWebsiteApproval } from './use-website-approval'
 import {
@@ -13,7 +17,7 @@ import { useScreenshotApi } from './use-screenshot-api'
 
 export type WebsiteFlowPhase = 'INSPIRATION' | 'SKELETON' | 'APPROVAL'
 
-interface SelectedInspiration {
+export interface SelectedInspiration {
   id: string
   url: string
   screenshotUrl: string
@@ -22,65 +26,110 @@ interface SelectedInspiration {
   isUserSubmitted?: boolean
 }
 
-export function useWebsiteFlow(initialProjectId?: string | null) {
-  const [projectId, setProjectId] = useState<string | null>(initialProjectId ?? null)
-  const [phase, setPhase] = useState<WebsiteFlowPhase>('INSPIRATION')
-  const [selectedInspirations, setSelectedInspirations] = useState<SelectedInspiration[]>([])
-  const [userNotes, setUserNotes] = useState('')
+const MAX_INSPIRATIONS = 5
+
+export function useWebsiteFlow() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const initialProjectId = searchParams.get('projectId')
+
+  const [projectId, setProjectId] = useState<string | null>(initialProjectId)
+  const [localPhase, setLocalPhase] = useState<WebsiteFlowPhase>('INSPIRATION')
+  // Local inspirations override: null means "use server data", array means "user has edited"
+  const [localInspirations, setLocalInspirations] = useState<SelectedInspiration[] | null>(null)
+  const [localNotes, setLocalNotes] = useState<string | null>(null)
   const [industryFilter, setIndustryFilter] = useState<string | undefined>()
   const [styleFilter, setStyleFilter] = useState<string | undefined>()
 
   // Data hooks
   const project = useWebsiteProject(projectId)
   const inspirations = useWebsiteInspirations({ industry: industryFilter, style: styleFilter })
-  const similarWebsites = useSimilarWebsites()
+  const visualSimilarity = useVisualSimilarity()
   const skeleton = useWebsiteSkeleton()
   const approval = useWebsiteApproval()
   const screenshot = useScreenshotApi()
   const createProject = useCreateWebsiteProject()
   const updateProject = useUpdateWebsiteProject()
 
-  // Sync phase from project data
-  const currentPhase = project.data?.phase ?? phase
+  // Derive phase: prefer server, fall back to local
+  const phase: WebsiteFlowPhase = project.data?.phase ?? localPhase
+
+  // Derive inspirations: prefer local edits, fall back to server data, then empty
+  const selectedInspirations = useMemo(() => {
+    if (localInspirations !== null) return localInspirations
+    if (project.data?.selectedInspirations?.length) return project.data.selectedInspirations
+    return []
+  }, [localInspirations, project.data?.selectedInspirations])
+
+  // Derive notes: prefer local edits, fall back to server data
+  const userNotes = localNotes ?? project.data?.userNotes ?? ''
+
+  // Sync projectId to URL so refreshes preserve state
+  const updateUrl = useCallback(
+    (id: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('projectId', id)
+      router.replace(`?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router]
+  )
+
+  const setUserNotes = useCallback((notes: string) => {
+    setLocalNotes(notes)
+  }, [])
 
   const addInspiration = useCallback((inspiration: SelectedInspiration) => {
-    setSelectedInspirations((prev) => {
-      if (prev.some((i) => i.id === inspiration.id)) return prev
-      if (prev.length >= 5) return prev
-      return [...prev, inspiration]
+    setLocalInspirations((prev) => {
+      const current = prev ?? []
+      if (current.some((i) => i.id === inspiration.id)) return current
+      if (current.length >= MAX_INSPIRATIONS) {
+        toast.error(`Maximum ${MAX_INSPIRATIONS} inspirations allowed`)
+        return current
+      }
+      return [...current, inspiration]
     })
   }, [])
 
   const removeInspiration = useCallback((id: string) => {
-    setSelectedInspirations((prev) => prev.filter((i) => i.id !== id))
+    setLocalInspirations((prev) => {
+      const current = prev ?? []
+      return current.filter((i) => i.id !== id)
+    })
   }, [])
 
   const updateInspirationNotes = useCallback((id: string, notes: string) => {
-    setSelectedInspirations((prev) => prev.map((i) => (i.id === id ? { ...i, notes } : i)))
+    setLocalInspirations((prev) => {
+      const current = prev ?? []
+      return current.map((i) => (i.id === id ? { ...i, notes } : i))
+    })
   }, [])
 
   const findSimilar = useCallback(() => {
     const ids = selectedInspirations.map((i) => i.id).filter((id) => !id.startsWith('user-'))
     if (ids.length > 0) {
-      similarWebsites.mutate(ids)
+      visualSimilarity.findSimilar.mutate({ inspirationIds: ids })
     }
-  }, [selectedInspirations, similarWebsites])
+  }, [selectedInspirations, visualSimilarity])
 
   const advanceToSkeleton = useCallback(async () => {
     if (selectedInspirations.length === 0) return
+    Sentry.addBreadcrumb({
+      category: 'website-flow',
+      message: 'Advancing to SKELETON phase',
+      data: { inspirationCount: selectedInspirations.length, projectId },
+      level: 'info',
+    })
 
     if (!projectId) {
+      // Create project directly in SKELETON phase (single API call)
       const newProject = await createProject.mutateAsync({
         selectedInspirations,
         userNotes: userNotes || undefined,
-      })
-      setProjectId(newProject.id)
-      setPhase('SKELETON')
-      // Update project to SKELETON phase
-      await updateProject.mutateAsync({
-        id: newProject.id,
         phase: 'SKELETON',
       })
+      setProjectId(newProject.id)
+      setLocalPhase('SKELETON')
+      updateUrl(newProject.id)
     } else {
       await updateProject.mutateAsync({
         id: projectId,
@@ -88,18 +137,40 @@ export function useWebsiteFlow(initialProjectId?: string | null) {
         selectedInspirations,
         userNotes: userNotes || undefined,
       })
-      setPhase('SKELETON')
+      setLocalPhase('SKELETON')
     }
-  }, [selectedInspirations, userNotes, projectId, createProject, updateProject])
+  }, [selectedInspirations, userNotes, projectId, createProject, updateProject, updateUrl])
 
   const advanceToApproval = useCallback(async () => {
     if (!projectId) return
+    Sentry.addBreadcrumb({
+      category: 'website-flow',
+      message: 'Advancing to APPROVAL phase',
+      data: { projectId },
+      level: 'info',
+    })
     await updateProject.mutateAsync({
       id: projectId,
       phase: 'APPROVAL',
     })
-    setPhase('APPROVAL')
+    setLocalPhase('APPROVAL')
   }, [projectId, updateProject])
+
+  const goBack = useCallback(async () => {
+    if (phase === 'SKELETON' && projectId) {
+      await updateProject.mutateAsync({
+        id: projectId,
+        phase: 'INSPIRATION',
+      })
+      setLocalPhase('INSPIRATION')
+    } else if (phase === 'APPROVAL' && projectId) {
+      await updateProject.mutateAsync({
+        id: projectId,
+        phase: 'SKELETON',
+      })
+      setLocalPhase('SKELETON')
+    }
+  }, [phase, projectId, updateProject])
 
   const approveProject = useCallback(async () => {
     if (!projectId) return
@@ -118,10 +189,21 @@ export function useWebsiteFlow(initialProjectId?: string | null) {
     [projectId, skeleton.sendMessage, project.data?.skeleton]
   )
 
+  const generateSkeletonFromTemplate = useCallback(
+    async (industry: string) => {
+      if (!projectId) return
+      return skeleton.generateFromTemplate.mutateAsync({
+        projectId,
+        industry,
+      })
+    },
+    [projectId, skeleton.generateFromTemplate]
+  )
+
   return {
     // State
     projectId,
-    phase: currentPhase,
+    phase,
     selectedInspirations,
     userNotes,
     industryFilter,
@@ -141,10 +223,12 @@ export function useWebsiteFlow(initialProjectId?: string | null) {
     // Phase transitions
     advanceToSkeleton,
     advanceToApproval,
+    goBack,
     approveProject,
 
     // Skeleton actions
     sendSkeletonMessage,
+    generateSkeletonFromTemplate,
 
     // Screenshot
     captureScreenshot: screenshot,
@@ -152,7 +236,7 @@ export function useWebsiteFlow(initialProjectId?: string | null) {
     // Query data
     project,
     inspirations,
-    similarWebsites,
+    similarWebsites: visualSimilarity.findSimilar,
     skeletonChat: skeleton,
     approvalMutation: approval,
     createProjectMutation: createProject,

@@ -28,6 +28,7 @@ export const createWebsiteProjectSchema = z.object({
     .min(1, 'At least one inspiration is required')
     .max(5),
   userNotes: z.string().max(2000).optional(),
+  phase: z.enum(['INSPIRATION', 'SKELETON']).optional(),
 })
 
 // Website project update schema
@@ -66,6 +67,8 @@ export const skeletonChatSchema = z.object({
   projectId: z.string().uuid(),
   message: z.string().min(1, 'Message is required').max(5000),
   currentSkeleton: z.record(z.string(), z.unknown()).optional(),
+  useTemplate: z.boolean().optional(),
+  industry: z.string().max(50).optional(),
 })
 
 // Similar websites request schema

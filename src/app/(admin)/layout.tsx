@@ -9,6 +9,7 @@ import { useSession } from '@/lib/auth-client'
 import { useSubdomain } from '@/hooks/use-subdomain'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
+import { SentryProvider } from '@/providers/sentry-provider'
 
 interface Task {
   id: string
@@ -81,26 +82,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <CreditProvider>
-      <SidebarProvider
-        defaultOpen={true}
-        className="bg-background outline-none focus:outline-none"
-        style={
-          {
-            fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
-            '--sidebar-width': '16rem',
-            '--sidebar-width-icon': '3rem',
-          } as React.CSSProperties
-        }
-      >
-        <AdminSidebar recentTasks={recentTasks} />
-        <SidebarInset className="bg-background outline-none focus:outline-none min-w-0">
-          <Header />
-          <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none min-w-0">
-            {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </CreditProvider>
+    <SentryProvider>
+      <CreditProvider>
+        <SidebarProvider
+          defaultOpen={true}
+          className="bg-background outline-none focus:outline-none"
+          style={
+            {
+              fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
+              '--sidebar-width': '16rem',
+              '--sidebar-width-icon': '3rem',
+            } as React.CSSProperties
+          }
+        >
+          <AdminSidebar recentTasks={recentTasks} />
+          <SidebarInset className="bg-background outline-none focus:outline-none min-w-0">
+            <Header />
+            <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 outline-none focus:outline-none min-w-0">
+              {children}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </CreditProvider>
+    </SentryProvider>
   )
 }

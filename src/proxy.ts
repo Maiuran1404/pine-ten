@@ -152,15 +152,15 @@ function redirectToLogin(request: NextRequest, pathname: string): NextResponse {
 }
 
 /**
- * Main middleware function.
+ * Main proxy function.
  *
- * Provides defense-in-depth auth gating at the edge layer:
+ * Provides defense-in-depth auth gating at the network layer:
  * - Page routes (/admin, /dashboard, /portal) redirect to /login without a session cookie
  * - API routes (/api/admin, /api/freelancer) return 401 JSON without a session cookie
  * - Public paths (/api/auth, /api/health, /login, etc.) pass through unconditionally
  * - Rate limiting is applied to auth routes and all API routes
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // Gate /register behind invite code — redirect to /early-access if no code param

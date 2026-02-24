@@ -11,10 +11,15 @@ const PHASES: { key: WebsiteFlowPhase; label: string }[] = [
 
 interface WebsiteProgressBarProps {
   currentPhase: WebsiteFlowPhase
+  onPhaseClick?: (phase: WebsiteFlowPhase) => void
   className?: string
 }
 
-export function WebsiteProgressBar({ currentPhase, className }: WebsiteProgressBarProps) {
+export function WebsiteProgressBar({
+  currentPhase,
+  onPhaseClick,
+  className,
+}: WebsiteProgressBarProps) {
   const currentIndex = PHASES.findIndex((p) => p.key === currentPhase)
 
   return (
@@ -22,10 +27,20 @@ export function WebsiteProgressBar({ currentPhase, className }: WebsiteProgressB
       {PHASES.map((phase, index) => {
         const isCompleted = index < currentIndex
         const isCurrent = index === currentIndex
+        const isClickable = isCompleted && !!onPhaseClick
 
         return (
           <div key={phase.key} className="flex items-center gap-2 flex-1">
-            <div className="flex items-center gap-2 flex-1">
+            <button
+              type="button"
+              disabled={!isClickable}
+              onClick={() => isClickable && onPhaseClick(phase.key)}
+              className={cn(
+                'flex items-center gap-2 flex-1',
+                isClickable && 'cursor-pointer hover:opacity-80',
+                !isClickable && 'cursor-default'
+              )}
+            >
               <div
                 className={cn(
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
@@ -46,7 +61,7 @@ export function WebsiteProgressBar({ currentPhase, className }: WebsiteProgressB
               >
                 {phase.label}
               </span>
-            </div>
+            </button>
             {index < PHASES.length - 1 && (
               <div
                 className={cn(
