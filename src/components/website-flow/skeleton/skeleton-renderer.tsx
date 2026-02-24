@@ -35,10 +35,6 @@ export function SkeletonRenderer({
   if (sorted.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">
-        <div className="w-16 h-16 rounded-2xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-4">
-          <span className="text-2xl">&#x1f3d7;&#xfe0f;</span>
-        </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Your Website Skeleton</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
           Start chatting to generate your website structure. The AI will create sections based on
           your inspirations.
@@ -50,7 +46,9 @@ export function SkeletonRenderer({
   return (
     <div className={className}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">Website Preview</h3>
+        <span className="text-xs text-muted-foreground">
+          {sorted.length} section{sorted.length !== 1 ? 's' : ''}
+        </span>
         <FidelityIndicator level={overallFidelity} />
       </div>
       <div className="p-4 space-y-3 overflow-auto">
