@@ -225,6 +225,13 @@
       "when": 1771754638144,
       "tag": "0031_abnormal_cardiac",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1771920190206,
+      "tag": "0032_gifted_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

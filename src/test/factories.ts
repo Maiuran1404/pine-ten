@@ -38,6 +38,8 @@ import type {
   auditLogs,
   audiences,
   platformSettings,
+  websiteInspirations,
+  websiteProjects,
 } from '@/db/schema'
 
 // ============================================
@@ -71,6 +73,8 @@ type EarlyAccessCode = typeof earlyAccessCodes.$inferSelect
 type AuditLog = typeof auditLogs.$inferSelect
 type Audience = typeof audiences.$inferSelect
 type PlatformSetting = typeof platformSettings.$inferSelect
+type WebsiteInspiration = typeof websiteInspirations.$inferSelect
+type WebsiteProject = typeof websiteProjects.$inferSelect
 
 // ============================================
 // Helper: unique ID generator
@@ -874,6 +878,60 @@ export function createMockPlatformSetting(
     value: 10,
     description: 'Price per credit in USD',
     updatedBy: null,
+    updatedAt: new Date(),
+    ...overrides,
+  }
+}
+
+// ============================================
+// 29. Website Inspirations
+// ============================================
+
+export function createMockWebsiteInspiration(
+  overrides: Partial<WebsiteInspiration> = {}
+): WebsiteInspiration {
+  return {
+    id: uniqueUUID(),
+    name: 'Example Agency Website',
+    url: 'https://example-agency.com',
+    screenshotUrl: 'https://storage.example.com/screenshots/example-agency.webp',
+    thumbnailUrl: 'https://storage.example.com/screenshots/example-agency-thumb.webp',
+    industry: ['technology'],
+    styleTags: ['minimal', 'modern'],
+    colorSamples: ['#3B82F6', '#111827', '#FFFFFF'],
+    sectionTypes: ['hero', 'features', 'testimonials', 'cta'],
+    typography: 'Inter',
+    layoutStyle: 'minimal',
+    description: 'A clean, modern agency website',
+    isActive: true,
+    displayOrder: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  }
+}
+
+// ============================================
+// 30. Website Projects
+// ============================================
+
+export function createMockWebsiteProject(overrides: Partial<WebsiteProject> = {}): WebsiteProject {
+  return {
+    id: uniqueUUID(),
+    userId: uniqueId('user_'),
+    companyId: null,
+    taskId: null,
+    phase: 'INSPIRATION',
+    status: 'DRAFT',
+    selectedInspirations: [],
+    userNotes: null,
+    skeleton: null,
+    chatHistory: [],
+    skeletonStage: 'INITIAL_GENERATION',
+    timeline: null,
+    creditsUsed: 0,
+    approvedAt: null,
+    createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
   }

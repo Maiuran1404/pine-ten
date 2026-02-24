@@ -44,6 +44,15 @@ export const queryKeys = {
     list: () => [...queryKeys.drafts.all, 'list'] as const,
     detail: (id: string) => [...queryKeys.drafts.all, 'detail', id] as const,
   },
+  // Website flow queries
+  websiteFlow: {
+    all: ['websiteFlow'] as const,
+    inspirations: (filters?: { industry?: string; style?: string }) =>
+      [...queryKeys.websiteFlow.all, 'inspirations', filters] as const,
+    similar: (ids: string[]) => [...queryKeys.websiteFlow.all, 'similar', ids] as const,
+    project: (id: string) => [...queryKeys.websiteFlow.all, 'project', id] as const,
+    projects: () => [...queryKeys.websiteFlow.all, 'projects'] as const,
+  },
 }
 
 // Generic fetcher function

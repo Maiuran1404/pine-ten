@@ -709,3 +709,14 @@ export type OnboardingInput = z.infer<typeof onboardingSchema>
 export type UpdateBrandInput = z.infer<typeof updateBrandSchema>
 export type ChatMessageInput = z.infer<typeof chatMessageSchema>
 export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>
+
+// Website flow schemas
+export {
+  screenshotRequestSchema,
+  inspirationSelectionSchema,
+  createWebsiteProjectSchema,
+  updateWebsiteProjectSchema,
+  skeletonChatSchema,
+  similarWebsitesSchema,
+  approveWebsiteProjectSchema,
+} from './website-flow-schemas'

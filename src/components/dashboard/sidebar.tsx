@@ -22,6 +22,7 @@ import {
   Building2,
   User,
   MessageSquare,
+  Globe,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -42,7 +43,8 @@ export function AppSidebar() {
     const allDrafts = getDrafts()
     // Show up to 5 recent drafts that have at least one user message
     return allDrafts.filter((d) => d.messages.some((m) => m.role === 'user')).slice(0, 5)
-  }, [isCollapsed, pathname]) // Re-fetch when navigating back to sidebar
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pathname triggers refetch when navigating back
+  }, [isCollapsed, pathname])
 
   const handleStartNewChat = () => {
     router.push('/dashboard')
@@ -50,6 +52,7 @@ export function AppSidebar() {
 
   // Features menu items
   const features = [
+    { icon: Globe, label: 'Website', href: '/dashboard/website-project' },
     { icon: CheckSquare, label: 'Tasks', href: '/dashboard/tasks' },
     { icon: FolderOpen, label: 'Assets', href: '/dashboard/designs' },
     { icon: Building2, label: 'My Brand', href: '/dashboard/brand' },

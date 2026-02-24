@@ -53,6 +53,10 @@ const envSchema = z.object({
   // Unsplash (optional - for high-quality stock photos in storyboard)
   UNSPLASH_ACCESS_KEY: z.string().min(1).optional(),
 
+  // Screenshot (optional - for website flow screenshots)
+  SCREENSHOT_API_KEY: z.string().min(1).optional(),
+  SCREENSHOT_API_URL: z.string().url().optional(),
+
   // Admin (use env vars, not hardcoded)
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 

@@ -1091,6 +1091,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [stripeConnectAccounts.freelancerId],
   }),
+  websiteProjects: many(websiteProjects),
 }))
 
 export const companiesRelations = relations(companies, ({ many }) => ({
@@ -2314,3 +2315,171 @@ export const chatTestRunsRelations = relations(chatTestRuns, ({ one }) => ({
     references: [users.id],
   }),
 }))
+
+// ============================================
+// Website Design Flow Tables
+// ============================================
+
+// Website flow phase enum
+export const websiteFlowPhaseEnum = pgEnum('website_flow_phase', [
+  'INSPIRATION',
+  'SKELETON',
+  'APPROVAL',
+])
+
+// Website project status enum
+export const websiteProjectStatusEnum = pgEnum('website_project_status', [
+  'DRAFT',
+  'IN_PROGRESS',
+  'APPROVED',
+  'COMPLETED',
+  'CANCELLED',
+])
+
+// Website inspirations — curated gallery of website designs
+export const websiteInspirations = pgTable(
+  'website_inspirations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    url: text('url').notNull(),
+    screenshotUrl: text('screenshot_url').notNull(),
+    thumbnailUrl: text('thumbnail_url'),
+    industry: jsonb('industry').$type<string[]>().default([]),
+    styleTags: jsonb('style_tags').$type<string[]>().default([]),
+    colorSamples: jsonb('color_samples').$type<string[]>().default([]),
+    sectionTypes: jsonb('section_types').$type<string[]>().default([]),
+    typography: text('typography'),
+    layoutStyle: text('layout_style'),
+    description: text('description'),
+    isActive: boolean('is_active').notNull().default(true),
+    displayOrder: integer('display_order').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('website_inspirations_industry_idx').on(table.industry),
+    index('website_inspirations_is_active_idx').on(table.isActive),
+    index('website_inspirations_display_order_idx').on(table.displayOrder),
+  ]
+)
+
+// Website projects — tracks user progress through the website design flow
+export const websiteProjects = pgTable(
+  'website_projects',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    companyId: uuid('company_id').references(() => companies.id, {
+      onDelete: 'set null',
+    }),
+    taskId: uuid('task_id').references(() => tasks.id, {
+      onDelete: 'set null',
+    }),
+
+    // Flow state
+    phase: websiteFlowPhaseEnum('phase').notNull().default('INSPIRATION'),
+    status: websiteProjectStatusEnum('status').notNull().default('DRAFT'),
+
+    // Inspiration phase data
+    selectedInspirations: jsonb('selected_inspirations')
+      .$type<
+        Array<{
+          id: string
+          url: string
+          screenshotUrl: string
+          name: string
+          notes?: string
+          isUserSubmitted?: boolean
+        }>
+      >()
+      .default([]),
+    userNotes: text('user_notes'),
+
+    // Skeleton phase data
+    skeleton: jsonb('skeleton').$type<{
+      sections: Array<{
+        id: string
+        type: string
+        title: string
+        description: string
+        order: number
+        fidelity: 'low' | 'mid' | 'high'
+        content?: Record<string, unknown>
+        aiRecommendation?: string
+      }>
+      globalStyles?: {
+        primaryColor?: string
+        secondaryColor?: string
+        fontPrimary?: string
+        fontSecondary?: string
+        layoutDensity?: 'compact' | 'balanced' | 'spacious'
+      }
+    }>(),
+
+    // AI chat history for skeleton phase
+    chatHistory: jsonb('chat_history')
+      .$type<
+        Array<{
+          id: string
+          role: 'user' | 'assistant'
+          content: string
+          timestamp: string
+          skeletonDelta?: Record<string, unknown>
+        }>
+      >()
+      .default([]),
+
+    // Skeleton AI state machine stage
+    skeletonStage: text('skeleton_stage').default('INITIAL_GENERATION'),
+
+    // Timeline & approval data
+    timeline: jsonb('timeline').$type<{
+      milestones: Array<{
+        id: string
+        title: string
+        description: string
+        daysFromStart: number
+        status: 'pending' | 'in_progress' | 'completed'
+      }>
+      estimatedDays: number
+      creditsCost: number
+    }>(),
+
+    // Credits
+    creditsUsed: integer('credits_used').notNull().default(0),
+
+    // Timestamps
+    approvedAt: timestamp('approved_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('website_projects_user_id_idx').on(table.userId),
+    index('website_projects_status_idx').on(table.status),
+    index('website_projects_phase_idx').on(table.phase),
+    index('website_projects_task_id_idx').on(table.taskId),
+    index('website_projects_created_at_idx').on(table.createdAt),
+  ]
+)
+
+// Website projects relations
+export const websiteProjectsRelations = relations(websiteProjects, ({ one }) => ({
+  user: one(users, {
+    fields: [websiteProjects.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [websiteProjects.companyId],
+    references: [companies.id],
+  }),
+  task: one(tasks, {
+    fields: [websiteProjects.taskId],
+    references: [tasks.id],
+  }),
+}))
+
+// Website inspirations relations (standalone, no FKs to other tables)
+export const websiteInspirationsRelations = relations(websiteInspirations, () => ({}))

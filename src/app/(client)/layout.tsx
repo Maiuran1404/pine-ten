@@ -17,6 +17,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // Note: /dashboard/chat now redirects to /dashboard, but we keep this check
   // in case anyone lands on the redirect page briefly
   const isChatPage = pathname?.startsWith('/dashboard/chat')
+  const isWebsiteProjectPage = pathname?.startsWith('/dashboard/website-project')
+  const isFullScreenPage = isChatPage || isWebsiteProjectPage
   const isDashboardRoot = pathname === '/dashboard'
   const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot)
 
@@ -56,8 +58,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return <FullPageLoader />
   }
 
-  // Chat page has its own full-screen layout
-  if (isChatPage) {
+  // Chat and website project pages have their own full-screen layout
+  if (isFullScreenPage) {
     return (
       <CreditProvider>
         <SidebarProvider
