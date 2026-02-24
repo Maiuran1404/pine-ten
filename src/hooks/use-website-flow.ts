@@ -26,7 +26,7 @@ export interface SelectedInspiration {
   isUserSubmitted?: boolean
 }
 
-const MAX_INSPIRATIONS = 5
+const MAX_INSPIRATIONS = 3
 
 export function useWebsiteFlow() {
   const searchParams = useSearchParams()

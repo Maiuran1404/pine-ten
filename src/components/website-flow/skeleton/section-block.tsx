@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { GripVertical, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   ImagePlaceholder,
@@ -179,7 +179,7 @@ export function SectionBlock({
         className
       )}
     >
-      {/* Section header with controls */}
+      {/* Hover controls */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {!isFirst && onMoveUp && (
           <Button variant="ghost" size="icon" className="w-6 h-6" onClick={onMoveUp}>
@@ -203,9 +203,8 @@ export function SectionBlock({
         )}
       </div>
 
-      {/* Section label */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
-        <GripVertical className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Compact section label */}
+      <div className="absolute top-2 left-2 z-10">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide bg-background/80 px-1.5 py-0.5 rounded">
           {section.title}
         </span>

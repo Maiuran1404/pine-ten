@@ -105,7 +105,7 @@ export function InspirationPhase({
           <h2 className="text-xl font-semibold text-foreground">Find Your Inspiration</h2>
           {selectedInspirations.length > 0 && (
             <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400">
-              {selectedInspirations.length}/5 selected
+              {selectedInspirations.length}/3 selected
             </span>
           )}
         </div>
