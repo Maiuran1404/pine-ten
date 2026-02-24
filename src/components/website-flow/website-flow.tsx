@@ -188,11 +188,40 @@ export function WebsiteFlow() {
     }
   }, [flow.projectId, delivery.deployToProduction])
 
-  // Extract skeleton sections for display
-  const skeletonSections =
-    (flow.project.data?.skeleton as { sections?: Array<Record<string, unknown>> } | null)
-      ?.sections ?? []
+  // Extract skeleton data for display
+  const skeletonData = flow.project.data?.skeleton as {
+    sections?: Array<Record<string, unknown>>
+    globalStyles?: {
+      primaryColor?: string
+      secondaryColor?: string
+      fontPrimary?: string
+      fontSecondary?: string
+      layoutDensity?: 'compact' | 'balanced' | 'spacious'
+    }
+  } | null
+  const skeletonSections = skeletonData?.sections ?? []
+  const globalStyles = skeletonData?.globalStyles
   const chatMessages = flow.project.data?.chatHistory ?? []
+
+  // Map skeleton stage to fidelity level
+  const skeletonStage = flow.project.data?.skeletonStage ?? 'INITIAL_GENERATION'
+  const stageFidelity = (() => {
+    switch (skeletonStage) {
+      case 'CONTENT_REFINEMENT':
+        return 'mid' as const
+      case 'STYLE_APPLICATION':
+      case 'FINAL_REVIEW':
+        return 'high' as const
+      default:
+        return 'low' as const
+    }
+  })()
+
+  // Apply stage-derived fidelity to sections for rendering
+  const sectionsWithFidelity = skeletonSections.map((s) => ({
+    ...s,
+    fidelity: stageFidelity,
+  }))
 
   // Calculate timeline for approval phase
   const timeline = calculateTimeline(skeletonSections.length || 8)
@@ -224,7 +253,7 @@ export function WebsiteFlow() {
         return (
           <SkeletonRenderer
             sections={
-              skeletonSections as Array<{
+              sectionsWithFidelity as Array<{
                 id: string
                 type: string
                 title: string
@@ -234,6 +263,7 @@ export function WebsiteFlow() {
                 content?: Record<string, unknown>
               }>
             }
+            globalStyles={globalStyles}
             className="h-full"
           />
         )
@@ -241,7 +271,7 @@ export function WebsiteFlow() {
         return (
           <SkeletonRenderer
             sections={
-              skeletonSections as Array<{
+              sectionsWithFidelity as Array<{
                 id: string
                 type: string
                 title: string
@@ -251,6 +281,7 @@ export function WebsiteFlow() {
                 content?: Record<string, unknown>
               }>
             }
+            globalStyles={globalStyles}
             className="h-full"
           />
         )
