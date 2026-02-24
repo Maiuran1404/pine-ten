@@ -1413,18 +1413,11 @@ async function handler(request: NextRequest) {
         quickOptions &&
         quickOptions.options.length >= 2 &&
         (() => {
-          // Check 1: question text mentions style/visual/direction keywords
+          // Only enrich with images when the question explicitly asks about
+          // style, visual direction, aesthetic, or inspiration — NOT for
+          // general questions like target audience, goals, etc.
           const q = (quickOptions.question || '').toLowerCase()
-          if (/style|visual|direction|aesthetic|look and feel|inspiration/.test(q)) return true
-          // Check 2: at least 2 options are multi-word descriptive labels
-          // (not simple actions like "Sounds good", "Skip", "Show me more")
-          const ACTION_RE =
-            /^(sounds good|that works|skip|yes|no|sure|go ahead|show me|i like|something different|something else|submit|done|make changes|go deeper|looks good|ready|tweak|adjust|keep|different|continue|refine|i need)/i
-          const descriptiveCount = quickOptions.options.filter((o) => {
-            const label = typeof o === 'string' ? o : o.label
-            return label.trim().split(/\s+/).length >= 3 && !ACTION_RE.test(label)
-          }).length
-          return descriptiveCount >= 2
+          return /style|visual|direction|aesthetic|look and feel|inspiration|mood|vibe/.test(q)
         })()
       if (isStyleDirection && quickOptions) {
         try {
