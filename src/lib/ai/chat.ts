@@ -134,7 +134,8 @@ RULES:
 - Be decisive - make recommendations, don't ask for basic info you can infer
 - Use brand data (industry, audience, platform) to make smart assumptions
 - Ask for confirmation, not information
-- ALWAYS include [QUICK_OPTIONS] with confirmation-style options`
+- ALWAYS include [QUICK_OPTIONS] with confirmation-style options
+- EVERY response MUST end with a question that leads into the next step. Never just state information and stop. The question should present a specific choice, not seek validation.`
 
 function getSystemPrompt(): string {
   const today = new Date()

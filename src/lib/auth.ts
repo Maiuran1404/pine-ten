@@ -133,8 +133,9 @@ export const auth = betterAuth({
       httpOnly: true,
       path: '/',
       // Set domain for cookie sharing across subdomains in production
-      // Required for OAuth callback to work correctly since the state cookie
-      // needs to be readable after Google redirects back to the callback URL
+      // Production: .getcrafted.ai — shared across app/artist/superadmin subdomains
+      // Dev: no domain set — localhost is on the Public Suffix List so browsers
+      // reject domain=.localhost. Each subdomain gets its own session in dev.
       ...(isProduction && { domain: `.${baseDomain}` }),
     },
   },

@@ -623,11 +623,13 @@ export function ChatMessageList({
                               </motion.div>
                             )}
 
-                          {/* Deliverable Style References - only on last assistant message when stage CTA is styleSelection */}
+                          {/* Deliverable Style References - only on last assistant message when stage CTA is styleSelection.
+                              Hidden when video references are present (they already serve as the visual direction picker). */}
                           {isLastAssistant &&
                             (!briefingStage || stageCTA === 'styleSelection') &&
                             message.deliverableStyles &&
                             message.deliverableStyles.length > 0 &&
+                            !(message.videoReferences && message.videoReferences.length > 0) &&
                             (animatingMessageId !== message.id ||
                               completedTypingIds.has(message.id)) && (
                               <motion.div

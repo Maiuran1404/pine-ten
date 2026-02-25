@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
+import { useState, useEffect, useCallback, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
+import { useGroupRef } from 'react-resizable-panels'
 import { type ChatStage, type MoodboardItem } from './types'
 import { type LiveBrief } from './brief-panel/types'
 import { TopProgressBar } from './progress-stepper'
@@ -188,6 +190,29 @@ export function ChatLayout({
     }
   }, [viewStructureRef])
 
+  // Resizable panel snap points (chat panel percentages)
+  // Only allow these discrete sizes — prevents panels from being squished too small
+  const SNAP_POINTS = [35, 45, 55, 65]
+  const groupRef = useGroupRef()
+
+  const handleLayoutChanged = useCallback(
+    (layout: Record<string, number>) => {
+      const chatSize = Object.values(layout)[0]
+      if (chatSize == null) return
+      const nearest = SNAP_POINTS.reduce((prev, curr) =>
+        Math.abs(curr - chatSize) < Math.abs(prev - chatSize) ? curr : prev
+      )
+      if (Math.abs(chatSize - nearest) > 0.5) {
+        const keys = Object.keys(layout)
+        if (keys.length === 2) {
+          groupRef.current?.setLayout({ [keys[0]]: nearest, [keys[1]]: 100 - nearest })
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
   const showRightPanel = showMoodboard || showBrief
   const StructureIcon = structureType ? STRUCTURE_ICONS[structureType] || Film : Film
 
@@ -210,10 +235,9 @@ export function ChatLayout({
             ================================================================ */}
         {structurePanelVisible ? (
           <>
-            {/* Left: Chat area (60%) */}
-            <div className="flex flex-col min-w-0 w-full lg:w-[60%] lg:min-w-[400px] relative">
-              {/* Mobile header */}
-              <div className="lg:hidden shrink-0 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-end gap-2">
+            {/* Mobile: full-width chat + header to open structure sheet */}
+            <div className="flex flex-col min-w-0 w-full lg:hidden relative">
+              <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-end gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -224,43 +248,57 @@ export function ChatLayout({
                   <span className="text-xs">Structure</span>
                 </Button>
               </div>
-              {/* Main content */}
               <div className="flex-1 min-h-0">{children}</div>
             </div>
 
-            {/* Right: Structure panel (40%) */}
-            <div className="hidden lg:flex lg:w-[40%] min-w-[320px] flex-col border-l border-border/50 bg-muted/20">
-              <StructurePanel
-                structureType={structureType ?? null}
-                structureData={structureData ?? null}
-                briefingStage={briefingStage ?? undefined}
-                sceneImageData={sceneImageData}
-                isRegenerating={isRegenerating}
-                changedScenes={changedScenes}
-                onSceneClick={onSceneClick}
-                onSelectionChange={onSceneSelectionChange}
-                onSceneEdit={onSceneEdit}
-                onRegenerateStoryboard={onRegenerateStoryboard}
-                onRegenerateScene={onRegenerateScene}
-                onRegenerateField={onRegenerateField}
-                onSectionReorder={onSectionReorder}
-                onSectionEdit={onSectionEdit}
-                websiteGlobalStyles={websiteGlobalStyles}
-                websiteInspirations={websiteInspirations}
-                websiteInspirationIds={websiteInspirationIds}
-                inspirationGallery={inspirationGallery}
-                isGalleryLoading={isGalleryLoading}
-                isCapturingScreenshot={isCapturingScreenshot}
-                onInspirationSelect={onInspirationSelect}
-                onRemoveInspiration={onRemoveInspiration}
-                onCaptureScreenshot={onCaptureScreenshot}
-                onFindSimilar={onFindSimilar}
-                similarResults={similarResults}
-                isFindingSimilar={isFindingSimilar}
-                canFindSimilar={canFindSimilar}
-                onUpdateInspirationNotes={onUpdateInspirationNotes}
-              />
-            </div>
+            {/* Desktop: Resizable split between chat and structure panel */}
+            <ResizablePanelGroup
+              orientation="horizontal"
+              className="hidden lg:flex h-full"
+              groupRef={groupRef}
+              onLayoutChanged={handleLayoutChanged}
+            >
+              <ResizablePanel id="chat" defaultSize={55} minSize={35} maxSize={65}>
+                <div className="flex flex-col h-full min-w-0 relative">
+                  <div className="flex-1 min-h-0">{children}</div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel id="structure" defaultSize={45} minSize={35} maxSize={65}>
+                <div className="flex flex-col h-full bg-muted/20">
+                  <StructurePanel
+                    structureType={structureType ?? null}
+                    structureData={structureData ?? null}
+                    briefingStage={briefingStage ?? undefined}
+                    sceneImageData={sceneImageData}
+                    isRegenerating={isRegenerating}
+                    changedScenes={changedScenes}
+                    onSceneClick={onSceneClick}
+                    onSelectionChange={onSceneSelectionChange}
+                    onSceneEdit={onSceneEdit}
+                    onRegenerateStoryboard={onRegenerateStoryboard}
+                    onRegenerateScene={onRegenerateScene}
+                    onRegenerateField={onRegenerateField}
+                    onSectionReorder={onSectionReorder}
+                    onSectionEdit={onSectionEdit}
+                    websiteGlobalStyles={websiteGlobalStyles}
+                    websiteInspirations={websiteInspirations}
+                    websiteInspirationIds={websiteInspirationIds}
+                    inspirationGallery={inspirationGallery}
+                    isGalleryLoading={isGalleryLoading}
+                    isCapturingScreenshot={isCapturingScreenshot}
+                    onInspirationSelect={onInspirationSelect}
+                    onRemoveInspiration={onRemoveInspiration}
+                    onCaptureScreenshot={onCaptureScreenshot}
+                    onFindSimilar={onFindSimilar}
+                    similarResults={similarResults}
+                    isFindingSimilar={isFindingSimilar}
+                    canFindSimilar={canFindSimilar}
+                    onUpdateInspirationNotes={onUpdateInspirationNotes}
+                  />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
 
             {/* Mobile/Tablet: Structure panel bottom sheet */}
             <Sheet open={isMobileStructureOpen} onOpenChange={setIsMobileStructureOpen}>

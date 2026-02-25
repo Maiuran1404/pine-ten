@@ -392,11 +392,12 @@ async function handler(request: NextRequest) {
             /\[Feedback on Scene/.test(lastUserContent)
           ) {
             let feedbackHint =
-              '\n\nIMPORTANT: The user is giving feedback on specific storyboard scenes. ' +
+              '\n\nCRITICAL REQUIREMENT — YOU MUST OUTPUT A [STORYBOARD] BLOCK: The user is giving feedback on specific storyboard scenes. ' +
               'IMPROVE the existing text based on their feedback — do NOT blank out, remove, or shorten existing content. ' +
               'Preserve all existing fields (title, description, voiceover, visualNote, duration, transition, cameraNote, hookData, fullScript, directorNotes) for scenes the user did NOT mention. ' +
               'For scenes the user DID mention, apply their feedback while keeping any fields they did not specifically ask to change. ' +
-              'Regenerate the FULL [STORYBOARD] block. If the user asked to merge, combine, remove, or reduce scenes, output ONLY the resulting scenes (fewer than before). ' +
+              'You MUST regenerate the FULL [STORYBOARD]...[/STORYBOARD] block with valid JSON in your response — without it the storyboard panel will not update. ' +
+              'If the user asked to merge, combine, remove, or reduce scenes, output ONLY the resulting scenes (fewer than before). ' +
               "If the user asked to add or split scenes, include the new scenes. Always output the complete updated storyboard reflecting the user's changes."
 
             // Prefer client-sent storyboard (includes local edits) over server briefingState
@@ -1208,10 +1209,20 @@ async function handler(request: NextRequest) {
           if (isSceneFeedback && !structureData && structureType) {
             logger.debug(
               { structureType },
-              'Scene feedback detected but no storyboard returned — retrying with format reinforcement'
+              'Scene feedback detected but no storyboard returned — retrying with storyboard context'
             )
             try {
-              const reinforcement = getFormatReinforcement(structureType)
+              // Build a retry prompt that includes the current storyboard + user feedback
+              // so the AI can apply the changes and return the full updated storyboard
+              const storyboardForRetry =
+                (clientLatestStoryboard?.type === 'storyboard' && clientLatestStoryboard) ||
+                (briefingState.structure?.type === 'storyboard' && briefingState.structure) ||
+                null
+              const retryPrompt = storyboardForRetry
+                ? `The user gave feedback on specific scenes but you didn't include the updated storyboard in your response. ` +
+                  `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
+                  `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
+                : getFormatReinforcement(structureType)
               const feedbackRetryBrandContext: BrandContext = {
                 companyName: company?.name,
                 industry: company?.industry ?? undefined,
@@ -1225,7 +1236,7 @@ async function handler(request: NextRequest) {
                 [
                   ...messages,
                   { role: 'assistant', content: response.content },
-                  { role: 'user', content: reinforcement },
+                  { role: 'user', content: retryPrompt },
                 ],
                 session.user.id,
                 chatContext,

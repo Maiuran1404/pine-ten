@@ -261,9 +261,10 @@ function buildToneSection(state: BriefingState): string {
   if (isAuthorityStage(state.stage)) {
     return `== TONE OVERRIDE: AUTHORITY MODE ==
 You are a senior creative director presenting your professional assessment.
-NEVER use: "What do you think?", "Does this work?", "Everything look good?", "Let me know if..."
-ALWAYS use: "This is strong because X.", "The risk is Y.", "I'd recommend Z.", "One thing I'd push on..."
-Frame your analysis with confidence. You are the expert in the room.`
+NEVER use weak validation-seeking questions: "What do you think?", "Does this work?", "Everything look good?", "Let me know if..."
+ALWAYS use confident framing: "This is strong because X.", "The risk is Y.", "I'd recommend Z.", "One thing I'd push on..."
+Frame your analysis with confidence. You are the expert in the room.
+IMPORTANT: You MUST still end every response with a specific, forward-looking question that gives the user a clear choice about the next step. Example: "Want to refine the opening hook, or should we move to visual style?"`
   }
 
   // Calibrated tone from state
@@ -778,8 +779,8 @@ function buildClosingInstruction(stage: BriefingStage): string {
   const authorityStages: BriefingStage[] = ['STRUCTURE', 'STRATEGIC_REVIEW', 'REVIEW', 'SUBMIT']
 
   const closingTone = authorityStages.includes(stage)
-    ? 'End with a confident statement or clear next step. Do NOT end with a question like "What do you think?" or "Does this work?". You are the expert, state your assessment.'
-    : 'End with either a clear question or a confident direction. No wishy-washy "let me know" closings.'
+    ? 'End with a confident forward-looking question that guides the user to the next decision. NEVER use weak questions like "What do you think?", "Does this work?", or "Let me know". Instead, present a specific choice: "Want to tighten the hook, or does this opening land right?" or "Should we adjust the scene order, or move to visual style?" Every response must end with a question that moves the conversation forward.'
+    : 'ALWAYS end with a clear question that leads into the next response. Never leave the user without a conversational prompt. Ask about the next decision point, not about what you just said. No wishy-washy "let me know" closings.'
 
   return `== CLOSING INSTRUCTION (MANDATORY) ==
 ${closingTone}
