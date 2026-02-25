@@ -440,8 +440,8 @@ function SceneThumbnail({
 }) {
   const imageId = scene.referenceImageIds?.[0]
   const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
-  // Prefer multi-source scene image, fall back to reference image
-  const imageUrl = sceneImageData?.primaryUrl || refImageUrl
+  // Prefer multi-source scene image, fall back to persisted URL on scene, then reference image
+  const imageUrl = sceneImageData?.primaryUrl || scene.resolvedImageUrl || refImageUrl
   const isGif = sceneImageData?.primaryMediaType === 'gif'
   const gradient = getSceneGradient(index)
 

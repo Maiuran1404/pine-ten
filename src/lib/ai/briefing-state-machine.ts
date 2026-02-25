@@ -64,6 +64,15 @@ export interface StoryboardScene {
   directorNotes?: string
   referenceImageIds?: string[]
   referenceDescription?: string
+  // Resolved image data (populated after image search, persists with scene)
+  resolvedImageUrl?: string
+  resolvedImageSource?: string
+  resolvedImageAttribution?: {
+    sourceName: string
+    sourceUrl: string
+    filmTitle?: string
+    photographer?: string
+  }
 }
 
 export interface VideoHookData {

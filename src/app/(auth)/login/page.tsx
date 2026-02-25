@@ -141,11 +141,11 @@ function LoginContent() {
   }, [isArtist, searchParams, router, session])
 
   useEffect(() => {
-    if (!isPending && session?.user) {
+    if (!isPending && session?.user && portal.isHydrated) {
       const redirectUrl = getRedirectUrl()
       router.replace(redirectUrl)
     }
-  }, [session, isPending, router, getRedirectUrl])
+  }, [session, isPending, router, getRedirectUrl, portal.isHydrated])
 
   const {
     register,
@@ -189,6 +189,10 @@ function LoginContent() {
       toast.error('Please open this page in Safari or Chrome to sign in with Google', {
         duration: 5000,
       })
+      return
+    }
+
+    if (!portal.isHydrated) {
       return
     }
 

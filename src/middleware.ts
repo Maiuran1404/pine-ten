@@ -160,7 +160,7 @@ function redirectToLogin(request: NextRequest, pathname: string): NextResponse {
  * - Public paths (/api/auth, /api/health, /login, etc.) pass through unconditionally
  * - Rate limiting is applied to auth routes and all API routes
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // Gate /register behind invite code — redirect to /early-access if no code param

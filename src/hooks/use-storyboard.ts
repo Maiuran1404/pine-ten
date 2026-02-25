@@ -127,6 +127,25 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
       }
       if (dataMap.size > 0) {
         setSceneImageData(dataMap)
+        // Also embed image URLs on the scene objects so they persist with structureData
+        setStoryboardScenes((prev) => {
+          if (!prev || prev.type !== 'storyboard') return prev
+          const updated = {
+            ...prev,
+            scenes: prev.scenes.map((scene) => {
+              const img = dataMap.get(scene.sceneNumber)
+              if (!img) return scene
+              return {
+                ...scene,
+                resolvedImageUrl: img.primaryUrl,
+                resolvedImageSource: img.primarySource,
+                resolvedImageAttribution: img.attribution,
+              }
+            }),
+          }
+          latestStoryboardRef.current = updated
+          return updated
+        })
       }
     },
     []
@@ -305,6 +324,24 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     setStoryboardScenes(data)
     if (data.type === 'storyboard') {
       latestStoryboardRef.current = data
+      // Hydrate sceneImageData from persisted image URLs on scenes (survives draft restore)
+      const hydrated = new Map<number, SceneImageData>()
+      for (const scene of data.scenes) {
+        if (scene.resolvedImageUrl) {
+          hydrated.set(scene.sceneNumber, {
+            primaryUrl: scene.resolvedImageUrl,
+            primarySource: (scene.resolvedImageSource as ImageSource) || 'pexels',
+            primaryMediaType: 'still',
+            attribution: scene.resolvedImageAttribution || {
+              sourceName: scene.resolvedImageSource || 'Pexels',
+              sourceUrl: '',
+            },
+          })
+        }
+      }
+      if (hydrated.size > 0) {
+        setSceneImageData((prev) => (prev.size > 0 ? prev : hydrated))
+      }
     }
   }, [])
 
