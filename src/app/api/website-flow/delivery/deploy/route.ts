@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
 import { websiteProjects } from '@/db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireClient } from '@/lib/require-auth'
 import { deploySchema } from '@/lib/validations/website-delivery-schemas'
@@ -32,20 +32,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Check delivery status — must be PREVIEW_READY before deploying
-      const deliveryResult = await db.execute(
-        sql`SELECT delivery_status, framer_project_url FROM website_projects WHERE id = ${validated.projectId} LIMIT 1`
-      )
-      const deliveryRow = (
-        deliveryResult as unknown as Array<{ delivery_status: string; framer_project_url: string }>
-      )[0]
-
-      if (!deliveryRow?.framer_project_url) {
+      if (!project.framerProjectUrl) {
         throw Errors.badRequest('Project has not been pushed to Framer yet')
       }
 
-      if (deliveryRow.delivery_status !== 'PREVIEW_READY') {
+      if (project.deliveryStatus !== 'PREVIEW_READY') {
         throw Errors.badRequest(
-          `Cannot deploy in current delivery status: ${deliveryRow.delivery_status}. Preview must be ready first.`
+          `Cannot deploy in current delivery status: ${project.deliveryStatus}. Preview must be ready first.`
         )
       }
 
@@ -55,22 +48,28 @@ export async function POST(request: NextRequest) {
       }
 
       // Update status to DEPLOYING
-      await db.execute(
-        sql`UPDATE website_projects SET delivery_status = 'DEPLOYING', updated_at = now() WHERE id = ${validated.projectId}`
-      )
+      await db
+        .update(websiteProjects)
+        .set({ deliveryStatus: 'DEPLOYING', updatedAt: new Date() })
+        .where(eq(websiteProjects.id, validated.projectId))
 
       const builder = createBuilder('framer', {
         apiKey: framerApiKey,
-        projectUrl: deliveryRow.framer_project_url,
+        projectUrl: project.framerProjectUrl,
       })
 
       try {
         const result = await builder.deployToProduction()
 
         if (result.success) {
-          await db.execute(
-            sql`UPDATE website_projects SET delivery_status = 'DEPLOYED', framer_deployed_url = ${result.deployedUrl}, updated_at = now() WHERE id = ${validated.projectId}`
-          )
+          await db
+            .update(websiteProjects)
+            .set({
+              deliveryStatus: 'DEPLOYED',
+              framerDeployedUrl: result.deployedUrl,
+              updatedAt: new Date(),
+            })
+            .where(eq(websiteProjects.id, validated.projectId))
 
           logger.info(
             {
@@ -81,9 +80,10 @@ export async function POST(request: NextRequest) {
             'Website deployed to production via Framer'
           )
         } else {
-          await db.execute(
-            sql`UPDATE website_projects SET delivery_status = 'FAILED', updated_at = now() WHERE id = ${validated.projectId}`
-          )
+          await db
+            .update(websiteProjects)
+            .set({ deliveryStatus: 'FAILED', updatedAt: new Date() })
+            .where(eq(websiteProjects.id, validated.projectId))
 
           logger.warn(
             {
@@ -102,9 +102,10 @@ export async function POST(request: NextRequest) {
         await builder.disconnect()
 
         // Revert to PREVIEW_READY on failure
-        await db.execute(
-          sql`UPDATE website_projects SET delivery_status = 'PREVIEW_READY', updated_at = now() WHERE id = ${validated.projectId}`
-        )
+        await db
+          .update(websiteProjects)
+          .set({ deliveryStatus: 'PREVIEW_READY', updatedAt: new Date() })
+          .where(eq(websiteProjects.id, validated.projectId))
 
         throw error
       }

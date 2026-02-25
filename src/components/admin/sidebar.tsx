@@ -34,6 +34,7 @@ import {
   FileText,
   UserPlus,
   Image,
+  GalleryThumbnails,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -115,6 +116,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Reference Library',
         href: '/admin/deliverable-styles',
         icon: LayoutTemplate,
+      },
+      {
+        name: 'Template Images',
+        href: '/admin/template-images',
+        icon: GalleryThumbnails,
       },
       {
         name: 'Video Library',

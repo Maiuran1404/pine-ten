@@ -16,22 +16,22 @@ async function loadEmbeddingVectors(
   inspirationIds: string[]
 ): Promise<Array<{ id: string; vector: number[] }>> {
   try {
-    const idList = inspirationIds.map((id) => `'${id}'`).join(',')
-    const result = (await db.execute(
-      sql.raw(`
-        SELECT id, embedding_vector::text as vector_text
-        FROM website_inspirations
-        WHERE id IN (${idList})
-          AND embedding_vector IS NOT NULL
-      `)
-    )) as unknown as Array<{ id: string; vector_text: string }>
+    const rows = await db
+      .select({
+        id: websiteInspirations.id,
+        vectorText: sql<string>`embedding_vector::text`,
+      })
+      .from(websiteInspirations)
+      .where(
+        and(inArray(websiteInspirations.id, inspirationIds), sql`embedding_vector IS NOT NULL`)
+      )
 
-    return result
-      .filter((row) => row.vector_text)
+    return rows
+      .filter((row) => row.vectorText)
       .map((row) => ({
         id: row.id,
         // Parse pgvector text representation: "[0.1,0.2,...]"
-        vector: row.vector_text.replace(/^\[/, '').replace(/]$/, '').split(',').map(Number),
+        vector: row.vectorText.replace(/^\[/, '').replace(/]$/, '').split(',').map(Number),
       }))
   } catch {
     // pgvector extension not installed or column doesn't exist

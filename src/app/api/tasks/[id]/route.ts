@@ -10,6 +10,7 @@ import {
   taskActivityLog,
   briefs,
   chatDrafts,
+  websiteProjects,
 } from '@/db/schema'
 import { eq, desc, and, ne } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
@@ -90,93 +91,112 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const companyId = clientInfo[0]?.companyId
 
-    // Fetch files, messages, activity log, brief, and optionally brand info in parallel
-    const [files, messages, activityLog, brandResult, previousWorkResult, briefResult] =
-      await Promise.all([
-        db
-          .select()
-          .from(taskFiles)
-          .where(eq(taskFiles.taskId, id))
-          .orderBy(desc(taskFiles.createdAt)),
-        db
-          .select({
-            id: taskMessages.id,
-            content: taskMessages.content,
-            attachments: taskMessages.attachments,
-            createdAt: taskMessages.createdAt,
-            senderId: taskMessages.senderId,
-            senderName: users.name,
-            senderImage: users.image,
-          })
-          .from(taskMessages)
-          .leftJoin(users, eq(taskMessages.senderId, users.id))
-          .where(eq(taskMessages.taskId, id))
-          .orderBy(taskMessages.createdAt),
-        // Fetch activity log for timeline
-        db
-          .select({
-            id: taskActivityLog.id,
-            action: taskActivityLog.action,
-            actorType: taskActivityLog.actorType,
-            actorId: taskActivityLog.actorId,
-            previousStatus: taskActivityLog.previousStatus,
-            newStatus: taskActivityLog.newStatus,
-            metadata: taskActivityLog.metadata,
-            createdAt: taskActivityLog.createdAt,
-          })
-          .from(taskActivityLog)
-          .where(eq(taskActivityLog.taskId, id))
-          .orderBy(taskActivityLog.createdAt),
-        // Fetch company/brand info if companyId exists
-        companyId
-          ? db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
-          : Promise.resolve([]),
-        // Fetch previous completed work for this company (tasks with deliverables)
-        companyId
-          ? db
-              .select({
-                taskId: tasks.id,
-                taskTitle: tasks.title,
-                taskStatus: tasks.status,
-                completedAt: tasks.completedAt,
-                categoryName: taskCategories.name,
-              })
-              .from(tasks)
-              .leftJoin(users, eq(tasks.clientId, users.id))
-              .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-              .where(
-                and(
-                  eq(users.companyId, companyId),
-                  eq(tasks.status, 'COMPLETED'),
-                  ne(tasks.id, id) // Exclude current task
-                )
+    // Fetch files, messages, activity log, brief, website project, and optionally brand info in parallel
+    const [
+      files,
+      messages,
+      activityLog,
+      brandResult,
+      previousWorkResult,
+      briefResult,
+      websiteProjectResult,
+    ] = await Promise.all([
+      db
+        .select()
+        .from(taskFiles)
+        .where(eq(taskFiles.taskId, id))
+        .orderBy(desc(taskFiles.createdAt)),
+      db
+        .select({
+          id: taskMessages.id,
+          content: taskMessages.content,
+          attachments: taskMessages.attachments,
+          createdAt: taskMessages.createdAt,
+          senderId: taskMessages.senderId,
+          senderName: users.name,
+          senderImage: users.image,
+        })
+        .from(taskMessages)
+        .leftJoin(users, eq(taskMessages.senderId, users.id))
+        .where(eq(taskMessages.taskId, id))
+        .orderBy(taskMessages.createdAt),
+      // Fetch activity log for timeline
+      db
+        .select({
+          id: taskActivityLog.id,
+          action: taskActivityLog.action,
+          actorType: taskActivityLog.actorType,
+          actorId: taskActivityLog.actorId,
+          previousStatus: taskActivityLog.previousStatus,
+          newStatus: taskActivityLog.newStatus,
+          metadata: taskActivityLog.metadata,
+          createdAt: taskActivityLog.createdAt,
+        })
+        .from(taskActivityLog)
+        .where(eq(taskActivityLog.taskId, id))
+        .orderBy(taskActivityLog.createdAt),
+      // Fetch company/brand info if companyId exists
+      companyId
+        ? db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
+        : Promise.resolve([]),
+      // Fetch previous completed work for this company (tasks with deliverables)
+      companyId
+        ? db
+            .select({
+              taskId: tasks.id,
+              taskTitle: tasks.title,
+              taskStatus: tasks.status,
+              completedAt: tasks.completedAt,
+              categoryName: taskCategories.name,
+            })
+            .from(tasks)
+            .leftJoin(users, eq(tasks.clientId, users.id))
+            .leftJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+            .where(
+              and(
+                eq(users.companyId, companyId),
+                eq(tasks.status, 'COMPLETED'),
+                ne(tasks.id, id) // Exclude current task
               )
-              .orderBy(desc(tasks.completedAt))
-              .limit(20)
-          : Promise.resolve([]),
-        // Fetch brief data linked to this task
-        db
-          .select({
-            id: briefs.id,
-            status: briefs.status,
-            completionPercentage: briefs.completionPercentage,
-            taskSummary: briefs.taskSummary,
-            topic: briefs.topic,
-            platform: briefs.platform,
-            contentType: briefs.contentType,
-            intent: briefs.intent,
-            taskType: briefs.taskType,
-            audience: briefs.audience,
-            dimensions: briefs.dimensions,
-            visualDirection: briefs.visualDirection,
-            contentOutline: briefs.contentOutline,
-            brandContext: briefs.brandContext,
-            draftId: briefs.draftId,
-          })
-          .from(briefs)
-          .where(eq(briefs.taskId, id))
-          .limit(1),
-      ])
+            )
+            .orderBy(desc(tasks.completedAt))
+            .limit(20)
+        : Promise.resolve([]),
+      // Fetch brief data linked to this task
+      db
+        .select({
+          id: briefs.id,
+          status: briefs.status,
+          completionPercentage: briefs.completionPercentage,
+          taskSummary: briefs.taskSummary,
+          topic: briefs.topic,
+          platform: briefs.platform,
+          contentType: briefs.contentType,
+          intent: briefs.intent,
+          taskType: briefs.taskType,
+          audience: briefs.audience,
+          dimensions: briefs.dimensions,
+          visualDirection: briefs.visualDirection,
+          contentOutline: briefs.contentOutline,
+          brandContext: briefs.brandContext,
+          draftId: briefs.draftId,
+        })
+        .from(briefs)
+        .where(eq(briefs.taskId, id))
+        .limit(1),
+      // Fetch website project linked to this task (for delivery pipeline)
+      db
+        .select({
+          id: websiteProjects.id,
+          deliveryStatus: websiteProjects.deliveryStatus,
+          framerProjectUrl: websiteProjects.framerProjectUrl,
+          framerPreviewUrl: websiteProjects.framerPreviewUrl,
+          framerDeployedUrl: websiteProjects.framerDeployedUrl,
+        })
+        .from(websiteProjects)
+        .where(eq(websiteProjects.taskId, id))
+        .limit(1),
+    ])
 
     // Get deliverable files for previous work
     const previousTaskIds = previousWorkResult.map((t) => t.taskId)
@@ -316,6 +336,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         briefingState,
         previousWork,
         activityLog,
+        websiteProject: websiteProjectResult[0] ?? null,
       },
     })
   })

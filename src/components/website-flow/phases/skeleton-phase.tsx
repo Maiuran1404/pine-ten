@@ -3,20 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight, LayoutTemplate, Loader2 } from 'lucide-react'
+import { INDUSTRY_OPTIONS } from '@/lib/website/industry-templates'
 import { SkeletonChat } from '../skeleton/skeleton-chat'
-
-const INDUSTRY_OPTIONS = [
-  { value: 'law-firm', label: 'Law Firm' },
-  { value: 'saas', label: 'SaaS' },
-  { value: 'agency', label: 'Agency' },
-  { value: 'ecommerce', label: 'E-Commerce' },
-  { value: 'portfolio', label: 'Portfolio' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'real-estate', label: 'Real Estate' },
-  { value: 'education', label: 'Education' },
-] as const
 
 interface ChatMessage {
   id: string

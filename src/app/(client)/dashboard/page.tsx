@@ -47,8 +47,32 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { getImageVariantUrls } from '@/lib/image/utils'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
+
+interface TemplateOption {
+  title: string
+  description: string
+  prompt: string
+  icon: typeof Rocket
+  optionKey: string
+}
+
+interface TemplateCategory {
+  icon: typeof Rocket
+  categoryKey: string
+  description: string
+  modalDescription: string
+  options: TemplateOption[]
+}
+
+interface TemplateImageData {
+  id: string
+  categoryKey: string
+  optionKey: string | null
+  imageUrl: string
+}
 
 interface UploadedFile {
   fileName: string
@@ -110,15 +134,17 @@ interface PlatformSelection {
 }
 
 // Template categories and sub-options based on service offerings
-const TEMPLATE_CATEGORIES = {
+const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
   'Launch Videos': {
     icon: Megaphone,
+    categoryKey: 'launch-videos',
     description: 'Product videos that convert',
     modalDescription:
       "Select the video type that fits my launch goals. Add details about my product and we'll craft the perfect brief.",
     options: [
       {
         title: 'Product Launch Video',
+        optionKey: 'product-launch-video',
         description:
           'A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.',
         prompt: 'Create a product launch video',
@@ -126,6 +152,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Feature Highlight',
+        optionKey: 'feature-highlight',
         description:
           'A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.',
         prompt: 'Create a feature highlight video',
@@ -133,6 +160,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'App Walkthrough',
+        optionKey: 'app-walkthrough',
         description:
           'A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.',
         prompt: 'Create an app walkthrough video',
@@ -142,12 +170,14 @@ const TEMPLATE_CATEGORIES = {
   },
   'Pitch Deck': {
     icon: Presentation,
+    categoryKey: 'pitch-deck',
     description: 'Investor-ready presentations',
     modalDescription:
       "Choose the presentation style that matches my audience. Share my existing deck or key points and we'll design something compelling.",
     options: [
       {
         title: 'Investor Pitch Deck',
+        optionKey: 'investor-pitch-deck',
         description:
           'A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.',
         prompt: 'Redesign my investor pitch deck',
@@ -155,6 +185,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Sales Deck',
+        optionKey: 'sales-deck',
         description:
           'A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.',
         prompt: 'Create a sales presentation deck',
@@ -162,6 +193,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Company Overview',
+        optionKey: 'company-overview',
         description:
           'A versatile introduction to my company that works for partners, clients, and new team members.',
         prompt: 'Design a company overview presentation',
@@ -171,12 +203,14 @@ const TEMPLATE_CATEGORIES = {
   },
   Branding: {
     icon: Palette,
+    categoryKey: 'branding',
     description: 'Complete visual identity',
     modalDescription:
       "Tell us about my brand personality and goals. We'll create a visual identity that sets me apart.",
     options: [
       {
         title: 'Full Brand Package',
+        optionKey: 'full-brand-package',
         description:
           'A complete visual identity system including logo design, color palette, typography, and brand guidelines.',
         prompt: 'Create a full brand package with logo and visual identity',
@@ -184,6 +218,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Logo Design',
+        optionKey: 'logo-design',
         description:
           'A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.',
         prompt: 'Design a logo for my brand',
@@ -191,6 +226,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Brand Refresh',
+        optionKey: 'brand-refresh',
         description:
           'Modernize and elevate my existing brand while maintaining recognition with updated visual elements.',
         prompt: 'Refresh and modernize my existing brand',
@@ -200,11 +236,13 @@ const TEMPLATE_CATEGORIES = {
   },
   'Social Media': {
     icon: Share2,
+    categoryKey: 'social-media',
     description: 'Ads, content & video edits',
     modalDescription: 'Plan your content calendar, choose platforms, and set posting frequency.',
     options: [
       {
         title: 'Instagram Post',
+        optionKey: 'instagram-post',
         description:
           'Eye-catching static posts designed for maximum engagement in the 4:5 feed format.',
         prompt: 'Create Instagram post designs',
@@ -212,6 +250,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Instagram Story',
+        optionKey: 'instagram-story',
         description:
           'Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.',
         prompt: 'Create Instagram story designs',
@@ -219,6 +258,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Instagram Reels',
+        optionKey: 'instagram-reels',
         description:
           'Short-form vertical video content designed to capture attention in the first second.',
         prompt: 'Create an Instagram Reels video',
@@ -226,6 +266,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'LinkedIn Content',
+        optionKey: 'linkedin-content',
         description:
           'Professional content designed for B2B engagement including carousels and thought leadership.',
         prompt: 'Create LinkedIn content',
@@ -233,6 +274,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Video Edit',
+        optionKey: 'video-edit',
         description:
           'Transform raw footage into polished, platform-ready content with professional editing.',
         prompt: 'Edit my video footage for social media',
@@ -240,6 +282,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Ad Creatives',
+        optionKey: 'ad-creatives',
         description:
           'Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.',
         prompt: 'Create social media ad creatives',
@@ -249,12 +292,14 @@ const TEMPLATE_CATEGORIES = {
   },
   'Content Calendar': {
     icon: CalendarDays,
+    categoryKey: 'content-calendar',
     description: 'Strategic content planning',
     modalDescription:
       'Plan your content calendar with posting schedules, content pillars, and platform strategy.',
     options: [
       {
         title: 'Social Media Calendar',
+        optionKey: 'social-media-calendar',
         description:
           'A strategic posting schedule across your social platforms with content pillars, weekly themes, and engagement tactics.',
         prompt: 'Create a social media content calendar',
@@ -262,6 +307,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Multi-Platform Campaign',
+        optionKey: 'multi-platform-campaign',
         description:
           'A coordinated content plan spanning multiple platforms with consistent messaging and CTA escalation.',
         prompt: 'Plan a multi-platform content campaign',
@@ -269,6 +315,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Launch Content Plan',
+        optionKey: 'launch-content-plan',
         description:
           'A pre-launch to post-launch content timeline with teasers, announcements, and follow-up content.',
         prompt: 'Create a product launch content plan',
@@ -278,12 +325,14 @@ const TEMPLATE_CATEGORIES = {
   },
   'Landing Page': {
     icon: PanelTop,
+    categoryKey: 'landing-page',
     description: 'High-converting web pages',
     modalDescription:
       "Pick a landing page style and tell us about my product or campaign. We'll design a page that drives action.",
     options: [
       {
         title: 'Product Landing Page',
+        optionKey: 'product-landing-page',
         description:
           'A conversion-focused page that showcases my product with compelling visuals, benefits, and a clear call to action.',
         prompt: 'Design a product landing page',
@@ -291,6 +340,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'SaaS Landing Page',
+        optionKey: 'saas-landing-page',
         description:
           'A modern page built for software products with feature highlights, pricing, social proof, and sign-up flows.',
         prompt: 'Design a SaaS landing page',
@@ -298,6 +348,7 @@ const TEMPLATE_CATEGORIES = {
       },
       {
         title: 'Event Landing Page',
+        optionKey: 'event-landing-page',
         description:
           'A dynamic page for events, launches, or campaigns with countdown timers, speaker bios, and registration.',
         prompt: 'Design an event landing page',
@@ -334,6 +385,7 @@ function DashboardContent() {
   const dragCounterRef = useRef(0)
   const prefersReduced = useReducedMotion()
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [templateImageMap, setTemplateImageMap] = useState<Map<string, string>>(new Map())
 
   const userName = session?.user?.name?.split(' ')[0] || 'there'
 
@@ -371,6 +423,23 @@ function DashboardContent() {
       })
       .catch(() => setFetchError('Failed to load style references'))
       .finally(() => setIsLoadingStyles(false))
+
+    // Fetch template preview images
+    fetch('/api/template-images')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.data?.images) {
+          const map = new Map<string, string>()
+          for (const img of data.data.images as TemplateImageData[]) {
+            const key = img.optionKey ? `${img.categoryKey}:${img.optionKey}` : img.categoryKey
+            map.set(key, img.imageUrl)
+          }
+          setTemplateImageMap(map)
+        }
+      })
+      .catch(() => {
+        // Non-critical — fallback to icons
+      })
   }, [])
 
   // Auto-resize textarea
@@ -883,7 +952,8 @@ function DashboardContent() {
             or start from a template
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon }]) => {
+            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, categoryKey }]) => {
+              const categoryImage = templateImageMap.get(categoryKey)
               const gradients: Record<string, string> = {
                 'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
                 'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
@@ -904,20 +974,35 @@ function DashboardContent() {
                   }}
                   className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
                 >
-                  <div
-                    className={cn(
-                      'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
-                      gradient
-                    )}
-                  />
-                  <div
-                    className="absolute inset-0 opacity-[0.15]"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                      backgroundSize: '128px 128px',
-                    }}
-                  />
-                  <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
+                  {categoryImage ? (
+                    <>
+                      <Image
+                        src={categoryImage}
+                        alt={category}
+                        fill
+                        className="object-cover"
+                        sizes="120px"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 group-hover:from-black/70 transition-colors" />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={cn(
+                          'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
+                          gradient
+                        )}
+                      />
+                      <div
+                        className="absolute inset-0 opacity-[0.15]"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                          backgroundSize: '128px 128px',
+                        }}
+                      />
+                      <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
+                    </>
+                  )}
                   <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
                     {category}
                   </span>
@@ -946,15 +1031,28 @@ function DashboardContent() {
               const category =
                 TEMPLATE_CATEGORIES[selectedCategory as keyof typeof TEMPLATE_CATEGORIES]
               const Icon = category?.icon
+              const headerImage = category ? templateImageMap.get(category.categoryKey) : undefined
 
               return (
                 <>
                   {/* Header */}
                   <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-[var(--crafted-green)] flex items-center justify-center shrink-0">
-                        {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
-                      </div>
+                      {headerImage ? (
+                        <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0">
+                          <Image
+                            src={headerImage}
+                            alt={selectedCategory}
+                            width={36}
+                            height={36}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-[var(--crafted-green)] flex items-center justify-center shrink-0">
+                          {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
+                        </div>
+                      )}
                       <DialogTitle className="text-base font-semibold text-foreground tracking-tight">
                         {selectedCategory}
                       </DialogTitle>

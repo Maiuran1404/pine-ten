@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'
-import { ChevronRight, Copy, AlertCircle, FileText, Palette, MessageSquare } from 'lucide-react'
+import {
+  ChevronRight,
+  Copy,
+  AlertCircle,
+  FileText,
+  Palette,
+  MessageSquare,
+  Globe,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TaskDetailData } from '@/components/task-detail/types'
 import { STATUS_CONFIG } from '@/components/task-detail/types'
@@ -21,6 +29,7 @@ import { DesignerCard } from '@/components/task-detail/sidebar/designer-card'
 import { TaskMetadataPills } from '@/components/task-detail/sidebar/task-metadata-pills'
 import { ActivityTimeline } from '@/components/task-detail/sidebar/activity-timeline'
 import { AttachmentsList } from '@/components/task-detail/sidebar/attachments-list'
+import { WebsiteDeliveryTab } from '@/components/task-detail/tabs/website-delivery-tab'
 
 export default function TaskDetailPage() {
   const params = useParams()
@@ -303,6 +312,13 @@ export default function TaskDetailPage() {
                     </span>
                   )}
                 </TabsTrigger>
+                {task.websiteProject && (
+                  <TabsTrigger value="website" className="flex-1 gap-1.5">
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden sm:inline">Website</span>
+                    <span className="sm:hidden">Web</span>
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="brief">
@@ -325,6 +341,12 @@ export default function TaskDetailPage() {
                   canChat={canChat}
                 />
               </TabsContent>
+
+              {task.websiteProject && (
+                <TabsContent value="website">
+                  <WebsiteDeliveryTab projectId={task.websiteProject.id} taskId={task.id} />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
 

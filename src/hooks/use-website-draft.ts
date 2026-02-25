@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './use-queries'
 import { useCsrfContext } from '@/providers/csrf-provider'
+import type { DeliveryStatus } from '@/lib/validations/website-delivery-schemas'
 
 interface WebsiteProject {
   id: string
@@ -27,6 +28,10 @@ interface WebsiteProject {
   }>
   skeletonStage: string | null
   timeline: Record<string, unknown> | null
+  deliveryStatus: DeliveryStatus
+  framerProjectUrl: string | null
+  framerPreviewUrl: string | null
+  framerDeployedUrl: string | null
   creditsUsed: number
   createdAt: string
   updatedAt: string

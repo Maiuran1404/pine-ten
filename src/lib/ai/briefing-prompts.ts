@@ -9,6 +9,7 @@
 
 import type { BriefingState, BriefingStage, DeliverableCategory } from './briefing-state-machine'
 import { STALL_CONFIG, getLegalTransitions } from './briefing-state-machine'
+import { INDUSTRY_OPTIONS } from '@/lib/website/industry-templates'
 
 // =============================================================================
 // BRAND CONTEXT TYPE (passed from caller)
@@ -405,13 +406,21 @@ If you have an open question about the primary action or audience, ask it before
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
 - Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"6s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]
 OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.`
-    case 'website':
-      return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
+    case 'website': {
+      const industryLabels = INDUSTRY_OPTIONS.map((o) => o.label)
+      const industryTemplatePrompt =
+        isFirstTurn && !state.structure
+          ? `If this is the first turn and no layout exists yet, offer industry templates as quick options so the user can choose a starter template:
+[QUICK_OPTIONS]{"question": "Want to start from an industry template?", "options": ${JSON.stringify(industryLabels.slice(0, 10))}}[/QUICK_OPTIONS]
+When the user picks a template, generate the corresponding [LAYOUT] block with sections appropriate for that industry. For example, a SaaS template includes: navigation, hero, features, stats, pricing, testimonials, FAQ, CTA, footer.\n\n`
+          : ''
+      return `${clarifyPrefix}${industryTemplatePrompt}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
 - Each section: name, purpose, content guidance, order, fidelity ("low").
 - You MUST output the structure as [LAYOUT]{json}[/LAYOUT]. Without this marker the UI cannot render the layout.
 - Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1,"fidelity":"low"}]}[/LAYOUT]
 OUTPUT FORMAT: The [LAYOUT]{valid JSON}[/LAYOUT] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the layout as plain text without these markers, the UI cannot render it and the response fails.`
+    }
     case 'content':
       return `${clarifyPrefix}MANDATORY: Create a strategic content calendar.
 - Include: posting cadence, content pillars (with %), weekly arcs, CTA escalation.

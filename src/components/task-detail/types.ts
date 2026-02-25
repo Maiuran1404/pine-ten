@@ -3,6 +3,7 @@ import type {
   StrategicReviewData,
   BriefingState,
 } from '@/lib/ai/briefing-state-machine'
+import type { DeliveryStatus } from '@/lib/validations/website-delivery-schemas'
 import type {
   AudienceBrief,
   VisualDirection,
@@ -187,6 +188,19 @@ export interface TaskDetailData {
   brandDNA: BrandDNA | null
   briefData: BriefData | null
   briefingState: BriefingState | null
+  websiteProject: WebsiteProjectSummary | null
+}
+
+// =============================================================================
+// WEBSITE PROJECT (delivery pipeline summary)
+// =============================================================================
+
+export interface WebsiteProjectSummary {
+  id: string
+  deliveryStatus: DeliveryStatus
+  framerProjectUrl: string | null
+  framerPreviewUrl: string | null
+  framerDeployedUrl: string | null
 }
 
 // =============================================================================

@@ -9,6 +9,7 @@ import {
   pgEnum,
   decimal,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
@@ -1069,6 +1070,26 @@ export const platformSettings = pgTable('platform_settings', {
   updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+// Template preview images (for client dashboard template selection)
+export const templateImages = pgTable(
+  'template_images',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    categoryKey: text('category_key').notNull(), // e.g. "launch-videos"
+    optionKey: text('option_key'), // e.g. "product-launch-video" (null = category cover)
+    imageUrl: text('image_url').notNull(), // Supabase public URL
+    sourceUrl: text('source_url'), // Original source URL
+    isActive: boolean('is_active').notNull().default(true),
+    displayOrder: integer('display_order').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('ti_category_idx').on(table.categoryKey),
+    uniqueIndex('ti_category_option_idx').on(table.categoryKey, table.optionKey),
+  ]
+)
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -2336,6 +2357,19 @@ export const websiteProjectStatusEnum = pgEnum('website_project_status', [
   'CANCELLED',
 ])
 
+// Website delivery status enum — tracks pushing to external builder (Framer, etc.)
+export const websiteDeliveryStatusEnum = pgEnum('website_delivery_status', [
+  'PENDING',
+  'PUSHING',
+  'PUSHED',
+  'PREVIEWING',
+  'PREVIEW_READY',
+  'DEPLOYING',
+  'DEPLOYED',
+  'FAILED',
+])
+export type WebsiteDeliveryStatus = (typeof websiteDeliveryStatusEnum.enumValues)[number]
+
 // Website inspirations — curated gallery of website designs
 export const websiteInspirations = pgTable(
   'website_inspirations',
@@ -2447,6 +2481,12 @@ export const websiteProjects = pgTable(
       estimatedDays: number
       creditsCost: number
     }>(),
+
+    // Delivery state (external builder integration)
+    deliveryStatus: websiteDeliveryStatusEnum('delivery_status').notNull().default('PENDING'),
+    framerProjectUrl: text('framer_project_url'),
+    framerPreviewUrl: text('framer_preview_url'),
+    framerDeployedUrl: text('framer_deployed_url'),
 
     // Credits
     creditsUsed: integer('credits_used').notNull().default(0),

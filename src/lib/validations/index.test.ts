@@ -4,6 +4,9 @@ import {
   updateUserSettingsSchema,
   createCheckoutSchema,
   taskMessageSchema,
+  createTemplateImageSchema,
+  onboardingRequestSchema,
+  extractBrandRequestSchema,
 } from './index'
 
 describe('Validation Schemas', () => {
@@ -149,6 +152,224 @@ describe('Validation Schemas', () => {
       if (result.success) {
         expect(result.data.content).toBe('Hello world')
       }
+    })
+  })
+
+  describe('createTemplateImageSchema', () => {
+    it('should validate a valid template image', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'launch-videos',
+        imageUrl: 'https://example.com/image.png',
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.displayOrder).toBe(0)
+      }
+    })
+
+    it('should validate with all optional fields', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'social-media',
+        optionKey: 'instagram-post',
+        imageUrl: 'https://example.com/image.png',
+        sourceUrl: 'https://source.com/original.png',
+        displayOrder: 5,
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.optionKey).toBe('instagram-post')
+        expect(result.data.sourceUrl).toBe('https://source.com/original.png')
+        expect(result.data.displayOrder).toBe(5)
+      }
+    })
+
+    it('should reject when categoryKey is missing', () => {
+      const result = createTemplateImageSchema.safeParse({
+        imageUrl: 'https://example.com/image.png',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject when imageUrl is missing', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'launch-videos',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject an invalid imageUrl', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'launch-videos',
+        imageUrl: 'not-a-url',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject an invalid sourceUrl', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'launch-videos',
+        imageUrl: 'https://example.com/image.png',
+        sourceUrl: 'bad-url',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should allow null optionKey', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: 'launch-videos',
+        optionKey: null,
+        imageUrl: 'https://example.com/image.png',
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.optionKey).toBeNull()
+      }
+    })
+
+    it('should reject empty categoryKey', () => {
+      const result = createTemplateImageSchema.safeParse({
+        categoryKey: '',
+        imageUrl: 'https://example.com/image.png',
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('onboardingRequestSchema', () => {
+    it('should validate a valid client onboarding request', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'client',
+        data: {
+          brand: {
+            name: 'Acme Corp',
+          },
+        },
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate a client onboarding with full brand data', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'client',
+        data: {
+          brand: {
+            name: 'Acme Corp',
+            website: 'https://acme.com',
+            industry: 'Technology',
+            industryArchetype: 'tech',
+            description: 'A tech company',
+            logoUrl: 'https://example.com/logo.png',
+            primaryColor: '#3B82F6',
+            secondaryColor: '#1E40AF',
+            brandColors: ['#3B82F6', '#1E40AF'],
+            primaryFont: 'Inter',
+            tagline: 'Building the future',
+            keywords: ['tech', 'saas'],
+            creativeFocus: ['social-media'],
+          },
+          hasWebsite: true,
+        },
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate a valid freelancer onboarding request', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'freelancer',
+        data: {
+          whatsappNumber: '+14155551234',
+          bio: 'Professional designer',
+          skills: ['Graphic Design', 'UI/UX'],
+          specializations: ['Static Ads'],
+          portfolioUrls: ['https://portfolio.example.com'],
+        },
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate a freelancer with minimal data', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'freelancer',
+        data: {},
+      })
+      expect(result.success).toBe(true)
+      if (result.success && result.data.type === 'freelancer') {
+        expect(result.data.data.skills).toEqual([])
+        expect(result.data.data.specializations).toEqual([])
+        expect(result.data.data.portfolioUrls).toEqual([])
+      }
+    })
+
+    it('should reject when type is missing', () => {
+      const result = onboardingRequestSchema.safeParse({
+        data: {
+          brand: { name: 'Test' },
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject an invalid role/type', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'admin',
+        data: {
+          brand: { name: 'Test' },
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject client type with missing brand name', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'client',
+        data: {
+          brand: {},
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject when data field is missing', () => {
+      const result = onboardingRequestSchema.safeParse({
+        type: 'client',
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('extractBrandRequestSchema', () => {
+    it('should validate a valid URL string', () => {
+      const result = extractBrandRequestSchema.safeParse({
+        websiteUrl: 'https://example.com',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate a URL without protocol', () => {
+      // The schema only requires min(1), not .url()
+      const result = extractBrandRequestSchema.safeParse({
+        websiteUrl: 'example.com',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject an empty websiteUrl', () => {
+      const result = extractBrandRequestSchema.safeParse({
+        websiteUrl: '',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject when websiteUrl is missing', () => {
+      const result = extractBrandRequestSchema.safeParse({})
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject a URL that exceeds max length', () => {
+      const result = extractBrandRequestSchema.safeParse({
+        websiteUrl: 'https://example.com/' + 'a'.repeat(2000),
+      })
+      expect(result.success).toBe(false)
     })
   })
 })

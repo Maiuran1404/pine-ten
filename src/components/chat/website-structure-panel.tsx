@@ -51,6 +51,23 @@ interface WebsiteStructurePanelProps {
   }) => void
   onRemoveInspiration: (id: string) => void
   onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
+  // Visual similarity & notes
+  onFindSimilar?: () => void
+  similarResults?: Array<{
+    inspiration: {
+      id: string
+      name: string
+      url: string
+      screenshotUrl: string
+      thumbnailUrl: string | null
+      industry: string[]
+      styleTags: string[]
+    }
+    score: number
+  }>
+  isFindingSimilar?: boolean
+  canFindSimilar?: boolean
+  onUpdateInspirationNotes?: (id: string, notes: string) => void
 
   className?: string
 }
@@ -67,6 +84,11 @@ export function WebsiteStructurePanel({
   onInspirationSelect,
   onRemoveInspiration,
   onCaptureScreenshot,
+  onFindSimilar,
+  similarResults,
+  isFindingSimilar,
+  canFindSimilar,
+  onUpdateInspirationNotes,
   className,
 }: WebsiteStructurePanelProps) {
   const fidelity = briefingStage ? getFidelityForStage(briefingStage) : 'low'
@@ -101,6 +123,11 @@ export function WebsiteStructurePanel({
         onSelectGalleryItem={onInspirationSelect}
         onRemoveInspiration={onRemoveInspiration}
         onCaptureScreenshot={onCaptureScreenshot}
+        onFindSimilar={onFindSimilar}
+        similarResults={similarResults}
+        isFindingSimilar={isFindingSimilar}
+        canFindSimilar={canFindSimilar}
+        onUpdateInspirationNotes={onUpdateInspirationNotes}
         className={className}
       />
     )

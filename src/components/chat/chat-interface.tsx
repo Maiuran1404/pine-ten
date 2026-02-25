@@ -243,6 +243,12 @@ export function ChatInterface({
     setIndustryFilter: _setIndustryFilter,
     styleFilter: _styleFilter,
     setStyleFilter: _setStyleFilter,
+    // Visual similarity & notes
+    findSimilarWebsites,
+    similarWebsiteResults,
+    isFindingSimilar,
+    canFindSimilar,
+    updateInspirationNotes,
 
     // Handlers
     handleSend,
@@ -345,6 +351,11 @@ export function ChatInterface({
         }
         onRemoveInspiration={removeWebsiteInspiration}
         onCaptureScreenshot={captureWebsiteScreenshot}
+        onFindSimilar={findSimilarWebsites}
+        similarResults={similarWebsiteResults}
+        isFindingSimilar={isFindingSimilar}
+        canFindSimilar={canFindSimilar}
+        onUpdateInspirationNotes={updateInspirationNotes}
         briefingStage={briefingStage}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >

@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
       let templateUrl = process.env.FRAMER_TEMPLATE_PROJECT_URL
 
       if (validated.templateId) {
-        const templateResult = await db.execute(
+        // TODO: Add website_templates to Drizzle schema to use query builder instead
+        const rows = (await db.execute(
           sql`SELECT framer_project_url FROM website_templates WHERE id = ${validated.templateId} AND is_active = true LIMIT 1`
-        )
-        const rows = templateResult as unknown as Array<{ framer_project_url: string }>
+        )) as unknown as Array<{ framer_project_url: string }>
         if (rows.length > 0) {
           templateUrl = rows[0].framer_project_url
         }
@@ -63,9 +63,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Update delivery status to PUSHING
-      await db.execute(
-        sql`UPDATE website_projects SET delivery_status = 'PUSHING', framer_project_url = ${templateUrl}, updated_at = now() WHERE id = ${validated.projectId}`
-      )
+      await db
+        .update(websiteProjects)
+        .set({
+          deliveryStatus: 'PUSHING',
+          framerProjectUrl: templateUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(websiteProjects.id, validated.projectId))
 
       // Build the skeleton data for the builder
       const skeletonData: SkeletonData = {
@@ -87,9 +92,14 @@ export async function POST(request: NextRequest) {
         const result = await builder.pushSkeleton(skeletonData)
 
         if (result.success) {
-          await db.execute(
-            sql`UPDATE website_projects SET delivery_status = 'PUSHED', framer_preview_url = ${result.previewUrl ?? ''}, updated_at = now() WHERE id = ${validated.projectId}`
-          )
+          await db
+            .update(websiteProjects)
+            .set({
+              deliveryStatus: 'PUSHED',
+              framerPreviewUrl: result.previewUrl ?? '',
+              updatedAt: new Date(),
+            })
+            .where(eq(websiteProjects.id, validated.projectId))
 
           // Apply global styles if present
           if (project.skeleton.globalStyles) {
@@ -105,9 +115,10 @@ export async function POST(request: NextRequest) {
             'Skeleton pushed to Framer successfully'
           )
         } else {
-          await db.execute(
-            sql`UPDATE website_projects SET delivery_status = 'FAILED', updated_at = now() WHERE id = ${validated.projectId}`
-          )
+          await db
+            .update(websiteProjects)
+            .set({ deliveryStatus: 'FAILED', updatedAt: new Date() })
+            .where(eq(websiteProjects.id, validated.projectId))
 
           logger.warn(
             {
@@ -125,9 +136,10 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         await builder.disconnect()
 
-        await db.execute(
-          sql`UPDATE website_projects SET delivery_status = 'FAILED', updated_at = now() WHERE id = ${validated.projectId}`
-        )
+        await db
+          .update(websiteProjects)
+          .set({ deliveryStatus: 'FAILED', updatedAt: new Date() })
+          .where(eq(websiteProjects.id, validated.projectId))
 
         throw error
       }

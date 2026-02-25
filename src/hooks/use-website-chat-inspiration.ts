@@ -1,13 +1,14 @@
 /**
  * Hook for managing website inspiration state within the chat briefing flow.
  * Lighter weight than use-website-flow.ts - only manages inspiration selection,
- * screenshot capture, and gallery fetching.
+ * screenshot capture, gallery fetching, and visual similarity search.
  */
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useScreenshotApi } from '@/hooks/use-screenshot-api'
+import { useVisualSimilarity } from '@/hooks/use-visual-similarity'
 import type { WebsiteInspiration } from '@/lib/ai/briefing-state-machine'
 
 interface UseWebsiteChatInspirationOptions {
@@ -20,6 +21,7 @@ export function useWebsiteChatInspiration({ enabled }: UseWebsiteChatInspiration
   const [styleFilter, setStyleFilter] = useState<string | null>(null)
 
   const screenshotApi = useScreenshotApi()
+  const visualSimilarity = useVisualSimilarity()
 
   // Fetch curated gallery from API
   const galleryQuery = useQuery({
@@ -69,6 +71,25 @@ export function useWebsiteChatInspiration({ enabled }: UseWebsiteChatInspiration
 
   const selectedIds = useMemo(() => selectedInspirations.map((i) => i.id), [selectedInspirations])
 
+  // ── Visual similarity search ──
+  // Only gallery-sourced inspirations can be used for similarity (they have DB IDs)
+  const gallerySourcedIds = useMemo(
+    () => selectedInspirations.filter((i) => !i.isUserSubmitted).map((i) => i.id),
+    [selectedInspirations]
+  )
+
+  const canFindSimilar = gallerySourcedIds.length > 0
+
+  const findSimilar = useCallback(() => {
+    if (!canFindSimilar) return
+    visualSimilarity.findSimilar.mutate({ inspirationIds: gallerySourcedIds, limit: 6 })
+  }, [canFindSimilar, gallerySourcedIds, visualSimilarity.findSimilar])
+
+  // ── Per-inspiration notes ──
+  const updateInspirationNotes = useCallback((id: string, notes: string) => {
+    setSelectedInspirations((prev) => prev.map((i) => (i.id === id ? { ...i, notes } : i)))
+  }, [])
+
   return {
     // Selected inspirations
     selectedInspirations,
@@ -89,5 +110,14 @@ export function useWebsiteChatInspiration({ enabled }: UseWebsiteChatInspiration
     setIndustryFilter,
     styleFilter,
     setStyleFilter,
+
+    // Visual similarity
+    findSimilar,
+    similarResults: visualSimilarity.data ?? [],
+    isFindingSimilar: visualSimilarity.isPending,
+    canFindSimilar,
+
+    // Notes
+    updateInspirationNotes,
   }
 }

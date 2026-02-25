@@ -55,6 +55,8 @@ export interface BrandData {
   // Explicit style and tone selections (used in brand DNA reveal)
   visualStyle?: string
   brandTone?: string
+  // Brand voice summary (AI-generated 1-2 sentence assessment)
+  brandVoiceSummary?: string
   // Inferred target audiences
   audiences?: InferredAudience[]
 }
@@ -325,6 +327,7 @@ export const defaultBrandData: BrandData = {
   targetAudience: '',
   brandPositioning: '',
   visualPreferences: [],
+  brandVoiceSummary: '',
   audiences: [],
 }
 

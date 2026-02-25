@@ -97,7 +97,7 @@ async function handler(request: NextRequest) {
               industry: brand.industry,
               industryArchetype: brand.industryArchetype,
               description: brand.description,
-              creativeFocus: brand.creativeFocus ? [brand.creativeFocus] : undefined,
+              creativeFocus: brand.creativeFocus?.length ? brand.creativeFocus : undefined,
             })
             audienceSource = 'inferred'
             logger.info({ count: audiencesToSave.length }, 'Inferred audiences from brand data')

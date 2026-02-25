@@ -138,6 +138,8 @@ interface BrandExtraction {
   signalDensity: number // 0 = Minimal, 100 = Rich
   signalWarmth: number // 0 = Cold, 100 = Warm
   signalEnergy: number // 0 = Calm, 100 = Energetic
+  // Brand voice summary (1-2 sentence brand strategist assessment)
+  brandVoiceSummary: string
   // Inferred target audiences
   audiences?: InferredAudience[]
 }
@@ -173,6 +175,54 @@ function extractSocialLinks(links: string[] | undefined): BrandExtraction['socia
   return socialLinks
 }
 
+// Extract a brand name from a domain (e.g., "didit.me" → "Didit")
+function extractNameFromDomain(url: string): string | null {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '')
+    const parts = hostname.split('.')
+    if (parts.length < 2) return null
+    const name = parts[0]
+    if (!name || name.length < 2) return null
+    return name.charAt(0).toUpperCase() + name.slice(1)
+  } catch {
+    return null
+  }
+}
+
+// Extract a clean brand name from a page title
+// Titles often follow patterns like "Tagline | Brand" or "Page - Brand Name"
+// We check all segments and prefer the shortest non-generic one
+function extractNameFromTitle(title: string): string {
+  // Split by common title separators: | – —
+  const segments = title
+    .split(/\s*[|–—]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  if (segments.length === 0) return 'Unknown Company'
+  if (segments.length === 1) return segments[0]
+
+  // Score each segment — brand names tend to be short and NOT start with generic words
+  const taglinePrefixes =
+    /^(the|a|an|your|our|we|get|stop|start|try|discover|welcome|introducing|build|create|make)\s/i
+
+  const scored = segments.map((seg, i) => ({
+    text: seg,
+    index: i,
+    wordCount: seg.split(/\s+/).length,
+    looksLikeTagline: taglinePrefixes.test(seg) || seg.split(/\s+/).length > 4,
+  }))
+
+  // Prefer: non-tagline, fewer words, later position (brand name often last)
+  const sorted = [...scored].sort((a, b) => {
+    if (a.looksLikeTagline !== b.looksLikeTagline) return a.looksLikeTagline ? 1 : -1
+    if (a.wordCount !== b.wordCount) return a.wordCount - b.wordCount
+    return b.index - a.index
+  })
+
+  return sorted[0]?.text || segments[0]
+}
+
 // Create default brand data from metadata and Firecrawl branding
 function createDefaultBrandData(
   metadata:
@@ -199,7 +249,8 @@ function createDefaultBrandData(
         images?: { logo?: string | null; favicon?: string | null }
       }
     | undefined,
-  links: string[] | undefined
+  links: string[] | undefined,
+  normalizedUrl?: string
 ): BrandExtraction {
   // Get all hex colors from branding, excluding background and text colors
   const brandColors: string[] = branding?.colors
@@ -243,7 +294,10 @@ function createDefaultBrandData(
   }
 
   return {
-    name: metadata?.title?.split('|')[0]?.split('-')[0]?.split('–')[0]?.trim() || 'Unknown Company',
+    name:
+      (metadata?.title ? extractNameFromTitle(metadata.title) : null) ||
+      (normalizedUrl ? extractNameFromDomain(normalizedUrl) : null) ||
+      'Unknown Company',
     description: metadata?.description || '',
     tagline: null,
     industry: null,
@@ -277,6 +331,8 @@ function createDefaultBrandData(
     signalDensity: 50,
     signalWarmth: 50,
     signalEnergy: 50,
+    // Brand voice summary (empty by default, populated by Claude)
+    brandVoiceSummary: '',
     // Empty audiences array - will be populated by Claude analysis
     audiences: [],
   }
@@ -306,6 +362,7 @@ export async function POST(request: NextRequest) {
           'branding',
         ],
         onlyMainContent: false,
+        headers: { 'Accept-Language': 'en-US,en;q=0.9' }, // Prefer English content
       })
     } catch (scrapeError) {
       logger.error({ error: scrapeError }, 'Firecrawl scrape error')
@@ -369,7 +426,7 @@ export async function POST(request: NextRequest) {
     // 3. Industry classification
     // So we always run Claude analysis, but may use Firecrawl colors as fallback
     const firecrawlBrandData = hasBrandingColors
-      ? createDefaultBrandData(metadata, branding, links)
+      ? createDefaultBrandData(metadata, branding, links, normalizedUrl)
       : null
 
     // Otherwise, use Claude for deeper analysis
@@ -394,8 +451,10 @@ Based on the content${
       screenshot ? ' and screenshot' : ''
     } above, extract the following brand information in JSON format:
 
-1. **Company Name**: The company/brand name
-2. **Description**: A brief description of what the company does (2-3 sentences)
+IMPORTANT: ALL output must be in English, even if the website content is in another language. Translate any non-English content.
+
+1. **Company Name**: The official company/brand name. CRITICAL: The domain name is the strongest signal — for "${normalizedUrl}", the brand name is very likely derived from the domain (e.g., "didit.me" → "Didit", "stripe.com" → "Stripe", "notion.so" → "Notion"). Do NOT use taglines, headings, or slogans as the company name. Look for the actual brand name in the logo, domain, or page footer.
+2. **Description**: A brief description of what the company does (2-3 sentences, in English)
 3. **Tagline**: Any tagline or slogan found
 4. **Industry**: The specific industry the company operates in (e.g., "Recruitment", "SaaS", "Restaurants", "Electrical Services", "Fashion & Apparel")
 5. **Industry Archetype** (choose ONE that best categorizes the business model):
@@ -478,6 +537,8 @@ Based on the content${
    B2B signals: mentions of "teams", "enterprise", job titles, integrations, ROI language
    B2C signals: lifestyle imagery, personal benefits, emotional language, individual pricing
 
+16. **Brand Voice Summary**: Write 1-2 sentences as a brand strategist describing this brand's voice and visual identity. Be specific and opinionated — reference what you actually see (colors, typography, imagery style, copy tone). Example: "Your brand projects quiet confidence through clean typography and muted earth tones. The voice is composed and professional — approachable without ever being casual." Do NOT be generic.
+
 IMPORTANT: Do NOT default all personality values to 50 and DO NOT always pick generic options. Analyze the actual visual design:
 - A tech startup with bold colors and playful copy should have visualStyle "playful-vibrant" or "tech-futuristic", brandTone "bold-confident" or "playful-witty"
 - A law firm with serif fonts and dark colors should have visualStyle "corporate-professional" or "elegant-refined", brandTone "authoritative-expert"
@@ -523,6 +584,7 @@ Return ONLY a valid JSON object with this exact structure:
   "signalDensity": number,
   "signalWarmth": number,
   "signalEnergy": number,
+  "brandVoiceSummary": "string (1-2 sentences)",
   "audiences": [
     {
       "name": "string (e.g., 'Enterprise HR Directors')",
@@ -579,7 +641,7 @@ Return ONLY a valid JSON object with this exact structure:
         })
 
         const response = await getAnthropic().messages.create({
-          model: 'claude-3-5-haiku-20241022', // Faster model for brand extraction
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 2000,
           messages: [
             {
@@ -606,19 +668,26 @@ Return ONLY a valid JSON object with this exact structure:
         lastError = error as Error
         logger.error({ error, attempt: attempt + 1 }, 'Claude analysis attempt failed')
 
-        // Check if it's an image size error
+        // Check if it's an image-related error — retry without screenshot
         const errorMessage = String(error)
         if (
-          errorMessage.includes('8000 pixels') ||
-          errorMessage.includes('image') ||
-          errorMessage.includes('dimension')
+          useScreenshot &&
+          (errorMessage.includes('8000 pixels') ||
+            errorMessage.includes('image') ||
+            errorMessage.includes('dimension'))
         ) {
           logger.info('Image too large, retrying without screenshot')
           useScreenshot = false
-          continue // Retry without screenshot
+          continue
         }
 
-        // For other errors, don't retry
+        // For other errors, still retry once without screenshot as a general fallback
+        if (attempt === 0 && useScreenshot) {
+          logger.info('Claude analysis failed, retrying without screenshot')
+          useScreenshot = false
+          continue
+        }
+
         break
       }
     }
@@ -626,7 +695,32 @@ Return ONLY a valid JSON object with this exact structure:
     // If Claude analysis failed entirely, use fallback data
     if (!brandData) {
       logger.error({ error: lastError }, 'All Claude analysis attempts failed, using fallback data')
-      brandData = createDefaultBrandData(metadata, branding, links)
+      brandData = createDefaultBrandData(metadata, branding, links, normalizedUrl)
+    }
+
+    // Sanitize non-Latin text from key fields (handles sites that serve localized content)
+    const hasNonLatin = (text: string) => /[^\u0000-\u024F\u1E00-\u1EFF]/.test(text)
+    const stripNonLatin = (text: string) => {
+      // If text has parenthetical English translation like "中文 (English)", extract the English
+      const parenMatch = text.match(/\(([^)]+)\)/)
+      if (parenMatch && !hasNonLatin(parenMatch[1])) return parenMatch[1].trim()
+      // Otherwise strip non-Latin chars and clean up
+      const cleaned = text
+        .replace(/[^\u0000-\u024F\u1E00-\u1EFF]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      return cleaned || null
+    }
+
+    if (brandData.name && hasNonLatin(brandData.name)) {
+      brandData.name =
+        stripNonLatin(brandData.name) || extractNameFromDomain(normalizedUrl) || 'Unknown Company'
+    }
+    if (brandData.description && hasNonLatin(brandData.description)) {
+      brandData.description = stripNonLatin(brandData.description) || ''
+    }
+    if (brandData.tagline && hasNonLatin(brandData.tagline)) {
+      brandData.tagline = stripNonLatin(brandData.tagline)
     }
 
     // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
@@ -716,6 +810,7 @@ Return ONLY a valid JSON object with this exact structure:
     brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50
     brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50
     brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50
+    brandDataWithFeels.brandVoiceSummary = brandData.brandVoiceSummary || ''
 
     // Validate and set defaults for visualStyle, brandTone, and industryArchetype
     const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(

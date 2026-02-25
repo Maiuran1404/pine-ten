@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { sql } from 'drizzle-orm'
+import { websiteProjects } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { deliveryWebhookSchema } from '@/lib/validations/website-delivery-schemas'
 import { logger } from '@/lib/logger'
+import type { WebsiteDeliveryStatus } from '@/db/schema'
 
 /**
  * Webhook handler for external builder status updates (Framer, etc.)
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       )
 
       // Map webhook events to delivery statuses
-      const statusMap: Record<string, string> = {
+      const statusMap: Record<string, WebsiteDeliveryStatus> = {
         build_started: 'PUSHING',
         build_completed: 'PUSHED',
         build_failed: 'FAILED',
@@ -62,25 +64,35 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify the project exists
-      const projectResult = await db.execute(
-        sql`SELECT id FROM website_projects WHERE id = ${validated.projectId} LIMIT 1`
-      )
+      const [project] = await db
+        .select({ id: websiteProjects.id })
+        .from(websiteProjects)
+        .where(eq(websiteProjects.id, validated.projectId))
+        .limit(1)
 
-      if ((projectResult as unknown as Array<{ id: string }>).length === 0) {
+      if (!project) {
         throw Errors.notFound('Website project')
       }
 
       // Update delivery status
-      await db.execute(
-        sql`UPDATE website_projects SET delivery_status = ${newStatus}, updated_at = now() WHERE id = ${validated.projectId}`
-      )
+      const updateData: {
+        deliveryStatus: WebsiteDeliveryStatus
+        updatedAt: Date
+        framerDeployedUrl?: string
+      } = {
+        deliveryStatus: newStatus,
+        updatedAt: new Date(),
+      }
 
       // If deployed, also update the deployed URL from webhook data
       if (validated.event === 'deployed' && validated.data?.url) {
-        await db.execute(
-          sql`UPDATE website_projects SET framer_deployed_url = ${validated.data.url as string} WHERE id = ${validated.projectId}`
-        )
+        updateData.framerDeployedUrl = validated.data.url as string
       }
+
+      await db
+        .update(websiteProjects)
+        .set(updateData)
+        .where(eq(websiteProjects.id, validated.projectId))
 
       return successResponse({ received: true, status: newStatus }, 200)
     },

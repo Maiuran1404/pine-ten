@@ -232,6 +232,13 @@
       "when": 1771920190206,
       "tag": "0032_gifted_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1771989657899,
+      "tag": "0033_gorgeous_wolfpack",
+      "breakpoints": true
     }
   ]
 }

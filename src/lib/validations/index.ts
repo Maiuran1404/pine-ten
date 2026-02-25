@@ -466,7 +466,7 @@ const clientOnboardingDataSchema = z.object({
     contactPhone: z.string().optional().nullable(),
     tagline: z.string().optional().nullable(),
     keywords: z.array(z.string()).optional().default([]),
-    creativeFocus: z.string().optional().nullable(),
+    creativeFocus: z.array(z.string()).optional().default([]),
     audiences: z
       .array(
         z.object({
@@ -698,6 +698,20 @@ export const joinViaInviteSchema = z.object({
   email: z.string().email('Valid email is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   whatsappNumber: z.string().min(1, 'WhatsApp number is required').max(30),
+})
+
+// ============ Template Image Schemas ============
+
+export const createTemplateImageSchema = z.object({
+  categoryKey: z.string().min(1).max(100),
+  optionKey: z.string().min(1).max(100).optional().nullable(),
+  imageUrl: z.string().url(),
+  sourceUrl: z.string().url().optional().nullable(),
+  displayOrder: z.number().int().optional().default(0),
+})
+
+export const updateTemplateImageSchema = createTemplateImageSchema.partial().extend({
+  isActive: z.boolean().optional(),
 })
 
 // ============ Helper Types ============

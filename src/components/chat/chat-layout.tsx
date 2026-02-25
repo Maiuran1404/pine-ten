@@ -86,6 +86,23 @@ interface ChatLayoutProps {
   }) => void
   onRemoveInspiration?: (id: string) => void
   onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
+  // Visual similarity & notes
+  onFindSimilar?: () => void
+  similarResults?: Array<{
+    inspiration: {
+      id: string
+      name: string
+      url: string
+      screenshotUrl: string
+      thumbnailUrl: string | null
+      industry: string[]
+      styleTags: string[]
+    }
+    score: number
+  }>
+  isFindingSimilar?: boolean
+  canFindSimilar?: boolean
+  onUpdateInspirationNotes?: (id: string, notes: string) => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -144,6 +161,11 @@ export function ChatLayout({
   onInspirationSelect,
   onRemoveInspiration,
   onCaptureScreenshot,
+  onFindSimilar,
+  similarResults,
+  isFindingSimilar,
+  canFindSimilar,
+  onUpdateInspirationNotes,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -232,6 +254,11 @@ export function ChatLayout({
                 onInspirationSelect={onInspirationSelect}
                 onRemoveInspiration={onRemoveInspiration}
                 onCaptureScreenshot={onCaptureScreenshot}
+                onFindSimilar={onFindSimilar}
+                similarResults={similarResults}
+                isFindingSimilar={isFindingSimilar}
+                canFindSimilar={canFindSimilar}
+                onUpdateInspirationNotes={onUpdateInspirationNotes}
               />
             </div>
 

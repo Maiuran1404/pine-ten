@@ -698,6 +698,13 @@ export function useChatInterfaceData({
     setIndustryFilter: websiteInspiration.setIndustryFilter,
     styleFilter: websiteInspiration.styleFilter,
     setStyleFilter: websiteInspiration.setStyleFilter,
+    // Visual similarity
+    findSimilarWebsites: websiteInspiration.findSimilar,
+    similarWebsiteResults: websiteInspiration.similarResults,
+    isFindingSimilar: websiteInspiration.isFindingSimilar,
+    canFindSimilar: websiteInspiration.canFindSimilar,
+    // Inspiration notes
+    updateInspirationNotes: websiteInspiration.updateInspirationNotes,
     handleStrategicReviewAction,
     handleSceneEdit: storyboard.handleSceneEdit,
     handleSectionEdit: storyboard.handleSectionEdit,

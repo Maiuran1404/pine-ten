@@ -48,6 +48,8 @@ import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
 import { FreelancerOnboarding } from '@/components/onboarding/freelancer-onboarding'
 import { BrandReferenceGridSkeleton, ImageWithSkeleton } from '@/components/ui/skeletons'
 import { useSubdomain } from '@/hooks/use-subdomain'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 const BRAND_COLOR_STEPS: OnboardingStep[] = [
   'brand-dna-reveal',
@@ -458,6 +460,86 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
   )
 }
 
+// Extracted outside render to avoid "cannot create components during render" lint error
+function EditorPanel({
+  children,
+  isOpen,
+  title,
+  isMobile,
+  onClose,
+}: {
+  children: React.ReactNode
+  isOpen: boolean
+  title: string
+  isMobile: boolean
+  onClose: () => void
+}) {
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="bg-[#141414] text-white border-white/10 rounded-t-2xl max-h-[70vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-white text-sm">{title}</SheetTitle>
+          </SheetHeader>
+          <div className="pt-4 pb-6">{children}</div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="overflow-hidden"
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function SectionEditButton({
+  section,
+  isActive,
+  onToggle,
+}: {
+  section: 'name' | 'colors' | 'typography' | 'style' | 'tone'
+  isActive: boolean
+  onToggle: (
+    section: 'name' | 'colors' | 'typography' | 'style' | 'tone',
+    isActive: boolean
+  ) => void
+}) {
+  return (
+    <button
+      onClick={() => onToggle(section, isActive)}
+      className={`p-1.5 rounded-lg transition-all ${
+        isActive
+          ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
+          : 'text-white/30 hover:text-white/60 hover:bg-white/5'
+      }`}
+      title={isActive ? 'Done' : 'Edit'}
+    >
+      {isActive ? (
+        <Check className="w-3.5 h-3.5" />
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+          />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 function BrandDNARevealStep({
   brandData,
   onAdjust: _onAdjust,
@@ -475,10 +557,21 @@ function BrandDNARevealStep({
   const [editingSection, setEditingSection] = useState<
     'name' | 'colors' | 'typography' | 'style' | 'tone' | null
   >(null)
+  const [editingColor, setEditingColor] = useState<'primary' | 'secondary' | 'accent' | null>(null)
   const [editingAudienceIndex, setEditingAudienceIndex] = useState<number | null>(null)
   const [showAddAudience, setShowAddAudience] = useState(false)
   const [newAudienceName, setNewAudienceName] = useState('')
   const [newAudienceType, setNewAudienceType] = useState<'b2b' | 'b2c'>('b2b')
+  // Track which logo URL failed so we auto-retry when URL changes
+  const [logoErrorUrl, setLogoErrorUrl] = useState<string | null>(null)
+  const isMobile = useIsMobile()
+
+  // Derive logoError from whether current URL matches the failed URL
+  const logoUrl = brandData.logoUrl || brandData.faviconUrl
+  const logoError = logoUrl ? logoUrl === logoErrorUrl : false
+
+  // Derive active editing color — null when not in colors section
+  const _activeEditingColor = editingSection === 'colors' ? editingColor : null
 
   // Derive initial style and tone from feel values if not explicitly set
   const getInitialVisualStyle = () => {
@@ -535,6 +628,30 @@ function BrandDNARevealStep({
     },
     {} as Record<string, typeof FONT_OPTIONS>
   )
+
+  // Confidence indicator helper
+  const getConfidenceIndicator = (confidence: number) => {
+    if (confidence >= 85) return { label: 'Strong match', color: '#22c55e' }
+    if (confidence >= 70) return { label: 'Good match', color: '#3b82f6' }
+    if (confidence >= 50) return { label: 'Possible match', color: '#eab308' }
+    return { label: 'Suggested', color: '#9ca3af' }
+  }
+
+  // Color getter/setter helpers for one-at-a-time color editing
+  const getColorValue = (which: 'primary' | 'secondary' | 'accent') => {
+    if (which === 'primary') return brandData.primaryColor || '#3b82f6'
+    if (which === 'secondary') return brandData.secondaryColor || '#8b5cf6'
+    return brandData.accentColor || '#f59e0b'
+  }
+
+  const setColorValue = (which: 'primary' | 'secondary' | 'accent', color: string) => {
+    if (which === 'primary') setBrandData({ ...brandData, primaryColor: color })
+    else if (which === 'secondary') setBrandData({ ...brandData, secondaryColor: color })
+    else setBrandData({ ...brandData, accentColor: color })
+  }
+
+  // EditorPanel wrapper - uses the extracted component below
+  // (extracted to avoid "cannot create components during render" lint error)
 
   // Color presets for quick selection
   const colorPresets = [
@@ -611,36 +728,14 @@ function BrandDNARevealStep({
     setEditingAudienceIndex(null)
   }
 
-  const SectionEditButton = ({
-    section,
-    isActive,
-  }: {
-    section: 'name' | 'colors' | 'typography' | 'style' | 'tone'
+  // SectionEditButton uses the extracted component below
+  // (extracted to avoid "cannot create components during render" lint error)
+  const handleToggleSection = (
+    section: 'name' | 'colors' | 'typography' | 'style' | 'tone',
     isActive: boolean
-  }) => (
-    <button
-      onClick={() => setEditingSection(isActive ? null : section)}
-      className={`p-1.5 rounded-lg transition-all ${
-        isActive
-          ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
-          : 'text-white/30 hover:text-white/60 hover:bg-white/5'
-      }`}
-      title={isActive ? 'Done' : 'Edit'}
-    >
-      {isActive ? (
-        <Check className="w-3.5 h-3.5" />
-      ) : (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-          />
-        </svg>
-      )}
-    </button>
-  )
+  ) => {
+    setEditingSection(isActive ? null : section)
+  }
 
   return (
     <motion.div
@@ -649,6 +744,17 @@ function BrandDNARevealStep({
       animate="show"
       className="w-full max-w-xl"
     >
+      {/* Celebration header */}
+      <motion.div variants={staggerItem} className="flex items-center gap-2.5 mb-5">
+        <div className="w-8 h-8 rounded-xl bg-[#9AA48C]/15 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-[#9AA48C]" />
+        </div>
+        <div>
+          <p className="text-white text-sm font-medium">Here&apos;s what we found</p>
+          <p className="text-white/40 text-xs">Your brand DNA, extracted and ready to refine</p>
+        </div>
+      </motion.div>
+
       {/* Glassmorphic Card - Option A width */}
       <motion.div
         variants={staggerItem}
@@ -673,7 +779,7 @@ function BrandDNARevealStep({
           {/* Header with Logo and Name - Editable inline */}
           <div className="flex items-start gap-4 mb-6">
             <div
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor}, ${
                   secondaryColor || primaryColor
@@ -681,17 +787,38 @@ function BrandDNARevealStep({
                 boxShadow: `0 8px 32px ${primaryColor}30`,
               }}
             >
-              <span className="text-white font-bold text-2xl sm:text-3xl" style={{ fontFamily }}>
-                {brandData.name?.[0]?.toUpperCase() || 'B'}
-              </span>
+              {(brandData.logoUrl || brandData.faviconUrl) && !logoError ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={brandData.logoUrl || brandData.faviconUrl}
+                  alt={brandData.name || 'Brand logo'}
+                  className="w-full h-full object-contain p-2"
+                  onError={() => setLogoErrorUrl(brandData.logoUrl || brandData.faviconUrl || null)}
+                />
+              ) : (
+                <span className="text-white font-bold text-2xl sm:text-3xl" style={{ fontFamily }}>
+                  {brandData.name?.[0]?.toUpperCase() || 'B'}
+                </span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 group/name">
                 <p className="text-white/40 text-xs uppercase tracking-wider font-medium">
                   Your Brand
                 </p>
-                {/* eslint-disable-next-line react-hooks/static-components */}
-                <SectionEditButton section="name" isActive={editingSection === 'name'} />
+                <div
+                  className={
+                    editingSection === 'name'
+                      ? ''
+                      : 'opacity-0 group-hover/name:opacity-100 transition-opacity'
+                  }
+                >
+                  <SectionEditButton
+                    section="name"
+                    isActive={editingSection === 'name'}
+                    onToggle={handleToggleSection}
+                  />
+                </div>
               </div>
               {editingSection === 'name' ? (
                 <input
@@ -710,6 +837,43 @@ function BrandDNARevealStep({
                 >
                   {brandData.name || 'Your Brand'}
                 </h1>
+              )}
+              {/* Compact social links - icon only */}
+              {(brandData.socialLinks?.linkedin ||
+                brandData.socialLinks?.twitter ||
+                brandData.socialLinks?.instagram) && (
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  {brandData.socialLinks?.linkedin && (
+                    <a
+                      href={brandData.socialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/30 hover:text-[#0A66C2] transition-colors"
+                    >
+                      <Linkedin className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  {brandData.socialLinks?.twitter && (
+                    <a
+                      href={brandData.socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/30 hover:text-white/70 transition-colors"
+                    >
+                      <Twitter className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  {brandData.socialLinks?.instagram && (
+                    <a
+                      href={brandData.socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/30 hover:text-[#E4405F] transition-colors"
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -799,137 +963,90 @@ function BrandDNARevealStep({
             {/* Expandable editor panels */}
             <AnimatePresence>
               {editingSection === 'colors' && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
+                <EditorPanel
+                  isOpen={editingSection === 'colors'}
+                  title="Brand Colors"
+                  isMobile={isMobile}
+                  onClose={() => setEditingSection(null)}
                 >
                   <div className="pt-4 pb-2 space-y-3">
-                    {/* Primary Color */}
-                    <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">Primary</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {colorPresets.slice(0, 10).map((color) => (
-                          <button
-                            key={color}
-                            onClick={() =>
-                              setBrandData({
-                                ...brandData,
-                                primaryColor: color,
-                              })
-                            }
-                            className={`w-8 h-8 rounded-lg transition-all ${
-                              brandData.primaryColor === color
-                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
-                                : 'hover:scale-110'
-                            }`}
-                            style={{ backgroundColor: color }}
+                    {/* Color swatches row - click to expand */}
+                    <div className="flex items-center gap-3">
+                      {(['primary', 'secondary', 'accent'] as const).map((which) => (
+                        <button
+                          key={which}
+                          onClick={() => setEditingColor(editingColor === which ? null : which)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
+                            editingColor === which
+                              ? 'bg-white/10 ring-1 ring-white/20'
+                              : 'hover:bg-white/5'
+                          }`}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-lg"
+                            style={{
+                              backgroundColor: getColorValue(which),
+                              boxShadow: `0 2px 8px ${getColorValue(which)}30`,
+                            }}
                           />
-                        ))}
-                        <div className="relative">
-                          <input
-                            type="color"
-                            value={brandData.primaryColor || '#3b82f6'}
-                            onChange={(e) =>
-                              setBrandData({
-                                ...brandData,
-                                primaryColor: e.target.value,
-                              })
-                            }
-                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                          />
-                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-sm">+</span>
-                          </div>
-                        </div>
-                      </div>
+                          <span className="text-white/50 text-xs capitalize">{which}</span>
+                        </button>
+                      ))}
                     </div>
-                    {/* Secondary Color */}
-                    <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">Secondary</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {colorPresets.slice(0, 10).map((color) => (
-                          <button
-                            key={color}
-                            onClick={() =>
-                              setBrandData({
-                                ...brandData,
-                                secondaryColor: color,
-                              })
-                            }
-                            className={`w-8 h-8 rounded-lg transition-all ${
-                              brandData.secondaryColor === color
-                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
-                                : 'hover:scale-110'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                        <div className="relative">
-                          <input
-                            type="color"
-                            value={brandData.secondaryColor || '#8b5cf6'}
-                            onChange={(e) =>
-                              setBrandData({
-                                ...brandData,
-                                secondaryColor: e.target.value,
-                              })
-                            }
-                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                          />
-                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-sm">+</span>
+
+                    {/* Single expanded preset grid */}
+                    <AnimatePresence>
+                      {editingColor && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pt-2">
+                            <p className="text-white/40 text-xs font-medium mb-2 capitalize">
+                              {editingColor}
+                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {colorPresets.map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => setColorValue(editingColor, color)}
+                                  className={`w-8 h-8 rounded-lg transition-all ${
+                                    getColorValue(editingColor) === color
+                                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
+                                      : 'hover:scale-110'
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                              <div className="relative">
+                                <input
+                                  type="color"
+                                  value={getColorValue(editingColor)}
+                                  onChange={(e) => setColorValue(editingColor, e.target.value)}
+                                  className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
+                                />
+                                <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                                  <span className="text-white/40 text-sm">+</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Accent Color */}
-                    <div>
-                      <p className="text-white/40 text-xs font-medium mb-2">Accent</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {colorPresets.slice(5, 15).map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => setBrandData({ ...brandData, accentColor: color })}
-                            className={`w-8 h-8 rounded-lg transition-all ${
-                              brandData.accentColor === color
-                                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
-                                : 'hover:scale-110'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                        <div className="relative">
-                          <input
-                            type="color"
-                            value={brandData.accentColor || '#f59e0b'}
-                            onChange={(e) =>
-                              setBrandData({
-                                ...brandData,
-                                accentColor: e.target.value,
-                              })
-                            }
-                            className="w-8 h-8 rounded-lg cursor-pointer opacity-0 absolute inset-0"
-                          />
-                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/40 text-sm">+</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </motion.div>
+                </EditorPanel>
               )}
 
               {editingSection === 'typography' && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
+                <EditorPanel
+                  isOpen={editingSection === 'typography'}
+                  title="Typography"
+                  isMobile={isMobile}
+                  onClose={() => setEditingSection(null)}
                 >
                   <div className="pt-4 max-h-48 overflow-y-auto">
                     {Object.entries(groupedFonts).map(([category, fonts]) => (
@@ -963,16 +1080,15 @@ function BrandDNARevealStep({
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </EditorPanel>
               )}
 
               {editingSection === 'style' && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
+                <EditorPanel
+                  isOpen={editingSection === 'style'}
+                  title="Visual Style"
+                  isMobile={isMobile}
+                  onClose={() => setEditingSection(null)}
                 >
                   <div className="pt-4 flex flex-wrap gap-2">
                     {VISUAL_STYLE_OPTIONS.map((style) => {
@@ -998,16 +1114,15 @@ function BrandDNARevealStep({
                       )
                     })}
                   </div>
-                </motion.div>
+                </EditorPanel>
               )}
 
               {editingSection === 'tone' && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
+                <EditorPanel
+                  isOpen={editingSection === 'tone'}
+                  title="Brand Tone"
+                  isMobile={isMobile}
+                  onClose={() => setEditingSection(null)}
                 >
                   <div className="pt-4 flex flex-wrap gap-2">
                     {BRAND_TONE_OPTIONS.map((tone) => {
@@ -1033,67 +1148,10 @@ function BrandDNARevealStep({
                       )
                     })}
                   </div>
-                </motion.div>
+                </EditorPanel>
               )}
             </AnimatePresence>
           </div>
-
-          {/* Social Links - Compact inline */}
-          {(brandData.socialLinks?.linkedin ||
-            brandData.socialLinks?.twitter ||
-            brandData.socialLinks?.instagram) && (
-            <div className="mb-5">
-              <span className="text-white/40 text-xs font-medium uppercase tracking-wider block mb-2">
-                Social
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {brandData.socialLinks?.linkedin && (
-                  <a
-                    href={brandData.socialLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{
-                      background: 'rgba(10, 102, 194, 0.15)',
-                      color: '#5BA3E0',
-                    }}
-                  >
-                    <Linkedin className="w-3.5 h-3.5" />
-                    LinkedIn
-                  </a>
-                )}
-                {brandData.socialLinks?.twitter && (
-                  <a
-                    href={brandData.socialLinks.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    }}
-                  >
-                    <Twitter className="w-3.5 h-3.5" />X
-                  </a>
-                )}
-                {brandData.socialLinks?.instagram && (
-                  <a
-                    href={brandData.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                    style={{
-                      background: 'rgba(228, 64, 95, 0.15)',
-                      color: '#E4405F',
-                    }}
-                  >
-                    <Instagram className="w-3.5 h-3.5" />
-                    Instagram
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Target Audiences - Editable with marketplace support */}
           <div className="mb-5">
@@ -1295,7 +1353,7 @@ function BrandDNARevealStep({
                       )}
                       <button
                         onClick={() => handleRemoveAudience(index)}
-                        className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                        className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
                         title="Remove"
                       >
                         <svg
@@ -1313,9 +1371,18 @@ function BrandDNARevealStep({
                         </svg>
                       </button>
                     </div>
-                    <span className="text-white/20 text-[9px] flex-shrink-0 ml-2">
-                      {audience.confidence}%
-                    </span>
+                    {(() => {
+                      const indicator = getConfidenceIndicator(audience.confidence)
+                      return (
+                        <span className="flex items-center gap-1 flex-shrink-0 ml-2">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: indicator.color }}
+                          />
+                          <span className="text-white/30 text-[9px]">{indicator.label}</span>
+                        </span>
+                      )
+                    })()}
                   </div>
                 ))}
               </div>
@@ -1347,11 +1414,16 @@ function BrandDNARevealStep({
             </button>
             <button
               onClick={onContinue}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white text-black/90"
+              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white text-black/90 flex flex-col items-center justify-center"
               style={{ background: 'rgba(245, 245, 240, 0.95)' }}
             >
-              Looks right
-              <Check className="w-4 h-4 inline ml-1.5" />
+              <span className="flex items-center">
+                Continue
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </span>
+              <span className="text-[10px] text-black/50 font-normal mt-0.5">
+                You can always adjust later
+              </span>
             </button>
           </div>
         </div>
@@ -1871,13 +1943,15 @@ interface BrandReference {
   score?: number
 }
 
-// Brand Card Preview Panel for DNA Reveal step (Option A)
+// Brand Card Preview Panel - Mock LinkedIn social post
 function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
+  const [logoErrUrl, setLogoErrUrl] = useState<string | null>(null)
   const colors = [brandData.primaryColor, brandData.secondaryColor, brandData.accentColor].filter(
     Boolean
   )
   const primaryColor = colors[0] || '#3b82f6'
   const secondaryColor = colors[1] || '#8b5cf6'
+  const accentColor = colors[2] || '#f59e0b'
 
   const getFontFamily = (fontName: string) => {
     const font = FONT_OPTIONS.find((f) => f.value === fontName)
@@ -1885,165 +1959,139 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
   }
   const fontFamily = getFontFamily(brandData.primaryFont || 'Satoshi')
 
+  // Re-animate on name/font changes
+  const animationKey = `${brandData.name}-${brandData.primaryFont}`
+
+  // Derive logo error from whether current URL matches the failed URL
+  const currentLogoUrl = brandData.logoUrl || brandData.faviconUrl
+  const logoErr = currentLogoUrl ? currentLogoUrl === logoErrUrl : false
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full max-w-md"
+      className="w-full max-w-sm"
     >
-      {/* Brand Card Preview */}
       <div className="relative">
         {/* Floating label */}
         <div className="text-center mb-6">
-          <span className="text-white/30 text-xs uppercase tracking-widest">
-            Your Brand at a Glance
-          </span>
+          <span className="text-white/30 text-xs uppercase tracking-widest">Live Preview</span>
         </div>
 
-        {/* Main Card */}
+        {/* Mock Social Post Card */}
         <motion.div
+          key={animationKey}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="relative rounded-3xl overflow-hidden"
+          className="relative rounded-2xl overflow-hidden"
           style={{
-            background: `linear-gradient(135deg, ${primaryColor}15 0%, ${secondaryColor}10 50%, transparent 100%)`,
-            border: `1px solid ${primaryColor}30`,
-            boxShadow: `0 0 80px ${primaryColor}15, 0 0 40px ${secondaryColor}10`,
+            background: 'rgba(20, 20, 20, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
           }}
         >
-          {/* Card inner */}
-          <div className="p-8 backdrop-blur-sm">
-            {/* Logo/Initial */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
-              className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 mx-auto"
-              style={{
-                background: `linear-gradient(135deg, ${primaryColor}, ${
-                  secondaryColor || primaryColor
-                })`,
-                boxShadow: `0 8px 32px ${primaryColor}40`,
-              }}
-            >
-              <span className="text-white text-3xl font-bold" style={{ fontFamily }}>
-                {brandData.name?.[0]?.toUpperCase() || 'B'}
-              </span>
-            </motion.div>
+          {/* Post header - avatar + name + industry */}
+          <div className="p-5 pb-0">
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center overflow-hidden shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                }}
+              >
+                {(brandData.logoUrl || brandData.faviconUrl) && !logoErr ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={brandData.logoUrl || brandData.faviconUrl}
+                    alt=""
+                    className="w-full h-full object-contain p-1.5"
+                    onError={() => setLogoErrUrl(brandData.logoUrl || brandData.faviconUrl || null)}
+                  />
+                ) : (
+                  <span className="text-white font-bold text-lg" style={{ fontFamily }}>
+                    {brandData.name?.[0]?.toUpperCase() || 'B'}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-white text-sm font-semibold truncate" style={{ fontFamily }}>
+                  {brandData.name || 'Your Brand'}
+                </p>
+                <p className="text-white/40 text-xs truncate">
+                  {brandData.industry || 'Your industry'}
+                </p>
+              </div>
+              <span className="text-white/20 text-[10px] ml-auto">1h</span>
+            </div>
 
-            {/* Brand Name */}
-            <motion.h2
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="text-3xl text-white font-semibold text-center mb-2"
+            {/* Post body */}
+            <p
+              className="text-white/70 text-sm leading-relaxed mb-4 line-clamp-3"
               style={{ fontFamily }}
             >
-              {brandData.name || 'Your Brand'}
-            </motion.h2>
+              {brandData.tagline ||
+                brandData.description?.slice(0, 120) ||
+                'Your brand story appears here — edit colors, fonts, and details on the left to see changes in real-time.'}
+            </p>
+          </div>
 
-            {/* Tagline/Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="text-white/50 text-sm text-center mb-8 line-clamp-2 max-w-xs mx-auto"
-            >
-              {brandData.tagline || brandData.description?.slice(0, 80) || 'Your brand story'}
-            </motion.p>
+          {/* Brand color banner */}
+          <div className="flex h-2">
+            <div className="flex-1" style={{ backgroundColor: primaryColor }} />
+            <div className="flex-1" style={{ backgroundColor: secondaryColor }} />
+            <div className="flex-1" style={{ backgroundColor: accentColor }} />
+          </div>
 
-            {/* Color Palette */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="flex justify-center gap-3 mb-6"
-            >
-              {colors.length > 0 ? (
-                colors.map((color, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.9 + i * 0.1, type: 'spring' }}
-                    className="w-10 h-10 rounded-xl"
-                    style={{
-                      backgroundColor: color,
-                      boxShadow: `0 4px 12px ${color}50`,
-                    }}
+          {/* Mock engagement row */}
+          <div className="px-5 py-3 flex items-center justify-between border-t border-white/[0.06]">
+            <div className="flex items-center gap-4">
+              <span className="text-white/30 text-xs flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
                   />
-                ))
-              ) : (
-                <>
-                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#3b82f6' }} />
-                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#8b5cf6' }} />
-                  <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: '#f59e0b' }} />
-                </>
-              )}
-            </motion.div>
-
-            {/* Typography Sample */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.1 }}
-              className="text-center p-4 rounded-xl"
-              style={{ background: 'rgba(255, 255, 255, 0.03)' }}
-            >
-              <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2">Typography</p>
-              <p className="text-white text-lg" style={{ fontFamily }}>
-                {brandData.primaryFont || 'Satoshi'}
-              </p>
-              <p className="text-white/40 text-xs mt-1" style={{ fontFamily }}>
-                Aa Bb Cc Dd Ee Ff Gg
-              </p>
-            </motion.div>
-
-            {/* Style & Tone badges */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2 }}
-              className="flex flex-wrap justify-center gap-2 mt-6"
-            >
-              {brandData.visualStyle && (
-                <span
-                  className="px-3 py-1.5 rounded-full text-xs font-medium"
-                  style={{
-                    background: `${primaryColor}20`,
-                    color: primaryColor,
-                  }}
-                >
-                  {VISUAL_STYLE_OPTIONS.find((o) => o.value === brandData.visualStyle)?.label ||
-                    brandData.visualStyle}
-                </span>
-              )}
-              {brandData.brandTone && (
-                <span
-                  className="px-3 py-1.5 rounded-full text-xs font-medium"
-                  style={{
-                    background: `${secondaryColor}20`,
-                    color: secondaryColor,
-                  }}
-                >
-                  {BRAND_TONE_OPTIONS.find((o) => o.value === brandData.brandTone)?.label ||
-                    brandData.brandTone}
-                </span>
-              )}
-            </motion.div>
+                </svg>
+                42
+              </span>
+              <span className="text-white/30 text-xs flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                7
+              </span>
+              <span className="text-white/30 text-xs flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                3
+              </span>
+            </div>
           </div>
         </motion.div>
 
         {/* Decorative elements */}
         <div
-          className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[80px] opacity-30"
+          className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[80px] opacity-20"
           style={{ background: primaryColor }}
         />
         <div
-          className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-[60px] opacity-20"
+          className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-[60px] opacity-15"
           style={{ background: secondaryColor }}
         />
       </div>
@@ -2459,6 +2507,47 @@ function BrandSignalSlider({
   )
 }
 
+// Convert hex color to RGB values
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null
+}
+
+// Generate a deterministic fallback voice summary when Claude's brandVoiceSummary is empty
+function generateFallbackVoiceSummary(
+  brandData: BrandData,
+  signals: { tone: number; density: number; warmth: number; energy: number }
+): string {
+  const toneDescriptor =
+    signals.tone < 30
+      ? 'composed professionalism'
+      : signals.tone < 50
+        ? 'measured confidence'
+        : signals.tone < 70
+          ? 'approachable warmth'
+          : 'spirited personality'
+
+  const energyDescriptor =
+    signals.energy < 30
+      ? 'calm, understated energy'
+      : signals.energy < 50
+        ? 'steady, grounded energy'
+        : signals.energy < 70
+          ? 'balanced, dynamic energy'
+          : 'vibrant, high energy'
+
+  const brandToneOption = BRAND_TONE_OPTIONS.find((o) => o.value === brandData.brandTone)
+  const toneName = brandToneOption?.label.toLowerCase() || 'professional'
+
+  return `Your brand speaks with ${toneDescriptor} and ${energyDescriptor}. The overall voice reads as ${toneName} — consistent and intentional.`
+}
+
 function FineTuneStep({
   brandData,
   setBrandData,
@@ -2514,19 +2603,70 @@ function FineTuneStep({
     return snapToStep(rawValue, numLevels)
   }
 
+  // Compute derived values for archetype card
+  const signals = {
+    tone: getSignalValue('signalTone'),
+    density: getSignalValue('signalDensity'),
+    warmth: getSignalValue('signalWarmth'),
+    energy: getSignalValue('signalEnergy'),
+  }
+  const archetypeKey = getBrandArchetype(signals)
+  const archetype = BRAND_ARCHETYPES[archetypeKey] || {
+    name: 'Versatile Classic',
+    brands: ['Google', 'Microsoft', 'Adobe'],
+  }
+  const brandToneOption = BRAND_TONE_OPTIONS.find((o) => o.value === brandData.brandTone)
+  const brandToneLabel = brandToneOption?.label || 'Professional & Trustworthy'
+  const voiceSummary =
+    brandData.brandVoiceSummary || generateFallbackVoiceSummary(brandData, signals)
+
+  // Compute rgba background from brand primary color
+  const rgb = hexToRgb(accentColor)
+  const cardBg = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.06)` : 'rgba(154, 164, 140, 0.06)'
+  const cardBorder = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : 'rgba(154, 164, 140, 0.15)'
+
   return (
     <GlowingCard glowColor="#9AA48C" className="max-w-lg">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
-        <motion.div variants={staggerItem} className="text-left mb-8">
+        {/* Heading + AI voice summary */}
+        <motion.div variants={staggerItem} className="text-left mb-6">
           <h1
-            className="text-2xl sm:text-3xl text-white mb-2"
+            className="text-2xl sm:text-3xl text-white mb-3"
             style={{ fontFamily: "'Times New Roman', serif" }}
           >
-            Let&apos;s dial it in
+            Your brand voice
           </h1>
-          <p className="text-white/50 text-sm">
-            Adjust these core signals to match your brand feel.
-          </p>
+          <p className="text-white/60 text-sm leading-relaxed">{voiceSummary}</p>
+        </motion.div>
+
+        {/* Archetype assessment card */}
+        <motion.div
+          variants={staggerItem}
+          className="rounded-xl p-4 mb-6"
+          style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+        >
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-white text-lg" style={{ fontFamily: "'Times New Roman', serif" }}>
+              {archetype.name}
+            </span>
+            <span
+              className="text-xs font-medium px-2.5 py-1 rounded-full text-[#9AA48C]"
+              style={{
+                background: 'rgba(154, 164, 140, 0.15)',
+                border: '1px solid rgba(154, 164, 140, 0.3)',
+              }}
+            >
+              {brandToneLabel}
+            </span>
+          </div>
+          <p className="text-white/40 text-xs mt-2">Similar to {archetype.brands.join(', ')}</p>
+        </motion.div>
+
+        {/* Fine-tune label */}
+        <motion.div variants={staggerItem} className="mb-4">
+          <span className="text-white/30 text-[11px] uppercase tracking-wider font-medium">
+            Fine-tune if needed
+          </span>
         </motion.div>
 
         <div className="space-y-6 mb-8">
@@ -3790,7 +3930,10 @@ function OnboardingContent() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || 'Failed to save onboarding'
+        const errorMessage =
+          typeof errorData.error === 'string'
+            ? errorData.error
+            : errorData.message || 'Failed to save onboarding'
         console.error('Onboarding API error:', errorMessage, errorData)
         throw new Error(errorMessage)
       }

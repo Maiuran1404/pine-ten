@@ -19,6 +19,9 @@ import {
   ExternalLink,
   ArrowLeft,
   Eye,
+  Sparkles,
+  Columns2,
+  LayoutGrid,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -39,6 +42,19 @@ interface GalleryItem {
   styleTags: string[]
 }
 
+interface SimilarResult {
+  inspiration: {
+    id: string
+    name: string
+    url: string
+    screenshotUrl: string
+    thumbnailUrl: string | null
+    industry: string[]
+    styleTags: string[]
+  }
+  score: number
+}
+
 interface InspirationPanelProps {
   selectedInspirations: WebsiteInspiration[]
   inspirationGallery: GalleryItem[]
@@ -53,6 +69,13 @@ interface InspirationPanelProps {
   }) => void
   onRemoveInspiration: (id: string) => void
   onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
+  // Visual similarity
+  onFindSimilar?: () => void
+  similarResults?: SimilarResult[]
+  isFindingSimilar?: boolean
+  canFindSimilar?: boolean
+  // Comparison & notes
+  onUpdateInspirationNotes?: (id: string, notes: string) => void
   className?: string
 }
 
@@ -376,6 +399,118 @@ function SelectedWebsiteCard({
 // MAIN PANEL
 // =============================================================================
 
+// =============================================================================
+// COMPARISON VIEW — side-by-side screenshots with notes
+// =============================================================================
+
+function ComparisonView({
+  inspirations,
+  onUpdateNotes,
+}: {
+  inspirations: WebsiteInspiration[]
+  onUpdateNotes?: (id: string, notes: string) => void
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {inspirations.map((item) => (
+          <div key={item.id} className="space-y-2">
+            <div className="rounded-lg overflow-hidden border border-border/40 bg-muted">
+              <div className="aspect-[4/3]">
+                {item.screenshotUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={item.screenshotUrl}
+                    alt={item.name}
+                    className="w-full h-full object-cover object-top"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Globe className="w-6 h-6 text-muted-foreground/25" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <span className="text-xs font-medium text-foreground truncate block">{item.name}</span>
+            {onUpdateNotes && (
+              <textarea
+                value={item.notes ?? ''}
+                onChange={(e) => onUpdateNotes(item.id, e.target.value)}
+                placeholder="Add notes..."
+                maxLength={500}
+                className="w-full text-xs bg-muted/50 border border-border/30 rounded-md px-2 py-1.5 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                rows={3}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// SIMILAR RESULTS — 2-column grid with match % badge
+// =============================================================================
+
+function SimilarResultsGrid({
+  results,
+  selectedIds,
+  onSelect,
+}: {
+  results: SimilarResult[]
+  selectedIds: string[]
+  onSelect: (item: { id: string; name: string; url: string; screenshotUrl: string }) => void
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {results.map((result) => (
+        <div
+          key={result.inspiration.id}
+          className="relative rounded-lg overflow-hidden cursor-pointer group border border-border/40 hover:border-border transition-colors"
+          onClick={() =>
+            onSelect({
+              id: result.inspiration.id,
+              name: result.inspiration.name,
+              url: result.inspiration.url,
+              screenshotUrl: result.inspiration.screenshotUrl,
+            })
+          }
+        >
+          <div className="aspect-[4/3] bg-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={result.inspiration.screenshotUrl}
+              alt={result.inspiration.name}
+              className="w-full h-full object-cover object-top"
+              loading="lazy"
+            />
+          </div>
+          {/* Match % badge */}
+          <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+            {Math.round(result.score * 100)}%
+          </div>
+          {/* Name overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/70 to-transparent flex items-end px-2 pb-1.5">
+            <span className="text-[11px] font-medium text-white leading-tight truncate">
+              {result.inspiration.name}
+            </span>
+          </div>
+          {/* Selected ring */}
+          {selectedIds.includes(result.inspiration.id) && (
+            <div className="absolute inset-0 ring-2 ring-inset ring-emerald-500 rounded-lg pointer-events-none" />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// =============================================================================
+// MAIN PANEL
+// =============================================================================
+
 export function InspirationPanel({
   selectedInspirations,
   inspirationGallery,
@@ -385,10 +520,18 @@ export function InspirationPanel({
   onSelectGalleryItem,
   onRemoveInspiration,
   onCaptureScreenshot,
+  onFindSimilar,
+  similarResults,
+  isFindingSimilar,
+  canFindSimilar,
+  onUpdateInspirationNotes,
   className,
 }: InspirationPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [previewingItem, setPreviewingItem] = useState<GalleryItem | null>(null)
+  const [viewMode, setViewMode] = useState<'gallery' | 'comparison'>('gallery')
+
+  const showComparisonToggle = selectedInspirations.length >= 2
 
   // ── Preview mode — full-panel takeover ──
   if (previewingItem) {
@@ -421,84 +564,159 @@ export function InspirationPanel({
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-emerald-600" />
           <span className="text-sm font-semibold text-foreground">Inspiration</span>
+          <div className="flex-1" />
+          {/* Gallery / Comparison toggle */}
+          {showComparisonToggle && (
+            <div className="flex items-center gap-0.5 bg-muted/50 rounded-md p-0.5">
+              <button
+                onClick={() => setViewMode('gallery')}
+                className={cn(
+                  'p-1 rounded transition-colors',
+                  viewMode === 'gallery'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Gallery view"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('comparison')}
+                className={cn(
+                  'p-1 rounded transition-colors',
+                  viewMode === 'comparison'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Compare side-by-side"
+              >
+                <Columns2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         <p className="text-xs text-muted-foreground/60 mt-1">
           {selectedInspirations.length === 0
             ? 'Tap a website to preview, then select the ones you like'
-            : 'Add more references or continue chatting'}
+            : viewMode === 'comparison'
+              ? 'Compare selections side-by-side and add notes'
+              : 'Add more references or continue chatting'}
         </p>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="px-3 py-3 space-y-4">
-          {/* Selected section */}
-          {selectedInspirations.length > 0 && (
-            <div>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2 block">
-                Selected ({selectedInspirations.length})
-              </span>
-              <AnimatePresence mode="popLayout">
-                <div className="space-y-2">
-                  {selectedInspirations.map((item) => (
-                    <SelectedWebsiteCard
-                      key={item.id}
-                      item={item}
-                      isExpanded={expandedId === item.id}
-                      onToggleExpand={() =>
-                        setExpandedId((prev) => (prev === item.id ? null : item.id))
-                      }
-                      onRemove={() => onRemoveInspiration(item.id)}
-                    />
-                  ))}
-                </div>
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Gallery section */}
-          {(isGalleryLoading || inspirationGallery.length > 0) && (
-            <div>
+          {/* Comparison view */}
+          {viewMode === 'comparison' && selectedInspirations.length >= 2 ? (
+            <ComparisonView
+              inspirations={selectedInspirations}
+              onUpdateNotes={onUpdateInspirationNotes}
+            />
+          ) : (
+            <>
+              {/* Selected section */}
               {selectedInspirations.length > 0 && (
-                <div className="border-t border-dashed border-border/40 mb-4" />
-              )}
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2.5 block">
-                Suggestions
-              </span>
-
-              {isGalleryLoading ? (
-                <div className="grid grid-cols-2 gap-2.5">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="aspect-[4/3] rounded-lg" />
-                  ))}
+                <div>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2 block">
+                    Selected ({selectedInspirations.length})
+                  </span>
+                  <AnimatePresence mode="popLayout">
+                    <div className="space-y-2">
+                      {selectedInspirations.map((item) => (
+                        <SelectedWebsiteCard
+                          key={item.id}
+                          item={item}
+                          isExpanded={expandedId === item.id}
+                          onToggleExpand={() =>
+                            setExpandedId((prev) => (prev === item.id ? null : item.id))
+                          }
+                          onRemove={() => onRemoveInspiration(item.id)}
+                        />
+                      ))}
+                    </div>
+                  </AnimatePresence>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2.5">
-                  {inspirationGallery.map((item) => (
-                    <GalleryCard
-                      key={item.id}
-                      item={item}
-                      selected={selectedIds.includes(item.id)}
-                      onPreview={() => setPreviewingItem(item)}
+              )}
+
+              {/* Find Similar section */}
+              {canFindSimilar && onFindSimilar && (
+                <div>
+                  {selectedInspirations.length > 0 && (
+                    <div className="border-t border-dashed border-border/40 mb-4" />
+                  )}
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60">
+                      Find Similar
+                    </span>
+                    <button
+                      onClick={onFindSimilar}
+                      disabled={isFindingSimilar}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-[11px] font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
+                    >
+                      {isFindingSimilar ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      {isFindingSimilar ? 'Searching...' : 'Find similar sites'}
+                    </button>
+                  </div>
+                  {similarResults && similarResults.length > 0 && (
+                    <SimilarResultsGrid
+                      results={similarResults}
+                      selectedIds={selectedIds}
+                      onSelect={onSelectGalleryItem}
                     />
-                  ))}
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* URL input */}
-          {onCaptureScreenshot && (
-            <div className="pt-3 border-t border-border/30">
-              <UrlInput onSubmit={onCaptureScreenshot} isLoading={isCapturingScreenshot} />
-            </div>
-          )}
+              {/* Gallery section */}
+              {(isGalleryLoading || inspirationGallery.length > 0) && (
+                <div>
+                  {(selectedInspirations.length > 0 || (canFindSimilar && onFindSimilar)) && (
+                    <div className="border-t border-dashed border-border/40 mb-4" />
+                  )}
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2.5 block">
+                    Suggestions
+                  </span>
 
-          {/* Capturing indicator */}
-          {isCapturingScreenshot && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Capturing screenshot...
-            </div>
+                  {isGalleryLoading ? (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="aspect-[4/3] rounded-lg" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {inspirationGallery.map((item) => (
+                        <GalleryCard
+                          key={item.id}
+                          item={item}
+                          selected={selectedIds.includes(item.id)}
+                          onPreview={() => setPreviewingItem(item)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* URL input */}
+              {onCaptureScreenshot && (
+                <div className="pt-3 border-t border-border/30">
+                  <UrlInput onSubmit={onCaptureScreenshot} isLoading={isCapturingScreenshot} />
+                </div>
+              )}
+
+              {/* Capturing indicator */}
+              {isCapturingScreenshot && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Capturing screenshot...
+                </div>
+              )}
+            </>
           )}
         </div>
       </ScrollArea>

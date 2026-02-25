@@ -228,15 +228,15 @@ export function WebsiteFlow() {
 
   // Determine if project is approved and extract delivery state
   const isApproved = flow.project.data?.status === 'APPROVED'
-  const projectData = flow.project.data as Record<string, unknown> | undefined
-  const deliveryState = isApproved
-    ? {
-        status: ((projectData?.deliveryStatus as string) || 'PENDING') as DeliveryStatus,
-        framerProjectUrl: projectData?.framerProjectUrl as string | undefined,
-        framerPreviewUrl: projectData?.framerPreviewUrl as string | undefined,
-        framerDeployedUrl: projectData?.framerDeployedUrl as string | undefined,
-      }
-    : undefined
+  const deliveryState =
+    isApproved && flow.project.data
+      ? {
+          status: (flow.project.data.deliveryStatus || 'PENDING') as DeliveryStatus,
+          framerProjectUrl: flow.project.data.framerProjectUrl ?? undefined,
+          framerPreviewUrl: flow.project.data.framerPreviewUrl ?? undefined,
+          framerDeployedUrl: flow.project.data.framerDeployedUrl ?? undefined,
+        }
+      : undefined
 
   // Determine right panel content based on phase
   const renderRightPanel = () => {
