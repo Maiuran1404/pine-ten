@@ -8,13 +8,15 @@ if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is not set')
 }
 
+const isDev = process.env.NODE_ENV === 'development'
+
 // Create the postgres client
 const client = postgres(connectionString, {
   prepare: false,
   ssl: 'require',
-  max: 10, // Connection pool size
-  idle_timeout: 20,
-  connect_timeout: 10,
+  max: isDev ? 25 : 50,
+  idle_timeout: 300,
+  connect_timeout: 30,
 })
 
 // Create drizzle instance
