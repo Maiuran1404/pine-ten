@@ -8,7 +8,7 @@
  */
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe,
@@ -146,29 +146,24 @@ function SitePreview({
 }) {
   const [iframeLoaded, setIframeLoaded] = useState(false)
   const [iframeFailed, setIframeFailed] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const proxyUrl = `/api/website-flow/proxy?url=${encodeURIComponent(item.url)}`
 
-  // The proxy injects a beacon that fires on window.load:
-  //   postMessage({type:'proxy-ok'}, '*')
-  // If the proxied site's JS navigates the iframe during page load,
-  // the load event never fires → beacon never arrives → timeout → fallback.
-  useEffect(() => {
-    const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'proxy-ok') {
+  // After each iframe load, check if it still shows our proxy page.
+  // If the proxied site's JS navigated the iframe to a different URL
+  // (e.g. app.localhost), the location check will fail → show fallback.
+  // Uses allow-same-origin sandbox so we can read contentWindow.location.
+  const handleIframeLoad = useCallback(() => {
+    try {
+      const loc = iframeRef.current?.contentWindow?.location?.href ?? ''
+      if (loc.includes('/api/website-flow/proxy')) {
         setIframeLoaded(true)
-        clearTimeout(timeoutId)
+      } else {
+        setIframeFailed(true)
       }
-    }
-
-    window.addEventListener('message', handleMessage)
-    // If no beacon within 8s, the iframe likely navigated away — show fallback
-    const timeoutId = setTimeout(() => {
+    } catch {
+      // Cross-origin error — iframe left our origin
       setIframeFailed(true)
-    }, 8000)
-
-    return () => {
-      window.removeEventListener('message', handleMessage)
-      clearTimeout(timeoutId)
     }
   }, [])
 
@@ -233,10 +228,12 @@ function SitePreview({
               </div>
             )}
             <iframe
+              ref={iframeRef}
               src={proxyUrl}
               title={item.name}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               className={cn('w-full h-full border-none', !iframeLoaded && 'opacity-0')}
+              onLoad={handleIframeLoad}
             />
           </>
         )}
@@ -373,7 +370,7 @@ function SelectedWebsiteCard({
           <iframe
             src={proxyUrl}
             title={item.name}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             className="w-full h-full border-none"
             onLoad={() => setIframeLoaded(true)}
           />
