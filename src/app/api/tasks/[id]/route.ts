@@ -12,7 +12,7 @@ import {
   chatDrafts,
   websiteProjects,
 } from '@/db/schema'
-import { eq, desc, and, ne } from 'drizzle-orm'
+import { eq, desc, and, ne, inArray } from 'drizzle-orm'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
 
