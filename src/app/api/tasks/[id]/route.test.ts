@@ -100,6 +100,14 @@ vi.mock('@/db/schema', () => ({
     createdAt: 'createdAt',
     taskId: 'taskId',
   },
+  websiteProjects: {
+    id: 'id',
+    taskId: 'taskId',
+    deliveryStatus: 'deliveryStatus',
+    framerProjectUrl: 'framerProjectUrl',
+    framerPreviewUrl: 'framerPreviewUrl',
+    framerDeployedUrl: 'framerDeployedUrl',
+  },
 }))
 
 vi.mock('drizzle-orm', () => ({
@@ -249,7 +257,16 @@ function setupTaskFound(
     }),
   })
 
-  // 9th select: previous deliverables (only if previousWork has items)
+  // 9th select: website project (always runs)
+  mockSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([]),
+      }),
+    }),
+  })
+
+  // 10th select: previous deliverables (only if previousWork has items)
   if (previousWork.length > 0) {
     mockSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
