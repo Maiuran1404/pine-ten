@@ -8,7 +8,7 @@
  */
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe,
@@ -130,7 +130,9 @@ function GalleryCard({
 }
 
 // =============================================================================
-// SITE PREVIEW — full-panel screenshot preview (no iframes — too fragile)
+// SITE PREVIEW — full-panel scrollable iframe (loaded via srcdoc to prevent
+// navigation hijacking — the proxied site's JS can't navigate the iframe
+// to our app domain since srcdoc resolves relative URLs to about:srcdoc)
 // =============================================================================
 
 function SitePreview({
@@ -144,8 +146,30 @@ function SitePreview({
   onBack: () => void
   onSelect: () => void
 }) {
-  const [imgLoaded, setImgLoaded] = useState(false)
-  const [hasError, setHasError] = useState(false)
+  const [srcdoc, setSrcdoc] = useState<string | null>(null)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [fetchFailed, setFetchFailed] = useState(false)
+  const proxyUrl = `/api/website-flow/proxy?url=${encodeURIComponent(item.url)}`
+
+  // Fetch proxy HTML client-side and inject as srcdoc.
+  // This prevents the proxied site's JS from navigating the iframe to our app.
+  useEffect(() => {
+    let cancelled = false
+    fetch(proxyUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`)
+        return res.text()
+      })
+      .then((html) => {
+        if (!cancelled) setSrcdoc(html)
+      })
+      .catch(() => {
+        if (!cancelled) setFetchFailed(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [proxyUrl])
 
   return (
     <div className="flex flex-col h-full">
@@ -171,39 +195,51 @@ function SitePreview({
         </a>
       </div>
 
-      {/* Screenshot preview */}
-      <ScrollArea className="flex-1">
-        <div className="relative bg-muted/30">
-          {!imgLoaded && !hasError && (
-            <div className="aspect-[4/3] flex items-center justify-center bg-muted/30">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
-            </div>
-          )}
-          {hasError ? (
-            <div className="aspect-[4/3] flex flex-col items-center justify-center gap-2 bg-muted/20">
-              <Globe className="w-8 h-8 text-muted-foreground/20" />
-              <p className="text-xs text-muted-foreground/50">Preview unavailable</p>
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-foreground hover:underline inline-flex items-center gap-1 mt-1"
-              >
-                Open in new tab <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-          ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={item.screenshotUrl}
-              alt={item.name}
-              className={cn('w-full object-cover object-top', !imgLoaded && 'h-0 overflow-hidden')}
-              onLoad={() => setImgLoaded(true)}
-              onError={() => setHasError(true)}
-            />
-          )}
-        </div>
-      </ScrollArea>
+      {/* Preview content */}
+      <div className="relative flex-1 bg-muted/30">
+        {fetchFailed ? (
+          <div className="flex flex-col h-full items-center justify-center gap-2">
+            <Globe className="w-8 h-8 text-muted-foreground/20" />
+            <p className="text-xs text-muted-foreground/50">Preview unavailable</p>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-foreground hover:underline inline-flex items-center gap-1 mt-1"
+            >
+              Open in new tab <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ) : (
+          <>
+            {/* Screenshot + spinner while loading */}
+            {!iframeLoaded && (
+              <>
+                {item.screenshotUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={item.screenshotUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover object-top"
+                  />
+                )}
+                <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+                </div>
+              </>
+            )}
+            {srcdoc && (
+              <iframe
+                srcDoc={srcdoc}
+                title={item.name}
+                sandbox="allow-scripts"
+                className={cn('w-full h-full border-none', !iframeLoaded && 'opacity-0')}
+                onLoad={() => setIframeLoaded(true)}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       {/* Bottom action bar */}
       <div className="shrink-0 h-14 flex items-center gap-2 px-3 border-t border-border/40 bg-background">

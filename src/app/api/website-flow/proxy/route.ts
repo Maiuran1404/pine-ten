@@ -53,6 +53,13 @@ export async function GET(request: NextRequest) {
     // plus an error-suppression script to prevent JS crashes from showing
     // ugly error pages in the preview iframe.
     const baseTag = `<base href="${parsed.origin}/" target="_blank">`
+    // Force native scrolling — many portfolio sites (Locomotive Scroll, Lenis,
+    // smooth-scrollbar) set overflow:hidden on body and use JS-based scroll
+    // which breaks inside sandboxed iframes. This CSS restores native scroll.
+    const proxyStyle = `<style>
+html,body{overflow:auto!important;height:auto!important;scroll-behavior:auto!important;-webkit-overflow-scrolling:touch!important;position:static!important}
+[data-scroll-container],[data-scroll],[data-lenis-prevent],.__next,.smooth-scroll,.locomotive-scroll{transform:none!important;will-change:auto!important;overflow:visible!important}
+</style>`
     const proxyScript = `<script>
 (function(){
   // Suppress JS errors so they don't show error pages
@@ -70,20 +77,26 @@ export async function GET(request: NextRequest) {
     var origReplace=window.location.replace.bind(window.location);
     window.location.replace=function(){};
   }catch(x){}
-  // Beacon: fire on DOMContentLoaded so it arrives once the HTML is
-  // fully parsed. Sites that redirect during page load never finish
-  // parsing, so the beacon never arrives → client shows fallback.
-  // (Using DOMContentLoaded instead of load because load waits for
-  // all sub-resources like images/fonts which can take 10s+.)
+  // After DOM loads, forcibly remove custom scroll library wrappers
   document.addEventListener('DOMContentLoaded',function(){
-    try{window.parent.postMessage({type:'proxy-ok'},'*')}catch(x){}
+    // Remove locomotive-scroll / lenis scroll hijacking
+    try{
+      var h=document.documentElement,b=document.body;
+      h.style.setProperty('overflow','auto','important');
+      b.style.setProperty('overflow','auto','important');
+      h.style.setProperty('height','auto','important');
+      b.style.setProperty('height','auto','important');
+    }catch(x){}
   });
 })();
 </script>`
     if (html.includes('<head')) {
-      html = html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}${proxyScript}`)
+      html = html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}${proxyStyle}${proxyScript}`)
     } else if (html.includes('<html')) {
-      html = html.replace(/<html([^>]*)>/i, `<html$1><head>${baseTag}${proxyScript}</head>`)
+      html = html.replace(
+        /<html([^>]*)>/i,
+        `<html$1><head>${baseTag}${proxyStyle}${proxyScript}</head>`
+      )
     }
 
     return new NextResponse(html, {
