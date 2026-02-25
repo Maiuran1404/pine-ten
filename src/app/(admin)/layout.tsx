@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [session])
 
-  if (isPending) {
+  if (isPending || !portal.isHydrated) {
     return <FullPageLoader />
   }
 
