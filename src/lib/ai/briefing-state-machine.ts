@@ -77,6 +77,7 @@ export interface LayoutSection {
   purpose: string
   contentGuidance: string
   order: number
+  fidelity?: 'low' | 'mid' | 'high'
   // Elaboration fields (populated during ELABORATE stage)
   draftContent?: string
   headline?: string
@@ -180,6 +181,27 @@ export interface ToneProfile {
 }
 
 // =============================================================================
+// WEBSITE-SPECIFIC TYPES
+// =============================================================================
+
+export interface WebsiteInspiration {
+  id: string
+  url: string
+  screenshotUrl: string
+  name: string
+  notes?: string
+  isUserSubmitted?: boolean
+}
+
+export interface WebsiteGlobalStyles {
+  primaryColor?: string
+  secondaryColor?: string
+  fontPrimary?: string
+  fontSecondary?: string
+  layoutDensity?: 'compact' | 'balanced' | 'spacious'
+}
+
+// =============================================================================
 // BRIEFING STATE (Composes LiveBrief)
 // =============================================================================
 
@@ -201,6 +223,9 @@ export interface BriefingState {
   toneProfile: ToneProfile | null
   turnsInCurrentStage: number
   messageCount: number
+  // Website-specific (only populated for website deliverables)
+  websiteInspirations?: WebsiteInspiration[]
+  websiteGlobalStyles?: WebsiteGlobalStyles
 }
 
 // =============================================================================
@@ -623,6 +648,8 @@ export interface SerializedBriefingState {
   toneProfile: ToneProfile | null
   turnsInCurrentStage: number
   messageCount: number
+  websiteInspirations?: WebsiteInspiration[]
+  websiteGlobalStyles?: WebsiteGlobalStyles
 }
 
 interface SerializedLiveBrief extends Omit<LiveBrief, 'createdAt' | 'updatedAt'> {

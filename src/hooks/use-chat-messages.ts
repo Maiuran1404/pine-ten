@@ -13,7 +13,7 @@ import {
   type TaskProposal,
   type StructureData,
 } from '@/components/chat/types'
-import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
+import type { SerializedBriefingState, WebsiteGlobalStyles } from '@/lib/ai/briefing-state-machine'
 import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
 
 /** Shape of a scene image match from the multi-source orchestrator */
@@ -45,6 +45,7 @@ export interface ChatApiResponse {
   quickOptions?: Message['quickOptions']
   structureData?: StructureData
   strategicReviewData?: Message['strategicReviewData']
+  globalStyles?: WebsiteGlobalStyles
   assetRequest?: Message['assetRequest']
   sceneImageMatches?: ApiSceneImageMatch[]
 }
@@ -59,6 +60,7 @@ interface UseChatMessagesOptions {
   onDeliverableTypeChange: (type: string) => void
   onStructureData: (data: StructureData) => void
   onSceneImageMatches: (matches?: ApiSceneImageMatch[]) => void
+  onGlobalStyles?: (styles: WebsiteGlobalStyles) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
 }
 
@@ -72,6 +74,7 @@ export function useChatMessages({
   onDeliverableTypeChange,
   onStructureData,
   onSceneImageMatches,
+  onGlobalStyles,
   latestStoryboardRef,
 }: UseChatMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -113,6 +116,11 @@ export function useChatMessages({
       // Process Pexels scene image matches
       onSceneImageMatches(data.sceneImageMatches)
 
+      // Process global styles (website flow)
+      if (data.globalStyles && onGlobalStyles) {
+        onGlobalStyles(data.globalStyles)
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -143,6 +151,7 @@ export function useChatMessages({
       syncBriefingFromServer,
       onStructureData,
       onSceneImageMatches,
+      onGlobalStyles,
       onTaskProposal,
       onDeliverableTypeChange,
       latestStoryboardRef,

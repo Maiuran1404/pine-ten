@@ -218,7 +218,8 @@ export function useTaskSubmission({
       setShowSubmissionSuccess(true)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create task')
-      throw error
+      // Don't re-throw — the toast provides user feedback and the finally
+      // block resets isLoading so the UI recovers to a clickable state.
     } finally {
       setIsLoading(false)
     }

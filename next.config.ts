@@ -98,8 +98,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply security headers to all routes
-        source: '/:path*',
+        // Apply security headers to all routes except the website proxy
+        // (the proxy intentionally strips frame-blocking headers for iframe previews)
+        source: '/((?!api/website-flow/proxy).*)',
         headers: [
           {
             key: 'X-Frame-Options',

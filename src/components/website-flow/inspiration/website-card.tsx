@@ -28,7 +28,13 @@ export function WebsiteCard({
 }: WebsiteCardProps) {
   return (
     <div className={cn('group relative', className)}>
-      <ScreenshotFrame src={screenshotUrl} alt={url} selected={selected} onClick={onSelect} />
+      <ScreenshotFrame
+        src={screenshotUrl}
+        url={url}
+        alt={url}
+        selected={selected}
+        onClick={onSelect}
+      />
       <div className="mt-2 px-1">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-medium text-foreground truncate">{name}</h4>

@@ -220,6 +220,8 @@ export function ChatInterface({
     structurePanelVisible,
     changedScenes,
     sceneImageData,
+    websiteGlobalStyles,
+    websiteFidelity: _websiteFidelity,
     handleStrategicReviewAction,
     handleSceneEdit,
     handleSectionEdit,
@@ -227,6 +229,20 @@ export function ChatInterface({
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,
+
+    // Website inspiration
+    websiteInspirations,
+    websiteInspirationIds,
+    addWebsiteInspiration,
+    removeWebsiteInspiration,
+    captureWebsiteScreenshot,
+    isCapturingScreenshot,
+    inspirationGallery,
+    isGalleryLoading,
+    industryFilter: _industryFilter,
+    setIndustryFilter: _setIndustryFilter,
+    styleFilter: _styleFilter,
+    setStyleFilter: _setStyleFilter,
 
     // Handlers
     handleSend,
@@ -313,6 +329,23 @@ export function ChatInterface({
         isRegenerating={isLoading}
         changedScenes={changedScenes}
         viewStructureRef={viewStructureRef}
+        websiteGlobalStyles={websiteGlobalStyles}
+        websiteInspirations={websiteInspirations}
+        websiteInspirationIds={websiteInspirationIds}
+        inspirationGallery={inspirationGallery}
+        isGalleryLoading={isGalleryLoading}
+        isCapturingScreenshot={isCapturingScreenshot}
+        onInspirationSelect={(item) =>
+          addWebsiteInspiration({
+            id: item.id,
+            url: item.url,
+            screenshotUrl: item.screenshotUrl,
+            name: item.name,
+          })
+        }
+        onRemoveInspiration={removeWebsiteInspiration}
+        onCaptureScreenshot={captureWebsiteScreenshot}
+        briefingStage={briefingStage}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
         <div

@@ -1019,6 +1019,9 @@ export function generateTaskSummary(inference: InferenceResult): string {
     } else {
       parts.push(contentNames[inference.contentType.value])
     }
+  } else if (inference.platform.value === 'web' && inference.taskType.value === 'single_asset') {
+    // Website / landing page projects — replace generic "Web" with specific label
+    parts[0] = 'Landing Page'
   } else if (inference.platform.value && parts.length === 1) {
     // If we only have platform, add generic "Content"
     parts.push('Content')

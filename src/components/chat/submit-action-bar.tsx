@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -48,6 +48,8 @@ export function SubmitActionBar({
 }: SubmitActionBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isBriefReviewOpen, setIsBriefReviewOpen] = useState(false)
+  // Animation lock: prevents clicks during expand/collapse transitions
+  const [isAnimating, setIsAnimating] = useState(false)
 
   const creditsRequired = taskProposal.creditsRequired ?? 15
   const deliveryDays = taskProposal.deliveryDays ?? 3
@@ -55,21 +57,37 @@ export function SubmitActionBar({
   const deliveryDate = getDeliveryDateString(deliveryDays)
   const moodboardImages = moodboardItems.filter((item) => item.imageUrl).slice(0, 5)
 
-  const handleSubmitClick = () => {
+  const handleSubmitClick = useCallback(() => {
+    if (isAnimating || isSubmitting) return
     if (!hasEnoughCredits) {
       onInsufficientCredits()
       return
     }
+    setIsAnimating(true)
     setIsExpanded(true)
-  }
+  }, [isAnimating, isSubmitting, hasEnoughCredits, onInsufficientCredits])
 
-  const handleConfirm = async () => {
-    await onConfirm()
-  }
+  const handleConfirm = useCallback(async () => {
+    if (isSubmitting) return
+    try {
+      await onConfirm()
+    } catch {
+      // Error already handled by useTaskSubmission (shows toast)
+      // No re-throw — keeps the UI stable
+    }
+  }, [isSubmitting, onConfirm])
 
-  const handleGoBack = () => {
+  const handleGoBack = useCallback(() => {
+    if (isAnimating || isSubmitting) return
+    setIsAnimating(true)
+    // Close brief review before collapsing to prevent nested animation conflicts
+    setIsBriefReviewOpen(false)
     setIsExpanded(false)
-  }
+  }, [isAnimating, isSubmitting])
+
+  const handleAnimationComplete = useCallback(() => {
+    setIsAnimating(false)
+  }, [])
 
   return (
     <motion.div
@@ -78,25 +96,25 @@ export function SubmitActionBar({
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full"
     >
-      <motion.div
-        layout
+      <div
         className={cn(
-          'border-2 rounded-2xl overflow-hidden shadow-lg transition-colors',
+          'border-2 rounded-2xl overflow-hidden shadow-lg transition-colors duration-200',
           'bg-white dark:bg-card',
           isExpanded
             ? 'border-emerald-500/40 shadow-emerald-500/10'
             : 'border-emerald-500/30 shadow-emerald-500/5'
         )}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {!isExpanded ? (
             /* Collapsed state */
             <motion.div
               key="collapsed"
-              initial={false}
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
+              onAnimationComplete={handleAnimationComplete}
               className="p-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -124,7 +142,7 @@ export function SubmitActionBar({
                     variant="outline"
                     size="sm"
                     onClick={onMakeChanges}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isAnimating}
                     className="gap-1.5 h-9"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -134,7 +152,7 @@ export function SubmitActionBar({
                   <Button
                     size="lg"
                     onClick={handleSubmitClick}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isAnimating}
                     className={cn(
                       'gap-2 rounded-xl px-6 sm:px-8 font-semibold h-11',
                       hasEnoughCredits
@@ -163,10 +181,11 @@ export function SubmitActionBar({
             /* Expanded state */
             <motion.div
               key="expanded"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onAnimationComplete={handleAnimationComplete}
               className="p-5 sm:p-6"
             >
               {/* Header */}
@@ -179,7 +198,8 @@ export function SubmitActionBar({
                 </div>
                 <button
                   onClick={handleGoBack}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  disabled={isAnimating || isSubmitting}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 disabled:opacity-50"
                 >
                   <ChevronDown className="h-3 w-3 rotate-180" />
                   Collapse
@@ -286,7 +306,7 @@ export function SubmitActionBar({
                 <Button
                   variant="ghost"
                   onClick={handleGoBack}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isAnimating}
                   className="gap-1.5 text-muted-foreground"
                 >
                   Go Back
@@ -294,7 +314,7 @@ export function SubmitActionBar({
                 <Button
                   size="lg"
                   onClick={hasEnoughCredits ? handleConfirm : onInsufficientCredits}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isAnimating}
                   className={cn(
                     'gap-2 rounded-xl px-8 font-semibold h-12 sm:h-14 text-base',
                     hasEnoughCredits
@@ -323,7 +343,7 @@ export function SubmitActionBar({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -395,7 +415,7 @@ function BriefReviewSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
             <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">

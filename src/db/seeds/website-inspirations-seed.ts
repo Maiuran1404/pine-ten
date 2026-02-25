@@ -10,8 +10,8 @@
  *   --resume            Skip URLs that already exist in the DB
  */
 
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
 import { eq } from 'drizzle-orm'
 import { websiteInspirations } from '../schema'
 import { WEBSITE_INSPIRATIONS_DATA } from './website-inspirations-data'
@@ -72,7 +72,7 @@ async function captureScreenshotForSeed(
 
 function placeholder(url: string): { imageUrl: string; thumbnailUrl: string | null } {
   return {
-    imageUrl: `https://placehold.co/1280x800/f1f5f9/64748b?text=${encodeURIComponent(new URL(url).hostname)}`,
+    imageUrl: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
     thumbnailUrl: null,
   }
 }
@@ -108,8 +108,8 @@ async function main() {
     process.exit(1)
   }
 
-  const pool = new Pool({ connectionString: databaseUrl })
-  const db = drizzle(pool)
+  const client = postgres(databaseUrl, { prepare: false, ssl: 'require', max: 10 })
+  const db = drizzle(client)
 
   try {
     // Check existing entries for resume mode
@@ -226,7 +226,7 @@ async function main() {
 
     console.log(`\nTotal active inspirations in DB: ${total.length}`)
   } finally {
-    await pool.end()
+    await client.end()
   }
 }
 

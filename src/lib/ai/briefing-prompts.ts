@@ -68,6 +68,12 @@ export function buildSystemPrompt(state: BriefingState, brandContext?: BrandCont
     sections.push(buildBrandSection(brandContext))
   }
 
+  // Website inspiration context
+  const inspirationContext = buildWebsiteInspirationContext(state)
+  if (inspirationContext) {
+    sections.push(inspirationContext)
+  }
+
   // Closing instruction (stage-specific)
   sections.push(buildClosingInstruction(state.stage))
 
@@ -402,9 +408,9 @@ OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary de
     case 'website':
       return `${clarifyPrefix}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
-- Each section: name, purpose, content guidance, order.
+- Each section: name, purpose, content guidance, order, fidelity ("low").
 - You MUST output the structure as [LAYOUT]{json}[/LAYOUT]. Without this marker the UI cannot render the layout.
-- Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1}]}[/LAYOUT]
+- Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1,"fidelity":"low"}]}[/LAYOUT]
 OUTPUT FORMAT: The [LAYOUT]{valid JSON}[/LAYOUT] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the layout as plain text without these markers, the UI cannot render it and the response fails.`
     case 'content':
       return `${clarifyPrefix}MANDATORY: Create a strategic content calendar.
@@ -482,6 +488,11 @@ For each section, add:
 - draftContent: Full body copy draft for this section
 - ctaText: The exact CTA button/link text
 - referenceDescription: Description of the visual style for this section
+- fidelity: "mid" (all sections at mid-fidelity during elaboration)
+
+Also output a [GLOBAL_STYLES] block with color and typography preferences based on the brand/project context:
+[GLOBAL_STYLES]{"primaryColor":"#hex","secondaryColor":"#hex","fontPrimary":"Font Name","fontSecondary":"Font Name","layoutDensity":"balanced"}[/GLOBAL_STYLES]
+Choose colors and fonts that align with the brand/industry. layoutDensity should be "compact", "balanced", or "spacious".
 
 Output the complete elaborated layout using [LAYOUT]{json}[/LAYOUT] with all existing fields PLUS the new detail fields.
 Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
@@ -715,6 +726,25 @@ If you can identify a known similar company based on their industry/audience, su
 Make it concrete. If you can't identify a player, ask:
 "Who are the companies your audience already knows about in this space?"
 This is optional. If the user ignores it, move on. If they engage, note it.`
+}
+
+// =============================================================================
+// WEBSITE INSPIRATION CONTEXT
+// =============================================================================
+
+function buildWebsiteInspirationContext(state: BriefingState): string | null {
+  if (state.deliverableCategory !== 'website') return null
+  if (!state.websiteInspirations || state.websiteInspirations.length === 0) return null
+
+  const lines = state.websiteInspirations.map((insp, i) => {
+    const notes = insp.notes ? ` - "${insp.notes}"` : ' - No notes'
+    return `${i + 1}. **${insp.name}** (${insp.url})${notes}`
+  })
+
+  return `== SELECTED WEBSITE INSPIRATIONS ==
+${lines.join('\n')}
+
+Reference these inspirations when recommending section structure and design approach. Extract visual patterns (layout density, color usage, typography choices) from these references to inform the design direction.`
 }
 
 // =============================================================================

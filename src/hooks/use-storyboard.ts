@@ -11,8 +11,13 @@ import {
   type StructureData,
   type ChatMessage as Message,
 } from '@/components/chat/types'
-import type { LayoutSection, BriefingState } from '@/lib/ai/briefing-state-machine'
+import type {
+  LayoutSection,
+  BriefingState,
+  WebsiteGlobalStyles,
+} from '@/lib/ai/briefing-state-machine'
 import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
+import { getFidelityForStage } from '@/lib/adapters/layout-skeleton-adapter'
 
 export interface SceneImageData {
   primaryUrl: string
@@ -40,6 +45,9 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
 
+  // Website global styles (populated from AI [GLOBAL_STYLES] marker)
+  const [globalStyles, setGlobalStyles] = useState<WebsiteGlobalStyles | null>(null)
+
   // Visual diff tracking (U1): track which scenes changed after a revision
   const [changedScenes, setChangedScenes] = useState<Set<number>>(new Set())
   const previousScenesRef = useRef<StructureData | null>(null)
@@ -58,8 +66,18 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     return map[cat] ?? null
   }, [briefingState?.deliverableCategory])
 
-  // Structure panel visible only when we have actual structure data
-  const structurePanelVisible = storyboardScenes !== null
+  // Structure panel visible when we have structure data OR for website projects
+  // (websites show the InspirationPanel before structure data exists)
+  const structurePanelVisible =
+    storyboardScenes !== null ||
+    (briefingState?.deliverableCategory === 'website' && structureType === 'layout')
+
+  // Fidelity level derived from current briefing stage (website only)
+  const currentStage = briefingState?.stage
+  const websiteFidelity = useMemo(() => {
+    if (!currentStage) return 'low' as const
+    return getFidelityForStage(currentStage)
+  }, [currentStage])
 
   // Helper: process multi-source scene image matches from API response
   const processSceneImageMatches = useCallback(
@@ -300,6 +318,9 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     structureType,
     structurePanelVisible,
     changedScenes,
+    globalStyles,
+    setGlobalStyles,
+    websiteFidelity,
     processSceneImageMatches,
     handleSceneClick,
     handleMultiSceneFeedback,

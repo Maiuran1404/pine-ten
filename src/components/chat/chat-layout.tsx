@@ -12,7 +12,13 @@ import { TopProgressBar } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel } from './structure-panel'
-import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
+import type {
+  StructureData,
+  StoryboardScene,
+  LayoutSection,
+  WebsiteGlobalStyles,
+  WebsiteInspiration,
+} from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
 
 interface ChatLayoutProps {
@@ -58,6 +64,30 @@ interface ChatLayoutProps {
   changedScenes?: Set<number>
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
+  // Website-specific props
+  websiteGlobalStyles?: WebsiteGlobalStyles | null
+  websiteInspirations?: WebsiteInspiration[]
+  websiteInspirationIds?: string[]
+  inspirationGallery?: Array<{
+    id: string
+    name: string
+    url: string
+    screenshotUrl: string
+    industry: string[]
+    styleTags: string[]
+  }>
+  isGalleryLoading?: boolean
+  isCapturingScreenshot?: boolean
+  onInspirationSelect?: (item: {
+    id: string
+    name: string
+    url: string
+    screenshotUrl: string
+  }) => void
+  onRemoveInspiration?: (id: string) => void
+  onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
+  // Briefing stage (used by structure panel for fidelity)
+  briefingStage?: string | null
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -105,6 +135,16 @@ export function ChatLayout({
   isRegenerating,
   changedScenes,
   viewStructureRef,
+  websiteGlobalStyles,
+  websiteInspirations,
+  websiteInspirationIds,
+  inspirationGallery,
+  isGalleryLoading,
+  isCapturingScreenshot,
+  onInspirationSelect,
+  onRemoveInspiration,
+  onCaptureScreenshot,
+  briefingStage,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -171,6 +211,7 @@ export function ChatLayout({
               <StructurePanel
                 structureType={structureType ?? null}
                 structureData={structureData ?? null}
+                briefingStage={briefingStage ?? undefined}
                 sceneImageData={sceneImageData}
                 isRegenerating={isRegenerating}
                 changedScenes={changedScenes}
@@ -182,6 +223,15 @@ export function ChatLayout({
                 onRegenerateField={onRegenerateField}
                 onSectionReorder={onSectionReorder}
                 onSectionEdit={onSectionEdit}
+                websiteGlobalStyles={websiteGlobalStyles}
+                websiteInspirations={websiteInspirations}
+                websiteInspirationIds={websiteInspirationIds}
+                inspirationGallery={inspirationGallery}
+                isGalleryLoading={isGalleryLoading}
+                isCapturingScreenshot={isCapturingScreenshot}
+                onInspirationSelect={onInspirationSelect}
+                onRemoveInspiration={onRemoveInspiration}
+                onCaptureScreenshot={onCaptureScreenshot}
               />
             </div>
 
@@ -192,6 +242,7 @@ export function ChatLayout({
                   <StructurePanel
                     structureType={structureType ?? null}
                     structureData={structureData ?? null}
+                    briefingStage={briefingStage ?? undefined}
                     sceneImageData={sceneImageData}
                     isRegenerating={isRegenerating}
                     changedScenes={changedScenes}
@@ -203,6 +254,15 @@ export function ChatLayout({
                     onRegenerateField={onRegenerateField}
                     onSectionReorder={onSectionReorder}
                     onSectionEdit={onSectionEdit}
+                    websiteGlobalStyles={websiteGlobalStyles}
+                    websiteInspirations={websiteInspirations}
+                    websiteInspirationIds={websiteInspirationIds}
+                    inspirationGallery={inspirationGallery}
+                    isGalleryLoading={isGalleryLoading}
+                    isCapturingScreenshot={isCapturingScreenshot}
+                    onInspirationSelect={onInspirationSelect}
+                    onRemoveInspiration={onRemoveInspiration}
+                    onCaptureScreenshot={onCaptureScreenshot}
                   />
                 </div>
               </SheetContent>

@@ -60,6 +60,7 @@ import {
   parseStructuredOutput,
   parseStrategicReview,
   parseBriefMeta,
+  parseGlobalStyles,
   getFormatReinforcement,
   getStrategicReviewReinforcement,
   type StructureType,
@@ -773,6 +774,7 @@ async function handler(request: NextRequest) {
       // Parse structured output from AI response when state machine is at STRUCTURE or STRATEGIC_REVIEW
       let structureData = undefined
       let strategicReviewData = undefined
+      let globalStyles = undefined
 
       if (clientBriefingState) {
         try {
@@ -1056,6 +1058,17 @@ async function handler(request: NextRequest) {
           if (reviewParsed.success && reviewParsed.data) {
             strategicReviewData = reviewParsed.data
             briefingState.strategicReview = reviewParsed.data
+          }
+
+          // ================================================================
+          // 13b. Parse [GLOBAL_STYLES] for website projects
+          // ================================================================
+          if (briefingState.deliverableCategory === 'website') {
+            const parsedGlobalStyles = parseGlobalStyles(response.content)
+            if (parsedGlobalStyles) {
+              globalStyles = parsedGlobalStyles
+              briefingState.websiteGlobalStyles = parsedGlobalStyles
+            }
           }
 
           // ================================================================
@@ -1404,6 +1417,8 @@ async function handler(request: NextRequest) {
         .replace(/\[\/ASSET_REQUEST\]/g, '') // Orphaned closing tags
         .replace(/\[BRIEF_META\][\s\S]*?\[\/BRIEF_META\]/g, '')
         .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
+        .replace(/\[GLOBAL_STYLES\][\s\S]*?\[\/GLOBAL_STYLES\]/g, '')
+        .replace(/\[\/GLOBAL_STYLES\]/g, '') // Orphaned closing tags
         .trim()
 
       // Enrich style-direction quick options with representative Pexels images.
@@ -1458,6 +1473,7 @@ async function handler(request: NextRequest) {
         videoReferences,
         structureData,
         strategicReviewData,
+        globalStyles,
         sceneImageMatches,
         assetRequest: response.assetRequest,
         briefingState: updatedBriefingState ?? clientBriefingState,

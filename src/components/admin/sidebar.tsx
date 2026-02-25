@@ -33,6 +33,7 @@ import {
   FlaskConical,
   FileText,
   UserPlus,
+  Image,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -134,6 +135,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Quick Design',
         href: '/admin/orshot-templates',
         icon: Wand2,
+      },
+      {
+        name: 'Storyboard Images',
+        href: '/admin/storyboard-images',
+        icon: Image,
       },
       {
         name: 'Intake Prompts',

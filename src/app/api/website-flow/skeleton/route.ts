@@ -257,6 +257,37 @@ export async function POST(request: NextRequest) {
 
       if (nextStage !== currentStage) {
         updateValues.skeletonStage = nextStage
+
+        // Map stage to fidelity level and update all sections
+        const stageFidelityMap: Record<string, 'low' | 'mid' | 'high'> = {
+          INITIAL_GENERATION: 'low',
+          SECTION_FEEDBACK: 'low',
+          CONTENT_REFINEMENT: 'mid',
+          STYLE_APPLICATION: 'high',
+          FINAL_REVIEW: 'high',
+        }
+        const targetFidelity = stageFidelityMap[nextStage] ?? 'low'
+
+        // Apply fidelity to skeleton sections if present
+        if (updateValues.skeleton) {
+          const skel = updateValues.skeleton as {
+            sections: Array<Record<string, unknown>>
+            globalStyles?: unknown
+          }
+          skel.sections = skel.sections.map((s: Record<string, unknown>) => ({
+            ...s,
+            fidelity: targetFidelity,
+          }))
+        } else if (project.skeleton?.sections) {
+          // Stage advanced but no new skeleton from AI — update existing sections' fidelity
+          updateValues.skeleton = {
+            sections: project.skeleton.sections.map((s: Record<string, unknown>) => ({
+              ...s,
+              fidelity: targetFidelity,
+            })),
+            globalStyles: project.skeleton.globalStyles,
+          }
+        }
       }
 
       // If ready for approval, advance phase

@@ -3,15 +3,23 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { SubmitActionBar } from './submit-action-bar'
 import type { TaskProposal, MoodboardItem } from './types'
 
-// Mock framer-motion
+// Mock framer-motion — invoke onAnimationComplete immediately so the
+// animation lock (`isAnimating`) resets before the next user interaction.
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({
       children,
+      onAnimationComplete,
       ...props
-    }: React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) => (
-      <div {...props}>{children}</div>
-    ),
+    }: React.PropsWithChildren<
+      React.HTMLAttributes<HTMLDivElement> & { onAnimationComplete?: () => void }
+    >) => {
+      // Fire on next tick so the component mounts first
+      if (onAnimationComplete) {
+        queueMicrotask(onAnimationComplete)
+      }
+      return <div {...props}>{children}</div>
+    },
   },
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }))
@@ -104,6 +112,11 @@ describe('SubmitActionBar', () => {
     // First expand
     fireEvent.click(screen.getByRole('button', { name: /Submit Brief/i }))
 
+    // Wait for animation lock to release (onAnimationComplete fires via microtask)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Confirm & Submit/i })).not.toBeDisabled()
+    })
+
     // Then confirm
     fireEvent.click(screen.getByRole('button', { name: /Confirm & Submit/i }))
     await waitFor(() => {
@@ -111,16 +124,23 @@ describe('SubmitActionBar', () => {
     })
   })
 
-  it('collapses back when Go Back is clicked in expanded state', () => {
+  it('collapses back when Go Back is clicked in expanded state', async () => {
     render(<SubmitActionBar {...defaultProps} />)
 
     // Expand
     fireEvent.click(screen.getByRole('button', { name: /Submit Brief/i }))
     expect(screen.getByText('Ready to Submit')).toBeInTheDocument()
 
+    // Wait for animation lock to release
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Go Back/i })).not.toBeDisabled()
+    })
+
     // Collapse
     fireEvent.click(screen.getByRole('button', { name: /Go Back/i }))
-    expect(screen.queryByText('Ready to Submit')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('Ready to Submit')).not.toBeInTheDocument()
+    })
   })
 
   it('shows credit balance info in expanded state', () => {

@@ -472,9 +472,9 @@ export function ChatMessageList({
                     'flex',
                     message.role === 'user' ? 'justify-end' : 'justify-start',
                     index > 0 && messages[index - 1]?.role !== message.role
-                      ? 'mt-6'
+                      ? 'mt-8'
                       : index > 0
-                        ? 'mt-5'
+                        ? 'mt-6'
                         : ''
                   )}
                 >

@@ -3,12 +3,20 @@
 import { Film, Layout, Calendar, Palette, Loader2, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { StructureData, StoryboardScene, LayoutSection } from '@/lib/ai/briefing-state-machine'
+import type {
+  StructureData,
+  StoryboardScene,
+  LayoutSection,
+  BriefingStage,
+  WebsiteGlobalStyles,
+  WebsiteInspiration,
+} from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
 import { RichStoryboardPanel } from './storyboard-view'
 import { LayoutPreview } from './layout-preview'
 import { ContentCalendar } from './brief-panel/content-calendar'
 import { DesignSpecView } from './design-spec-view'
+import { WebsiteStructurePanel } from './website-structure-panel'
 
 // =============================================================================
 // TYPES
@@ -29,6 +37,28 @@ interface StructurePanelProps {
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
+  // Website-specific props
+  websiteGlobalStyles?: WebsiteGlobalStyles | null
+  websiteInspirations?: WebsiteInspiration[]
+  websiteInspirationIds?: string[]
+  inspirationGallery?: Array<{
+    id: string
+    name: string
+    url: string
+    screenshotUrl: string
+    industry: string[]
+    styleTags: string[]
+  }>
+  isGalleryLoading?: boolean
+  isCapturingScreenshot?: boolean
+  onInspirationSelect?: (item: {
+    id: string
+    name: string
+    url: string
+    screenshotUrl: string
+  }) => void
+  onRemoveInspiration?: (id: string) => void
+  onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
   className?: string
 }
 
@@ -153,10 +183,42 @@ export function StructurePanel({
   onRegenerateField,
   onSectionReorder,
   onSectionEdit,
+  websiteGlobalStyles,
+  websiteInspirations,
+  websiteInspirationIds,
+  inspirationGallery,
+  isGalleryLoading,
+  isCapturingScreenshot,
+  onInspirationSelect,
+  onRemoveInspiration,
+  onCaptureScreenshot,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
   if (!structureType) return null
+
+  // Website projects: use WebsiteStructurePanel for both placeholder and data states
+  if (structureType === 'layout') {
+    return (
+      <div className={cn('flex flex-col h-full bg-background', className)}>
+        <WebsiteStructurePanel
+          sections={structureData?.type === 'layout' ? structureData.sections : null}
+          briefingStage={(briefingStage as BriefingStage) ?? undefined}
+          globalStyles={websiteGlobalStyles}
+          onSectionReorder={onSectionReorder}
+          onSectionEdit={onSectionEdit}
+          websiteInspirations={websiteInspirations ?? []}
+          websiteInspirationIds={websiteInspirationIds ?? []}
+          inspirationGallery={inspirationGallery ?? []}
+          isGalleryLoading={isGalleryLoading}
+          isCapturingScreenshot={isCapturingScreenshot}
+          onInspirationSelect={onInspirationSelect ?? (() => {})}
+          onRemoveInspiration={onRemoveInspiration ?? (() => {})}
+          onCaptureScreenshot={onCaptureScreenshot}
+        />
+      </div>
+    )
+  }
 
   // Placeholder — type known but no data yet
   if (!structureData) {

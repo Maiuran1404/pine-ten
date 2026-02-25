@@ -25,6 +25,7 @@ import { useSmartCompletion } from '@/hooks/use-smart-completion'
 import { useChatScroll } from '@/hooks/use-chat-scroll'
 import { useStoryboard } from '@/hooks/use-storyboard'
 import { useDraftPersistence } from '@/hooks/use-draft-persistence'
+import { useWebsiteChatInspiration } from '@/hooks/use-website-chat-inspiration'
 import {
   autoCapitalizeI,
   hasReadyIndicator,
@@ -197,6 +198,11 @@ export function useChatInterfaceData({
     briefingState: _briefingState,
   })
 
+  // ─── Website inspiration (only active for website projects) ──
+  const websiteInspiration = useWebsiteChatInspiration({
+    enabled: _briefingState?.deliverableCategory === 'website',
+  })
+
   // ─── Chat messages & API ─────────────────────────────────────
   const chatMessages = useChatMessages({
     selectedStyles: [], // Will be overridden via style selection
@@ -208,6 +214,7 @@ export function useChatInterfaceData({
     onDeliverableTypeChange: stableOnDeliverableTypeChange,
     onStructureData: storyboard.updateStructureData,
     onSceneImageMatches: storyboard.processSceneImageMatches,
+    onGlobalStyles: storyboard.setGlobalStyles,
     latestStoryboardRef: storyboard.latestStoryboardRef,
   })
 
@@ -675,6 +682,22 @@ export function useChatInterfaceData({
     structurePanelVisible: storyboard.structurePanelVisible,
     changedScenes: storyboard.changedScenes,
     sceneImageData: storyboard.sceneImageData,
+    websiteGlobalStyles: storyboard.globalStyles,
+    websiteFidelity: storyboard.websiteFidelity,
+
+    // Website inspiration
+    websiteInspirations: websiteInspiration.selectedInspirations,
+    websiteInspirationIds: websiteInspiration.selectedIds,
+    addWebsiteInspiration: websiteInspiration.addInspiration,
+    removeWebsiteInspiration: websiteInspiration.removeInspiration,
+    captureWebsiteScreenshot: websiteInspiration.captureScreenshot,
+    isCapturingScreenshot: websiteInspiration.isCapturingScreenshot,
+    inspirationGallery: websiteInspiration.inspirationGallery,
+    isGalleryLoading: websiteInspiration.isGalleryLoading,
+    industryFilter: websiteInspiration.industryFilter,
+    setIndustryFilter: websiteInspiration.setIndustryFilter,
+    styleFilter: websiteInspiration.styleFilter,
+    setStyleFilter: websiteInspiration.setStyleFilter,
     handleStrategicReviewAction,
     handleSceneEdit: storyboard.handleSceneEdit,
     handleSectionEdit: storyboard.handleSectionEdit,

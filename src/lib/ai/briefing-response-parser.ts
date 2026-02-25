@@ -44,6 +44,7 @@ export type MarkerType =
   | 'DESIGN_SPEC'
   | 'STRATEGIC_REVIEW'
   | 'BRIEF_META'
+  | 'GLOBAL_STYLES'
 
 /** Maps StructureData['type'] to marker name */
 const STRUCTURE_TO_MARKER: Record<StructureType, MarkerType> = {
@@ -228,6 +229,43 @@ export function parseBriefMeta(aiResponse: string): ParseResult<BriefMetaData> {
     isPartial: false,
     rawText: aiResponse,
   }
+}
+
+// =============================================================================
+// GLOBAL_STYLES PARSING (Website flow)
+// =============================================================================
+
+import type { WebsiteGlobalStyles } from './briefing-state-machine'
+
+/**
+ * Parse [GLOBAL_STYLES] block from AI response.
+ * Returns website global styles (colors, fonts, density) or null.
+ */
+export function parseGlobalStyles(aiResponse: string): WebsiteGlobalStyles | null {
+  const extracted = extractMarkerContent(aiResponse, 'GLOBAL_STYLES')
+  if (!extracted) return null
+
+  const parsed = lenientJsonParse(extracted)
+  if (!parsed || Array.isArray(parsed)) return null
+
+  const styles: WebsiteGlobalStyles = {}
+
+  const primaryColor = typeof parsed.primaryColor === 'string' ? parsed.primaryColor : undefined
+  const secondaryColor =
+    typeof parsed.secondaryColor === 'string' ? parsed.secondaryColor : undefined
+  const fontPrimary = typeof parsed.fontPrimary === 'string' ? parsed.fontPrimary : undefined
+  const fontSecondary = typeof parsed.fontSecondary === 'string' ? parsed.fontSecondary : undefined
+  const layoutDensity = typeof parsed.layoutDensity === 'string' ? parsed.layoutDensity : undefined
+
+  if (primaryColor) styles.primaryColor = primaryColor
+  if (secondaryColor) styles.secondaryColor = secondaryColor
+  if (fontPrimary) styles.fontPrimary = fontPrimary
+  if (fontSecondary) styles.fontSecondary = fontSecondary
+  if (layoutDensity && ['compact', 'balanced', 'spacious'].includes(layoutDensity)) {
+    styles.layoutDensity = layoutDensity as 'compact' | 'balanced' | 'spacious'
+  }
+
+  return Object.keys(styles).length > 0 ? styles : null
 }
 
 // =============================================================================
@@ -559,7 +597,9 @@ function validateLayout(parsed: Record<string, unknown> | unknown[]): StructureD
     const name =
       getString(section, 'sectionName') ??
       getString(section, 'section_name') ??
-      getString(section, 'name')
+      getString(section, 'name') ??
+      getString(section, 'title') ??
+      getString(section, 'section')
     if (!name) continue
 
     const draftContent =
@@ -572,12 +612,20 @@ function validateLayout(parsed: Record<string, unknown> | unknown[]): StructureD
       getString(section, 'reference_description') ??
       undefined
 
+    const fidelityStr = getString(section, 'fidelity')
+    const validFidelities = ['low', 'mid', 'high']
+    const fidelity =
+      fidelityStr && validFidelities.includes(fidelityStr)
+        ? (fidelityStr as 'low' | 'mid' | 'high')
+        : undefined
+
     validSections.push({
       sectionName: name,
       purpose: getString(section, 'purpose') ?? '',
       contentGuidance:
         getString(section, 'contentGuidance') ?? getString(section, 'content_guidance') ?? '',
       order: getNumber(section, 'order') ?? i + 1,
+      ...(fidelity ? { fidelity } : {}),
       ...(draftContent ? { draftContent } : {}),
       ...(headline ? { headline } : {}),
       ...(subheadline ? { subheadline } : {}),
@@ -864,7 +912,13 @@ function partialLayout(parsed: Record<string, unknown> | unknown[]): StructureDa
         getString(s, 'referenceDescription') ?? getString(s, 'reference_description') ?? undefined
 
       validSections.push({
-        sectionName: getString(s, 'sectionName') ?? getString(s, 'name') ?? `Section ${i + 1}`,
+        sectionName:
+          getString(s, 'sectionName') ??
+          getString(s, 'section_name') ??
+          getString(s, 'name') ??
+          getString(s, 'title') ??
+          getString(s, 'section') ??
+          `Section ${i + 1}`,
         purpose: getString(s, 'purpose') ?? '',
         contentGuidance: getString(s, 'contentGuidance') ?? '',
         order: getNumber(s, 'order') ?? i + 1,

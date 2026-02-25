@@ -87,11 +87,16 @@ ${globalStylesContext}
 SKELETON STAGE: ${input.skeletonStage}
 
 STAGE GUIDANCE:
-- INITIAL_GENERATION: Propose an initial skeleton based on the inspirations. Include 4-8 sections.
-- SECTION_FEEDBACK: Help refine individual sections based on client feedback. Add, remove, or reorder sections.
-- CONTENT_REFINEMENT: Focus on content direction for each section - headlines, copy tone, key messages.
-- STYLE_APPLICATION: Apply visual style preferences - colors, typography, spacing. Reference the client's inspiration picks.
-- FINAL_REVIEW: Review the complete skeleton and make final adjustments. Summarize and confirm.
+- INITIAL_GENERATION: Propose an initial skeleton based on the inspirations. Include 4-8 sections. Set fidelity to "low" for all sections (wireframe-level).
+- SECTION_FEEDBACK: Help refine individual sections based on client feedback. Add, remove, or reorder sections. Keep fidelity at "low".
+- CONTENT_REFINEMENT: Focus on content direction for each section - headlines, copy tone, key messages. Set fidelity to "mid" for all sections. Include placeholder text content in each section's content field.
+- STYLE_APPLICATION: Apply visual style preferences - colors, typography, spacing. Reference the client's inspiration picks. Set fidelity to "high" for all sections. You MUST include a "globalStyles" object with primaryColor, secondaryColor, fontPrimary, fontSecondary, and layoutDensity.
+- FINAL_REVIEW: Review the complete skeleton and make final adjustments. Keep fidelity at "high" and ensure globalStyles are complete. Summarize and confirm.
+
+FIDELITY LEVELS:
+- "low": Wireframe blocks - just section type and layout structure, no real content
+- "mid": Content placeholders - section includes headline text, body copy direction, and placeholder content
+- "high": Full visual fidelity - colors, fonts, and spacing applied via globalStyles, detailed content in each section
 
 RESPONSE FORMAT:
 Always include skeleton updates in your response when making changes. Use this JSON block format:

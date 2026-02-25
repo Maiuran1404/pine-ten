@@ -41,6 +41,9 @@ const envSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_WHATSAPP_NUMBER: z.string().optional(),
 
+  // OpenAI (optional - for storyboard AI image generation)
+  OPENAI_API_KEY: z.string().startsWith('sk-').optional(),
+
   // Orshot (optional - for quick design generation)
   ORSHOT_API_KEY: z.string().min(1).optional(),
 
