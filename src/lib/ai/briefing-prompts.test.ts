@@ -339,13 +339,13 @@ describe('buildSystemPrompt', () => {
   it('uses conversational closing for EXTRACT stage', () => {
     const state = makeState({ stage: 'EXTRACT' })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('clear question or a confident direction')
+    expect(prompt).toContain('ALWAYS end with a clear question that leads into the next response')
   })
 
   it('uses authority closing for STRUCTURE stage', () => {
     const state = makeState({ stage: 'STRUCTURE' })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('Do NOT end with a question like')
+    expect(prompt).toContain('End with a confident forward-looking question')
   })
 
   // Current state section
