@@ -56,6 +56,36 @@ export interface BrandData {
   contactEmail: string | null
   contactPhone: string | null
   keywords: string[]
+  competitors: Array<{
+    name: string
+    website?: string
+    positioning?: string
+    strengths?: string
+    weaknesses?: string
+  }> | null
+  positioning: {
+    uvp?: string
+    missionStatement?: string
+    positioningStatement?: string
+    differentiators?: string[]
+    targetMarket?: string
+  } | null
+  brandVoice: {
+    messagingPillars?: string[]
+    toneDoList?: string[]
+    toneDontList?: string[]
+    brandPromise?: string
+    keyPhrases?: string[]
+    avoidPhrases?: string[]
+  } | null
 }
 
-export type TabId = 'company' | 'colors' | 'typography' | 'social' | 'audiences'
+export type TabId =
+  | 'company'
+  | 'colors'
+  | 'typography'
+  | 'social'
+  | 'audiences'
+  | 'positioning'
+  | 'voice'
+  | 'competitors'

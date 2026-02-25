@@ -142,6 +142,29 @@ interface BrandExtraction {
   brandVoiceSummary: string
   // Inferred target audiences
   audiences?: InferredAudience[]
+  // Strategic brand data
+  competitors?: Array<{
+    name: string
+    website?: string
+    positioning?: string
+    strengths?: string
+    weaknesses?: string
+  }>
+  positioning?: {
+    uvp?: string
+    missionStatement?: string
+    positioningStatement?: string
+    differentiators?: string[]
+    targetMarket?: string
+  }
+  brandVoice?: {
+    messagingPillars?: string[]
+    toneDoList?: string[]
+    toneDontList?: string[]
+    brandPromise?: string
+    keyPhrases?: string[]
+    avoidPhrases?: string[]
+  }
 }
 
 // Extract social links from page links
@@ -335,6 +358,10 @@ function createDefaultBrandData(
     brandVoiceSummary: '',
     // Empty audiences array - will be populated by Claude analysis
     audiences: [],
+    // Empty strategic brand data - will be populated by Claude analysis
+    competitors: [],
+    positioning: {},
+    brandVoice: {},
   }
 }
 
@@ -560,6 +587,30 @@ IMPORTANT: ALL output must be in English, even if the website content is in anot
 
 16. **Brand Voice Summary**: Write 1-2 sentences as a brand strategist describing this brand's voice and visual identity. Be specific and opinionated — reference what you actually see (colors, typography, imagery style, copy tone). Example: "Your brand projects quiet confidence through clean typography and muted earth tones. The voice is composed and professional — approachable without ever being casual." Do NOT be generic.
 
+17. **Competitors** (1-5 competitors inferred from the website content):
+   Look for comparison pages, "vs" content, differentiator language, or named competitors.
+   For each competitor provide:
+   - name: Company name
+   - website: URL if mentioned
+   - positioning: How they position themselves relative to this brand
+   - strengths: What they do well
+   - weaknesses: Where this brand beats them
+
+18. **Positioning**:
+   - uvp: Unique Value Proposition — extract from hero section, main headline, or key benefit statements
+   - missionStatement: From "About" page content or mission/vision sections
+   - positioningStatement: How the brand positions itself in the market
+   - differentiators: 2-5 key things that make this brand unique (from features, benefits, USP sections)
+   - targetMarket: Who this brand primarily serves (derived from content, pricing, language)
+
+19. **Brand Voice & Messaging**:
+   - messagingPillars: 3-5 core messages repeated throughout the site (themes, key benefits)
+   - toneDoList: 3-5 tone characteristics the brand USES (e.g., "Use direct, action-oriented language")
+   - toneDontList: 3-5 tone characteristics the brand AVOIDS (e.g., "Avoid jargon and technical terms")
+   - brandPromise: The core promise or commitment the brand makes
+   - keyPhrases: 3-8 actual phrases or taglines used repeatedly on the site
+   - avoidPhrases: 3-5 types of language/phrases that don't fit this brand
+
 IMPORTANT: Do NOT default all personality values to 50 and DO NOT always pick generic options. Analyze the actual visual design:
 - A tech startup with bold colors and playful copy should have visualStyle "playful-vibrant" or "tech-futuristic", brandTone "bold-confident" or "playful-witty"
 - A law firm with serif fonts and dark colors should have visualStyle "corporate-professional" or "elegant-refined", brandTone "authoritative-expert"
@@ -633,7 +684,31 @@ Return ONLY a valid JSON object with this exact structure:
       },
       "confidence": 85
     }
-  ]
+  ],
+  "competitors": [
+    {
+      "name": "string",
+      "website": "url or undefined",
+      "positioning": "string or undefined",
+      "strengths": "string or undefined",
+      "weaknesses": "string or undefined"
+    }
+  ],
+  "positioning": {
+    "uvp": "string or undefined",
+    "missionStatement": "string or undefined",
+    "positioningStatement": "string or undefined",
+    "differentiators": ["string"],
+    "targetMarket": "string or undefined"
+  },
+  "brandVoice": {
+    "messagingPillars": ["string"],
+    "toneDoList": ["string"],
+    "toneDontList": ["string"],
+    "brandPromise": "string or undefined",
+    "keyPhrases": ["string"],
+    "avoidPhrases": ["string"]
+  }
 }`
 
   // Try to include screenshot, but be prepared to retry without it if it fails
@@ -663,7 +738,7 @@ Return ONLY a valid JSON object with this exact structure:
 
       const response = await getAnthropic().messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        max_tokens: 3000,
         messages: [
           {
             role: 'user',
@@ -866,6 +941,11 @@ Return ONLY a valid JSON object with this exact structure:
             : 50,
       }))
     : []
+
+  // Ensure strategic brand fields have defaults
+  brandDataWithFeels.competitors = Array.isArray(brandData.competitors) ? brandData.competitors : []
+  brandDataWithFeels.positioning = brandData.positioning || {}
+  brandDataWithFeels.brandVoice = brandData.brandVoice || {}
 
   // Ensure exactly one primary audience if audiences exist
   if (brandDataWithFeels.audiences.length > 0) {

@@ -49,6 +49,7 @@ import {
 import { inferStageFromResponse } from '@/lib/ai/briefing-stage-inferrer'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
+import { deriveToneOfVoice } from '@/lib/ai/brand-utils'
 import {
   extractStyleKeywords,
   extractInspirationReferences,
@@ -235,6 +236,59 @@ async function handler(request: NextRequest) {
       // the existing chat() call.
       // ====================================================================
 
+      // ── Pre-build brand context (used by all state machine branches) ──
+      const brandAudiences: InferredAudience[] = company?.id
+        ? (
+            await db.select().from(audiencesTable).where(eq(audiencesTable.companyId, company.id))
+          ).map((a) => ({
+            name: a.name,
+            isPrimary: a.isPrimary,
+            demographics: a.demographics as InferredAudience['demographics'],
+            psychographics: a.psychographics as InferredAudience['psychographics'],
+            confidence: 1.0,
+          }))
+        : []
+
+      const brandContext: BrandContext = {
+        companyName: company?.name,
+        industry: company?.industry ?? undefined,
+        toneOfVoice: deriveToneOfVoice(company ?? null),
+        brandDescription: company?.description ?? undefined,
+        tagline: company?.tagline ?? undefined,
+        industryArchetype: company?.industryArchetype ?? undefined,
+        keywords: company?.keywords ?? undefined,
+        colors: company
+          ? {
+              primary: company.primaryColor ?? undefined,
+              secondary: company.secondaryColor ?? undefined,
+              accent: company.accentColor ?? undefined,
+            }
+          : undefined,
+        typography: company
+          ? {
+              primary: company.primaryFont ?? undefined,
+              secondary: company.secondaryFont ?? undefined,
+            }
+          : undefined,
+        audiences: brandAudiences.map((a) => ({
+          name: a.name,
+          isPrimary: a.isPrimary,
+          demographics: a.demographics as Record<string, unknown> | undefined,
+          psychographics: a.psychographics as
+            | { painPoints?: string[]; goals?: string[]; values?: string[] }
+            | undefined,
+        })),
+        competitors: (company?.competitors as BrandContext['competitors']) ?? undefined,
+        positioning: company?.positioning
+          ? {
+              uvp: (company.positioning as Record<string, string>).uvp,
+              differentiators: (company.positioning as Record<string, string[]>).differentiators,
+              targetMarket: (company.positioning as Record<string, string>).targetMarket,
+            }
+          : undefined,
+        brandVoice: (company?.brandVoice as BrandContext['brandVoice']) ?? undefined,
+      }
+
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
       let preAiInference: ReturnType<typeof inferFromMessage> | undefined
@@ -261,23 +315,7 @@ async function handler(request: NextRequest) {
           })
           preAiInference = inference // Store for post-AI fallback
 
-          // 2. Fetch brand audiences for inference
-          const brandAudiences: InferredAudience[] = company?.id
-            ? (
-                await db
-                  .select()
-                  .from(audiencesTable)
-                  .where(eq(audiencesTable.companyId, company.id))
-              ).map((a) => ({
-                name: a.name,
-                isPrimary: a.isPrimary,
-                demographics: a.demographics as InferredAudience['demographics'],
-                psychographics: a.psychographics as InferredAudience['psychographics'],
-                confidence: 1.0,
-              }))
-            : []
-
-          // 3. Apply inference to LiveBrief
+          // 2. Apply inference to LiveBrief
           briefingState.brief = applyInferenceToBrief(
             briefingState.brief,
             inference,
@@ -376,11 +414,6 @@ async function handler(request: NextRequest) {
           briefingState.messageCount += 1
 
           // 8. Build system prompt from state (includes legal transitions + BRIEF_META instruction)
-          const brandContext: BrandContext = {
-            companyName: company?.name,
-            industry: company?.industry ?? undefined,
-            brandDescription: company?.description ?? undefined,
-          }
           let systemPrompt = buildSystemPrompt(briefingState, brandContext)
 
           // Add scene feedback hint: when user gives feedback on specific scenes during STRUCTURE,
@@ -1105,13 +1138,8 @@ async function handler(request: NextRequest) {
             try {
               const reinforcement = getFormatReinforcement(structureType)
               // Rebuild system prompt for STRUCTURE stage (stateMachineOverride has stale pre-transition prompt)
-              const retryBrandContext: BrandContext = {
-                companyName: company?.name,
-                industry: company?.industry ?? undefined,
-                brandDescription: company?.description ?? undefined,
-              }
               const structureRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, retryBrandContext),
+                systemPrompt: buildSystemPrompt(briefingState, brandContext),
                 stage: briefingState.stage,
               }
               const retryResponse = await chat(
@@ -1167,13 +1195,8 @@ async function handler(request: NextRequest) {
             )
             try {
               const reinforcement = getFormatReinforcement(structureType)
-              const elaborateRetryBrandContext: BrandContext = {
-                companyName: company?.name,
-                industry: company?.industry ?? undefined,
-                brandDescription: company?.description ?? undefined,
-              }
               const elaborateRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, elaborateRetryBrandContext),
+                systemPrompt: buildSystemPrompt(briefingState, brandContext),
                 stage: briefingState.stage,
               }
               const retryResponse = await chat(
@@ -1223,13 +1246,8 @@ async function handler(request: NextRequest) {
                   `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
                   `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
                 : getFormatReinforcement(structureType)
-              const feedbackRetryBrandContext: BrandContext = {
-                companyName: company?.name,
-                industry: company?.industry ?? undefined,
-                brandDescription: company?.description ?? undefined,
-              }
               const feedbackRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, feedbackRetryBrandContext),
+                systemPrompt: buildSystemPrompt(briefingState, brandContext),
                 stage: briefingState.stage,
               }
               const retryResponse = await chat(
@@ -1269,13 +1287,8 @@ async function handler(request: NextRequest) {
             )
             try {
               const reinforcement = getFormatReinforcement(structureType)
-              const regenRetryBrandContext: BrandContext = {
-                companyName: company?.name,
-                industry: company?.industry ?? undefined,
-                brandDescription: company?.description ?? undefined,
-              }
               const regenRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, regenRetryBrandContext),
+                systemPrompt: buildSystemPrompt(briefingState, brandContext),
                 stage: briefingState.stage,
               }
               const retryResponse = await chat(
@@ -1325,13 +1338,8 @@ async function handler(request: NextRequest) {
               try {
                 const reinforcement = getStrategicReviewReinforcement()
                 // Rebuild system prompt for STRATEGIC_REVIEW stage (stateMachineOverride has stale pre-AI prompt)
-                const reviewBrandContext: BrandContext = {
-                  companyName: company?.name,
-                  industry: company?.industry ?? undefined,
-                  brandDescription: company?.description ?? undefined,
-                }
                 const reviewRetryOverride = {
-                  systemPrompt: buildSystemPrompt(briefingState, reviewBrandContext),
+                  systemPrompt: buildSystemPrompt(briefingState, brandContext),
                   stage: briefingState.stage,
                 }
                 const retryResponse = await chat(
@@ -1443,7 +1451,7 @@ async function handler(request: NextRequest) {
           // style, visual direction, aesthetic, or inspiration — NOT for
           // general questions like target audience, goals, etc.
           const q = (quickOptions.question || '').toLowerCase()
-          return /style|visual|direction|aesthetic|look and feel|inspiration|mood|vibe/.test(q)
+          return /style|visual direction|aesthetic|look and feel|inspiration|mood|vibe/.test(q)
         })()
       if (isStyleDirection && quickOptions) {
         try {

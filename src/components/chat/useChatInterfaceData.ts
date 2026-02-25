@@ -480,15 +480,19 @@ export function useChatInterfaceData({
 
   // ─── Composed handlers ──────────────────────────────────────
 
-  // Wrap handleSend to include file upload state and scene references
+  // Wrap handleSend to include file upload state and scene references.
+  // When files are still uploading, we collect them via collectAndClear()
+  // which clears the UI chips immediately, then await the in-flight uploads
+  // before firing the chat API call. The upload wait is hidden behind
+  // the "Thinking..." loading indicator.
   const handleSend = useCallback(async () => {
-    if (!chatMessages.input.trim() && fileUpload.uploadedFiles.length === 0) return
+    if (!chatMessages.input.trim() && !fileUpload.hasFiles) return
 
-    const currentFiles = [...fileUpload.uploadedFiles]
+    const fileCount = fileUpload.pendingFiles.length
     const rawContent = chatMessages.input
       ? autoCapitalizeI(chatMessages.input)
-      : currentFiles.length > 0
-        ? `Attached ${currentFiles.length} file(s)`
+      : fileCount > 0
+        ? `Attached ${fileCount} file(s)`
         : ''
 
     const processedContent =
@@ -504,25 +508,38 @@ export function useChatInterfaceData({
             .join(', ')}] ${rawContent}`
         : rawContent
 
-    fileUpload.setUploadedFiles([])
+    // Snapshot files and clear UI chips immediately.
+    // allUploadsPromise resolves when in-flight uploads finish.
+    const { alreadyDone, allUploadsPromise, hasInFlight } = fileUpload.collectAndClear()
     storyboard.setSceneReferences([])
 
-    await chatMessages.handleSend(processedContent, currentFiles)
+    if (!hasInFlight) {
+      // All files already uploaded — send directly
+      await chatMessages.handleSend(processedContent, alreadyDone)
+      return
+    }
+
+    // Files still uploading — await them then send.
+    // chatMessages.handleSend shows the user message + "Thinking..."
+    // so the upload wait is hidden behind the loading indicator.
+    const allFiles = await allUploadsPromise
+    await chatMessages.handleSend(processedContent, allFiles)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     chatMessages.input,
     chatMessages.handleSend,
-    fileUpload.uploadedFiles,
-    fileUpload.setUploadedFiles,
+    fileUpload.pendingFiles,
+    fileUpload.hasFiles,
+    fileUpload.collectAndClear,
     storyboard.sceneReferences,
     storyboard.setSceneReferences,
   ])
 
   const handleDiscard = useCallback(() => {
     chatMessages.setInput('')
-    fileUpload.setUploadedFiles([])
+    fileUpload.clearPendingFiles()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatMessages.setInput, fileUpload.setUploadedFiles])
+  }, [chatMessages.setInput, fileUpload.clearPendingFiles])
 
   const handleEditLastMessage = useCallback(() => {
     const msgs = chatMessages.messages
@@ -643,6 +660,8 @@ export function useChatInterfaceData({
 
     // Files
     uploadedFiles: fileUpload.uploadedFiles,
+    pendingFiles: fileUpload.pendingFiles,
+    hasFiles: fileUpload.hasFiles,
     allAttachments,
     isDragging: fileUpload.isDragging,
 

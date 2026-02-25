@@ -407,60 +407,6 @@ function MoodboardContent({
 }
 
 // =============================================================================
-// LIVE BRIEF SUMMARY (#13) — compact card showing captured fields
-// =============================================================================
-
-function LiveBriefSummary({ brief }: { brief: LiveBrief | null }) {
-  if (!brief) return null
-
-  const fields: { label: string; value: string | undefined }[] = [
-    { label: 'Project', value: brief.taskSummary.value || undefined },
-    { label: 'Type', value: brief.taskType.value || undefined },
-    { label: 'Audience', value: brief.audience.value?.name || undefined },
-    { label: 'Platform', value: brief.platform.value || undefined },
-    { label: 'Intent', value: brief.intent.value || undefined },
-    { label: 'Topic', value: brief.topic.value || undefined },
-  ]
-
-  const captured = fields.filter((f) => f.value)
-  const total = fields.length
-
-  if (captured.length === 0) return null
-
-  return (
-    <div className="mx-4 mt-3 mb-1 rounded-lg border border-border/30 bg-muted/20 p-3 space-y-2">
-      {/* Counter + mini progress */}
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-          Brief Progress
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted-foreground">
-            {captured.length}/{total}
-          </span>
-          <div className="w-10 h-1.5 rounded-full bg-muted/50 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${(captured.length / total) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Compact field grid */}
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-        {captured.slice(0, 6).map((f) => (
-          <div key={f.label} className="min-w-0">
-            <span className="text-[9px] text-muted-foreground/50 uppercase">{f.label}</span>
-            <p className="text-[11px] text-foreground truncate">{f.value}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// =============================================================================
 // MAIN UNIFIED PANEL
 // =============================================================================
 
@@ -624,9 +570,6 @@ export function UnifiedPanel({
     <div className={cn('flex flex-col h-full bg-transparent', className)}>
       {/* Context Strip */}
       <ContextStrip currentStage={currentStage} completedStages={completedStages} />
-
-      {/* Live Brief Summary (#13) */}
-      <LiveBriefSummary brief={brief} />
 
       {/* Primary Content - Scrollable */}
       <ScrollArea className="flex-1">

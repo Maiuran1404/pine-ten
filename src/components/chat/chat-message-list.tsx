@@ -201,7 +201,7 @@ function LoadingIndicator({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-start gap-3"
+      className="flex items-start gap-3 mt-5"
       role="status"
       aria-label={loadingMessages[loadingStage]}
     >
@@ -348,7 +348,7 @@ export interface ChatMessageListProps {
   latestStoryboardScenes?: import('@/lib/ai/briefing-state-machine').StoryboardScene[]
 
   // Inline upload zone
-  onInlineUpload?: (files: FileList | File[]) => Promise<void>
+  onInlineUpload?: (files: FileList | File[]) => void
   isUploading?: boolean
   uploadedFiles?: UploadedFile[]
   onRemoveUploadedFile?: (fileUrl: string) => void
@@ -472,9 +472,9 @@ export function ChatMessageList({
                     'flex',
                     message.role === 'user' ? 'justify-end' : 'justify-start',
                     index > 0 && messages[index - 1]?.role !== message.role
-                      ? 'mt-8'
+                      ? 'mt-5'
                       : index > 0
-                        ? 'mt-6'
+                        ? 'mt-3'
                         : ''
                   )}
                 >

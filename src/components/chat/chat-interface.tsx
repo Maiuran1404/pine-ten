@@ -181,6 +181,8 @@ export function ChatInterface({
 
     // Files
     uploadedFiles,
+    pendingFiles,
+    hasFiles,
     allAttachments: _allAttachments,
     isDragging,
 
@@ -531,8 +533,8 @@ export function ChatInterface({
               input={input}
               setInput={setInput}
               isLoading={isLoading}
-              isUploading={isUploading}
-              uploadedFiles={uploadedFiles}
+              pendingFiles={pendingFiles}
+              hasFiles={hasFiles}
               pendingTask={pendingTask}
               isTaskMode={isTaskMode}
               seamlessTransition={seamlessTransition}

@@ -2,9 +2,54 @@ import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 /**
  * Storyboard export utilities (#19)
+ * - PDF: Crafted-branded storyboard document via server-side Puppeteer
  * - Clipboard: formatted text summary
  * - JSON: structured scene data download
  */
+
+export async function exportStoryboardPDF(
+  scenes: StoryboardScene[],
+  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
+): Promise<void> {
+  const payload = {
+    scenes: scenes.map((scene) => ({
+      sceneNumber: scene.sceneNumber,
+      title: scene.title,
+      description: scene.description || '',
+      duration: scene.duration,
+      visualNote: scene.visualNote || '',
+      voiceover: scene.voiceover,
+      transition: scene.transition,
+      cameraNote: scene.cameraNote,
+      fullScript: scene.fullScript,
+      directorNotes: scene.directorNotes,
+      resolvedImageUrl: scene.resolvedImageUrl,
+      resolvedImageSource: scene.resolvedImageSource,
+      resolvedImageAttribution: scene.resolvedImageAttribution,
+    })),
+  }
+
+  const res = await csrfFetch('/api/storyboard/generate-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'PDF generation failed' }))
+    throw new Error(error.error || 'PDF generation failed')
+  }
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `storyboard-${new Date().toISOString().slice(0, 10)}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 export function formatStoryboardText(scenes: StoryboardScene[]): string {
   const lines: string[] = ['STORYBOARD', '==========', '']

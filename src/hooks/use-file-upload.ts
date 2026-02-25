@@ -1,7 +1,7 @@
 /**
- * Hook for managing file uploads and drag-and-drop.
- * Handles uploading files to the server, drag/drop events,
- * and managing the uploaded file list.
+ * Hook for managing file uploads with optimistic previews.
+ * Files get instant local previews via URL.createObjectURL() and upload
+ * in the background — no blocking spinner, no disabled buttons.
  */
 'use client'
 
@@ -9,69 +9,114 @@ import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { type UploadedFile } from '@/components/chat/types'
 
+export interface PendingFile {
+  id: string
+  file: File
+  localPreviewUrl: string
+  fileName: string
+  fileType: string
+  fileSize: number
+  status: 'uploading' | 'done' | 'error'
+  result?: UploadedFile
+  error?: string
+}
+
 interface UseFileUploadOptions {
   addFromUpload: (file: UploadedFile) => void
 }
 
 export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [isUploading, setIsUploading] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
+  // Track in-flight upload promises so waitForUploads works even after state is cleared
+  const uploadPromisesRef = useRef<Map<string, Promise<UploadedFile | null>>>(new Map())
+
   const uploadFiles = useCallback(
-    async (files: FileList | File[]) => {
+    (files: FileList | File[]) => {
       const fileArray = Array.from(files)
       if (fileArray.length === 0) return
 
-      setIsUploading(true)
+      // Create pending file entries with local preview URLs immediately
+      const newPending: PendingFile[] = fileArray.map((file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        file,
+        localPreviewUrl: URL.createObjectURL(file),
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        status: 'uploading' as const,
+      }))
 
-      try {
-        const uploadPromises = fileArray.map(async (file) => {
-          const formData = new FormData()
-          formData.append('file', file)
-          formData.append('folder', 'attachments')
+      setPendingFiles((prev) => [...prev, ...newPending])
 
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
+      // Fire uploads in background — each file uploads independently
+      newPending.forEach((pending) => {
+        const formData = new FormData()
+        formData.append('file', pending.file)
+        formData.append('folder', 'attachments')
+
+        const uploadPromise = fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.error?.message || errorData.message || 'Upload failed')
+            }
+            const data = await response.json()
+            const uploadedFile = (data.data?.file || data.file) as UploadedFile
+
+            if (!uploadedFile?.fileUrl) {
+              throw new Error('Upload returned no file URL')
+            }
+
+            // Mark this file as done in state
+            setPendingFiles((prev) =>
+              prev.map((f) =>
+                f.id === pending.id ? { ...f, status: 'done' as const, result: uploadedFile } : f
+              )
+            )
+
+            // Add images to moodboard
+            if (uploadedFile.fileType?.startsWith('image/')) {
+              addFromUpload(uploadedFile)
+            }
+
+            return uploadedFile
+          })
+          .catch((error) => {
+            const errorMsg = error instanceof Error ? error.message : 'Failed to upload file'
+
+            setPendingFiles((prev) =>
+              prev.map((f) =>
+                f.id === pending.id ? { ...f, status: 'error' as const, error: errorMsg } : f
+              )
+            )
+
+            toast.error(`Failed to upload ${pending.fileName}: ${errorMsg}`)
+            return null
+          })
+          .finally(() => {
+            // Clean up the promise from the tracking map
+            uploadPromisesRef.current.delete(pending.id)
           })
 
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error?.message || errorData.message || 'Upload failed')
-          }
-
-          const data = await response.json()
-          return (data.data?.file || data.file) as UploadedFile
-        })
-
-        const newFiles = await Promise.all(uploadPromises)
-        const validFiles = newFiles.filter((f): f is UploadedFile => !!f && !!f.fileUrl)
-        setUploadedFiles((prev) => [...prev, ...validFiles])
-
-        validFiles.forEach((file) => {
-          if (file.fileType?.startsWith('image/')) {
-            addFromUpload(file)
-          }
-        })
-
-        toast.success(`${validFiles.length} file(s) uploaded`)
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to upload files')
-      } finally {
-        setIsUploading(false)
-      }
+        // Track the promise
+        uploadPromisesRef.current.set(pending.id, uploadPromise)
+      })
     },
     [addFromUpload]
   )
 
   const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files
       if (!files || files.length === 0) return
-      await uploadFiles(files)
+      uploadFiles(files)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -103,7 +148,7 @@ export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
   }, [])
 
   const handleDrop = useCallback(
-    async (e: React.DragEvent) => {
+    (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
       setIsDragging(false)
@@ -111,28 +156,115 @@ export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
 
       const files = e.dataTransfer.files
       if (files && files.length > 0) {
-        await uploadFiles(files)
+        uploadFiles(files)
       }
     },
     [uploadFiles]
   )
 
-  const removeFile = useCallback((fileUrl: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.fileUrl !== fileUrl))
+  const removeFile = useCallback((idOrUrl: string) => {
+    setPendingFiles((prev) => {
+      const toRemove = prev.find(
+        (f) => f.id === idOrUrl || f.localPreviewUrl === idOrUrl || f.result?.fileUrl === idOrUrl
+      )
+      if (toRemove) {
+        URL.revokeObjectURL(toRemove.localPreviewUrl)
+        // Remove promise tracking too
+        uploadPromisesRef.current.delete(toRemove.id)
+      }
+      return prev.filter(
+        (f) => f.id !== idOrUrl && f.localPreviewUrl !== idOrUrl && f.result?.fileUrl !== idOrUrl
+      )
+    })
   }, [])
 
   const addExternalLink = useCallback((file: UploadedFile) => {
-    setUploadedFiles((prev) => [...prev, file])
+    setPendingFiles((prev) => [
+      ...prev,
+      {
+        id: `ext-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        file: new File([], file.fileName),
+        localPreviewUrl: file.fileUrl,
+        fileName: file.fileName,
+        fileType: file.fileType,
+        fileSize: file.fileSize,
+        status: 'done' as const,
+        result: file,
+      },
+    ])
   }, [])
 
-  const clearUploadedFiles = useCallback(() => {
-    setUploadedFiles([])
+  /**
+   * Snapshot current files and clear the pending state.
+   * Returns already-completed UploadedFile[] and a promise that resolves
+   * with ALL files (including those still uploading) once they finish.
+   * This allows clearing previews from the input immediately while still
+   * awaiting in-flight uploads.
+   */
+  const collectAndClear = useCallback((): {
+    alreadyDone: UploadedFile[]
+    allUploadsPromise: Promise<UploadedFile[]>
+    hasInFlight: boolean
+  } => {
+    // Snapshot what we need from current state
+    let snapshotDone: UploadedFile[] = []
+    let hasInFlight = false
+
+    setPendingFiles((prev) => {
+      snapshotDone = prev.filter((f) => f.status === 'done' && f.result).map((f) => f.result!)
+      hasInFlight = prev.some((f) => f.status === 'uploading')
+
+      // Revoke blob URLs
+      prev.forEach((f) => {
+        if (f.localPreviewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(f.localPreviewUrl)
+        }
+      })
+      return []
+    })
+
+    // Capture all in-flight promises before they self-clean
+    const inFlightPromises = Array.from(uploadPromisesRef.current.values())
+
+    const allUploadsPromise =
+      inFlightPromises.length > 0
+        ? Promise.all(inFlightPromises).then((results) => {
+            const uploaded = results.filter((r): r is UploadedFile => r !== null)
+            return [...snapshotDone, ...uploaded]
+          })
+        : Promise.resolve(snapshotDone)
+
+    return { alreadyDone: snapshotDone, allUploadsPromise, hasInFlight }
   }, [])
+
+  const clearPendingFiles = useCallback(() => {
+    setPendingFiles((prev) => {
+      prev.forEach((f) => {
+        if (f.localPreviewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(f.localPreviewUrl)
+        }
+      })
+      return []
+    })
+  }, [])
+
+  // Backward-compatible: derive uploadedFiles from pending files that are done
+  const uploadedFiles: UploadedFile[] = pendingFiles
+    .filter((f) => f.status === 'done' && f.result)
+    .map((f) => f.result!)
+
+  // Backward-compatible: isUploading is true if any file is still uploading
+  const isUploading = pendingFiles.some((f) => f.status === 'uploading')
+
+  // Whether there are any files (uploading or done) — used for send button enablement
+  const hasFiles = pendingFiles.length > 0
 
   return {
+    pendingFiles,
+    setPendingFiles,
     uploadedFiles,
-    setUploadedFiles,
     isUploading,
+    hasFiles,
     isDragging,
     fileInputRef,
     uploadFiles,
@@ -143,6 +275,12 @@ export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
     handleDrop,
     removeFile,
     addExternalLink,
-    clearUploadedFiles,
+    clearPendingFiles,
+    collectAndClear,
+    // Backward-compatible alias
+    setUploadedFiles: setPendingFiles as unknown as React.Dispatch<
+      React.SetStateAction<UploadedFile[]>
+    >,
+    clearUploadedFiles: clearPendingFiles,
   }
 }

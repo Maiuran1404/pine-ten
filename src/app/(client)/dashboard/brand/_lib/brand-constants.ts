@@ -4,6 +4,9 @@ import {
   Type,
   Globe,
   Users,
+  Target,
+  MessageSquare,
+  Swords,
   Twitter,
   Linkedin,
   Instagram,
@@ -134,4 +137,7 @@ export const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
   { id: 'typography', label: 'Typography', icon: Type },
   { id: 'social', label: 'Social', icon: Globe },
   { id: 'audiences', label: 'Audiences', icon: Users },
+  { id: 'positioning', label: 'Positioning', icon: Target },
+  { id: 'voice', label: 'Voice', icon: MessageSquare },
+  { id: 'competitors', label: 'Competitors', icon: Swords },
 ]

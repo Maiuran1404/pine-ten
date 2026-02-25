@@ -61,7 +61,7 @@ function detectExternalLink(
 
 interface InlineUploadZoneProps {
   assetRequest: AssetRequest
-  onUpload: (files: FileList | File[]) => Promise<void>
+  onUpload: (files: FileList | File[]) => void
   isUploading: boolean
   uploadedFiles: UploadedFile[]
   onRemoveFile: (fileUrl: string) => void

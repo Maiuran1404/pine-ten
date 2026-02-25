@@ -19,11 +19,11 @@ import {
 import { cn } from '@/lib/utils'
 import type {
   ChatMessage as Message,
-  UploadedFile,
   TaskProposal,
   MoodboardItem,
   QuickOptions as QuickOptionsType,
 } from './types'
+import type { PendingFile } from '@/hooks/use-file-upload'
 import { QuickOptions } from './quick-options'
 import { SubmitActionBar } from './submit-action-bar'
 import type { LiveBrief } from './brief-panel/types'
@@ -37,8 +37,8 @@ export interface ChatInputAreaProps {
   input: string
   setInput: (value: string) => void
   isLoading: boolean
-  isUploading: boolean
-  uploadedFiles: UploadedFile[]
+  pendingFiles: PendingFile[]
+  hasFiles: boolean
   pendingTask: TaskProposal | null
   isTaskMode: boolean
   seamlessTransition: boolean
@@ -96,7 +96,7 @@ export interface ChatInputAreaProps {
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleRequestTaskSummary: () => void
-  removeFile: (fileUrl: string) => void
+  removeFile: (idOrUrl: string) => void
 }
 
 // =============================================================================
@@ -111,8 +111,8 @@ export function ChatInputArea({
   input,
   setInput,
   isLoading,
-  isUploading,
-  uploadedFiles,
+  pendingFiles,
+  hasFiles,
   pendingTask,
   isTaskMode: _isTaskMode,
   seamlessTransition: _seamlessTransition,
@@ -229,33 +229,49 @@ export function ChatInputArea({
         </div>
       )}
 
-      {/* Pending uploads preview */}
-      {uploadedFiles.length > 0 && (
+      {/* File preview chips (optimistic — shown instantly before upload completes) */}
+      {pendingFiles.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
-          {uploadedFiles.filter(Boolean).map((file) => {
-            if (!file || !file.fileUrl) return null
+          {pendingFiles.map((pf) => {
+            const previewUrl = pf.result?.fileUrl ?? pf.localPreviewUrl
+            const isImage = pf.fileType?.startsWith('image/')
             return (
               <div
-                key={file.fileUrl}
-                className="relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border"
-              >
-                {file.isExternalLink ? (
-                  <Link2 className="h-5 w-5 text-muted-foreground" />
-                ) : file.fileType?.startsWith('image/') ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={file.fileUrl}
-                    alt={file.fileName || 'Uploaded file'}
-                    className="h-10 w-10 rounded object-cover"
-                  />
-                ) : (
-                  <FileIcon className="h-5 w-5 text-muted-foreground" />
+                key={pf.id}
+                className={cn(
+                  'relative group flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border',
+                  pf.status === 'error' ? 'border-destructive/50' : 'border-border'
                 )}
+              >
+                {/* Thumbnail / icon */}
+                <div className="relative">
+                  {pf.result?.isExternalLink ? (
+                    <Link2 className="h-5 w-5 text-muted-foreground" />
+                  ) : isImage ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={previewUrl}
+                      alt={pf.fileName || 'Uploaded file'}
+                      className="h-10 w-10 rounded object-cover"
+                    />
+                  ) : (
+                    <FileIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  {/* Per-file upload spinner overlay */}
+                  {pf.status === 'uploading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  )}
+                </div>
                 <span className="text-sm max-w-[100px] truncate text-foreground">
-                  {file.fileName || 'File'}
+                  {pf.fileName || 'File'}
                 </span>
+                {pf.status === 'error' && (
+                  <span className="text-[10px] text-destructive">Failed</span>
+                )}
                 <button
-                  onClick={() => removeFile(file.fileUrl)}
+                  onClick={() => removeFile(pf.id)}
                   className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <XCircle className="h-4 w-4" />
@@ -381,16 +397,14 @@ export function ChatInputArea({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Attach files"
               >
-                {isUploading ? <LoadingSpinner size="sm" /> : <Paperclip className="h-4 w-4" />}
+                <Paperclip className="h-4 w-4" />
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Add image"
               >
                 <ImageIcon className="h-4 w-4" />
@@ -497,7 +511,7 @@ export function ChatInputArea({
           <div className="flex items-center gap-2 shrink-0 ml-3">
             <Button
               onClick={handleSend}
-              disabled={isLoading || (!input.trim() && uploadedFiles.length === 0)}
+              disabled={isLoading || (!input.trim() && !hasFiles)}
               className="h-9 px-5 bg-crafted-green hover:bg-crafted-green-light text-white rounded-full"
             >
               {isLoading ? (

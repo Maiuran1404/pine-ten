@@ -311,6 +311,31 @@ export const companies = pgTable('companies', {
   keywords: jsonb('keywords').$type<string[]>().default([]),
   // Onboarding status
   onboardingStatus: onboardingStatusEnum('onboarding_status').notNull().default('NOT_STARTED'),
+  // Strategic brand data (JSONB)
+  competitors: jsonb('competitors').$type<
+    Array<{
+      name: string
+      website?: string
+      positioning?: string
+      strengths?: string
+      weaknesses?: string
+    }>
+  >(),
+  positioning: jsonb('positioning').$type<{
+    uvp?: string
+    missionStatement?: string
+    positioningStatement?: string
+    differentiators?: string[]
+    targetMarket?: string
+  }>(),
+  brandVoice: jsonb('brand_voice').$type<{
+    messagingPillars?: string[]
+    toneDoList?: string[]
+    toneDontList?: string[]
+    brandPromise?: string
+    keyPhrases?: string[]
+    avoidPhrases?: string[]
+  }>(),
   // Slack integration
   slackChannelId: text('slack_channel_id'), // Client-specific Slack channel
   slackChannelName: text('slack_channel_name'), // Stored for reference

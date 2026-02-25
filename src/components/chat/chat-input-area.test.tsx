@@ -55,8 +55,8 @@ function createDefaultProps(overrides: Partial<ChatInputAreaProps> = {}): ChatIn
     input: '',
     setInput: vi.fn(),
     isLoading: false,
-    isUploading: false,
-    uploadedFiles: [],
+    pendingFiles: [],
+    hasFiles: false,
     pendingTask: null,
     isTaskMode: false,
     seamlessTransition: false,
@@ -148,16 +148,26 @@ describe('ChatInputArea', () => {
     expect(submitButton).not.toBeDisabled()
   })
 
-  it('enables Submit button when files are uploaded even with empty input', () => {
+  it('enables Submit button when files are attached even with empty input', () => {
     render(
       <ChatInputArea
         {...createDefaultProps({
-          uploadedFiles: [
+          hasFiles: true,
+          pendingFiles: [
             {
+              id: 'f1',
+              file: new File([''], 'test.png', { type: 'image/png' }),
+              localPreviewUrl: 'blob:http://localhost/test',
               fileName: 'test.png',
-              fileUrl: 'http://test.com/test.png',
               fileType: 'image/png',
               fileSize: 1024,
+              status: 'done',
+              result: {
+                fileName: 'test.png',
+                fileUrl: 'http://test.com/test.png',
+                fileType: 'image/png',
+                fileSize: 1024,
+              },
             },
           ],
         })}
@@ -188,18 +198,27 @@ describe('ChatInputArea', () => {
     expect(screen.getByText('25 credits available')).toBeInTheDocument()
   })
 
-  it('displays uploaded files with remove button', () => {
+  it('displays pending files with remove button', () => {
     const removeFile = vi.fn()
     render(
       <ChatInputArea
         {...createDefaultProps({
           removeFile,
-          uploadedFiles: [
+          pendingFiles: [
             {
+              id: 'f1',
+              file: new File([''], 'photo.jpg', { type: 'image/jpeg' }),
+              localPreviewUrl: 'blob:http://localhost/photo',
               fileName: 'photo.jpg',
-              fileUrl: 'http://test.com/photo.jpg',
               fileType: 'image/jpeg',
               fileSize: 2048,
+              status: 'done',
+              result: {
+                fileName: 'photo.jpg',
+                fileUrl: 'http://test.com/photo.jpg',
+                fileType: 'image/jpeg',
+                fileSize: 2048,
+              },
             },
           ],
         })}

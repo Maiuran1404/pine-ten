@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withErrorHandling } from '@/lib/errors'
-import { requireAdmin } from '@/lib/require-auth'
-import { pitchDeckSchema } from '@/lib/validations/pitch-deck-schema'
-import { renderPitchDeckHTML } from '@/lib/pitch-deck/pdf-renderer'
+import { requireAuth } from '@/lib/require-auth'
+import { storyboardPdfSchema } from '@/lib/validations/storyboard-pdf-schema'
+import { renderStoryboardHTML } from '@/lib/storyboard-pdf/pdf-renderer'
 import { launchBrowser } from '@/lib/puppeteer'
 
 export const maxDuration = 60
@@ -10,11 +10,11 @@ export const maxDuration = 60
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
-      await requireAdmin()
+      await requireAuth()
 
       const body = await request.json()
-      const data = pitchDeckSchema.parse(body)
-      const html = await renderPitchDeckHTML(data)
+      const data = storyboardPdfSchema.parse(body)
+      const html = await renderStoryboardHTML(data)
 
       let browser
       try {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         })
         const pdfBuffer = Buffer.from(pdfUint8)
 
-        const filename = `pitch-deck-${data.clientName.toLowerCase().replace(/\s+/g, '-')}.pdf`
+        const filename = `storyboard-${new Date().toISOString().slice(0, 10)}.pdf`
 
         return new NextResponse(pdfBuffer, {
           status: 200,
@@ -48,6 +48,6 @@ export async function POST(request: NextRequest) {
         }
       }
     },
-    { endpoint: 'POST /api/admin/pitch-decks/generate-pdf' }
+    { endpoint: 'POST /api/storyboard/generate-pdf' }
   )
 }

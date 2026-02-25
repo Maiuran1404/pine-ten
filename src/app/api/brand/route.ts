@@ -68,6 +68,9 @@ export async function PUT(request: NextRequest) {
         contactPhone,
         tagline,
         keywords,
+        competitors,
+        positioning,
+        brandVoice,
       } = validated
 
       // Update company
@@ -94,6 +97,9 @@ export async function PUT(request: NextRequest) {
           contactPhone: contactPhone ?? undefined,
           tagline: tagline ?? undefined,
           keywords: keywords ?? undefined,
+          competitors: competitors ?? undefined,
+          positioning: positioning ?? undefined,
+          brandVoice: brandVoice ?? undefined,
           updatedAt: new Date(),
         })
         .where(eq(companies.id, dbUser.companyId))

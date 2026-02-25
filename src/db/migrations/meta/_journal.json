@@ -239,6 +239,13 @@
       "when": 1771989657899,
       "tag": "0033_gorgeous_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1772059638443,
+      "tag": "0034_tense_elektra",
+      "breakpoints": true
     }
   ]
 }

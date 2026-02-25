@@ -24,6 +24,7 @@ import {
   Redo2,
   Download,
   Clipboard,
+  Loader2,
 } from 'lucide-react'
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable'
@@ -37,10 +38,11 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
-import { TimelineBar, getSceneRole } from './timeline-bar'
+import { getSceneRole } from './timeline-bar'
 import { StoryboardPreview } from './storyboard-preview'
 import { useStoryboardKeyboard } from '@/hooks/use-storyboard-keyboard'
-import { copyStoryboardToClipboard, exportStoryboardJSON } from '@/lib/storyboard-export'
+import { copyStoryboardToClipboard, exportStoryboardPDF } from '@/lib/storyboard-export'
+import { useCsrfContext } from '@/providers/csrf-provider'
 
 // =============================================================================
 // HELPERS
@@ -997,61 +999,6 @@ function getDurationIndicator(totalDuration: number): {
 }
 
 // =============================================================================
-// DURATION BUDGET BAR (#8) — visual bar showing current vs target duration
-// =============================================================================
-
-function DurationBudgetBar({
-  totalDuration,
-  targetDuration,
-  onTargetChange,
-}: {
-  totalDuration: number
-  targetDuration: number
-  onTargetChange: (target: number) => void
-}) {
-  const ratio = targetDuration > 0 ? totalDuration / targetDuration : 0
-  const isOver = ratio > 1
-  const isClose = ratio >= 0.9 && ratio <= 1.1
-  const barColor = isOver ? 'bg-red-500' : isClose ? 'bg-amber-500' : 'bg-emerald-500'
-  const textColor = isOver ? 'text-red-500' : isClose ? 'text-amber-500' : 'text-emerald-600'
-
-  return (
-    <div className="shrink-0 px-4 py-2 border-b border-border/20 flex items-center gap-3">
-      {/* Large numeric display */}
-      <div className="flex items-baseline gap-1">
-        <span className={cn('text-lg font-bold tabular-nums', textColor)}>
-          {formatTimestamp(totalDuration)}
-        </span>
-        <span className="text-xs text-muted-foreground/60">/</span>
-        <span className="text-sm text-muted-foreground tabular-nums">
-          {formatTimestamp(targetDuration)}
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-300', barColor)}
-          style={{ width: `${Math.min(ratio * 100, 100)}%` }}
-        />
-      </div>
-
-      {/* Target selector */}
-      <select
-        value={targetDuration}
-        onChange={(e) => onTargetChange(Number(e.target.value))}
-        onClick={(e) => e.stopPropagation()}
-        className="text-[10px] bg-transparent border border-border/50 rounded px-1.5 py-0.5 text-muted-foreground cursor-pointer outline-none focus:ring-1 focus:ring-primary/50"
-      >
-        {DURATION_TARGETS.map((t) => (
-          <option key={t} value={t}>
-            {t}s
-          </option>
-        ))}
-      </select>
-    </div>
-  )
-}
 
 // Rotating loading messages for regeneration (U2)
 const REGEN_LOADING_MESSAGES = [
@@ -1084,8 +1031,9 @@ export function RichStoryboardPanel({
   const [regenConfirm, setRegenConfirm] = useState(false)
   const [_regenLoadingMsg, setRegenLoadingMsg] = useState(0)
   const [detailScene, setDetailScene] = useState<StoryboardScene | null>(null)
-  const [targetDuration, setTargetDuration] = useState(60)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const { csrfFetch } = useCsrfContext()
 
   // DnD sensors with activation constraint to avoid conflicts with click (#6)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
@@ -1248,11 +1196,25 @@ export function RichStoryboardPanel({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => exportStoryboardJSON(scenes)}
+              disabled={isDownloading}
+              onClick={async () => {
+                setIsDownloading(true)
+                try {
+                  await exportStoryboardPDF(scenes, csrfFetch)
+                } catch {
+                  // silently fail — user sees spinner stop
+                } finally {
+                  setIsDownloading(false)
+                }
+              }}
               className="h-7 w-7 text-muted-foreground hover:text-primary"
-              title="Download JSON"
+              title="Download PDF"
             >
-              <Download className="h-3.5 w-3.5" />
+              {isDownloading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
             </Button>
             {/* Preview button (#12) */}
             <Button
@@ -1291,18 +1253,6 @@ export function RichStoryboardPanel({
           </div>
         </div>
       </div>
-
-      {/* Duration Budget Bar (#8) */}
-      {totalDuration > 0 && (
-        <DurationBudgetBar
-          totalDuration={totalDuration}
-          targetDuration={targetDuration}
-          onTargetChange={setTargetDuration}
-        />
-      )}
-
-      {/* Timeline bar (#5) */}
-      <TimelineBar scenes={scenes} className="shrink-0 py-2 border-b border-border/20" />
 
       {/* Scrollable rich scene cards with DnD (#6) */}
       <ScrollArea className="flex-1 relative">

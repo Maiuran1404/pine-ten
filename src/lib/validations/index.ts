@@ -187,6 +187,41 @@ export const updateBrandSchema = z.object({
       youtube: z.string().url().optional().or(z.literal('')),
     })
     .optional(),
+  // Strategic brand data (JSONB)
+  competitors: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        website: z.string().url().optional().or(z.literal('')),
+        positioning: z.string().max(500).optional(),
+        strengths: z.string().max(500).optional(),
+        weaknesses: z.string().max(500).optional(),
+      })
+    )
+    .max(10)
+    .optional()
+    .nullable(),
+  positioning: z
+    .object({
+      uvp: z.string().max(500).optional(),
+      missionStatement: z.string().max(1000).optional(),
+      positioningStatement: z.string().max(1000).optional(),
+      differentiators: z.array(z.string().max(200)).max(10).optional(),
+      targetMarket: z.string().max(500).optional(),
+    })
+    .optional()
+    .nullable(),
+  brandVoice: z
+    .object({
+      messagingPillars: z.array(z.string().max(200)).max(10).optional(),
+      toneDoList: z.array(z.string().max(200)).max(20).optional(),
+      toneDontList: z.array(z.string().max(200)).max(20).optional(),
+      brandPromise: z.string().max(500).optional(),
+      keyPhrases: z.array(z.string().max(200)).max(20).optional(),
+      avoidPhrases: z.array(z.string().max(200)).max(20).optional(),
+    })
+    .optional()
+    .nullable(),
 })
 
 export const extractBrandSchema = z.object({

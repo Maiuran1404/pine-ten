@@ -20,6 +20,34 @@ export interface BrandContext {
   industry?: string
   toneOfVoice?: string
   brandDescription?: string
+  // Enrichment fields
+  tagline?: string
+  industryArchetype?: string
+  keywords?: string[]
+  colors?: { primary?: string; secondary?: string; accent?: string }
+  typography?: { primary?: string; secondary?: string }
+  audiences?: Array<{
+    name: string
+    isPrimary?: boolean
+    demographics?: Record<string, unknown>
+    psychographics?: { painPoints?: string[]; goals?: string[]; values?: string[] }
+  }>
+  competitors?: Array<{
+    name: string
+    positioning?: string
+  }>
+  positioning?: {
+    uvp?: string
+    differentiators?: string[]
+    targetMarket?: string
+  }
+  brandVoice?: {
+    messagingPillars?: string[]
+    toneDoList?: string[]
+    toneDontList?: string[]
+    keyPhrases?: string[]
+    avoidPhrases?: string[]
+  }
 }
 
 // =============================================================================
@@ -66,7 +94,7 @@ export function buildSystemPrompt(state: BriefingState, brandContext?: BrandCont
 
   // Brand context
   if (brandContext) {
-    sections.push(buildBrandSection(brandContext))
+    sections.push(buildBrandSection(brandContext, state.stage))
   }
 
   // Website inspiration context
@@ -761,12 +789,98 @@ Reference these inspirations when recommending section structure and design appr
 // BRAND CONTEXT
 // =============================================================================
 
-function buildBrandSection(ctx: BrandContext): string {
+function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
   const parts: string[] = ['== BRAND CONTEXT ==']
+
+  // ── Identity (all stages) ──
   if (ctx.companyName) parts.push(`Company: ${ctx.companyName}`)
+  if (ctx.tagline) parts.push(`Tagline: "${ctx.tagline}"`)
   if (ctx.industry) parts.push(`Industry: ${ctx.industry}`)
+  if (ctx.industryArchetype) parts.push(`Archetype: ${ctx.industryArchetype}`)
   if (ctx.toneOfVoice) parts.push(`Tone of voice: ${ctx.toneOfVoice}`)
   if (ctx.brandDescription) parts.push(`Description: ${ctx.brandDescription}`)
+  if (ctx.keywords?.length) parts.push(`Keywords: ${ctx.keywords.join(', ')}`)
+
+  // ── Positioning (all stages) ──
+  if (ctx.positioning) {
+    const pos = ctx.positioning
+    if (pos.uvp) parts.push(`\nUnique Value Proposition: ${pos.uvp}`)
+    if (pos.differentiators?.length)
+      parts.push(`Differentiators: ${pos.differentiators.join(', ')}`)
+    if (pos.targetMarket) parts.push(`Target Market: ${pos.targetMarket}`)
+  }
+
+  // ── Brand Voice (all stages) ──
+  if (ctx.brandVoice) {
+    const voice = ctx.brandVoice
+    if (voice.messagingPillars?.length)
+      parts.push(`\nMessaging Pillars: ${voice.messagingPillars.join(' | ')}`)
+    if (voice.toneDoList?.length) parts.push(`Tone DO's: ${voice.toneDoList.join(', ')}`)
+    if (voice.toneDontList?.length) parts.push(`Tone DON'Ts: ${voice.toneDontList.join(', ')}`)
+    if (voice.keyPhrases?.length) parts.push(`Key Phrases: "${voice.keyPhrases.join('", "')}"`)
+    if (voice.avoidPhrases?.length)
+      parts.push(`Avoid Phrases: "${voice.avoidPhrases.join('", "')}"`)
+  }
+
+  // ── Competitors (EXTRACT, INTENT, STRATEGIC_REVIEW only) ──
+  const competitorStages: BriefingStage[] = ['EXTRACT', 'INTENT', 'STRATEGIC_REVIEW']
+  if (ctx.competitors?.length && (!stage || competitorStages.includes(stage))) {
+    parts.push('\nCompetitors:')
+    for (const c of ctx.competitors) {
+      const line = c.positioning ? `- ${c.name}: ${c.positioning}` : `- ${c.name}`
+      parts.push(line)
+    }
+  }
+
+  // ── Visual Identity (INSPIRATION → SUBMIT) ──
+  const visualStages: BriefingStage[] = [
+    'INSPIRATION',
+    'STRUCTURE',
+    'ELABORATE',
+    'STRATEGIC_REVIEW',
+    'MOODBOARD',
+    'REVIEW',
+    'DEEPEN',
+    'SUBMIT',
+  ]
+  if (stage && visualStages.includes(stage)) {
+    if (ctx.colors?.primary || ctx.colors?.secondary || ctx.colors?.accent) {
+      const colorParts: string[] = []
+      if (ctx.colors.primary) colorParts.push(`Primary: ${ctx.colors.primary}`)
+      if (ctx.colors.secondary) colorParts.push(`Secondary: ${ctx.colors.secondary}`)
+      if (ctx.colors.accent) colorParts.push(`Accent: ${ctx.colors.accent}`)
+      parts.push(`\nBrand Colors: ${colorParts.join(', ')}`)
+    }
+    if (ctx.typography?.primary || ctx.typography?.secondary) {
+      const typoParts: string[] = []
+      if (ctx.typography.primary) typoParts.push(`Primary: ${ctx.typography.primary}`)
+      if (ctx.typography.secondary) typoParts.push(`Secondary: ${ctx.typography.secondary}`)
+      parts.push(`Typography: ${typoParts.join(', ')}`)
+    }
+  }
+
+  // ── Audiences (EXTRACT, INTENT, STRUCTURE, ELABORATE, STRATEGIC_REVIEW) ──
+  const audienceStages: BriefingStage[] = [
+    'EXTRACT',
+    'INTENT',
+    'STRUCTURE',
+    'ELABORATE',
+    'STRATEGIC_REVIEW',
+  ]
+  if (ctx.audiences?.length && (!stage || audienceStages.includes(stage))) {
+    parts.push('\nTarget Audiences:')
+    for (const a of ctx.audiences) {
+      const primary = a.isPrimary ? ' (PRIMARY)' : ''
+      parts.push(`- ${a.name}${primary}`)
+      if (a.psychographics?.painPoints?.length) {
+        parts.push(`  Pain points: ${a.psychographics.painPoints.join(', ')}`)
+      }
+      if (a.psychographics?.goals?.length) {
+        parts.push(`  Goals: ${a.psychographics.goals.join(', ')}`)
+      }
+    }
+  }
+
   return parts.join('\n')
 }
 

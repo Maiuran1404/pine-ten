@@ -13,6 +13,9 @@ import { ColorsTab } from './_components/colors-tab'
 import { TypographyTab } from './_components/typography-tab'
 import { SocialTab } from './_components/social-tab'
 import { AudiencesTab } from './_components/audiences-tab'
+import { PositioningTab } from './_components/positioning-tab'
+import { VoiceTab } from './_components/voice-tab'
+import { CompetitorsTab } from './_components/competitors-tab'
 import { BrandPreview } from './_components/brand-preview'
 import type { TabId } from './_lib/brand-types'
 
@@ -149,6 +152,13 @@ export default function BrandPage() {
                   onDelete={handleDeleteAudience}
                   onSetPrimary={handleSetPrimaryAudience}
                 />
+              )}
+              {activeTab === 'positioning' && (
+                <PositioningTab brand={brand} updateField={updateField} />
+              )}
+              {activeTab === 'voice' && <VoiceTab brand={brand} updateField={updateField} />}
+              {activeTab === 'competitors' && (
+                <CompetitorsTab brand={brand} updateField={updateField} />
               )}
             </motion.div>
           </AnimatePresence>
