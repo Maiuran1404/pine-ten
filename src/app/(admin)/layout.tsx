@@ -30,6 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isPending && !session) {
       router.push('/login')
+      return
     }
     // Wait for subdomain detection to complete before checking
     if (!portal.isHydrated) {
