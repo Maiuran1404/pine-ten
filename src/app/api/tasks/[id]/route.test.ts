@@ -115,6 +115,7 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn(),
   desc: vi.fn(),
   ne: vi.fn(),
+  inArray: vi.fn(),
 }))
 
 const { GET } = await import('./route')
@@ -536,5 +537,256 @@ describe('GET /api/tasks/[id]', () => {
 
     const response = await GET(makeRequest() as never, makeParams('task-3'))
     expect(response.status).toBe(200)
+  })
+
+  it('includes websiteProject data when a website project exists for the task', async () => {
+    setupAuth({ id: 'owner-user', role: 'CLIENT' })
+
+    const taskRow = {
+      id: 'task-wp',
+      title: 'Website Task',
+      description: 'A website project task',
+      status: 'IN_PROGRESS',
+      requirements: null,
+      styleReferences: [],
+      moodboardItems: [],
+      chatHistory: [],
+      estimatedHours: '8',
+      creditsUsed: 20,
+      maxRevisions: 3,
+      revisionsUsed: 0,
+      priority: 'NORMAL',
+      deadline: null,
+      assignedAt: null,
+      completedAt: null,
+      createdAt: new Date(),
+      clientId: 'owner-user',
+      freelancerId: null,
+      categoryId: null,
+      categoryDbId: null,
+      categoryName: null,
+      categorySlug: null,
+      freelancerDbId: null,
+      freelancerName: null,
+      freelancerImage: null,
+    }
+
+    const websiteProject = {
+      id: 'wp-1',
+      deliveryStatus: 'PREVIEWING',
+      framerProjectUrl: 'https://framer.com/project/abc',
+      framerPreviewUrl: 'https://preview.framer.com/abc',
+      framerDeployedUrl: null,
+    }
+
+    // 1st select: main task query
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        leftJoin: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([taskRow]),
+            }),
+          }),
+        }),
+      }),
+    })
+
+    // 2nd select: client info (no company)
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([{ companyId: null }]),
+        }),
+      }),
+    })
+
+    // 3rd: files
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    })
+
+    // 4th: messages
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
+    })
+
+    // 5th: activity log
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    })
+
+    // 6th: brief data
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    })
+
+    // 7th: website project — returns a project
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([websiteProject]),
+        }),
+      }),
+    })
+
+    const response = await GET(makeRequest() as never, makeParams('task-wp'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data.task.websiteProject).not.toBeNull()
+    expect(data.data.task.websiteProject.id).toBe('wp-1')
+    expect(data.data.task.websiteProject.deliveryStatus).toBe('PREVIEWING')
+    expect(data.data.task.websiteProject.framerProjectUrl).toBe('https://framer.com/project/abc')
+    expect(data.data.task.websiteProject.framerPreviewUrl).toBe('https://preview.framer.com/abc')
+    expect(data.data.task.websiteProject.framerDeployedUrl).toBeNull()
+  })
+
+  it('returns websiteProject as null when no website project exists', async () => {
+    setupAuth({ id: 'admin-user', role: 'ADMIN' })
+
+    const taskRow = {
+      id: 'task-no-wp',
+      title: 'Regular Task',
+      description: 'No website project',
+      status: 'PENDING',
+      requirements: null,
+      styleReferences: [],
+      moodboardItems: [],
+      chatHistory: [],
+      estimatedHours: null,
+      creditsUsed: 5,
+      maxRevisions: 3,
+      revisionsUsed: 0,
+      priority: 'NORMAL',
+      deadline: null,
+      assignedAt: null,
+      completedAt: null,
+      createdAt: new Date(),
+      clientId: 'someone',
+      freelancerId: null,
+      categoryId: null,
+      categoryDbId: null,
+      categoryName: null,
+      categorySlug: null,
+      freelancerDbId: null,
+      freelancerName: null,
+      freelancerImage: null,
+    }
+
+    // Use setupTaskFound which returns empty websiteProjectResult by default
+    setupTaskFound(taskRow)
+
+    const response = await GET(makeRequest() as never, makeParams('task-no-wp'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data.task.websiteProject).toBeNull()
+  })
+
+  it('filters previous deliverables by task IDs using inArray', async () => {
+    setupAuth({ id: 'owner-user', role: 'CLIENT' })
+
+    const taskRow = {
+      id: 'task-pd',
+      title: 'Task with previous work',
+      description: 'Has previous deliverables',
+      status: 'IN_PROGRESS',
+      requirements: null,
+      styleReferences: [],
+      moodboardItems: [],
+      chatHistory: [],
+      estimatedHours: '4',
+      creditsUsed: 10,
+      maxRevisions: 3,
+      revisionsUsed: 0,
+      priority: 'NORMAL',
+      deadline: null,
+      assignedAt: null,
+      completedAt: null,
+      createdAt: new Date(),
+      clientId: 'owner-user',
+      freelancerId: null,
+      categoryId: null,
+      categoryDbId: null,
+      categoryName: null,
+      categorySlug: null,
+      freelancerDbId: null,
+      freelancerName: null,
+      freelancerImage: null,
+    }
+
+    const previousWork = [
+      {
+        taskId: 'prev-task-1',
+        taskTitle: 'Old Task 1',
+        taskStatus: 'COMPLETED',
+        completedAt: new Date(),
+        categoryName: 'Logo',
+      },
+      {
+        taskId: 'prev-task-2',
+        taskTitle: 'Old Task 2',
+        taskStatus: 'COMPLETED',
+        completedAt: new Date(),
+        categoryName: 'Banner',
+      },
+    ]
+
+    const previousDeliverables = [
+      {
+        id: 'file-a',
+        taskId: 'prev-task-1',
+        fileName: 'logo.png',
+        fileUrl: 'https://cdn.example.com/logo.png',
+        fileType: 'image/png',
+        fileSize: 1024,
+        createdAt: new Date(),
+      },
+      {
+        id: 'file-b',
+        taskId: 'prev-task-2',
+        fileName: 'banner.jpg',
+        fileUrl: 'https://cdn.example.com/banner.jpg',
+        fileType: 'image/jpeg',
+        fileSize: 2048,
+        createdAt: new Date(),
+      },
+    ]
+
+    setupTaskFound(taskRow, {
+      clientCompanyId: 'company-1',
+      previousWork,
+      previousDeliverables,
+    })
+
+    const response = await GET(makeRequest() as never, makeParams('task-pd'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data.task.previousWork).toHaveLength(2)
+    // Deliverables are grouped by task — each previous work item gets its own deliverables
+    expect(data.data.task.previousWork[0].deliverables).toHaveLength(1)
+    expect(data.data.task.previousWork[0].deliverables[0].fileName).toBe('logo.png')
+    expect(data.data.task.previousWork[1].deliverables).toHaveLength(1)
+    expect(data.data.task.previousWork[1].deliverables[0].fileName).toBe('banner.jpg')
   })
 })

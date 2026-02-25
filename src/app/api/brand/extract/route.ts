@@ -338,102 +338,123 @@ function createDefaultBrandData(
   }
 }
 
+const EXTRACTION_TIMEOUT_MS = 45_000
+
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async () => {
-    await requireAuth()
+  return withErrorHandling(
+    async () => {
+      await requireAuth()
 
-    const body = await request.json()
-    const { websiteUrl } = extractBrandRequestSchema.parse(body)
+      // Guard against hung requests — fail gracefully before platform timeout
+      const result = await Promise.race([
+        extractBrand(request),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(Errors.badRequest('Brand extraction timed out. Please try again.')),
+            EXTRACTION_TIMEOUT_MS
+          )
+        ),
+      ])
 
-    // Normalize URL
-    let normalizedUrl = websiteUrl.trim()
-    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-      normalizedUrl = `https://${normalizedUrl}`
+      return result
+    },
+    { endpoint: 'POST /api/brand/extract' }
+  )
+}
+
+async function extractBrand(request: NextRequest) {
+  const body = await request.json()
+  const { websiteUrl } = extractBrandRequestSchema.parse(body)
+
+  // Normalize URL
+  let normalizedUrl = websiteUrl.trim()
+  if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+    normalizedUrl = `https://${normalizedUrl}`
+  }
+
+  // Scrape the website with Firecrawl - use viewport-sized screenshot to avoid oversized images
+  let scrapeResult
+  try {
+    scrapeResult = await getFirecrawl().scrape(normalizedUrl, {
+      formats: [
+        'markdown',
+        { type: 'screenshot', fullPage: false }, // Use viewport screenshot to stay within Claude's size limits
+        'links',
+        'branding',
+      ],
+      onlyMainContent: false,
+      headers: { 'Accept-Language': 'en-US,en;q=0.9' }, // Prefer English content
+    })
+  } catch (scrapeError) {
+    logger.error({ error: scrapeError }, 'Firecrawl scrape error')
+    throw Errors.badRequest('Failed to scrape website. Please check the URL and try again.')
+  }
+
+  const { markdown, screenshot, links, metadata, branding } = scrapeResult as {
+    markdown?: string
+    screenshot?: string
+    links?: string[]
+    metadata?: {
+      title?: string
+      description?: string
+      ogImage?: string
+      favicon?: string
     }
-
-    // Scrape the website with Firecrawl - use viewport-sized screenshot to avoid oversized images
-    let scrapeResult
-    try {
-      scrapeResult = await getFirecrawl().scrape(normalizedUrl, {
-        formats: [
-          'markdown',
-          { type: 'screenshot', fullPage: false }, // Use viewport screenshot to stay within Claude's size limits
-          'links',
-          'branding',
-        ],
-        onlyMainContent: false,
-        headers: { 'Accept-Language': 'en-US,en;q=0.9' }, // Prefer English content
-      })
-    } catch (scrapeError) {
-      logger.error({ error: scrapeError }, 'Firecrawl scrape error')
-      throw Errors.badRequest('Failed to scrape website. Please check the URL and try again.')
-    }
-
-    const { markdown, screenshot, links, metadata, branding } = scrapeResult as {
-      markdown?: string
-      screenshot?: string
-      links?: string[]
-      metadata?: {
-        title?: string
-        description?: string
-        ogImage?: string
-        favicon?: string
+    branding?: {
+      colors?: {
+        primary?: string
+        secondary?: string
+        accent?: string
+        background?: string
+        textPrimary?: string
+        link?: string
+        [key: string]: string | undefined
       }
-      branding?: {
-        colors?: {
+      typography?: {
+        fontFamilies?: {
           primary?: string
-          secondary?: string
-          accent?: string
-          background?: string
-          textPrimary?: string
-          link?: string
-          [key: string]: string | undefined
-        }
-        typography?: {
-          fontFamilies?: {
-            primary?: string
-          }
-        }
-        fonts?: Array<{ family: string }>
-        images?: {
-          logo?: string | null
-          favicon?: string | null
-        }
-        confidence?: {
-          colors?: number
-          buttons?: number
-          overall?: number
         }
       }
+      fonts?: Array<{ family: string }>
+      images?: {
+        logo?: string | null
+        favicon?: string | null
+      }
+      confidence?: {
+        colors?: number
+        buttons?: number
+        overall?: number
+      }
     }
+  }
 
-    // Check if Firecrawl has good branding data with reasonable confidence
-    // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
-    const colorConfidence = branding?.confidence?.colors ?? 0
-    const hasColorsWithConfidence =
-      branding?.colors && Object.keys(branding.colors).length > 2 && colorConfidence >= 0.3
+  // Check if Firecrawl has good branding data with reasonable confidence
+  // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
+  const colorConfidence = branding?.confidence?.colors ?? 0
+  const hasColorsWithConfidence =
+    branding?.colors && Object.keys(branding.colors).length > 2 && colorConfidence >= 0.3
 
-    // If confidence is too low, use Claude for better color extraction
-    const hasBrandingColors = hasColorsWithConfidence
-    logger.info(
-      { url: normalizedUrl, source: hasBrandingColors ? 'Firecrawl' : 'Claude', colorConfidence },
-      'Brand extraction source selected'
-    )
+  // If confidence is too low, use Claude for better color extraction
+  const hasBrandingColors = hasColorsWithConfidence
+  logger.info(
+    { url: normalizedUrl, source: hasBrandingColors ? 'Firecrawl' : 'Claude', colorConfidence },
+    'Brand extraction source selected'
+  )
 
-    // Even if Firecrawl has good branding colors, we still need Claude for:
-    // 1. Target audience inference
-    // 2. Visual style and brand tone detection
-    // 3. Industry classification
-    // So we always run Claude analysis, but may use Firecrawl colors as fallback
-    const firecrawlBrandData = hasBrandingColors
-      ? createDefaultBrandData(metadata, branding, links, normalizedUrl)
-      : null
+  // Even if Firecrawl has good branding colors, we still need Claude for:
+  // 1. Target audience inference
+  // 2. Visual style and brand tone detection
+  // 3. Industry classification
+  // So we always run Claude analysis, but may use Firecrawl colors as fallback
+  const firecrawlBrandData = hasBrandingColors
+    ? createDefaultBrandData(metadata, branding, links, normalizedUrl)
+    : null
 
-    // Otherwise, use Claude for deeper analysis
-    const contentParts: Anthropic.Messages.ContentBlockParam[] = []
+  // Otherwise, use Claude for deeper analysis
+  const contentParts: Anthropic.Messages.ContentBlockParam[] = []
 
-    // Add text content for context (always include this)
-    const textPrompt = `Analyze this website and extract comprehensive brand information including visual personality.
+  // Add text content for context (always include this)
+  const textPrompt = `Analyze this website and extract comprehensive brand information including visual personality.
 
 Website URL: ${normalizedUrl}
 Page Title: ${metadata?.title || 'Unknown'}
@@ -448,8 +469,8 @@ ${links?.slice(0, 20).join('\n') || 'No links available'}
 ${screenshot ? 'A screenshot of the website is also provided for visual analysis.' : ''}
 
 Based on the content${
-      screenshot ? ' and screenshot' : ''
-    } above, extract the following brand information in JSON format:
+    screenshot ? ' and screenshot' : ''
+  } above, extract the following brand information in JSON format:
 
 IMPORTANT: ALL output must be in English, even if the website content is in another language. Translate any non-English content.
 
@@ -615,251 +636,248 @@ Return ONLY a valid JSON object with this exact structure:
   ]
 }`
 
-    // Try to include screenshot, but be prepared to retry without it if it fails
-    let useScreenshot = !!screenshot
-    let brandData: BrandExtraction | null = null
-    let lastError: Error | null = null
+  // Try to include screenshot, but be prepared to retry without it if it fails
+  let useScreenshot = !!screenshot
+  let brandData: BrandExtraction | null = null
+  let lastError: Error | null = null
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        contentParts.length = 0 // Clear array
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      contentParts.length = 0 // Clear array
 
-        // Only add screenshot on first attempt
-        if (useScreenshot && attempt === 0 && screenshot) {
-          contentParts.push({
-            type: 'image',
-            source: {
-              type: 'url',
-              url: screenshot,
-            },
-          })
-        }
-
+      // Only add screenshot on first attempt
+      if (useScreenshot && attempt === 0 && screenshot) {
         contentParts.push({
-          type: 'text',
-          text: textPrompt,
+          type: 'image',
+          source: {
+            type: 'url',
+            url: screenshot,
+          },
         })
-
-        const response = await getAnthropic().messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2000,
-          messages: [
-            {
-              role: 'user',
-              content: contentParts,
-            },
-          ],
-        })
-
-        // Extract JSON from Claude's response
-        const responseText = response.content
-          .filter((block): block is Anthropic.Messages.TextBlock => block.type === 'text')
-          .map((block) => block.text)
-          .join('')
-
-        // Parse the JSON response
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-        if (!jsonMatch) {
-          throw new Error('No JSON found in response')
-        }
-        brandData = JSON.parse(jsonMatch[0])
-        break // Success, exit retry loop
-      } catch (error) {
-        lastError = error as Error
-        logger.error({ error, attempt: attempt + 1 }, 'Claude analysis attempt failed')
-
-        // Check if it's an image-related error — retry without screenshot
-        const errorMessage = String(error)
-        if (
-          useScreenshot &&
-          (errorMessage.includes('8000 pixels') ||
-            errorMessage.includes('image') ||
-            errorMessage.includes('dimension'))
-        ) {
-          logger.info('Image too large, retrying without screenshot')
-          useScreenshot = false
-          continue
-        }
-
-        // For other errors, still retry once without screenshot as a general fallback
-        if (attempt === 0 && useScreenshot) {
-          logger.info('Claude analysis failed, retrying without screenshot')
-          useScreenshot = false
-          continue
-        }
-
-        break
       }
-    }
 
-    // If Claude analysis failed entirely, use fallback data
-    if (!brandData) {
-      logger.error({ error: lastError }, 'All Claude analysis attempts failed, using fallback data')
-      brandData = createDefaultBrandData(metadata, branding, links, normalizedUrl)
-    }
-
-    // Sanitize non-Latin text from key fields (handles sites that serve localized content)
-    const hasNonLatin = (text: string) => /[^\u0000-\u024F\u1E00-\u1EFF]/.test(text)
-    const stripNonLatin = (text: string) => {
-      // If text has parenthetical English translation like "中文 (English)", extract the English
-      const parenMatch = text.match(/\(([^)]+)\)/)
-      if (parenMatch && !hasNonLatin(parenMatch[1])) return parenMatch[1].trim()
-      // Otherwise strip non-Latin chars and clean up
-      const cleaned = text
-        .replace(/[^\u0000-\u024F\u1E00-\u1EFF]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-      return cleaned || null
-    }
-
-    if (brandData.name && hasNonLatin(brandData.name)) {
-      brandData.name =
-        stripNonLatin(brandData.name) || extractNameFromDomain(normalizedUrl) || 'Unknown Company'
-    }
-    if (brandData.description && hasNonLatin(brandData.description)) {
-      brandData.description = stripNonLatin(brandData.description) || ''
-    }
-    if (brandData.tagline && hasNonLatin(brandData.tagline)) {
-      brandData.tagline = stripNonLatin(brandData.tagline)
-    }
-
-    // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
-    // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
-    if (firecrawlBrandData && hasBrandingColors) {
-      brandData.primaryColor = firecrawlBrandData.primaryColor
-      brandData.secondaryColor = firecrawlBrandData.secondaryColor
-      brandData.accentColor = firecrawlBrandData.accentColor
-      brandData.backgroundColor = firecrawlBrandData.backgroundColor
-      brandData.textColor = firecrawlBrandData.textColor
-      if (firecrawlBrandData.brandColors.length > 0) {
-        brandData.brandColors = firecrawlBrandData.brandColors
-      }
-      logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis")
-    } else {
-      // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
-      // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
-      const firecrawlColorConfidence = branding?.confidence?.colors ?? 0
-      if (branding?.colors && firecrawlColorConfidence >= 0.1) {
-        // Only use Firecrawl colors as fallback when Claude returned defaults
-        if (branding.colors.primary && brandData.primaryColor === '#6366f1') {
-          brandData.primaryColor = branding.colors.primary
-        }
-        // Use Firecrawl accent as secondary since they don't have a 'secondary' key
-        if (branding.colors.accent && !brandData.secondaryColor) {
-          brandData.secondaryColor = branding.colors.accent
-        }
-        if (
-          branding.colors.link &&
-          !brandData.accentColor &&
-          branding.colors.link !== brandData.secondaryColor
-        ) {
-          brandData.accentColor = branding.colors.link
-        }
-        if (branding.colors.background && brandData.backgroundColor === '#ffffff') {
-          brandData.backgroundColor = branding.colors.background
-        }
-        if (branding.colors.textPrimary && brandData.textColor === '#1f2937') {
-          brandData.textColor = branding.colors.textPrimary
-        }
-        if (brandData.brandColors.length === 0) {
-          brandData.brandColors = Object.values(branding.colors).filter(
-            (c): c is string => typeof c === 'string' && c.startsWith('#')
-          )
-        }
-      }
-    }
-
-    if (branding?.typography?.fontFamilies?.primary && !brandData.primaryFont) {
-      brandData.primaryFont = branding.typography.fontFamilies.primary
-    } else if (branding?.fonts?.[0]?.family && !brandData.primaryFont) {
-      brandData.primaryFont = branding.fonts[0].family
-    }
-
-    // Add favicon and logo from branding/metadata if not found
-    if (!brandData.faviconUrl) {
-      brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null
-    }
-    if (!brandData.logoUrl) {
-      brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null
-    }
-
-    // Merge social links - ensure empty object if none found
-    const extractedSocial = extractSocialLinks(links)
-    const claudeSocial = brandData.socialLinks || {}
-    brandData.socialLinks = { ...extractedSocial, ...claudeSocial }
-
-    // Remove any undefined/null/empty string values from social links
-    if (brandData.socialLinks) {
-      Object.keys(brandData.socialLinks).forEach((key) => {
-        const value = brandData.socialLinks[key as keyof typeof brandData.socialLinks]
-        if (!value || value.trim() === '') {
-          delete brandData.socialLinks[key as keyof typeof brandData.socialLinks]
-        }
+      contentParts.push({
+        type: 'text',
+        text: textPrompt,
       })
+
+      const response = await getAnthropic().messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [
+          {
+            role: 'user',
+            content: contentParts,
+          },
+        ],
+      })
+
+      // Extract JSON from Claude's response
+      const responseText = response.content
+        .filter((block): block is Anthropic.Messages.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('')
+
+      // Parse the JSON response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('No JSON found in response')
+      }
+      brandData = JSON.parse(jsonMatch[0])
+      break // Success, exit retry loop
+    } catch (error) {
+      lastError = error as Error
+      logger.error({ error, attempt: attempt + 1 }, 'Claude analysis attempt failed')
+
+      // Check if it's an image-related error — retry without screenshot
+      const errorMessage = String(error)
+      if (
+        useScreenshot &&
+        (errorMessage.includes('8000 pixels') ||
+          errorMessage.includes('image') ||
+          errorMessage.includes('dimension'))
+      ) {
+        logger.info('Image too large, retrying without screenshot')
+        useScreenshot = false
+        continue
+      }
+
+      // For other errors, still retry once without screenshot as a general fallback
+      if (attempt === 0 && useScreenshot) {
+        logger.info('Claude analysis failed, retrying without screenshot')
+        useScreenshot = false
+        continue
+      }
+
+      break
     }
+  }
 
-    // Ensure feel values have defaults if Claude didn't return them
-    // Use type assertion since brandData may be a parsed JSON that doesn't have all fields
-    const brandDataWithFeels = brandData as BrandExtraction
-    brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50
-    brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50
-    brandDataWithFeels.feelExperimentalClassic = brandData.feelExperimentalClassic ?? 50
-    brandDataWithFeels.feelFriendlyProfessional = brandData.feelFriendlyProfessional ?? 50
-    brandDataWithFeels.feelPremiumAccessible = brandData.feelPremiumAccessible ?? 50
-    brandDataWithFeels.signalTone = brandData.signalTone ?? 50
-    brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50
-    brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50
-    brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50
-    brandDataWithFeels.brandVoiceSummary = brandData.brandVoiceSummary || ''
+  // If Claude analysis failed entirely, use fallback data
+  if (!brandData) {
+    logger.error({ error: lastError }, 'All Claude analysis attempts failed, using fallback data')
+    brandData = createDefaultBrandData(metadata, branding, links, normalizedUrl)
+  }
 
-    // Validate and set defaults for visualStyle, brandTone, and industryArchetype
-    const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(
-      brandData.visualStyle as (typeof VISUAL_STYLE_VALUES)[number]
-    )
-    const isValidBrandTone = BRAND_TONE_VALUES.includes(
-      brandData.brandTone as (typeof BRAND_TONE_VALUES)[number]
-    )
-    const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(
-      brandData.industryArchetype as (typeof INDUSTRY_ARCHETYPE_VALUES)[number]
-    )
+  // Sanitize non-Latin text from key fields (handles sites that serve localized content)
+  const hasNonLatin = (text: string) => /[^\u0000-\u024F\u1E00-\u1EFF]/.test(text)
+  const stripNonLatin = (text: string) => {
+    // If text has parenthetical English translation like "中文 (English)", extract the English
+    const parenMatch = text.match(/\(([^)]+)\)/)
+    if (parenMatch && !hasNonLatin(parenMatch[1])) return parenMatch[1].trim()
+    // Otherwise strip non-Latin chars and clean up
+    const cleaned = text
+      .replace(/[^\u0000-\u024F\u1E00-\u1EFF]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return cleaned || null
+  }
 
-    brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : 'modern-sleek'
-    brandDataWithFeels.brandTone = isValidBrandTone
-      ? brandData.brandTone
-      : 'professional-trustworthy'
-    brandDataWithFeels.industryArchetype = isValidIndustryArchetype
-      ? brandData.industryArchetype
-      : null
+  if (brandData.name && hasNonLatin(brandData.name)) {
+    brandData.name =
+      stripNonLatin(brandData.name) || extractNameFromDomain(normalizedUrl) || 'Unknown Company'
+  }
+  if (brandData.description && hasNonLatin(brandData.description)) {
+    brandData.description = stripNonLatin(brandData.description) || ''
+  }
+  if (brandData.tagline && hasNonLatin(brandData.tagline)) {
+    brandData.tagline = stripNonLatin(brandData.tagline)
+  }
 
-    // Ensure audiences is an array and validate each audience
-    const rawAudiences = brandData.audiences || []
-    brandDataWithFeels.audiences = Array.isArray(rawAudiences)
-      ? rawAudiences.map((audience: InferredAudience) => ({
-          name: audience.name || 'Unknown Audience',
-          isPrimary: !!audience.isPrimary,
-          demographics: audience.demographics || {},
-          firmographics: audience.firmographics || {},
-          psychographics: audience.psychographics || {},
-          behavioral: audience.behavioral || {},
-          confidence:
-            typeof audience.confidence === 'number'
-              ? Math.min(100, Math.max(0, audience.confidence))
-              : 50,
-        }))
-      : []
-
-    // Ensure exactly one primary audience if audiences exist
-    if (brandDataWithFeels.audiences.length > 0) {
-      const hasPrimary = brandDataWithFeels.audiences.some((a) => a.isPrimary)
-      if (!hasPrimary) {
-        brandDataWithFeels.audiences[0].isPrimary = true
+  // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
+  // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
+  if (firecrawlBrandData && hasBrandingColors) {
+    brandData.primaryColor = firecrawlBrandData.primaryColor
+    brandData.secondaryColor = firecrawlBrandData.secondaryColor
+    brandData.accentColor = firecrawlBrandData.accentColor
+    brandData.backgroundColor = firecrawlBrandData.backgroundColor
+    brandData.textColor = firecrawlBrandData.textColor
+    if (firecrawlBrandData.brandColors.length > 0) {
+      brandData.brandColors = firecrawlBrandData.brandColors
+    }
+    logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis")
+  } else {
+    // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
+    // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
+    const firecrawlColorConfidence = branding?.confidence?.colors ?? 0
+    if (branding?.colors && firecrawlColorConfidence >= 0.1) {
+      // Only use Firecrawl colors as fallback when Claude returned defaults
+      if (branding.colors.primary && brandData.primaryColor === '#6366f1') {
+        brandData.primaryColor = branding.colors.primary
+      }
+      // Use Firecrawl accent as secondary since they don't have a 'secondary' key
+      if (branding.colors.accent && !brandData.secondaryColor) {
+        brandData.secondaryColor = branding.colors.accent
+      }
+      if (
+        branding.colors.link &&
+        !brandData.accentColor &&
+        branding.colors.link !== brandData.secondaryColor
+      ) {
+        brandData.accentColor = branding.colors.link
+      }
+      if (branding.colors.background && brandData.backgroundColor === '#ffffff') {
+        brandData.backgroundColor = branding.colors.background
+      }
+      if (branding.colors.textPrimary && brandData.textColor === '#1f2937') {
+        brandData.textColor = branding.colors.textPrimary
+      }
+      if (brandData.brandColors.length === 0) {
+        brandData.brandColors = Object.values(branding.colors).filter(
+          (c): c is string => typeof c === 'string' && c.startsWith('#')
+        )
       }
     }
+  }
 
-    return successResponse({
-      ...brandDataWithFeels,
-      website: normalizedUrl,
-      screenshotUrl: screenshot || null,
+  if (branding?.typography?.fontFamilies?.primary && !brandData.primaryFont) {
+    brandData.primaryFont = branding.typography.fontFamilies.primary
+  } else if (branding?.fonts?.[0]?.family && !brandData.primaryFont) {
+    brandData.primaryFont = branding.fonts[0].family
+  }
+
+  // Add favicon and logo from branding/metadata if not found
+  if (!brandData.faviconUrl) {
+    brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null
+  }
+  if (!brandData.logoUrl) {
+    brandData.logoUrl = branding?.images?.logo || metadata?.ogImage || null
+  }
+
+  // Merge social links - ensure empty object if none found
+  const extractedSocial = extractSocialLinks(links)
+  const claudeSocial = brandData.socialLinks || {}
+  brandData.socialLinks = { ...extractedSocial, ...claudeSocial }
+
+  // Remove any undefined/null/empty string values from social links
+  if (brandData.socialLinks) {
+    Object.keys(brandData.socialLinks).forEach((key) => {
+      const value = brandData.socialLinks[key as keyof typeof brandData.socialLinks]
+      if (!value || value.trim() === '') {
+        delete brandData.socialLinks[key as keyof typeof brandData.socialLinks]
+      }
     })
+  }
+
+  // Ensure feel values have defaults if Claude didn't return them
+  // Use type assertion since brandData may be a parsed JSON that doesn't have all fields
+  const brandDataWithFeels = brandData as BrandExtraction
+  brandDataWithFeels.feelPlayfulSerious = brandData.feelPlayfulSerious ?? 50
+  brandDataWithFeels.feelBoldMinimal = brandData.feelBoldMinimal ?? 50
+  brandDataWithFeels.feelExperimentalClassic = brandData.feelExperimentalClassic ?? 50
+  brandDataWithFeels.feelFriendlyProfessional = brandData.feelFriendlyProfessional ?? 50
+  brandDataWithFeels.feelPremiumAccessible = brandData.feelPremiumAccessible ?? 50
+  brandDataWithFeels.signalTone = brandData.signalTone ?? 50
+  brandDataWithFeels.signalDensity = brandData.signalDensity ?? 50
+  brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50
+  brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50
+  brandDataWithFeels.brandVoiceSummary = brandData.brandVoiceSummary || ''
+
+  // Validate and set defaults for visualStyle, brandTone, and industryArchetype
+  const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(
+    brandData.visualStyle as (typeof VISUAL_STYLE_VALUES)[number]
+  )
+  const isValidBrandTone = BRAND_TONE_VALUES.includes(
+    brandData.brandTone as (typeof BRAND_TONE_VALUES)[number]
+  )
+  const isValidIndustryArchetype = INDUSTRY_ARCHETYPE_VALUES.includes(
+    brandData.industryArchetype as (typeof INDUSTRY_ARCHETYPE_VALUES)[number]
+  )
+
+  brandDataWithFeels.visualStyle = isValidVisualStyle ? brandData.visualStyle : 'modern-sleek'
+  brandDataWithFeels.brandTone = isValidBrandTone ? brandData.brandTone : 'professional-trustworthy'
+  brandDataWithFeels.industryArchetype = isValidIndustryArchetype
+    ? brandData.industryArchetype
+    : null
+
+  // Ensure audiences is an array and validate each audience
+  const rawAudiences = brandData.audiences || []
+  brandDataWithFeels.audiences = Array.isArray(rawAudiences)
+    ? rawAudiences.map((audience: InferredAudience) => ({
+        name: audience.name || 'Unknown Audience',
+        isPrimary: !!audience.isPrimary,
+        demographics: audience.demographics || {},
+        firmographics: audience.firmographics || {},
+        psychographics: audience.psychographics || {},
+        behavioral: audience.behavioral || {},
+        confidence:
+          typeof audience.confidence === 'number'
+            ? Math.min(100, Math.max(0, audience.confidence))
+            : 50,
+      }))
+    : []
+
+  // Ensure exactly one primary audience if audiences exist
+  if (brandDataWithFeels.audiences.length > 0) {
+    const hasPrimary = brandDataWithFeels.audiences.some((a) => a.isPrimary)
+    if (!hasPrimary) {
+      brandDataWithFeels.audiences[0].isPrimary = true
+    }
+  }
+
+  return successResponse({
+    ...brandDataWithFeels,
+    website: normalizedUrl,
+    screenshotUrl: screenshot || null,
   })
 }

@@ -209,4 +209,56 @@ describe('POST /api/auth/onboarding', () => {
     expect(data.data.success).toBe(true)
     expect(data.data.companyId).toBe('company-1')
   })
+
+  it('accepts creativeFocus as an array of strings', async () => {
+    setupAuth()
+    mockDbSelect.mockReturnValueOnce(
+      chainableSelect([{ role: 'CLIENT', onboardingCompleted: false }])
+    )
+    // Company insert
+    mockDbInsert.mockReturnValueOnce({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 'company-2', name: 'Focus Brand' }]),
+      }),
+    })
+    // Audiences insert (empty)
+    setupUpdate()
+
+    const body = {
+      type: 'client',
+      data: {
+        brand: {
+          name: 'Focus Brand',
+          industry: 'Marketing',
+          creativeFocus: ['social-media', 'branding', 'video-production'],
+        },
+        hasWebsite: true,
+      },
+    }
+
+    const response = await POST(makeRequest(body) as never)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data.success).toBe(true)
+    expect(data.data.companyId).toBe('company-2')
+  })
+
+  it('rejects creativeFocus when given as a plain string instead of array', async () => {
+    // Use the real (un-mocked) schema to validate that a plain string is rejected
+    const actual = await vi.importActual<typeof import('@/lib/validations')>('@/lib/validations')
+
+    const result = actual.onboardingRequestSchema.safeParse({
+      type: 'client',
+      data: {
+        brand: {
+          name: 'Bad Focus',
+          creativeFocus: 'social-media', // string instead of array — should fail
+        },
+        hasWebsite: false,
+      },
+    })
+
+    expect(result.success).toBe(false)
+  })
 })

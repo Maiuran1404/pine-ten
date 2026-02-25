@@ -38,6 +38,11 @@ export const queryKeys = {
     all: ['brand'] as const,
     current: () => [...queryKeys.brand.all, 'current'] as const,
   },
+  // Audience queries
+  audiences: {
+    all: ['audiences'] as const,
+    list: () => ['audiences', 'list'] as const,
+  },
   // Draft queries
   drafts: {
     all: ['drafts'] as const,

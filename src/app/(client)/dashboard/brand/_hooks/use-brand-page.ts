@@ -1,69 +1,62 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useCsrfContext } from '@/providers/csrf-provider'
+import { queryKeys } from '@/hooks/use-queries'
 import type { BrandData, Audience } from '../_lib/brand-types'
+
+async function fetchBrandData(): Promise<BrandData | null> {
+  const response = await fetch('/api/brand')
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch brand')
+  }
+
+  const result = await response.json()
+  return result.data
+}
+
+async function fetchAudiencesData(): Promise<Audience[]> {
+  const response = await fetch('/api/audiences')
+  if (!response.ok) {
+    return []
+  }
+  const result = await response.json()
+  return result.data || []
+}
 
 export function useBrandPage() {
   const { csrfFetch } = useCsrfContext()
-  const [brand, setBrand] = useState<BrandData | null>(null)
-  const [audiences, setAudiences] = useState<Audience[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isRescanning, setIsRescanning] = useState(false)
-  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false)
+  const queryClient = useQueryClient()
+
+  // Local edits overlay — null means no unsaved changes
+  const [localEdits, setLocalEdits] = useState<BrandData | null>(null)
   const [copiedColor, setCopiedColor] = useState<string | null>(null)
+  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false)
 
-  const savedSnapshotRef = useRef<string | null>(null)
+  // ── Queries ──────────────────────────────────────────────────────
 
-  const hasChanges = useMemo(
-    () => brand !== null && JSON.stringify(brand) !== savedSnapshotRef.current,
-    [brand]
-  )
+  const brandQuery = useQuery({
+    queryKey: queryKeys.brand.current(),
+    queryFn: fetchBrandData,
+  })
 
-  // Fetch brand data
-  const fetchBrand = useCallback(async () => {
-    try {
-      const response = await fetch('/api/brand')
+  const audiencesQuery = useQuery({
+    queryKey: queryKeys.audiences.list(),
+    queryFn: fetchAudiencesData,
+  })
 
-      if (response.status === 404) {
-        setBrand(null)
-        setIsLoading(false)
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch brand')
-      }
-      const result = await response.json()
-      setBrand(result.data)
-      savedSnapshotRef.current = JSON.stringify(result.data)
-    } catch (error) {
-      console.error('Fetch error:', error)
-      toast.error('Failed to load brand information')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  // Fetch audiences
-  const fetchAudiences = useCallback(async () => {
-    try {
-      const response = await fetch('/api/audiences')
-      if (response.ok) {
-        const result = await response.json()
-        setAudiences(result.data || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch audiences:', error)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchBrand()
-    fetchAudiences()
-  }, [fetchBrand, fetchAudiences])
+  // The brand exposed to consumers: local edits take precedence over server data
+  const brand = localEdits ?? brandQuery.data ?? null
+  const audiences = audiencesQuery.data ?? []
+  const isLoading = brandQuery.isLoading || audiencesQuery.isLoading
+  const hasChanges = localEdits !== null
 
   // Beforeunload warning when dirty
   useEffect(() => {
@@ -75,9 +68,18 @@ export function useBrandPage() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [hasChanges])
 
-  const updateField = useCallback((field: keyof BrandData, value: unknown) => {
-    setBrand((prev) => (prev ? { ...prev, [field]: value } : null))
-  }, [])
+  // ── Local field updates (optimistic, no server call) ─────────────
+
+  const updateField = useCallback(
+    (field: keyof BrandData, value: unknown) => {
+      setLocalEdits((prev) => {
+        // Start from existing local edits, or from server data
+        const base = prev ?? brandQuery.data
+        return base ? { ...base, [field]: value } : null
+      })
+    },
+    [brandQuery.data]
+  )
 
   const addBrandColor = useCallback(
     (color: string) => {
@@ -100,65 +102,127 @@ export function useBrandPage() {
     [brand, updateField]
   )
 
-  const handleSave = useCallback(async () => {
-    if (!brand) return
+  const copyColor = useCallback((color: string) => {
+    navigator.clipboard.writeText(color)
+    setCopiedColor(color)
+    setTimeout(() => setCopiedColor(null), 2000)
+  }, [])
 
-    setIsSaving(true)
-    try {
+  // ── Mutations ────────────────────────────────────────────────────
+
+  const saveMutation = useMutation({
+    mutationFn: async (brandData: BrandData) => {
       const response = await csrfFetch('/api/brand', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(brand),
+        body: JSON.stringify(brandData),
       })
-
       if (!response.ok) {
         throw new Error('Failed to save')
       }
-
-      savedSnapshotRef.current = JSON.stringify(brand)
+      return response.json()
+    },
+    onSuccess: () => {
+      setLocalEdits(null)
       toast.success('Brand updated successfully!')
-    } catch {
+      queryClient.invalidateQueries({ queryKey: queryKeys.brand.all })
+    },
+    onError: () => {
       toast.error('Failed to save changes')
-    } finally {
-      setIsSaving(false)
-    }
-  }, [brand, csrfFetch])
+    },
+  })
+
+  const rescanMutation = useMutation({
+    mutationFn: async (websiteUrl: string) => {
+      const response = await csrfFetch('/api/brand/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ websiteUrl }),
+      })
+      if (!response.ok) {
+        throw new Error('Scan failed')
+      }
+      const result = await response.json()
+      return result.data
+    },
+    onSuccess: (data) => {
+      setLocalEdits((prev) => {
+        const base = prev ?? brandQuery.data
+        return base
+          ? {
+              ...base,
+              ...data,
+              id: base.id,
+            }
+          : null
+      })
+      toast.success('Brand information refreshed from website!')
+    },
+    onError: () => {
+      toast.error('Failed to scan website')
+    },
+  })
+
+  const deleteAudienceMutation = useMutation({
+    mutationFn: async (audienceId: string) => {
+      const response = await csrfFetch(`/api/audiences/${audienceId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete')
+      }
+    },
+    onSuccess: (_data, audienceId) => {
+      queryClient.setQueryData<Audience[]>(
+        queryKeys.audiences.list(),
+        (old) => old?.filter((a) => a.id !== audienceId) ?? []
+      )
+      toast.success('Audience removed')
+    },
+    onError: () => {
+      toast.error('Failed to remove audience')
+    },
+  })
+
+  const setPrimaryAudienceMutation = useMutation({
+    mutationFn: async (audienceId: string) => {
+      const response = await csrfFetch(`/api/audiences/${audienceId}/primary`, {
+        method: 'PUT',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update')
+      }
+    },
+    onSuccess: (_data, audienceId) => {
+      queryClient.setQueryData<Audience[]>(
+        queryKeys.audiences.list(),
+        (old) =>
+          old?.map((a) => ({
+            ...a,
+            isPrimary: a.id === audienceId,
+          })) ?? []
+      )
+      toast.success('Primary audience updated')
+    },
+    onError: () => {
+      toast.error('Failed to update primary audience')
+    },
+  })
+
+  // ── Handlers (stable references matching old API) ────────────────
+
+  const handleSave = useCallback(async () => {
+    if (!brand) return
+    saveMutation.mutate(brand)
+  }, [brand, saveMutation])
 
   const handleRescan = useCallback(async () => {
     if (!brand?.website) {
       toast.error('No website to scan')
       return
     }
-
-    setIsRescanning(true)
-    try {
-      const response = await csrfFetch('/api/brand/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ websiteUrl: brand.website }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Scan failed')
-      }
-
-      const result = await response.json()
-      setBrand((prev) =>
-        prev
-          ? {
-              ...prev,
-              ...result.data,
-              id: prev.id,
-            }
-          : null
-      )
-      toast.success('Brand information refreshed from website!')
-    } catch {
-      toast.error('Failed to scan website')
-    } finally {
-      setIsRescanning(false)
-    }
-  }, [brand?.website, csrfFetch])
+    rescanMutation.mutate(brand.website)
+  }, [brand, rescanMutation])
 
   const handleRedoOnboarding = useCallback(() => {
     setIsResettingOnboarding(true)
@@ -168,59 +232,26 @@ export function useBrandPage() {
 
   const handleDeleteAudience = useCallback(
     async (audienceId: string) => {
-      try {
-        const response = await csrfFetch(`/api/audiences/${audienceId}`, {
-          method: 'DELETE',
-        })
-        if (response.ok) {
-          setAudiences((prev) => prev.filter((a) => a.id !== audienceId))
-          toast.success('Audience removed')
-        } else {
-          throw new Error('Failed to delete')
-        }
-      } catch {
-        toast.error('Failed to remove audience')
-      }
+      deleteAudienceMutation.mutate(audienceId)
     },
-    [csrfFetch]
+    [deleteAudienceMutation]
   )
 
   const handleSetPrimaryAudience = useCallback(
     async (audienceId: string) => {
-      try {
-        const response = await csrfFetch(`/api/audiences/${audienceId}/primary`, {
-          method: 'PUT',
-        })
-        if (response.ok) {
-          setAudiences((prev) =>
-            prev.map((a) => ({
-              ...a,
-              isPrimary: a.id === audienceId,
-            }))
-          )
-          toast.success('Primary audience updated')
-        } else {
-          throw new Error('Failed to update')
-        }
-      } catch {
-        toast.error('Failed to update primary audience')
-      }
+      setPrimaryAudienceMutation.mutate(audienceId)
     },
-    [csrfFetch]
+    [setPrimaryAudienceMutation]
   )
 
-  const copyColor = useCallback((color: string) => {
-    navigator.clipboard.writeText(color)
-    setCopiedColor(color)
-    setTimeout(() => setCopiedColor(null), 2000)
-  }, [])
+  // ── Public interface (unchanged from original) ───────────────────
 
   return {
     brand,
     audiences,
     isLoading,
-    isSaving,
-    isRescanning,
+    isSaving: saveMutation.isPending,
+    isRescanning: rescanMutation.isPending,
     isResettingOnboarding,
     copiedColor,
     hasChanges,

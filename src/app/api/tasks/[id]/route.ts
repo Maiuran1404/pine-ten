@@ -198,7 +198,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .limit(1),
     ])
 
-    // Get deliverable files for previous work
+    // Get deliverable files for previous work (filtered in SQL, not in JS)
     const previousTaskIds = previousWorkResult.map((t) => t.taskId)
     const previousDeliverables =
       previousTaskIds.length > 0
@@ -213,19 +213,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               createdAt: taskFiles.createdAt,
             })
             .from(taskFiles)
-            .where(and(eq(taskFiles.isDeliverable, true)))
+            .where(
+              and(eq(taskFiles.isDeliverable, true), inArray(taskFiles.taskId, previousTaskIds))
+            )
             .orderBy(desc(taskFiles.createdAt))
         : []
-
-    // Filter deliverables to only those belonging to previous tasks
-    const filteredDeliverables = previousDeliverables.filter((d) =>
-      previousTaskIds.includes(d.taskId)
-    )
 
     // Group deliverables by task
     const previousWork = previousWorkResult.map((task) => ({
       ...task,
-      deliverables: filteredDeliverables.filter((d) => d.taskId === task.taskId),
+      deliverables: previousDeliverables.filter((d) => d.taskId === task.taskId),
     }))
 
     // Build brand DNA object

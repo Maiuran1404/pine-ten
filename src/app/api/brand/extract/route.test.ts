@@ -256,4 +256,79 @@ describe('POST /api/brand/extract', () => {
     expect(data.data.visualStyle).toBe('modern-sleek') // default
     expect(data.data.brandTone).toBe('professional-trustworthy') // default
   })
+
+  it('rejects with 400 when extraction times out after 45 seconds', async () => {
+    setupAuth()
+    // Make scrape hang indefinitely so the timeout fires
+    mockScrape.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 120_000)))
+
+    // Use fake timers to advance past the 45s timeout
+    vi.useFakeTimers()
+    const responsePromise = POST(makeRequest({ websiteUrl: 'https://slow-site.com' }) as never)
+
+    // Advance past the EXTRACTION_TIMEOUT_MS (45_000)
+    await vi.advanceTimersByTimeAsync(46_000)
+
+    const response = await responsePromise
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error.message).toContain('timed out')
+
+    vi.useRealTimers()
+  })
+
+  it('extracts brand name from domain when title is unavailable', async () => {
+    setupAuth()
+    // Scrape returns no metadata title, so fallback uses domain name
+    mockScrape.mockResolvedValue({
+      ...mockScrapeResult,
+      metadata: {
+        title: undefined,
+        description: 'A cool product',
+        ogImage: null,
+        favicon: null,
+      },
+      branding: {
+        ...mockScrapeResult.branding,
+        confidence: { colors: 0.1, buttons: 0.1, overall: 0.1 },
+      },
+    })
+    // Claude fails, triggering the fallback path which uses extractNameFromDomain
+    mockCreate.mockRejectedValue(new Error('Claude API error'))
+
+    const response = await POST(makeRequest({ websiteUrl: 'https://acmecorp.com' }) as never)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    // extractNameFromDomain('https://acmecorp.com') produces 'Acmecorp'
+    expect(data.data.name).toBe('Acmecorp')
+  })
+
+  it('extracts brand name from page title segments', async () => {
+    setupAuth()
+    mockScrape.mockResolvedValue({
+      ...mockScrapeResult,
+      metadata: {
+        title: 'Build amazing products | Vercel',
+        description: 'Frontend cloud',
+        ogImage: null,
+        favicon: null,
+      },
+      branding: {
+        ...mockScrapeResult.branding,
+        confidence: { colors: 0.1, buttons: 0.1, overall: 0.1 },
+      },
+    })
+    // Claude fails, triggering the fallback which uses extractNameFromTitle
+    mockCreate.mockRejectedValue(new Error('Claude API error'))
+
+    const response = await POST(makeRequest({ websiteUrl: 'https://vercel.com' }) as never)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    // extractNameFromTitle('Build amazing products | Vercel') should prefer 'Vercel'
+    // because it is shorter, non-tagline, and at a later position
+    expect(data.data.name).toBe('Vercel')
+  })
 })

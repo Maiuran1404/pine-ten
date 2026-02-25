@@ -8,7 +8,7 @@
  */
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe,
@@ -95,7 +95,7 @@ function getHostname(url: string): string {
 // GALLERY CARD — frameless thumbnail with gradient overlay
 // =============================================================================
 
-function GalleryCard({
+const GalleryCard = memo(function GalleryCard({
   item,
   selected,
   onPreview,
@@ -150,7 +150,7 @@ function GalleryCard({
       )}
     </div>
   )
-}
+})
 
 // =============================================================================
 // SITE PREVIEW — full-panel scrollable iframe (loaded via srcdoc to prevent
@@ -195,7 +195,7 @@ function SitePreview({
     return () => {
       cancelled = true
     }
-  }, [proxyUrl])
+  }, [proxyUrl, item.url])
 
   return (
     <div className="flex flex-col h-full">
