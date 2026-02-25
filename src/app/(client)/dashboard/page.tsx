@@ -40,11 +40,13 @@ import {
   ShoppingBag,
   Monitor,
   CalendarDays,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
+import { QuickBriefForm, type QuickBriefData } from '@/components/chat/quick-brief-form'
 import { useSession } from '@/lib/auth-client'
 import { getImageVariantUrls } from '@/lib/image/utils'
 import Image from 'next/image'
@@ -377,6 +379,7 @@ function DashboardContent() {
   const [platformSelections, setPlatformSelections] = useState<Record<string, PlatformSelection>>(
     {}
   )
+  const [quickMode, setQuickMode] = useState(false)
   const [tasksForReview, setTasksForReview] = useState<
     { id: string; title: string; description: string }[]
   >([])
@@ -1022,6 +1025,7 @@ function DashboardContent() {
             setSelectedOption(null)
             setModalNotes('')
             setPlatformSelections({})
+            setQuickMode(false)
           }
         }}
       >
@@ -1053,16 +1057,49 @@ function DashboardContent() {
                           {Icon && <Icon className="h-4.5 w-4.5 text-white" />}
                         </div>
                       )}
-                      <DialogTitle className="text-base font-semibold text-foreground tracking-tight">
+                      <DialogTitle className="text-base font-semibold text-foreground tracking-tight flex-1">
                         {selectedCategory}
                       </DialogTitle>
+                      {/* Quick Brief toggle (#9) */}
+                      {selectedCategory !== 'Social Media' && (
+                        <button
+                          type="button"
+                          onClick={() => setQuickMode((q) => !q)}
+                          className={cn(
+                            'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors',
+                            quickMode
+                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                              : 'border-border text-muted-foreground hover:border-amber-500/30'
+                          )}
+                        >
+                          <Zap className="h-3 w-3" />
+                          Quick
+                        </button>
+                      )}
                     </div>
                     <p className="text-[13px] text-muted-foreground leading-relaxed pl-12">
                       {category?.modalDescription}
                     </p>
                   </div>
 
-                  {selectedCategory === 'Social Media' ? (
+                  {quickMode && selectedCategory !== 'Social Media' ? (
+                    <div className="px-6 pb-6">
+                      <QuickBriefForm
+                        onSubmit={(brief: QuickBriefData) => {
+                          const parts = [
+                            `Create a ${selectedCategory?.toLowerCase() || 'video'}: ${brief.goal}`,
+                          ]
+                          if (brief.audience) parts.push(`Target audience: ${brief.audience}`)
+                          if (brief.style) parts.push(`Style: ${brief.style}`)
+                          parts.push(`Duration: ${brief.duration}s`)
+                          if (brief.platforms.length > 0)
+                            parts.push(`Platforms: ${brief.platforms.join(', ')}`)
+                          handleSubmit(parts.join('. '))
+                        }}
+                        isLoading={isSending}
+                      />
+                    </div>
+                  ) : selectedCategory === 'Social Media' ? (
                     <>
                       {/* Platform Picker */}
                       <div className="px-5 pb-4 flex flex-col gap-2.5">
@@ -1337,6 +1374,18 @@ function DashboardContent() {
                                   {option.description}
                                 </p>
                               </div>
+
+                              {/* Thumbnail (#22) */}
+                              {templateImageMap.get(option.optionKey) && (
+                                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={templateImageMap.get(option.optionKey)}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
                             </button>
                           )
                         })}

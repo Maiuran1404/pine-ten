@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Film,
@@ -14,15 +14,33 @@ import {
   Sparkles,
   ChevronDown,
   Check,
+  GripVertical,
+  Pencil,
+  Minus,
+  Plus,
+  X,
+  Play,
+  Undo2,
+  Redo2,
+  Download,
+  Clipboard,
 } from 'lucide-react'
+import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 
 import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
+import { TimelineBar, getSceneRole } from './timeline-bar'
+import { StoryboardPreview } from './storyboard-preview'
+import { useStoryboardKeyboard } from '@/hooks/use-storyboard-keyboard'
+import { copyStoryboardToClipboard, exportStoryboardJSON } from '@/lib/storyboard-export'
 
 // =============================================================================
 // HELPERS
@@ -102,6 +120,162 @@ function HookDataInline({ hookData }: { hookData: NonNullable<StoryboardScene['h
       </div>
     </div>
   )
+}
+
+// =============================================================================
+// EDITABLE FIELD — click to edit, blur/Enter to save (#7)
+// =============================================================================
+
+function EditableField({
+  value,
+  field,
+  onSave,
+  multiline = false,
+  className,
+  displayClassName,
+}: {
+  value: string
+  field: string
+  onSave: (field: string, value: string) => void
+  multiline?: boolean
+  className?: string
+  displayClassName?: string
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(value)
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    setEditValue(value)
+  }, [value])
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleSave = useCallback(() => {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== value) {
+      onSave(field, trimmed)
+    } else {
+      setEditValue(value)
+    }
+    setIsEditing(false)
+  }, [editValue, value, field, onSave])
+
+  if (isEditing) {
+    const sharedProps = {
+      value: editValue,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setEditValue(e.target.value),
+      onBlur: handleSave,
+      onKeyDown: (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          handleSave()
+        }
+        if (e.key === 'Escape') {
+          setEditValue(value)
+          setIsEditing(false)
+        }
+      },
+      className: cn(
+        'w-full bg-transparent border border-primary/30 rounded px-1.5 py-0.5 text-foreground outline-none focus:ring-1 focus:ring-primary/50',
+        className
+      ),
+    }
+
+    if (multiline) {
+      return (
+        <textarea
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+          rows={3}
+          {...sharedProps}
+        />
+      )
+    }
+    return (
+      <input ref={inputRef as React.RefObject<HTMLInputElement>} type="text" {...sharedProps} />
+    )
+  }
+
+  return (
+    <span
+      className={cn('group/edit cursor-pointer inline-flex items-center gap-1', displayClassName)}
+      onClick={(e) => {
+        e.stopPropagation()
+        setIsEditing(true)
+      }}
+    >
+      <span className={className}>{value}</span>
+      <Pencil className="h-2.5 w-2.5 text-muted-foreground/0 group-hover/edit:text-muted-foreground/60 transition-colors shrink-0" />
+    </span>
+  )
+}
+
+// =============================================================================
+// DURATION CONTROL — +/- buttons around duration (#23)
+// =============================================================================
+
+function DurationControl({
+  duration,
+  onDurationChange,
+  compact = false,
+}: {
+  duration: string
+  onDurationChange: (newDuration: string) => void
+  compact?: boolean
+}) {
+  const seconds = parseDurationSeconds(duration)
+
+  const adjust = (delta: number) => {
+    const newSeconds = Math.max(1, seconds + delta)
+    onDurationChange(`${newSeconds}s`)
+  }
+
+  return (
+    <div className="inline-flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => adjust(-1)}
+        className={cn(
+          'rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground',
+          compact ? 'p-0.5' : 'p-1'
+        )}
+        title="Decrease duration"
+      >
+        <Minus className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      </button>
+      <span className={cn('font-mono tabular-nums', compact ? 'text-xs px-0.5' : 'text-sm px-1')}>
+        {seconds}s
+      </span>
+      <button
+        type="button"
+        onClick={() => adjust(1)}
+        className={cn(
+          'rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground',
+          compact ? 'p-0.5' : 'p-1'
+        )}
+        title="Increase duration"
+      >
+        <Plus className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      </button>
+    </div>
+  )
+}
+
+// =============================================================================
+// SCENE ROLE BADGE COLORS (#24)
+// =============================================================================
+
+const ROLE_BADGE_COLORS: Record<string, string> = {
+  hook: 'bg-amber-500/70',
+  cta: 'bg-emerald-500/70',
+  transition: 'bg-purple-500/70',
+  feature: 'bg-black/40',
 }
 
 // =============================================================================
@@ -529,47 +703,58 @@ function RichSceneCard({
   scene,
   index,
   isFirst,
+  totalScenes,
   timestamp,
   isSelected,
   isChanged,
+  fieldChanges,
   onToggleSelect,
-  onSceneEdit: _onSceneEdit,
+  onSceneEdit,
   onRegenerateScene,
-  onRegenerateField: _onRegenerateField,
+  onOpenDetail,
   sceneImageData,
   getImageUrl,
 }: {
   scene: StoryboardScene
   index: number
   isFirst: boolean
+  totalScenes: number
   timestamp: { start: string; end: string }
   isSelected: boolean
   isChanged?: boolean
+  fieldChanges?: { field: string; oldValue: string; newValue: string }[]
   onToggleSelect: () => void
   onSceneEdit?: (field: string, value: string) => void
   onRegenerateScene?: () => void
-  onRegenerateField?: (field: string) => void
+  onOpenDetail?: () => void
   sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
 }) {
-  const [isExpanded, setIsExpanded] = useState(isSelected)
-  const durSeconds = parseDurationSeconds(scene.duration)
+  // Drag-and-drop via @dnd-kit/sortable (#6)
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `scene-${scene.sceneNumber}`,
+  })
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
 
-  // Sync expanded state with selection — selecting expands, deselecting collapses
-  useEffect(() => {
-    setIsExpanded(isSelected)
-  }, [isSelected])
-  const hasExpandableContent = !!scene.voiceover || !!scene.visualNote || !!scene.description
+  const role = getSceneRole(scene, index, totalScenes)
+  const badgeBg = ROLE_BADGE_COLORS[role] || ROLE_BADGE_COLORS.feature
 
   return (
     <div
+      ref={setNodeRef}
+      style={sortableStyle}
+      {...attributes}
       onClick={onToggleSelect}
       className={cn(
         'group/card rounded-lg border overflow-hidden transition-all cursor-pointer',
         'border-border/50',
         isSelected && 'ring-2 ring-primary bg-primary/5',
         isChanged && !isSelected && 'ring-2 ring-emerald-400/60 animate-pulse',
-        !isSelected && !isChanged && 'hover:shadow-sm hover:border-border/80'
+        !isSelected && !isChanged && 'hover:shadow-sm hover:border-border/80',
+        isDragging && 'opacity-50 shadow-lg z-50'
       )}
     >
       {/* Thumbnail area with overlaid controls */}
@@ -581,26 +766,53 @@ function RichSceneCard({
           getImageUrl={getImageUrl}
         />
 
-        {/* Selected checkmark badge — top-left */}
+        {/* Drag handle — top-left corner, hover-reveal (#6) */}
+        <div
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-2 left-2 p-1 rounded bg-black/30 text-white/70 backdrop-blur-sm opacity-0 group-hover/card:opacity-100 hover:bg-black/50 hover:text-white transition-all cursor-grab active:cursor-grabbing z-10"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </div>
+
+        {/* Selected checkmark badge — top-left, offset from drag handle */}
         {isSelected && (
-          <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+          <div className="absolute top-2 left-9 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
             <Check className="h-3 w-3 text-primary-foreground" />
           </div>
         )}
 
-        {/* Scene number badge — top-right */}
+        {/* Scene number badge — top-right, colored by role (#24) */}
         <Badge
           variant="secondary"
-          className="absolute top-2 right-2 text-[10px] h-5 px-1.5 bg-black/40 text-white border-0 backdrop-blur-sm"
+          className={cn(
+            'absolute top-2 right-2 text-[10px] h-5 px-1.5 text-white border-0 backdrop-blur-sm',
+            badgeBg
+          )}
         >
           Scene {scene.sceneNumber}
         </Badge>
 
-        {/* Updated badge — visual diff indicator (U1) */}
+        {/* Updated badge — visual diff indicator (U1 + #21 field diffs) */}
         {isChanged && (
           <Badge
             variant="secondary"
-            className="absolute top-2 left-2 text-[9px] h-4 px-1.5 bg-emerald-600/80 text-white border-0 backdrop-blur-sm animate-pulse"
+            className={cn(
+              'absolute top-2 text-[9px] h-4 px-1.5 bg-emerald-600/80 text-white border-0 backdrop-blur-sm animate-pulse cursor-help',
+              isSelected ? 'left-16' : 'left-9'
+            )}
+            title={
+              fieldChanges?.length
+                ? fieldChanges
+                    .map((c) =>
+                      c.field === 'scene'
+                        ? c.newValue
+                        : `${c.field}: "${c.oldValue.slice(0, 30)}" → "${c.newValue.slice(0, 30)}"`
+                    )
+                    .join('\n')
+                : 'Updated'
+            }
           >
             Updated
           </Badge>
@@ -624,20 +836,39 @@ function RichSceneCard({
 
       {/* Card body */}
       <div className="p-3 space-y-2">
-        {/* Timestamp + duration row */}
+        {/* Timestamp + duration row with DurationControl (#23) */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-mono font-semibold text-foreground/70 bg-muted/60 px-1.5 py-0.5 rounded">
             {timestamp.start}–{timestamp.end}
           </span>
           <span className="text-xs text-muted-foreground/30">—</span>
-          {durSeconds > 0 && (
-            <span className="text-xs font-mono text-muted-foreground">{durSeconds}s</span>
+          {onSceneEdit ? (
+            <DurationControl
+              duration={scene.duration}
+              onDurationChange={(val) => onSceneEdit('duration', val)}
+              compact
+            />
+          ) : (
+            parseDurationSeconds(scene.duration) > 0 && (
+              <span className="text-xs font-mono text-muted-foreground">
+                {parseDurationSeconds(scene.duration)}s
+              </span>
+            )
           )}
         </div>
 
-        {/* Title — full width, no truncation */}
+        {/* Title — editable (#7) */}
         <h4 className="text-sm font-medium text-foreground leading-snug">
-          {scene.title}
+          {onSceneEdit ? (
+            <EditableField
+              value={scene.title}
+              field="title"
+              onSave={onSceneEdit}
+              className="text-sm font-medium"
+            />
+          ) : (
+            scene.title
+          )}
           {isFirst && (
             <Badge
               variant="outline"
@@ -648,53 +879,34 @@ function RichSceneCard({
           )}
         </h4>
 
-        {/* Summary lines: Script, Visual — expand in-place when toggled */}
+        {/* Summary lines: Script, Visual */}
         <div className="space-y-1">
           {scene.voiceover && (
-            <p
-              className={cn(
-                'text-xs text-muted-foreground leading-relaxed',
-                !isExpanded && 'line-clamp-2'
-              )}
-            >
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
               <span className="font-medium text-muted-foreground/80">Script:</span>{' '}
               {scene.voiceover}
             </p>
           )}
           {scene.visualNote && (
-            <p
-              className={cn(
-                'text-xs text-muted-foreground leading-relaxed',
-                !isExpanded && 'line-clamp-2'
-              )}
-            >
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
               <span className="font-medium text-muted-foreground/80">Visual:</span>{' '}
               {scene.visualNote}
             </p>
           )}
-          {/* Description — only visible when expanded */}
-          {isExpanded && scene.description && (
-            <p className="text-xs text-muted-foreground leading-relaxed">{scene.description}</p>
-          )}
         </div>
 
-        {/* Hook data — scene 1 only, shown when expanded */}
-        {isExpanded && isFirst && scene.hookData && <HookDataInline hookData={scene.hookData} />}
-
-        {/* Expand/collapse toggle */}
-        {hasExpandableContent && (
+        {/* "More details" opens the detail drawer (#14) */}
+        {onOpenDetail && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              setIsExpanded((prev) => !prev)
+              onOpenDetail()
             }}
             className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1"
           >
-            <ChevronDown
-              className={cn('h-3 w-3 transition-transform', isExpanded && 'rotate-180')}
-            />
-            <span>{isExpanded ? 'Less' : 'More details'}</span>
+            <ChevronDown className="h-3 w-3" />
+            <span>More details</span>
           </button>
         )}
       </div>
@@ -753,14 +965,20 @@ interface RichStoryboardPanelProps {
   className?: string
   sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
-  changedScenes?: Set<number>
+  changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
+  onSceneReorder?: (scenes: StoryboardScene[]) => void
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   getImageUrl?: (imageId: string) => string
+  // Undo/Redo (#20)
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
 }
 
 // Duration targets (common video ad lengths in seconds)
@@ -776,6 +994,63 @@ function getDurationIndicator(totalDuration: number): {
     if (diff <= 10) return { color: 'amber', target }
   }
   return { color: null, target: null }
+}
+
+// =============================================================================
+// DURATION BUDGET BAR (#8) — visual bar showing current vs target duration
+// =============================================================================
+
+function DurationBudgetBar({
+  totalDuration,
+  targetDuration,
+  onTargetChange,
+}: {
+  totalDuration: number
+  targetDuration: number
+  onTargetChange: (target: number) => void
+}) {
+  const ratio = targetDuration > 0 ? totalDuration / targetDuration : 0
+  const isOver = ratio > 1
+  const isClose = ratio >= 0.9 && ratio <= 1.1
+  const barColor = isOver ? 'bg-red-500' : isClose ? 'bg-amber-500' : 'bg-emerald-500'
+  const textColor = isOver ? 'text-red-500' : isClose ? 'text-amber-500' : 'text-emerald-600'
+
+  return (
+    <div className="shrink-0 px-4 py-2 border-b border-border/20 flex items-center gap-3">
+      {/* Large numeric display */}
+      <div className="flex items-baseline gap-1">
+        <span className={cn('text-lg font-bold tabular-nums', textColor)}>
+          {formatTimestamp(totalDuration)}
+        </span>
+        <span className="text-xs text-muted-foreground/60">/</span>
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {formatTimestamp(targetDuration)}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
+        <div
+          className={cn('h-full rounded-full transition-all duration-300', barColor)}
+          style={{ width: `${Math.min(ratio * 100, 100)}%` }}
+        />
+      </div>
+
+      {/* Target selector */}
+      <select
+        value={targetDuration}
+        onChange={(e) => onTargetChange(Number(e.target.value))}
+        onClick={(e) => e.stopPropagation()}
+        className="text-[10px] bg-transparent border border-border/50 rounded px-1.5 py-0.5 text-muted-foreground cursor-pointer outline-none focus:ring-1 focus:ring-primary/50"
+      >
+        {DURATION_TARGETS.map((t) => (
+          <option key={t} value={t}>
+            {t}s
+          </option>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 // Rotating loading messages for regeneration (U2)
@@ -795,14 +1070,34 @@ export function RichStoryboardPanel({
   changedScenes,
   onSelectionChange,
   onSceneEdit,
+  onSceneReorder,
   onRegenerateStoryboard,
   onRegenerateScene,
-  onRegenerateField,
+  onRegenerateField: _onRegenerateField,
   getImageUrl,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
   const [regenConfirm, setRegenConfirm] = useState(false)
-  const [regenLoadingMsg, setRegenLoadingMsg] = useState(0)
+  const [_regenLoadingMsg, setRegenLoadingMsg] = useState(0)
+  const [detailScene, setDetailScene] = useState<StoryboardScene | null>(null)
+  const [targetDuration, setTargetDuration] = useState(60)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  // DnD sensors with activation constraint to avoid conflicts with click (#6)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+
+  // Keyboard shortcuts (#18)
+  useStoryboardKeyboard({
+    enabled: !previewOpen && !detailScene,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
+  })
 
   // Rotate loading messages during regeneration (U2)
   useEffect(() => {
@@ -831,6 +1126,28 @@ export function RichStoryboardPanel({
     }
   }, [selectedScenes, scenes, onSelectionChange])
 
+  // Handle drag end — reorder scenes (#6)
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id || !onSceneReorder) return
+
+      const activeSceneNum = parseInt(String(active.id).replace('scene-', ''), 10)
+      const overSceneNum = parseInt(String(over.id).replace('scene-', ''), 10)
+
+      const oldIndex = scenes.findIndex((s) => s.sceneNumber === activeSceneNum)
+      const newIndex = scenes.findIndex((s) => s.sceneNumber === overSceneNum)
+
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const reordered = [...scenes]
+      const [moved] = reordered.splice(oldIndex, 1)
+      reordered.splice(newIndex, 0, moved)
+      onSceneReorder(reordered)
+    },
+    [scenes, onSceneReorder]
+  )
+
   if (scenes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -842,6 +1159,7 @@ export function RichStoryboardPanel({
 
   const totalDuration = scenes.reduce((acc, scene) => acc + parseDurationSeconds(scene.duration), 0)
   const timestampRanges = computeTimestampRanges(scenes)
+  const sortableIds = scenes.map((s) => `scene-${s.sceneNumber}`)
 
   const toggleSelect = (sceneNumber: number) => {
     setSelectedScenes((prev) =>
@@ -891,77 +1209,164 @@ export function RichStoryboardPanel({
                 )
               })()}
           </div>
-          {onRegenerateStoryboard && (
+          <div className="flex items-center gap-1">
+            {/* Undo/Redo buttons (#20) */}
+            {onUndo && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onUndo}
+                disabled={!canUndo}
+                className="h-7 w-7 text-muted-foreground hover:text-primary disabled:opacity-30"
+                title="Undo (Cmd+Z)"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onRedo && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onRedo}
+                disabled={!canRedo}
+                className="h-7 w-7 text-muted-foreground hover:text-primary disabled:opacity-30"
+                title="Redo (Cmd+Shift+Z)"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {/* Export buttons (#19) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => copyStoryboardToClipboard(scenes)}
+              className="h-7 w-7 text-muted-foreground hover:text-primary"
+              title="Copy to clipboard"
+            >
+              <Clipboard className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => exportStoryboardJSON(scenes)}
+              className="h-7 w-7 text-muted-foreground hover:text-primary"
+              title="Download JSON"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+            {/* Preview button (#12) */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                if (regenConfirm) {
-                  setRegenConfirm(false)
-                  onRegenerateStoryboard()
-                } else {
-                  setRegenConfirm(true)
-                }
-              }}
-              disabled={isRegenerating}
-              className={cn(
-                'gap-1.5 text-xs h-7',
-                regenConfirm
-                  ? 'text-amber-600 hover:text-amber-700 bg-amber-50 dark:bg-amber-900/20'
-                  : 'text-muted-foreground hover:text-primary'
-              )}
+              onClick={() => setPreviewOpen(true)}
+              className="gap-1.5 text-xs h-7 text-muted-foreground hover:text-primary"
             >
-              <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
-              {isRegenerating ? 'Regenerating...' : regenConfirm ? 'Confirm?' : 'Regenerate'}
+              <Play className="h-3 w-3" />
+              Preview
             </Button>
-          )}
+            {onRegenerateStoryboard && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (regenConfirm) {
+                    setRegenConfirm(false)
+                    onRegenerateStoryboard()
+                  } else {
+                    setRegenConfirm(true)
+                  }
+                }}
+                disabled={isRegenerating}
+                className={cn(
+                  'gap-1.5 text-xs h-7',
+                  regenConfirm
+                    ? 'text-amber-600 hover:text-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                    : 'text-muted-foreground hover:text-primary'
+                )}
+              >
+                <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
+                {isRegenerating ? 'Regenerating...' : regenConfirm ? 'Confirm?' : 'Regenerate'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Scrollable rich scene cards */}
+      {/* Duration Budget Bar (#8) */}
+      {totalDuration > 0 && (
+        <DurationBudgetBar
+          totalDuration={totalDuration}
+          targetDuration={targetDuration}
+          onTargetChange={setTargetDuration}
+        />
+      )}
+
+      {/* Timeline bar (#5) */}
+      <TimelineBar scenes={scenes} className="shrink-0 py-2 border-b border-border/20" />
+
+      {/* Scrollable rich scene cards with DnD (#6) */}
       <ScrollArea className="flex-1 relative">
-        {/* Loading overlay during regeneration (U2: rotating messages) */}
+        {/* Skeleton loading during regeneration (#3) */}
         {isRegenerating && (
-          <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <RefreshCw className="h-5 w-5 text-primary animate-spin" />
-              <span className="text-xs text-muted-foreground transition-opacity duration-300">
-                {REGEN_LOADING_MESSAGES[regenLoadingMsg]}
-              </span>
+          <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[2px]">
+            <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
+              {scenes.map((scene) => (
+                <div
+                  key={scene.sceneNumber}
+                  className="rounded-lg border border-border/30 overflow-hidden animate-pulse"
+                >
+                  <div className="aspect-video bg-muted/40" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 w-20 bg-muted/30 rounded" />
+                    <div className="h-4 w-3/4 bg-muted/30 rounded" />
+                    <div className="h-3 w-full bg-muted/20 rounded" />
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Updating Scene {scene.sceneNumber}...</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
-        <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
-          {scenes.map((scene, index) => (
-            <motion.div
-              key={scene.sceneNumber}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.04 }}
-            >
-              <RichSceneCard
-                scene={scene}
-                index={index}
-                isFirst={index === 0}
-                timestamp={timestampRanges[index]}
-                isSelected={selectedScenes.includes(scene.sceneNumber)}
-                isChanged={changedScenes?.has(scene.sceneNumber)}
-                onToggleSelect={() => toggleSelect(scene.sceneNumber)}
-                onSceneEdit={
-                  onSceneEdit
-                    ? (field, value) => onSceneEdit(scene.sceneNumber, field, value)
-                    : undefined
-                }
-                onRegenerateScene={onRegenerateScene ? () => onRegenerateScene(scene) : undefined}
-                onRegenerateField={
-                  onRegenerateField ? (field) => onRegenerateField(scene, field) : undefined
-                }
-                sceneImageData={sceneImageData?.get(scene.sceneNumber)}
-                getImageUrl={getImageUrl}
-              />
-            </motion.div>
-          ))}
-        </div>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+            <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
+              {scenes.map((scene, index) => (
+                <motion.div
+                  key={scene.sceneNumber}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.04 }}
+                >
+                  <RichSceneCard
+                    scene={scene}
+                    index={index}
+                    isFirst={index === 0}
+                    totalScenes={scenes.length}
+                    timestamp={timestampRanges[index]}
+                    isSelected={selectedScenes.includes(scene.sceneNumber)}
+                    isChanged={changedScenes?.has(scene.sceneNumber)}
+                    fieldChanges={changedScenes?.get(scene.sceneNumber)}
+                    onToggleSelect={() => toggleSelect(scene.sceneNumber)}
+                    onSceneEdit={
+                      onSceneEdit
+                        ? (field, value) => onSceneEdit(scene.sceneNumber, field, value)
+                        : undefined
+                    }
+                    onRegenerateScene={
+                      onRegenerateScene ? () => onRegenerateScene(scene) : undefined
+                    }
+                    onOpenDetail={() => setDetailScene(scene)}
+                    sceneImageData={sceneImageData?.get(scene.sceneNumber)}
+                    getImageUrl={getImageUrl}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Dynamic attribution — shows unique sources used across all scenes */}
         {sceneImageData && sceneImageData.size > 0 && (
@@ -970,6 +1375,220 @@ export function RichStoryboardPanel({
           </div>
         )}
       </ScrollArea>
+
+      {/* Scene Detail Drawer (#14) */}
+      <Sheet open={!!detailScene} onOpenChange={(open) => !open && setDetailScene(null)}>
+        <SheetContent side="right" className="w-[420px] sm:w-[480px] p-0 overflow-y-auto">
+          {detailScene && (
+            <SceneDetailDrawer
+              scene={detailScene}
+              sceneImageData={sceneImageData?.get(detailScene.sceneNumber)}
+              getImageUrl={getImageUrl}
+              onSceneEdit={
+                onSceneEdit
+                  ? (field, value) => {
+                      onSceneEdit(detailScene.sceneNumber, field, value)
+                      // Keep drawer synced with latest data
+                      setDetailScene((prev) => (prev ? { ...prev, [field]: value } : null))
+                    }
+                  : undefined
+              }
+              onClose={() => setDetailScene(null)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Storyboard Preview Dialog (#12) */}
+      <StoryboardPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        scenes={scenes}
+        sceneImageData={sceneImageData}
+      />
+    </div>
+  )
+}
+
+// =============================================================================
+// SCENE DETAIL DRAWER (#14) — right-anchored Sheet with all editable fields
+// =============================================================================
+
+function SceneDetailDrawer({
+  scene,
+  sceneImageData,
+  getImageUrl,
+  onSceneEdit,
+  onClose,
+}: {
+  scene: StoryboardScene
+  sceneImageData?: SceneImageData
+  getImageUrl?: (imageId: string) => string
+  onSceneEdit?: (field: string, value: string) => void
+  onClose: () => void
+}) {
+  const imageId = scene.referenceImageIds?.[0]
+  const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
+  const imageUrl = sceneImageData?.primaryUrl || scene.resolvedImageUrl || refImageUrl
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Scene {scene.sceneNumber}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{scene.duration}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Full-size thumbnail */}
+      {imageUrl && (
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+          <OptimizedImage
+            src={imageUrl}
+            alt={`Scene ${scene.sceneNumber}`}
+            fill
+            className="object-cover"
+            containerClassName="absolute inset-0"
+            sizes="480px"
+          />
+        </div>
+      )}
+
+      {/* Editable fields */}
+      <div className="flex-1 px-6 py-4 space-y-5">
+        {/* Title */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Title
+          </label>
+          {onSceneEdit ? (
+            <EditableField
+              value={scene.title}
+              field="title"
+              onSave={onSceneEdit}
+              className="text-sm font-medium text-foreground"
+            />
+          ) : (
+            <p className="text-sm font-medium text-foreground">{scene.title}</p>
+          )}
+        </div>
+
+        {/* Duration */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Duration
+          </label>
+          {onSceneEdit ? (
+            <DurationControl
+              duration={scene.duration}
+              onDurationChange={(val) => onSceneEdit('duration', val)}
+            />
+          ) : (
+            <p className="text-sm text-foreground">{scene.duration}</p>
+          )}
+        </div>
+
+        {/* Voiceover / Script */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Script / Voiceover
+          </label>
+          {onSceneEdit ? (
+            <EditableField
+              value={scene.voiceover || ''}
+              field="voiceover"
+              onSave={onSceneEdit}
+              multiline
+              className="text-xs text-muted-foreground leading-relaxed"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {scene.voiceover || 'No script yet'}
+            </p>
+          )}
+        </div>
+
+        {/* Visual Note */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Visual Direction
+          </label>
+          {onSceneEdit ? (
+            <EditableField
+              value={scene.visualNote || ''}
+              field="visualNote"
+              onSave={onSceneEdit}
+              multiline
+              className="text-xs text-muted-foreground leading-relaxed"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {scene.visualNote || 'No visual notes'}
+            </p>
+          )}
+        </div>
+
+        {/* Description */}
+        {scene.description && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Description
+            </label>
+            {onSceneEdit ? (
+              <EditableField
+                value={scene.description}
+                field="description"
+                onSave={onSceneEdit}
+                multiline
+                className="text-xs text-muted-foreground leading-relaxed"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground leading-relaxed">{scene.description}</p>
+            )}
+          </div>
+        )}
+
+        {/* Hook data — scene 1 only */}
+        {scene.hookData && <HookDataInline hookData={scene.hookData} />}
+
+        {/* Director Notes (elaboration) */}
+        {scene.directorNotes && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Director Notes
+            </label>
+            <p className="text-xs text-muted-foreground leading-relaxed">{scene.directorNotes}</p>
+          </div>
+        )}
+
+        {/* Camera Note */}
+        {scene.cameraNote && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Camera
+            </label>
+            <p className="text-xs text-muted-foreground leading-relaxed">{scene.cameraNote}</p>
+          </div>
+        )}
+
+        {/* Transition */}
+        {scene.transition && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Transition
+            </label>
+            <p className="text-xs text-muted-foreground leading-relaxed">{scene.transition}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

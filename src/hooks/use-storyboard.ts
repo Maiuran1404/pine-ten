@@ -49,8 +49,16 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const [globalStyles, setGlobalStyles] = useState<WebsiteGlobalStyles | null>(null)
 
   // Visual diff tracking (U1): track which scenes changed after a revision
-  const [changedScenes, setChangedScenes] = useState<Set<number>>(new Set())
+  // Extended (#21): Map<sceneNumber, FieldChange[]> for field-level diffs
+  const [changedScenes, setChangedScenes] = useState<
+    Map<number, { field: string; oldValue: string; newValue: string }[]>
+  >(new Map())
   const previousScenesRef = useRef<StructureData | null>(null)
+
+  // Undo/Redo history (#20) — max 20 entries
+  const [historyStack, setHistoryStack] = useState<StructureData[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const isUndoRedoRef = useRef(false)
 
   // Compute structure type from deliverable category
   const structureType = useMemo((): StructureData['type'] | null => {
@@ -254,20 +262,86 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     })
   }, [])
 
+  // Push current state to history before making changes (#20)
+  const pushHistory = useCallback(
+    (state: StructureData | null) => {
+      if (!state || isUndoRedoRef.current) return
+      setHistoryStack((prev) => {
+        // Discard any future states if we're mid-history
+        const truncated = prev.slice(0, historyIndex + 1)
+        const next = [...truncated, state].slice(-20) // max 20 entries
+        return next
+      })
+      setHistoryIndex((prev) => Math.min(prev + 1, 19))
+    },
+    [historyIndex]
+  )
+
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return
+    const prevIndex = historyIndex - 1
+    const prevState = historyStack[prevIndex]
+    if (!prevState) return
+    isUndoRedoRef.current = true
+    setStoryboardScenes(prevState)
+    latestStoryboardRef.current = prevState
+    setHistoryIndex(prevIndex)
+    isUndoRedoRef.current = false
+  }, [historyIndex, historyStack])
+
+  const redo = useCallback(() => {
+    if (historyIndex >= historyStack.length - 1) return
+    const nextIndex = historyIndex + 1
+    const nextState = historyStack[nextIndex]
+    if (!nextState) return
+    isUndoRedoRef.current = true
+    setStoryboardScenes(nextState)
+    latestStoryboardRef.current = nextState
+    setHistoryIndex(nextIndex)
+    isUndoRedoRef.current = false
+  }, [historyIndex, historyStack])
+
+  const canUndo = historyIndex > 0
+  const canRedo = historyIndex < historyStack.length - 1
+
+  // Reorder scenes via drag-and-drop (reassigns sceneNumber values)
+  const handleSceneReorder = useCallback(
+    (reorderedScenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[]) => {
+      pushHistory(storyboardScenes)
+      setStoryboardScenes((prev) => {
+        if (!prev || prev.type !== 'storyboard') return prev
+        const updated = {
+          ...prev,
+          scenes: reorderedScenes.map((scene, i) => ({
+            ...scene,
+            sceneNumber: i + 1,
+          })),
+        }
+        latestStoryboardRef.current = updated
+        return updated
+      })
+    },
+    [pushHistory, storyboardScenes]
+  )
+
   // Edit a scene field directly (user typed a change)
-  const handleSceneEdit = useCallback((sceneNumber: number, field: string, value: string) => {
-    setStoryboardScenes((prev) => {
-      if (!prev || prev.type !== 'storyboard') return prev
-      const updated = {
-        ...prev,
-        scenes: prev.scenes.map((s) =>
-          s.sceneNumber === sceneNumber ? { ...s, [field]: value } : s
-        ),
-      }
-      latestStoryboardRef.current = updated
-      return updated
-    })
-  }, [])
+  const handleSceneEdit = useCallback(
+    (sceneNumber: number, field: string, value: string) => {
+      pushHistory(storyboardScenes)
+      setStoryboardScenes((prev) => {
+        if (!prev || prev.type !== 'storyboard') return prev
+        const updated = {
+          ...prev,
+          scenes: prev.scenes.map((s) =>
+            s.sceneNumber === sceneNumber ? { ...s, [field]: value } : s
+          ),
+        }
+        latestStoryboardRef.current = updated
+        return updated
+      })
+    },
+    [pushHistory, storyboardScenes]
+  )
 
   // Trigger AI regeneration of whole storyboard
   const handleRegenerateStoryboard = useCallback(() => {
@@ -292,31 +366,72 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     [handleSendOption]
   )
 
+  // Replace a scene's image with a new URL (#11)
+  const handleSceneImageReplace = useCallback(
+    (sceneNumber: number, newUrl: string, source: ImageSource = 'pexels') => {
+      // Update the scene image data map
+      setSceneImageData((prev) => {
+        const updated = new Map(prev)
+        updated.set(sceneNumber, {
+          primaryUrl: newUrl,
+          primarySource: source,
+          primaryMediaType: 'still',
+          attribution: {
+            sourceName: source.charAt(0).toUpperCase() + source.slice(1),
+            sourceUrl: '',
+          },
+        })
+        return updated
+      })
+      // Also persist the URL on the scene object
+      setStoryboardScenes((prev) => {
+        if (!prev || prev.type !== 'storyboard') return prev
+        const updated = {
+          ...prev,
+          scenes: prev.scenes.map((s) =>
+            s.sceneNumber === sceneNumber
+              ? { ...s, resolvedImageUrl: newUrl, resolvedImageSource: source }
+              : s
+          ),
+        }
+        latestStoryboardRef.current = updated
+        return updated
+      })
+    },
+    []
+  )
+
   // Update structure data from API response
   const updateStructureData = useCallback((data: StructureData) => {
-    // Visual diff detection (U1): compare old vs new scenes
+    // Visual diff detection (U1 + #21): compare old vs new scenes with field-level diffs
     if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
       const oldScenes = previousScenesRef.current.scenes
-      const changed = new Set<number>()
+      const changed = new Map<number, { field: string; oldValue: string; newValue: string }[]>()
+      const diffFields = ['title', 'description', 'duration', 'voiceover', 'visualNote'] as const
       for (const newScene of data.scenes) {
         const oldScene = oldScenes.find((s) => s.sceneNumber === newScene.sceneNumber)
         if (!oldScene) {
-          // New scene added
-          changed.add(newScene.sceneNumber)
-        } else if (
-          oldScene.title !== newScene.title ||
-          oldScene.description !== newScene.description ||
-          oldScene.duration !== newScene.duration ||
-          oldScene.voiceover !== newScene.voiceover ||
-          oldScene.visualNote !== newScene.visualNote
-        ) {
-          changed.add(newScene.sceneNumber)
+          changed.set(newScene.sceneNumber, [
+            { field: 'scene', oldValue: '', newValue: 'New scene added' },
+          ])
+        } else {
+          const fieldChanges: { field: string; oldValue: string; newValue: string }[] = []
+          for (const field of diffFields) {
+            const oldVal = (oldScene[field] as string) || ''
+            const newVal = (newScene[field] as string) || ''
+            if (oldVal !== newVal) {
+              fieldChanges.push({ field, oldValue: oldVal, newValue: newVal })
+            }
+          }
+          if (fieldChanges.length > 0) {
+            changed.set(newScene.sceneNumber, fieldChanges)
+          }
         }
       }
       if (changed.size > 0) {
         setChangedScenes(changed)
-        // Clear after 5 seconds
-        setTimeout(() => setChangedScenes(new Set()), 5000)
+        // Clear after 8 seconds (longer so users can hover to see diffs)
+        setTimeout(() => setChangedScenes(new Map()), 8000)
       }
     }
 
@@ -366,9 +481,15 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     handleSectionReorder,
     handleSectionEdit,
     handleSceneEdit,
+    handleSceneReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,
+    handleSceneImageReplace,
     updateStructureData,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   }
 }

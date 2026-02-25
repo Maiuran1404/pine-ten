@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, GripVertical, Palette } from 'lucide-react'
+import { X, GripVertical, Palette, Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type MoodboardItem } from '../types'
 
 interface MoodboardCardProps {
   item: MoodboardItem
   onRemove: (id: string) => void
+  onApplyToScene?: (item: MoodboardItem, sceneNumber: number) => void
+  sceneCount?: number
   isDragging?: boolean
   dragHandleProps?: Record<string, unknown>
   className?: string
@@ -17,6 +19,8 @@ interface MoodboardCardProps {
 export function MoodboardCard({
   item,
   onRemove,
+  onApplyToScene,
+  sceneCount = 0,
   isDragging = false,
   dragHandleProps,
   className,
@@ -67,6 +71,39 @@ export function MoodboardCard({
       >
         <X className="h-3 w-3" />
       </button>
+
+      {/* Apply to scene button (#15) */}
+      {onApplyToScene && sceneCount > 0 && item.type !== 'color' && (
+        <div className="absolute bottom-[calc(100%-theme(spacing.1))] right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="relative group/apply">
+            <button
+              type="button"
+              className="p-1 rounded-full bg-black/40 text-white hover:bg-emerald-600 transition-colors"
+              aria-label="Apply to scene"
+              title="Apply to scene"
+            >
+              <Film className="h-3 w-3" />
+            </button>
+            <div className="absolute bottom-full right-0 mb-1 hidden group-hover/apply:block min-w-[100px]">
+              <div className="bg-popover border border-border rounded-md shadow-lg py-1 text-xs">
+                {Array.from({ length: sceneCount }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onApplyToScene(item, i + 1)
+                    }}
+                    className="w-full px-3 py-1.5 text-left hover:bg-muted transition-colors text-foreground"
+                  >
+                    Scene {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {isColor ? (

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Check, Circle, ChevronRight, Copy, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { LiveBrief, FieldSource } from './types'
 import {
@@ -15,7 +16,21 @@ import {
 } from './types'
 
 // =============================================================================
-// SLEEK FIELD ROW - With suggestions and status indicators
+// INTENT SHORT LABELS - Compact labels for chip display
+// =============================================================================
+
+const INTENT_SHORT_LABELS: Record<string, string> = {
+  signups: 'Signups',
+  authority: 'Authority',
+  awareness: 'Awareness',
+  sales: 'Sales',
+  engagement: 'Engagement',
+  education: 'Education',
+  announcement: 'Announcement',
+}
+
+// =============================================================================
+// SLEEK FIELD ROW - Legacy export, kept for backward compatibility
 // =============================================================================
 
 export interface SleekFieldProps {
@@ -27,6 +42,7 @@ export interface SleekFieldProps {
   onUseSuggestion?: () => void
 }
 
+/** @deprecated Use TextBlock or MetadataChips instead */
 export function SleekField({
   label,
   value,
@@ -37,7 +53,6 @@ export function SleekField({
 }: SleekFieldProps) {
   const hasValue = value && value.trim().length > 0
 
-  // Determine the status label based on source and confidence
   const getStatusBadge = () => {
     if (source === 'confirmed') {
       return (
@@ -113,7 +128,122 @@ export function SleekField({
 }
 
 // =============================================================================
-// BRIEF FIELDS CONTENT - Extracted for reuse in UnifiedPanel
+// TEXT BLOCK - For long-form fields (Summary, Topic)
+// =============================================================================
+
+interface TextBlockProps {
+  label: string
+  value: string | null
+  source: FieldSource
+  confidence: number
+  placeholder: string
+  prominent?: boolean
+}
+
+function TextBlock({
+  label,
+  value,
+  source,
+  confidence,
+  placeholder,
+  prominent = false,
+}: TextBlockProps) {
+  const hasValue = value && value.trim().length > 0
+  const isAnalyzing = source === 'pending' && hasValue
+
+  return (
+    <div className={cn(prominent ? 'mb-4' : 'mb-3')}>
+      <span className="text-[10px] font-medium text-muted-foreground/50 tracking-wide">
+        {label}
+      </span>
+      {hasValue ? (
+        <p
+          className={cn(
+            'mt-0.5 leading-relaxed',
+            prominent ? 'text-[13px] text-foreground' : 'text-xs text-foreground/80',
+            isAnalyzing && 'text-muted-foreground'
+          )}
+        >
+          {value}
+          {isAnalyzing && confidence > 0 && confidence < 0.5 && (
+            <span className="text-[10px] text-muted-foreground/40 ml-1 italic">(refining...)</span>
+          )}
+        </p>
+      ) : (
+        <p className="mt-0.5 text-xs text-muted-foreground/30 italic">{placeholder}</p>
+      )}
+    </div>
+  )
+}
+
+// =============================================================================
+// FIELD CHIP - Single metadata chip with subtle source indicator
+// =============================================================================
+
+interface FieldChipProps {
+  label: string
+  value: string | null
+  source: FieldSource
+  confidence: number
+  suggestion?: string | null
+  onUseSuggestion?: () => void
+}
+
+function FieldChip({
+  label,
+  value,
+  source,
+  confidence,
+  suggestion,
+  onUseSuggestion,
+}: FieldChipProps) {
+  const hasValue = value && value.trim().length > 0
+  const isConfirmed = source === 'confirmed'
+  const isReady = source === 'inferred' && confidence >= 0.75
+  const isAnalyzing = source === 'pending' && hasValue
+
+  if (!hasValue && suggestion && onUseSuggestion) {
+    return (
+      <button
+        onClick={onUseSuggestion}
+        className="group inline-flex items-center gap-1 rounded-full border border-dashed border-border/40 px-2.5 py-1 text-[11px] text-muted-foreground/40 hover:border-border/60 hover:text-muted-foreground/60 transition-colors"
+      >
+        <span>{label}</span>
+        <span className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50">
+          +
+        </span>
+      </button>
+    )
+  }
+
+  if (!hasValue) {
+    return (
+      <span className="inline-flex items-center rounded-full border border-dashed border-border/30 px-2.5 py-1 text-[11px] text-muted-foreground/30 italic">
+        {label}
+      </span>
+    )
+  }
+
+  return (
+    <Badge
+      variant="secondary"
+      className={cn(
+        'text-[11px] font-normal py-1 px-2.5 gap-1.5',
+        isAnalyzing && 'opacity-60',
+        (isConfirmed || isReady) && 'ring-1 ring-emerald-500/20'
+      )}
+    >
+      {(isConfirmed || isReady) && (
+        <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+      )}
+      {isAnalyzing && <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse shrink-0" />}
+      {value}
+    </Badge>
+  )
+}
+
+// =============================================================================
+// BRIEF FIELDS CONTENT - Redesigned with chip-based metadata layout
 // =============================================================================
 
 interface BriefFieldsContentProps {
@@ -126,8 +256,11 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
 
   // Get display values
   const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
-  const audienceValue = brief.audience.value?.name || null
-  const intentValue = brief.intent.value ? INTENT_DESCRIPTIONS[brief.intent.value] : null
+  const audienceRaw = brief.audience.value?.name || null
+  const audienceValue = audienceRaw ? audienceRaw.replace(/\b\w/g, (c) => c.toUpperCase()) : null
+  const intentValue = brief.intent.value
+    ? INTENT_SHORT_LABELS[brief.intent.value] || INTENT_DESCRIPTIONS[brief.intent.value]
+    : null
 
   // Handlers to apply suggestions
   const applySuggestion = useCallback(
@@ -145,92 +278,96 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
   )
 
   return (
-    <div className="px-4 pb-4">
-      <SleekField
+    <div className="px-4 pb-4 space-y-0">
+      {/* Summary -- prominent, first thing the eye hits */}
+      <TextBlock
         label="Summary"
         value={brief.taskSummary.value}
         source={brief.taskSummary.source}
         confidence={brief.taskSummary.confidence}
-        suggestion={!brief.taskSummary.value ? 'Describe your project...' : null}
+        placeholder="Describe your project..."
+        prominent
       />
-      <SleekField
-        label="Intent"
-        value={intentValue}
-        source={brief.intent.source}
-        confidence={brief.intent.confidence}
-        suggestion={!brief.intent.value ? "What's the goal of this project?" : null}
-        onUseSuggestion={() =>
-          applySuggestion('intent', {
-            value: 'launch',
-            confidence: 0.5,
-            source: 'inferred',
-          })
-        }
-      />
-      <SleekField
-        label="Platform"
-        value={platformValue}
-        source={brief.platform.source}
-        confidence={brief.platform.confidence}
-        suggestion={!brief.platform.value ? 'Instagram / LinkedIn / Web' : null}
-        onUseSuggestion={() =>
-          applySuggestion('platform', {
-            value: 'instagram',
-            confidence: 0.5,
-            source: 'inferred',
-          })
-        }
-      />
-      <SleekField
-        label="Audience"
-        value={audienceValue}
-        source={brief.audience.source}
-        confidence={brief.audience.confidence}
-        suggestion={brief.audience.value?.name ? null : 'Tell us about your audience'}
-      />
-      <SleekField
+
+      {/* Metadata chip cluster -- Platform, Intent, Audience, Dimensions */}
+      <div className="mb-4">
+        <span className="text-[10px] font-medium text-muted-foreground/50 tracking-wide">
+          Details
+        </span>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <FieldChip
+            label="Platform"
+            value={platformValue}
+            source={brief.platform.source}
+            confidence={brief.platform.confidence}
+            suggestion={!brief.platform.value ? 'Platform' : null}
+            onUseSuggestion={() =>
+              applySuggestion('platform', {
+                value: 'instagram',
+                confidence: 0.5,
+                source: 'inferred',
+              })
+            }
+          />
+          <FieldChip
+            label="Intent"
+            value={intentValue}
+            source={brief.intent.source}
+            confidence={brief.intent.confidence}
+            suggestion={!brief.intent.value ? 'Intent' : null}
+            onUseSuggestion={() =>
+              applySuggestion('intent', {
+                value: 'announcement',
+                confidence: 0.5,
+                source: 'inferred',
+              })
+            }
+          />
+          <FieldChip
+            label="Audience"
+            value={audienceValue}
+            source={brief.audience.source}
+            confidence={brief.audience.confidence}
+          />
+
+          {/* Dimension chips inline with metadata */}
+          {brief.dimensions.slice(0, 3).map((dim, idx) => (
+            <Badge
+              key={`${dim.width}x${dim.height}-${idx}`}
+              variant="outline"
+              className="text-[10px] font-normal py-0.5 px-2 text-muted-foreground/70"
+            >
+              {dim.width}&times;{dim.height}
+            </Badge>
+          ))}
+          {brief.dimensions.length > 3 && (
+            <span className="inline-flex items-center text-[10px] text-muted-foreground/40 px-1">
+              +{brief.dimensions.length - 3}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Topic -- secondary text block, only shows when there is content or space permits */}
+      <TextBlock
         label="Topic"
         value={brief.topic.value}
         source={brief.topic.source}
         confidence={brief.topic.confidence}
-        suggestion={!brief.topic.value ? "What's this about?" : null}
+        placeholder="Mention in chat..."
       />
 
-      {/* Dimensions - compact */}
-      {brief.dimensions.length > 0 && (
-        <div className="pt-3 mt-1">
-          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
-            Dimensions
-          </span>
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {brief.dimensions.slice(0, 3).map((dim, idx) => (
-              <span
-                key={`${dim.width}x${dim.height}-${idx}`}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground/70"
-              >
-                {dim.width}x{dim.height}
-              </span>
-            ))}
-            {brief.dimensions.length > 3 && (
-              <span className="text-[10px] text-muted-foreground/40">
-                +{brief.dimensions.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Colors from brand */}
+      {/* Brand Colors -- compact swatch row */}
       {brief.visualDirection?.colorPalette && brief.visualDirection.colorPalette.length > 0 && (
-        <div className="pt-3 mt-1">
-          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+        <div className="mb-3">
+          <span className="text-[10px] font-medium text-muted-foreground/50 tracking-wide">
             Brand Colors
           </span>
-          <div className="flex gap-1.5 mt-1.5">
-            {brief.visualDirection.colorPalette.slice(0, 5).map((color, idx) => (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {brief.visualDirection.colorPalette.slice(0, 6).map((color, idx) => (
               <div
                 key={idx}
-                className="w-5 h-5 rounded-full border border-white/20 shadow-sm"
+                className="w-5 h-5 rounded-full border border-border/30 shadow-sm transition-transform hover:scale-110"
                 style={{ backgroundColor: color }}
                 title={color}
               />
@@ -239,12 +376,12 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
         </div>
       )}
 
-      {/* Ready indicator */}
+      {/* Ready indicator -- single, quiet confirmation */}
       {isReady && (
-        <div className="mt-4 pt-3 border-t border-border/20">
-          <div className="flex items-center gap-2 text-emerald-500">
-            <Check className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">Ready to submit</span>
+        <div className="pt-3 mt-1">
+          <div className="flex items-center gap-1.5 text-emerald-500">
+            <Check className="h-3 w-3" />
+            <span className="text-[11px] font-medium">Ready to submit</span>
           </div>
         </div>
       )}
@@ -292,26 +429,6 @@ Topic: ${brief.topic.value || 'TBD'}
     setCopiedBrief(true)
     setTimeout(() => setCopiedBrief(false), 2000)
   }, [brief])
-
-  // Get display values
-  const platformValue = brief.platform.value ? PLATFORM_DISPLAY_NAMES[brief.platform.value] : null
-  const audienceValue = brief.audience.value?.name || null
-  const intentValue = brief.intent.value ? INTENT_DESCRIPTIONS[brief.intent.value] : null
-
-  // Handlers to apply suggestions
-  const applySuggestion = useCallback(
-    (field: keyof LiveBrief, value: unknown) => {
-      onBriefUpdate({
-        ...brief,
-        [field]:
-          typeof value === 'string'
-            ? { value, confidence: 0.7, source: 'inferred' as const }
-            : value,
-        updatedAt: new Date(),
-      })
-    },
-    [brief, onBriefUpdate]
-  )
 
   return (
     <div className={cn('flex flex-col h-full bg-transparent', className)}>
@@ -368,112 +485,9 @@ Topic: ${brief.topic.value || 'TBD'}
         </div>
       </div>
 
-      {/* Brief Fields */}
+      {/* Brief Fields -- delegates to the shared redesigned component */}
       <ScrollArea className="flex-1">
-        <div className="px-4 pb-4">
-          <SleekField
-            label="Summary"
-            value={brief.taskSummary.value}
-            source={brief.taskSummary.source}
-            confidence={brief.taskSummary.confidence}
-            suggestion={!brief.taskSummary.value ? 'Describe your project...' : null}
-          />
-          <SleekField
-            label="Intent"
-            value={intentValue}
-            source={brief.intent.source}
-            confidence={brief.intent.confidence}
-            suggestion={!brief.intent.value ? "What's the goal of this project?" : null}
-            onUseSuggestion={() =>
-              applySuggestion('intent', {
-                value: 'launch',
-                confidence: 0.5,
-                source: 'inferred',
-              })
-            }
-          />
-          <SleekField
-            label="Platform"
-            value={platformValue}
-            source={brief.platform.source}
-            confidence={brief.platform.confidence}
-            suggestion={!brief.platform.value ? 'Instagram / LinkedIn / Web' : null}
-            onUseSuggestion={() =>
-              applySuggestion('platform', {
-                value: 'instagram',
-                confidence: 0.5,
-                source: 'inferred',
-              })
-            }
-          />
-          <SleekField
-            label="Audience"
-            value={audienceValue}
-            source={brief.audience.source}
-            confidence={brief.audience.confidence}
-            suggestion={brief.audience.value?.name ? null : 'Tell us about your audience'}
-          />
-          <SleekField
-            label="Topic"
-            value={brief.topic.value}
-            source={brief.topic.source}
-            confidence={brief.topic.confidence}
-            suggestion={!brief.topic.value ? "What's this about?" : null}
-          />
-
-          {/* Dimensions - compact */}
-          {brief.dimensions.length > 0 && (
-            <div className="pt-3 mt-1">
-              <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
-                Dimensions
-              </span>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {brief.dimensions.slice(0, 3).map((dim, idx) => (
-                  <span
-                    key={`${dim.width}x${dim.height}-${idx}`}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground/70"
-                  >
-                    {dim.width}×{dim.height}
-                  </span>
-                ))}
-                {brief.dimensions.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground/40">
-                    +{brief.dimensions.length - 3}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Colors from brand */}
-          {brief.visualDirection?.colorPalette && brief.visualDirection.colorPalette.length > 0 && (
-            <div className="pt-3 mt-1">
-              <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
-                Brand Colors
-              </span>
-              <div className="flex gap-1.5 mt-1.5">
-                {brief.visualDirection.colorPalette.slice(0, 5).map((color, idx) => (
-                  <div
-                    key={idx}
-                    className="w-5 h-5 rounded-full border border-white/20 shadow-sm"
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ready indicator */}
-          {isReady && (
-            <div className="mt-4 pt-3 border-t border-border/20">
-              <div className="flex items-center gap-2 text-emerald-500">
-                <Check className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Ready to submit</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <BriefFieldsContent brief={brief} onBriefUpdate={onBriefUpdate} />
       </ScrollArea>
     </div>
   )

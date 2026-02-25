@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/shared/loading'
 import {
-  Check,
   Image as ImageIcon,
   Paperclip,
   FileIcon,
@@ -137,7 +136,7 @@ export function ChatInputArea({
   stateMachineQuickOptions,
   onQuickOptionClick,
   hasStrategicReviewCTA = false,
-  animatingMessageId = null,
+  animatingMessageId: _animatingMessageId = null,
   sceneReferences = [],
   onRemoveSceneReference,
   deliverableCategory,
@@ -147,6 +146,11 @@ export function ChatInputArea({
   handleRequestTaskSummary: _handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
+  // Hide quick options when the last assistant message already shows inline style/video references
+  const lastAssistant = messages.findLast((m) => m.role === 'assistant')
+  const hasInlineStylePicker =
+    !!lastAssistant?.videoReferences?.length || !!lastAssistant?.deliverableStyles?.length
+
   // When a pending task exists, render the submit action bar instead of the input
   if (pendingTask && onConfirmTask && onMakeChanges && onInsufficientCredits) {
     return (
@@ -166,15 +170,15 @@ export function ChatInputArea({
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
       {/* State machine quick option chips + "I'm ready to submit" grouped */}
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {stateMachineQuickOptions &&
           stateMachineQuickOptions.options.length > 0 &&
           onQuickOptionClick &&
           !isLoading &&
-          !animatingMessageId &&
           !input.trim() &&
           !hasStrategicReviewCTA &&
-          sceneReferences.length === 0 && (
+          sceneReferences.length === 0 &&
+          !hasInlineStylePicker && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -424,54 +428,68 @@ export function ChatInputArea({
             {input.trim().length > 0 &&
               (() => {
                 const wordCount = input.trim().split(/\s+/).filter(Boolean).length
-                const solidPromptWords = 10
                 const greatPromptWords = 20
 
-                // Calculate progress percentage for the gradient bar
-                const progress = Math.min((wordCount / greatPromptWords) * 100, 100)
+                // Score: word count + specificity (mentions platforms, audience, colors)
+                const specificityPatterns =
+                  /instagram|tiktok|youtube|linkedin|facebook|audience|brand|style|color|#[0-9a-f]/gi
+                const specificityBonus = (input.match(specificityPatterns) || []).length * 2
+                const rawScore = Math.min(wordCount + specificityBonus, greatPromptWords)
+                const pct = Math.min((rawScore / greatPromptWords) * 100, 100)
 
-                if (wordCount >= greatPromptWords) {
-                  return (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-crafted-mint/15 dark:bg-crafted-green/10">
-                        <Check className="h-3 w-3 text-crafted-green" />
-                        <span className="text-xs font-medium text-crafted-green">
-                          Great detail!
-                        </span>
-                      </div>
-                    </div>
-                  )
-                } else if (wordCount >= solidPromptWords) {
-                  const wordsNeeded = greatPromptWords - wordCount
-                  return (
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-ds-warning to-ds-success transition-all duration-300"
-                          style={{ width: `${progress}%` }}
+                // SVG ring parameters
+                const r = 10
+                const circumference = 2 * Math.PI * r
+                const offset = circumference - (pct / 100) * circumference
+                const color =
+                  pct >= 100 ? 'text-crafted-green' : pct >= 50 ? 'text-amber-500' : 'text-rose-400'
+
+                const tooltip =
+                  pct >= 100
+                    ? 'Great detail!'
+                    : 'Add details like target audience or style preference'
+
+                return (
+                  <div className="flex items-center gap-1.5" title={tooltip}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" className={color}>
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r={r}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        opacity={0.15}
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r={r}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        transform="rotate(-90 12 12)"
+                        className="transition-all duration-300"
+                      />
+                      {pct >= 100 && (
+                        <path
+                          d="M8 12.5l2.5 2.5 5-5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         />
-                      </div>
-                      <span className="text-xs text-amber-600 dark:text-amber-400">
-                        +{wordsNeeded} for best results
-                      </span>
-                    </div>
-                  )
-                } else {
-                  const wordsNeeded = solidPromptWords - wordCount
-                  return (
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-ds-error to-ds-warning transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-rose-500 dark:text-rose-400">
-                        +{wordsNeeded} for a solid prompt
-                      </span>
-                    </div>
-                  )
-                }
+                      )}
+                    </svg>
+                    {pct < 100 && (
+                      <span className={cn('text-[10px]', color)}>{Math.round(pct)}%</span>
+                    )}
+                  </div>
+                )
               })()}
           </div>
 

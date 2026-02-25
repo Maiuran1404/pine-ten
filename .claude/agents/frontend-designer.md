@@ -329,7 +329,7 @@ After implementation, verify the output visually:
 4. Toggle dark mode and verify appearance
 5. If the result doesn't match intent, iterate
 
-If browser tools are not available, describe what the component should look like at each breakpoint so the user can visually verify.
+Visual verification is mandatory. Use browser automation tools to navigate, screenshot, and verify at all breakpoints. If the dev server is not running, start it with `npm run dev` first. Do not proceed to the next task until visual verification passes.
 
 ---
 
@@ -589,7 +589,7 @@ export function DataView({ data, isLoading, error }: DataViewProps) {
 
 ## Annotation-Driven Refinement
 
-When the `agentation` MCP tools are available, use them for visual feedback loops:
+Use the `agentation` MCP tools for visual feedback loops:
 
 1. After implementing a component, ask the user to annotate issues directly in the browser
 2. Use `agentation_watch_annotations` to receive pinpointed feedback

@@ -41,6 +41,9 @@ interface UnifiedPanelProps {
   onRequestSubmit?: () => void
   isReadyForDesigner?: boolean
   deliverableCategory?: string | null
+  // Moodboard-to-scene connection (#15)
+  onApplyMoodboardToScene?: (item: MoodboardItem, sceneNumber: number) => void
+  storyboardSceneCount?: number
   className?: string
 }
 
@@ -75,6 +78,41 @@ function getSectionsForStage(
     (brief?.visualDirection?.colorPalette.length || 0) +
     (brief?.visualDirection?.moodKeywords.length || 0)
 
+  // Helper: only include a section when it has content or is the active stage
+  const visualIfPopulated =
+    visualCount > 0
+      ? [
+          {
+            key: 'visual' as SectionKey,
+            label: 'Visual Direction',
+            defaultOpen: false,
+            itemCount: visualCount,
+          },
+        ]
+      : []
+  const moodboardIfPopulated =
+    moodboardCount > 0
+      ? [
+          {
+            key: 'moodboard' as SectionKey,
+            label: 'Moodboard',
+            defaultOpen: false,
+            itemCount: moodboardCount,
+          },
+        ]
+      : []
+  const outlineIfPopulated =
+    showOutline && outlineCount > 0
+      ? [
+          {
+            key: 'outline' as SectionKey,
+            label: 'Content Plan',
+            defaultOpen: false,
+            itemCount: outlineCount,
+          },
+        ]
+      : []
+
   let sections: SectionConfig[]
 
   switch (currentStage) {
@@ -83,41 +121,28 @@ function getSectionsForStage(
       break
 
     case 'details':
-      // STRUCTURE stage (comes first): show brief + visual direction for structure preview
+      // Brief is the focus — open by default. Other sections only if they have content.
       sections = [
-        { key: 'brief', label: 'Brief', defaultOpen: false },
-        {
-          key: 'visual',
-          label: 'Visual Direction',
-          defaultOpen: true,
-          itemCount: visualCount || undefined,
-        },
+        { key: 'brief', label: 'Brief', defaultOpen: true },
+        ...visualIfPopulated,
+        ...moodboardIfPopulated,
+        ...outlineIfPopulated,
       ]
       break
 
     case 'style':
-      // INSPIRATION stage (comes after STRUCTURE): show brief + moodboard + visual direction
+      // Moodboard is the active section — always shown. Visual only if populated.
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
         { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
-        {
-          key: 'visual',
-          label: 'Visual Direction',
-          defaultOpen: false,
-          itemCount: visualCount || undefined,
-        },
+        ...visualIfPopulated,
       ]
       break
 
     case 'strategic_review':
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
-        {
-          key: 'visual',
-          label: 'Visual Direction',
-          defaultOpen: false,
-          itemCount: visualCount || undefined,
-        },
+        ...visualIfPopulated,
         ...(showOutline
           ? [
               {
@@ -128,11 +153,12 @@ function getSectionsForStage(
               },
             ]
           : []),
-        { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
+        ...moodboardIfPopulated,
       ]
       break
 
     case 'moodboard':
+      // Moodboard + Visual Direction are both active sections — always shown.
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: false },
         { key: 'moodboard', label: 'Moodboard', defaultOpen: true, itemCount: moodboardCount },
@@ -142,16 +168,7 @@ function getSectionsForStage(
           defaultOpen: true,
           itemCount: visualCount || undefined,
         },
-        ...(showOutline
-          ? [
-              {
-                key: 'outline' as SectionKey,
-                label: 'Content Plan',
-                defaultOpen: false,
-                itemCount: outlineCount || undefined,
-              },
-            ]
-          : []),
+        ...outlineIfPopulated,
       ]
       break
 
@@ -159,12 +176,7 @@ function getSectionsForStage(
     case 'deepen':
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
-        {
-          key: 'visual',
-          label: 'Visual Direction',
-          defaultOpen: false,
-          itemCount: visualCount || undefined,
-        },
+        ...visualIfPopulated,
         ...(showOutline
           ? [
               {
@@ -175,19 +187,14 @@ function getSectionsForStage(
               },
             ]
           : []),
-        { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
+        ...moodboardIfPopulated,
       ]
       break
 
     case 'submit':
       sections = [
         { key: 'brief', label: 'Brief', defaultOpen: true },
-        {
-          key: 'visual',
-          label: 'Visual Direction',
-          defaultOpen: true,
-          itemCount: visualCount || undefined,
-        },
+        ...visualIfPopulated.map((s) => ({ ...s, defaultOpen: true })),
         ...(showOutline
           ? [
               {
@@ -198,7 +205,7 @@ function getSectionsForStage(
               },
             ]
           : []),
-        { key: 'moodboard', label: 'Moodboard', defaultOpen: false, itemCount: moodboardCount },
+        ...moodboardIfPopulated,
       ]
       break
 
@@ -333,9 +340,13 @@ function CollapsibleSection({
 function MoodboardContent({
   items,
   onRemoveItem,
+  onApplyToScene,
+  sceneCount,
 }: {
   items: MoodboardItem[]
   onRemoveItem: (id: string) => void
+  onApplyToScene?: (item: MoodboardItem, sceneNumber: number) => void
+  sceneCount?: number
 }) {
   const groupedItems = useMemo(() => {
     const styles = items.filter((item) => item.type === 'style')
@@ -380,11 +391,71 @@ function MoodboardContent({
           <MoodboardSectionHeader title="Uploads" itemCount={groupedItems.uploads.length} />
           <div className="grid grid-cols-2 gap-2 pt-1">
             {groupedItems.uploads.map((item) => (
-              <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
+              <MoodboardCard
+                key={item.id}
+                item={item}
+                onRemove={onRemoveItem}
+                onApplyToScene={onApplyToScene}
+                sceneCount={sceneCount}
+              />
             ))}
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// =============================================================================
+// LIVE BRIEF SUMMARY (#13) — compact card showing captured fields
+// =============================================================================
+
+function LiveBriefSummary({ brief }: { brief: LiveBrief | null }) {
+  if (!brief) return null
+
+  const fields: { label: string; value: string | undefined }[] = [
+    { label: 'Project', value: brief.taskSummary.value || undefined },
+    { label: 'Type', value: brief.taskType.value || undefined },
+    { label: 'Audience', value: brief.audience.value?.name || undefined },
+    { label: 'Platform', value: brief.platform.value || undefined },
+    { label: 'Intent', value: brief.intent.value || undefined },
+    { label: 'Topic', value: brief.topic.value || undefined },
+  ]
+
+  const captured = fields.filter((f) => f.value)
+  const total = fields.length
+
+  if (captured.length === 0) return null
+
+  return (
+    <div className="mx-4 mt-3 mb-1 rounded-lg border border-border/30 bg-muted/20 p-3 space-y-2">
+      {/* Counter + mini progress */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          Brief Progress
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">
+            {captured.length}/{total}
+          </span>
+          <div className="w-10 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${(captured.length / total) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Compact field grid */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+        {captured.slice(0, 6).map((f) => (
+          <div key={f.label} className="min-w-0">
+            <span className="text-[9px] text-muted-foreground/50 uppercase">{f.label}</span>
+            <p className="text-[11px] text-foreground truncate">{f.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -404,6 +475,8 @@ export function UnifiedPanel({
   onRequestSubmit,
   isReadyForDesigner,
   deliverableCategory,
+  onApplyMoodboardToScene,
+  storyboardSceneCount,
   className,
 }: UnifiedPanelProps) {
   // Track user-toggled open/close state per section
@@ -512,7 +585,14 @@ export function UnifiedPanel({
         return <BriefFieldsContent brief={brief} onBriefUpdate={onBriefUpdate} />
 
       case 'moodboard':
-        return <MoodboardContent items={moodboardItems} onRemoveItem={onRemoveMoodboardItem} />
+        return (
+          <MoodboardContent
+            items={moodboardItems}
+            onRemoveItem={onRemoveMoodboardItem}
+            onApplyToScene={onApplyMoodboardToScene}
+            sceneCount={storyboardSceneCount}
+          />
+        )
 
       case 'visual':
         return (
@@ -545,20 +625,28 @@ export function UnifiedPanel({
       {/* Context Strip */}
       <ContextStrip currentStage={currentStage} completedStages={completedStages} />
 
+      {/* Live Brief Summary (#13) */}
+      <LiveBriefSummary brief={brief} />
+
       {/* Primary Content - Scrollable */}
       <ScrollArea className="flex-1">
         <div>
-          {sections.map((section) => (
-            <CollapsibleSection
-              key={section.key}
-              label={section.label}
-              isOpen={isSectionOpen(section)}
-              onToggle={() => toggleSection(section.key)}
-              itemCount={section.itemCount}
-            >
-              {renderSection(section)}
-            </CollapsibleSection>
-          ))}
+          {sections.length === 1 ? (
+            // Single section — render directly without collapsible wrapper
+            <div className="py-1">{renderSection(sections[0])}</div>
+          ) : (
+            sections.map((section) => (
+              <CollapsibleSection
+                key={section.key}
+                label={section.label}
+                isOpen={isSectionOpen(section)}
+                onToggle={() => toggleSection(section.key)}
+                itemCount={section.itemCount}
+              >
+                {renderSection(section)}
+              </CollapsibleSection>
+            ))
+          )}
         </div>
       </ScrollArea>
 

@@ -13,6 +13,8 @@ import { Palette, Sparkles } from 'lucide-react'
 interface MoodboardPanelProps {
   items: MoodboardItem[]
   onRemoveItem: (id: string) => void
+  onApplyToScene?: (item: MoodboardItem, sceneNumber: number) => void
+  sceneCount?: number
   onClearAll?: () => void
   className?: string
 }
@@ -20,6 +22,8 @@ interface MoodboardPanelProps {
 export function MoodboardPanel({
   items,
   onRemoveItem,
+  onApplyToScene,
+  sceneCount = 0,
   onClearAll,
   className,
 }: MoodboardPanelProps) {
@@ -116,7 +120,13 @@ export function MoodboardPanel({
                       >
                         <div className="grid grid-cols-3 gap-2 pt-2">
                           {groupedItems.styles.map((item) => (
-                            <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
+                            <MoodboardCard
+                              key={item.id}
+                              item={item}
+                              onRemove={onRemoveItem}
+                              onApplyToScene={onApplyToScene}
+                              sceneCount={sceneCount}
+                            />
                           ))}
                         </div>
                       </motion.div>
@@ -179,7 +189,13 @@ export function MoodboardPanel({
                       >
                         <div className="grid grid-cols-2 gap-2 pt-2">
                           {groupedItems.uploads.map((item) => (
-                            <MoodboardCard key={item.id} item={item} onRemove={onRemoveItem} />
+                            <MoodboardCard
+                              key={item.id}
+                              item={item}
+                              onRemove={onRemoveItem}
+                              onApplyToScene={onApplyToScene}
+                              sceneCount={sceneCount}
+                            />
                           ))}
                         </div>
                       </motion.div>

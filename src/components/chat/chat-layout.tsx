@@ -10,7 +10,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { useGroupRef } from 'react-resizable-panels'
 import { type ChatStage, type MoodboardItem } from './types'
 import { type LiveBrief } from './brief-panel/types'
-import { TopProgressBar } from './progress-stepper'
+import { LabeledProgressBar } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel } from './structure-panel'
@@ -53,17 +53,26 @@ interface ChatLayoutProps {
   structureType?: StructureData['type'] | null
   structureData?: StructureData | null
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
+  onSceneReorder?: (scenes: StoryboardScene[]) => void
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
+  // Moodboard-to-scene connection (#15)
+  onApplyMoodboardToScene?: (item: MoodboardItem, sceneNumber: number) => void
+  storyboardSceneCount?: number
   // Scene image data from multi-source search (Film-Grab, Flim.ai, Pexels, Eyecannndy)
   sceneImageData?: Map<number, SceneImageData>
   // Loading state for regeneration
   isRegenerating?: boolean
-  // Changed scene numbers for visual diff highlighting
-  changedScenes?: Set<number>
+  // Changed scene numbers for visual diff highlighting (#21: field-level diffs)
+  changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
+  // Undo/Redo (#20)
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
   // Website-specific props
@@ -145,14 +154,21 @@ export function ChatLayout({
   structureType,
   structureData,
   onSceneEdit,
+  onSceneReorder,
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
   onSectionReorder,
   onSectionEdit,
+  onApplyMoodboardToScene,
+  storyboardSceneCount,
   sceneImageData,
   isRegenerating,
   changedScenes,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   viewStructureRef,
   websiteGlobalStyles,
   websiteInspirations,
@@ -220,7 +236,7 @@ export function ChatLayout({
     <div className={cn('flex flex-col h-full relative', className)}>
       {/* Top Progress Bar - Subtle, takes minimal space */}
       {showProgress && (
-        <TopProgressBar
+        <LabeledProgressBar
           currentStage={currentStage}
           completedStages={completedStages}
           progressPercentage={progressPercentage}
@@ -273,9 +289,14 @@ export function ChatLayout({
                     sceneImageData={sceneImageData}
                     isRegenerating={isRegenerating}
                     changedScenes={changedScenes}
+                    onUndo={onUndo}
+                    onRedo={onRedo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
                     onSceneClick={onSceneClick}
                     onSelectionChange={onSceneSelectionChange}
                     onSceneEdit={onSceneEdit}
+                    onSceneReorder={onSceneReorder}
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
                     onRegenerateField={onRegenerateField}
@@ -311,9 +332,14 @@ export function ChatLayout({
                     sceneImageData={sceneImageData}
                     isRegenerating={isRegenerating}
                     changedScenes={changedScenes}
+                    onUndo={onUndo}
+                    onRedo={onRedo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
                     onSceneClick={onSceneClick}
                     onSelectionChange={onSceneSelectionChange}
                     onSceneEdit={onSceneEdit}
+                    onSceneReorder={onSceneReorder}
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
                     onRegenerateField={onRegenerateField}
@@ -378,6 +404,8 @@ export function ChatLayout({
                           onRequestSubmit={onRequestSubmit}
                           isReadyForDesigner={isReadyForDesigner}
                           deliverableCategory={deliverableCategory}
+                          onApplyMoodboardToScene={onApplyMoodboardToScene}
+                          storyboardSceneCount={storyboardSceneCount}
                         />
                       </div>
                     </SheetContent>
@@ -477,6 +505,8 @@ export function ChatLayout({
                         onClearMoodboard={onClearMoodboard}
                         onRequestSubmit={onRequestSubmit}
                         isReadyForDesigner={isReadyForDesigner}
+                        onApplyMoodboardToScene={onApplyMoodboardToScene}
+                        storyboardSceneCount={storyboardSceneCount}
                       />
                     </div>
                   </SheetContent>

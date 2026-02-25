@@ -28,10 +28,16 @@ interface StructurePanelProps {
   briefingStage?: string
   sceneImageData?: Map<number, SceneImageData>
   isRegenerating?: boolean
-  changedScenes?: Set<number>
+  changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
+  // Undo/Redo (#20)
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
   onSceneClick?: (scene: StoryboardScene) => void
   onSelectionChange?: (scenes: StoryboardScene[]) => void
   onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
+  onSceneReorder?: (scenes: StoryboardScene[]) => void
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
@@ -192,9 +198,14 @@ export function StructurePanel({
   sceneImageData,
   isRegenerating,
   changedScenes,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   onSceneClick,
   onSelectionChange,
   onSceneEdit,
+  onSceneReorder,
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
@@ -298,9 +309,14 @@ export function StructurePanel({
           onSceneClick={onSceneClick}
           onSelectionChange={onSelectionChange}
           onSceneEdit={onSceneEdit}
+          onSceneReorder={onSceneReorder}
           onRegenerateStoryboard={onRegenerateStoryboard}
           onRegenerateScene={onRegenerateScene}
           onRegenerateField={onRegenerateField}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
       )}
       {structureData.type === 'layout' && (

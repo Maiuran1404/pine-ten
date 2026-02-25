@@ -96,6 +96,13 @@ Dev: `app.localhost:3000`, `artist.localhost:3000`, `superadmin.localhost:3000`
 2. **Layouts** — Client-side `useEffect` role checks with redirects. Admin requires ADMIN role + superadmin subdomain. Freelancer allows FREELANCER or ADMIN.
 3. **API Routes** — Server-side via `src/lib/require-auth.ts`: `requireAuth()`, `requireRole()`, `requireAdmin()`, `requireFreelancer()`, `requireClient()`, `requireOwnerOrAdmin()`, `requireApprovedFreelancer()`
 
+### Hydration & Redirects
+
+Any redirect based on role or subdomain in a layout **MUST** gate on `portal.isHydrated` before executing. Without this guard, redirects fire before the auth session is loaded, causing infinite redirect loops or flashing wrong-portal pages. This has been fixed 3+ times — treat it as a strict rule.
+
+- Better Auth session cache has ~5min TTL — after DB role changes, the client session may be stale. Account for this in redirect logic.
+- Layout role checks run client-side (`useEffect`), so they see the hydrated session, not the server-rendered one.
+
 ## Chat & Briefing Flow
 
 The creative briefing is the core product flow. Architecture:
@@ -136,6 +143,15 @@ Maps to 6 UI stages: brief → style → details → strategic_review → moodbo
 ### AI Integration
 
 System prompt in `chat.ts` configures Claude as a "senior creative director" that makes proactive recommendations (not open-ended questions). Outputs structured markers: `[DELIVERABLE_STYLES: ...]` for style picker, `[QUICK_OPTIONS]{...}[/QUICK_OPTIONS]` for chip buttons.
+
+#### AI Chat Behavior Rules
+
+These rules are hard-won from repeated bugs — violating them causes visible UX issues:
+
+- **Quick options must derive from the AI's current message content**, not from stage inference or generic defaults. If the AI asks about audience, the chips must be audience options — never unrelated CTAs.
+- **Each AI message must end with exactly one forward-looking question** to guide the user to the next step. No dead-end messages, no multiple questions competing for attention.
+- **Never show unrelated CTAs or UI elements** for a stage the user hasn't reached (e.g., don't show video reference grids while still asking about audience).
+- **Stage transitions are driven by the state machine**, not by AI message content. The AI informs the state machine, but the state machine owns progression.
 
 ## State Management
 
@@ -190,6 +206,10 @@ Server actions return: `{ data: T; error: null } | { data: null; error: string }
 - **NEVER** skip Zod validation in API routes
 - **NEVER** use default exports (except pages/layouts)
 - **NEVER** hardcode credentials or database URLs
+- **NEVER** change fundamental UX interaction patterns (e.g., iframe to screenshots, modal to inline) without explicit user approval — these are product decisions
+- **NEVER** implement major visual redesigns without user approval of the approach first
+- **NEVER** use bare `fetch` for mutations — always use `csrfFetch()` from `useCsrfContext()`
+- **NEVER** use `db.execute(sql\`...\`)` for queries — always use typed Drizzle query builder (`db.select()`, `db.insert()`, etc.)
 
 ## Database
 
@@ -205,12 +225,13 @@ Server actions return: `{ data: T; error: null } | { data: null; error: string }
 4. `npm run db:migrate` — apply migration
 5. `npm run typecheck` — verify no type breakage
 
-Use the `db-migration` agent for guided workflows.
+Use `/migrate` for guided workflows (dispatches the `db-migration` agent).
 
 ## Testing
 
 - Vitest + Testing Library, co-located: `foo.ts` → `foo.test.ts`
 - Every new API route and Zod schema needs tests
+- Use `/add-test` to generate tests for existing files (dispatches `test-writer` agent)
 - Mock Supabase: `createMockSupabaseClient` from `src/test/mocks/supabase.ts`
 - Factories: `src/test/factories.ts`
 
@@ -232,7 +253,7 @@ PR titles follow the same format. Keep commits atomic — one logical change per
 - **Zod validation first** in every API route
 - **kebab-case** file names, `@/` path alias maps to `src/`
 - Auth via Better Auth (not Supabase Auth) — see `src/lib/auth.ts`
-- New env vars must be added to `src/lib/env.ts`
+- New env vars: use `/add-env` to scaffold across `env.ts` + `.env.example` + CI
 - Rate limiting via `checkRateLimit`, CSRF on mutations via `csrfFetch()`
 
 ## Planning & Workflow
@@ -261,6 +282,16 @@ When fixing multiple bugs or issues in a session, **always test, commit, and pus
 - Broken fixes don't block other changes
 - Git history stays clean and bisectable
 
+## Visual Verification
+
+After any change to `.tsx` component or page files, visual verification is mandatory:
+
+1. Use `/verify` to check affected pages in the browser
+2. Fix any visual issues before committing
+3. This applies to both manual edits and `/develop` pipeline runs
+
+Visual verification catches layout bugs, responsive issues, render errors, and console errors that static analysis cannot detect. URL mappings for all pages are in `.claude/url-map.md`.
+
 ## Agents & Commands
 
 | Agent               | Purpose                                              |
@@ -273,14 +304,38 @@ When fixing multiple bugs or issues in a session, **always test, commit, and pus
 | `refactor`          | DRY refactoring with project conventions             |
 | `perf-analyzer`     | Performance audit — config/infra only, no code       |
 
-| Command          | Purpose                                        |
-| ---------------- | ---------------------------------------------- |
-| `/review`        | Review staged changes                          |
-| `/deep-review`   | Deep review with security + perf analysis      |
-| `/design-review` | Design system, accessibility, and visual audit |
-| `/validate`      | Run full validation suite with summary         |
-| `/fix-types`     | Find and fix TypeScript errors                 |
-| `/perf-audit`    | Run performance audit (config & infra focused) |
+| Command           | Purpose                                                  |
+| ----------------- | -------------------------------------------------------- |
+| `/review`         | Review staged changes                                    |
+| `/deep-review`    | Deep review with security + perf analysis                |
+| `/design-review`  | Design system, accessibility, and visual audit           |
+| `/validate`       | Run full validation suite with summary                   |
+| `/fix-types`      | Find and fix TypeScript errors                           |
+| `/perf-audit`     | Run performance audit (config & infra focused)           |
+| `/migrate`        | Guided database migration (dispatches db-migration)      |
+| `/add-test`       | Generate co-located tests (dispatches test-writer)       |
+| `/security-audit` | Run security audit (dispatches security-auditor)         |
+| `/cleanup`        | Remove debug artifacts and flag dead code                |
+| `/refactor`       | DRY analysis and extraction (dispatches refactor)        |
+| `/check-ready`    | Pre-push safety gate with readiness report               |
+| `/add-env`        | Scaffold env var across env.ts + .env.example + CI       |
+| `/verify`         | Visual verification loop (browser screenshots + console) |
+
+## Proactive Command Usage
+
+Use these commands automatically in the appropriate context — don't wait for the user to ask:
+
+| Trigger                                               | Command                               |
+| ----------------------------------------------------- | ------------------------------------- |
+| Schema change requested                               | `/migrate`                            |
+| New API route or Zod schema created without tests     | `/add-test`                           |
+| Before committing/pushing code                        | `/check-ready`                        |
+| New `process.env.*` reference needed                  | `/add-env`                            |
+| Duplicate code noticed during implementation          | `/refactor`                           |
+| After a big feature is done, before PR                | `/security-audit` then `/check-ready` |
+| Debug console statements spotted in diff              | `/cleanup`                            |
+| Code ready to commit and push                         | `/add-commit-push`                    |
+| After creating/modifying any `.tsx` component or page | `/verify`                             |
 
 ## Sub-Agent Dispatch Rules
 
@@ -288,3 +343,24 @@ When fixing multiple bugs or issues in a session, **always test, commit, and pus
 - **Sequential**: schema change → migration → seed, API route → validation schema → test
 - Use subagents to keep the main context window clean — offload research and exploration
 - One task per subagent for focused execution
+
+## Design Language
+
+The established visual identity for Crafted:
+
+- **Font**: Satoshi (primary), system fallbacks
+- **Style**: Premium, immersive — grainy/textured backgrounds, subtle gradient accents, generous whitespace
+- **Palette**: Dark mode dominant, warm accent tones, high contrast for readability
+- **Components**: shadcn/ui base with custom styling to match the premium aesthetic
+
+For any UI/UX decisions, use the `frontend-designer` agent and `/design-review`. Don't make aesthetic judgment calls independently — the design language is intentional and should be preserved.
+
+## Known Fragile Areas
+
+These areas have repeatedly broken across sessions. Treat changes here with extra care — test thoroughly and verify visually:
+
+- **Superadmin login redirect flow** — hydration race between auth session loading and role-based redirect logic. Must gate on `portal.isHydrated`.
+- **Storyboard/structure data persistence** — scene data, structure content, and visual references must survive page refresh via draft persistence. Test the full save → refresh → restore cycle.
+- **Quick options alignment** — chip buttons must match the AI's current message context. Regression: generic/stage-based chips appearing instead of message-derived ones.
+- **Submit button / progress bar visibility** — at the final briefing stage, the submit CTA and progress indicator must be visible and functional. Regression: elements hidden by conditional rendering bugs.
+- **Chat scroll behavior** — auto-scroll to latest message, but respect user scroll-up. Regression: scroll jumps or stuck-at-top issues.

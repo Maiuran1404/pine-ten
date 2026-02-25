@@ -14,6 +14,7 @@ import {
   Building2,
   PanelLeftClose,
   PanelLeft,
+  ArrowLeft,
   Moon,
   Sun,
   User,
@@ -151,7 +152,10 @@ export default function ChatPage() {
       >
         {/* Logo and collapse toggle */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <Image
               src="/craftedfigureblack.png"
               alt="Crafted"
@@ -167,7 +171,7 @@ export default function ChatPage() {
               className="hidden dark:block"
             />
             <span className="font-semibold text-lg text-foreground">Crafted</span>
-          </Link>
+          </button>
           <button
             onClick={() => setSidebarCollapsed(true)}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -175,6 +179,17 @@ export default function ChatPage() {
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* Back to Dashboard */}
+        <div className="px-4 pt-3">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
         </div>
 
         {/* New Chat button */}

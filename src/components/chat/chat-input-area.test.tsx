@@ -277,16 +277,18 @@ describe('ChatInputArea', () => {
     expect(screen.getByText('Scene 1: Opening Scene')).toBeInTheDocument()
   })
 
-  it('shows word count progress indicator for short input', () => {
+  it('shows prompt quality ring for short input', () => {
     render(<ChatInputArea {...createDefaultProps({ input: 'one two three four five' })} />)
 
-    expect(screen.getByText(/for a solid prompt/)).toBeInTheDocument()
+    expect(
+      screen.getByTitle('Add details like target audience or style preference')
+    ).toBeInTheDocument()
   })
 
-  it('shows "Great detail!" for long input', () => {
+  it('shows prompt quality ring with checkmark for long input', () => {
     const longInput = Array.from({ length: 25 }, (_, i) => `word${i}`).join(' ')
     render(<ChatInputArea {...createDefaultProps({ input: longInput })} />)
 
-    expect(screen.getByText('Great detail!')).toBeInTheDocument()
+    expect(screen.getByTitle('Great detail!')).toBeInTheDocument()
   })
 })

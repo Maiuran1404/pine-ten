@@ -51,7 +51,15 @@ Execute in strict order — each step depends on the previous:
   - New Zod schemas (valid, invalid, edge cases)
 - Run `npm run test` to verify tests pass
 
-### Phase 3: Validate
+### Phase 3: Visual Verify
+
+If any `.tsx` component or page files were created or modified in Phase 2:
+
+1. Run `/verify` to check the affected pages in the browser
+2. If `/verify` reports issues, fix them before proceeding to validation
+3. If no `.tsx` files were touched (API-only or schema-only changes), skip this phase
+
+### Phase 4: Validate
 
 Run the full validation suite:
 
@@ -61,7 +69,7 @@ Run the full validation suite:
 
 Report the summary table and quality metrics as defined in `/validate`.
 
-### Phase 4: Summary
+### Phase 5: Summary
 
 Report:
 
@@ -69,6 +77,7 @@ Report:
 - Files modified (with paths)
 - Migration applied (if any)
 - Tests added (count)
+- Visual verification result (pass/fail/skipped)
 - Validation result (pass/fail)
 
 ## Rules
@@ -77,4 +86,5 @@ Report:
 - **Sequential execution** — schema before API, API before components, components before tests
 - **No partial delivery** — if any phase fails, stop and report the failure clearly
 - **Atomic commits** — do not commit automatically; let the user decide when to commit
+- **Visual verification before validation** — if UI files were touched, `/verify` runs before lint/typecheck/test
 - **Briefing subsystem guard** — any changes to `src/lib/ai/briefing-*.ts` or `src/components/chat/` trigger the `briefing-architect` agent for review

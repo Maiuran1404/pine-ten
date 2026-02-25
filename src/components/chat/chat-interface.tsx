@@ -224,11 +224,17 @@ export function ChatInterface({
     websiteFidelity: _websiteFidelity,
     handleStrategicReviewAction,
     handleSceneEdit,
+    handleSceneReorder,
+    handleSceneImageReplace,
     handleSectionEdit,
     handleSectionReorder,
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
 
     // Website inspiration
     websiteInspirations,
@@ -326,14 +332,25 @@ export function ChatInterface({
         structureType={structureType}
         structureData={storyboardScenes}
         onSceneEdit={handleSceneEdit}
+        onSceneReorder={handleSceneReorder}
         onRegenerateStoryboard={showSubmissionSuccess ? undefined : handleRegenerateStoryboard}
         onRegenerateScene={showSubmissionSuccess ? undefined : handleRegenerateScene}
         onRegenerateField={showSubmissionSuccess ? undefined : handleRegenerateField}
         onSectionReorder={handleSectionReorder}
         onSectionEdit={handleSectionEdit}
         sceneImageData={sceneImageData}
+        onApplyMoodboardToScene={(item, sceneNumber) =>
+          handleSceneImageReplace(sceneNumber, item.imageUrl)
+        }
+        storyboardSceneCount={
+          storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
+        }
         isRegenerating={isLoading}
         changedScenes={changedScenes}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}

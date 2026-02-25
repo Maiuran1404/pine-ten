@@ -707,11 +707,17 @@ export function useChatInterfaceData({
     updateInspirationNotes: websiteInspiration.updateInspirationNotes,
     handleStrategicReviewAction,
     handleSceneEdit: storyboard.handleSceneEdit,
+    handleSceneReorder: storyboard.handleSceneReorder,
+    handleSceneImageReplace: storyboard.handleSceneImageReplace,
     handleSectionEdit: storyboard.handleSectionEdit,
     handleSectionReorder: storyboard.handleSectionReorder,
     handleRegenerateStoryboard: storyboard.handleRegenerateStoryboard,
     handleRegenerateScene: storyboard.handleRegenerateScene,
     handleRegenerateField: storyboard.handleRegenerateField,
+    undo: storyboard.undo,
+    redo: storyboard.redo,
+    canUndo: storyboard.canUndo,
+    canRedo: storyboard.canRedo,
 
     // Handlers
     handleSend,

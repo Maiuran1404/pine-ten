@@ -278,7 +278,7 @@ export function VideoReferenceGrid({
 
   // Sort by brandMatchScore descending
   const sorted = [...videos].sort((a, b) => (b.brandMatchScore ?? 0) - (a.brandMatchScore ?? 0))
-  const displayed = sorted.slice(0, 3)
+  const displayed = sorted.slice(0, 6)
 
   // Best match: top-scored card when brandMatchScore >= 70
   const topScore = displayed[0]?.brandMatchScore ?? 0
