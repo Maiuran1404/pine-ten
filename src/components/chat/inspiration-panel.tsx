@@ -8,7 +8,7 @@
  */
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe,
@@ -130,7 +130,7 @@ function GalleryCard({
 }
 
 // =============================================================================
-// SITE PREVIEW — full-panel iframe takeover
+// SITE PREVIEW — full-panel screenshot preview (no iframes — too fragile)
 // =============================================================================
 
 function SitePreview({
@@ -144,28 +144,8 @@ function SitePreview({
   onBack: () => void
   onSelect: () => void
 }) {
-  const [iframeLoaded, setIframeLoaded] = useState(false)
-  const [iframeFailed, setIframeFailed] = useState(false)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const proxyUrl = `/api/website-flow/proxy?url=${encodeURIComponent(item.url)}`
-
-  // After each iframe load, check if it still shows our proxy page.
-  // If the proxied site's JS navigated the iframe to a different URL
-  // (e.g. app.localhost), the location check will fail → show fallback.
-  // Uses allow-same-origin sandbox so we can read contentWindow.location.
-  const handleIframeLoad = useCallback(() => {
-    try {
-      const loc = iframeRef.current?.contentWindow?.location?.href ?? ''
-      if (loc.includes('/api/website-flow/proxy')) {
-        setIframeLoaded(true)
-      } else {
-        setIframeFailed(true)
-      }
-    } catch {
-      // Cross-origin error — iframe left our origin
-      setIframeFailed(true)
-    }
-  }, [])
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   return (
     <div className="flex flex-col h-full">
@@ -181,63 +161,49 @@ function SitePreview({
         <span className="flex-1 text-center text-xs text-muted-foreground truncate px-2">
           {getHostname(item.url)}
         </span>
-        <div className="w-16" />
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+        >
+          Visit <ExternalLink className="w-3 h-3" />
+        </a>
       </div>
 
-      {/* Preview content */}
-      <div className="relative flex-1 bg-muted/30">
-        {iframeFailed ? (
-          /* Screenshot fallback when iframe fails */
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.screenshotUrl}
-                alt={item.name}
-                className="w-full object-cover object-top"
-              />
+      {/* Screenshot preview */}
+      <ScrollArea className="flex-1">
+        <div className="relative bg-muted/30">
+          {!imgLoaded && !hasError && (
+            <div className="aspect-[4/3] flex items-center justify-center bg-muted/30">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
             </div>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background via-background/90 to-transparent pt-8 pb-3 px-3 text-center">
-              <p className="text-xs text-muted-foreground mb-2">
-                Live preview unavailable for this site
-              </p>
+          )}
+          {hasError ? (
+            <div className="aspect-[4/3] flex flex-col items-center justify-center gap-2 bg-muted/20">
+              <Globe className="w-8 h-8 text-muted-foreground/20" />
+              <p className="text-xs text-muted-foreground/50">Preview unavailable</p>
               <a
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-medium text-foreground hover:underline inline-flex items-center gap-1"
+                className="text-xs font-medium text-foreground hover:underline inline-flex items-center gap-1 mt-1"
               >
                 Open in new tab <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-          </div>
-        ) : (
-          <>
-            {/* Fallback screenshot while loading */}
-            {!iframeLoaded && item.screenshotUrl && (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={item.screenshotUrl}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover object-top"
-              />
-            )}
-            {!iframeLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
-              </div>
-            )}
-            <iframe
-              ref={iframeRef}
-              src={proxyUrl}
-              title={item.name}
-              sandbox="allow-scripts allow-same-origin"
-              className={cn('w-full h-full border-none', !iframeLoaded && 'opacity-0')}
-              onLoad={handleIframeLoad}
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={item.screenshotUrl}
+              alt={item.name}
+              className={cn('w-full object-cover object-top', !imgLoaded && 'h-0 overflow-hidden')}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setHasError(true)}
             />
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Bottom action bar */}
       <div className="shrink-0 h-14 flex items-center gap-2 px-3 border-t border-border/40 bg-background">
@@ -281,8 +247,6 @@ function SelectedWebsiteCard({
   onToggleExpand: () => void
   onRemove: () => void
 }) {
-  const [iframeLoaded, setIframeLoaded] = useState(false)
-
   const handleVisit = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
@@ -290,8 +254,6 @@ function SelectedWebsiteCard({
     },
     [item.url]
   )
-
-  const proxyUrl = `/api/website-flow/proxy?url=${encodeURIComponent(item.url)}`
 
   return (
     <motion.div
@@ -359,20 +321,14 @@ function SelectedWebsiteCard({
         </div>
       </div>
 
-      {/* Expanded iframe preview */}
-      {isExpanded && (
-        <div className="relative border-t border-border/30 h-[420px] bg-muted/20">
-          {!iframeLoaded && (
-            <div className="absolute inset-0 z-10 bg-muted/20 animate-pulse flex items-center justify-center">
-              <Globe className="w-6 h-6 text-muted-foreground/20" />
-            </div>
-          )}
-          <iframe
-            src={proxyUrl}
-            title={item.name}
-            sandbox="allow-scripts allow-same-origin"
-            className="w-full h-full border-none"
-            onLoad={() => setIframeLoaded(true)}
+      {/* Expanded screenshot preview */}
+      {isExpanded && item.screenshotUrl && (
+        <div className="border-t border-border/30 max-h-[420px] overflow-hidden bg-muted/20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.screenshotUrl}
+            alt={item.name}
+            className="w-full object-cover object-top"
           />
         </div>
       )}
