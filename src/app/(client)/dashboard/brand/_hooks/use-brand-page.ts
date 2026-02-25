@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useCsrfContext } from '@/providers/csrf-provider'
 import type { BrandData, Audience } from '../_lib/brand-types'
@@ -17,7 +17,10 @@ export function useBrandPage() {
 
   const savedSnapshotRef = useRef<string | null>(null)
 
-  const hasChanges = brand !== null && JSON.stringify(brand) !== savedSnapshotRef.current
+  const hasChanges = useMemo(
+    () => brand !== null && JSON.stringify(brand) !== savedSnapshotRef.current,
+    [brand]
+  )
 
   // Fetch brand data
   const fetchBrand = useCallback(async () => {

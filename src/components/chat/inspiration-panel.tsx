@@ -186,8 +186,11 @@ function SitePreview({
       .then((html) => {
         if (!cancelled) setSrcdoc(html)
       })
-      .catch(() => {
-        if (!cancelled) setFetchFailed(true)
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Proxy fetch failed for', item.url, err)
+          setFetchFailed(true)
+        }
       })
     return () => {
       cancelled = true

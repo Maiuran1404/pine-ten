@@ -294,9 +294,14 @@ describe('Validation Schemas', () => {
       })
       expect(result.success).toBe(true)
       if (result.success && result.data.type === 'freelancer') {
-        expect(result.data.data.skills).toEqual([])
-        expect(result.data.data.specializations).toEqual([])
-        expect(result.data.data.portfolioUrls).toEqual([])
+        const data = result.data.data as {
+          skills: string[]
+          specializations: string[]
+          portfolioUrls: string[]
+        }
+        expect(data.skills).toEqual([])
+        expect(data.specializations).toEqual([])
+        expect(data.portfolioUrls).toEqual([])
       }
     })
 
