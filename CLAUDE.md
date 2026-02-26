@@ -211,6 +211,7 @@ Server actions return: `{ data: T; error: null } | { data: null; error: string }
 - **NEVER** use bare `fetch` for mutations — always use `csrfFetch()` from `useCsrfContext()`
 - **NEVER** use `db.execute(sql\`...\`)` for queries — always use typed Drizzle query builder (`db.select()`, `db.insert()`, etc.)
 - **NEVER** remove or rename a function, type, or export without first grepping for all references and updating them in the same edit batch — this breaks parallel agents
+- **NEVER** use raw Tailwind palette colors (`emerald-500`, `violet-300`, `amber-600`, etc.) or hardcoded hex/rgb values for styling — all colors must come from design tokens in `globals.css` (see Color System section under Design Language)
 
 ## Database
 
@@ -377,6 +378,48 @@ The established visual identity for Crafted:
 - **Components**: shadcn/ui base with custom styling to match the premium aesthetic
 
 For any UI/UX decisions, use the `frontend-designer` agent and `/design-review`. Don't make aesthetic judgment calls independently — the design language is intentional and should be preserved.
+
+### Color System (Strict Token Usage)
+
+**All colors MUST come from the defined design tokens.** Never use raw hex values, Tailwind named palette colors (`emerald-*`, `violet-*`, `amber-*`, etc.), or arbitrary color values (`bg-[#abc123]`, `text-[#abc123]`). The only source of truth for colors is `globals.css` CSS custom properties.
+
+#### Allowed Color Tokens
+
+**Brand Greens** (use via `crafted-green`, `crafted-green-light`, `crafted-sage`, `crafted-mint`, `crafted-forest`):
+
+| Token                   | Light     | Purpose                         |
+| ----------------------- | --------- | ------------------------------- |
+| `--crafted-green`       | `#4a7c4a` | Primary brand accent            |
+| `--crafted-green-light` | `#6b9b6b` | Lighter accent                  |
+| `--crafted-sage`        | `#8bb58b` | Subtle accent, links            |
+| `--crafted-mint`        | `#a8d4a8` | Very light accent, hover states |
+| `--crafted-forest`      | `#2d5a2d` | Deep accent, headings           |
+
+**Semantic Tokens** (shadcn/ui — use via Tailwind classes like `bg-background`, `text-foreground`, `border-border`, etc.):
+`background`, `foreground`, `card`, `card-foreground`, `popover`, `popover-foreground`, `primary`, `primary-foreground`, `secondary`, `secondary-foreground`, `muted`, `muted-foreground`, `accent`, `accent-foreground`, `destructive`, `border`, `input`, `ring`
+
+**Dashboard Tokens** (use via `ds-success`, `ds-warning`, `ds-error` Tailwind classes):
+`--ds-accent`, `--ds-accent-light`, `--ds-accent-dark`, `--ds-accent-muted`, `--ds-bg-*`, `--ds-border-*`, `--ds-text-*`, `--ds-success`, `--ds-warning`, `--ds-error`
+
+**Gradients** (use via CSS utility classes):
+`crafted-gradient` (135deg), `crafted-gradient-simple`, `crafted-gradient-radial`
+
+#### Color Usage Rules
+
+1. **Use Tailwind token classes** — `bg-background`, `text-foreground`, `border-border`, `bg-accent`, `text-muted-foreground`, `bg-crafted-green`, `text-crafted-sage`, `bg-ds-success`, etc.
+2. **Use CSS variables with `var()`** for inline styles — `var(--crafted-green)`, `var(--ds-accent)`, `var(--background)`, etc.
+3. **Opacity modifiers are OK** on tokens — `bg-crafted-green/20`, `text-crafted-sage/50`, `border-ds-accent/30`.
+4. **For new semantic needs**, add a new CSS custom property to `globals.css` `:root` and `.dark` blocks, register it in the `@theme inline` block, then use the Tailwind class. Never sprinkle one-off hex codes.
+5. **Status colors** — success: `ds-success`, warning: `ds-warning`, error: `ds-error` or `destructive`. No other reds/greens/ambers for status.
+6. **Third-party brand colors** (Google, LinkedIn, etc.) are the only acceptable hardcoded hex values — use a comment explaining the brand source.
+7. **PDF/email rendering** — where CSS variables are unavailable, hardcode values that exactly match the token values from `globals.css`. Reference the token name in a comment: `fill: '#4a7c4a' /* --crafted-green */`.
+
+#### Forbidden Color Patterns
+
+- **NEVER** use raw Tailwind palette colors: `emerald-*`, `green-*`, `violet-*`, `purple-*`, `amber-*`, `blue-*`, `cyan-*`, `rose-*`, `red-*`, `yellow-*`, `teal-*`, `indigo-*`, `fuchsia-*`, `pink-*`, `orange-*`, `lime-*`, `sky-*`, `stone-*`, `slate-*`, `gray-*`, `zinc-*`, `neutral-*` — use semantic tokens instead.
+- **NEVER** use arbitrary color values like `bg-[#10b981]`, `text-[#9AA48C]`, `border-[rgba(99,102,241,0.5)]` — add a CSS variable if the token doesn't exist.
+- **NEVER** introduce a new color without adding it as a CSS custom property in `globals.css` first.
+- **NEVER** use different color values between light and dark mode for the same semantic purpose unless intentionally designed (e.g., `--ds-accent` should feel like the same brand color in both modes).
 
 ## Known Fragile Areas
 
