@@ -103,34 +103,48 @@ function HighNavigation({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
   )
 }
 
-function HighHero({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
+function HighHero({
+  globalStyles: s,
+  content,
+}: {
+  globalStyles?: GlobalStyles
+  content?: Record<string, unknown>
+}) {
   const d = getDensity(s?.layoutDensity)
+  const headline = (content?.headline as string) || 'Transform Your Business Today'
+  const subheadline =
+    (content?.subheadline as string) ||
+    'We help companies achieve their goals with innovative solutions designed for the modern world.'
+  const cta = (content?.ctaText as string) || 'Get Started'
   return (
     <div className={cn(d.section, 'space-y-4')}>
       <h1
         className="text-2xl font-bold"
         style={{ color: s?.primaryColor ?? undefined, fontFamily: s?.fontPrimary }}
       >
-        Transform Your Business Today
+        {headline}
       </h1>
       <p
         className="text-sm text-muted-foreground max-w-md"
         style={{ fontFamily: s?.fontSecondary }}
       >
-        We help companies achieve their goals with innovative solutions designed for the modern
-        world.
+        {subheadline}
       </p>
-      <StyledButton
-        primaryColor={s?.primaryColor}
-        label="Get Started"
-        fontSecondary={s?.fontSecondary}
-      />
+      <StyledButton primaryColor={s?.primaryColor} label={cta} fontSecondary={s?.fontSecondary} />
     </div>
   )
 }
 
-function HighFeatures({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
+function HighFeatures({
+  globalStyles: s,
+  content,
+}: {
+  globalStyles?: GlobalStyles
+  content?: Record<string, unknown>
+}) {
   const d = getDensity(s?.layoutDensity)
+  const headline = (content?.headline as string) || 'Why Choose Us'
+  const subheadline = (content?.subheadline as string) || 'Everything you need to succeed online.'
   const features = [
     {
       title: 'Fast Performance',
@@ -152,13 +166,13 @@ function HighFeatures({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
         className="text-lg font-semibold mb-2"
         style={{ color: s?.primaryColor ?? undefined, fontFamily: s?.fontPrimary }}
       >
-        Why Choose Us
+        {headline}
       </h2>
       <p
         className="text-xs text-muted-foreground mb-6 max-w-sm"
         style={{ fontFamily: s?.fontSecondary }}
       >
-        Everything you need to succeed online.
+        {subheadline}
       </p>
       <div className={cn('grid grid-cols-3', d.inner)}>
         {features.map((feature) => (
@@ -190,8 +204,18 @@ function HighFeatures({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
   )
 }
 
-function HighAbout({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
+function HighAbout({
+  globalStyles: s,
+  content,
+}: {
+  globalStyles?: GlobalStyles
+  content?: Record<string, unknown>
+}) {
   const d = getDensity(s?.layoutDensity)
+  const headline = (content?.headline as string) || 'About Our Company'
+  const body =
+    (content?.draftContent as string) ||
+    'Founded in 2020, we have been helping businesses of all sizes build their online presence. Our team of experts combines creativity with technical excellence to deliver results.'
   return (
     <div className={cn(d.section, 'grid grid-cols-2 items-center', d.inner)}>
       <div className="space-y-3">
@@ -199,21 +223,13 @@ function HighAbout({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
           className="text-lg font-semibold"
           style={{ color: s?.primaryColor ?? undefined, fontFamily: s?.fontPrimary }}
         >
-          About Our Company
+          {headline}
         </h2>
         <p
           className="text-xs text-muted-foreground leading-relaxed"
           style={{ fontFamily: s?.fontSecondary }}
         >
-          Founded in 2020, we have been helping businesses of all sizes build their online presence.
-          Our team of experts combines creativity with technical excellence to deliver results.
-        </p>
-        <p
-          className="text-xs text-muted-foreground leading-relaxed"
-          style={{ fontFamily: s?.fontSecondary }}
-        >
-          We believe great design is about more than aesthetics. It is about creating experiences
-          that connect with your audience and drive growth.
+          {body}
         </p>
       </div>
       <GradientPlaceholder
@@ -547,8 +563,18 @@ function HighFaq({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
   )
 }
 
-function HighCta({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
+function HighCta({
+  globalStyles: s,
+  content,
+}: {
+  globalStyles?: GlobalStyles
+  content?: Record<string, unknown>
+}) {
   const d = getDensity(s?.layoutDensity)
+  const headline = (content?.headline as string) || 'Ready to Get Started?'
+  const subheadline =
+    (content?.subheadline as string) ||
+    'Join hundreds of businesses that have already transformed their online presence.'
   return (
     <div
       className={cn(d.section, 'text-center space-y-4')}
@@ -560,13 +586,13 @@ function HighCta({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
         className="text-xl font-bold"
         style={{ color: s?.primaryColor ?? undefined, fontFamily: s?.fontPrimary }}
       >
-        Ready to Get Started?
+        {headline}
       </h2>
       <p
         className="text-sm text-muted-foreground max-w-md mx-auto"
         style={{ fontFamily: s?.fontSecondary }}
       >
-        Join hundreds of businesses that have already transformed their online presence.
+        {subheadline}
       </p>
       <div className="flex justify-center gap-3">
         <StyledButton

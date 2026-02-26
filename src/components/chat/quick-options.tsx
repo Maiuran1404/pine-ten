@@ -101,7 +101,9 @@ export function QuickOptions({
                   )}
                 >
                   {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}
-                  {label}
+                  <span className="truncate" title={label}>
+                    {label}
+                  </span>
                 </motion.button>
               )
             }
@@ -138,7 +140,10 @@ export function QuickOptions({
 
                 {/* Label */}
                 <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                  <span className="text-white text-[13px] font-medium leading-tight drop-shadow-sm">
+                  <span
+                    className="text-white text-[13px] font-medium leading-tight drop-shadow-sm line-clamp-2"
+                    title={label}
+                  >
                     {label}
                   </span>
                 </div>
@@ -213,7 +218,9 @@ export function QuickOptions({
               )}
             >
               {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}
-              {label}
+              <span className="truncate" title={label}>
+                {label}
+              </span>
             </motion.button>
           )
         })}

@@ -437,9 +437,9 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
         }
         return 'STRUCTURE'
       }
-      // Non-video: INSPIRATION requires structure !== null, or force-advance after 3 turns
+      // Non-video: INSPIRATION requires structure !== null, or force-advance after 2 turns
       // to prevent permanent stuck state when structure markers are missing
-      if (state.structure !== null || state.turnsInCurrentStage >= 3) {
+      if (state.structure !== null || state.turnsInCurrentStage >= 2) {
         return 'INSPIRATION'
       }
       return 'STRUCTURE'
@@ -455,9 +455,9 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'ELABORATE': {
-      // Advance to MOODBOARD when elaboration is complete or after 5 turns
+      // Advance to MOODBOARD when elaboration is complete or after 3 turns
       // (STRATEGIC_REVIEW stage is temporarily disabled)
-      if (checkElaborationComplete(state) || state.turnsInCurrentStage >= 5) {
+      if (checkElaborationComplete(state) || state.turnsInCurrentStage >= 3) {
         return 'MOODBOARD'
       }
       return 'ELABORATE'
@@ -477,8 +477,8 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'REVIEW': {
-      // Advance to SUBMIT after 2+ turns (user has reviewed and responded)
-      if (state.turnsInCurrentStage >= 2) {
+      // Advance to SUBMIT after 1+ turns (user has reviewed and responded)
+      if (state.turnsInCurrentStage >= 1) {
         return 'SUBMIT'
       }
       return 'REVIEW'

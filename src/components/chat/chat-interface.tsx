@@ -326,7 +326,7 @@ export function ChatInterface({
         briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
         onRequestSubmit={handleOpenSubmissionModal}
         isReadyForDesigner={brief ? isBriefReadyForDesigner(brief) : false}
-        showProgress={false}
+        showProgress={messages.length > 0}
         showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
         showBrief={seamlessTransition && !isTaskMode && showRightPanel}
         deliverableCategory={deliverableCategory}
