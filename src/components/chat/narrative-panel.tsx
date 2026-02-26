@@ -130,7 +130,7 @@ export function NarrativePanel({
                     <button
                       type="button"
                       onClick={saveEdit}
-                      className="text-[10px] px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors"
+                      className="text-[10px] px-2 py-0.5 rounded bg-crafted-green/20 text-crafted-green-light hover:bg-crafted-green/30 transition-colors"
                     >
                       Save
                     </button>
@@ -157,7 +157,7 @@ export function NarrativePanel({
               {editingField === 'narrative' ? (
                 <div className="space-y-2">
                   <textarea
-                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-violet-500/30 focus:border-violet-500/50 min-h-[5rem]"
+                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/30 focus:border-crafted-green/50 min-h-[5rem]"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -170,7 +170,7 @@ export function NarrativePanel({
                     <button
                       type="button"
                       onClick={saveEdit}
-                      className="text-[10px] px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors"
+                      className="text-[10px] px-2 py-0.5 rounded bg-crafted-green/20 text-crafted-green-light hover:bg-crafted-green/30 transition-colors"
                     >
                       Save
                     </button>
@@ -196,7 +196,7 @@ export function NarrativePanel({
               {/* Hook — with accent line (click to edit) */}
               {editingField === 'hook' ? (
                 <div className="flex gap-3">
-                  <div className="w-0.5 shrink-0 rounded-full bg-amber-500/40" />
+                  <div className="w-0.5 shrink-0 rounded-full bg-crafted-green/40" />
                   <div className="flex-1 space-y-2">
                     <textarea
                       className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-amber-500/30 focus:border-amber-500/50 min-h-[2.5rem]"
@@ -231,7 +231,7 @@ export function NarrativePanel({
                   className="flex gap-3 cursor-pointer group"
                   onClick={() => startEditing('hook')}
                 >
-                  <div className="w-0.5 shrink-0 rounded-full bg-amber-500/40" />
+                  <div className="w-0.5 shrink-0 rounded-full bg-crafted-green/40" />
                   <p className="flex-1 text-sm text-foreground/70 leading-relaxed italic">
                     &ldquo;{renderHighlightedText(narrative.hook)}&rdquo;
                   </p>

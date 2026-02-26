@@ -3842,7 +3842,8 @@ function OnboardingContent() {
           // API returned an error - show error message and go back
           clearInterval(progressInterval)
           const errorMessage =
-            result.error || 'Failed to extract brand information from this website.'
+            (typeof result.error === 'string' ? result.error : result.error?.message) ||
+            'Failed to extract brand information from this website.'
           toast.error(errorMessage)
           setStep('brand-input')
           setIsLoading(false)
