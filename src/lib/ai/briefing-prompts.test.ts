@@ -77,7 +77,6 @@ describe('buildSystemPrompt', () => {
         concept: 'Test concept',
         narrative: 'Test story arc and emotional journey',
         hook: 'Test hook',
-        tags: ['audience: testers', 'tone: direct'],
       },
       narrativeApproved: true,
     })

@@ -323,7 +323,6 @@ export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrat
       concept,
       narrative,
       hook: hook ?? '',
-      tags: [],
     },
     isPartial: false,
     rawText: aiResponse,

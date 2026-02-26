@@ -118,14 +118,17 @@ export function toLayoutSections(sections: SkeletonSection[]): LayoutSection[] {
   }))
 }
 
-/** Build content record from elaboration fields */
-function buildContent(section: LayoutSection): Record<string, unknown> | undefined {
+/** Build content record from elaboration fields, with fallbacks from section metadata */
+function buildContent(section: LayoutSection): Record<string, unknown> {
   const content: Record<string, unknown> = {}
-  if (section.headline) content.headline = section.headline
-  if (section.subheadline) content.subheadline = section.subheadline
-  if (section.draftContent) content.draftContent = section.draftContent
+
+  // Use elaboration fields when available, fall back to section metadata
+  content.headline = section.headline || section.sectionName
+  content.subheadline = section.subheadline || section.purpose || ''
+  content.draftContent = section.draftContent || section.contentGuidance || ''
+
   if (section.ctaText) content.ctaText = section.ctaText
   if (section.referenceDescription) content.referenceDescription = section.referenceDescription
 
-  return Object.keys(content).length > 0 ? content : undefined
+  return content
 }
