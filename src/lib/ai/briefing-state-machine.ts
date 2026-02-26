@@ -270,7 +270,7 @@ export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
     softNudgeAfter: null,
   },
   STRUCTURE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 4 },
-  ELABORATE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 5 },
+  ELABORATE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 3 },
   STRATEGIC_REVIEW: {
     maxTurnsBeforeNarrow: null,
     maxTurnsBeforeRecommend: null,
