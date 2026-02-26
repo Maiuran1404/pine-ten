@@ -15,13 +15,7 @@ import { ContentOutlinePanel } from './brief-panel/content-outline'
 import { MoodboardCard } from './moodboard/moodboard-card'
 import { MoodboardSectionHeader } from './moodboard/moodboard-header'
 import { ColorSwatches } from './moodboard/color-swatches'
-import {
-  BRIEFING_CHAT_STAGES,
-  STAGE_DESCRIPTIONS,
-  isStageCompleted,
-  isCurrentStage,
-} from '@/lib/chat-progress'
-import { getStageHint } from '@/lib/chat-progress'
+import { STAGE_DESCRIPTIONS, getStageHint } from '@/lib/chat-progress'
 
 // =============================================================================
 // TYPES
