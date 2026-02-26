@@ -15,6 +15,7 @@ interface HighFidelitySectionProps {
   type: string
   globalStyles?: GlobalStyles
   className?: string
+  content?: Record<string, unknown>
 }
 
 const DENSITY_PADDING = {
