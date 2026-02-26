@@ -305,7 +305,6 @@ export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrat
   const concept = getString(parsed, 'concept')
   const narrative = getString(parsed, 'narrative')
   const hook = getString(parsed, 'hook')
-  const tags = getStringArray(parsed, 'tags')
 
   // Require at least concept and narrative
   if (!concept || !narrative) {
@@ -324,7 +323,7 @@ export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrat
       concept,
       narrative,
       hook: hook ?? '',
-      tags: tags ?? [],
+      tags: [],
     },
     isPartial: false,
     rawText: aiResponse,
@@ -336,7 +335,7 @@ export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrat
  */
 export function getVideoNarrativeReinforcement(): string {
   return `IMPORTANT: Your response MUST include the story narrative wrapped in [VIDEO_NARRATIVE] markers with valid JSON. Example format:
-[VIDEO_NARRATIVE]{"concept":"One-line idea for the video","narrative":"2-3 sentences covering the story arc, audience, and emotional journey","hook":"The opening hook that grabs attention in the first 3 seconds","tags":["audience: marketing directors","tone: confident","emotion: frustration → confidence","format: 30s product demo"]}[/VIDEO_NARRATIVE]
+[VIDEO_NARRATIVE]{"concept":"One-line idea for the video","narrative":"2-3 sentences covering the story arc, audience, and emotional journey. Wrap key phrases in <<double angle brackets>> to highlight them.","hook":"The opening hook that grabs attention in the first 3 seconds"}[/VIDEO_NARRATIVE]
 Ensure the JSON is valid — no trailing commas, use double quotes for strings.`
 }
 

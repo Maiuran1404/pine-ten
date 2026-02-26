@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
+import { useState, useEffect, useCallback, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -217,29 +217,6 @@ export function ChatLayout({
     }
   }, [viewStructureRef])
 
-  // Resizable panel snap points (chat panel percentages)
-  // Only allow these discrete sizes — prevents panels from being squished too small
-  const SNAP_POINTS = [35, 45, 55, 65]
-  const groupRef = useGroupRef()
-
-  const handleLayoutChanged = useCallback(
-    (layout: Record<string, number>) => {
-      const chatSize = Object.values(layout)[0]
-      if (chatSize == null) return
-      const nearest = SNAP_POINTS.reduce((prev, curr) =>
-        Math.abs(curr - chatSize) < Math.abs(prev - chatSize) ? curr : prev
-      )
-      if (Math.abs(chatSize - nearest) > 0.5) {
-        const keys = Object.keys(layout)
-        if (keys.length === 2) {
-          groupRef.current?.setLayout({ [keys[0]]: nearest, [keys[1]]: 100 - nearest })
-        }
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
-
   const showRightPanel = showMoodboard || showBrief
   const StructureIcon = structureType ? STRUCTURE_ICONS[structureType] || Film : Film
 
@@ -279,12 +256,7 @@ export function ChatLayout({
             </div>
 
             {/* Desktop: Resizable split between chat and structure panel */}
-            <ResizablePanelGroup
-              orientation="horizontal"
-              className="hidden lg:flex h-full"
-              groupRef={groupRef}
-              onLayoutChanged={handleLayoutChanged}
-            >
+            <ResizablePanelGroup orientation="horizontal" className="hidden lg:flex h-full">
               <ResizablePanel id="chat" defaultSize={55} minSize={35} maxSize={65}>
                 <div className="flex flex-col h-full min-w-0 relative">
                   <div className="flex-1 min-h-0">{children}</div>

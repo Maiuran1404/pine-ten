@@ -164,6 +164,7 @@ export interface VideoNarrative {
   concept: string
   narrative: string
   hook: string
+  tags: string[]
 }
 
 // =============================================================================
