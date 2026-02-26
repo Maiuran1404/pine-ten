@@ -212,7 +212,7 @@ export function NarrativePanel({
                       <button
                         type="button"
                         onClick={saveEdit}
-                        className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"
+                        className="text-[10px] px-2 py-0.5 rounded bg-crafted-green/20 text-crafted-green-light hover:bg-crafted-green/30 transition-colors"
                       >
                         Save
                       </button>
@@ -243,8 +243,8 @@ export function NarrativePanel({
 
           {/* Refine hint */}
           <div className="flex items-center gap-1.5 mt-3 px-1">
-            <Sparkles className="h-3 w-3 text-muted-foreground/30" />
-            <span className="text-[10px] text-muted-foreground/40">
+            <Sparkles className="h-3 w-3 text-crafted-sage/30" />
+            <span className="text-[10px] text-crafted-sage/40">
               Click to edit directly, or chat to refine with AI
             </span>
           </div>
