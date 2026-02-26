@@ -13,8 +13,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from '@/lib/auth-client'
 import { getDraft } from '@/lib/chat-drafts'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
-import { useBrief } from '@/lib/hooks/use-brief'
 import { useBrandData } from '@/lib/hooks/use-brand-data'
+import { useBriefAutoSave } from '@/lib/hooks/use-brief-auto-save'
 import {
   calculateChatStage,
   calculateChatStageFromBriefing,

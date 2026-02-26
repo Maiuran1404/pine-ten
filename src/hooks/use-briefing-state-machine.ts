@@ -5,6 +5,7 @@ import type { QuickOptions } from '@/components/chat/types'
 import * as Sentry from '@sentry/nextjs'
 import { usePostHog } from 'posthog-js/react'
 import { PostHogEvents } from '@/lib/posthog-events'
+import type { LiveBrief } from '@/components/chat/brief-panel/types'
 import {
   type BriefingState,
   type BriefingStage,
@@ -48,6 +49,8 @@ export interface UseBriefingStateMachineReturn {
   systemPromptContext: string
   dispatch: (action: BriefingAction) => void
   syncFromServer: (serverState: SerializedBriefingState) => void
+  /** Update the brief within the briefing state (single source of truth) */
+  updateBrief: (updater: (brief: LiveBrief) => LiveBrief) => void
 }
 
 // =============================================================================
@@ -169,6 +172,23 @@ export function useBriefingStateMachine(
   )
 
   // ==========================================================================
+  // updateBrief — modify the brief within BriefingState (single source of truth)
+  // ==========================================================================
+
+  const updateBrief = useCallback(
+    (updater: (brief: LiveBrief) => LiveBrief) => {
+      setState((prev) => {
+        const newBrief = updater(prev.brief)
+        if (newBrief === prev.brief) return prev
+        const newState = { ...prev, brief: newBrief }
+        persistState(newState)
+        return newState
+      })
+    },
+    [persistState]
+  )
+
+  // ==========================================================================
   // Derived values
   // ==========================================================================
 
@@ -202,5 +222,6 @@ export function useBriefingStateMachine(
     systemPromptContext,
     dispatch,
     syncFromServer,
+    updateBrief,
   }
 }
