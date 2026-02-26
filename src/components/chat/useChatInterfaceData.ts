@@ -370,9 +370,12 @@ export function useChatInterfaceData({
   ])
 
   // ─── Estimated credits ─────────────────────────────────────
+  // Use a ref to preserve the last known credit estimate when deliverableCategory
+  // goes null during sync, preventing flicker (BUG-5)
+  const lastKnownCreditsRef = useRef<number | null>(null)
   const estimatedCredits = useMemo(() => {
     const category = _briefingState?.deliverableCategory
-    if (!category) return null
+    if (!category) return lastKnownCreditsRef.current
     const CREDIT_ESTIMATES: Record<string, number> = {
       video: 30,
       website: 30,
@@ -380,15 +383,18 @@ export function useChatInterfaceData({
       design: 20,
       brand: 60,
     }
-    return CREDIT_ESTIMATES[category] ?? null
+    const estimate = CREDIT_ESTIMATES[category] ?? null
+    if (estimate !== null) lastKnownCreditsRef.current = estimate
+    return estimate
   }, [_briefingState?.deliverableCategory])
 
   // ─── Quick options ──────────────────────────────────────────
   const resolvedQuickOptions = useMemo(() => {
     if (chatMessages.isLoading || task.pendingTask) return null
-    const lastAssistantMessage = [...chatMessages.messages]
-      .reverse()
-      .find((m) => m.role === 'assistant')
+    const msgs = chatMessages.messages
+    // Dismiss chips after user answers (BUG-7)
+    if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') return null
+    const lastAssistantMessage = [...msgs].reverse().find((m) => m.role === 'assistant')
     if (
       lastAssistantMessage?.quickOptions &&
       lastAssistantMessage.quickOptions.options.length > 0

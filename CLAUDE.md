@@ -296,32 +296,34 @@ Visual verification catches layout bugs, responsive issues, render errors, and c
 
 ## Agents & Commands
 
-| Agent               | Purpose                                              |
-| ------------------- | ---------------------------------------------------- |
-| `code-reviewer`     | PR review against project conventions                |
-| `frontend-designer` | Design-aware frontend builds with visual verify loop |
-| `security-auditor`  | Auth, secrets, input validation audits               |
-| `test-writer`       | Generate co-located Vitest tests                     |
-| `db-migration`      | Safe schema → generate → review → migrate flow       |
-| `refactor`          | DRY refactoring with project conventions             |
-| `perf-analyzer`     | Performance audit — config/infra only, no code       |
+| Agent               | Purpose                                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `code-reviewer`     | PR review against project conventions                                        |
+| `frontend-designer` | Design-aware frontend builds with visual verify loop                         |
+| `security-auditor`  | Auth, secrets, input validation audits                                       |
+| `test-writer`       | Generate co-located Vitest tests                                             |
+| `db-migration`      | Safe schema → generate → review → migrate flow                               |
+| `refactor`          | DRY refactoring with project conventions                                     |
+| `perf-analyzer`     | Performance audit — config/infra only, no code                               |
+| `first-principles`  | Fresh-eyes architectural audit — wrong abstractions, complexity, bug magnets |
 
-| Command           | Purpose                                                  |
-| ----------------- | -------------------------------------------------------- |
-| `/review`         | Review staged changes                                    |
-| `/deep-review`    | Deep review with security + perf analysis                |
-| `/design-review`  | Design system, accessibility, and visual audit           |
-| `/validate`       | Run full validation suite with summary                   |
-| `/fix-types`      | Find and fix TypeScript errors                           |
-| `/perf-audit`     | Run performance audit (config & infra focused)           |
-| `/migrate`        | Guided database migration (dispatches db-migration)      |
-| `/add-test`       | Generate co-located tests (dispatches test-writer)       |
-| `/security-audit` | Run security audit (dispatches security-auditor)         |
-| `/cleanup`        | Remove debug artifacts and flag dead code                |
-| `/refactor`       | DRY analysis and extraction (dispatches refactor)        |
-| `/check-ready`    | Pre-push safety gate with readiness report               |
-| `/add-env`        | Scaffold env var across env.ts + .env.example + CI       |
-| `/verify`         | Visual verification loop (browser screenshots + console) |
+| Command             | Purpose                                                            |
+| ------------------- | ------------------------------------------------------------------ |
+| `/review`           | Review staged changes                                              |
+| `/deep-review`      | Deep review with security + perf analysis                          |
+| `/design-review`    | Design system, accessibility, and visual audit                     |
+| `/validate`         | Run full validation suite with summary                             |
+| `/fix-types`        | Find and fix TypeScript errors                                     |
+| `/perf-audit`       | Run performance audit (config & infra focused)                     |
+| `/migrate`          | Guided database migration (dispatches db-migration)                |
+| `/add-test`         | Generate co-located tests (dispatches test-writer)                 |
+| `/security-audit`   | Run security audit (dispatches security-auditor)                   |
+| `/cleanup`          | Remove debug artifacts and flag dead code                          |
+| `/refactor`         | DRY analysis and extraction (dispatches refactor)                  |
+| `/check-ready`      | Pre-push safety gate with readiness report                         |
+| `/add-env`          | Scaffold env var across env.ts + .env.example + CI                 |
+| `/verify`           | Visual verification loop (browser screenshots + console)           |
+| `/first-principles` | First-principles architectural audit (dispatches first-principles) |
 
 ## Proactive Command Usage
 

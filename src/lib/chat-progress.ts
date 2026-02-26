@@ -43,8 +43,8 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
  */
 export const BRIEFING_CHAT_STAGES: ChatStage[] = [
   'brief',
-  'details',
   'style',
+  'details',
   'strategic_review',
   'moodboard',
   'review',

@@ -655,13 +655,16 @@ function SceneThumbnail({
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <OptimizedImage
+          // Plain <img> for all scene thumbnails — these are external, uncontrolled URLs
+          // where next/image would throw on unwhitelisted hostnames
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={imageUrl}
             alt={`Scene ${scene.sceneNumber} thumbnail`}
-            fill
-            className="object-cover"
-            containerClassName="absolute inset-0"
-            sizes="(max-width: 768px) 100vw, 400px"
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              ;(e.target as HTMLImageElement).style.display = 'none'
+            }}
           />
         )
       ) : (
@@ -995,10 +998,10 @@ function getDurationIndicator(totalDuration: number): {
   color: 'green' | 'amber' | null
   target: number | null
 } {
+  // Pick the smallest standard target >= total duration
   for (const target of DURATION_TARGETS) {
-    const diff = Math.abs(totalDuration - target)
-    if (diff <= 5) return { color: 'green', target }
-    if (diff <= 10) return { color: 'amber', target }
+    if (totalDuration <= target + 5) return { color: 'green', target }
+    if (totalDuration <= target + 10) return { color: 'amber', target }
   }
   return { color: null, target: null }
 }

@@ -522,13 +522,13 @@ Do NOT offer options about moving to storyboard, visual style, or submission.`
 APPROVED NARRATIVE:
 ${narrativeContext}
 
-Before you can build the storyboard scenes, you need to know: ${missingCritical.join(' and ')}.
+Before building the storyboard scenes, you need to clarify: ${missingCritical.join(' and ')}.
 
-Ask 1-2 quick, specific questions to fill these gaps. Keep it conversational and forward-moving — frame it as "one quick thing before I build your scenes."
+Ask 1-2 quick, specific questions to fill these gaps. Frame it naturally as part of the creative process — something like "Just to make sure the storyboard nails this — [question]" or "Before I start building out the scenes, quick question — [question]". Keep it forward-moving and excited.
 
 IMPORTANT:
 - Do NOT output [STORYBOARD] markers. You don't have enough info yet.
-- Do NOT say "we skipped a step" or anything that feels like a dead-end.
+- Do NOT say "we skipped a step", "we missed something", "we haven't done X yet", or anything that sounds like a correction or dead-end. Instead, frame clarifying questions as a natural part of building the storyboard — you're gathering the last details to make it great.
 - DO output an updated [VIDEO_NARRATIVE] block (same as current, or refined if user gave new info).
 - Your [QUICK_OPTIONS] should help the user answer quickly: offer concrete choices for what's missing.
 - Once the user answers, the NEXT turn will build the storyboard.`
@@ -560,7 +560,7 @@ SCENE QUALITY RULES:
 - CRITICAL: Use [STORYBOARD] as the marker, NOT [VIDEO_STORYBOARD]. The UI parser only recognizes [STORYBOARD].
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
 - Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"The Drop-Off Cliff","description":"A product manager stares at a funnel chart. The bar at 'Identity Verification' drops to nearly zero.","duration":"6s","visualNote":"Over-the-shoulder shot of a real analytics dashboard","voiceover":"You know that screen. The one where 40% of your sign-ups just disappear.","transition":"cut","cameraNote":"Over-shoulder, tight on screen, then pull back to show the person's reaction","imageSearchTerms":["person looking at analytics dashboard","funnel chart on laptop screen"],"hookData":{"targetPersona":"Product managers","painMetric":"40% sign-up drop-off","quantifiableImpact":"verification in 2 seconds"}}]}[/STORYBOARD]
-OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.
+OUTPUT FORMAT: Start with the [STORYBOARD]{valid JSON}[/STORYBOARD] block FIRST, before any conversational text. This is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.
 
 CONVERSATIONAL TEXT:
 After the [STORYBOARD] block, write a brief pointer: "Your storyboard is ready on the canvas. Click any scene to edit, or tell me what to adjust."

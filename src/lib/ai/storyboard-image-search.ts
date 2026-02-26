@@ -409,7 +409,7 @@ async function searchSerperForSceneAsStoryboardImages(
     .slice(0, count)
     .map((img, index) => ({
       id: `serper_${Date.now()}_${index}`,
-      url: img.thumbnailUrl || img.imageUrl,
+      url: img.imageUrl || img.thumbnailUrl,
       originalUrl: img.imageUrl || undefined,
       source: 'serper' as const,
       mediaType: 'still' as const,

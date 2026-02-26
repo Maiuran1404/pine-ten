@@ -25,6 +25,39 @@ import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
 import { getChatTitle } from '@/components/chat/chat-interface.utils'
 import type { TaskData } from '@/components/chat/chat-interface'
 
+/**
+ * Sanitize restored draft data to strip untrusted image URLs from storyboard scenes.
+ * Prevents crash recovery loops (BUG-9) where poisoned URLs from external image
+ * search results persist in draft storage and cause next/image to throw on render.
+ */
+function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): void {
+  for (const msg of messages) {
+    const sd = msg.structureData as
+      | { type?: string; scenes?: Array<{ resolvedImageUrl?: string }> }
+      | undefined
+    if (sd?.type === 'storyboard' && sd.scenes) {
+      for (const scene of sd.scenes) {
+        if (scene.resolvedImageUrl) {
+          try {
+            const url = new URL(scene.resolvedImageUrl)
+            // Strip encrypted Google thumbnail URLs and obviously broken URLs
+            if (
+              url.hostname.includes('encrypted-tbn') ||
+              url.hostname.includes('gstatic.com') ||
+              url.protocol !== 'https:'
+            ) {
+              scene.resolvedImageUrl = undefined
+            }
+          } catch {
+            // Invalid URL — strip it
+            scene.resolvedImageUrl = undefined
+          }
+        }
+      }
+    }
+  }
+}
+
 interface UseDraftPersistenceOptions {
   draftId: string
   onDraftUpdate?: () => void
@@ -123,6 +156,8 @@ export function useDraftPersistence({
         ...m,
         timestamp: new Date(m.timestamp),
       }))
+      // Sanitize restored scene image URLs to prevent crash loops (BUG-9)
+      sanitizeRestoredMessages(loadedMessages)
       setMessages(loadedMessages)
       setSelectedStyles(draft.selectedStyles)
       setPendingTask(draft.pendingTask)

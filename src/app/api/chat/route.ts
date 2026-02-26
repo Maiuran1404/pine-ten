@@ -603,9 +603,18 @@ async function handler(request: NextRequest) {
                 deliverableStyleMarker = undefined // Clear the marker so no grid is shown
                 break
               }
-              // SKIP image styles for video types - video references will be shown instead
+              // For video types, fetch visual direction references instead of skipping entirely
               if (isVideoType) {
-                logger.debug('Skipping image styles for video type - will show video references')
+                deliverableStyles = await searchStyleImages(
+                  {
+                    searchTerms: deliverableStyleMarker.searchTerms,
+                    deliverableType: normalizedType,
+                  },
+                  { count: 6, styleContext }
+                )
+                if (!deliverableStyles?.length) {
+                  deliverableStyleMarker = undefined
+                }
                 break
               }
               // Enrich search terms with accumulated style context from briefing state
@@ -1428,6 +1437,23 @@ async function handler(request: NextRequest) {
         .replace(/\[VIDEO_NARRATIVE\][\s\S]*?\[\/VIDEO_NARRATIVE\]/g, '')
         .replace(/\[\/VIDEO_NARRATIVE\]/g, '') // Orphaned closing tags
         .trim()
+
+      // Strip false "storyboard ready" claims when parse actually failed (panel desync fix)
+      const clientStage = clientBriefingState?.stage
+      const clientCategory = clientBriefingState?.deliverableCategory
+      if (
+        clientStage === 'STRUCTURE' &&
+        !structureData &&
+        (clientCategory === 'video' || response.content.includes('[STORYBOARD]'))
+      ) {
+        cleanContent = cleanContent
+          .replace(/[Yy]our storyboard is ready[^.]*\./g, '')
+          .replace(/ready on the canvas[^.]*\./g, '')
+          .trim()
+        if (!cleanContent || cleanContent.length < 20) {
+          cleanContent = "I'm putting together the scene breakdown — one more moment."
+        }
+      }
 
       // Enrich style-direction quick options with representative Pexels images.
       // Detection is content-based (not stage-based) because the state machine

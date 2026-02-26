@@ -269,24 +269,30 @@ export function StructurePanel({
     )
   }
 
-  // Video narrative phase: show NarrativePanel until storyboard data arrives
-  if (
-    structureType === 'storyboard' &&
-    videoNarrative &&
-    !structureData &&
-    onApproveNarrative &&
-    onNarrativeFieldEdit
-  ) {
-    return (
-      <div className={cn('flex flex-col h-full bg-background', className)}>
-        <NarrativePanel
-          narrative={videoNarrative}
-          onApprove={onApproveNarrative}
-          onFieldEdit={onNarrativeFieldEdit}
-          isApproved={narrativeApproved}
-        />
-      </div>
-    )
+  // Video narrative phase: show NarrativePanel until narrative is approved,
+  // then show loading skeleton while storyboard is being generated
+  if (structureType === 'storyboard' && videoNarrative && !structureData) {
+    // Once narrative is approved, show storyboard loading skeleton
+    if (narrativeApproved) {
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <PlaceholderState structureType="storyboard" />
+        </div>
+      )
+    }
+    // Narrative not yet approved — show the narrative panel for review
+    if (onApproveNarrative && onNarrativeFieldEdit) {
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <NarrativePanel
+            narrative={videoNarrative}
+            onApprove={onApproveNarrative}
+            onFieldEdit={onNarrativeFieldEdit}
+            isApproved={narrativeApproved}
+          />
+        </div>
+      )
+    }
   }
 
   // Placeholder — type known but no data yet

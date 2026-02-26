@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -434,6 +434,23 @@ export function ChatMessageList({
     prevMessageCountRef.current = messages.length
   }, [messages])
 
+  // Compute the last message ID that has storyboard data (BUG-10:
+  // only show the "storyboard is on the canvas" button on the latest such message)
+  const lastStoryboardMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].structureData?.type === 'storyboard') return messages[i].id
+    }
+    return null
+  }, [messages])
+
+  // Same for layout messages
+  const lastLayoutMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].structureData?.type === 'layout') return messages[i].id
+    }
+    return null
+  }, [messages])
+
   const handleTypingComplete = useCallback(
     (messageId: string) => {
       if (animatingMessageId === messageId) {
@@ -734,7 +751,8 @@ export function ChatMessageList({
                                     />
                                   )}
                                 {message.structureData.type === 'storyboard' &&
-                                  structurePanelVisible && (
+                                  structurePanelVisible &&
+                                  message.id === lastStoryboardMessageId && (
                                     <button
                                       type="button"
                                       onClick={onViewStoryboard}
@@ -750,7 +768,8 @@ export function ChatMessageList({
                                     <LayoutPreview sections={message.structureData.sections} />
                                   )}
                                 {message.structureData.type === 'layout' &&
-                                  structurePanelVisible && (
+                                  structurePanelVisible &&
+                                  message.id === lastLayoutMessageId && (
                                     <button
                                       type="button"
                                       onClick={onViewStoryboard}

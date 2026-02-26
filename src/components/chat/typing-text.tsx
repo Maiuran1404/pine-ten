@@ -132,6 +132,7 @@ export function TypingText({
   const chunksRef = useRef<string[]>([])
   const onCompleteRef = useRef(onComplete)
   const speedRef = useRef(speed)
+  const animationGenRef = useRef(0)
 
   useEffect(() => {
     onCompleteRef.current = onComplete
@@ -168,10 +169,15 @@ export function TypingText({
     setIsComplete(false)
     chunkIndexRef.current = 0
 
+    // Increment generation counter to invalidate stale animation callbacks
+    const gen = ++animationGenRef.current
+
     // Split content into safe chunks that won't break markdown
     chunksRef.current = splitIntoSafeChunks(textContent)
 
     const animateChunks = () => {
+      // Bail if a newer animation generation has started
+      if (animationGenRef.current !== gen) return
       if (chunkIndexRef.current < chunksRef.current.length) {
         setDisplayedContent((prev) => prev + chunksRef.current[chunkIndexRef.current])
         chunkIndexRef.current++

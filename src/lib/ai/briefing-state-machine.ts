@@ -331,7 +331,13 @@ export const STAGE_PIPELINE: StageGate[] = [
   },
   {
     stage: 'INSPIRATION',
-    exitWhen: (s) => (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0,
+    exitWhen: (s) => {
+      // Video projects: style selection is optional (visual direction comes from storyboard)
+      if (s.deliverableCategory === 'video') {
+        return s.structure !== null
+      }
+      return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
+    },
   },
   {
     stage: 'ELABORATE',
