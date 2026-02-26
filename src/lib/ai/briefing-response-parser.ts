@@ -21,6 +21,7 @@ import type {
   StoryboardScene,
   LayoutSection,
   ContentCalendarOutline,
+  VideoNarrative,
 } from './briefing-state-machine'
 
 // =============================================================================
@@ -45,6 +46,7 @@ export type MarkerType =
   | 'STRATEGIC_REVIEW'
   | 'BRIEF_META'
   | 'GLOBAL_STYLES'
+  | 'VIDEO_NARRATIVE'
 
 /** Maps StructureData['type'] to marker name */
 const STRUCTURE_TO_MARKER: Record<StructureType, MarkerType> = {
@@ -266,6 +268,76 @@ export function parseGlobalStyles(aiResponse: string): WebsiteGlobalStyles | nul
   }
 
   return Object.keys(styles).length > 0 ? styles : null
+}
+
+// =============================================================================
+// VIDEO_NARRATIVE PARSING
+// =============================================================================
+
+/**
+ * Parse [VIDEO_NARRATIVE] block from AI response.
+ * Returns the story narrative (concept, plot, audience, emotional arc, etc.) or null.
+ */
+export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrative> {
+  const extracted = extractMarkerContent(aiResponse, 'VIDEO_NARRATIVE')
+
+  if (!extracted) {
+    return {
+      success: false,
+      data: null,
+      isPartial: false,
+      rawText: aiResponse,
+      parseError: 'No [VIDEO_NARRATIVE] marker found',
+    }
+  }
+
+  const parsed = lenientJsonParse(extracted)
+  if (!parsed || Array.isArray(parsed)) {
+    return {
+      success: false,
+      data: null,
+      isPartial: false,
+      rawText: aiResponse,
+      parseError: 'Failed to parse VIDEO_NARRATIVE JSON',
+    }
+  }
+
+  const concept = getString(parsed, 'concept')
+  const narrative = getString(parsed, 'narrative')
+  const hook = getString(parsed, 'hook')
+  const tags = getStringArray(parsed, 'tags')
+
+  // Require at least concept and narrative
+  if (!concept || !narrative) {
+    return {
+      success: false,
+      data: null,
+      isPartial: true,
+      rawText: aiResponse,
+      parseError: 'VIDEO_NARRATIVE missing required fields (concept, narrative)',
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      concept,
+      narrative,
+      hook: hook ?? '',
+      tags: tags ?? [],
+    },
+    isPartial: false,
+    rawText: aiResponse,
+  }
+}
+
+/**
+ * Generate a format reinforcement prompt for video narrative retry.
+ */
+export function getVideoNarrativeReinforcement(): string {
+  return `IMPORTANT: Your response MUST include the story narrative wrapped in [VIDEO_NARRATIVE] markers with valid JSON. Example format:
+[VIDEO_NARRATIVE]{"concept":"One-line idea for the video","narrative":"2-3 sentences covering the story arc, audience, and emotional journey","hook":"The opening hook that grabs attention in the first 3 seconds","tags":["audience: marketing directors","tone: confident","emotion: frustration → confidence","format: 30s product demo"]}[/VIDEO_NARRATIVE]
+Ensure the JSON is valid — no trailing commas, use double quotes for strings.`
 }
 
 // =============================================================================

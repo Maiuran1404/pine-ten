@@ -69,6 +69,7 @@ const PUBLIC_PATHS = [
   '/api/csrf',
   '/api/openapi',
   '/api-docs',
+  '/ingest',
   '/_next',
   '/favicon.ico',
   '/robots.txt',
@@ -268,6 +269,7 @@ export async function middleware(request: NextRequest) {
         "img-src 'self' data: blob: https: http:",
         "connect-src 'self' https://api.stripe.com wss: https:",
         "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com",
+        "worker-src 'self' blob:",
       ].join('; ')
     )
   }

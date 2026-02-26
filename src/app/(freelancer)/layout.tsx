@@ -8,6 +8,7 @@ import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
 import { logger } from '@/lib/logger'
 import { SentryProvider } from '@/providers/sentry-provider'
+import { PostHogIdentify } from '@/components/posthog-identify'
 import type { FreelancerProfileState } from '@/types'
 
 export default function FreelancerLayout({ children }: { children: React.ReactNode }) {
@@ -66,6 +67,7 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
 
   return (
     <SentryProvider>
+      <PostHogIdentify />
       <div className="flex h-screen overflow-hidden">
         <FreelancerSidebar
           open={sidebarOpen}

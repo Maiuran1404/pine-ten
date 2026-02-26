@@ -9,6 +9,8 @@ import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 import { submitDeliverableSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
@@ -110,6 +112,11 @@ export async function POST(request: NextRequest) {
       } catch (notifyError) {
         logger.error({ error: notifyError }, 'Failed to send notifications')
       }
+
+      captureServerEvent(user.id, PostHogEvents.TASK_DELIVERABLE_SUBMITTED, {
+        task_id: taskId,
+        file_count: files.length,
+      })
 
       return successResponse({ success: true })
     },

@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { QuickOptions } from '@/components/chat/types'
 import * as Sentry from '@sentry/nextjs'
+import { usePostHog } from 'posthog-js/react'
+import { PostHogEvents } from '@/lib/posthog-events'
 import {
   type BriefingState,
   type BriefingStage,
@@ -178,6 +180,20 @@ export function useBriefingStateMachine(
     () => buildSystemPrompt(state, options?.brandContext),
     [state, options?.brandContext]
   )
+
+  // Track stage transitions in PostHog
+  const posthog = usePostHog()
+  const prevStageRef = useRef<BriefingStage | null>(null)
+  useEffect(() => {
+    if (posthog && state.stage !== prevStageRef.current) {
+      posthog.capture(PostHogEvents.BRIEFING_STAGE_ENTERED, {
+        stage: state.stage,
+        previous_stage: prevStageRef.current,
+        $source: 'client',
+      })
+      prevStageRef.current = state.stage
+    }
+  }, [state.stage, posthog])
 
   return {
     briefingState: state,

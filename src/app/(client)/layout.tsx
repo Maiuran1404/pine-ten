@@ -8,6 +8,7 @@ import { useSession } from '@/lib/auth-client'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
 import { SentryProvider } from '@/providers/sentry-provider'
+import { PostHogIdentify } from '@/components/posthog-identify'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -63,6 +64,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   if (isFullScreenPage) {
     return (
       <SentryProvider>
+        <PostHogIdentify />
         <CreditProvider>
           <SidebarProvider
             defaultOpen={false}

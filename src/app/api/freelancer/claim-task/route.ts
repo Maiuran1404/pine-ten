@@ -10,6 +10,8 @@ import { logger } from '@/lib/logger'
 import { claimTaskSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireApprovedFreelancer } from '@/lib/require-auth'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
@@ -73,6 +75,10 @@ export async function POST(request: NextRequest) {
           logger.error({ error: emailError }, 'Failed to send task assigned notification')
         }
       }
+
+      captureServerEvent(user.id, PostHogEvents.TASK_CLAIMED, {
+        task_id: taskId,
+      })
 
       return successResponse({ success: true })
     },

@@ -215,6 +215,7 @@ export function useChatInterfaceData({
     onStructureData: storyboard.updateStructureData,
     onSceneImageMatches: storyboard.processSceneImageMatches,
     onGlobalStyles: storyboard.setGlobalStyles,
+    onVideoNarrative: storyboard.updateVideoNarrative,
     latestStoryboardRef: storyboard.latestStoryboardRef,
   })
 
@@ -404,6 +405,17 @@ export function useChatInterfaceData({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.structure, storyboard.storyboardScenes])
+
+  // ─── Stability: restore video narrative from briefing state ──
+  useEffect(() => {
+    if (_briefingState?.videoNarrative && !storyboard.videoNarrative) {
+      storyboard.setVideoNarrative(_briefingState.videoNarrative)
+    }
+    if (_briefingState?.narrativeApproved && !storyboard.narrativeApproved) {
+      storyboard.setNarrativeApproved(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
 
   // ─── Detect "ready to execute" patterns ─────────────────────
   useEffect(() => {
@@ -737,6 +749,12 @@ export function useChatInterfaceData({
     redo: storyboard.redo,
     canUndo: storyboard.canUndo,
     canRedo: storyboard.canRedo,
+    // Video narrative
+    videoNarrative: storyboard.videoNarrative,
+    narrativeApproved: storyboard.narrativeApproved,
+    handleApproveNarrative: storyboard.handleApproveNarrative,
+    handleNarrativeFieldEdit: storyboard.handleNarrativeFieldEdit,
+    handleRegenerateNarrative: storyboard.handleRegenerateNarrative,
 
     // Handlers
     handleSend,

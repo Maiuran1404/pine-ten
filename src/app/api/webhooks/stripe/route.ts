@@ -6,6 +6,8 @@ import { eq } from 'drizzle-orm'
 import { adminNotifications, sendEmail, emailTemplates } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +52,11 @@ export async function POST(request: NextRequest) {
             { userId: result.userId, credits: result.credits },
             'processed'
           )
+
+          captureServerEvent(result.userId, PostHogEvents.CREDIT_PURCHASE_COMPLETED, {
+            credits_purchased: result.credits,
+            new_balance: newCredits,
+          })
 
           logger.info(
             { userId: result.userId, credits: result.credits, eventId: result.eventId },

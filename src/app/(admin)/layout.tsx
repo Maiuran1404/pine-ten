@@ -10,6 +10,7 @@ import { useSubdomain } from '@/hooks/use-subdomain'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
 import { SentryProvider } from '@/providers/sentry-provider'
+import { PostHogIdentify } from '@/components/posthog-identify'
 
 interface Task {
   id: string
@@ -84,6 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <SentryProvider>
+      <PostHogIdentify />
       <CreditProvider>
         <SidebarProvider
           defaultOpen={true}

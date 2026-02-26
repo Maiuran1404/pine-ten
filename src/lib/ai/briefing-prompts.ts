@@ -425,16 +425,58 @@ If you have an open question about the primary action or audience, ask it before
     : ''
 
   switch (category) {
-    case 'video':
-      return `${clarifyPrefix}MANDATORY: Create a scene-by-scene storyboard with a strong opening hook.
-- Generate 4-6 scenes. Scene 1 MUST have a hook with who it's for + their problem.
+    case 'video': {
+      // Three-phase flow: narrative → approval → storyboard
+      const hasNarrative = state.videoNarrative !== null
+      const narrativeApproved = state.narrativeApproved
+
+      if (!hasNarrative) {
+        // Phase 1: Generate story narrative first
+        return `${clarifyPrefix}MANDATORY: Before building a scene-by-scene storyboard, first create a concise story narrative that summarizes the video idea.
+
+Generate a story narrative with these fields:
+- concept: One-line creative concept (what is the video about, in a nutshell)
+- narrative: 2-3 sentences covering the story arc, who it's for, and the emotional journey (beginning → middle → end, audience, tone, key message — all in one concise paragraph)
+- hook: The opening hook that grabs attention in the first 3 seconds
+- tags: 4-6 short labels highlighting key facets of the video (e.g. "audience: CTOs", "tone: confident", "emotion: frustration → confidence", "format: 30s explainer", "style: cinematic", "CTA: book a demo")
+
+You MUST output the narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE]. Without this marker the UI cannot render the narrative panel.
+Example: [VIDEO_NARRATIVE]{"concept":"Transform data chaos into clarity","narrative":"Open on the pain of manual reporting that marketing directors know too well, then reveal the product as the turning point — real-time insights that replace guesswork. Close on a team celebrating confident decisions, moving from frustration to relief to confidence.","hook":"73% of marketing budgets are wasted on bad data — here's how to fix that in 30 seconds","tags":["audience: marketing directors","tone: confident & direct","emotion: frustration → confidence","format: 30s product demo","CTA: book a demo"]}[/VIDEO_NARRATIVE]
+
+OUTPUT FORMAT: The [VIDEO_NARRATIVE]{valid JSON}[/VIDEO_NARRATIVE] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas.
+
+After the user reviews and approves the narrative, you will then build the full storyboard based on it.`
+      }
+
+      if (hasNarrative && !narrativeApproved) {
+        // Phase 2: Narrative exists but user is refining it
+        const narrativeContext = JSON.stringify(state.videoNarrative)
+        return `The user is reviewing the story narrative and may want to refine it. Here is the current narrative:
+${narrativeContext}
+
+If the user requests changes, regenerate the [VIDEO_NARRATIVE] with those changes applied.
+You MUST output the updated narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE].
+
+Do NOT generate a storyboard yet. The user must approve the narrative first before building scenes.`
+      }
+
+      // Phase 3: Narrative approved, now build the storyboard
+      const narrativeContext = JSON.stringify(state.videoNarrative)
+      return `${clarifyPrefix}The user has approved the story narrative. Now build a scene-by-scene storyboard that brings it to life.
+
+APPROVED NARRATIVE:
+${narrativeContext}
+
+MANDATORY: Create a scene-by-scene storyboard aligned with the approved narrative.
+- Generate 4-6 scenes. Scene 1 MUST have a hook that matches the narrative's hook strategy.
 - DURATION REQUIREMENT: The total video duration must be 30-60 seconds. Distribute scene durations so they sum to at least 30 seconds. Typical scene durations are 5-10 seconds each.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
 - Do NOT include imageSearchTerms yet. Images will be added after the inspiration stage.
-- Create a first-draft storyboard based on what you know so far. The user can edit individual scenes and regenerate parts later.
+- Ensure the emotional journey from the narrative flows through the scenes.
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
 - Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"6s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]
 OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.`
+    }
     case 'website': {
       const industryLabels = INDUSTRY_OPTIONS.map((o) => o.label)
       const industryTemplatePrompt =

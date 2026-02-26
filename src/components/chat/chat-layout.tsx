@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, type MutableRefObject, ReactNode } from 'react'
+import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import type {
   LayoutSection,
   WebsiteGlobalStyles,
   WebsiteInspiration,
+  VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
 
@@ -114,6 +115,12 @@ interface ChatLayoutProps {
   isFindingSimilar?: boolean
   canFindSimilar?: boolean
   onUpdateInspirationNotes?: (id: string, notes: string) => void
+  // Video narrative props
+  videoNarrative?: VideoNarrative | null
+  narrativeApproved?: boolean
+  onApproveNarrative?: () => void
+  onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  onRegenerateNarrative?: () => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -184,6 +191,11 @@ export function ChatLayout({
   isFindingSimilar,
   canFindSimilar,
   onUpdateInspirationNotes,
+  videoNarrative,
+  narrativeApproved,
+  onApproveNarrative,
+  onNarrativeFieldEdit,
+  onRegenerateNarrative,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -316,6 +328,11 @@ export function ChatLayout({
                     isFindingSimilar={isFindingSimilar}
                     canFindSimilar={canFindSimilar}
                     onUpdateInspirationNotes={onUpdateInspirationNotes}
+                    videoNarrative={videoNarrative}
+                    narrativeApproved={narrativeApproved}
+                    onApproveNarrative={onApproveNarrative}
+                    onNarrativeFieldEdit={onNarrativeFieldEdit}
+                    onRegenerateNarrative={onRegenerateNarrative}
                   />
                 </div>
               </ResizablePanel>
@@ -354,6 +371,11 @@ export function ChatLayout({
                     onInspirationSelect={onInspirationSelect}
                     onRemoveInspiration={onRemoveInspiration}
                     onCaptureScreenshot={onCaptureScreenshot}
+                    videoNarrative={videoNarrative}
+                    narrativeApproved={narrativeApproved}
+                    onApproveNarrative={onApproveNarrative}
+                    onNarrativeFieldEdit={onNarrativeFieldEdit}
+                    onRegenerateNarrative={onRegenerateNarrative}
                   />
                 </div>
               </SheetContent>

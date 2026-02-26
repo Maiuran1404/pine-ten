@@ -10,6 +10,7 @@ import type {
   BriefingStage,
   WebsiteGlobalStyles,
   WebsiteInspiration,
+  VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
 import { RichStoryboardPanel } from './storyboard-view'
@@ -17,6 +18,7 @@ import { LayoutPreview } from './layout-preview'
 import { ContentCalendar } from './brief-panel/content-calendar'
 import { DesignSpecView } from './design-spec-view'
 import { WebsiteStructurePanel } from './website-structure-panel'
+import { NarrativePanel } from './narrative-panel'
 
 // =============================================================================
 // TYPES
@@ -82,6 +84,12 @@ interface StructurePanelProps {
   isFindingSimilar?: boolean
   canFindSimilar?: boolean
   onUpdateInspirationNotes?: (id: string, notes: string) => void
+  // Video narrative props
+  videoNarrative?: VideoNarrative | null
+  narrativeApproved?: boolean
+  onApproveNarrative?: () => void
+  onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  onRegenerateNarrative?: () => void
   className?: string
 }
 
@@ -225,6 +233,11 @@ export function StructurePanel({
   isFindingSimilar,
   canFindSimilar,
   onUpdateInspirationNotes,
+  videoNarrative,
+  narrativeApproved,
+  onApproveNarrative,
+  onNarrativeFieldEdit,
+  onRegenerateNarrative,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -254,6 +267,36 @@ export function StructurePanel({
           canFindSimilar={canFindSimilar}
           onUpdateInspirationNotes={onUpdateInspirationNotes}
         />
+      </div>
+    )
+  }
+
+  // Video narrative phase: narrative exists but not yet approved → show NarrativePanel
+  if (
+    structureType === 'storyboard' &&
+    videoNarrative &&
+    !narrativeApproved &&
+    onApproveNarrative &&
+    onNarrativeFieldEdit
+  ) {
+    return (
+      <div className={cn('flex flex-col h-full bg-background', className)}>
+        <NarrativePanel
+          narrative={videoNarrative}
+          onApprove={onApproveNarrative}
+          onFieldEdit={onNarrativeFieldEdit}
+          onRegenerate={onRegenerateNarrative ?? (() => {})}
+          isRegenerating={isRegenerating}
+        />
+      </div>
+    )
+  }
+
+  // Video narrative approved but storyboard not yet generated → show loading placeholder
+  if (structureType === 'storyboard' && narrativeApproved && !structureData) {
+    return (
+      <div className={cn('flex flex-col h-full bg-background', className)}>
+        <PlaceholderState structureType={structureType} />
       </div>
     )
   }

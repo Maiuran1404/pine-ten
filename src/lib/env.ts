@@ -76,6 +76,9 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().url().optional(),
   SENTRY_ENVIRONMENT: z.string().optional(),
 
+  // PostHog (optional — server-side events disabled if unset)
+  POSTHOG_API_KEY: z.string().min(1).optional(),
+
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),

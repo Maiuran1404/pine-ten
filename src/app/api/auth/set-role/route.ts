@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm'
 import { withRateLimit } from '@/lib/rate-limit'
 import { config } from '@/lib/config'
 import { setRoleSchema } from '@/lib/validations'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 
 // Set user role after registration based on portal type
 async function handler(request: NextRequest) {
@@ -40,6 +42,11 @@ async function handler(request: NextRequest) {
           .update(users)
           .set({ role: 'FREELANCER', updatedAt: new Date() })
           .where(eq(users.id, user.id))
+
+        captureServerEvent(user.id, PostHogEvents.USER_SIGNED_UP, {
+          role: 'FREELANCER',
+          auth_method: 'set-role',
+        })
       }
 
       return successResponse({ success: true })

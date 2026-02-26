@@ -62,8 +62,10 @@ import {
   parseStrategicReview,
   parseBriefMeta,
   parseGlobalStyles,
+  parseVideoNarrative,
   getFormatReinforcement,
   getStrategicReviewReinforcement,
+  getVideoNarrativeReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
 import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboard-image-search'
@@ -809,6 +811,7 @@ async function handler(request: NextRequest) {
       let structureData = undefined
       let strategicReviewData = undefined
       let globalStyles = undefined
+      let videoNarrativeData = undefined
 
       if (clientBriefingState) {
         try {
@@ -1106,14 +1109,79 @@ async function handler(request: NextRequest) {
           }
 
           // ================================================================
+          // 13c. Parse [VIDEO_NARRATIVE] for video projects
+          // ================================================================
+          if (briefingState.deliverableCategory === 'video') {
+            const narrativeParsed = parseVideoNarrative(response.content)
+            if (narrativeParsed.success && narrativeParsed.data) {
+              videoNarrativeData = narrativeParsed.data
+              briefingState.videoNarrative = narrativeParsed.data
+            }
+
+            // Detect narrative approval from user message
+            const lastUserContent = messages[messages.length - 1]?.content || ''
+            const approvalPattern =
+              /\b(looks good|approve|approved|let'?s build|build the storyboard|go ahead|perfect|love it|great|that works|move forward|nail(ed)? it)\b/i
+            if (
+              !briefingState.narrativeApproved &&
+              briefingState.videoNarrative &&
+              approvalPattern.test(lastUserContent)
+            ) {
+              briefingState.narrativeApproved = true
+            }
+
+            // Narrative retry: if at STRUCTURE stage for video, no narrative parsed,
+            // and no storyboard either, retry with narrative format reinforcement
+            if (
+              briefingState.stage === 'STRUCTURE' &&
+              !videoNarrativeData &&
+              !structureData &&
+              !briefingState.narrativeApproved
+            ) {
+              logger.debug('VIDEO_NARRATIVE not parsed — attempting retry with reinforcement')
+              try {
+                const reinforcement = getVideoNarrativeReinforcement()
+                const narrativeRetryOverride = {
+                  systemPrompt: buildSystemPrompt(briefingState, brandContext),
+                  stage: briefingState.stage,
+                }
+                const retryResponse = await chat(
+                  [
+                    ...messages,
+                    { role: 'assistant', content: response.content },
+                    { role: 'user', content: reinforcement },
+                  ],
+                  session.user.id,
+                  chatContext,
+                  narrativeRetryOverride
+                )
+                const retryNarrative = parseVideoNarrative(retryResponse.content)
+                if (retryNarrative.success && retryNarrative.data) {
+                  videoNarrativeData = retryNarrative.data
+                  briefingState.videoNarrative = retryNarrative.data
+                  logger.debug('VIDEO_NARRATIVE retry succeeded')
+                } else {
+                  logger.warn('VIDEO_NARRATIVE retry also failed')
+                }
+              } catch (retryErr) {
+                logger.warn({ err: retryErr }, 'VIDEO_NARRATIVE retry failed')
+              }
+            }
+          }
+
+          // ================================================================
           // 14-15. Auto-advance on structure/review parse
           // ================================================================
 
           // Auto-advance STRUCTURE -> INSPIRATION when structure data was just parsed
           // on a non-first turn (first turn stays in STRUCTURE for user interaction)
+          // For video: only auto-advance when narrative is approved AND storyboard is parsed
           if (briefingState.stage === 'STRUCTURE' && structureData && turnsBeforeBriefMeta > 0) {
-            briefingState.stage = 'INSPIRATION'
-            briefingState.turnsInCurrentStage = 0
+            const isVideo = briefingState.deliverableCategory === 'video'
+            if (!isVideo || briefingState.narrativeApproved) {
+              briefingState.stage = 'INSPIRATION'
+              briefingState.turnsInCurrentStage = 0
+            }
           }
 
           // Auto-advance STRATEGIC_REVIEW -> MOODBOARD when review data is parsed
@@ -1438,6 +1506,8 @@ async function handler(request: NextRequest) {
         .replace(/\[\/BRIEF_META\]/g, '') // Orphaned closing tags
         .replace(/\[GLOBAL_STYLES\][\s\S]*?\[\/GLOBAL_STYLES\]/g, '')
         .replace(/\[\/GLOBAL_STYLES\]/g, '') // Orphaned closing tags
+        .replace(/\[VIDEO_NARRATIVE\][\s\S]*?\[\/VIDEO_NARRATIVE\]/g, '')
+        .replace(/\[\/VIDEO_NARRATIVE\]/g, '') // Orphaned closing tags
         .trim()
 
       // Enrich style-direction quick options with representative Pexels images.
@@ -1493,6 +1563,7 @@ async function handler(request: NextRequest) {
         structureData,
         strategicReviewData,
         globalStyles,
+        videoNarrativeData,
         sceneImageMatches,
         assetRequest: response.assetRequest,
         briefingState: updatedBriefingState ?? clientBriefingState,

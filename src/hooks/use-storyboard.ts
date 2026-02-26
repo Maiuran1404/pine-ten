@@ -15,6 +15,7 @@ import type {
   LayoutSection,
   BriefingState,
   WebsiteGlobalStyles,
+  VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
 import { getFidelityForStage } from '@/lib/adapters/layout-skeleton-adapter'
@@ -48,6 +49,10 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   // Website global styles (populated from AI [GLOBAL_STYLES] marker)
   const [globalStyles, setGlobalStyles] = useState<WebsiteGlobalStyles | null>(null)
 
+  // Video narrative state (story concept before storyboard, video only)
+  const [videoNarrative, setVideoNarrative] = useState<VideoNarrative | null>(null)
+  const [narrativeApproved, setNarrativeApproved] = useState(false)
+
   // Visual diff tracking (U1): track which scenes changed after a revision
   // Extended (#21): Map<sceneNumber, FieldChange[]> for field-level diffs
   const [changedScenes, setChangedScenes] = useState<
@@ -74,10 +79,11 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     return map[cat] ?? null
   }, [briefingState?.deliverableCategory])
 
-  // Structure panel visible when we have structure data OR for website projects
+  // Structure panel visible when we have structure data, video narrative, OR for website projects
   // (websites show the InspirationPanel before structure data exists)
   const structurePanelVisible =
     storyboardScenes !== null ||
+    videoNarrative !== null ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')
 
   // Fidelity level derived from current briefing stage (website only)
@@ -460,6 +466,35 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     }
   }, [])
 
+  // Update video narrative from API response
+  const updateVideoNarrative = useCallback((data: VideoNarrative) => {
+    setVideoNarrative(data)
+  }, [])
+
+  // Approve narrative and trigger storyboard generation
+  const handleApproveNarrative = useCallback(() => {
+    setNarrativeApproved(true)
+    handleSendOption(
+      'The story narrative looks great. Let\u2019s build the storyboard based on this.'
+    )
+  }, [handleSendOption])
+
+  // Edit a narrative field inline
+  const handleNarrativeFieldEdit = useCallback(
+    (field: 'concept' | 'narrative' | 'hook', value: string) => {
+      setVideoNarrative((prev) => {
+        if (!prev) return prev
+        return { ...prev, [field]: value }
+      })
+    },
+    []
+  )
+
+  // Regenerate narrative via AI
+  const handleRegenerateNarrative = useCallback(() => {
+    handleSendOption('Regenerate the story narrative with a fresh approach')
+  }, [handleSendOption])
+
   return {
     storyboardScenes,
     setStoryboardScenes,
@@ -491,5 +526,14 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     redo,
     canUndo,
     canRedo,
+    // Video narrative
+    videoNarrative,
+    setVideoNarrative,
+    narrativeApproved,
+    setNarrativeApproved,
+    updateVideoNarrative,
+    handleApproveNarrative,
+    handleNarrativeFieldEdit,
+    handleRegenerateNarrative,
   }
 }

@@ -8,6 +8,8 @@
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import * as Sentry from '@sentry/nextjs'
+import { usePostHog } from 'posthog-js/react'
+import { PostHogEvents } from '@/lib/posthog-events'
 import { toast } from 'sonner'
 import { useCredits, dispatchCreditsUpdated } from '@/providers/credit-provider'
 import {
@@ -56,6 +58,7 @@ export function useTaskSubmission({
   scrollAreaRef,
 }: UseTaskSubmissionOptions) {
   const router = useRouter()
+  const posthog = usePostHog()
   const { credits: userCredits, refreshCredits, deductCredits } = useCredits()
   const [pendingTask, setPendingTask] = useState<TaskProposal | null>(null)
   const [taskData, setTaskData] = useState<TaskData | null>(initialTaskData || null)
@@ -96,6 +99,11 @@ export function useTaskSubmission({
         message: 'Insufficient credits',
         data: { required: normalizedTask.creditsRequired, available: userCredits },
         level: 'warning',
+      })
+      posthog?.capture(PostHogEvents.INSUFFICIENT_CREDITS_SHOWN, {
+        credits_required: normalizedTask.creditsRequired,
+        credits_available: userCredits,
+        $source: 'client',
       })
       setShowCreditDialog(true)
       return
@@ -206,6 +214,12 @@ export function useTaskSubmission({
         level: 'info',
       })
 
+      posthog?.capture(PostHogEvents.BRIEFING_COMPLETED, {
+        task_id: taskId,
+        credits_used: normalizedTask.creditsRequired,
+        $source: 'client',
+      })
+
       window.dispatchEvent(new CustomEvent('tasks-updated'))
       const newCredits = userCredits - (normalizedTask.creditsRequired ?? 0)
       deductCredits(normalizedTask.creditsRequired)
@@ -237,6 +251,7 @@ export function useTaskSubmission({
     deductCredits,
     setMessages,
     setAnimatingMessageId,
+    posthog,
   ])
 
   const handleOpenSubmissionModal = useCallback(() => {

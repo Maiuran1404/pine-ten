@@ -7,6 +7,8 @@ import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return withErrorHandling(async () => {
@@ -42,6 +44,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, id))
+
+    captureServerEvent(session.user.id, PostHogEvents.TASK_APPROVED, {
+      task_id: id,
+    })
 
     // Send email notifications
     try {

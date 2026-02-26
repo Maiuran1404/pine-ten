@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import { Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { CsrfProvider } from '@/providers/csrf-provider'
 import { QueryProvider } from '@/providers/query-provider'
+import { PostHogProvider } from '@/providers/posthog-provider'
+import { PostHogPageview } from '@/components/posthog-pageview'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { SkipLink } from '@/components/shared/skip-link'
 import { DevAgentation } from '@/components/dev-agentation'
@@ -66,21 +69,26 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${satoshi.variable} antialiased bg-background text-foreground`}
       >
         <SkipLink />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <CsrfProvider>
-              <main id="main-content">{children}</main>
-              <Toaster position="top-right" />
-            </CsrfProvider>
-          </QueryProvider>
-          <SpeedInsights />
-          <Analytics />
-        </ThemeProvider>
+        <PostHogProvider>
+          <Suspense>
+            <PostHogPageview />
+          </Suspense>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              <CsrfProvider>
+                <main id="main-content">{children}</main>
+                <Toaster position="top-right" />
+              </CsrfProvider>
+            </QueryProvider>
+            <SpeedInsights />
+            <Analytics />
+          </ThemeProvider>
+        </PostHogProvider>
         <DevAgentation />
       </body>
     </html>

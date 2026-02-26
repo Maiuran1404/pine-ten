@@ -26,6 +26,8 @@ import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
 import { logger } from '@/lib/logger'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { captureServerEvent } from '@/lib/posthog'
+import { PostHogEvents } from '@/lib/posthog-events'
 import {
   rankArtistsForTask,
   detectTaskComplexity,
@@ -651,6 +653,18 @@ export async function POST(request: NextRequest) {
           context: 'client assignment email',
         })
       }
+
+      // PostHog server-side event
+      captureServerEvent(session.user.id, PostHogEvents.TASK_CREATED, {
+        task_id: result.task.id,
+        category: category || null,
+        credits_used: creditsRequired,
+        complexity: result.task.complexity,
+        urgency: result.task.urgency,
+        match_score: result.assignedTo?.totalScore ?? null,
+        assigned_to: result.assignedTo?.artist.userId ?? null,
+        ...(result.companyId ? { $groups: { company: result.companyId } } : {}),
+      })
 
       logger.info(
         {

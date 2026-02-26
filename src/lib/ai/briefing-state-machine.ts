@@ -157,6 +157,16 @@ export interface DesignSpec {
 }
 
 // =============================================================================
+// VIDEO NARRATIVE (Story concept before storyboard)
+// =============================================================================
+
+export interface VideoNarrative {
+  concept: string
+  narrative: string
+  hook: string
+}
+
+// =============================================================================
 // STRATEGIC REVIEW TYPES
 // =============================================================================
 
@@ -232,6 +242,9 @@ export interface BriefingState {
   toneProfile: ToneProfile | null
   turnsInCurrentStage: number
   messageCount: number
+  // Video narrative (story concept before storyboard, video only)
+  videoNarrative: VideoNarrative | null
+  narrativeApproved: boolean
   // Website-specific (only populated for website deliverables)
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
@@ -330,6 +343,8 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
     toneProfile: null,
     turnsInCurrentStage: 0,
     messageCount: 0,
+    videoNarrative: null,
+    narrativeApproved: false,
   }
 }
 
@@ -413,7 +428,16 @@ function evaluateStageAdvancement(state: BriefingState): BriefingStage {
     }
 
     case 'STRUCTURE': {
-      // INSPIRATION requires structure !== null, or force-advance after 3 turns
+      // Video projects: two-phase flow (narrative → storyboard)
+      // Must have narrative approved AND structure data before advancing
+      if (state.deliverableCategory === 'video') {
+        const hasNarrativeAndStructure = state.narrativeApproved && state.structure !== null
+        if (hasNarrativeAndStructure || state.turnsInCurrentStage >= 5) {
+          return 'INSPIRATION'
+        }
+        return 'STRUCTURE'
+      }
+      // Non-video: INSPIRATION requires structure !== null, or force-advance after 3 turns
       // to prevent permanent stuck state when structure markers are missing
       if (state.structure !== null || state.turnsInCurrentStage >= 3) {
         return 'INSPIRATION'
@@ -567,6 +591,8 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
     newState.strategicReview = null
     newState.sectionMoodboards = {}
     newState.deepenSelections = null
+    newState.videoNarrative = null
+    newState.narrativeApproved = false
   }
 
   // Going back to ELABORATE: clear strategic review + downstream, keep structure
@@ -633,6 +659,8 @@ export function pivotCategory(
     sectionMoodboards: {},
     competitiveDifferentiation: null,
     deepenSelections: null,
+    videoNarrative: null,
+    narrativeApproved: false,
     turnsInCurrentStage: 0,
   }
 }
@@ -657,6 +685,8 @@ export interface SerializedBriefingState {
   toneProfile: ToneProfile | null
   turnsInCurrentStage: number
   messageCount: number
+  videoNarrative: VideoNarrative | null
+  narrativeApproved: boolean
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
 }

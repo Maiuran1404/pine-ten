@@ -65,6 +65,7 @@ const nextConfig: NextConfig = {
     'sharp',
     'puppeteer-core',
     '@sparticuz/chromium-min',
+    'posthog-node',
   ],
 
   // Increase body size limit for file uploads (default 10MB)
@@ -91,7 +92,26 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-tooltip',
       'date-fns',
+      'posthog-js',
     ],
+  },
+
+  // PostHog reverse proxy — bypasses ad blockers (same pattern as Sentry /monitoring tunnel)
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://eu-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://eu.i.posthog.com/:path*',
+      },
+      {
+        source: '/ingest/decide',
+        destination: 'https://eu.i.posthog.com/decide',
+      },
+    ]
   },
 
   // Security headers
@@ -137,6 +157,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "connect-src 'self' https: wss:",
               "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://js.stripe.com https://hooks.stripe.com",
+              "worker-src 'self' blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

@@ -13,7 +13,11 @@ import {
   type TaskProposal,
   type StructureData,
 } from '@/components/chat/types'
-import type { SerializedBriefingState, WebsiteGlobalStyles } from '@/lib/ai/briefing-state-machine'
+import type {
+  SerializedBriefingState,
+  WebsiteGlobalStyles,
+  VideoNarrative,
+} from '@/lib/ai/briefing-state-machine'
 import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
 
 /** Shape of a scene image match from the multi-source orchestrator */
@@ -46,6 +50,7 @@ export interface ChatApiResponse {
   structureData?: StructureData
   strategicReviewData?: Message['strategicReviewData']
   globalStyles?: WebsiteGlobalStyles
+  videoNarrativeData?: VideoNarrative
   assetRequest?: Message['assetRequest']
   sceneImageMatches?: ApiSceneImageMatch[]
 }
@@ -61,6 +66,7 @@ interface UseChatMessagesOptions {
   onStructureData: (data: StructureData) => void
   onSceneImageMatches: (matches?: ApiSceneImageMatch[]) => void
   onGlobalStyles?: (styles: WebsiteGlobalStyles) => void
+  onVideoNarrative?: (data: VideoNarrative) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
 }
 
@@ -75,6 +81,7 @@ export function useChatMessages({
   onStructureData,
   onSceneImageMatches,
   onGlobalStyles,
+  onVideoNarrative,
   latestStoryboardRef,
 }: UseChatMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -121,6 +128,11 @@ export function useChatMessages({
         onGlobalStyles(data.globalStyles)
       }
 
+      // Process video narrative (video flow)
+      if (data.videoNarrativeData && onVideoNarrative) {
+        onVideoNarrative(data.videoNarrativeData)
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -152,6 +164,7 @@ export function useChatMessages({
       onStructureData,
       onSceneImageMatches,
       onGlobalStyles,
+      onVideoNarrative,
       onTaskProposal,
       onDeliverableTypeChange,
       latestStoryboardRef,

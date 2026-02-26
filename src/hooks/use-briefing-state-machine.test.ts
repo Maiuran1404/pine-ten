@@ -76,6 +76,8 @@ function createMockState(overrides: Partial<BriefingState> = {}): BriefingState 
     toneProfile: null,
     turnsInCurrentStage: 0,
     messageCount: 0,
+    videoNarrative: null,
+    narrativeApproved: false,
     ...overrides,
   }
 }

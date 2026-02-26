@@ -237,6 +237,12 @@ export function ChatInterface({
     redo,
     canUndo,
     canRedo,
+    // Video narrative
+    videoNarrative,
+    narrativeApproved,
+    handleApproveNarrative,
+    handleNarrativeFieldEdit,
+    handleRegenerateNarrative,
 
     // Website inspiration
     websiteInspirations,
@@ -353,6 +359,11 @@ export function ChatInterface({
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        videoNarrative={videoNarrative}
+        narrativeApproved={narrativeApproved}
+        onApproveNarrative={handleApproveNarrative}
+        onNarrativeFieldEdit={handleNarrativeFieldEdit}
+        onRegenerateNarrative={handleRegenerateNarrative}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}

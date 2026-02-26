@@ -59,10 +59,27 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('style references')
   })
 
-  it('STRUCTURE stage for video includes storyboard instructions', () => {
+  it('STRUCTURE stage for video (no narrative) includes narrative instructions', () => {
     const state = makeState({
       stage: 'STRUCTURE',
       deliverableCategory: 'video',
+    })
+    const prompt = buildSystemPrompt(state)
+    expect(prompt).toContain('story narrative')
+    expect(prompt).toContain('[VIDEO_NARRATIVE]')
+  })
+
+  it('STRUCTURE stage for video (narrative approved) includes storyboard instructions', () => {
+    const state = makeState({
+      stage: 'STRUCTURE',
+      deliverableCategory: 'video',
+      videoNarrative: {
+        concept: 'Test concept',
+        narrative: 'Test story arc and emotional journey',
+        hook: 'Test hook',
+        tags: ['audience: testers', 'tone: direct'],
+      },
+      narrativeApproved: true,
     })
     const prompt = buildSystemPrompt(state)
     expect(prompt).toContain('storyboard')
