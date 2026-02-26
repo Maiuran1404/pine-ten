@@ -9,23 +9,24 @@ import { SlideWrapper, SlideFooter } from '@/components/pitch-deck/slides/slide-
 import type { StoryboardPdfScene } from '@/lib/validations/storyboard-pdf-schema'
 
 interface StoryboardScenePageProps {
-  scene: StoryboardPdfScene
+  sceneA: StoryboardPdfScene
+  sceneB?: StoryboardPdfScene
   pageNumber: number
   totalPages: number
   logoSrc?: string
 }
 
-/** Reusable section label */
+/** Reusable section label — compact for dual layout */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 700,
         color: '#4a7c4a' /* --crafted-green */,
         textTransform: 'uppercase',
         letterSpacing: '1.2px',
-        marginBottom: 4,
+        marginBottom: 2,
       }}
     >
       {children}
@@ -33,110 +34,38 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Single metadata cell for the bottom grid */
-function MetadataCell({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div
-        style={{
-          fontSize: 9,
-          fontWeight: 700,
-          color: '#4a7c4a' /* --crafted-green */,
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          marginBottom: 3,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: '#444',
-          fontWeight: 400,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
+/** Truncate text to a max length to prevent overflow */
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text
+  return text.slice(0, maxLen - 1) + '…'
 }
 
-export function StoryboardScenePage({
-  scene,
-  pageNumber,
-  totalPages,
-  logoSrc,
-}: StoryboardScenePageProps) {
+/** Single scene card rendered in compact form */
+function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
   const hasImage = !!scene.resolvedImageUrl
   const attribution = scene.resolvedImageAttribution
-  const hasFullScript = scene.fullScript && scene.fullScript !== scene.voiceover
-
-  // Collect metadata columns that have data
-  const metadataCells: Array<{ label: string; content: string }> = []
-  if (scene.cameraNote) metadataCells.push({ label: 'Camera', content: scene.cameraNote })
-  if (scene.directorNotes)
-    metadataCells.push({ label: 'Director Notes', content: scene.directorNotes })
-  if (hasFullScript) metadataCells.push({ label: 'Full Script', content: scene.fullScript! })
 
   return (
-    <SlideWrapper backgroundColor="#ffffff">
-      {/* Header bar */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '36px 80px 0',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              backgroundColor: '#4a7c4a' /* --crafted-green */,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#888',
-              textTransform: 'uppercase',
-              letterSpacing: '1.5px',
-            }}
-          >
-            Video Storyboard
-          </span>
-        </div>
-        {logoSrc && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={logoSrc} alt="Crafted" style={{ height: 36, objectFit: 'contain' }} />
-        )}
-      </div>
-
-      {/* Scene title row */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* Scene # badge + title + duration/transition row */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
-          padding: '24px 80px 0',
+          gap: 10,
+          marginBottom: 10,
         }}
       >
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
+            width: 36,
+            height: 36,
+            borderRadius: 10,
             backgroundColor: '#4a7c4a' /* --crafted-green */,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: 900,
             color: '#ffffff',
             flexShrink: 0,
@@ -144,10 +73,10 @@ export function StoryboardScenePage({
         >
           {String(scene.sceneNumber).padStart(2, '0')}
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: 26,
+              fontSize: 20,
               fontWeight: 700,
               color: '#2B2B2B',
               lineHeight: 1.2,
@@ -157,10 +86,10 @@ export function StoryboardScenePage({
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: 500,
               color: '#888',
-              marginTop: 2,
+              marginTop: 1,
             }}
           >
             {scene.duration}
@@ -169,26 +98,15 @@ export function StoryboardScenePage({
         </div>
       </div>
 
-      {/* Two-column layout: image left + script/visual right */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 40,
-          padding: '20px 80px 0',
-        }}
-      >
-        {/* Left column — image */}
-        <div
-          style={{
-            width: '52%',
-            flexShrink: 0,
-          }}
-        >
+      {/* Two-column: image (~40%) | text content (~60%) */}
+      <div style={{ display: 'flex', gap: 24 }}>
+        {/* Image column */}
+        <div style={{ width: '38%', flexShrink: 0 }}>
           <div
             style={{
               width: '100%',
-              height: 460,
-              borderRadius: 14,
+              height: 260,
+              borderRadius: 10,
               overflow: 'hidden',
               position: 'relative',
               background: 'linear-gradient(135deg, #e8f0e4 0%, #d4e0cf 50%, #c0d1b9 100%)',
@@ -209,7 +127,7 @@ export function StoryboardScenePage({
             >
               <div
                 style={{
-                  fontSize: 42,
+                  fontSize: 28,
                   fontWeight: 900,
                   color: 'rgba(74,124,74,0.25)',
                 }}
@@ -230,7 +148,6 @@ export function StoryboardScenePage({
                 }}
               />
             )}
-            {/* Image attribution overlay */}
             {attribution && (
               <div
                 style={{
@@ -238,9 +155,9 @@ export function StoryboardScenePage({
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  padding: '8px 12px',
+                  padding: '6px 10px',
                   background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
-                  fontSize: 10,
+                  fontSize: 9,
                   color: 'rgba(255,255,255,0.8)',
                   fontWeight: 400,
                 }}
@@ -255,13 +172,13 @@ export function StoryboardScenePage({
           </div>
         </div>
 
-        {/* Right column — script + visual direction */}
+        {/* Text column — script, visual direction, description, camera */}
         <div
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: 20,
+            gap: 8,
             minWidth: 0,
           }}
         >
@@ -270,13 +187,13 @@ export function StoryboardScenePage({
               <SectionLabel>Script / Voiceover</SectionLabel>
               <div
                 style={{
-                  fontSize: 14,
-                  lineHeight: 1.6,
+                  fontSize: 12,
+                  lineHeight: 1.5,
                   color: '#444',
                   fontWeight: 400,
                 }}
               >
-                &ldquo;{scene.voiceover}&rdquo;
+                &ldquo;{truncate(scene.voiceover, 280)}&rdquo;
               </div>
             </div>
           )}
@@ -286,134 +203,199 @@ export function StoryboardScenePage({
               <SectionLabel>Visual Direction</SectionLabel>
               <div
                 style={{
-                  fontSize: 14,
-                  lineHeight: 1.6,
+                  fontSize: 12,
+                  lineHeight: 1.5,
                   color: '#444',
                   fontWeight: 400,
                 }}
               >
-                {scene.visualNote}
+                {truncate(scene.visualNote, 220)}
+              </div>
+            </div>
+          )}
+
+          {scene.description && (
+            <div>
+              <SectionLabel>Description</SectionLabel>
+              <div
+                style={{
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  color: '#444',
+                  fontWeight: 400,
+                }}
+              >
+                {truncate(scene.description, 200)}
+              </div>
+            </div>
+          )}
+
+          {scene.cameraNote && (
+            <div>
+              <SectionLabel>Camera</SectionLabel>
+              <div
+                style={{
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  color: '#444',
+                  fontWeight: 400,
+                }}
+              >
+                {truncate(scene.cameraNote, 150)}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Description — full width below the two columns */}
-      {scene.description && (
-        <div style={{ padding: '16px 80px 0' }}>
-          <SectionLabel>Description</SectionLabel>
-          <div
-            style={{
-              fontSize: 13,
-              lineHeight: 1.6,
-              color: '#444',
-              fontWeight: 400,
-            }}
-          >
-            {scene.description}
-          </div>
-        </div>
-      )}
-
-      {/* Metadata grid — conditional columns */}
-      {metadataCells.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 24,
-            padding: '16px 80px 0',
-            borderTop: '1px solid #e0e0e0',
-            marginLeft: 80,
-            marginRight: 80,
-            paddingLeft: 0,
-            paddingRight: 0,
-            marginTop: 16,
-            paddingTop: 16,
-          }}
-        >
-          {metadataCells.map((cell) => (
-            <MetadataCell key={cell.label} label={cell.label}>
-              {cell.content}
-            </MetadataCell>
-          ))}
-        </div>
-      )}
-
-      {/* Hook data — scene 1 only */}
+      {/* Hook data row if present */}
       {scene.hookData && (
         <div
           style={{
-            margin: '16px 80px 0',
-            padding: '12px 16px',
-            borderRadius: 10,
+            marginTop: 8,
+            padding: '8px 12px',
+            borderRadius: 8,
             border: '1px solid rgba(184,134,11,0.3)' /* amber accent */,
             backgroundColor: 'rgba(184,134,11,0.05)',
           }}
         >
           <div
             style={{
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: 700,
               color: '#b8860b' /* amber accent */,
               textTransform: 'uppercase',
               letterSpacing: '1.2px',
-              marginBottom: 8,
+              marginBottom: 4,
             }}
           >
             Hook Strategy
           </div>
-          <div style={{ display: 'flex', gap: 32 }}>
+          <div style={{ display: 'flex', gap: 24 }}>
             <div>
               <div
                 style={{
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: 700,
                   color: '#b8860b',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  marginBottom: 2,
+                  marginBottom: 1,
                 }}
               >
                 Persona
               </div>
-              <div style={{ fontSize: 12, color: '#2B2B2B' }}>{scene.hookData.targetPersona}</div>
+              <div style={{ fontSize: 11, color: '#2B2B2B' }}>{scene.hookData.targetPersona}</div>
             </div>
             <div>
               <div
                 style={{
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: 700,
                   color: '#b8860b',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  marginBottom: 2,
+                  marginBottom: 1,
                 }}
               >
                 Pain Metric
               </div>
-              <div style={{ fontSize: 12, color: '#2B2B2B' }}>{scene.hookData.painMetric}</div>
+              <div style={{ fontSize: 11, color: '#2B2B2B' }}>{scene.hookData.painMetric}</div>
             </div>
             <div>
               <div
                 style={{
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: 700,
                   color: '#b8860b',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  marginBottom: 2,
+                  marginBottom: 1,
                 }}
               >
                 Impact
               </div>
-              <div style={{ fontSize: 12, color: '#2B2B2B', fontWeight: 600 }}>
+              <div style={{ fontSize: 11, color: '#2B2B2B', fontWeight: 600 }}>
                 {scene.hookData.quantifiableImpact}
               </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+export function StoryboardScenePage({
+  sceneA,
+  sceneB,
+  pageNumber,
+  totalPages,
+  logoSrc,
+}: StoryboardScenePageProps) {
+  return (
+    <SlideWrapper backgroundColor="#ffffff">
+      {/* Header bar */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '28px 60px 0',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: '#4a7c4a' /* --crafted-green */,
+            }}
+          />
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#888',
+              textTransform: 'uppercase',
+              letterSpacing: '1.5px',
+            }}
+          >
+            Video Storyboard
+          </span>
+        </div>
+        {logoSrc && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={logoSrc} alt="Crafted" style={{ height: 32, objectFit: 'contain' }} />
+        )}
+      </div>
+
+      {/* Scene cards container */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '16px 60px 0',
+          flex: 1,
+        }}
+      >
+        {/* Scene A */}
+        <SceneCard scene={sceneA} />
+
+        {/* Divider + Scene B (if present) */}
+        {sceneB && (
+          <>
+            <div
+              style={{
+                borderTop: '1px solid #e0e0e0',
+                margin: '16px 0',
+              }}
+            />
+            <SceneCard scene={sceneB} />
+          </>
+        )}
+      </div>
 
       <SlideFooter
         pageNumber={`${String(pageNumber).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`}

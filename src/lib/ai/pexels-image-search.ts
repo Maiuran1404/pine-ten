@@ -9,7 +9,7 @@ import { createTTLCache } from './ttl-cache'
 
 export interface PexelsPhoto {
   pexelsId: number
-  url: string // src.medium (800px wide, good for thumbnails)
+  url: string // src.large (940px wide, good quality for storyboard thumbnails)
   originalUrl: string // src.original for full quality
   photographer: string
   photographerUrl: string
@@ -49,7 +49,7 @@ function getPexelsClient() {
 function mapPhoto(photo: Photo): PexelsPhoto {
   return {
     pexelsId: photo.id,
-    url: photo.src.medium,
+    url: photo.src.large,
     originalUrl: photo.src.original,
     photographer: photo.photographer,
     photographerUrl: photo.photographer_url,

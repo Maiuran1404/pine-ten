@@ -43,8 +43,14 @@ export async function renderStoryboardHTML(data: StoryboardPdfInput): Promise<st
     day: 'numeric',
   })
 
-  // total pages: cover + 1 scene per page + summary
-  const totalPages = 1 + data.scenes.length + 1
+  // Pair scenes into groups of 2 for dual-scene pages
+  const scenePairs: Array<[(typeof data.scenes)[0], (typeof data.scenes)[0] | undefined]> = []
+  for (let i = 0; i < data.scenes.length; i += 2) {
+    scenePairs.push([data.scenes[i], data.scenes[i + 1]])
+  }
+
+  // total pages: cover + ceil(scenes/2) scene pages + summary
+  const totalPages = 1 + scenePairs.length + 1
 
   const slides = [
     // Cover page
@@ -54,11 +60,12 @@ export async function renderStoryboardHTML(data: StoryboardPdfInput): Promise<st
       date,
       figureLogoSrc: figureWhiteLogo,
     }),
-    // Scene pages (1 per page, full detail)
-    ...data.scenes.map((scene, i) =>
+    // Scene pages (2 per page)
+    ...scenePairs.map(([sceneA, sceneB], i) =>
       createElement(StoryboardScenePage, {
         key: i,
-        scene,
+        sceneA,
+        sceneB,
         pageNumber: i + 2,
         totalPages,
         logoSrc: combinedBlackLogo,

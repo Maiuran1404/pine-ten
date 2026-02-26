@@ -333,8 +333,16 @@ export function parseVideoNarrative(aiResponse: string): ParseResult<VideoNarrat
  * Generate a format reinforcement prompt for video narrative retry.
  */
 export function getVideoNarrativeReinforcement(): string {
-  return `IMPORTANT: Your response MUST include the story narrative wrapped in [VIDEO_NARRATIVE] markers with valid JSON. Example format:
-[VIDEO_NARRATIVE]{"concept":"One-line idea for the video","narrative":"2-3 sentences covering the story arc, audience, and emotional journey. Wrap key phrases in <<double angle brackets>> to highlight them.","hook":"The opening hook that grabs attention in the first 3 seconds"}[/VIDEO_NARRATIVE]
+  return `IMPORTANT: Your previous response was missing [VIDEO_NARRATIVE] markers. The UI panel cannot update without them.
+
+You MUST include an updated story narrative wrapped in [VIDEO_NARRATIVE] markers with valid JSON. Incorporate any new information the user provided in their latest message into the narrative. If the user answered a question or gave context, use that to sharpen the concept, narrative arc, or CTA.
+
+QUALITY RULES:
+- "narrative" must be 3-4 sentences: tension → turning point → payoff → result. Wrap key phrases in <<double angle brackets>>.
+- "hook" must be a clear call-to-action (verb + where to go + what they get). NOT a visual description or tagline.
+
+Example format:
+[VIDEO_NARRATIVE]{"concept":"One-line creative angle","narrative":"3-4 sentences covering the story arc with <<highlighted key phrases>>. Must include specific tension, turning point, payoff, and result.","hook":"<<Action verb>> + where to go + what they get. e.g. <<Try it free>> for 30 days."}[/VIDEO_NARRATIVE]
 Ensure the JSON is valid — no trailing commas, use double quotes for strings.`
 }
 

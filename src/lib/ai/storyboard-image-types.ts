@@ -13,6 +13,7 @@ export type ImageSource =
   | 'dezeen'
   | 'houzz'
   | 'arena'
+  | 'serper'
 export type ImageMediaType = 'still' | 'gif'
 
 export interface StoryboardImageAttribution {

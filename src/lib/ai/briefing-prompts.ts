@@ -452,20 +452,25 @@ Good: "What happens when your competitors' checkout takes 4x longer than yours"
 Use the actual product name, a real number, or a specific pain point the user shared. Be concrete.
 
 NARRATIVE (the story arc):
-Write 2-3 sentences that describe the emotional journey of the video, not just what happens on screen. Structure it as: tension, then turning point, then payoff. Name the real audience, use real stakes, and show what changes.
+Write 3-4 sentences that describe the emotional journey of the video. Structure it as: tension → turning point → payoff → result. Name the real audience, use real stakes, and show what changes. This should read like a mini-story with a beginning, middle, and end — not a vague outline.
 IMPORTANT: Wrap 3-5 key phrases in <<double angle brackets>> for inline highlights (audience, metrics, emotions, product features).
-Bad: "Open on the problem, show the solution, end with results climbing." (could describe any product video ever made)
-Good: "Open on a <<product manager>> watching sign-ups flatline at the verification step, the one screen that loses <<40% of new users>>. Cut to the moment they flip on Didit: <<one face scan, two seconds, done>>. Close on the dashboard the next morning. The drop-off cliff is gone."
+Bad: "Open on the problem, show the solution, end with results climbing." (could describe any product video ever made — too short, too vague)
+Bad: "Shows the product in action while building toward the business impact." (one sentence, no specifics, no story)
+Good: "Open on a <<product manager>> watching sign-ups flatline at the verification step, the one screen that loses <<40% of new users>>. Show the old flow: selfie upload, document scan, manual review, <<three-day wait>>. Cut to the moment they flip on Didit: <<one face scan, two seconds, done>>. Close on the same funnel chart a week later — the drop-off cliff is gone, and <<conversion is up 35%>>."
 
-HOOK (the closing CTA):
-Write a single, direct call-to-action telling the viewer exactly what to do next. This is NOT a tagline or headline. It is an action step: a verb + where to go + what they get.
-Bad: "If you're a CTO struggling with verification, this changes everything" (passive, no action)
+HOOK (the call-to-action):
+Write a clear, direct call-to-action that tells the viewer exactly what to DO after watching this video. This is the purpose of the video — what action should the viewer take?
+This MUST be an actionable instruction: a verb + where to go + what they get. Think of it as the final card on screen.
+Bad: "Split screen: users abandoning verification flows vs. seamless experience" (this is a visual description, NOT a CTA)
+Bad: "If you're a CTO struggling with verification, this changes everything" (passive statement, no action)
+Bad: "The future of onboarding is here" (tagline, not an action step)
 Good: "<<Try Didit free>> for 30 days. Two lines of code, live in 10 minutes."
 Good: "<<Book a 15-min demo>> and see your own checkout flow verified in real time."
+Good: "<<Start your free trial>> at didit.com — set up in under 5 minutes."
 Use <<double angle brackets>> on the key action phrase.
 
 You MUST output the narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE]. Without this marker the UI cannot render the narrative panel.
-Example: [VIDEO_NARRATIVE]{"concept":"The 6-second identity check that killed a 23-step onboarding flow","narrative":"Open on a <<product manager>> staring at a funnel chart where <<40% of sign-ups>> die at the identity verification step. Show the old flow: selfie upload, document scan, manual review, three-day wait. Then the switch: Didit goes live, and a new user verifies with <<one face scan in two seconds>>. Close on the same funnel chart a week later. The drop-off cliff is gone, and <<conversion is up 35%>>.","hook":"<<Try Didit free>> for 30 days. Two lines of code, live in 10 minutes."}[/VIDEO_NARRATIVE]
+Example: [VIDEO_NARRATIVE]{"concept":"The 6-second identity check that killed a 23-step onboarding flow","narrative":"Open on a <<product manager>> staring at a funnel chart where <<40% of sign-ups>> die at the identity verification step. Show the old flow: selfie upload, document scan, manual review, <<three-day wait>>. Then the switch: Didit goes live, and a new user verifies with <<one face scan in two seconds>>. Close on the same funnel chart a week later — the drop-off cliff is gone, and <<conversion is up 35%>>.","hook":"<<Try Didit free>> for 30 days. Two lines of code, live in 10 minutes."}[/VIDEO_NARRATIVE]
 
 OUTPUT FORMAT: The [VIDEO_NARRATIVE]{valid JSON}[/VIDEO_NARRATIVE] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas.
 
@@ -479,16 +484,24 @@ Do NOT offer options about storyboard, visual style, or submission at this stage
       if (hasNarrative && !narrativeApproved) {
         // Phase 2: Narrative exists but user is refining it
         const narrativeContext = JSON.stringify(state.videoNarrative)
-        return `The user is reviewing the story narrative and may want to refine it. Here is the current narrative:
+        return `The user is reviewing the story narrative. Here is the current narrative:
 ${narrativeContext}
 
-If the user requests changes, regenerate the [VIDEO_NARRATIVE] with those changes applied.
-You MUST output the updated narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE].
+MANDATORY: You MUST output an updated [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE] block in EVERY response during this phase. This is not optional — the UI panel on the right only updates when it receives new [VIDEO_NARRATIVE] markers.
+
+If the user provides new information (answering a question, giving context, sharing details), incorporate that information into the narrative and regenerate it. Even if the changes are small, always output the full updated narrative.
+If the user explicitly requests changes, apply those changes.
+If no new info was shared, return the current narrative unchanged but still wrapped in [VIDEO_NARRATIVE] markers.
+
+QUALITY RULES for the narrative fields:
+- "narrative" MUST be 3-4 sentences telling a mini-story: tension → turning point → payoff → result. Never less than 3 sentences.
+- "hook" MUST be a clear call-to-action: a verb + where to go + what they get. NOT a visual description, NOT a tagline, NOT a passive statement. It answers "what should the viewer DO after watching?"
 
 Do NOT generate a storyboard yet. The user must approve the narrative first before building scenes.
 
 CONVERSATIONAL TEXT:
-After updating the narrative, write a brief message like "Updated the narrative on the canvas — take a look." Do NOT ask unrelated questions.
+After the [VIDEO_NARRATIVE] block, write a brief message acknowledging what the user shared and pointing them to the updated canvas. Keep it to 1-2 sentences.
+If you still need more context, ask ONE specific follow-up question.
 Your [QUICK_OPTIONS] should be: {"question": "How about now?", "options": ["Try a different angle", "Adjust the CTA", "Looks good, let's build scenes"]}
 Do NOT offer options about moving to storyboard, visual style, or submission.`
       }
@@ -511,12 +524,12 @@ SCENE QUALITY RULES:
 - Each scene description should describe what the CAMERA SEES, not abstract ideas. "A product manager refreshing a dashboard showing 12% conversion" not "The pain of low conversion rates."
 - The final scene should land on a concrete result (a number, a visual change, a reaction) before delivering the CTA from the approved narrative.
 
-- For each scene, include imageSearchTerms: an array of 2-3 search terms that describe what a stock photographer would TAG this scene as. Focus on VISIBLE SUBJECTS and COMPOSITIONS, not abstract concepts.
-  Bad: ["identity verification", "conversion optimization", "user authentication"]
-  Good: ["person scanning face with phone camera", "laptop showing dashboard analytics chart", "hands holding smartphone verification screen"]
-  Bad: ["business impact metrics", "platform scalability"]
-  Good: ["dashboard screen conversion rate chart", "multiple device screens app interface"]
-  These terms are used for Pexels/Unsplash stock photo search — concrete, tag-style visual descriptions work best.
+- For each scene, include imageSearchTerms: an array of 3-4 short search tags that describe what a stock photographer would TAG this scene as. Each term should be 2-3 words maximum — think stock photo TAGS, not descriptions. Focus on VISIBLE SUBJECTS, not abstract concepts.
+  Bad (too long): ["person scanning face with phone camera", "laptop showing dashboard analytics chart"]
+  Good (short tags): ["face scan smartphone", "analytics dashboard laptop", "woman phone verification"]
+  Bad (abstract): ["identity verification", "conversion optimization", "business impact metrics"]
+  Good (concrete): ["fingerprint phone screen", "conversion chart laptop", "team meeting whiteboard"]
+  Each term is searched INDEPENDENTLY on Pexels/Unsplash — short, specific tags yield far better results than multi-word phrases.
 - Do NOT include filmTitleSuggestions or visualTechniques yet. Those depend on the style chosen later.
 - CRITICAL: Use [STORYBOARD] as the marker, NOT [VIDEO_STORYBOARD]. The UI parser only recognizes [STORYBOARD].
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.

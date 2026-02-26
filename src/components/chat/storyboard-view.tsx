@@ -1262,97 +1262,77 @@ export function RichStoryboardPanel({
       <ScrollArea className="flex-1 relative">
         {/* Skeleton loading during regeneration (#3) */}
         {isRegenerating && (
-          <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[2px]">
-            {/* Background: shimmer skeleton grid */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 z-10 bg-background"
+          >
+            {/* Skeleton grid matching real card layout */}
             <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
-              {scenes.map((scene, i) => (
+              {scenes.map((_, i) => (
                 <div
-                  key={scene.sceneNumber}
-                  className="rounded-lg border border-border/30 overflow-hidden"
+                  key={i}
+                  className="rounded-lg border border-border/40 overflow-hidden bg-muted/20"
                 >
                   <div
                     className="aspect-video skeleton-shimmer"
-                    style={{ animationDelay: `${i * 0.15}s` }}
+                    style={{ animationDelay: `${i * 0.12}s` }}
                   />
-                  <div className="p-3 space-y-2">
+                  <div className="p-3 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-2.5 w-14 skeleton-shimmer rounded-full"
+                        style={{ animationDelay: `${i * 0.12 + 0.04}s` }}
+                      />
+                      <div
+                        className="h-2.5 w-8 skeleton-shimmer rounded-full"
+                        style={{ animationDelay: `${i * 0.12 + 0.06}s` }}
+                      />
+                    </div>
                     <div
-                      className="h-3 w-20 skeleton-shimmer rounded"
-                      style={{ animationDelay: `${i * 0.15 + 0.05}s` }}
+                      className="h-3 w-3/4 skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.12 + 0.08}s` }}
                     />
                     <div
-                      className="h-4 w-3/4 skeleton-shimmer rounded"
-                      style={{ animationDelay: `${i * 0.15 + 0.1}s` }}
+                      className="h-2.5 w-full skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.12 + 0.1}s` }}
                     />
                     <div
-                      className="h-3 w-full skeleton-shimmer rounded"
-                      style={{ animationDelay: `${i * 0.15 + 0.15}s` }}
+                      className="h-2.5 w-2/3 skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.12 + 0.12}s` }}
                     />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Foreground: centered glass-morphism status capsule */}
+            {/* Centered loading indicator */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="bg-background/90 backdrop-blur-md border border-border/50 shadow-lg rounded-xl px-6 py-5 flex flex-col items-center gap-3 min-w-[240px]"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="flex flex-col items-center gap-2.5"
               >
-                {/* Layered icon */}
-                <div className="relative h-8 w-8">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                    className="absolute inset-0 flex items-center justify-center"
-                  >
-                    <RefreshCw className="h-6 w-6 text-crafted-sage/60" />
-                  </motion.div>
-                  <motion.div
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute inset-0 flex items-center justify-center"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-crafted-green" />
-                  </motion.div>
-                </div>
-
-                {/* Rotating message text */}
-                <div className="h-5 overflow-hidden relative w-full text-center">
+                <Loader2 className="h-4 w-4 text-crafted-green animate-spin" />
+                <div className="h-4 overflow-hidden text-center">
                   <AnimatePresence mode="wait">
                     <motion.p
                       key={regenLoadingMsg}
-                      initial={{ opacity: 0, y: 12 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-sm font-medium text-foreground/80"
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-xs text-muted-foreground"
                     >
                       {REGEN_LOADING_MESSAGES[regenLoadingMsg]}
                     </motion.p>
                   </AnimatePresence>
                 </div>
-
-                {/* Progress bar */}
-                <div className="w-full h-1 bg-muted/30 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-crafted-green rounded-full"
-                    initial={{ width: '4%' }}
-                    animate={{
-                      width: `${Math.max(4, ((regenLoadingMsg + 1) / REGEN_LOADING_MESSAGES.length) * 100)}%`,
-                    }}
-                    transition={{ duration: 0.6, ease: 'easeInOut' }}
-                  />
-                </div>
-
-                {/* Step indicator */}
-                <p className="text-[10px] text-muted-foreground/50">
-                  Step {regenLoadingMsg + 1} of {REGEN_LOADING_MESSAGES.length}
-                </p>
               </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
