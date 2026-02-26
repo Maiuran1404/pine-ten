@@ -27,66 +27,25 @@ export function LabeledProgressBar({
   completedStages,
   className,
 }: LabeledProgressBarProps) {
+  const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
+  const progress = (currentIndex / Math.max(BRIEFING_CHAT_STAGES.length - 1, 1)) * 100
+
   return (
-    <div className={cn('w-full px-4 py-2 border-b border-border/50 bg-card/30', className)}>
-      {/* Desktop: full labels */}
-      <div className="hidden sm:flex items-center justify-between relative">
-        {/* Connecting line */}
-        <div className="absolute top-3 left-4 right-4 h-0.5 bg-muted-foreground/15 z-0" />
-        <div
-          className="absolute top-3 left-4 h-0.5 bg-primary z-0 transition-all duration-500"
-          style={{
-            width: `${(BRIEFING_CHAT_STAGES.indexOf(currentStage) / Math.max(BRIEFING_CHAT_STAGES.length - 1, 1)) * 100}%`,
-          }}
+    <div className={cn('w-full', className)}>
+      {/* Thin progress track */}
+      <div className="h-[2px] bg-muted-foreground/10 w-full relative">
+        <motion.div
+          className="h-full bg-primary/60"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         />
-
-        {BRIEFING_CHAT_STAGES.map((stage) => {
-          const isCompleted = isStageCompleted(stage, completedStages)
-          const isCurrent = isCurrentStage(stage, currentStage)
-
-          return (
-            <div key={stage} className="flex flex-col items-center gap-1 z-10">
-              <div
-                className={cn(
-                  'w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors',
-                  isCompleted && 'bg-primary border-primary',
-                  isCurrent && !isCompleted && 'border-primary bg-primary/10',
-                  !isCompleted && !isCurrent && 'border-muted-foreground/30 bg-background'
-                )}
-              >
-                {isCompleted ? (
-                  <Check className="h-3 w-3 text-primary-foreground" />
-                ) : isCurrent ? (
-                  <motion.div
-                    className="w-2 h-2 rounded-full bg-primary"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
-                ) : (
-                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                )}
-              </div>
-              <span
-                className={cn(
-                  'text-[10px] font-medium transition-colors whitespace-nowrap',
-                  isCurrent && 'text-primary',
-                  isCompleted && 'text-foreground',
-                  !isCurrent && !isCompleted && 'text-muted-foreground/50'
-                )}
-              >
-                {STAGE_DESCRIPTIONS[stage]}
-              </span>
-            </div>
-          )
-        })}
       </div>
 
-      {/* Mobile: current step label + dot indicators */}
-      <div className="flex sm:hidden items-center justify-between">
-        <span className="text-xs font-medium text-foreground">
-          {STAGE_DESCRIPTIONS[currentStage]}
-        </span>
-        <div className="flex items-center gap-1">
+      {/* Compact label row */}
+      <div className="px-4 py-1 flex items-center gap-2 border-b border-border/30">
+        {/* Dot indicators */}
+        <div className="hidden sm:flex items-center gap-1">
           {BRIEFING_CHAT_STAGES.map((stage) => {
             const isCompleted = isStageCompleted(stage, completedStages)
             const isCurrent = isCurrentStage(stage, currentStage)
@@ -94,10 +53,35 @@ export function LabeledProgressBar({
               <div
                 key={stage}
                 className={cn(
-                  'w-2 h-2 rounded-full transition-colors',
-                  isCompleted && 'bg-primary',
-                  isCurrent && !isCompleted && 'bg-primary/50',
-                  !isCompleted && !isCurrent && 'bg-muted-foreground/20'
+                  'w-1.5 h-1.5 rounded-full transition-colors',
+                  isCompleted && 'bg-primary/70',
+                  isCurrent && !isCompleted && 'bg-primary/40',
+                  !isCompleted && !isCurrent && 'bg-muted-foreground/15'
+                )}
+                title={STAGE_DESCRIPTIONS[stage]}
+              />
+            )
+          })}
+        </div>
+
+        {/* Current step label */}
+        <span className="text-[10px] text-muted-foreground/60 font-medium">
+          {STAGE_DESCRIPTIONS[currentStage]}
+        </span>
+
+        {/* Mobile dots */}
+        <div className="flex sm:hidden items-center gap-1 ml-auto">
+          {BRIEFING_CHAT_STAGES.map((stage) => {
+            const isCompleted = isStageCompleted(stage, completedStages)
+            const isCurrent = isCurrentStage(stage, currentStage)
+            return (
+              <div
+                key={stage}
+                className={cn(
+                  'w-1.5 h-1.5 rounded-full transition-colors',
+                  isCompleted && 'bg-primary/70',
+                  isCurrent && !isCompleted && 'bg-primary/40',
+                  !isCompleted && !isCurrent && 'bg-muted-foreground/15'
                 )}
               />
             )

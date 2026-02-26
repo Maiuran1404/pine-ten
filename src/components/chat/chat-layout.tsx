@@ -222,8 +222,8 @@ export function ChatLayout({
 
   return (
     <div className={cn('flex flex-col h-full relative', className)}>
-      {/* Top Progress Bar - Subtle, takes minimal space */}
-      {showProgress && (
+      {/* Top Progress Bar - only shown in structure panel mode (full-width) */}
+      {showProgress && structurePanelVisible && (
         <LabeledProgressBar
           currentStage={currentStage}
           completedStages={completedStages}
@@ -383,6 +383,13 @@ export function ChatLayout({
                     </SheetTrigger>
                     <SheetContent side="right" className="w-80 p-0">
                       <div className="h-full pt-8">
+                        {showProgress && (
+                          <LabeledProgressBar
+                            currentStage={currentStage}
+                            completedStages={completedStages}
+                            progressPercentage={progressPercentage}
+                          />
+                        )}
                         <UnifiedPanel
                           currentStage={currentStage}
                           completedStages={completedStages}
@@ -433,6 +440,15 @@ export function ChatLayout({
                     transition={{ duration: 0.2 }}
                     className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full"
                   >
+                    {/* Progress bar aligned to right panel */}
+                    {showProgress && (
+                      <LabeledProgressBar
+                        currentStage={currentStage}
+                        completedStages={completedStages}
+                        progressPercentage={progressPercentage}
+                      />
+                    )}
+
                     {/* Collapse button */}
                     <div className="shrink-0 flex items-center justify-start px-3 py-2">
                       <Button

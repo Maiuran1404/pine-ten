@@ -3707,13 +3707,26 @@ function OnboardingContent() {
   // Restore state from sessionStorage on mount
   const getInitialState = useCallback(() => {
     if (typeof window === 'undefined') return { route: null, step: 'welcome' as OnboardingStep }
+
+    // Coming from brand page reset — start fresh
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('reset') === 'true') {
+      sessionStorage.removeItem('onboarding-state')
+      return { route: null, step: 'welcome' as OnboardingStep }
+    }
+
     try {
       const saved = sessionStorage.getItem('onboarding-state')
       if (saved) {
         const parsed = JSON.parse(saved)
+        let restoredStep = (parsed.step || 'welcome') as OnboardingStep
+        // Don't restore transient steps — they need an active process running
+        if (restoredStep === 'scanning') {
+          restoredStep = 'brand-input'
+        }
         return {
           route: parsed.route || null,
-          step: parsed.step || 'welcome',
+          step: restoredStep,
         }
       }
     } catch {
@@ -3788,11 +3801,16 @@ function OnboardingContent() {
       return
     }
 
+    // Skip redirect if coming from brand page reset — session cache may be stale
+    if (searchParams.get('reset') === 'true') {
+      return
+    }
+
     const user = session?.user as { onboardingCompleted?: boolean; role?: string } | undefined
     if (user?.onboardingCompleted) {
       router.push('/dashboard')
     }
-  }, [session, isPending, router, showingCompletionScreen])
+  }, [session, isPending, router, showingCompletionScreen, searchParams])
 
   // Brand extraction
   const handleBrandExtraction = async () => {

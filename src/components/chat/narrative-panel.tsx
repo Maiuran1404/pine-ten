@@ -33,7 +33,7 @@ function renderHighlightedText(text: string): ReactNode[] {
       return (
         <span
           key={i}
-          className="inline-flex items-center px-1.5 py-0 rounded-md bg-violet-500/10 text-violet-300 text-[0.85em] font-medium mx-0.5"
+          className="inline-flex items-center px-1.5 py-0 rounded-md bg-crafted-mint/20 text-crafted-forest text-[0.85em] font-medium mx-0.5"
         >
           {inner}
         </span>
@@ -85,14 +85,14 @@ export function NarrativePanel({
       <div className="shrink-0 px-5 py-3.5 border-b border-border/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-violet-500/10 border border-violet-500/20">
-              <Film className="h-3.5 w-3.5 text-violet-400" />
+            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-crafted-mint/20 border border-crafted-sage/30">
+              <Film className="h-3.5 w-3.5 text-crafted-green" />
             </div>
             <span className="text-sm font-semibold text-foreground tracking-tight">
               Video Blueprint
             </span>
           </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-mono">
+          <span className="text-[10px] uppercase tracking-widest text-crafted-sage/30 font-mono">
             narrative
           </span>
         </div>
@@ -103,10 +103,11 @@ export function NarrativePanel({
         <div className="p-5">
           {/* Blueprint card */}
           <div
-            className="relative rounded-xl border border-dashed border-border/50 overflow-hidden"
+            className="relative rounded-xl border border-dashed border-crafted-sage/20 overflow-hidden"
             style={{
+              backgroundColor: 'rgba(168, 212, 168, 0.05)',
               backgroundImage:
-                'radial-gradient(circle, hsl(var(--muted-foreground) / 0.06) 1px, transparent 1px)',
+                'linear-gradient(rgba(139, 181, 139, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 181, 139, 0.08) 1px, transparent 1px)',
               backgroundSize: '20px 20px',
             }}
           >

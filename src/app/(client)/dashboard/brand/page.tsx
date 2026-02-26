@@ -70,9 +70,13 @@ export default function BrandPage() {
             <h3 className="text-lg font-medium text-foreground">No Brand Set Up</h3>
             <p className="text-muted-foreground">Complete onboarding to set up your brand.</p>
             <Button
-              onClick={() => {
-                fetch('/api/brand/reset-onboarding', { method: 'POST' }).catch(() => {})
-                window.location.href = '/onboarding'
+              onClick={async () => {
+                try {
+                  await fetch('/api/brand/reset-onboarding', { method: 'POST' })
+                } catch {
+                  // continue to onboarding even if reset fails
+                }
+                window.location.href = '/onboarding?reset=true'
               }}
               className="mt-2"
             >
