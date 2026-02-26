@@ -178,6 +178,7 @@ export function ChatInterface({
     progressState,
     briefingStage,
     deliverableCategory,
+    estimatedCredits,
 
     // Files
     uploadedFiles,
@@ -579,6 +580,7 @@ export function ChatInterface({
                 setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
               }
               deliverableCategory={deliverableCategory}
+              estimatedCredits={estimatedCredits}
               hasStoryboard={
                 !!(
                   storyboardScenes &&

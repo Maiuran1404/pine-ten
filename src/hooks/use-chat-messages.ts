@@ -184,9 +184,9 @@ export function useChatMessages({
         attachments: currentFiles && currentFiles.length > 0 ? currentFiles : undefined,
       }
 
+      setIsLoading(true)
       setMessages((prev) => [...prev, userMessage])
       setInput('')
-      setIsLoading(true)
       setLastSendError(null)
       requestStartTimeRef.current = Date.now()
 
@@ -252,9 +252,9 @@ export function useChatMessages({
         timestamp: new Date(),
       }
 
+      setIsLoading(true)
       setMessages((prev) => [...prev, userMessage])
       setInput('')
-      setIsLoading(true)
       setLastSendError(null)
 
       try {

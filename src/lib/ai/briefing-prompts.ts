@@ -361,7 +361,8 @@ function buildExtractTask(_state: BriefingState): string {
 - Reference any style keywords or inspiration they mentioned.
 - IMPORTANT: Do NOT re-ask about things the user already stated clearly (e.g. if they said "new customers" or "driving traffic", their intent and audience are already clear. Confirm it and move to the next unknown).
 - Only ask about what's genuinely missing. If audience/goal/intent are clear, ask about something else (style preference, brand personality, specific requirements).
-- Be concise. Don't repeat back everything they said.`
+- Be concise. Don't repeat back everything they said.
+- If the user's first message clearly states what they want, for whom, and why, confirm everything in one sentence and proceed directly to structure. Do not ask follow-up questions when all core information is present.`
 }
 
 function buildTaskTypeTask(_state: BriefingState): string {
@@ -494,6 +495,7 @@ When the user picks a template, generate the corresponding [LAYOUT] block with s
       return `${clarifyPrefix}${industryTemplatePrompt}MANDATORY: Create a section-by-section layout.
 - Generate appropriate sections: hero, features, social proof, CTA, footer, etc.
 - Each section: name, purpose, content guidance, order, fidelity ("low").
+- IMPORTANT: Each section MUST include a headline and subheadline that reflects the user's actual project. Use the project topic, business name, and value proposition to write realistic headlines. For example, if the user is building a SaaS landing page for an AI tool, the hero headline should be about their specific product, not generic text like "Transform Your Business Today". The contentGuidance should describe what content goes in each section.
 - You MUST output the structure as [LAYOUT]{json}[/LAYOUT]. Without this marker the UI cannot render the layout.
 - Example: [LAYOUT]{"sections":[{"sectionName":"Hero","purpose":"Primary conversion","contentGuidance":"Lead with value prop","order":1,"fidelity":"low"}]}[/LAYOUT]
 OUTPUT FORMAT: The [LAYOUT]{valid JSON}[/LAYOUT] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the layout as plain text without these markers, the UI cannot render it and the response fails.`

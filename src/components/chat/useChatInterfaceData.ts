@@ -352,6 +352,20 @@ export function useChatInterfaceData({
     task.taskSubmitted,
   ])
 
+  // ─── Estimated credits ─────────────────────────────────────
+  const estimatedCredits = useMemo(() => {
+    const category = _briefingState?.deliverableCategory
+    if (!category) return null
+    const CREDIT_ESTIMATES: Record<string, number> = {
+      video: 30,
+      website: 30,
+      content: 15,
+      design: 20,
+      brand: 60,
+    }
+    return CREDIT_ESTIMATES[category] ?? null
+  }, [_briefingState?.deliverableCategory])
+
   // ─── Quick options ──────────────────────────────────────────
   const resolvedQuickOptions = useMemo(() => {
     if (chatMessages.isLoading || task.pendingTask) return null
@@ -669,6 +683,7 @@ export function useChatInterfaceData({
     progressState,
     briefingStage: _briefingState?.stage ?? null,
     deliverableCategory: _briefingState?.deliverableCategory ?? null,
+    estimatedCredits,
 
     // Files
     uploadedFiles: fileUpload.uploadedFiles,

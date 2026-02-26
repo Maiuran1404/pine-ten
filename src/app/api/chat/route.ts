@@ -72,6 +72,59 @@ import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboar
 import { searchPexelsForScene } from '@/lib/ai/pexels-image-search'
 import type { InferredAudience } from '@/components/onboarding/types'
 
+/** Remove consecutive duplicate sentences and phrases from AI response */
+function deduplicateResponse(text: string): string {
+  // Split into lines (preserving markdown structure markers)
+  const lines = text.split('\n')
+  const deduped: string[] = []
+
+  for (const line of lines) {
+    // Skip structure markers — never dedupe [STORYBOARD], [LAYOUT], etc.
+    if (
+      /^\[(?:STORYBOARD|LAYOUT|CALENDAR|DESIGN_SPEC|BRIEF_META|QUICK_OPTIONS|VIDEO_NARRATIVE|DELIVERABLE_STYLES|ASSET_REQUEST)/.test(
+        line.trim()
+      )
+    ) {
+      deduped.push(line)
+      continue
+    }
+
+    // Split line into sentences
+    const sentences = line.match(/[^.!?]+[.!?]+/g)
+    if (!sentences) {
+      deduped.push(line)
+      continue
+    }
+
+    const uniqueSentences: string[] = []
+    for (const sentence of sentences) {
+      const normalized = sentence.trim().toLowerCase()
+      const lastNormalized =
+        uniqueSentences.length > 0
+          ? uniqueSentences[uniqueSentences.length - 1].trim().toLowerCase()
+          : ''
+      if (normalized !== lastNormalized) {
+        uniqueSentences.push(sentence)
+      }
+    }
+
+    deduped.push(uniqueSentences.join(''))
+  }
+
+  // Also remove consecutive duplicate lines
+  const finalLines: string[] = []
+  for (const line of deduped) {
+    const trimmed = line.trim().toLowerCase()
+    const lastTrimmed =
+      finalLines.length > 0 ? finalLines[finalLines.length - 1].trim().toLowerCase() : ''
+    if (trimmed !== lastTrimmed || trimmed === '') {
+      finalLines.push(line)
+    }
+  }
+
+  return finalLines.join('\n')
+}
+
 async function handler(request: NextRequest) {
   return withErrorHandling(
     async () => {
@@ -485,11 +538,17 @@ async function handler(request: NextRequest) {
 
       // Stage-based gating: only attach style/video data at eligible stages
       const STYLE_ELIGIBLE_STAGES = new Set(['INSPIRATION', 'MOODBOARD'])
+      const POST_STYLE_STAGES = new Set(['REVIEW', 'DEEPEN', 'SUBMIT'])
       const currentStage = updatedBriefingState?.stage ?? clientBriefingState?.stage
-      const isStyleEligible = !currentStage || STYLE_ELIGIBLE_STAGES.has(currentStage)
+      const isStyleEligible = currentStage
+        ? STYLE_ELIGIBLE_STAGES.has(currentStage) && !POST_STYLE_STAGES.has(currentStage)
+        : true
 
       // Get AI response with context (+ optional state machine override)
       const response = await chat(messages, session.user.id, chatContext, stateMachineOverride)
+
+      // Post-process: deduplicate consecutive repeated sentences/phrases
+      response.content = deduplicateResponse(response.content)
 
       // Check if a task proposal was generated
       const taskProposal = parseTaskFromChat(response.content)
@@ -552,10 +611,25 @@ async function handler(request: NextRequest) {
                 logger.debug('Skipping image styles for video type - will show video references')
                 break
               }
+              // Enrich search terms with accumulated style context from briefing state
+              let enrichedSearchTerms = deliverableStyleMarker.searchTerms
+              if (updatedBriefingState) {
+                const contextTerms: string[] = []
+                if (updatedBriefingState.styleKeywords?.length) {
+                  contextTerms.push(...updatedBriefingState.styleKeywords.slice(0, 3))
+                }
+                if (updatedBriefingState.inspirationRefs?.length) {
+                  contextTerms.push(...updatedBriefingState.inspirationRefs.slice(0, 2))
+                }
+                if (contextTerms.length > 0 && enrichedSearchTerms) {
+                  enrichedSearchTerms = [...enrichedSearchTerms, ...contextTerms]
+                }
+              }
+
               // Dynamic web image search using AI-provided search terms or context
               deliverableStyles = await searchStyleImages(
                 {
-                  searchTerms: deliverableStyleMarker.searchTerms,
+                  searchTerms: enrichedSearchTerms,
                   deliverableType: normalizedType,
                 },
                 { count: 6, styleContext }

@@ -19,6 +19,17 @@ function getLabel(option: string | QuickOptionItem): string {
   return typeof option === 'string' ? option : option.label
 }
 
+/** Check if an option is a navigation action (go back, skip, continue) */
+function isNavigationOption(label: string): boolean {
+  const lower = label.toLowerCase()
+  return (
+    lower.startsWith('go back') ||
+    lower.startsWith('skip') ||
+    lower.startsWith('continue') ||
+    lower.startsWith('move on')
+  )
+}
+
 /** Check if any option has an image */
 function hasImages(options: (string | QuickOptionItem)[]): boolean {
   return options.some((o) => typeof o === 'object' && o !== null && 'imageUrl' in o && o.imageUrl)
@@ -185,59 +196,94 @@ export function QuickOptions({
     )
   }
 
-  // Default text pill layout (unchanged)
+  // Default text pill layout
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-center">
-        {displayOptions.map((option, idx) => {
-          const label = getLabel(option)
-          const isSelected = selectedOptions.includes(label)
+        {displayOptions
+          .filter((o) => !isNavigationOption(getLabel(o)))
+          .map((option, idx) => {
+            const label = getLabel(option)
+            const isSelected = selectedOptions.includes(label)
 
-          return (
-            <motion.button
-              key={idx}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: idx * 0.04 }}
-              type="button"
-              onClick={() => handleOptionClick(label)}
-              disabled={disabled}
-              className={cn(
-                'px-3 py-1.5 text-[13px] font-normal rounded-full border transition-all duration-150',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'whitespace-nowrap cursor-pointer',
-                isMultiSelect && isSelected
-                  ? // Selected state for multi-select
-                    'border-crafted-green bg-crafted-mint/20 text-crafted-forest'
-                  : // Default state
-                    'border-border bg-muted/40 text-foreground/80 dark:border-border dark:bg-card dark:text-foreground/80',
-                // Hover: light sage green with shadow
-                'hover:border-crafted-sage hover:bg-crafted-mint/10 hover:shadow-sm hover:text-crafted-forest dark:hover:bg-crafted-green/10 dark:hover:border-crafted-sage/50',
-                // Active: stronger sage green with scale
-                'active:border-crafted-green active:bg-crafted-mint/20 active:scale-[0.97] dark:active:bg-crafted-green/15'
-              )}
-            >
-              {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}
-              <span className="truncate" title={label}>
-                {label}
-              </span>
-            </motion.button>
-          )
-        })}
-        {showSkip && !isMultiSelect && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2, delay: displayOptions.length * 0.04 }}
-            type="button"
-            onClick={() => onSelect('Skip this question')}
-            disabled={disabled}
-            className="px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            Skip
-          </motion.button>
-        )}
+            return (
+              <motion.button
+                key={idx}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: idx * 0.04 }}
+                type="button"
+                onClick={() => handleOptionClick(label)}
+                disabled={disabled}
+                className={cn(
+                  'px-3 py-1.5 text-[13px] font-normal rounded-full border transition-all duration-150',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'whitespace-nowrap cursor-pointer',
+                  isMultiSelect && isSelected
+                    ? // Selected state for multi-select
+                      'border-crafted-green bg-crafted-mint/20 text-crafted-forest'
+                    : // Default state
+                      'border-border bg-muted/40 text-foreground/80 dark:border-border dark:bg-card dark:text-foreground/80',
+                  // Hover: light sage green with shadow
+                  'hover:border-crafted-sage hover:bg-crafted-mint/10 hover:shadow-sm hover:text-crafted-forest dark:hover:bg-crafted-green/10 dark:hover:border-crafted-sage/50',
+                  // Active: stronger sage green with scale
+                  'active:border-crafted-green active:bg-crafted-mint/20 active:scale-[0.97] dark:active:bg-crafted-green/15'
+                )}
+              >
+                {isMultiSelect && isSelected && <Check className="h-3.5 w-3.5 inline mr-1.5" />}
+                <span className="truncate" title={label}>
+                  {label}
+                </span>
+              </motion.button>
+            )
+          })}
       </div>
+      {/* Navigation options in a separate row */}
+      {displayOptions.some((o) => isNavigationOption(getLabel(o))) && (
+        <div className="flex flex-wrap gap-2 items-center">
+          {displayOptions
+            .filter((o) => isNavigationOption(getLabel(o)))
+            .map((option, idx) => {
+              const label = getLabel(option)
+              return (
+                <motion.button
+                  key={`nav-${idx}`}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: idx * 0.04 }}
+                  type="button"
+                  onClick={() => handleOptionClick(label)}
+                  disabled={disabled}
+                  className={cn(
+                    'px-3 py-1.5 text-[13px] font-normal rounded-full border transition-all duration-150',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'whitespace-nowrap cursor-pointer',
+                    'border-dashed border-border text-muted-foreground',
+                    'hover:border-crafted-sage hover:text-foreground hover:shadow-sm',
+                    'active:scale-[0.97]'
+                  )}
+                >
+                  <span className="truncate" title={label}>
+                    {label}
+                  </span>
+                </motion.button>
+              )
+            })}
+        </div>
+      )}
+      {showSkip && !isMultiSelect && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2, delay: displayOptions.length * 0.04 }}
+          type="button"
+          onClick={() => onSelect('Skip this question')}
+          disabled={disabled}
+          className="px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          Skip
+        </motion.button>
+      )}
 
       {isMultiSelect && selectedOptions.length > 0 && (
         <div className="flex justify-start">
