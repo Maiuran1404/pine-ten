@@ -117,7 +117,7 @@ export function NarrativePanel({
                 <div className="space-y-2">
                   <input
                     type="text"
-                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-base font-semibold text-foreground tracking-tight outline-none border border-violet-500/30 focus:border-violet-500/50"
+                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-base font-semibold text-foreground tracking-tight outline-none border border-crafted-green/30 focus:border-crafted-green/50"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     onKeyDown={(e) => {
