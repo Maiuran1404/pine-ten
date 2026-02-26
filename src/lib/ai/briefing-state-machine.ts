@@ -164,7 +164,6 @@ export interface VideoNarrative {
   concept: string
   narrative: string
   hook: string
-  tags: string[]
 }
 
 // =============================================================================
@@ -262,7 +261,7 @@ export interface StallConfig {
 }
 
 export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
-  EXTRACT: { maxTurnsBeforeNarrow: 2, maxTurnsBeforeRecommend: 3, softNudgeAfter: null },
+  EXTRACT: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
   TASK_TYPE: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
   INTENT: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
   INSPIRATION: {
