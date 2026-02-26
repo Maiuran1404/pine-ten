@@ -634,6 +634,7 @@ function SceneThumbnail({
         dezeen: 'Dezeen',
         houzz: 'Houzz',
         arena: 'Are.na',
+        serper: 'Web',
       }[sceneImageData.primarySource]
     : null
 
