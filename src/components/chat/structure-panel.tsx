@@ -269,11 +269,11 @@ export function StructurePanel({
     )
   }
 
-  // Video narrative phase: narrative exists but not yet approved → show NarrativePanel
+  // Video narrative phase: show NarrativePanel until storyboard data arrives
   if (
     structureType === 'storyboard' &&
     videoNarrative &&
-    !narrativeApproved &&
+    !structureData &&
     onApproveNarrative &&
     onNarrativeFieldEdit
   ) {
@@ -283,16 +283,8 @@ export function StructurePanel({
           narrative={videoNarrative}
           onApprove={onApproveNarrative}
           onFieldEdit={onNarrativeFieldEdit}
+          isApproved={narrativeApproved}
         />
-      </div>
-    )
-  }
-
-  // Video narrative approved but storyboard not yet generated → show loading placeholder
-  if (structureType === 'storyboard' && narrativeApproved && !structureData) {
-    return (
-      <div className={cn('flex flex-col h-full bg-background', className)}>
-        <PlaceholderState structureType={structureType} />
       </div>
     )
   }

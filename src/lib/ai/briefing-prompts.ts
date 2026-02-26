@@ -508,6 +508,32 @@ Do NOT offer options about moving to storyboard, visual style, or submission.`
 
       // Phase 3: Narrative approved, now build the storyboard
       const narrativeContext = JSON.stringify(state.videoNarrative)
+
+      // Check if crucial info is missing before building storyboard
+      const missingCritical: string[] = []
+      if (!state.brief.topic.value)
+        missingCritical.push('the specific topic or feature this video is about')
+      if (!state.brief.audience.value) missingCritical.push('who the target audience is')
+
+      if (missingCritical.length > 0) {
+        // Ask clarifying questions before building storyboard
+        return `The user has approved the story narrative direction. Good — keep the momentum going.
+
+APPROVED NARRATIVE:
+${narrativeContext}
+
+Before you can build the storyboard scenes, you need to know: ${missingCritical.join(' and ')}.
+
+Ask 1-2 quick, specific questions to fill these gaps. Keep it conversational and forward-moving — frame it as "one quick thing before I build your scenes."
+
+IMPORTANT:
+- Do NOT output [STORYBOARD] markers. You don't have enough info yet.
+- Do NOT say "we skipped a step" or anything that feels like a dead-end.
+- DO output an updated [VIDEO_NARRATIVE] block (same as current, or refined if user gave new info).
+- Your [QUICK_OPTIONS] should help the user answer quickly: offer concrete choices for what's missing.
+- Once the user answers, the NEXT turn will build the storyboard.`
+      }
+
       return `${clarifyPrefix}The user has approved the story narrative. Now build a scene-by-scene storyboard that brings it to life.
 
 APPROVED NARRATIVE:

@@ -15,6 +15,7 @@ interface NarrativePanelProps {
   narrative: VideoNarrative
   onApprove: () => void
   onFieldEdit: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  isApproved?: boolean
   className?: string
 }
 
@@ -463,6 +464,7 @@ export function NarrativePanel({
   narrative,
   onApprove,
   onFieldEdit,
+  isApproved,
   className,
 }: NarrativePanelProps) {
   const [editingField, setEditingField] = useState<'concept' | 'narrative' | 'hook' | null>(null)
@@ -610,25 +612,36 @@ export function NarrativePanel({
             </div>
           </div>
 
-          {/* Refine hint */}
-          <div className="flex items-center gap-2 mt-4 rounded-lg border border-crafted-sage/20 bg-crafted-sage/5 px-3 py-2">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-crafted-sage" />
-            <span className="text-xs text-muted-foreground">
-              Chat to refine, or edit directly above
-            </span>
-          </div>
+          {/* Refine hint or approved status */}
+          {!isApproved ? (
+            <div className="flex items-center gap-2 mt-4 rounded-lg border border-crafted-sage/20 bg-crafted-sage/5 px-3 py-2">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-crafted-sage" />
+              <span className="text-xs text-muted-foreground">
+                Chat to refine, or edit directly above
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mt-4 rounded-lg border border-crafted-sage/30 bg-crafted-sage/10 px-3 py-2.5">
+              <Check className="h-3.5 w-3.5 shrink-0 text-crafted-green" />
+              <span className="text-xs text-muted-foreground">
+                Narrative approved — answer the chat to build scenes
+              </span>
+            </div>
+          )}
 
-          {/* Continue CTA — at the bottom after all content */}
-          <div className="mt-4">
-            <Button
-              size="lg"
-              className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
-              onClick={onApprove}
-            >
-              Continue to Storyboard
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Continue CTA — only shown before approval */}
+          {!isApproved && (
+            <div className="mt-4">
+              <Button
+                size="lg"
+                className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
+                onClick={onApprove}
+              >
+                Continue to Storyboard
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Animated blueprint motif — fills whitespace below */}
           <BlueprintMotif />
