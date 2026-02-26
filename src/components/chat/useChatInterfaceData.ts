@@ -704,6 +704,7 @@ export function useChatInterfaceData({
 
     // Chat title & dialogs
     chatTitle: draftPersistence.chatTitle,
+    lastSavedAt: draftPersistence.lastSavedAt,
     showDeleteDialog,
     setShowDeleteDialog,
     showStartOverDialog,

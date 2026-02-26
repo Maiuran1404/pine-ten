@@ -11,6 +11,7 @@ import {
 interface MidFidelitySectionProps {
   type: string
   className?: string
+  content?: Record<string, unknown>
 }
 
 function MidNavigation() {
@@ -29,20 +30,23 @@ function MidNavigation() {
   )
 }
 
-function MidHero() {
+function MidHero({ content }: { content?: Record<string, unknown> }) {
+  const headline = (content?.headline as string) || 'Transform Your Business Today'
+  const subheadline =
+    (content?.subheadline as string) ||
+    'We help companies achieve their goals with innovative solutions designed for the modern world.'
   return (
     <div className="py-16 px-8 space-y-4">
-      <h1 className="text-2xl font-bold text-foreground/80">Transform Your Business Today</h1>
-      <p className="text-sm text-muted-foreground max-w-md">
-        We help companies achieve their goals with innovative solutions designed for the modern
-        world.
-      </p>
+      <h1 className="text-2xl font-bold text-foreground/80">{headline}</h1>
+      <p className="text-sm text-muted-foreground max-w-md">{subheadline}</p>
       <ButtonShape width="w-32" />
     </div>
   )
 }
 
-function MidFeatures() {
+function MidFeatures({ content }: { content?: Record<string, unknown> }) {
+  const headline = (content?.headline as string) || 'Why Choose Us'
+  const subheadline = (content?.subheadline as string) || 'Everything you need to succeed online.'
   const features = [
     {
       title: 'Fast Performance',
@@ -60,10 +64,8 @@ function MidFeatures() {
 
   return (
     <div className="py-10 px-8">
-      <h2 className="text-lg font-semibold text-foreground/80 mb-2">Why Choose Us</h2>
-      <p className="text-xs text-muted-foreground mb-6 max-w-sm">
-        Everything you need to succeed online.
-      </p>
+      <h2 className="text-lg font-semibold text-foreground/80 mb-2">{headline}</h2>
+      <p className="text-xs text-muted-foreground mb-6 max-w-sm">{subheadline}</p>
       <div className="grid grid-cols-3 gap-6">
         {features.map((feature) => (
           <div key={feature.title} className="space-y-2">
@@ -77,19 +79,16 @@ function MidFeatures() {
   )
 }
 
-function MidAbout() {
+function MidAbout({ content }: { content?: Record<string, unknown> }) {
+  const headline = (content?.headline as string) || 'About Our Company'
+  const body =
+    (content?.draftContent as string) ||
+    'Founded in 2020, we have been helping businesses of all sizes build their online presence. Our team of experts combines creativity with technical excellence to deliver results.'
   return (
     <div className="py-10 px-8 grid grid-cols-2 gap-8 items-center">
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground/80">About Our Company</h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Founded in 2020, we have been helping businesses of all sizes build their online presence.
-          Our team of experts combines creativity with technical excellence to deliver results.
-        </p>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          We believe great design is about more than aesthetics. It is about creating experiences
-          that connect with your audience and drive growth.
-        </p>
+        <h2 className="text-lg font-semibold text-foreground/80">{headline}</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
       </div>
       <ImagePlaceholder className="aspect-video" />
     </div>
@@ -282,13 +281,15 @@ function MidFaq() {
   )
 }
 
-function MidCta() {
+function MidCta({ content }: { content?: Record<string, unknown> }) {
+  const headline = (content?.headline as string) || 'Ready to Get Started?'
+  const subheadline =
+    (content?.subheadline as string) ||
+    'Join hundreds of businesses that have already transformed their online presence.'
   return (
     <div className="py-14 px-8 text-center space-y-4">
-      <h2 className="text-xl font-bold text-foreground/80">Ready to Get Started?</h2>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Join hundreds of businesses that have already transformed their online presence.
-      </p>
+      <h2 className="text-xl font-bold text-foreground/80">{headline}</h2>
+      <p className="text-sm text-muted-foreground max-w-md mx-auto">{subheadline}</p>
       <div className="flex justify-center gap-3">
         <ButtonShape width="w-32" />
         <ButtonShape width="w-28" />
@@ -372,17 +373,17 @@ function MidFooter() {
   )
 }
 
-export function MidFidelitySection({ type, className }: MidFidelitySectionProps) {
-  const content = (() => {
+export function MidFidelitySection({ type, className, content }: MidFidelitySectionProps) {
+  const sectionContent = (() => {
     switch (type) {
       case 'navigation':
         return <MidNavigation />
       case 'hero':
-        return <MidHero />
+        return <MidHero content={content} />
       case 'features':
-        return <MidFeatures />
+        return <MidFeatures content={content} />
       case 'about':
-        return <MidAbout />
+        return <MidAbout content={content} />
       case 'testimonials':
         return <MidTestimonials />
       case 'stats':
@@ -396,7 +397,7 @@ export function MidFidelitySection({ type, className }: MidFidelitySectionProps)
       case 'faq':
         return <MidFaq />
       case 'cta':
-        return <MidCta />
+        return <MidCta content={content} />
       case 'contact':
         return <MidContact />
       case 'footer':
@@ -404,15 +405,17 @@ export function MidFidelitySection({ type, className }: MidFidelitySectionProps)
       default:
         return (
           <div className="py-8 px-8">
-            <h2 className="text-lg font-semibold text-foreground/80 mb-2">Section Title</h2>
+            <h2 className="text-lg font-semibold text-foreground/80 mb-2">
+              {(content?.headline as string) || 'Section Title'}
+            </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              This section contains relevant content about your business that will be customized
-              during the design process.
+              {(content?.draftContent as string) ||
+                'This section contains relevant content about your business that will be customized during the design process.'}
             </p>
           </div>
         )
     }
   })()
 
-  return <div className={cn(className)}>{content}</div>
+  return <div className={cn(className)}>{sectionContent}</div>
 }

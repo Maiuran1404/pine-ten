@@ -210,6 +210,7 @@ Server actions return: `{ data: T; error: null } | { data: null; error: string }
 - **NEVER** implement major visual redesigns without user approval of the approach first
 - **NEVER** use bare `fetch` for mutations — always use `csrfFetch()` from `useCsrfContext()`
 - **NEVER** use `db.execute(sql\`...\`)` for queries — always use typed Drizzle query builder (`db.select()`, `db.insert()`, etc.)
+- **NEVER** remove or rename a function, type, or export without first grepping for all references and updating them in the same edit batch — this breaks parallel agents
 
 ## Database
 
@@ -343,6 +344,28 @@ Use these commands automatically in the appropriate context — don't wait for t
 - **Sequential**: schema change → migration → seed, API route → validation schema → test
 - Use subagents to keep the main context window clean — offload research and exploration
 - One task per subagent for focused execution
+
+## Parallel Agent Safety
+
+Multiple agents may be editing the same codebase concurrently. This causes breakage when one agent removes, renames, or refactors code that another agent depends on. Follow these rules strictly:
+
+### Before Editing a File
+
+1. **Re-read any file before editing it** — never rely on a stale read from earlier in the session. Another agent may have modified it since you last read it.
+2. **Check for callers before removing/renaming** — before deleting or renaming any function, type, constant, or export, grep the codebase for all references. If other files use it, update them too or leave the original in place.
+3. **Never remove a function/type/export without updating all references** — this is the #1 source of parallel agent breakage. If you remove `isNavigationOption()` from a file, every file that calls it must be updated in the same edit batch.
+
+### When Refactoring Shared Code
+
+- **Prefer adding over removing** — if you're replacing a function, add the new one alongside the old one first. Only remove the old one after confirming zero remaining references.
+- **Export renames need aliases** — if renaming an export, add `export { newName as oldName }` temporarily until all consumers are updated, or update all consumers in the same commit.
+- **Run typecheck after edits** — always `npm run typecheck` after any refactor that touches exports, function signatures, or shared types. Fix all errors before moving on.
+
+### Commit Discipline with Parallel Agents
+
+- **Never commit code that doesn't typecheck** — if `npm run typecheck` fails, fix it before committing. Another agent may pull your broken state.
+- **Commit frequently** — small, passing commits reduce the window for conflicts.
+- **Pull before editing shared files** — if you know other agents are active, check `git status` and `git diff` for uncommitted changes from other agents before starting edits on the same files.
 
 ## Design Language
 

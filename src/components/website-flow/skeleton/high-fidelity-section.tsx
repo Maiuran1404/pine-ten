@@ -753,17 +753,22 @@ function HighFooter({ globalStyles: s }: { globalStyles?: GlobalStyles }) {
   )
 }
 
-export function HighFidelitySection({ type, globalStyles, className }: HighFidelitySectionProps) {
-  const content = (() => {
+export function HighFidelitySection({
+  type,
+  globalStyles,
+  className,
+  content,
+}: HighFidelitySectionProps) {
+  const sectionContent = (() => {
     switch (type) {
       case 'navigation':
         return <HighNavigation globalStyles={globalStyles} />
       case 'hero':
-        return <HighHero globalStyles={globalStyles} />
+        return <HighHero globalStyles={globalStyles} content={content} />
       case 'features':
-        return <HighFeatures globalStyles={globalStyles} />
+        return <HighFeatures globalStyles={globalStyles} content={content} />
       case 'about':
-        return <HighAbout globalStyles={globalStyles} />
+        return <HighAbout globalStyles={globalStyles} content={content} />
       case 'testimonials':
         return <HighTestimonials globalStyles={globalStyles} />
       case 'stats':
@@ -777,7 +782,7 @@ export function HighFidelitySection({ type, globalStyles, className }: HighFidel
       case 'faq':
         return <HighFaq globalStyles={globalStyles} />
       case 'cta':
-        return <HighCta globalStyles={globalStyles} />
+        return <HighCta globalStyles={globalStyles} content={content} />
       case 'contact':
         return <HighContact globalStyles={globalStyles} />
       case 'footer':
@@ -792,19 +797,19 @@ export function HighFidelitySection({ type, globalStyles, className }: HighFidel
                 fontFamily: globalStyles?.fontPrimary,
               }}
             >
-              Section Title
+              {(content?.headline as string) || 'Section Title'}
             </h2>
             <p
               className="text-xs text-muted-foreground leading-relaxed"
               style={{ fontFamily: globalStyles?.fontSecondary }}
             >
-              This section contains relevant content about your business that will be customized
-              during the design process.
+              {(content?.draftContent as string) ||
+                'This section contains relevant content about your business that will be customized during the design process.'}
             </p>
           </div>
         )
     }
   })()
 
-  return <div className={cn(className)}>{content}</div>
+  return <div className={cn(className)}>{sectionContent}</div>
 }

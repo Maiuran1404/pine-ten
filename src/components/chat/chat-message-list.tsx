@@ -162,6 +162,20 @@ const DEFAULT_LOADING_MESSAGES = [
 // LOADING INDICATOR
 // =============================================================================
 
+const STAGE_LOADING_CONTEXT: Record<string, string> = {
+  EXTRACT: 'Understanding your project',
+  TASK_TYPE: 'Identifying deliverable type',
+  INTENT: 'Clarifying project goals',
+  STRUCTURE: 'Building your layout',
+  INSPIRATION: 'Finding visual references',
+  ELABORATE: 'Adding detail to sections',
+  STRATEGIC_REVIEW: 'Preparing strategic review',
+  MOODBOARD: 'Curating visual direction',
+  REVIEW: 'Preparing summary',
+  DEEPEN: 'Diving deeper',
+  SUBMIT: 'Finalizing brief',
+}
+
 function LoadingIndicator({
   requestStartTime,
   briefingStage,
@@ -231,7 +245,12 @@ function LoadingIndicator({
               }}
             />
           </motion.div>
-          {/* Timer */}
+          {/* Stage context + Timer */}
+          {briefingStage && STAGE_LOADING_CONTEXT[briefingStage] && elapsedTime > 2 && (
+            <span className="text-xs text-muted-foreground/40">
+              {STAGE_LOADING_CONTEXT[briefingStage]}
+            </span>
+          )}
           {elapsedTime > 0 && (
             <span className="text-xs text-muted-foreground/60 tabular-nums">{elapsedTime}s</span>
           )}

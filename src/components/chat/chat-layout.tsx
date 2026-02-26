@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, type MutableRefObject, ReactNode } from 'react'
+import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'

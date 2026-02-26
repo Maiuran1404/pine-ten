@@ -216,9 +216,13 @@ export function SectionBlock({
           section={section}
           globalStyles={globalStyles}
           lowFidelityRenderer={<LowFidelitySection type={section.type} />}
-          midFidelityRenderer={<MidFidelitySection type={section.type} />}
+          midFidelityRenderer={<MidFidelitySection type={section.type} content={section.content} />}
           highFidelityRenderer={
-            <HighFidelitySection type={section.type} globalStyles={globalStyles} />
+            <HighFidelitySection
+              type={section.type}
+              globalStyles={globalStyles}
+              content={section.content}
+            />
           }
         />
       </div>

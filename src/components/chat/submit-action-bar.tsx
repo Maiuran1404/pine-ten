@@ -164,7 +164,7 @@ export function SubmitActionBar({
                       <LoadingSpinner size="sm" />
                     ) : hasEnoughCredits ? (
                       <>
-                        Submit Brief
+                        Submit Brief ({creditsRequired} credits)
                         <ArrowRight className="h-4 w-4" />
                       </>
                     ) : (

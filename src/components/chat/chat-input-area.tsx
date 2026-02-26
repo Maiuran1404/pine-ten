@@ -15,6 +15,7 @@ import {
   Bookmark,
   LayoutGrid,
   Link2,
+  Palette,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -89,6 +90,12 @@ export interface ChatInputAreaProps {
   // Deliverable category (for type detection badge)
   deliverableCategory?: string | null
 
+  // Estimated credit cost for current project type
+  estimatedCredits?: number | null
+
+  // Last draft save timestamp
+  lastSavedAt?: Date | null
+
   // Whether a storyboard exists (for video submission guard)
   hasStoryboard?: boolean
 
@@ -140,6 +147,8 @@ export function ChatInputArea({
   sceneReferences = [],
   onRemoveSceneReference,
   deliverableCategory,
+  estimatedCredits,
+  lastSavedAt,
   hasStoryboard: _hasStoryboard = true,
   handleSend,
   handleFileUpload,
@@ -428,16 +437,39 @@ export function ChatInputArea({
                 )}
               />
               <span className="text-muted-foreground">{userCredits} credits available</span>
+              {estimatedCredits && !EARLY_STAGES.has(briefingStage ?? '') && (
+                <>
+                  <span className="text-muted-foreground/40">&middot;</span>
+                  <span className="text-muted-foreground">
+                    ~{estimatedCredits} credits for this project
+                  </span>
+                </>
+              )}
             </div>
             {/* Deliverable type detection badge */}
             {deliverableCategory &&
               !EARLY_STAGES.has(briefingStage ?? '') &&
               briefingStage !== 'STRUCTURE' && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/50 text-[11px] text-muted-foreground">
-                  <Film className="h-3 w-3" />
+                <div
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/50 text-[11px] text-muted-foreground"
+                  title={`We detected this is a ${deliverableCategory} project \u2014 the brief is tailored accordingly`}
+                >
+                  {deliverableCategory === 'video' ? (
+                    <Film className="h-3 w-3" />
+                  ) : deliverableCategory === 'website' ? (
+                    <LayoutGrid className="h-3 w-3" />
+                  ) : deliverableCategory === 'design' || deliverableCategory === 'brand' ? (
+                    <Palette className="h-3 w-3" />
+                  ) : (
+                    <Film className="h-3 w-3" />
+                  )}
                   <span className="capitalize">{deliverableCategory} detected</span>
                 </div>
               )}
+            {/* Draft save indicator */}
+            {lastSavedAt && (
+              <span className="text-[10px] text-muted-foreground/50">Draft saved</span>
+            )}
             {/* Word count hint - only show when user starts typing */}
             {input.trim().length > 0 &&
               (() => {

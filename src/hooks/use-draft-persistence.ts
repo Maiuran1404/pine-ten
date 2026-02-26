@@ -93,6 +93,7 @@ export function useDraftPersistence({
   const searchParams = useSearchParams()
   const [isInitialized, setIsInitialized] = useState(false)
   const [initialMessageProcessed, setInitialMessageProcessed] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
 
   // Ref to access current messages without creating dependency cycles
   const messagesRef = useRef(messages)
@@ -310,6 +311,7 @@ export function useDraftPersistence({
     }
 
     saveDraft(draft)
+    setLastSavedAt(new Date()) // eslint-disable-line react-hooks/set-state-in-effect -- intentional: updates save indicator UI after draft persistence
     onDraftUpdateRef.current?.()
   }, [
     messages,
@@ -415,6 +417,7 @@ export function useDraftPersistence({
   return {
     isInitialized,
     chatTitle,
+    lastSavedAt,
     handleDeleteChat,
     handleStartOver,
   }

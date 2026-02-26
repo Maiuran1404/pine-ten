@@ -199,6 +199,7 @@ export function ChatInterface({
 
     // Chat title & dialogs
     chatTitle: _chatTitle,
+    lastSavedAt,
     showDeleteDialog,
     setShowDeleteDialog,
     showStartOverDialog,
@@ -581,6 +582,7 @@ export function ChatInterface({
               }
               deliverableCategory={deliverableCategory}
               estimatedCredits={estimatedCredits}
+              lastSavedAt={lastSavedAt}
               hasStoryboard={
                 !!(
                   storyboardScenes &&
