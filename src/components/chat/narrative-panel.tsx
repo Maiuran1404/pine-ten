@@ -199,7 +199,7 @@ export function NarrativePanel({
                   <div className="w-0.5 shrink-0 rounded-full bg-crafted-green/40" />
                   <div className="flex-1 space-y-2">
                     <textarea
-                      className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-amber-500/30 focus:border-amber-500/50 min-h-[2.5rem]"
+                      className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/30 focus:border-crafted-green/50 min-h-[2.5rem]"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
