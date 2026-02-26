@@ -436,12 +436,11 @@ If you have an open question about the primary action or audience, ask it before
 
 Generate a story narrative with these fields:
 - concept: One-line creative concept (what is the video about, in a nutshell)
-- narrative: 2-3 sentences covering the story arc, who it's for, and the emotional journey (beginning → middle → end, audience, tone, key message — all in one concise paragraph)
+- narrative: 2-3 sentences covering the story arc, who it's for, and the emotional journey. IMPORTANT: Wrap key phrases in <<double angle brackets>> to highlight them inline (e.g. audience, metrics, emotions, format). Use 3-5 highlights maximum.
 - hook: The opening hook that grabs attention in the first 3 seconds
-- tags: 4-6 short labels highlighting key facets of the video (e.g. "audience: CTOs", "tone: confident", "emotion: frustration → confidence", "format: 30s explainer", "style: cinematic", "CTA: book a demo")
 
 You MUST output the narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE]. Without this marker the UI cannot render the narrative panel.
-Example: [VIDEO_NARRATIVE]{"concept":"Transform data chaos into clarity","narrative":"Open on the pain of manual reporting that marketing directors know too well, then reveal the product as the turning point — real-time insights that replace guesswork. Close on a team celebrating confident decisions, moving from frustration to relief to confidence.","hook":"73% of marketing budgets are wasted on bad data — here's how to fix that in 30 seconds","tags":["audience: marketing directors","tone: confident & direct","emotion: frustration → confidence","format: 30s product demo","CTA: book a demo"]}[/VIDEO_NARRATIVE]
+Example: [VIDEO_NARRATIVE]{"concept":"Transform data chaos into clarity","narrative":"Open on the pain of manual reporting that <<marketing directors>> know too well, then reveal the product as the turning point — <<real-time insights>> that replace guesswork. Close on a team celebrating confident decisions, moving from <<frustration to confidence>>.","hook":"<<73% of marketing budgets>> are wasted on bad data — here's how to fix that in 30 seconds"}[/VIDEO_NARRATIVE]
 
 OUTPUT FORMAT: The [VIDEO_NARRATIVE]{valid JSON}[/VIDEO_NARRATIVE] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas.
 

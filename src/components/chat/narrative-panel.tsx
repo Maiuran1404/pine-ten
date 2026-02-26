@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Film, RefreshCw, Check, Pencil, X } from 'lucide-react'
+import { useState, useCallback, type ReactNode } from 'react'
+import { Film, RefreshCw, Check, Pencil, X, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -21,17 +21,27 @@ interface NarrativePanelProps {
 }
 
 // =============================================================================
-// TAG COLORS — 6-color rotation matching the codebase palette
+// INLINE HIGHLIGHT PARSER
+// Parses <<highlighted phrases>> in text and renders them as inline chips
 // =============================================================================
 
-const TAG_COLORS = [
-  'bg-violet-500/15 text-violet-300 border-violet-500/20',
-  'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
-  'bg-amber-500/15 text-amber-300 border-amber-500/20',
-  'bg-blue-500/15 text-blue-300 border-blue-500/20',
-  'bg-rose-500/15 text-rose-300 border-rose-500/20',
-  'bg-cyan-500/15 text-cyan-300 border-cyan-500/20',
-]
+function renderHighlightedText(text: string): ReactNode[] {
+  const parts = text.split(/(<<[^>]+>>)/)
+  return parts.map((part, i) => {
+    if (part.startsWith('<<') && part.endsWith('>>')) {
+      const inner = part.slice(2, -2)
+      return (
+        <span
+          key={i}
+          className="inline-flex items-center px-1.5 py-0 rounded-md bg-violet-500/10 text-violet-300 text-[0.85em] font-medium mx-0.5"
+        >
+          {inner}
+        </span>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
+}
 
 // =============================================================================
 // COMPONENT
@@ -45,28 +55,29 @@ export function NarrativePanel({
   isRegenerating,
   className,
 }: NarrativePanelProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editConcept, setEditConcept] = useState(narrative.concept)
-  const [editNarrative, setEditNarrative] = useState(narrative.narrative)
-  const [editHook, setEditHook] = useState(narrative.hook)
+  const [editingField, setEditingField] = useState<'concept' | 'narrative' | 'hook' | null>(null)
+  const [editValue, setEditValue] = useState('')
 
-  function startEditing() {
-    setEditConcept(narrative.concept)
-    setEditNarrative(narrative.narrative)
-    setEditHook(narrative.hook)
-    setIsEditing(true)
-  }
+  const startEditing = useCallback(
+    (field: 'concept' | 'narrative' | 'hook') => {
+      // Strip <<markers>> for editing — user sees clean text
+      const raw = narrative[field].replace(/<<|>>/g, '')
+      setEditValue(raw)
+      setEditingField(field)
+    },
+    [narrative]
+  )
 
-  function saveEdits() {
-    if (editConcept !== narrative.concept) onFieldEdit('concept', editConcept)
-    if (editNarrative !== narrative.narrative) onFieldEdit('narrative', editNarrative)
-    if (editHook !== narrative.hook) onFieldEdit('hook', editHook)
-    setIsEditing(false)
-  }
+  const saveEdit = useCallback(() => {
+    if (editingField) {
+      onFieldEdit(editingField, editValue)
+      setEditingField(null)
+    }
+  }, [editingField, editValue, onFieldEdit])
 
-  function cancelEdits() {
-    setIsEditing(false)
-  }
+  const cancelEdit = useCallback(() => {
+    setEditingField(null)
+  }, [])
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -77,11 +88,9 @@ export function NarrativePanel({
             <div className="flex items-center justify-center w-6 h-6 rounded-md bg-violet-500/10 border border-violet-500/20">
               <Film className="h-3.5 w-3.5 text-violet-400" />
             </div>
-            <div>
-              <span className="text-sm font-semibold text-foreground tracking-tight">
-                Video Blueprint
-              </span>
-            </div>
+            <span className="text-sm font-semibold text-foreground tracking-tight">
+              Video Blueprint
+            </span>
           </div>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-mono">
             narrative
@@ -101,99 +110,142 @@ export function NarrativePanel({
               backgroundSize: '20px 20px',
             }}
           >
-            {/* Edit toggle */}
-            <button
-              type="button"
-              className={cn(
-                'absolute top-3 right-3 z-10 p-1.5 rounded-md transition-all',
-                isEditing
-                  ? 'bg-violet-500/20 text-violet-300'
-                  : 'text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-muted/30'
-              )}
-              onClick={() => (isEditing ? cancelEdits() : startEditing())}
-            >
-              {isEditing ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
-            </button>
-
-            <div className="p-5 pr-10 space-y-4">
-              {/* Concept — headline */}
-              {isEditing ? (
-                <input
-                  type="text"
-                  className="w-full bg-transparent text-base font-semibold text-foreground tracking-tight outline-none border-b border-dashed border-violet-500/30 pb-1"
-                  value={editConcept}
-                  onChange={(e) => setEditConcept(e.target.value)}
-                  placeholder="One-line concept..."
-                />
+            <div className="p-5 space-y-4">
+              {/* Concept — headline (click to edit) */}
+              {editingField === 'concept' ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-base font-semibold text-foreground tracking-tight outline-none border border-violet-500/30 focus:border-violet-500/50"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit()
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    autoFocus
+                  />
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={saveEdit}
+                      className="text-[10px] px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="text-[10px] px-2 py-0.5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <h3 className="text-base font-semibold text-foreground tracking-tight leading-snug">
-                  {narrative.concept}
+                <h3
+                  className="text-base font-semibold text-foreground tracking-tight leading-snug cursor-pointer group flex items-start gap-2"
+                  onClick={() => startEditing('concept')}
+                >
+                  <span className="flex-1">{renderHighlightedText(narrative.concept)}</span>
+                  <Pencil className="h-3 w-3 mt-1 shrink-0 text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-colors" />
                 </h3>
               )}
 
-              {/* Narrative — body text */}
-              {isEditing ? (
-                <textarea
-                  className="w-full bg-transparent text-sm text-foreground/80 leading-relaxed resize-none outline-none border-b border-dashed border-violet-500/30 pb-1 min-h-[4rem]"
-                  value={editNarrative}
-                  onChange={(e) => setEditNarrative(e.target.value)}
-                  placeholder="Story arc, audience, emotional journey..."
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm text-foreground/70 leading-relaxed">{narrative.narrative}</p>
-              )}
-
-              {/* Hook — with accent line */}
-              <div className="flex gap-3">
-                <div className="w-0.5 shrink-0 rounded-full bg-amber-500/40" />
-                {isEditing ? (
+              {/* Narrative — body text (click to edit) */}
+              {editingField === 'narrative' ? (
+                <div className="space-y-2">
                   <textarea
-                    className="flex-1 bg-transparent text-sm text-amber-200/80 leading-relaxed resize-none outline-none border-b border-dashed border-amber-500/30 pb-1 min-h-[2rem]"
-                    value={editHook}
-                    onChange={(e) => setEditHook(e.target.value)}
-                    placeholder="Opening hook..."
-                    rows={2}
+                    className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-violet-500/30 focus:border-violet-500/50 min-h-[5rem]"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    rows={4}
+                    autoFocus
                   />
-                ) : (
-                  <p className="text-sm text-foreground/70 leading-relaxed italic">
-                    {narrative.hook ? `"${narrative.hook}"` : ''}
-                  </p>
-                )}
-              </div>
-
-              {/* Tags — chip row */}
-              {narrative.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {narrative.tags.map((tag, i) => (
-                    <span
-                      key={tag}
-                      className={cn(
-                        'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border',
-                        TAG_COLORS[i % TAG_COLORS.length]
-                      )}
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={saveEdit}
+                      className="text-[10px] px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors"
                     >
-                      {tag}
-                    </span>
-                  ))}
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="text-[10px] px-2 py-0.5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* Save bar in edit mode */}
-            {isEditing && (
-              <div className="px-5 py-2.5 border-t border-dashed border-border/40 flex justify-end">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs h-7 gap-1 text-violet-400 hover:text-violet-300"
-                  onClick={saveEdits}
+              ) : (
+                <p
+                  className="text-sm text-foreground/70 leading-relaxed cursor-pointer group flex items-start gap-2"
+                  onClick={() => startEditing('narrative')}
                 >
-                  <Check className="h-3 w-3" />
-                  Save changes
-                </Button>
-              </div>
-            )}
+                  <span className="flex-1">{renderHighlightedText(narrative.narrative)}</span>
+                  <Pencil className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-colors" />
+                </p>
+              )}
+
+              {/* Hook — with accent line (click to edit) */}
+              {editingField === 'hook' ? (
+                <div className="flex gap-3">
+                  <div className="w-0.5 shrink-0 rounded-full bg-amber-500/40" />
+                  <div className="flex-1 space-y-2">
+                    <textarea
+                      className="w-full bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-amber-500/30 focus:border-amber-500/50 min-h-[2.5rem]"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') cancelEdit()
+                      }}
+                      rows={2}
+                      autoFocus
+                    />
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={saveEdit}
+                        className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="text-[10px] px-2 py-0.5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : narrative.hook ? (
+                <div
+                  className="flex gap-3 cursor-pointer group"
+                  onClick={() => startEditing('hook')}
+                >
+                  <div className="w-0.5 shrink-0 rounded-full bg-amber-500/40" />
+                  <p className="flex-1 text-sm text-foreground/70 leading-relaxed italic">
+                    &ldquo;{renderHighlightedText(narrative.hook)}&rdquo;
+                  </p>
+                  <Pencil className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-colors" />
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Refine hint */}
+          <div className="flex items-center gap-1.5 mt-3 px-1">
+            <Sparkles className="h-3 w-3 text-muted-foreground/30" />
+            <span className="text-[10px] text-muted-foreground/40">
+              Click to edit directly, or chat to refine with AI
+            </span>
           </div>
         </div>
       </ScrollArea>
