@@ -45,38 +45,38 @@ const statusConfig: Record<
   { color: string; bgColor: string; label: string; icon: React.ReactNode }
 > = {
   ASSIGNED: {
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-ds-info',
+    bgColor: 'bg-ds-info/10 border-ds-info/30',
     label: 'Assigned',
     icon: <User className="h-3 w-3" />,
   },
   IN_PROGRESS: {
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-ds-status-review',
+    bgColor: 'bg-ds-status-review/10 border-ds-status-review/30',
     label: 'In Progress',
     icon: <RefreshCw className="h-3 w-3" />,
   },
   PENDING_ADMIN_REVIEW: {
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-ds-warning',
+    bgColor: 'bg-ds-warning/10 border-ds-warning/30',
     label: 'Under Review',
     icon: <Clock className="h-3 w-3" />,
   },
   IN_REVIEW: {
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-ds-warning',
+    bgColor: 'bg-ds-warning/10 border-ds-warning/30',
     label: 'Client Review',
     icon: <Eye className="h-3 w-3" />,
   },
   REVISION_REQUESTED: {
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-ds-error',
+    bgColor: 'bg-ds-error/10 border-ds-error/30',
     label: 'Revision',
     icon: <AlertTriangle className="h-3 w-3" />,
   },
   COMPLETED: {
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 border-green-200',
+    color: 'text-ds-success',
+    bgColor: 'bg-ds-success/10 border-ds-success/30',
     label: 'Completed',
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
@@ -172,7 +172,7 @@ export function FreelancerTasksContent() {
         <div
           className={cn(
             'flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group',
-            isRevision && 'bg-red-50/50 dark:bg-red-900/5'
+            isRevision && 'bg-ds-error/5'
           )}
         >
           {/* Status dot */}
@@ -180,15 +180,15 @@ export function FreelancerTasksContent() {
             className={cn(
               'w-2.5 h-2.5 rounded-full shrink-0',
               task.status === 'ASSIGNED'
-                ? 'bg-blue-500'
+                ? 'bg-ds-info'
                 : task.status === 'IN_PROGRESS'
-                  ? 'bg-purple-500'
+                  ? 'bg-ds-status-review'
                   : task.status === 'REVISION_REQUESTED'
-                    ? 'bg-red-500 animate-pulse'
+                    ? 'bg-ds-error animate-pulse'
                     : task.status === 'IN_REVIEW' || task.status === 'PENDING_ADMIN_REVIEW'
-                      ? 'bg-orange-500'
+                      ? 'bg-ds-warning'
                       : task.status === 'COMPLETED'
-                        ? 'bg-green-500'
+                        ? 'bg-ds-success'
                         : 'bg-muted-foreground'
             )}
           />
@@ -200,7 +200,7 @@ export function FreelancerTasksContent() {
                 {task.title}
               </h3>
               {isRevision && (
-                <span className="text-xs text-red-600 font-medium shrink-0">Action needed</span>
+                <span className="text-xs text-ds-error font-medium shrink-0">Action needed</span>
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate mt-0.5">{task.description}</p>
@@ -341,18 +341,16 @@ export function FreelancerTasksContent() {
           <div className="space-y-2 mb-4">
             {newAssignments.map((task) => (
               <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-                <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
-                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+                <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-ds-success/50 bg-ds-success/5 hover:border-ds-success transition-colors cursor-pointer">
+                  <Sparkles className="h-4 w-4 text-ds-success shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                      New:{' '}
-                    </span>
+                    <span className="text-sm font-medium text-ds-success">New: </span>
                     <span className="text-sm text-foreground">{task.title}</span>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 shrink-0"
+                    className="text-ds-success hover:text-ds-success/80 hover:bg-ds-success/10 shrink-0"
                   >
                     Start Working
                   </Button>

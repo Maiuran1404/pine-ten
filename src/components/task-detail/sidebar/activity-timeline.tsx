@@ -20,19 +20,19 @@ interface ActivityTimelineProps {
 }
 
 const ACTION_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
-  created: { icon: Circle, color: 'text-gray-500 bg-gray-100' },
-  assigned: { icon: User, color: 'text-blue-500 bg-blue-100' },
-  started: { icon: Play, color: 'text-purple-500 bg-purple-100' },
-  submitted: { icon: Eye, color: 'text-orange-500 bg-orange-100' },
-  revision_requested: { icon: RotateCcw, color: 'text-amber-500 bg-amber-100' },
-  completed: { icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-100' },
+  created: { icon: Circle, color: 'text-muted-foreground bg-muted' },
+  assigned: { icon: User, color: 'text-ds-info bg-ds-info/10' },
+  started: { icon: Play, color: 'text-ds-status-review bg-ds-status-review/10' },
+  submitted: { icon: Eye, color: 'text-ds-status-revision bg-ds-status-revision/10' },
+  revision_requested: { icon: RotateCcw, color: 'text-ds-warning bg-ds-warning/10' },
+  completed: { icon: CheckCircle2, color: 'text-ds-success bg-ds-success/10' },
 }
 
 function getActionConfig(action: string) {
   return (
     ACTION_ICONS[action] ?? {
       icon: Circle,
-      color: 'text-gray-500 bg-gray-100',
+      color: 'text-muted-foreground bg-muted',
     }
   )
 }

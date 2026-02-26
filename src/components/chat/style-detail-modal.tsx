@@ -65,13 +65,13 @@ export function StyleDetailModal({
           {/* Badges overlay */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-2">
             {isTopMatch && (
-              <Badge className="text-xs bg-amber-500 hover:bg-amber-500 text-white border-0">
+              <Badge className="text-xs bg-ds-warning hover:bg-ds-warning text-white border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 Best match
               </Badge>
             )}
             {isInCollection && (
-              <Badge className="text-xs bg-green-500 hover:bg-green-500 text-white border-0">
+              <Badge className="text-xs bg-ds-success hover:bg-ds-success text-white border-0">
                 <Check className="w-3 h-3 mr-1" />
                 In collection
               </Badge>
@@ -99,9 +99,9 @@ export function StyleDetailModal({
 
           {/* Brand match reason */}
           {style.matchReason && isGoodMatch && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700 dark:text-amber-300">{style.matchReason}</p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-ds-warning/10 border border-ds-warning/30">
+              <Sparkles className="w-4 h-4 text-ds-warning shrink-0 mt-0.5" />
+              <p className="text-sm text-ds-warning">{style.matchReason}</p>
             </div>
           )}
 

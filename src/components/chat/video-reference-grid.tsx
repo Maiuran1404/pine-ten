@@ -238,7 +238,7 @@ function VideoCard({
 
         {/* Best match badge */}
         {isBestMatch && (
-          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 bg-emerald-600 rounded-full text-[10px] text-white font-medium">
+          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 bg-crafted-green rounded-full text-[10px] text-white font-medium">
             <Sparkles className="w-2.5 h-2.5" />
             Best match
           </div>

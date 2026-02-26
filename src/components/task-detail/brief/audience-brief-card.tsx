@@ -37,7 +37,7 @@ export function AudienceBriefCard({ audience }: AudienceBriefCardProps) {
                 <Badge
                   key={point}
                   variant="outline"
-                  className="border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-400"
+                  className="border-ds-error/30 bg-ds-error/10 text-ds-error"
                 >
                   {point}
                 </Badge>
@@ -56,7 +56,7 @@ export function AudienceBriefCard({ audience }: AudienceBriefCardProps) {
                 <Badge
                   key={goal}
                   variant="outline"
-                  className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"
+                  className="border-ds-success/30 bg-ds-success/10 text-ds-success"
                 >
                   {goal}
                 </Badge>

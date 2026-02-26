@@ -89,7 +89,7 @@ interface InfiniteGridProps {
  */
 const hexToRgba = (hex: string, opacity: number): string => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!result) return `rgba(154, 164, 140, ${opacity})` // fallback to sage green
+  if (!result) return `rgba(154, 164, 140, ${opacity})` /* fallback: --crafted-olive (#9AA48C) */
   const r = parseInt(result[1], 16)
   const g = parseInt(result[2], 16)
   const b = parseInt(result[3], 16)
@@ -118,8 +118,12 @@ export const InfiniteGrid = ({
   sphereBlur: _sphereBlur = 150,
   sphereSizeMultiplier: _sphereSizeMultiplier = 1,
 }: InfiniteGridProps) => {
-  // Default colors: Sahara, Green sage, Sea light
-  const defaultColors: [string, string, string] = ['#EDBA8D', '#9AA48C', '#D2ECF2']
+  // Default decorative sphere colors — hex required for hexToRgba() parsing
+  const defaultColors: [string, string, string] = [
+    '#EDBA8D' /* decorative Sahara accent */,
+    '#9AA48C' /* --crafted-olive */,
+    '#D2ECF2' /* decorative Sea light accent */,
+  ]
   const colors = sphereColors || defaultColors
   const containerRef = useRef<HTMLDivElement>(null)
   const patternId = useId()

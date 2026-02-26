@@ -298,7 +298,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
 
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold">
-                      Portfolio Links <span className="text-red-500">*</span>
+                      Portfolio Links <span className="text-destructive">*</span>
                     </Label>
                     <Textarea
                       placeholder="Behance, Dribbble, or personal website URLs (comma-separated)"
@@ -368,7 +368,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                     <p className="text-muted-foreground">
                       Select the tools you use and your areas of expertise.
                     </p>
-                    <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                    <p className="text-sm text-ds-warning font-medium">
                       This is important for what projects you will receive.
                     </p>
                   </div>
@@ -508,7 +508,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold">
-                        WhatsApp Number <span className="text-red-500">*</span>
+                        WhatsApp Number <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         type="tel"
@@ -739,7 +739,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                   <div
                     className="h-20 relative"
                     style={{
-                      background: 'linear-gradient(135deg, #14b8a6, #3b82f6)',
+                      background: 'var(--crafted-gradient)',
                     }}
                   >
                     <div className="absolute inset-0 bg-black/10" />
@@ -915,7 +915,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div
                         className={cn(
                           'w-8 h-8 rounded-lg flex items-center justify-center',
-                          formData.bio ? 'bg-green-500' : 'bg-muted'
+                          formData.bio ? 'bg-ds-success' : 'bg-muted'
                         )}
                       >
                         {formData.bio ? (
@@ -937,7 +937,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div
                         className={cn(
                           'w-8 h-8 rounded-lg flex items-center justify-center',
-                          formData.skills.length > 0 ? 'bg-green-500' : 'bg-muted'
+                          formData.skills.length > 0 ? 'bg-ds-success' : 'bg-muted'
                         )}
                       >
                         {formData.skills.length > 0 ? (
@@ -961,7 +961,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div
                         className={cn(
                           'w-8 h-8 rounded-lg flex items-center justify-center',
-                          formData.whatsappNumber ? 'bg-green-500' : 'bg-muted'
+                          formData.whatsappNumber ? 'bg-ds-success' : 'bg-muted'
                         )}
                       >
                         {formData.whatsappNumber ? (
@@ -983,7 +983,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div
                         className={cn(
                           'w-8 h-8 rounded-lg flex items-center justify-center',
-                          formData.portfolioUrls ? 'bg-green-500' : 'bg-muted'
+                          formData.portfolioUrls ? 'bg-ds-success' : 'bg-muted'
                         )}
                       >
                         {formData.portfolioUrls ? (
@@ -1005,7 +1005,7 @@ export function FreelancerOnboarding({ onComplete }: FreelancerOnboardingProps) 
                       <div
                         className={cn(
                           'w-8 h-8 rounded-lg flex items-center justify-center',
-                          formData.timezone ? 'bg-green-500' : 'bg-muted'
+                          formData.timezone ? 'bg-ds-success' : 'bg-muted'
                         )}
                       >
                         {formData.timezone ? (

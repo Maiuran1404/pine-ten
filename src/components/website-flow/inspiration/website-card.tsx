@@ -39,7 +39,7 @@ export function WebsiteCard({
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-medium text-foreground truncate">{name}</h4>
           {selected && (
-            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-ds-success flex items-center justify-center">
               <Check className="w-3 h-3 text-white" />
             </div>
           )}
@@ -49,7 +49,7 @@ export function WebsiteCard({
             {industry.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                className="text-[10px] px-1.5 py-0.5 rounded-full bg-ds-info/10 text-ds-info"
               >
                 {tag}
               </span>
@@ -57,7 +57,7 @@ export function WebsiteCard({
             {styleTags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                className="text-[10px] px-1.5 py-0.5 rounded-full bg-ds-status-review/10 text-ds-status-review"
               >
                 {tag}
               </span>

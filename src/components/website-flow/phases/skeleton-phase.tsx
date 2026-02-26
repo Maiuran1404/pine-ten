@@ -120,7 +120,7 @@ export function SkeletonPhase({
           <Button
             onClick={onAdvance}
             disabled={isAdvancing}
-            className="w-full bg-green-600 hover:bg-green-700 text-white h-11"
+            className="w-full bg-crafted-green hover:bg-crafted-forest text-white h-11"
           >
             Review & Approve
             <ArrowRight className="w-4 h-4 ml-2" />

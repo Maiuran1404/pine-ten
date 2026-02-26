@@ -188,27 +188,27 @@ export default function NotificationsPage() {
       <Card className="p-4">
         <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-blue-500" />
+            <Mail className="h-4 w-4 text-ds-info" />
             <span className="text-muted-foreground">Email</span>
           </div>
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-green-500" />
+            <MessageCircle className="h-4 w-4 text-ds-success" />
             <span className="text-muted-foreground">WhatsApp</span>
           </div>
           <div className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-purple-500" />
+            <Smartphone className="h-4 w-4 text-ds-status-review" />
             <span className="text-muted-foreground">In-App</span>
           </div>
           <div className="border-l border-border pl-6 flex items-center gap-2">
-            <Users className="h-4 w-4 text-amber-500" />
+            <Users className="h-4 w-4 text-ds-warning" />
             <span className="text-muted-foreground">Client</span>
           </div>
           <div className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-cyan-500" />
+            <Briefcase className="h-4 w-4 text-ds-accent" />
             <span className="text-muted-foreground">Freelancer</span>
           </div>
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-red-500" />
+            <Shield className="h-4 w-4 text-ds-error" />
             <span className="text-muted-foreground">Admin</span>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function NotificationsPage() {
                   <Mail
                     className={cn(
                       'h-4 w-4',
-                      setting.emailEnabled ? 'text-blue-500' : 'text-muted-foreground/40'
+                      setting.emailEnabled ? 'text-ds-info' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">Email</span>
@@ -269,7 +269,7 @@ export default function NotificationsPage() {
                   <MessageCircle
                     className={cn(
                       'h-4 w-4',
-                      setting.whatsappEnabled ? 'text-green-500' : 'text-muted-foreground/40'
+                      setting.whatsappEnabled ? 'text-ds-success' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">WhatsApp</span>
@@ -286,7 +286,7 @@ export default function NotificationsPage() {
                   <Smartphone
                     className={cn(
                       'h-4 w-4',
-                      setting.inAppEnabled ? 'text-purple-500' : 'text-muted-foreground/40'
+                      setting.inAppEnabled ? 'text-ds-status-review' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">In-App</span>
@@ -304,7 +304,7 @@ export default function NotificationsPage() {
                   <Users
                     className={cn(
                       'h-4 w-4',
-                      setting.notifyClient ? 'text-amber-500' : 'text-muted-foreground/40'
+                      setting.notifyClient ? 'text-ds-warning' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">Client</span>
@@ -321,7 +321,7 @@ export default function NotificationsPage() {
                   <Briefcase
                     className={cn(
                       'h-4 w-4',
-                      setting.notifyFreelancer ? 'text-cyan-500' : 'text-muted-foreground/40'
+                      setting.notifyFreelancer ? 'text-ds-accent' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">Freelancer</span>
@@ -338,7 +338,7 @@ export default function NotificationsPage() {
                   <Shield
                     className={cn(
                       'h-4 w-4',
-                      setting.notifyAdmin ? 'text-red-500' : 'text-muted-foreground/40'
+                      setting.notifyAdmin ? 'text-ds-error' : 'text-muted-foreground/40'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">Admin</span>
@@ -381,7 +381,7 @@ export default function NotificationsPage() {
             {/* Email Subject */}
             <div className="space-y-2">
               <Label htmlFor="emailSubject" className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-blue-500" />
+                <Mail className="h-4 w-4 text-ds-info" />
                 Email Subject
               </Label>
               <Input
@@ -395,7 +395,7 @@ export default function NotificationsPage() {
             {/* Email Template */}
             <div className="space-y-2">
               <Label htmlFor="emailTemplate" className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-blue-500" />
+                <Mail className="h-4 w-4 text-ds-info" />
                 Email Template (HTML)
               </Label>
               <Textarea
@@ -411,7 +411,7 @@ export default function NotificationsPage() {
             {/* WhatsApp Template */}
             <div className="space-y-2">
               <Label htmlFor="whatsappTemplate" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-green-500" />
+                <MessageCircle className="h-4 w-4 text-ds-success" />
                 WhatsApp Template (Plain Text)
               </Label>
               <Textarea

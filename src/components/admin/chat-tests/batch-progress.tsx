@@ -36,33 +36,33 @@ const STAGE_LABELS: Record<string, string> = {
 function statusConfig(status: string, reachedReview: boolean) {
   if (status === 'completed' && reachedReview) {
     return {
-      icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />,
-      ringColor: 'ring-emerald-500/20',
-      bgColor: 'bg-emerald-50',
+      icon: <CheckCircle2 className="h-3.5 w-3.5 text-ds-success" />,
+      ringColor: 'ring-ds-success/20',
+      bgColor: 'bg-ds-success/10',
       label: 'Passed',
     }
   }
   if (status === 'completed' && !reachedReview) {
     return {
-      icon: <AlertCircle className="h-3.5 w-3.5 text-amber-500" />,
-      ringColor: 'ring-amber-500/20',
-      bgColor: 'bg-amber-50',
+      icon: <AlertCircle className="h-3.5 w-3.5 text-ds-warning" />,
+      ringColor: 'ring-ds-warning/20',
+      bgColor: 'bg-ds-warning/10',
       label: 'Completed (no review)',
     }
   }
   if (status === 'running') {
     return {
-      icon: <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />,
-      ringColor: 'ring-blue-500/20',
-      bgColor: 'bg-blue-50',
+      icon: <Loader2 className="h-3.5 w-3.5 text-ds-info animate-spin" />,
+      ringColor: 'ring-ds-info/20',
+      bgColor: 'bg-ds-info/10',
       label: 'Running',
     }
   }
   if (status === 'failed') {
     return {
-      icon: <XCircle className="h-3.5 w-3.5 text-red-500" />,
-      ringColor: 'ring-red-500/20',
-      bgColor: 'bg-red-50',
+      icon: <XCircle className="h-3.5 w-3.5 text-ds-error" />,
+      ringColor: 'ring-ds-error/20',
+      bgColor: 'bg-ds-error/10',
       label: 'Failed',
     }
   }
@@ -84,7 +84,7 @@ export function BatchProgress({ runs, className, onRunClick }: BatchProgressProp
   const isDone = completed === total
 
   return (
-    <Card className={cn(isDone ? '' : 'border-blue-200', className)}>
+    <Card className={cn(isDone ? '' : 'border-ds-info/30', className)}>
       <CardContent className="pt-5 pb-4 px-5">
         <div className="space-y-4">
           {/* Header row */}
@@ -95,19 +95,19 @@ export function BatchProgress({ runs, className, onRunClick }: BatchProgressProp
                 {isDone ? (
                   <>
                     {passed} of {total} passed
-                    {failed > 0 && <span className="text-red-500 ml-1">({failed} failed)</span>}
+                    {failed > 0 && <span className="text-ds-error ml-1">({failed} failed)</span>}
                   </>
                 ) : (
                   <>
                     {completed} of {total} complete
-                    {running > 0 && <span className="text-blue-500 ml-1">({running} running)</span>}
+                    {running > 0 && <span className="text-ds-info ml-1">({running} running)</span>}
                   </>
                 )}
               </p>
             </div>
             <Badge
               variant={isDone ? (failed === 0 ? 'default' : 'secondary') : 'secondary'}
-              className={cn(!isDone && 'bg-blue-100 text-blue-700 border-blue-200')}
+              className={cn(!isDone && 'bg-ds-info/10 text-ds-info border-ds-info/30')}
             >
               {isDone
                 ? failed === 0

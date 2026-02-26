@@ -125,10 +125,10 @@ function MatrixCell({
   onClick: () => void
 }) {
   const getColor = (count: number) => {
-    if (count === 0) return 'bg-red-500/20 border-red-500/30 hover:bg-red-500/30'
-    if (count <= 2) return 'bg-yellow-500/20 border-yellow-500/30 hover:bg-yellow-500/30'
-    if (count <= 5) return 'bg-green-500/20 border-green-500/30 hover:bg-green-500/30'
-    return 'bg-green-500/40 border-green-500/50 hover:bg-green-500/50'
+    if (count === 0) return 'bg-ds-error/20 border-ds-error/30 hover:bg-ds-error/30'
+    if (count <= 2) return 'bg-ds-warning/20 border-ds-warning/30 hover:bg-ds-warning/30'
+    if (count <= 5) return 'bg-ds-success/20 border-ds-success/30 hover:bg-ds-success/30'
+    return 'bg-ds-success/40 border-ds-success/50 hover:bg-ds-success/50'
   }
 
   return (
@@ -686,9 +686,9 @@ export default function DeliverableStylesPage() {
 
           {/* Missing Colors Detail */}
           {!isLoading && stats.missingColors > 0 && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
+            <Card className="border-ds-warning/30 bg-ds-warning/5">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <CardTitle className="flex items-center gap-2 text-ds-warning">
                   <Palette className="h-5 w-5" />
                   Color Data Missing
                 </CardTitle>
@@ -702,12 +702,12 @@ export default function DeliverableStylesPage() {
                   {Object.entries(stats.missingColorsByType).map(([typeValue, count]) => (
                     <div
                       key={typeValue}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-background border border-amber-500/20"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-background border border-ds-warning/20"
                     >
                       <span className="text-sm font-medium">
                         {getDeliverableTypeLabel(typeValue)}
                       </span>
-                      <Badge variant="outline" className="text-amber-600 border-amber-500/30">
+                      <Badge variant="outline" className="text-ds-warning border-ds-warning/30">
                         {count} missing
                       </Badge>
                     </div>
@@ -791,19 +791,19 @@ export default function DeliverableStylesPage() {
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-6 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-red-500/20 border border-red-500/30" />
+                      <div className="w-4 h-4 rounded bg-ds-error/20 border border-ds-error/30" />
                       <span className="text-muted-foreground">Empty</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500/30" />
+                      <div className="w-4 h-4 rounded bg-ds-warning/20 border border-ds-warning/30" />
                       <span className="text-muted-foreground">1-2</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-green-500/20 border border-green-500/30" />
+                      <div className="w-4 h-4 rounded bg-ds-success/20 border border-ds-success/30" />
                       <span className="text-muted-foreground">3-5</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-green-500/40 border border-green-500/50" />
+                      <div className="w-4 h-4 rounded bg-ds-success/40 border border-ds-success/50" />
                       <span className="text-muted-foreground">6+</span>
                     </div>
                   </div>
@@ -1036,7 +1036,7 @@ export default function DeliverableStylesPage() {
                                     <div className="absolute top-2 left-2">
                                       <Badge
                                         variant="outline"
-                                        className="bg-amber-500/90 text-white border-0 text-[10px]"
+                                        className="bg-ds-warning/90 text-white border-0 text-[10px]"
                                       >
                                         No colors
                                       </Badge>
@@ -1082,7 +1082,7 @@ export default function DeliverableStylesPage() {
                                       {togglingId === style.id ? (
                                         <LoadingSpinner size="sm" />
                                       ) : style.isActive ? (
-                                        <ToggleRight className="h-3.5 w-3.5 text-green-500" />
+                                        <ToggleRight className="h-3.5 w-3.5 text-ds-success" />
                                       ) : (
                                         <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />
                                       )}

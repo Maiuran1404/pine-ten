@@ -264,17 +264,17 @@ function computeStageHeatmap(runs: Run[]): StageHeatRow[] {
 
 function heatColor(turns: number): string {
   if (turns === 0) return 'bg-muted/30'
-  if (turns === 1) return 'bg-emerald-200'
-  if (turns === 2) return 'bg-emerald-400'
-  if (turns === 3) return 'bg-amber-300'
-  if (turns <= 5) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (turns === 1) return 'bg-ds-success/30'
+  if (turns === 2) return 'bg-ds-success/60'
+  if (turns === 3) return 'bg-ds-warning/50'
+  if (turns <= 5) return 'bg-ds-warning'
+  return 'bg-ds-error'
 }
 
 function heatTextColor(turns: number): string {
   if (turns === 0) return 'text-muted-foreground/40'
-  if (turns <= 2) return 'text-emerald-900'
-  if (turns <= 3) return 'text-amber-900'
+  if (turns <= 2) return 'text-foreground'
+  if (turns <= 3) return 'text-foreground'
   return 'text-white'
 }
 
@@ -577,7 +577,7 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center gap-1.5 mb-2">
-          <XCircle className="h-3.5 w-3.5 text-red-500" />
+          <XCircle className="h-3.5 w-3.5 text-ds-error" />
           <span className="text-xs font-medium">Where Runs Failed</span>
         </div>
         <div className="space-y-2">
@@ -585,7 +585,7 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
             <div key={stage}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium">{STAGE_LABELS[stage] ?? stage}</span>
-                <span className="text-[10px] text-red-500 font-medium">
+                <span className="text-[10px] text-ds-error font-medium">
                   {stageRuns.length} run{stageRuns.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -595,7 +595,7 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
                   return (
                     <div
                       key={run.id}
-                      className="text-[11px] bg-red-50 border border-red-100 rounded px-2 py-1.5 space-y-0.5"
+                      className="text-[11px] bg-ds-error/5 border border-ds-error/20 rounded px-2 py-1.5 space-y-0.5"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium truncate">{run.scenarioName}</span>
@@ -604,7 +604,7 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
                         </span>
                       </div>
                       {stalls.length > 0 && (
-                        <p className="text-amber-600">
+                        <p className="text-ds-warning">
                           Stalled:{' '}
                           {stalls
                             .map((s) => `${STAGE_LABELS[s.stage] ?? s.stage} (${s.turns}t)`)
@@ -612,7 +612,7 @@ function FailureBreakdown({ runs }: { runs: Run[] }) {
                         </p>
                       )}
                       {run.errorMessage && (
-                        <p className="text-red-500 truncate">{run.errorMessage}</p>
+                        <p className="text-ds-error truncate">{run.errorMessage}</p>
                       )}
                     </div>
                   )
@@ -649,21 +649,21 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-amber-500" />
+            <Zap className="h-3.5 w-3.5 text-ds-warning" />
             <span className="text-xs font-medium">Turn Heatmap</span>
           </div>
           <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
             <span className="flex items-center gap-0.5">
-              <span className="h-1.5 w-1.5 rounded-sm bg-emerald-200" /> 1-2
+              <span className="h-1.5 w-1.5 rounded-sm bg-ds-success/30" /> 1-2
             </span>
             <span className="flex items-center gap-0.5">
-              <span className="h-1.5 w-1.5 rounded-sm bg-amber-300" /> 3
+              <span className="h-1.5 w-1.5 rounded-sm bg-ds-warning/50" /> 3
             </span>
             <span className="flex items-center gap-0.5">
-              <span className="h-1.5 w-1.5 rounded-sm bg-amber-500" /> 4-5
+              <span className="h-1.5 w-1.5 rounded-sm bg-ds-warning" /> 4-5
             </span>
             <span className="flex items-center gap-0.5">
-              <span className="h-1.5 w-1.5 rounded-sm bg-red-500" /> 6+
+              <span className="h-1.5 w-1.5 rounded-sm bg-ds-error" /> 6+
             </span>
           </div>
         </div>
@@ -694,7 +694,7 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
                     <span
                       className={cn(
                         'h-1.5 w-1.5 rounded-full shrink-0',
-                        row.passed ? 'bg-emerald-500' : 'bg-red-500'
+                        row.passed ? 'bg-ds-success' : 'bg-ds-error'
                       )}
                     />
                     <span className="truncate" title={row.scenarioName}>
@@ -708,10 +708,10 @@ function StageHeatmap({ runs }: { runs: Run[] }) {
                       className={cn(
                         'font-semibold',
                         row.compositeScore >= 75
-                          ? 'text-emerald-600'
+                          ? 'text-ds-success'
                           : row.compositeScore >= 50
-                            ? 'text-amber-600'
-                            : 'text-red-600'
+                            ? 'text-ds-warning'
+                            : 'text-ds-error'
                       )}
                     >
                       {row.compositeScore}
@@ -751,10 +751,10 @@ function DimensionBreakdown({ runs }: { runs: Run[] }) {
   if (scoredRuns.length === 0) return null
 
   const dimensions = [
-    { key: 'efficiency', label: 'Efficiency', weight: '25%', color: 'bg-blue-500' },
-    { key: 'extraction', label: 'Extraction', weight: '25%', color: 'bg-violet-500' },
-    { key: 'quality', label: 'Quality', weight: '30%', color: 'bg-amber-500' },
-    { key: 'completeness', label: 'Completeness', weight: '20%', color: 'bg-emerald-500' },
+    { key: 'efficiency', label: 'Efficiency', weight: '25%', color: 'bg-ds-info' },
+    { key: 'extraction', label: 'Extraction', weight: '25%', color: 'bg-ds-status-review' },
+    { key: 'quality', label: 'Quality', weight: '30%', color: 'bg-ds-warning' },
+    { key: 'completeness', label: 'Completeness', weight: '20%', color: 'bg-ds-success' },
   ] as const
 
   const averages = dimensions.map((dim) => {
@@ -778,7 +778,7 @@ function DimensionBreakdown({ runs }: { runs: Run[] }) {
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center gap-1.5 mb-3">
-          <BarChart3 className="h-3.5 w-3.5 text-violet-500" />
+          <BarChart3 className="h-3.5 w-3.5 text-ds-status-review" />
           <span className="text-xs font-medium">Scoring Dimensions</span>
           <span className="text-[10px] text-muted-foreground ml-auto">
             {scoredRuns.length} scored run{scoredRuns.length !== 1 ? 's' : ''}
@@ -800,10 +800,10 @@ function DimensionBreakdown({ runs }: { runs: Run[] }) {
                     dim.avg === null
                       ? 'text-muted-foreground'
                       : dim.avg >= 75
-                        ? 'text-emerald-600'
+                        ? 'text-ds-success'
                         : dim.avg >= 50
-                          ? 'text-amber-600'
-                          : 'text-red-600'
+                          ? 'text-ds-warning'
+                          : 'text-ds-error'
                   )}
                 >
                   {dim.avg ?? '-'}
@@ -883,7 +883,7 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
           <Card className="flex-1">
             <CardContent className="p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                <TrendingDown className="h-3.5 w-3.5 text-ds-error" />
                 <span className="text-[10px] font-medium text-muted-foreground">
                   Biggest Drop-off
                 </span>
@@ -893,10 +893,10 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
                   <p className="text-sm font-semibold">
                     {STAGE_LABELS[bottleneck.stage] ?? bottleneck.stage}
                   </p>
-                  <p className="text-[10px] text-red-500">-{bottleneck.dropOff} runs lost</p>
+                  <p className="text-[10px] text-ds-error">-{bottleneck.dropOff} runs lost</p>
                 </div>
               ) : (
-                <p className="text-sm font-semibold text-emerald-600">None</p>
+                <p className="text-sm font-semibold text-ds-success">None</p>
               )}
             </CardContent>
           </Card>
@@ -905,17 +905,17 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
           <Card className="flex-1">
             <CardContent className="p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <Timer className="h-3.5 w-3.5 text-blue-500" />
+                <Timer className="h-3.5 w-3.5 text-ds-info" />
                 <span className="text-[10px] font-medium text-muted-foreground">Avg Turns</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-emerald-600">{avgTurnsPassed}</p>
+                  <p className="text-sm font-semibold text-ds-success">{avgTurnsPassed}</p>
                   <p className="text-[10px] text-muted-foreground">passed</p>
                 </div>
                 <div className="text-muted-foreground/30">|</div>
                 <div>
-                  <p className="text-sm font-semibold text-red-500">{avgTurnsFailed}</p>
+                  <p className="text-sm font-semibold text-ds-error">{avgTurnsFailed}</p>
                   <p className="text-[10px] text-muted-foreground">failed</p>
                 </div>
               </div>
@@ -926,29 +926,31 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
           <Card className="flex-1">
             <CardContent className="p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <MousePointerClick className="h-3.5 w-3.5 text-violet-500" />
+                <MousePointerClick className="h-3.5 w-3.5 text-ds-status-review" />
                 <span className="text-[10px] font-medium text-muted-foreground">Methods</span>
               </div>
               {totalMethods > 0 ? (
                 <div className="space-y-1">
                   <div className="flex h-2 rounded-full overflow-hidden">
-                    {qoPct > 0 && <div className="bg-violet-500" style={{ width: `${qoPct}%` }} />}
-                    {tplPct > 0 && <div className="bg-blue-400" style={{ width: `${tplPct}%` }} />}
+                    {qoPct > 0 && (
+                      <div className="bg-ds-status-review" style={{ width: `${qoPct}%` }} />
+                    )}
+                    {tplPct > 0 && <div className="bg-ds-info" style={{ width: `${tplPct}%` }} />}
                     {haikuPct > 0 && (
-                      <div className="bg-amber-400" style={{ width: `${haikuPct}%` }} />
+                      <div className="bg-ds-warning" style={{ width: `${haikuPct}%` }} />
                     )}
                   </div>
                   <div className="flex gap-2 text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-0.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-ds-status-review" />
                       {qoPct}%
                     </span>
                     <span className="flex items-center gap-0.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-ds-info" />
                       {tplPct}%
                     </span>
                     <span className="flex items-center gap-0.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-ds-warning" />
                       {haikuPct}%
                     </span>
                   </div>
@@ -970,10 +972,10 @@ export function BatchAnalysis({ runs, batchId }: BatchAnalysisProps) {
 
       {/* Stalls Warning */}
       {runs.some((r) => detectStalls(r).length > 0) && (
-        <Card className="border-amber-200">
+        <Card className="border-ds-warning/30">
           <CardContent className="p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <AlertTriangle className="h-3.5 w-3.5 text-ds-warning mt-0.5 shrink-0" />
               <div className="space-y-1">
                 <p className="text-xs font-medium">Stall Warning</p>
                 <div className="space-y-0.5">

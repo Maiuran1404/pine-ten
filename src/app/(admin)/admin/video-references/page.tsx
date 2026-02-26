@@ -875,7 +875,7 @@ https://youtu.be/xyz789
                           {togglingId === video.id ? (
                             <LoadingSpinner size="sm" />
                           ) : video.isActive ? (
-                            <ToggleRight className="h-3.5 w-3.5 text-green-500" />
+                            <ToggleRight className="h-3.5 w-3.5 text-ds-success" />
                           ) : (
                             <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />
                           )}

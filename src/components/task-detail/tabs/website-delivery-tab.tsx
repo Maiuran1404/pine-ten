@@ -77,11 +77,11 @@ function deriveStepStatuses(deliveryStatus: string): {
 function StepStatusIcon({ status }: { status: StepStatus }) {
   switch (status) {
     case 'completed':
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />
+      return <CheckCircle2 className="h-5 w-5 text-ds-success" />
     case 'in_progress':
-      return <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+      return <Loader2 className="h-5 w-5 animate-spin text-ds-info" />
     case 'failed':
-      return <AlertCircle className="h-5 w-5 text-red-600" />
+      return <AlertCircle className="h-5 w-5 text-ds-error" />
     default:
       return null
   }
@@ -226,9 +226,9 @@ export function WebsiteDeliveryTab({ projectId, taskId }: WebsiteDeliveryTabProp
               <Card
                 className={cn(
                   'relative overflow-hidden p-4 transition-colors',
-                  step.status === 'completed' && 'border-green-200 bg-green-50/50',
-                  step.status === 'in_progress' && 'border-blue-200 bg-blue-50/50',
-                  step.status === 'failed' && 'border-red-200 bg-red-50/50'
+                  step.status === 'completed' && 'border-ds-success/30 bg-ds-success/5',
+                  step.status === 'in_progress' && 'border-ds-info/30 bg-ds-info/5',
+                  step.status === 'failed' && 'border-ds-error/30 bg-ds-error/5'
                 )}
               >
                 <div className="flex items-start gap-4">
@@ -237,11 +237,11 @@ export function WebsiteDeliveryTab({ projectId, taskId }: WebsiteDeliveryTabProp
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
                       step.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-ds-success/10 text-ds-success'
                         : step.status === 'in_progress'
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-ds-info/10 text-ds-info'
                           : step.status === 'failed'
-                            ? 'bg-red-100 text-red-700'
+                            ? 'bg-ds-error/10 text-ds-error'
                             : 'bg-muted text-muted-foreground'
                     )}
                   >
@@ -267,7 +267,7 @@ export function WebsiteDeliveryTab({ projectId, taskId }: WebsiteDeliveryTabProp
                         href={step.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-ds-info hover:text-ds-info hover:underline"
                       >
                         <ExternalLink className="h-3 w-3" />
                         {step.urlLabel}
@@ -312,16 +312,16 @@ export function WebsiteDeliveryTab({ projectId, taskId }: WebsiteDeliveryTabProp
 
       {/* Deployed URL Highlight */}
       {project.framerDeployedUrl && stepStatuses.deploy === 'completed' && (
-        <Card className="border-green-200 bg-green-50 p-4">
+        <Card className="border-ds-success/30 bg-ds-success/5 p-4">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <CheckCircle2 className="h-5 w-5 text-ds-success" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-green-800">Website is live!</p>
+              <p className="text-sm font-medium text-ds-success">Website is live!</p>
               <a
                 href={project.framerDeployedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-green-700 hover:underline"
+                className="text-xs text-ds-success/80 hover:underline"
               >
                 {project.framerDeployedUrl}
               </a>

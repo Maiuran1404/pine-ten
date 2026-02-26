@@ -399,7 +399,7 @@ export default function AlgorithmPage() {
         </div>
         <div className="flex items-center gap-3">
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-amber-500 border-amber-500">
+            <Badge variant="outline" className="text-ds-warning border-ds-warning">
               Unsaved Changes
             </Badge>
           )}
@@ -465,7 +465,7 @@ export default function AlgorithmPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
-                <div className="flex items-center gap-2 text-amber-500">
+                <div className="flex items-center gap-2 text-ds-warning">
                   <AlertCircle className="h-5 w-5" />
                   <span>This action cannot be undone easily.</span>
                 </div>
@@ -484,11 +484,11 @@ export default function AlgorithmPage() {
       </div>
 
       {/* Active Configuration Status */}
-      <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20">
+      <Card className="bg-gradient-to-r from-ds-success/10 to-ds-success/10 border-ds-success/20">
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
+              <div className="h-3 w-3 rounded-full bg-ds-success animate-pulse" />
               <span className="font-medium">Active Configuration:</span>
               <span>{activeConfig?.name || 'Default'}</span>
               {activeConfig?.publishedAt && (
@@ -497,7 +497,7 @@ export default function AlgorithmPage() {
                 </span>
               )}
             </div>
-            <Badge variant="outline" className="text-green-500 border-green-500">
+            <Badge variant="outline" className="text-ds-success border-ds-success">
               v{activeConfig?.version || 0}
             </Badge>
           </div>
@@ -516,7 +516,7 @@ export default function AlgorithmPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2 font-medium">
-                <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500">
+                <div className="h-8 w-8 rounded-full bg-ds-info/20 flex items-center justify-center text-ds-info">
                   1
                 </div>
                 Score All Artists
@@ -528,7 +528,7 @@ export default function AlgorithmPage() {
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-2 font-medium">
-                <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500">
+                <div className="h-8 w-8 rounded-full bg-ds-info/20 flex items-center justify-center text-ds-info">
                   2
                 </div>
                 Offer to Best Match
@@ -540,7 +540,7 @@ export default function AlgorithmPage() {
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-2 font-medium">
-                <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500">
+                <div className="h-8 w-8 rounded-full bg-ds-info/20 flex items-center justify-center text-ds-info">
                   3
                 </div>
                 Escalate if Needed
@@ -579,8 +579,8 @@ export default function AlgorithmPage() {
                 <div
                   className={`text-center p-3 rounded-lg ${
                     weightsTotal === 100
-                      ? 'bg-green-500/10 text-green-500'
-                      : 'bg-red-500/10 text-red-500'
+                      ? 'bg-ds-success/10 text-ds-success'
+                      : 'bg-ds-error/10 text-ds-error'
                   }`}
                 >
                   Total: {weightsTotal}%{' '}
@@ -654,11 +654,11 @@ export default function AlgorithmPage() {
                     ][]
                   ).map(([key, value], index) => {
                     const colors = [
-                      'bg-blue-500',
-                      'bg-green-500',
-                      'bg-purple-500',
-                      'bg-orange-500',
-                      'bg-pink-500',
+                      'bg-ds-info',
+                      'bg-ds-success',
+                      'bg-ds-status-review',
+                      'bg-ds-warning',
+                      'bg-ds-accent',
                     ]
                     return (
                       <TooltipProvider key={key}>
@@ -683,11 +683,11 @@ export default function AlgorithmPage() {
                     ][]
                   ).map(([key, _value], index) => {
                     const colors = [
-                      'bg-blue-500',
-                      'bg-green-500',
-                      'bg-purple-500',
-                      'bg-orange-500',
-                      'bg-pink-500',
+                      'bg-ds-info',
+                      'bg-ds-success',
+                      'bg-ds-status-review',
+                      'bg-ds-warning',
+                      'bg-ds-accent',
                     ]
                     return (
                       <div key={key} className="flex items-center gap-1">
@@ -722,10 +722,10 @@ export default function AlgorithmPage() {
                   ][]
                 ).map(([key, value]) => {
                   const urgencyColors = {
-                    critical: 'text-red-500',
-                    urgent: 'text-orange-500',
-                    standard: 'text-blue-500',
-                    flexible: 'text-green-500',
+                    critical: 'text-ds-error',
+                    urgent: 'text-ds-status-revision',
+                    standard: 'text-ds-info',
+                    flexible: 'text-ds-success',
                   }
                   const urgencyDescriptions = {
                     critical: 'Deadline < 4 hours',
@@ -790,7 +790,7 @@ export default function AlgorithmPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h4 className="font-medium">Level 1 - Best Matches</h4>
-                    <div className="space-y-4 pl-4 border-l-2 border-blue-500">
+                    <div className="space-y-4 pl-4 border-l-2 border-ds-info">
                       <div className="space-y-2">
                         <Label>Minimum Skill Score</Label>
                         <div className="flex items-center gap-2">
@@ -837,7 +837,7 @@ export default function AlgorithmPage() {
 
                   <div className="space-y-4">
                     <h4 className="font-medium">Level 2 - Relaxed Matching</h4>
-                    <div className="space-y-4 pl-4 border-l-2 border-orange-500">
+                    <div className="space-y-4 pl-4 border-l-2 border-ds-warning">
                       <div className="space-y-2">
                         <Label>Minimum Skill Score</Label>
                         <div className="flex items-center gap-2">
@@ -902,7 +902,7 @@ export default function AlgorithmPage() {
 
                 <div className="space-y-4">
                   <h4 className="font-medium">Level 3 - Broadcast Mode</h4>
-                  <div className="pl-4 border-l-2 border-red-500">
+                  <div className="pl-4 border-l-2 border-ds-error">
                     <div className="space-y-2">
                       <Label>Broadcast Duration</Label>
                       <div className="flex items-center gap-2">
@@ -970,27 +970,27 @@ export default function AlgorithmPage() {
                       {
                         key: 'peakScore' as const,
                         label: 'Peak Hours (9AM-6PM)',
-                        color: 'text-green-500',
+                        color: 'text-ds-success',
                       },
                       {
                         key: 'eveningScore' as const,
                         label: 'Evening (6PM-9PM)',
-                        color: 'text-blue-500',
+                        color: 'text-ds-info',
                       },
                       {
                         key: 'earlyMorningScore' as const,
                         label: 'Early Morning (7AM-9AM)',
-                        color: 'text-yellow-500',
+                        color: 'text-ds-warning',
                       },
                       {
                         key: 'lateEveningScore' as const,
                         label: 'Late Evening (9PM-11PM)',
-                        color: 'text-orange-500',
+                        color: 'text-ds-status-revision',
                       },
                       {
                         key: 'nightScore' as const,
                         label: 'Night (11PM-7AM)',
-                        color: 'text-red-500',
+                        color: 'text-ds-error',
                       },
                     ].map(({ key, label, color }) => (
                       <div key={key} className="flex items-center justify-between">
@@ -1052,10 +1052,10 @@ export default function AlgorithmPage() {
                               const value = editingConfig.experienceMatrix[complexity][level]
                               const colorClass =
                                 value >= 80
-                                  ? 'bg-green-500/20'
+                                  ? 'bg-ds-success/20'
                                   : value >= 50
-                                    ? 'bg-yellow-500/20'
-                                    : 'bg-red-500/20'
+                                    ? 'bg-ds-warning/20'
+                                    : 'bg-ds-error/20'
                               return (
                                 <td key={level} className="py-3 px-4 text-center">
                                   <Input
@@ -1177,7 +1177,7 @@ export default function AlgorithmPage() {
                           type="checkbox"
                           checked={editingConfig.exclusionRules[key] as boolean}
                           onChange={(e) => updateExclusionRule(key, e.target.checked)}
-                          className="rounded border-gray-300"
+                          className="rounded border-border"
                         />
                         <span className="text-sm">{label}</span>
                       </label>
@@ -1201,7 +1201,7 @@ export default function AlgorithmPage() {
                     <div className="space-y-2">
                       <Label>Category Specialization Bonus</Label>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-500">+</span>
+                        <span className="text-ds-success">+</span>
                         <Input
                           type="number"
                           min={0}
@@ -1224,7 +1224,7 @@ export default function AlgorithmPage() {
                     <div className="space-y-2">
                       <Label>Nice-to-Have Skill Bonus</Label>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-500">+</span>
+                        <span className="text-ds-success">+</span>
                         <Input
                           type="number"
                           min={0}
@@ -1245,7 +1245,7 @@ export default function AlgorithmPage() {
                     <div className="space-y-2">
                       <Label>Favorite Artist Bonus</Label>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-500">+</span>
+                        <span className="text-ds-success">+</span>
                         <Input
                           type="number"
                           min={0}
@@ -1285,7 +1285,7 @@ export default function AlgorithmPage() {
                 <div
                   key={config.id}
                   className={`flex items-center justify-between p-3 rounded-lg border ${
-                    config.isActive ? 'bg-green-500/10 border-green-500/20' : 'hover:bg-muted/50'
+                    config.isActive ? 'bg-ds-success/10 border-ds-success/20' : 'hover:bg-muted/50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1293,7 +1293,7 @@ export default function AlgorithmPage() {
                       v{config.version}
                     </Badge>
                     <span className="font-medium">{config.name}</span>
-                    {config.isActive && <Badge className="bg-green-500">Active</Badge>}
+                    {config.isActive && <Badge className="bg-ds-success">Active</Badge>}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {config.publishedAt

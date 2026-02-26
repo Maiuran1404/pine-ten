@@ -206,7 +206,7 @@ export function CreditPurchaseDialog({
                       {pkg.discount && (
                         <Badge
                           variant="outline"
-                          className="text-xs text-green-600 border-green-600"
+                          className="text-xs text-ds-success border-ds-success"
                         >
                           {pkg.discount}
                         </Badge>

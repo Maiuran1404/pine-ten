@@ -477,9 +477,9 @@ export function TasksContent() {
 
                                 const urgencyColors = {
                                   overdue: 'bg-destructive',
-                                  urgent: 'bg-orange-500',
-                                  warning: 'bg-yellow-500',
-                                  safe: 'bg-green-500',
+                                  urgent: 'bg-ds-warning',
+                                  warning: 'bg-ds-warning',
+                                  safe: 'bg-ds-success',
                                 }
 
                                 return (
@@ -520,7 +520,7 @@ export function TasksContent() {
                                                   className={`h-1.5 ${timeProgress > 100 ? '[&>div]:bg-destructive' : '[&>div]:bg-muted-foreground/50'}`}
                                                 />
                                                 <div
-                                                  className="absolute top-0 h-1.5 w-px bg-orange-500"
+                                                  className="absolute top-0 h-1.5 w-px bg-ds-warning"
                                                   style={{ left: '50%' }}
                                                 />
                                               </div>
@@ -540,14 +540,14 @@ export function TasksContent() {
                                         <div className="flex items-center gap-1.5">
                                           {(urgency === 'overdue' || urgency === 'urgent') && (
                                             <AlertTriangle
-                                              className={`h-3.5 w-3.5 ${urgency === 'overdue' ? 'text-destructive' : 'text-orange-500'}`}
+                                              className={`h-3.5 w-3.5 ${urgency === 'overdue' ? 'text-destructive' : 'text-ds-warning'}`}
                                             />
                                           )}
                                           <Tooltip>
                                             <TooltipTrigger asChild>
                                               <div>
                                                 <span
-                                                  className={`text-sm ${urgency === 'overdue' ? 'text-destructive' : urgency === 'urgent' ? 'text-orange-500' : ''}`}
+                                                  className={`text-sm ${urgency === 'overdue' ? 'text-destructive' : urgency === 'urgent' ? 'text-ds-warning' : ''}`}
                                                 >
                                                   {formatTimeRemaining(
                                                     workingDeadline || task.deadline
@@ -576,7 +576,7 @@ export function TasksContent() {
                                           </Tooltip>
                                         </div>
                                       ) : task.status === 'COMPLETED' ? (
-                                        <span className="text-sm text-green-600">Done</span>
+                                        <span className="text-sm text-ds-success">Done</span>
                                       ) : (
                                         <span className="text-sm text-muted-foreground">-</span>
                                       )}

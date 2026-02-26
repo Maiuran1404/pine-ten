@@ -42,9 +42,7 @@ export function WebsiteFlowLayout({
             mobilePanel === 'right' ? 'flex w-full' : 'hidden md:flex'
           )}
         >
-          <div className="h-full w-full overflow-auto bg-gray-50 dark:bg-zinc-950">
-            {rightPanel}
-          </div>
+          <div className="h-full w-full overflow-auto bg-muted/50">{rightPanel}</div>
         </div>
       </div>
 
@@ -56,7 +54,7 @@ export function WebsiteFlowLayout({
             className={cn(
               'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium transition-colors',
               mobilePanel === 'left'
-                ? 'text-green-600 border-t-2 border-green-500 -mt-px'
+                ? 'text-crafted-green border-t-2 border-crafted-green -mt-px'
                 : 'text-muted-foreground'
             )}
           >
@@ -68,7 +66,7 @@ export function WebsiteFlowLayout({
             className={cn(
               'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium transition-colors',
               mobilePanel === 'right'
-                ? 'text-green-600 border-t-2 border-green-500 -mt-px'
+                ? 'text-crafted-green border-t-2 border-crafted-green -mt-px'
                 : 'text-muted-foreground'
             )}
           >

@@ -50,7 +50,7 @@ export function ComparisonView({ inspirations, onRemove, onUpdateNotes }: Compar
                 value={insp.notes || ''}
                 onChange={(e) => onUpdateNotes(insp.id, e.target.value)}
                 placeholder="What do you like about this site?"
-                className="w-full text-xs p-2 rounded border border-border bg-background resize-none h-16 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full text-xs p-2 rounded border border-border bg-background resize-none h-16 focus:outline-none focus:ring-1 focus:ring-crafted-green"
                 maxLength={500}
               />
               {(insp.notes?.length ?? 0) > 0 && (

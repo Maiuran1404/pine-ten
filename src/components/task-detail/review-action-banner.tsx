@@ -23,12 +23,12 @@ export function ReviewActionBanner({
 }: ReviewActionBannerProps) {
   if (task.status === 'REVISION_REQUESTED') {
     return (
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <div className="rounded-lg border border-ds-warning/30 bg-ds-warning/5 p-4">
         <div className="flex items-center gap-3">
-          <RotateCcw className="size-5 text-amber-600 shrink-0" />
+          <RotateCcw className="size-5 text-ds-warning shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-800">Revision requested</p>
-            <p className="text-sm text-amber-600">Designer is working on it</p>
+            <p className="text-sm font-medium text-ds-warning">Revision requested</p>
+            <p className="text-sm text-ds-warning/80">Designer is working on it</p>
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function ReviewActionBanner({
   const revisionsRemaining = task.maxRevisions - task.revisionsUsed
 
   return (
-    <div className="rounded-lg border border-orange-300 bg-orange-50 p-4">
+    <div className="rounded-lg border border-ds-status-revision/30 bg-ds-status-revision/5 p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-4">
           {/* Deliverable thumbnails */}
@@ -73,18 +73,18 @@ export function ReviewActionBanner({
               </div>
             ))}
             {remainingCount > 0 && (
-              <div className="flex size-12 items-center justify-center rounded-md border-2 border-white bg-orange-100 text-xs font-medium text-orange-700 shadow-sm">
+              <div className="flex size-12 items-center justify-center rounded-md border-2 border-white bg-ds-status-revision/10 text-xs font-medium text-ds-status-revision shadow-sm">
                 +{remainingCount}
               </div>
             )}
           </div>
 
           <div>
-            <p className="text-sm font-medium text-orange-800">
+            <p className="text-sm font-medium text-ds-status-revision">
               {deliverables.length} deliverable{deliverables.length !== 1 ? 's' : ''} ready for
               review
             </p>
-            <p className="text-xs text-orange-600">
+            <p className="text-xs text-ds-status-revision/80">
               {revisionsRemaining} revision{revisionsRemaining !== 1 ? 's' : ''} remaining
             </p>
           </div>
@@ -97,7 +97,7 @@ export function ReviewActionBanner({
             size="sm"
             onClick={onRequestRevision}
             disabled={isApproving}
-            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+            className="border-ds-status-revision/30 text-ds-status-revision hover:bg-ds-status-revision/10"
           >
             <RotateCcw className="size-4" />
             Request Revision
@@ -106,7 +106,7 @@ export function ReviewActionBanner({
             size="sm"
             onClick={onApprove}
             disabled={isApproving}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-crafted-green text-white hover:bg-crafted-forest"
           >
             <CheckCircle2 className="size-4" />
             {isApproving ? 'Approving...' : 'Approve'}

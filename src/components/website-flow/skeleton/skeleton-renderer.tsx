@@ -54,19 +54,19 @@ export function SkeletonRenderer({
       <div className="p-4 space-y-3 overflow-auto">
         {/* Browser chrome wrapper */}
         <div className="rounded-xl overflow-hidden border border-border shadow-sm">
-          <div className="bg-gray-100 dark:bg-zinc-800 px-3 py-1.5 flex items-center gap-1.5 border-b border-border">
+          <div className="bg-muted px-3 py-1.5 flex items-center gap-1.5 border-b border-border">
             <div className="flex gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
               <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
             </div>
             <div className="flex-1 mx-2">
-              <div className="bg-white dark:bg-zinc-700 rounded px-2 py-0.5 text-[10px] text-muted-foreground">
+              <div className="bg-background rounded px-2 py-0.5 text-[10px] text-muted-foreground">
                 yourwebsite.com
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-zinc-950 divide-y divide-border/50">
+          <div className="bg-background divide-y divide-border/50">
             {sorted.map((section, index) => (
               <SectionBlock
                 key={section.id}

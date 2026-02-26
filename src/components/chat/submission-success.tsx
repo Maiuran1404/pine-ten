@@ -21,7 +21,7 @@ function AnimatedCheckmark() {
         cx="40"
         cy="40"
         r="36"
-        stroke="#10b981"
+        stroke="var(--ds-success)"
         strokeWidth="3"
         fill="none"
         initial={{ pathLength: 0, opacity: 0 }}
@@ -31,7 +31,7 @@ function AnimatedCheckmark() {
       {/* Checkmark */}
       <motion.path
         d="M24 42 L34 52 L56 30"
-        stroke="#10b981"
+        stroke="var(--ds-success)"
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -58,7 +58,13 @@ function Particles() {
         const x = Math.cos(angle) * distance
         const y = Math.sin(angle) * distance
         const size = 3 + sizeOffset
-        const colors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669']
+        const colors = [
+          'var(--ds-success)',
+          'var(--crafted-green-light)',
+          'var(--crafted-sage)',
+          'var(--crafted-mint)',
+          'var(--crafted-forest)',
+        ]
         const color = colors[i % colors.length]
 
         return { x, y, size, color, delay: 0.3 + delayOffset }
@@ -157,7 +163,7 @@ export function SubmissionSuccess({
               <Button
                 size="lg"
                 onClick={onViewProject}
-                className="gap-2 rounded-xl px-8 font-semibold h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
+                className="gap-2 rounded-xl px-8 font-semibold h-12 bg-crafted-green hover:bg-crafted-forest text-white shadow-lg shadow-crafted-green/20"
               >
                 View Your Project
                 <ArrowRight className="h-4 w-4" />

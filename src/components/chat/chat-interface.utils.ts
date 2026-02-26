@@ -573,13 +573,16 @@ export function getStatusDisplay(status: string): {
   color: string
 } {
   const statusMap: Record<string, { label: string; color: string }> = {
-    PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-500' },
-    ASSIGNED: { label: 'Assigned', color: 'bg-blue-500/10 text-blue-500' },
+    PENDING: { label: 'Pending', color: 'bg-ds-warning/10 text-ds-warning' },
+    ASSIGNED: { label: 'Assigned', color: 'bg-ds-info/10 text-ds-info' },
     IN_PROGRESS: { label: 'In Progress', color: 'bg-primary/10 text-primary' },
-    PENDING_ADMIN_REVIEW: { label: 'Under Review', color: 'bg-orange-500/10 text-orange-500' },
-    PENDING_REVIEW: { label: 'Pending Review', color: 'bg-purple-500/10 text-purple-500' },
-    REVISION_REQUESTED: { label: 'Revision Requested', color: 'bg-red-500/10 text-red-500' },
-    COMPLETED: { label: 'Completed', color: 'bg-emerald-600/10 text-emerald-500' },
+    PENDING_ADMIN_REVIEW: { label: 'Under Review', color: 'bg-ds-warning/10 text-ds-warning' },
+    PENDING_REVIEW: {
+      label: 'Pending Review',
+      color: 'bg-ds-role-transition/10 text-ds-role-transition',
+    },
+    REVISION_REQUESTED: { label: 'Revision Requested', color: 'bg-ds-error/10 text-ds-error' },
+    COMPLETED: { label: 'Completed', color: 'bg-ds-success/10 text-ds-success' },
     CANCELLED: { label: 'Cancelled', color: 'bg-muted text-muted-foreground' },
   }
   return statusMap[status] || { label: status, color: 'bg-muted text-muted-foreground' }

@@ -16,10 +16,10 @@ import { getSceneRole, type SceneRole } from './timeline-bar'
 // =============================================================================
 
 const ROLE_COLORS: Record<SceneRole, string> = {
-  hook: 'bg-amber-500',
-  cta: 'bg-emerald-500',
-  transition: 'bg-purple-500',
-  feature: 'bg-neutral-500',
+  hook: 'bg-ds-role-hook',
+  cta: 'bg-ds-success',
+  transition: 'bg-ds-role-transition',
+  feature: 'bg-muted-foreground/50',
 }
 
 // =============================================================================
@@ -184,7 +184,7 @@ function StoryboardPreviewContent({
       </div>
 
       {/* Controls bar */}
-      <div className="bg-zinc-900 px-4 py-3 space-y-2">
+      <div className="bg-secondary px-4 py-3 space-y-2">
         {/* Timeline segments */}
         <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
           {scenes.map((s, i) => {

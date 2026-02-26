@@ -121,43 +121,43 @@ export function AdminDashboardContent() {
       PENDING: {
         variant: 'secondary',
         label: 'Pending',
-        color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+        color: 'bg-ds-warning/20 text-ds-warning border-ds-warning/30',
       },
       ASSIGNED: {
         variant: 'outline',
         label: 'Assigned',
-        color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        color: 'bg-ds-info/20 text-ds-info border-ds-info/30',
       },
       IN_PROGRESS: {
         variant: 'default',
         label: 'In Progress',
-        color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        color: 'bg-ds-success/20 text-ds-success border-ds-success/30',
       },
       IN_REVIEW: {
         variant: 'outline',
         label: 'In Review',
-        color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+        color: 'bg-ds-status-review/20 text-ds-status-review border-ds-status-review/30',
       },
       PENDING_ADMIN_REVIEW: {
         variant: 'destructive',
         label: 'Needs Verification',
-        color: 'bg-red-500/20 text-red-400 border-red-500/30',
+        color: 'bg-ds-error/20 text-ds-error border-ds-error/30',
       },
       REVISION_REQUESTED: {
         variant: 'destructive',
         label: 'Revision',
-        color: 'bg-red-500/20 text-red-400 border-red-500/30',
+        color: 'bg-ds-error/20 text-ds-error border-ds-error/30',
       },
       COMPLETED: {
         variant: 'secondary',
         label: 'Completed',
-        color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+        color: 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30',
       },
     }
     const config = variants[status] || {
       variant: 'secondary' as const,
       label: status,
-      color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+      color: 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30',
     }
     return (
       <span
@@ -240,22 +240,25 @@ export function AdminDashboardContent() {
             className="px-4 sm:px-0"
           >
             <Link href="/admin/verify">
-              <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 animate-pulse">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
-                    <p className="font-semibold text-red-800 dark:text-red-300">
+                    <p className="font-semibold text-destructive">
                       {pendingVerifications} deliverable{pendingVerifications !== 1 ? 's' : ''}{' '}
                       awaiting verification
                     </p>
-                    <p className="text-sm text-red-700/70 dark:text-red-400/70">
+                    <p className="text-sm text-destructive/70">
                       Artists have submitted work that needs your review before clients can see it
                     </p>
                   </div>
                 </div>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+                <Button
+                  size="sm"
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shrink-0"
+                >
                   Review Now
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -285,7 +288,7 @@ export function AdminDashboardContent() {
                   transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
                   className={`relative rounded-xl overflow-hidden border transition-all bg-card cursor-pointer group ${
                     shouldHighlight
-                      ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:border-yellow-500/70'
+                      ? 'border-ds-warning/50 shadow-[0_0_20px_var(--ds-warning-muted)] hover:border-ds-warning/70'
                       : 'border-border hover:border-primary/30 hover:bg-muted/50'
                   }`}
                 >

@@ -29,10 +29,10 @@ export function getSceneRole(
 }
 
 const ROLE_COLORS: Record<SceneRole, { bg: string; text: string }> = {
-  hook: { bg: 'bg-amber-500/80', text: 'text-white' },
-  cta: { bg: 'bg-emerald-500/80', text: 'text-white' },
-  transition: { bg: 'bg-purple-500/80', text: 'text-white' },
-  feature: { bg: 'bg-neutral-500/60 dark:bg-neutral-600/60', text: 'text-white' },
+  hook: { bg: 'bg-ds-role-hook/80', text: 'text-white' },
+  cta: { bg: 'bg-ds-success/80', text: 'text-white' },
+  transition: { bg: 'bg-ds-role-transition/80', text: 'text-white' },
+  feature: { bg: 'bg-muted-foreground/40', text: 'text-white' },
 }
 
 // =============================================================================

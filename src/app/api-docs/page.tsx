@@ -54,20 +54,21 @@ export default function ApiDocsPage() {
         .swagger-ui .opblock .opblock-summary {
           border-radius: 8px;
         }
+        /* Swagger/OpenAPI convention colors — keep as-is */
         .swagger-ui .opblock.opblock-get .opblock-summary {
-          border-color: #61affe;
+          border-color: #61affe; /* Swagger GET */
         }
         .swagger-ui .opblock.opblock-post .opblock-summary {
-          border-color: #49cc90;
+          border-color: #49cc90; /* Swagger POST */
         }
         .swagger-ui .opblock.opblock-put .opblock-summary {
-          border-color: #fca130;
+          border-color: #fca130; /* Swagger PUT */
         }
         .swagger-ui .opblock.opblock-delete .opblock-summary {
-          border-color: #f93e3e;
+          border-color: #f93e3e; /* Swagger DELETE */
         }
         .swagger-ui .opblock.opblock-patch .opblock-summary {
-          border-color: #50e3c2;
+          border-color: #50e3c2; /* Swagger PATCH */
         }
         .swagger-ui .btn {
           border-radius: 6px;

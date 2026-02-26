@@ -73,9 +73,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               { fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" } as React.CSSProperties
             }
           >
-            <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-zinc-950">
-              {children}
-            </div>
+            <div className="h-screen w-screen overflow-hidden bg-background">{children}</div>
           </SidebarProvider>
         </CreditProvider>
       </SentryProvider>

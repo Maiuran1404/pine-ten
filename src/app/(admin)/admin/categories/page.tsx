@@ -286,7 +286,7 @@ export default function CategoriesPage() {
                     <TableCell>{category.baseCredits}</TableCell>
                     <TableCell>
                       <span
-                        className={category.isActive ? 'text-green-600' : 'text-muted-foreground'}
+                        className={category.isActive ? 'text-ds-success' : 'text-muted-foreground'}
                       >
                         {category.isActive ? 'Active' : 'Inactive'}
                       </span>

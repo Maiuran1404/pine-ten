@@ -33,11 +33,11 @@ interface ConversationReplayProps {
 function generatedByLabel(method?: string) {
   switch (method) {
     case 'quick_option':
-      return { label: 'Quick Option', icon: Zap, color: 'text-amber-600' }
+      return { label: 'Quick Option', icon: Zap, color: 'text-ds-warning' }
     case 'template':
-      return { label: 'Template', icon: FileText, color: 'text-blue-600' }
+      return { label: 'Template', icon: FileText, color: 'text-ds-info' }
     case 'haiku':
-      return { label: 'Haiku', icon: Cpu, color: 'text-purple-600' }
+      return { label: 'Haiku', icon: Cpu, color: 'text-ds-status-review' }
     default:
       return null
   }

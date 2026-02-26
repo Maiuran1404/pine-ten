@@ -307,8 +307,8 @@ export function AIUploader<TClassification extends object>({
               key={upload.id}
               className={cn(
                 'border rounded-lg p-4 space-y-4',
-                upload.status === 'done' && 'bg-green-500/5 border-green-500/20',
-                upload.status === 'error' && 'bg-red-500/5 border-red-500/20'
+                upload.status === 'done' && 'bg-ds-success/5 border-ds-success/20',
+                upload.status === 'error' && 'bg-ds-error/5 border-ds-error/20'
               )}
             >
               <div className="flex gap-4">
@@ -344,7 +344,7 @@ export function AIUploader<TClassification extends object>({
                     </div>
                   </div>
 
-                  {upload.error && <p className="text-sm text-red-500 mt-1">{upload.error}</p>}
+                  {upload.error && <p className="text-sm text-ds-error mt-1">{upload.error}</p>}
                 </div>
               </div>
 
@@ -375,7 +375,7 @@ function UploadStatusBadge({ status }: { status: UploadStatus }) {
       )
     case 'classified':
       return (
-        <Badge className="bg-blue-500">
+        <Badge className="bg-ds-info">
           <Check className="h-3 w-3 mr-1" />
           Classified
         </Badge>
@@ -389,7 +389,7 @@ function UploadStatusBadge({ status }: { status: UploadStatus }) {
       )
     case 'done':
       return (
-        <Badge className="bg-green-500">
+        <Badge className="bg-ds-success">
           <Check className="h-3 w-3 mr-1" />
           Done
         </Badge>

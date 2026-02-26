@@ -150,18 +150,14 @@ export function QuickDesignModal({ open, onOpenChange }: QuickDesignModalProps) 
                 const isActive = selectedCategory === category
 
                 const colorClasses = {
-                  blue: isActive
-                    ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30'
-                    : '',
+                  blue: isActive ? 'bg-ds-info/10 text-ds-info border-ds-info/20' : '',
                   emerald: isActive
-                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+                    ? 'bg-crafted-green/10 text-crafted-green border-crafted-green/20'
                     : '',
                   violet: isActive
-                    ? 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30'
+                    ? 'bg-crafted-green/10 text-crafted-green border-crafted-green/20'
                     : '',
-                  gray: isActive
-                    ? 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30'
-                    : '',
+                  gray: isActive ? 'bg-muted text-muted-foreground border-border' : '',
                 }
 
                 return (

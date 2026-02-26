@@ -47,8 +47,8 @@ export function IndustryFilter({
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                   isSelected
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 dark:bg-zinc-800 text-foreground hover:bg-gray-200 dark:hover:bg-zinc-700'
+                    ? 'bg-ds-success text-white'
+                    : 'bg-muted text-foreground hover:bg-accent'
                 )}
               >
                 {industry}
@@ -72,8 +72,8 @@ export function IndustryFilter({
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                   isSelected
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-100 dark:bg-zinc-800 text-foreground hover:bg-gray-200 dark:hover:bg-zinc-700'
+                    ? 'bg-ds-status-review text-white'
+                    : 'bg-muted text-foreground hover:bg-accent'
                 )}
               >
                 {style}

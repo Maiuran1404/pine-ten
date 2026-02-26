@@ -183,14 +183,16 @@ export default function RevenuePage() {
       case 'succeeded':
       case 'processed':
       case 'paid':
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Success</Badge>
+        return (
+          <Badge className="bg-ds-success/10 text-ds-success border-ds-success/20">Success</Badge>
+        )
       case 'pending':
       case 'in_transit':
         return (
-          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>
+          <Badge className="bg-ds-warning/10 text-ds-warning border-ds-warning/20">Pending</Badge>
         )
       case 'failed':
-        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">Failed</Badge>
+        return <Badge className="bg-ds-error/10 text-ds-error border-ds-error/20">Failed</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -319,10 +321,10 @@ export default function RevenuePage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Stripe Available Balance</CardTitle>
-              <Wallet className="h-4 w-4 text-green-500" />
+              <Wallet className="h-4 w-4 text-ds-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-ds-success">
                 {data.stripe.balance.available.map((b, i) => (
                   <span key={i}>
                     {formatCurrency(b.amount / 100)}
@@ -337,10 +339,10 @@ export default function RevenuePage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Stripe Pending Balance</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-500" />
+              <Clock className="h-4 w-4 text-ds-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold text-ds-warning">
                 {data.stripe.balance.pending.map((b, i) => (
                   <span key={i}>
                     {formatCurrency(b.amount / 100)}
@@ -405,7 +407,7 @@ export default function RevenuePage() {
                             +{tx.credits}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium text-green-600">
+                        <TableCell className="font-medium text-ds-success">
                           {formatCurrency(tx.revenue)}
                         </TableCell>
                         <TableCell>
@@ -433,7 +435,7 @@ export default function RevenuePage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                  <ArrowUpRight className="h-4 w-4 text-ds-success" />
                   Purchases
                 </CardTitle>
               </CardHeader>
@@ -448,7 +450,7 @@ export default function RevenuePage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowDownRight className="h-4 w-4 text-blue-500" />
+                  <ArrowDownRight className="h-4 w-4 text-ds-info" />
                   Usage
                 </CardTitle>
               </CardHeader>
@@ -463,7 +465,7 @@ export default function RevenuePage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-purple-500" />
+                  <Coins className="h-4 w-4 text-ds-status-review" />
                   Bonuses
                 </CardTitle>
               </CardHeader>
@@ -478,7 +480,7 @@ export default function RevenuePage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-orange-500" />
+                  <RefreshCw className="h-4 w-4 text-ds-status-revision" />
                   Refunds
                 </CardTitle>
               </CardHeader>
@@ -611,7 +613,7 @@ export default function RevenuePage() {
                     {data.topCustomers.map((customer, index) => (
                       <TableRow key={customer.userId}>
                         <TableCell>
-                          <span className={`font-bold ${index < 3 ? 'text-yellow-500' : ''}`}>
+                          <span className={`font-bold ${index < 3 ? 'text-ds-warning' : ''}`}>
                             #{index + 1}
                           </span>
                         </TableCell>
@@ -624,7 +626,7 @@ export default function RevenuePage() {
                         <TableCell>
                           <Badge variant="secondary">{customer.totalCredits}</Badge>
                         </TableCell>
-                        <TableCell className="font-medium text-green-600">
+                        <TableCell className="font-medium text-ds-success">
                           {formatCurrency(customer.totalRevenue)}
                         </TableCell>
                         <TableCell>{customer.transactionCount}</TableCell>
@@ -663,7 +665,7 @@ export default function RevenuePage() {
                             <Badge variant="outline">{pkg.packageName}</Badge>
                             <span className="text-sm text-muted-foreground">{pkg.count} sales</span>
                           </div>
-                          <span className="font-medium text-green-600">
+                          <span className="font-medium text-ds-success">
                             {formatCurrency(pkg.revenue)}
                           </span>
                         </div>
@@ -696,7 +698,7 @@ export default function RevenuePage() {
                             <TableCell className="font-medium">{pkg.packageName}</TableCell>
                             <TableCell>{pkg.count}</TableCell>
                             <TableCell>{pkg.credits * pkg.count}</TableCell>
-                            <TableCell className="text-green-600">
+                            <TableCell className="text-ds-success">
                               {formatCurrency(pkg.revenue)}
                             </TableCell>
                           </TableRow>
@@ -735,7 +737,7 @@ export default function RevenuePage() {
                         <div key={month.month} className="space-y-1">
                           <div className="flex items-center justify-between text-sm">
                             <span className="font-medium">{month.month}</span>
-                            <span className="text-green-600">{formatCurrency(month.revenue)}</span>
+                            <span className="text-ds-success">{formatCurrency(month.revenue)}</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-3">
                             <div
@@ -768,7 +770,7 @@ export default function RevenuePage() {
                             <TableCell className="font-medium">{month.month}</TableCell>
                             <TableCell>{month.credits}</TableCell>
                             <TableCell>{month.transactionCount}</TableCell>
-                            <TableCell className="text-green-600">
+                            <TableCell className="text-ds-success">
                               {formatCurrency(month.revenue)}
                             </TableCell>
                           </TableRow>
@@ -821,12 +823,12 @@ export default function RevenuePage() {
                         </TableCell>
                         <TableCell>
                           {event.status === 'processed' ? (
-                            <div className="flex items-center gap-1 text-green-500">
+                            <div className="flex items-center gap-1 text-ds-success">
                               <CheckCircle className="h-4 w-4" />
                               <span className="text-sm">Processed</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1 text-red-500">
+                            <div className="flex items-center gap-1 text-ds-error">
                               <XCircle className="h-4 w-4" />
                               <span className="text-sm">Failed</span>
                             </div>
@@ -837,7 +839,7 @@ export default function RevenuePage() {
                         </TableCell>
                         <TableCell>
                           {event.errorMessage ? (
-                            <span className="text-sm text-red-500">{event.errorMessage}</span>
+                            <span className="text-sm text-ds-error">{event.errorMessage}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}

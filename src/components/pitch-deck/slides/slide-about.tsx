@@ -1,3 +1,8 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values: #2B2B2B = foreground, #666/#999/#bbb = muted shades,
+ * #e5e5e5/#e0e0e0 = borders, #3d4f5f = dark accent, #4dd0e1 = decorative
+ */
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 import { SlideWrapper, SlideHeader } from './slide-wrapper'
 import { ClientLogos } from './client-logos'

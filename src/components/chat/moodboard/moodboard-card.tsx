@@ -65,7 +65,7 @@ export function MoodboardCard({
         className={cn(
           'absolute top-1 right-1 z-10 p-1 rounded-full',
           'bg-black/40 text-white opacity-0 group-hover:opacity-100',
-          'hover:bg-red-500 transition-all duration-200'
+          'hover:bg-destructive transition-all duration-200'
         )}
         aria-label={`Remove ${item.name} from moodboard`}
       >
@@ -78,7 +78,7 @@ export function MoodboardCard({
           <div className="relative group/apply">
             <button
               type="button"
-              className="p-1 rounded-full bg-black/40 text-white hover:bg-emerald-600 transition-colors"
+              className="p-1 rounded-full bg-black/40 text-white hover:bg-crafted-green transition-colors"
               aria-label="Apply to scene"
               title="Apply to scene"
             >

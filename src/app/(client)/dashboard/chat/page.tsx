@@ -142,11 +142,11 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-zinc-950">
+    <div className="h-screen flex overflow-hidden bg-background">
       {/* Left sidebar */}
       <div
         className={cn(
-          'shrink-0 border-r border-border bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300',
+          'shrink-0 border-r border-border bg-card flex flex-col transition-all duration-300',
           sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-64'
         )}
       >
@@ -217,7 +217,7 @@ export default function ChatPage() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    ? 'bg-crafted-green/10 dark:bg-crafted-green/20 text-crafted-forest dark:text-crafted-sage'
                     : 'text-foreground hover:bg-muted'
                 )}
               >
@@ -230,29 +230,29 @@ export default function ChatPage() {
 
         {/* Credits card at bottom */}
         <div className="p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-950/40 p-4 border border-emerald-200/50 dark:border-emerald-800/50 relative overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-crafted-green/15 to-crafted-green/5 dark:from-crafted-green/30 dark:to-crafted-forest/30 p-4 border border-crafted-green/20 dark:border-crafted-green/30 relative overflow-hidden">
             {/* Decorative elements */}
-            <div className="absolute top-2 right-2 w-16 h-16 bg-emerald-200/30 dark:bg-emerald-700/20 rounded-lg transform rotate-12" />
-            <div className="absolute top-6 right-6 w-12 h-12 bg-emerald-300/30 dark:bg-emerald-600/20 rounded-lg transform -rotate-6" />
+            <div className="absolute top-2 right-2 w-16 h-16 bg-crafted-mint/30 dark:bg-crafted-green/20 rounded-lg transform rotate-12" />
+            <div className="absolute top-6 right-6 w-12 h-12 bg-crafted-sage/30 dark:bg-crafted-green-light/20 rounded-lg transform -rotate-6" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                <span className="text-sm font-semibold text-crafted-forest dark:text-crafted-sage">
                   Starter Plan
                 </span>
-                <span className="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-crafted-green text-white px-2 py-1 rounded-full font-medium">
                   {userCredits} Credits
                 </span>
               </div>
               <Link href="/dashboard/credits">
                 <Button
                   size="sm"
-                  className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium"
+                  className="w-full h-10 bg-crafted-green hover:bg-crafted-forest text-white rounded-xl font-medium"
                 >
                   Get more Credits!
                 </Button>
               </Link>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-3 text-center leading-relaxed">
+              <p className="text-xs text-crafted-forest dark:text-crafted-sage mt-3 text-center leading-relaxed">
                 Boost productivity with seamless tasks request and responsive AI, built to assist
                 you.
               </p>
@@ -263,14 +263,14 @@ export default function ChatPage() {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-        {/* Soft gradient emerald/mint background at top */}
+        {/* Soft gradient crafted-green/mint background at top */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `linear-gradient(180deg,
-              rgba(209, 250, 229, 0.4) 0%,
-              rgba(236, 253, 245, 0.2) 15%,
-              rgba(255, 255, 255, 0) 30%
+              color-mix(in srgb, var(--crafted-mint) 40%, transparent) 0%,
+              color-mix(in srgb, var(--crafted-mint) 20%, transparent) 15%,
+              transparent 30%
             )`,
           }}
         />
@@ -279,7 +279,7 @@ export default function ChatPage() {
           className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
           style={{
             background: `linear-gradient(180deg,
-              rgba(6, 78, 59, 0.15) 0%,
+              color-mix(in srgb, var(--crafted-forest) 15%, transparent) 0%,
               rgba(10, 10, 10, 0.5) 15%,
               rgba(10, 10, 10, 1) 30%
             )`,

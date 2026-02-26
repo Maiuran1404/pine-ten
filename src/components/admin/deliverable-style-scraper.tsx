@@ -291,7 +291,7 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                       <div className="text-sm">
                         <span className="font-medium">Results: </span>
                         {dribbbleSummary.successful > 0 && (
-                          <Badge className="bg-green-500 mr-1">
+                          <Badge className="bg-ds-success mr-1">
                             {dribbbleSummary.successful} imported
                           </Badge>
                         )}
@@ -324,9 +324,9 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                             'border rounded-lg p-3 flex gap-3',
                             result.success &&
                               result.imported &&
-                              'bg-green-500/5 border-green-500/20',
-                            result.skipped && 'bg-yellow-500/5 border-yellow-500/20',
-                            !result.success && 'bg-red-500/5 border-red-500/20'
+                              'bg-ds-success/5 border-ds-success/20',
+                            result.skipped && 'bg-ds-warning/5 border-ds-warning/20',
+                            !result.success && 'bg-ds-error/5 border-ds-error/20'
                           )}
                         >
                           {result.cdnUrl && (
@@ -349,9 +349,11 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                               <p className="text-sm font-medium truncate">{result.imported.name}</p>
                             )}
                             {result.skipped && (
-                              <p className="text-xs text-yellow-600">{result.skipReason}</p>
+                              <p className="text-xs text-ds-warning">{result.skipReason}</p>
                             )}
-                            {result.error && <p className="text-xs text-red-500">{result.error}</p>}
+                            {result.error && (
+                              <p className="text-xs text-ds-error">{result.error}</p>
+                            )}
                             {result.imported && (
                               <div className="flex items-center gap-1 mt-1">
                                 <Badge variant="outline" className="text-[10px] py-0">
@@ -365,7 +367,7 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                           </div>
                           <div className="flex-shrink-0">
                             {result.success && result.imported && (
-                              <Badge className="bg-green-500">
+                              <Badge className="bg-ds-success">
                                 <Check className="h-3 w-3" />
                               </Badge>
                             )}
@@ -489,8 +491,8 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                   key={img.url}
                   className={cn(
                     'border rounded-lg p-3 space-y-3',
-                    img.status === 'done' && 'bg-green-500/5 border-green-500/20',
-                    img.status === 'error' && 'bg-red-500/5 border-red-500/20'
+                    img.status === 'done' && 'bg-ds-success/5 border-ds-success/20',
+                    img.status === 'error' && 'bg-ds-error/5 border-ds-error/20'
                   )}
                 >
                   <div className="flex gap-3">
@@ -521,7 +523,7 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                             </Badge>
                           )}
                           {img.status === 'classified' && (
-                            <Badge className="bg-blue-500">
+                            <Badge className="bg-ds-info">
                               <Check className="h-3 w-3 mr-1" />
                               Ready
                             </Badge>
@@ -533,7 +535,7 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                             </Badge>
                           )}
                           {img.status === 'done' && (
-                            <Badge className="bg-green-500">
+                            <Badge className="bg-ds-success">
                               <Check className="h-3 w-3 mr-1" />
                               Done
                             </Badge>
@@ -556,7 +558,7 @@ export function DeliverableStyleScraper({ onUploadComplete }: DeliverableStyleSc
                         </div>
                       </div>
 
-                      {img.error && <p className="text-xs text-red-500 mt-1">{img.error}</p>}
+                      {img.error && <p className="text-xs text-ds-error mt-1">{img.error}</p>}
                     </div>
                   </div>
 

@@ -352,11 +352,11 @@ export default function PayoutsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+        <div className="p-4 rounded-lg bg-gradient-to-r from-ds-success/5 to-ds-success/10 border border-ds-success/30">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700 dark:text-green-300">Earning Range</p>
-              <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+              <p className="text-sm text-ds-success">Earning Range</p>
+              <p className="text-2xl font-bold text-ds-success">
                 ${cat.earnings.range.min} – ${cat.earnings.range.max}
               </p>
             </div>
@@ -392,9 +392,7 @@ export default function PayoutsPage() {
                   </Badge>
                   <span className="text-sm">{example.description}</span>
                 </div>
-                <span className="font-semibold text-green-600 dark:text-green-400">
-                  ${example.earning}
-                </span>
+                <span className="font-semibold text-ds-success">${example.earning}</span>
               </motion.div>
             ))}
           </div>
@@ -443,20 +441,20 @@ export default function PayoutsPage() {
       <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
         {/* Stripe Connect Banner - if not connected */}
         {(!stripeConnectStatus?.connected || !stripeConnectStatus?.payoutsEnabled) && (
-          <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20">
+          <Card className="border-ds-warning/30 bg-ds-warning/5">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
-                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div className="w-10 h-10 rounded-full bg-ds-warning/10 flex items-center justify-center shrink-0">
+                    <AlertCircle className="h-5 w-5 text-ds-warning" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                    <h3 className="font-semibold text-ds-warning">
                       {!stripeConnectStatus?.connected
                         ? 'Connect your Stripe account to receive payouts'
                         : 'Complete your Stripe onboarding'}
                     </h3>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-0.5">
+                    <p className="text-sm text-ds-warning/80 mt-0.5">
                       {!stripeConnectStatus?.connected
                         ? 'Set up Stripe Express to receive your earnings directly to your bank account.'
                         : 'Finish setting up your Stripe account to start receiving payouts.'}
@@ -494,7 +492,7 @@ export default function PayoutsPage() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 text-ds-success" />
                 Available Balance
               </CardDescription>
             </CardHeader>
@@ -511,7 +509,7 @@ export default function PayoutsPage() {
               {!canRequestPayout &&
                 availableForPayout > 0 &&
                 availableForPayout < minimumPayout && (
-                  <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-ds-warning mt-2 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {minimumPayout - availableForPayout} more credits needed for payout
                   </p>
@@ -523,7 +521,7 @@ export default function PayoutsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-amber-500" />
+                <Clock className="h-4 w-4 text-ds-warning" />
                 Pending Balance
               </CardDescription>
             </CardHeader>
@@ -583,7 +581,7 @@ export default function PayoutsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+                <Sparkles className="h-5 w-5 text-ds-warning" />
                 What You Can Earn
               </CardTitle>
               <CardDescription>
@@ -618,19 +616,19 @@ export default function PayoutsPage() {
               <div className="pt-4 border-t">
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-ds-success mt-0.5 shrink-0" />
                     <span>More complex projects pay significantly more</span>
                   </div>
                   <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-ds-success mt-0.5 shrink-0" />
                     <span>Video and motion graphics have the highest potential</span>
                   </div>
                   <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-ds-success mt-0.5 shrink-0" />
                     <span>Earnings deposited after client approval</span>
                   </div>
                   <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-ds-success mt-0.5 shrink-0" />
                     <span>
                       {payoutConfig?.holdingPeriodDays || 7}-day processing period before payout
                     </span>
@@ -672,8 +670,8 @@ export default function PayoutsPage() {
                     <p
                       className={`text-xs mt-1 flex items-center gap-1 ${
                         stats.thisMonthEarnings >= stats.lastMonthEarnings
-                          ? 'text-green-600'
-                          : 'text-red-600'
+                          ? 'text-ds-success'
+                          : 'text-ds-error'
                       }`}
                     >
                       {stats.thisMonthEarnings >= stats.lastMonthEarnings ? (
@@ -825,10 +823,10 @@ export default function PayoutsPage() {
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center ${
                               payout.status === 'completed'
-                                ? 'bg-green-100 text-green-600 dark:bg-green-900/30'
+                                ? 'bg-ds-success/10 text-ds-success'
                                 : payout.status === 'processing' || payout.status === 'pending'
-                                  ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
-                                  : 'bg-red-100 text-red-600 dark:bg-red-900/30'
+                                  ? 'bg-ds-warning/10 text-ds-warning'
+                                  : 'bg-ds-error/10 text-ds-error'
                             }`}
                           >
                             {payout.status === 'completed' ? (
@@ -847,7 +845,7 @@ export default function PayoutsPage() {
                               {payout.method.replace('_', ' ')} • {formatDate(payout.requestedAt)}
                             </p>
                             {payout.failureReason && (
-                              <p className="text-xs text-red-600 mt-0.5">{payout.failureReason}</p>
+                              <p className="text-xs text-ds-error mt-0.5">{payout.failureReason}</p>
                             )}
                           </div>
                         </div>
@@ -888,24 +886,22 @@ export default function PayoutsPage() {
             {stripeConnectStatus?.connected ? (
               <div className="space-y-4">
                 {/* Connected account info */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-ds-success/5 border border-ds-success/30">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div className="w-10 h-10 rounded-lg bg-ds-success/10 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-ds-success" />
                     </div>
                     <div>
-                      <p className="font-medium text-green-900 dark:text-green-100">
-                        Stripe Connected
-                      </p>
+                      <p className="font-medium text-ds-success">Stripe Connected</p>
                       {stripeConnectStatus.externalAccountLast4 && (
-                        <p className="text-sm text-green-700 dark:text-green-300">
+                        <p className="text-sm text-ds-success/80">
                           Bank account ending in {stripeConnectStatus.externalAccountLast4}
                         </p>
                       )}
                     </div>
                   </div>
                   {stripeConnectStatus.payoutsEnabled ? (
-                    <Badge variant="default" className="bg-green-600">
+                    <Badge variant="default" className="bg-ds-success">
                       Payouts Enabled
                     </Badge>
                   ) : (
@@ -1016,7 +1012,7 @@ export default function PayoutsPage() {
                   </div>
                   <div className="flex justify-between text-sm mt-2">
                     <span>You&apos;ll receive</span>
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-ds-success">
                       ${creditsToCurrency(parseInt(payoutAmount) || 0)}
                     </span>
                   </div>

@@ -48,18 +48,18 @@ export function TaskProgressCard({
       label: 'Overdue',
     },
     urgent: {
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500',
+      color: 'text-ds-warning',
+      bgColor: 'bg-ds-warning',
       label: 'Past Artist Deadline',
     },
     warning: {
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-500',
+      color: 'text-ds-warning',
+      bgColor: 'bg-ds-warning',
       label: 'Due Soon',
     },
     safe: {
-      color: 'text-green-600',
-      bgColor: 'bg-green-500',
+      color: 'text-ds-success',
+      bgColor: 'bg-ds-success',
       label: 'On Track',
     },
   }
@@ -79,7 +79,7 @@ export function TaskProgressCard({
           {urgency && isActiveTask && (
             <Badge
               variant={urgency === 'safe' ? 'outline' : 'destructive'}
-              className={urgency === 'safe' ? 'border-green-500 text-green-600' : ''}
+              className={urgency === 'safe' ? 'border-ds-success text-ds-success' : ''}
             >
               {urgencyConfig[urgency].label}
             </Badge>
@@ -120,14 +120,14 @@ export function TaskProgressCard({
                 />
                 {/* Working deadline marker at 50% */}
                 <div
-                  className="absolute top-0 h-3 w-0.5 bg-orange-500"
+                  className="absolute top-0 h-3 w-0.5 bg-ds-warning"
                   style={{ left: '50%' }}
                   title="Artist Deadline (50%)"
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Assigned</span>
-                <span className="text-orange-500">Artist Deadline</span>
+                <span className="text-ds-warning">Artist Deadline</span>
                 <span>Client Deadline</span>
               </div>
             </div>
@@ -147,7 +147,7 @@ export function TaskProgressCard({
             {workingDeadline ? (
               <div>
                 <p
-                  className={`font-medium ${urgency === 'urgent' || urgency === 'overdue' ? 'text-orange-500' : ''}`}
+                  className={`font-medium ${urgency === 'urgent' || urgency === 'overdue' ? 'text-ds-warning' : ''}`}
                 >
                   {workingDeadline.toLocaleDateString()}
                 </p>
@@ -195,10 +195,10 @@ export function TaskProgressCard({
           {completedAt && (
             <div className="col-span-2">
               <p className="text-muted-foreground flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-ds-success" />
                 Completed
               </p>
-              <p className="font-medium text-green-600">
+              <p className="font-medium text-ds-success">
                 {new Date(completedAt).toLocaleDateString()}
               </p>
             </div>

@@ -220,7 +220,7 @@ function LoadingIndicator({
       aria-label={loadingMessages[loadingStage]}
     >
       {/* Avatar — pulled into gutter on lg+ to align with input */}
-      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-emerald-700 dark:to-emerald-500 shadow-md flex items-center justify-center shrink-0">
+      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-crafted-forest dark:to-crafted-green shadow-md flex items-center justify-center shrink-0">
         <Sparkles className="h-4 w-4 text-crafted-mint animate-pulse" />
       </div>
       <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/30">
@@ -501,7 +501,7 @@ export function ChatMessageList({
                     /* Assistant message - left aligned with sparkle avatar */
                     <div className="group max-w-[85%] flex items-start gap-3">
                       {/* Sparkle avatar — pulled into gutter on lg+ to align content with input */}
-                      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-emerald-700 dark:to-emerald-500 shadow-md flex items-center justify-center shrink-0">
+                      <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-crafted-forest dark:to-crafted-green shadow-md flex items-center justify-center shrink-0">
                         <Sparkles className="h-4 w-4 text-crafted-mint" />
                       </div>
                       <div className="flex-1 min-w-0">

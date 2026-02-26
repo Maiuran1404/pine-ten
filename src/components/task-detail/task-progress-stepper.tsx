@@ -12,7 +12,7 @@ export function TaskProgressStepper({ status }: TaskProgressStepperProps) {
   )
 
   const statusConfig = STATUS_CONFIG[status]
-  const statusColor = statusConfig?.color ?? 'text-gray-600'
+  const statusColor = statusConfig?.color ?? 'text-muted-foreground'
 
   return (
     <div className="w-full">
@@ -30,7 +30,7 @@ export function TaskProgressStepper({ status }: TaskProgressStepperProps) {
                   <div
                     className={cn(
                       'flex size-8 items-center justify-center rounded-full border-2 text-sm font-medium transition-colors',
-                      isCompleted && 'border-emerald-600 bg-emerald-600 text-white',
+                      isCompleted && 'border-ds-success bg-ds-success text-white',
                       isCurrent && ['border-current bg-current text-white', statusColor],
                       isUpcoming &&
                         'border-muted-foreground/30 bg-transparent text-muted-foreground/50'
@@ -53,7 +53,7 @@ export function TaskProgressStepper({ status }: TaskProgressStepperProps) {
                 <span
                   className={cn(
                     'hidden text-xs font-medium sm:block',
-                    isCompleted && 'text-emerald-600',
+                    isCompleted && 'text-ds-success',
                     isCurrent && statusColor,
                     isUpcoming && 'text-muted-foreground/50'
                   )}
@@ -67,7 +67,7 @@ export function TaskProgressStepper({ status }: TaskProgressStepperProps) {
                 <div
                   className={cn(
                     'mx-2 h-0.5 flex-1 transition-colors',
-                    index < currentStepIndex ? 'bg-emerald-600' : 'bg-muted-foreground/20'
+                    index < currentStepIndex ? 'bg-ds-success' : 'bg-muted-foreground/20'
                   )}
                 />
               )}

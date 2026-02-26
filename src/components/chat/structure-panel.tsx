@@ -136,7 +136,7 @@ function PlaceholderState({ structureType }: { structureType: StructureData['typ
       {/* Header */}
       <div className="shrink-0 px-4 py-3 border-b border-border/40">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-emerald-600" />
+          <Icon className="h-4 w-4 text-crafted-green" />
           <span className="text-sm font-semibold text-foreground">{config.label}</span>
         </div>
       </div>
@@ -321,7 +321,7 @@ export function StructurePanel({
           if (total === 0) return null
           return (
             <div className="shrink-0 px-4 py-2 border-b border-border/40 flex items-center gap-2 text-xs text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-blue-500" />
+              <Sparkles className="h-3 w-3 text-ds-info" />
               <span>
                 {done}/{total}{' '}
                 {structureData.type === 'storyboard'
@@ -335,7 +335,7 @@ export function StructurePanel({
               </span>
               <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-500 rounded-full transition-all"
+                  className="h-full bg-ds-info rounded-full transition-all"
                   style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
                 />
               </div>

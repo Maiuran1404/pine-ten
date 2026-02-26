@@ -32,7 +32,7 @@ interface SidebarGroupedNavigationProps {
 export function SidebarNavigation({
   items,
   basePath,
-  accentColor: _accentColor = 'emerald',
+  accentColor: _accentColor = 'success',
   onItemClick,
 }: SidebarNavigationProps) {
   const pathname = usePathname()
@@ -72,7 +72,7 @@ export function SidebarNavigation({
 export function SidebarGroupedNavigation({
   groups,
   basePath,
-  accentColor: _accentColor = 'emerald',
+  accentColor: _accentColor = 'success',
   onItemClick,
 }: SidebarGroupedNavigationProps) {
   const pathname = usePathname()

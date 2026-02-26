@@ -1,3 +1,9 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values match design tokens:
+ *   #4a7c4a = --crafted-green, #2B2B2B = foreground, #888/#666/#999/#444 = muted shades,
+ *   #e8f0e4/#d4e0cf/#c0d1b9 = crafted-mint/sage gradients
+ */
 import { SlideWrapper, SlideFooter } from '@/components/pitch-deck/slides/slide-wrapper'
 import type { StoryboardPdfScene } from '@/lib/validations/storyboard-pdf-schema'
 

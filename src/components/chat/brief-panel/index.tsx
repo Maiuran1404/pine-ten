@@ -57,7 +57,7 @@ export function SleekField({
     if (source === 'confirmed') {
       return (
         <div className="flex items-center gap-1">
-          <Check className="h-3 w-3 text-emerald-500" />
+          <Check className="h-3 w-3 text-ds-success" />
         </div>
       )
     }
@@ -65,23 +65,23 @@ export function SleekField({
       if (confidence >= 0.75) {
         return (
           <div className="flex items-center gap-1">
-            <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
-            <span className="text-[9px] text-emerald-500">Ready</span>
+            <Sparkles className="h-2.5 w-2.5 text-ds-success" />
+            <span className="text-[9px] text-ds-success">Ready</span>
           </div>
         )
       }
       return (
         <div className="flex items-center gap-1">
-          <Sparkles className="h-2.5 w-2.5 text-amber-500" />
-          <span className="text-[9px] text-amber-500">AI</span>
+          <Sparkles className="h-2.5 w-2.5 text-ds-warning" />
+          <span className="text-[9px] text-ds-warning">AI</span>
         </div>
       )
     }
     if (source === 'pending' && hasValue) {
       return (
         <div className="flex items-center gap-1">
-          <Circle className="h-2.5 w-2.5 text-blue-400 animate-pulse" />
-          <span className="text-[9px] text-blue-400">Analyzing</span>
+          <Circle className="h-2.5 w-2.5 text-ds-info animate-pulse" />
+          <span className="text-[9px] text-ds-info">Analyzing</span>
         </div>
       )
     }
@@ -116,7 +116,7 @@ export function SleekField({
           className="group flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-muted-foreground transition-colors"
         >
           <span className="italic">{suggestion}</span>
-          <span className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500">
+          <span className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity text-ds-success">
             click to use
           </span>
         </button>
@@ -230,13 +230,13 @@ function FieldChip({
       className={cn(
         'text-[11px] font-normal py-1 px-2.5 gap-1.5',
         isAnalyzing && 'opacity-60',
-        (isConfirmed || isReady) && 'ring-1 ring-emerald-500/20'
+        (isConfirmed || isReady) && 'ring-1 ring-crafted-green/20'
       )}
     >
       {(isConfirmed || isReady) && (
-        <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+        <span className="w-1 h-1 rounded-full bg-crafted-green shrink-0" />
       )}
-      {isAnalyzing && <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse shrink-0" />}
+      {isAnalyzing && <span className="w-1 h-1 rounded-full bg-ds-info animate-pulse shrink-0" />}
       {value}
     </Badge>
   )
@@ -379,7 +379,7 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
       {/* Ready indicator -- single, quiet confirmation */}
       {isReady && (
         <div className="pt-3 mt-1">
-          <div className="flex items-center gap-1.5 text-emerald-500">
+          <div className="flex items-center gap-1.5 text-ds-success">
             <Check className="h-3 w-3" />
             <span className="text-[11px] font-medium">Ready to submit</span>
           </div>
@@ -443,7 +443,7 @@ Topic: ${brief.topic.value || 'TBD'}
             className="p-1 rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors"
           >
             {copiedBrief ? (
-              <Check className="h-3 w-3 text-emerald-500" />
+              <Check className="h-3 w-3 text-ds-success" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
@@ -455,7 +455,9 @@ Topic: ${brief.topic.value || 'TBD'}
             <span
               className={cn(
                 'text-[11px] font-medium',
-                isReady ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/70'
+                isReady
+                  ? 'text-crafted-green dark:text-crafted-green-light'
+                  : 'text-muted-foreground/70'
               )}
             >
               {isReady ? 'Ready to submit' : `${completion}% complete`}
@@ -466,7 +468,7 @@ Topic: ${brief.topic.value || 'TBD'}
               <motion.div
                 className={cn(
                   'h-full rounded-full',
-                  isReady ? 'bg-emerald-500' : 'bg-emerald-500/50'
+                  isReady ? 'bg-crafted-green' : 'bg-crafted-green/50'
                 )}
                 initial={{ width: 0 }}
                 animate={{ width: `${completion}%` }}
@@ -476,7 +478,7 @@ Topic: ${brief.topic.value || 'TBD'}
             <span
               className={cn(
                 'text-[10px] tabular-nums font-medium',
-                isReady ? 'text-emerald-500' : 'text-muted-foreground/50'
+                isReady ? 'text-ds-success' : 'text-muted-foreground/50'
               )}
             >
               {completion}%
@@ -526,7 +528,7 @@ export function CollapsibleBriefPanel({
         <div
           className={cn(
             'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium',
-            isReady ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'
+            isReady ? 'bg-ds-success/10 text-ds-success' : 'bg-muted text-muted-foreground'
           )}
         >
           {completion}

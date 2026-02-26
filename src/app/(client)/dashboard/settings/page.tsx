@@ -76,13 +76,13 @@ export default function SettingsPage() {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'PURCHASE':
-        return <ArrowDownRight className="h-4 w-4 text-emerald-500" />
+        return <ArrowDownRight className="h-4 w-4 text-ds-success" />
       case 'USAGE':
-        return <ArrowUpRight className="h-4 w-4 text-rose-500" />
+        return <ArrowUpRight className="h-4 w-4 text-ds-error" />
       case 'REFUND':
-        return <ArrowDownRight className="h-4 w-4 text-blue-500" />
+        return <ArrowDownRight className="h-4 w-4 text-ds-info" />
       case 'BONUS':
-        return <ArrowDownRight className="h-4 w-4 text-amber-500" />
+        return <ArrowDownRight className="h-4 w-4 text-ds-warning" />
       default:
         return <Coins className="h-4 w-4 text-muted-foreground" />
     }
@@ -91,7 +91,7 @@ export default function SettingsPage() {
   const formatTransactionAmount = (amount: number, type: string) => {
     const isPositive = type === 'PURCHASE' || type === 'REFUND' || type === 'BONUS'
     return (
-      <span className={isPositive ? 'text-emerald-500' : 'text-rose-500'}>
+      <span className={isPositive ? 'text-ds-success' : 'text-ds-error'}>
         {isPositive ? '+' : '-'}
         {Math.abs(amount)} credits
       </span>
@@ -188,10 +188,10 @@ export default function SettingsPage() {
                         className={cn(
                           'text-4xl font-bold',
                           billingData?.credits === 0
-                            ? 'text-rose-500'
+                            ? 'text-ds-error'
                             : (billingData?.credits ?? 0) <= 2
-                              ? 'text-amber-500'
-                              : 'text-emerald-500'
+                              ? 'text-ds-warning'
+                              : 'text-ds-success'
                         )}
                       >
                         {billingData?.credits ?? 0}
@@ -199,7 +199,7 @@ export default function SettingsPage() {
                       <span className="text-muted-foreground">credits available</span>
                     </div>
                     {(billingData?.credits ?? 0) <= 2 && (
-                      <p className="text-sm text-amber-500 mt-2">
+                      <p className="text-sm text-ds-warning mt-2">
                         Your balance is low. Purchase more credits to continue creating tasks.
                       </p>
                     )}

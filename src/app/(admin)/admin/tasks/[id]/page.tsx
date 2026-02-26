@@ -662,7 +662,7 @@ export default function AdminTaskDetailPage() {
                                     {freelancer.completedTasks} tasks
                                   </span>
                                   {freelancer.rating && (
-                                    <span className="flex items-center gap-0.5 text-xs text-amber-500">
+                                    <span className="flex items-center gap-0.5 text-xs text-ds-warning">
                                       <Star className="h-3 w-3 fill-current" />
                                       {parseFloat(freelancer.rating).toFixed(1)}
                                     </span>
@@ -753,7 +753,7 @@ export default function AdminTaskDetailPage() {
                                   {freelancer.completedTasks} tasks
                                 </span>
                                 {freelancer.rating && (
-                                  <span className="flex items-center gap-0.5 text-xs text-amber-500">
+                                  <span className="flex items-center gap-0.5 text-xs text-ds-warning">
                                     <Star className="h-3 w-3 fill-current" />
                                     {parseFloat(freelancer.rating).toFixed(1)}
                                   </span>

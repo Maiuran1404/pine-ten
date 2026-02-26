@@ -596,61 +596,62 @@ function DashboardContent() {
         {/* Base warm tone */}
         <div className="absolute inset-0 bg-background" />
 
-        {/* Large sage-green wash — top left canopy */}
+        {/* Large sage-green wash — top left canopy (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute -top-[20%] -left-[15%] w-[90%] h-[85%] rounded-[40%_60%_55%_45%/50%_40%_60%_50%]"
           style={{
             background:
-              'radial-gradient(ellipse at 40% 40%, rgba(140,190,130,0.35) 0%, rgba(160,200,150,0.18) 40%, transparent 70%)',
+              'radial-gradient(ellipse at 40% 40%, rgba(140,190,130,0.35) 0%, rgba(160,200,150,0.18) 40%, transparent 70%)' /* --crafted-sage variants */,
             animation: 'float1 45s ease-in-out infinite',
           }}
         />
 
-        {/* Warm golden bloom — morning sunlight */}
+        {/* Warm golden bloom — morning sunlight (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute top-[5%] right-[-10%] w-[70%] h-[65%] rounded-[55%_45%_50%_50%/45%_55%_45%_55%]"
           style={{
             background:
-              'radial-gradient(ellipse at 60% 50%, rgba(230,200,130,0.3) 0%, rgba(220,190,120,0.12) 50%, transparent 75%)',
+              'radial-gradient(ellipse at 60% 50%, rgba(230,200,130,0.3) 0%, rgba(220,190,120,0.12) 50%, transparent 75%)' /* warm golden accent */,
             animation: 'float2 55s ease-in-out infinite',
           }}
         />
 
-        {/* Deep emerald — lower foliage */}
+        {/* Deep emerald — lower foliage (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute bottom-[-15%] left-[0%] w-[80%] h-[60%] rounded-[45%_55%_60%_40%/55%_45%_50%_50%]"
           style={{
             background:
-              'radial-gradient(ellipse at 50% 60%, rgba(100,170,120,0.28) 0%, rgba(120,180,130,0.1) 45%, transparent 70%)',
+              'radial-gradient(ellipse at 50% 60%, rgba(100,170,120,0.28) 0%, rgba(120,180,130,0.1) 45%, transparent 70%)' /* --crafted-green variants */,
             animation: 'float3 60s ease-in-out infinite',
           }}
         />
 
-        {/* Soft mint accent — mid-page organic detail */}
+        {/* Soft mint accent — mid-page organic detail (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute top-[35%] left-[25%] w-[50%] h-[45%] rounded-[50%_50%_45%_55%/45%_55%_50%_50%]"
           style={{
             background:
-              'radial-gradient(ellipse at 45% 50%, rgba(150,210,170,0.22) 0%, transparent 65%)',
+              'radial-gradient(ellipse at 45% 50%, rgba(150,210,170,0.22) 0%, transparent 65%)' /* --crafted-mint variant */,
             animation: 'float4 50s ease-in-out infinite',
           }}
         />
 
-        {/* Warm peach bloom — like afternoon light */}
+        {/* Warm peach bloom — like afternoon light (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute top-[2%] left-[45%] w-[45%] h-[35%] rounded-[50%]"
           style={{
-            background: 'radial-gradient(circle, rgba(240,200,150,0.25) 0%, transparent 60%)',
+            background:
+              'radial-gradient(circle, rgba(240,200,150,0.25) 0%, transparent 60%)' /* warm peach accent */,
             animation: 'float5 35s ease-in-out infinite',
           }}
         />
 
-        {/* Bottom-right warm glow */}
+        {/* Bottom-right warm glow (canonical organic blob gradient — keep exact rgba) */}
         <div
           className="absolute bottom-[0%] right-[-5%] w-[55%] h-[50%] rounded-[50%_50%_40%_60%/40%_60%_50%_50%]"
           style={{
             background:
-              'radial-gradient(ellipse at 60% 60%, rgba(200,180,130,0.2) 0%, transparent 65%)',
+              'radial-gradient(ellipse at 60% 60%, rgba(200,180,130,0.2) 0%, transparent 65%)' /* warm golden accent */,
             animation: 'float1 65s ease-in-out infinite reverse',
           }}
         />
@@ -721,17 +722,20 @@ function DashboardContent() {
         <div className="px-4 sm:px-6 pt-6 max-w-3xl mx-auto w-full">
           {tasksForReview.map((task) => (
             <Link key={task.id} href={`/dashboard/tasks/${task.id}`}>
-              <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer mb-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0 animate-pulse">
-                  <Eye className="h-5 w-5 text-orange-600" />
+              <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-ds-status-revision bg-ds-status-revision/5 hover:bg-ds-status-revision/10 transition-colors cursor-pointer mb-3">
+                <div className="w-10 h-10 rounded-full bg-ds-status-revision/15 flex items-center justify-center shrink-0 animate-pulse">
+                  <Eye className="h-5 w-5 text-ds-status-revision" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-orange-800 dark:text-orange-300">
+                  <p className="font-semibold text-ds-status-revision">
                     Deliverable ready for review
                   </p>
                   <p className="text-sm text-foreground font-medium truncate">{task.title}</p>
                 </div>
-                <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white shrink-0">
+                <Button
+                  size="sm"
+                  className="bg-ds-status-revision hover:bg-ds-status-revision/90 text-white shrink-0"
+                >
                   Review Now
                 </Button>
               </div>
@@ -965,7 +969,7 @@ function DashboardContent() {
                 'Content Calendar': 'from-[var(--crafted-green)] to-[var(--crafted-sage)]',
                 'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
               }
-              const gradient = gradients[category] || 'from-gray-500 to-gray-600'
+              const gradient = gradients[category] || 'from-muted-foreground to-muted-foreground/80'
               return (
                 <button
                   key={category}
@@ -1068,8 +1072,8 @@ function DashboardContent() {
                           className={cn(
                             'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors',
                             quickMode
-                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
-                              : 'border-border text-muted-foreground hover:border-amber-500/30'
+                              ? 'bg-ds-warning/10 text-ds-warning border-ds-warning/30'
+                              : 'border-border text-muted-foreground hover:border-ds-warning/30'
                           )}
                         >
                           <Zap className="h-3 w-3" />

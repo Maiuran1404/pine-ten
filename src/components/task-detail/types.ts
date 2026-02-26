@@ -209,48 +209,48 @@ export interface WebsiteProjectSummary {
 
 export const STATUS_CONFIG: Record<string, { color: string; bgColor: string; label: string }> = {
   PENDING: {
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50 border-yellow-200',
+    color: 'text-ds-status-pending',
+    bgColor: 'bg-ds-status-pending/10 border-ds-status-pending/30',
     label: 'Queued',
   },
   OFFERED: {
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50 border-cyan-200',
+    color: 'text-ds-info',
+    bgColor: 'bg-ds-info/10 border-ds-info/30',
     label: 'Queued',
   },
   ASSIGNED: {
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-ds-status-assigned',
+    bgColor: 'bg-ds-status-assigned/10 border-ds-status-assigned/30',
     label: 'Assigned',
   },
   IN_PROGRESS: {
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-ds-status-review',
+    bgColor: 'bg-ds-status-review/10 border-ds-status-review/30',
     label: 'In Progress',
   },
   IN_REVIEW: {
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-ds-status-revision',
+    bgColor: 'bg-ds-status-revision/10 border-ds-status-revision/30',
     label: 'In Review',
   },
   PENDING_ADMIN_REVIEW: {
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-ds-warning',
+    bgColor: 'bg-ds-warning/10 border-ds-warning/30',
     label: 'Admin Review',
   },
   REVISION_REQUESTED: {
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-ds-error',
+    bgColor: 'bg-ds-error/10 border-ds-error/30',
     label: 'Revision',
   },
   COMPLETED: {
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 border-green-200',
+    color: 'text-ds-status-completed',
+    bgColor: 'bg-ds-status-completed/10 border-ds-status-completed/30',
     label: 'Completed',
   },
   CANCELLED: {
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-ds-status-cancelled',
+    bgColor: 'bg-ds-status-cancelled/10 border-ds-status-cancelled/30',
     label: 'Cancelled',
   },
 }

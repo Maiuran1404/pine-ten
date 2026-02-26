@@ -58,16 +58,16 @@ export function ConversationCard({ run }: ConversationRowProps) {
       <div
         className={cn(
           'flex items-center gap-4 px-4 py-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group',
-          run.reachedReview && 'border-emerald-200/60',
-          run.status === 'failed' && 'border-red-200/60'
+          run.reachedReview && 'border-ds-success/60',
+          run.status === 'failed' && 'border-destructive/60'
         )}
       >
         {/* Status icon + score badge */}
         <div className="shrink-0 flex items-center gap-2">
           {run.reachedReview ? (
-            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            <CheckCircle2 className="h-5 w-5 text-ds-success" />
           ) : run.status === 'failed' ? (
-            <XCircle className="h-5 w-5 text-red-500" />
+            <XCircle className="h-5 w-5 text-ds-error" />
           ) : (
             <Clock className="h-5 w-5 text-muted-foreground" />
           )}
@@ -79,10 +79,10 @@ export function ConversationCard({ run }: ConversationRowProps) {
                     className={cn(
                       'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2',
                       run.compositeScore! >= 75
-                        ? 'border-emerald-500 text-emerald-700 bg-emerald-50'
+                        ? 'border-ds-success text-ds-success bg-ds-success/10'
                         : run.compositeScore! >= 50
-                          ? 'border-amber-500 text-amber-700 bg-amber-50'
-                          : 'border-red-500 text-red-700 bg-red-50'
+                          ? 'border-ds-warning text-ds-warning bg-ds-warning/10'
+                          : 'border-ds-error text-ds-error bg-ds-error/10'
                     )}
                   >
                     {run.compositeScore}
@@ -121,7 +121,7 @@ export function ConversationCard({ run }: ConversationRowProps) {
           </div>
           {/* Error message for failed runs */}
           {run.errorMessage && (
-            <p className="text-[11px] text-red-500 truncate">{run.errorMessage}</p>
+            <p className="text-[11px] text-ds-error truncate">{run.errorMessage}</p>
           )}
         </div>
 

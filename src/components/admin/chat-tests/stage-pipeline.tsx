@@ -80,10 +80,10 @@ export function StagePipeline({
                       compact ? 'h-2 w-2' : 'h-2.5 w-2.5',
                       reached
                         ? isFailed
-                          ? 'bg-red-500'
+                          ? 'bg-ds-error'
                           : isPassed
-                            ? 'bg-emerald-500'
-                            : 'bg-emerald-400'
+                            ? 'bg-ds-success'
+                            : 'bg-ds-success/80'
                         : 'bg-muted border border-muted-foreground/20'
                     )}
                   />

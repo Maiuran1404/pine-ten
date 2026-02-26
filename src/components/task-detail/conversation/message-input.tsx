@@ -63,7 +63,7 @@ export function MessageInput({
       <div
         className={cn(
           'flex gap-2 rounded-lg border p-2',
-          isInReview && 'border-orange-300 bg-orange-50/50'
+          isInReview && 'border-ds-status-revision/30 bg-ds-status-revision/5'
         )}
       >
         <Textarea
@@ -75,7 +75,7 @@ export function MessageInput({
           }
           className={cn(
             'min-h-[60px] resize-none border-0 shadow-none focus-visible:ring-0',
-            isInReview && 'placeholder:text-orange-500/70'
+            isInReview && 'placeholder:text-ds-status-revision/70'
           )}
           disabled={isLoading}
         />
@@ -84,7 +84,7 @@ export function MessageInput({
             onClick={handleSubmit}
             disabled={!message.trim() || isLoading}
             size="sm"
-            className={cn(isInReview && 'bg-orange-500 hover:bg-orange-600')}
+            className={cn(isInReview && 'bg-ds-status-revision hover:bg-ds-status-revision/90')}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -105,7 +105,7 @@ export function MessageInput({
 
       {isInReview && (
         <p className="text-muted-foreground text-xs">
-          <span className="font-medium text-orange-600">
+          <span className="font-medium text-ds-status-revision">
             {revisionsRemaining} revision{revisionsRemaining !== 1 ? 's' : ''} remaining
           </span>{' '}
           -- Your message will be sent as a revision request.

@@ -232,7 +232,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
             <SidebarGroupedNavigation
               groups={navigationGroups}
               basePath="/admin"
-              accentColor="rose"
+              accentColor="error"
             />
           </SidebarGroupContent>
         </SidebarGroup>

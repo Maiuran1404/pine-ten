@@ -221,8 +221,8 @@ export function PortalDashboardContent() {
           className="relative flex flex-col items-center text-center max-w-2xl mx-auto space-y-6 z-10"
         >
           {/* Icon */}
-          <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 flex items-center justify-center mb-2 border border-yellow-500/20">
-            <Clock className="w-10 h-10 text-yellow-500" />
+          <div className="w-20 h-20 rounded-2xl bg-ds-warning/10 flex items-center justify-center mb-2 border border-ds-warning/20">
+            <Clock className="w-10 h-10 text-ds-warning" />
           </div>
 
           {/* Text */}
@@ -230,7 +230,8 @@ export function PortalDashboardContent() {
             <h1
               className="text-3xl sm:text-4xl font-normal tracking-tight"
               style={{
-                background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                background:
+                  'linear-gradient(90deg, var(--ds-warning) 0%, var(--ds-warning) 50%, var(--ds-warning) 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -246,9 +247,9 @@ export function PortalDashboardContent() {
 
           {/* Status Card */}
           <div className="w-full max-w-md mt-8">
-            <div className="relative rounded-xl overflow-hidden border border-yellow-500/20 bg-yellow-500/5">
+            <div className="relative rounded-xl overflow-hidden border border-ds-warning/20 bg-ds-warning/5">
               <div className="flex items-center gap-4 px-6 py-4">
-                <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
+                <div className="w-3 h-3 rounded-full bg-ds-warning animate-pulse" />
                 <div className="text-left">
                   <p className="text-foreground font-medium">Review in progress</p>
                   <p className="text-muted-foreground text-sm">Usually takes 24-48 hours</p>
@@ -322,7 +323,7 @@ export function PortalDashboardContent() {
                     <span className="text-3xl sm:text-4xl font-bold">
                       {stats?.rating?.toFixed(1) || '—'}
                     </span>
-                    {stats?.rating && <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />}
+                    {stats?.rating && <Star className="h-5 w-5 text-ds-warning fill-ds-warning" />}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Average rating</p>
                 </div>
@@ -360,25 +361,28 @@ export function PortalDashboardContent() {
             .filter((t) => t.status === 'REVISION_REQUESTED')
             .map((task) => (
               <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-                <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:border-red-600 transition-colors cursor-pointer">
+                <Card className="border-2 border-destructive bg-destructive/5 hover:border-destructive/80 transition-colors cursor-pointer">
                   <CardContent className="flex items-center gap-4 p-4">
-                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 animate-pulse">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 animate-pulse">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-red-700 dark:text-red-400">
+                        <span className="text-sm font-semibold text-destructive">
                           Revision requested
                         </span>
                       </div>
                       <p className="text-sm text-foreground font-medium mt-0.5 truncate">
                         {task.title}
                       </p>
-                      <p className="text-xs text-red-600/70 dark:text-red-400/70">
+                      <p className="text-xs text-destructive/70">
                         Review feedback and submit an updated version
                       </p>
                     </div>
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-destructive hover:bg-destructive/90 text-white shrink-0"
+                    >
                       Fix Now
                     </Button>
                   </CardContent>
@@ -395,14 +399,14 @@ export function PortalDashboardContent() {
             .filter((t) => t.status === 'ASSIGNED')
             .map((task) => (
               <Link key={task.id} href={`/portal/tasks/${task.id}`}>
-                <Card className="border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/20 hover:border-emerald-500 transition-colors cursor-pointer">
+                <Card className="border-2 border-ds-success/50 bg-ds-success/5 hover:border-ds-success transition-colors cursor-pointer">
                   <CardContent className="flex items-center gap-4 p-4">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                      <Sparkles className="h-5 w-5 text-emerald-600" />
+                    <div className="w-10 h-10 rounded-full bg-ds-success/10 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-5 w-5 text-ds-success" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                        <span className="text-sm font-semibold text-ds-success">
                           New task assigned to you
                         </span>
                       </div>
@@ -413,7 +417,7 @@ export function PortalDashboardContent() {
                     </div>
                     <Button
                       size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                      className="bg-ds-success hover:bg-ds-success/90 text-white shrink-0"
                     >
                       View Task
                     </Button>

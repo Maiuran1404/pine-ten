@@ -45,10 +45,10 @@ export function WebsiteProgressBar({
                 className={cn(
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
                   isCompleted
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-ds-success text-white'
                     : isCurrent
-                      ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 ring-2 ring-green-500'
-                      : 'bg-gray-100 dark:bg-zinc-800 text-muted-foreground'
+                      ? 'bg-ds-success/10 text-ds-success ring-2 ring-ds-success'
+                      : 'bg-muted text-muted-foreground'
                 )}
               >
                 {isCompleted ? '\u2713' : index + 1}
@@ -66,7 +66,7 @@ export function WebsiteProgressBar({
               <div
                 className={cn(
                   'h-0.5 flex-1 rounded-full',
-                  isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-zinc-700'
+                  isCompleted ? 'bg-ds-success' : 'bg-muted'
                 )}
               />
             )}

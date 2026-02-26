@@ -364,7 +364,7 @@ export function ClientsContent() {
                       </TableCell>
                       <TableCell>
                         {client.onboardingCompleted ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <CheckCircle className="h-5 w-5 text-ds-success" />
                         ) : (
                           <XCircle className="h-5 w-5 text-muted-foreground" />
                         )}
@@ -476,7 +476,7 @@ export function ClientsContent() {
                 </p>
                 <p>
                   <span className="text-muted-foreground">After grant:</span>{' '}
-                  <span className="font-medium text-green-600">
+                  <span className="font-medium text-ds-success">
                     {selectedClient.credits + grantCredits} credits
                   </span>
                 </p>

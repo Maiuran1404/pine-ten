@@ -136,7 +136,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-purple-500" />
+          <Zap className="h-5 w-5 text-ds-status-review" />
           Bigged Ad Spy Scraper
         </CardTitle>
         <CardDescription>
@@ -291,17 +291,17 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                 <div className="text-xs text-muted-foreground">Scraped</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-green-600">{summary.successful}</div>
+                <div className="text-lg font-bold text-ds-success">{summary.successful}</div>
                 <div className="text-xs text-muted-foreground">
                   {previewMode ? 'Ready' : 'Imported'}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-600">{summary.skipped}</div>
+                <div className="text-lg font-bold text-ds-warning">{summary.skipped}</div>
                 <div className="text-xs text-muted-foreground">Skipped</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-red-600">{summary.failed}</div>
+                <div className="text-lg font-bold text-ds-error">{summary.failed}</div>
                 <div className="text-xs text-muted-foreground">Failed</div>
               </div>
             </div>
@@ -309,7 +309,7 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
             {/* Successful imports */}
             {successfulResults.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-green-600">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-ds-success">
                   <CheckCircle2 className="h-4 w-4" />
                   {previewMode ? 'Ready for Import' : 'Imported'} ({successfulResults.length})
                 </h4>
@@ -347,13 +347,13 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
             {/* Skipped items */}
             {skippedResults.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-yellow-600">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-ds-warning">
                   <AlertTriangle className="h-4 w-4" />
                   Skipped ({skippedResults.length})
                 </h4>
                 <div className="space-y-1 max-h-[100px] overflow-y-auto text-xs">
                   {skippedResults.slice(0, 5).map((result, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-yellow-600">
+                    <div key={idx} className="flex items-center gap-2 text-ds-warning">
                       <span className="truncate flex-1">{result.skipReason}</span>
                     </div>
                   ))}
@@ -369,13 +369,13 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
             {/* Failed items */}
             {failedResults.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-red-600">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-ds-error">
                   <XCircle className="h-4 w-4" />
                   Failed ({failedResults.length})
                 </h4>
                 <div className="space-y-1 max-h-[100px] overflow-y-auto text-xs">
                   {failedResults.slice(0, 5).map((result, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-red-500">
+                    <div key={idx} className="flex items-center gap-2 text-ds-error">
                       <span className="truncate flex-1">{result.error}</span>
                     </div>
                   ))}

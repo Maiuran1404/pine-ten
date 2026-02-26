@@ -1,3 +1,9 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values match design tokens:
+ *   #293525/#3C612E/#5F7558/#4B624F = crafted forest/green cover palette,
+ *   #BDF945 = accent highlight, #ffffff = white
+ */
 import { SlideWrapper } from '@/components/pitch-deck/slides/slide-wrapper'
 
 interface StoryboardCoverProps {

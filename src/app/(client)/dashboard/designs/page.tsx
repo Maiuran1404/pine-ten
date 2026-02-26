@@ -94,7 +94,7 @@ function designToLibraryFile(design: Design): LibraryFile {
 // Get file icon based on type
 function getFileIcon(file: LibraryFile) {
   if (file.type === 'folder') {
-    return <Folder className="h-8 w-8 text-green-600" />
+    return <Folder className="h-8 w-8 text-crafted-green" />
   }
 
   const ext = file.fileType || getFileExtension(file.name)
@@ -103,22 +103,22 @@ function getFileIcon(file: LibraryFile) {
     case 'doc':
     case 'docx':
     case 'txt':
-      return <FileText className="h-8 w-8 text-green-600" />
+      return <FileText className="h-8 w-8 text-crafted-green" />
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'webp':
-      return <FileImage className="h-8 w-8 text-green-600" />
+      return <FileImage className="h-8 w-8 text-crafted-green" />
     case 'tsx':
     case 'jsx':
     case 'html':
     case 'css':
     case 'js':
     case 'ts':
-      return <FileCode className="h-8 w-8 text-green-600" />
+      return <FileCode className="h-8 w-8 text-crafted-green" />
     default:
-      return <File className="h-8 w-8 text-green-600" />
+      return <File className="h-8 w-8 text-crafted-green" />
   }
 }
 
@@ -157,13 +157,13 @@ function getSmallFileIcon(file: LibraryFile) {
 function getPermissionStyle(permission: string) {
   switch (permission) {
     case 'Editor':
-      return 'bg-green-100 text-green-700 border-green-200'
+      return 'bg-ds-success/10 text-ds-success border-ds-success/30'
     case 'View Only':
-      return 'bg-amber-100 text-amber-700 border-amber-200'
+      return 'bg-ds-warning/10 text-ds-warning border-ds-warning/30'
     case 'Administrator':
-      return 'bg-blue-100 text-blue-700 border-blue-200'
+      return 'bg-ds-info/10 text-ds-info border-ds-info/30'
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200'
+      return 'bg-muted text-muted-foreground border-border'
   }
 }
 
@@ -173,8 +173,8 @@ function EmptyState() {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-6">
-        <FolderOpen className="h-10 w-10 text-green-600" />
+      <div className="w-20 h-20 rounded-full bg-crafted-green/10 dark:bg-crafted-green/20 flex items-center justify-center mb-6">
+        <FolderOpen className="h-10 w-10 text-crafted-green" />
       </div>
       <h3 className="text-xl font-semibold text-foreground mb-2">No assets yet</h3>
       <p className="text-muted-foreground text-center max-w-md mb-6">
@@ -182,7 +182,7 @@ function EmptyState() {
       </p>
       <Button
         onClick={() => router.push('/dashboard')}
-        className="gap-2 bg-green-600 hover:bg-green-700"
+        className="gap-2 bg-crafted-green hover:bg-crafted-forest"
       >
         <MessageCircle className="h-4 w-4" />
         Start a Chat
@@ -200,7 +200,7 @@ function LoadingSkeleton() {
         <Skeleton className="h-6 w-48 mb-4" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl border border-border p-4">
+            <div key={i} className="bg-white dark:bg-secondary rounded-xl border border-border p-4">
               <Skeleton className="h-12 w-12 rounded-lg mb-3" />
               <Skeleton className="h-4 w-24" />
             </div>
@@ -211,7 +211,7 @@ function LoadingSkeleton() {
       {/* Table Skeleton */}
       <div>
         <Skeleton className="h-6 w-32 mb-4" />
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-border overflow-hidden">
+        <div className="bg-white dark:bg-secondary rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
             <Skeleton className="h-4 w-full" />
           </div>
@@ -390,10 +390,10 @@ export default function LibraryPage() {
                 {recentFiles.map((file) => (
                   <div
                     key={file.id}
-                    className="bg-white dark:bg-zinc-900 rounded-xl border border-green-200 dark:border-green-900/50 p-4 hover:border-green-300 dark:hover:border-green-800 transition-colors group"
+                    className="bg-white dark:bg-secondary rounded-xl border border-crafted-green/20 dark:border-crafted-green/20 p-4 hover:border-crafted-green/40 dark:hover:border-crafted-green/40 transition-colors group"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="p-2 bg-crafted-green/10 dark:bg-crafted-green/20 rounded-lg">
                         {getFileIcon(file)}
                       </div>
                       <DropdownMenu>
@@ -438,7 +438,7 @@ export default function LibraryPage() {
                   <h2 className="text-lg font-semibold text-foreground">All Files</h2>
                   <Badge
                     variant="outline"
-                    className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                    className="bg-crafted-green/10 text-crafted-forest border-crafted-green/20 dark:bg-crafted-green/20 dark:text-crafted-sage dark:border-crafted-green/30"
                   >
                     {totalFiles} Total
                   </Badge>
@@ -452,7 +452,7 @@ export default function LibraryPage() {
               </div>
 
               {/* Files table */}
-              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-border overflow-hidden">
+              <div className="bg-white dark:bg-secondary rounded-xl border border-border overflow-hidden">
                 {/* Table header */}
                 <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-border bg-muted/30">
                   <div className="col-span-6 sm:col-span-5 flex items-center gap-2 text-sm font-medium text-muted-foreground">

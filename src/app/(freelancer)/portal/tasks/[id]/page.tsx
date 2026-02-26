@@ -226,9 +226,9 @@ function WorkflowStepper({ currentStatus }: { currentStatus: string }) {
               <div
                 className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                  isCompleted && 'bg-green-500 text-white',
+                  isCompleted && 'bg-ds-success text-white',
                   isCurrent && !isRevisionStep && 'bg-primary text-primary-foreground',
-                  isRevisionStep && 'bg-orange-500 text-white',
+                  isRevisionStep && 'bg-ds-warning text-white',
                   !isCompleted && !isCurrent && 'bg-muted text-muted-foreground'
                 )}
               >
@@ -253,7 +253,7 @@ function WorkflowStepper({ currentStatus }: { currentStatus: string }) {
               <div
                 className={cn(
                   'flex-1 h-0.5 mx-2 mt-[-16px]',
-                  currentIndex > index ? 'bg-green-500' : 'bg-muted'
+                  currentIndex > index ? 'bg-ds-success' : 'bg-muted'
                 )}
               />
             )}
@@ -488,15 +488,15 @@ export default function FreelancerTaskDetailPage() {
 
   const _urgencyStyles: Record<string, string> = {
     overdue: 'text-destructive',
-    urgent: 'text-orange-500',
-    warning: 'text-yellow-600',
+    urgent: 'text-ds-warning',
+    warning: 'text-ds-warning',
     safe: 'text-foreground',
   }
 
   const _urgencyBgStyles: Record<string, string> = {
     overdue: 'bg-destructive/10 border-destructive/20',
-    urgent: 'bg-orange-500/10 border-orange-500/20',
-    warning: 'bg-yellow-500/10 border-yellow-500/20',
+    urgent: 'bg-ds-warning/10 border-ds-warning/20',
+    warning: 'bg-ds-warning/10 border-ds-warning/20',
     safe: '',
   }
 
@@ -523,14 +523,14 @@ export default function FreelancerTaskDetailPage() {
 
       {/* Primary CTA Banner — full width, top of page */}
       {task.status === 'ASSIGNED' && (
-        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-ds-success bg-ds-success/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center shrink-0">
-              <Play className="h-5 w-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-full bg-ds-success/10 flex items-center justify-center shrink-0">
+              <Play className="h-5 w-5 text-ds-success" />
             </div>
             <div>
-              <p className="font-semibold text-emerald-800 dark:text-emerald-300">Ready to start</p>
-              <p className="text-sm text-emerald-700/70 dark:text-emerald-400/70">
+              <p className="font-semibold text-ds-success">Ready to start</p>
+              <p className="text-sm text-ds-success/70">
                 Review the brief below, then begin working on this task
               </p>
             </div>
@@ -539,7 +539,7 @@ export default function FreelancerTaskDetailPage() {
             onClick={handleStartTask}
             disabled={isSubmitting}
             size="lg"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+            className="bg-ds-success hover:bg-ds-success/90 text-white shrink-0"
           >
             {isSubmitting ? (
               <LoadingSpinner size="sm" className="mr-2" />
@@ -570,14 +570,12 @@ export default function FreelancerTaskDetailPage() {
         </div>
       )}
       {task.status === 'REVISION_REQUESTED' && (
-        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-ds-warning bg-ds-warning/5">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+            <AlertTriangle className="h-5 w-5 text-ds-warning shrink-0" />
             <div>
-              <p className="font-semibold text-orange-800 dark:text-orange-300">
-                Revision requested
-              </p>
-              <p className="text-sm text-orange-700/70 dark:text-orange-400/70">
+              <p className="font-semibold text-ds-warning">Revision requested</p>
+              <p className="text-sm text-ds-warning/70">
                 The client has requested changes. Review feedback and resubmit.
               </p>
             </div>
@@ -585,7 +583,7 @@ export default function FreelancerTaskDetailPage() {
           <Button
             size="lg"
             variant="outline"
-            className="border-orange-500 text-orange-600 hover:bg-orange-500/10 shrink-0"
+            className="border-ds-warning text-ds-warning hover:bg-ds-warning/10 shrink-0"
             onClick={() => setActiveTab('submit')}
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -594,15 +592,13 @@ export default function FreelancerTaskDetailPage() {
         </div>
       )}
       {(task.status === 'IN_REVIEW' || task.status === 'PENDING_ADMIN_REVIEW') && (
-        <div className="flex items-center gap-4 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-ds-success/30 bg-ds-success/5">
+          <div className="w-10 h-10 rounded-full bg-ds-success/10 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-ds-success" />
           </div>
           <div>
-            <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-              Submitted successfully
-            </p>
-            <p className="text-sm text-emerald-700/70 dark:text-emerald-400/70">
+            <p className="font-semibold text-ds-success">Submitted successfully</p>
+            <p className="text-sm text-ds-success/70">
               Your work is being reviewed. You&apos;ll be notified of any updates.
             </p>
           </div>
@@ -645,7 +641,7 @@ export default function FreelancerTaskDetailPage() {
                   <Upload className="h-4 w-4" />
                   <span className="hidden sm:inline">Submit</span>
                   {task.status === 'REVISION_REQUESTED' && (
-                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-ds-warning animate-pulse" />
                   )}
                 </TabsTrigger>
               )}
@@ -1039,7 +1035,7 @@ export default function FreelancerTaskDetailPage() {
                         isOverdue
                           ? 'bg-destructive/10 border-destructive/20'
                           : isUrgent
-                            ? 'bg-orange-500/10 border-orange-500/20'
+                            ? 'bg-ds-warning/10 border-ds-warning/20'
                             : 'border-transparent'
                       )}
                     >
@@ -1049,7 +1045,7 @@ export default function FreelancerTaskDetailPage() {
                           isOverdue
                             ? 'bg-destructive/10'
                             : isUrgent
-                              ? 'bg-orange-500/10'
+                              ? 'bg-ds-warning/10'
                               : 'bg-muted'
                         )}
                       >
@@ -1059,7 +1055,7 @@ export default function FreelancerTaskDetailPage() {
                           <Clock
                             className={cn(
                               'h-5 w-5',
-                              isUrgent ? 'text-orange-500' : 'text-muted-foreground'
+                              isUrgent ? 'text-ds-warning' : 'text-muted-foreground'
                             )}
                           />
                         )}
@@ -1069,7 +1065,7 @@ export default function FreelancerTaskDetailPage() {
                         <p
                           className={cn(
                             'font-medium',
-                            isOverdue ? 'text-destructive' : isUrgent ? 'text-orange-500' : ''
+                            isOverdue ? 'text-destructive' : isUrgent ? 'text-ds-warning' : ''
                           )}
                         >
                           {artistDeadline.toLocaleDateString(undefined, {
@@ -1089,7 +1085,7 @@ export default function FreelancerTaskDetailPage() {
                             isOverdue
                               ? 'text-destructive'
                               : isUrgent
-                                ? 'text-orange-500'
+                                ? 'text-ds-warning'
                                 : 'text-muted-foreground'
                           )}
                         >
@@ -1119,8 +1115,8 @@ export default function FreelancerTaskDetailPage() {
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <div className="w-10 h-10 rounded-full bg-ds-success/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-ds-success" />
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Completed</p>

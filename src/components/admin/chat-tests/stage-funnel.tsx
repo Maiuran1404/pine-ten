@@ -45,15 +45,15 @@ export function computeFunnel(runs: Array<{ messages?: Array<{ stage?: string }>
 }
 
 function getSegmentColor(percentage: number): string {
-  if (percentage >= 90) return 'bg-emerald-500'
-  if (percentage >= 50) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (percentage >= 90) return 'bg-ds-success'
+  if (percentage >= 50) return 'bg-ds-warning'
+  return 'bg-ds-error'
 }
 
 function getTextColor(percentage: number): string {
-  if (percentage >= 90) return 'text-emerald-700'
-  if (percentage >= 50) return 'text-amber-700'
-  return 'text-red-700'
+  if (percentage >= 90) return 'text-ds-success'
+  if (percentage >= 50) return 'text-ds-warning'
+  return 'text-ds-error'
 }
 
 interface StageFunnelProps {
@@ -78,7 +78,7 @@ export function StageFunnel({ funnel, totalRuns }: StageFunnelProps) {
           <div key={item.stage} className="flex-1 flex flex-col items-center gap-0.5">
             {/* Drop-off indicator */}
             {dropOff > 0 && i > 0 && (
-              <span className="text-[10px] font-medium text-red-500">-{dropOff}</span>
+              <span className="text-[10px] font-medium text-ds-error">-{dropOff}</span>
             )}
 
             {/* Bar */}

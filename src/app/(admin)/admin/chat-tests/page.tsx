@@ -79,39 +79,39 @@ function passRate(batch: BatchSummary): number {
 }
 
 function passRateColor(rate: number): string {
-  if (rate >= 80) return 'text-emerald-600'
-  if (rate >= 50) return 'text-amber-600'
-  return 'text-red-600'
+  if (rate >= 80) return 'text-ds-success'
+  if (rate >= 50) return 'text-ds-warning'
+  return 'text-ds-error'
 }
 
 function passRateBg(rate: number): string {
-  if (rate >= 80) return 'bg-emerald-500'
-  if (rate >= 50) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (rate >= 80) return 'bg-ds-success'
+  if (rate >= 50) return 'bg-ds-warning'
+  return 'bg-ds-error'
 }
 
 function passRateBgMuted(rate: number): string {
-  if (rate >= 80) return 'bg-emerald-100'
-  if (rate >= 50) return 'bg-amber-100'
-  return 'bg-red-100'
+  if (rate >= 80) return 'bg-ds-success/10'
+  if (rate >= 50) return 'bg-ds-warning/10'
+  return 'bg-ds-error/10'
 }
 
 function scoreColor(score: number): string {
-  if (score >= 75) return 'text-emerald-600'
-  if (score >= 50) return 'text-amber-600'
-  return 'text-red-600'
+  if (score >= 75) return 'text-ds-success'
+  if (score >= 50) return 'text-ds-warning'
+  return 'text-ds-error'
 }
 
 function scoreBg(score: number): string {
-  if (score >= 75) return 'bg-emerald-500'
-  if (score >= 50) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (score >= 75) return 'bg-ds-success'
+  if (score >= 50) return 'bg-ds-warning'
+  return 'bg-ds-error'
 }
 
 function scoreBgMuted(score: number): string {
-  if (score >= 75) return 'bg-emerald-100'
-  if (score >= 50) return 'bg-amber-100'
-  return 'bg-red-100'
+  if (score >= 75) return 'bg-ds-success/10'
+  if (score >= 50) return 'bg-ds-warning/10'
+  return 'bg-ds-error/10'
 }
 
 /** Get the display score for a batch (composite score, or fall back to pass rate) */
@@ -125,13 +125,13 @@ function batchDisplayScore(batch: BatchSummary): { value: number; isScore: boole
 function statusDotColor(status: string): string {
   switch (status) {
     case 'Done':
-      return 'bg-emerald-500'
+      return 'bg-ds-success'
     case 'Running':
-      return 'bg-blue-500'
+      return 'bg-ds-info'
     case 'Partial':
-      return 'bg-amber-500'
+      return 'bg-ds-warning'
     case 'Failed':
-      return 'bg-red-500'
+      return 'bg-ds-error'
     default:
       return 'bg-muted-foreground'
   }
@@ -235,9 +235,9 @@ function HealthSummary({ batches }: { batches: BatchSummary[] }) {
                   className={cn(
                     'flex items-center gap-0.5 text-sm font-medium',
                     trend > 0
-                      ? 'text-emerald-600'
+                      ? 'text-ds-success'
                       : trend < 0
-                        ? 'text-red-600'
+                        ? 'text-ds-error'
                         : 'text-muted-foreground'
                   )}
                 >
@@ -375,7 +375,7 @@ function BatchRow({
       className={cn(
         'flex items-center gap-4 px-4 py-3.5 rounded-lg border bg-card',
         'hover:bg-accent/50 transition-colors',
-        isActive && 'border-blue-200 bg-blue-50/30'
+        isActive && 'border-ds-info/30 bg-ds-info/5'
       )}
     >
       <Link
@@ -385,7 +385,7 @@ function BatchRow({
         {/* Score / pass rate indicator */}
         <div className="shrink-0 w-12 text-center">
           {isActive ? (
-            <Loader2 className="h-5 w-5 text-blue-500 animate-spin mx-auto" />
+            <Loader2 className="h-5 w-5 text-ds-info animate-spin mx-auto" />
           ) : batch.avgCompositeScore !== null && batch.avgCompositeScore !== undefined ? (
             <span
               className={cn('text-lg font-bold tabular-nums', scoreColor(batch.avgCompositeScore))}
@@ -451,7 +451,7 @@ function BatchRow({
               <span className="text-xs text-muted-foreground">{status}</span>
             </span>
             {batch.failedRuns > 0 && status !== 'Failed' && (
-              <span className="text-xs text-red-500">{batch.failedRuns} failed</span>
+              <span className="text-xs text-ds-error">{batch.failedRuns} failed</span>
             )}
           </div>
         </div>
@@ -487,8 +487,8 @@ function BatchRow({
           disabled={deleting}
           className={cn(
             'shrink-0 p-1.5 rounded-md transition-colors',
-            'text-muted-foreground/40 hover:text-red-600 hover:bg-red-50',
-            deleting && 'text-red-600'
+            'text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5',
+            deleting && 'text-destructive'
           )}
           title="Delete batch"
         >

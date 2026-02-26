@@ -57,9 +57,9 @@ export default function CreditsPage() {
   const currentCredits = user?.credits || 0
 
   const getCreditColor = () => {
-    if (currentCredits === 0) return 'text-red-500'
-    if (currentCredits <= 20) return 'text-yellow-500'
-    return 'text-emerald-500'
+    if (currentCredits === 0) return 'text-ds-error'
+    if (currentCredits <= 20) return 'text-ds-warning'
+    return 'text-ds-success'
   }
 
   const handlePurchase = async (packageId: string) => {
@@ -113,7 +113,7 @@ export default function CreditsPage() {
               <span className="text-muted-foreground">credits</span>
             </div>
             {currentCredits <= 20 && (
-              <p className="text-sm text-red-500 mt-3">
+              <p className="text-sm text-ds-error mt-3">
                 Your balance is low. Purchase more credits to continue creating tasks.
               </p>
             )}

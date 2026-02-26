@@ -79,6 +79,10 @@
   --color-ds-highlight: var(--ds-highlight);
   --color-ds-highlight-text: var(--ds-highlight-text);
   --color-surface-raised: var(--surface-raised);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-warm: var(--admin-accent-warm);
+  --color-neutral-dark: var(--neutral-dark);
+  --color-neutral-darker: var(--neutral-darker);
 }
 
 :root {
@@ -178,14 +182,14 @@
   --crafted-olive: #9aa48c;
   --crafted-olive-dark: #7a8575;
 
-  /* Auth/Dark Surface Tokens */
-  --surface-overlay: rgba(20, 20, 20, 0.8);
-  --surface-input: rgba(40, 40, 40, 0.6);
-  --surface-inset: rgba(15, 15, 15, 0.9);
-  --surface-raised: #141414;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --button-cream: #f5f5f0;
-  --button-cream-foreground: #1a1a1a;
+  /* Auth Surface Tokens (Light Mode) */
+  --surface-overlay: rgba(255, 255, 255, 0.85);
+  --surface-input: rgba(0, 0, 0, 0.04);
+  --surface-inset: rgba(255, 255, 255, 0.9);
+  --surface-raised: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --button-cream: #1a1a1a;
+  --button-cream-foreground: #f5f5f0;
 
   /* Task Status System */
   --ds-status-pending: #eab308;
@@ -212,6 +216,14 @@
   /* Highlight Token (Onboarding Indigo) */
   --ds-highlight: #6366f1;
   --ds-highlight-text: #a5b4fc;
+
+  /* Admin Portal */
+  --admin-accent: #e11d48;
+  --admin-accent-warm: #ea580c;
+
+  /* Neutral Dark (default portal fallback) */
+  --neutral-dark: #1f2937;
+  --neutral-darker: #111827;
 }
 
 .dark {
@@ -319,6 +331,14 @@
   /* Highlight Token (Onboarding Indigo) */
   --ds-highlight: #818cf8;
   --ds-highlight-text: #a5b4fc;
+
+  /* Admin Portal */
+  --admin-accent: #fb7185;
+  --admin-accent-warm: #fb923c;
+
+  /* Neutral Dark (default portal fallback) */
+  --neutral-dark: #374151;
+  --neutral-darker: #1f2937;
 }
 
 @layer base {

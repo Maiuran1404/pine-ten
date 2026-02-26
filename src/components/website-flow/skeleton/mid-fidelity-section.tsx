@@ -69,7 +69,7 @@ function MidFeatures({ content }: { content?: Record<string, unknown> }) {
       <div className="grid grid-cols-3 gap-6">
         {features.map((feature) => (
           <div key={feature.title} className="space-y-2">
-            <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600" />
+            <div className="w-9 h-9 rounded-lg bg-muted border border-border" />
             <h3 className="text-sm font-semibold text-foreground/70">{feature.title}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
           </div>
@@ -116,10 +116,7 @@ function MidTestimonials() {
       <h2 className="text-lg font-semibold text-foreground/80 mb-6">What Our Clients Say</h2>
       <div className="grid grid-cols-2 gap-5">
         {testimonials.map((t) => (
-          <div
-            key={t.name}
-            className="p-5 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3"
-          >
+          <div key={t.name} className="p-5 border border-border rounded-lg space-y-3">
             <QuoteGlyph className="text-3xl" />
             <p className="text-xs text-muted-foreground leading-relaxed italic">{t.quote}</p>
             <div className="flex items-center gap-2 pt-1">
@@ -145,7 +142,7 @@ function MidStats() {
   ]
 
   return (
-    <div className="py-10 px-8 bg-slate-50 dark:bg-slate-800/30">
+    <div className="py-10 px-8 bg-muted/30">
       <div className="grid grid-cols-4 gap-6 text-center">
         {stats.map((stat) => (
           <div key={stat.label} className="space-y-1">
@@ -199,16 +196,13 @@ function MidPricing() {
       </p>
       <div className="grid grid-cols-3 gap-4">
         {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className="p-5 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3"
-          >
+          <div key={plan.name} className="p-5 border border-border rounded-lg space-y-3">
             <h3 className="text-sm font-semibold text-foreground/70">{plan.name}</h3>
             <p className="text-xl font-bold text-foreground/80">{plan.price}</p>
             <ul className="space-y-1.5">
               {plan.features.map((f) => (
                 <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex-shrink-0" />
+                  <span className="w-3 h-3 rounded-sm border border-border bg-muted flex-shrink-0" />
                   {f}
                 </li>
               ))}
@@ -262,11 +256,11 @@ function MidFaq() {
         {faqs.map((faq) => (
           <div
             key={faq.q}
-            className="flex items-center justify-between px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-sm bg-slate-100 dark:bg-slate-800"
+            className="flex items-center justify-between px-4 py-3 border border-border rounded-sm bg-muted"
           >
             <p className="text-xs font-medium text-foreground/70">{faq.q}</p>
             <svg
-              className="w-3 h-3 text-slate-400 dark:text-slate-500 flex-shrink-0"
+              className="w-3 h-3 text-muted-foreground flex-shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -308,19 +302,19 @@ function MidContact() {
             <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               Name
             </label>
-            <div className="h-8 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+            <div className="h-8 rounded border border-border bg-muted/50" />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               Email
             </label>
-            <div className="h-8 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+            <div className="h-8 rounded border border-border bg-muted/50" />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               Message
             </label>
-            <div className="h-20 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+            <div className="h-20 rounded border border-border bg-muted/50" />
           </div>
           <ButtonShape width="w-24" />
         </div>
@@ -349,7 +343,7 @@ function MidFooter() {
   ]
 
   return (
-    <div className="py-8 px-8 bg-slate-50 dark:bg-slate-800/50">
+    <div className="py-8 px-8 bg-muted/50">
       <div className="grid grid-cols-4 gap-6 mb-6">
         {columns.map((col) => (
           <div key={col.title}>
@@ -364,7 +358,7 @@ function MidFooter() {
           </div>
         ))}
       </div>
-      <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+      <div className="border-t border-border pt-4">
         <p className="text-[10px] text-muted-foreground text-center">
           2026 YourCompany. All rights reserved.
         </p>

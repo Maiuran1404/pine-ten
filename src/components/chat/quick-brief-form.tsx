@@ -60,14 +60,14 @@ export function QuickBriefForm({ onSubmit, isLoading, className }: QuickBriefFor
   return (
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <Zap className="h-4 w-4 text-amber-500" />
+        <Zap className="h-4 w-4 text-ds-warning" />
         Quick Brief
       </div>
 
       {/* Goal */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">
-          Goal <span className="text-red-500">*</span>
+          Goal <span className="text-ds-error">*</span>
         </label>
         <input
           type="text"

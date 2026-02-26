@@ -307,7 +307,7 @@ export default function ArtistInvitesPage() {
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-ds-warning">{stats.pending}</div>
           </CardContent>
         </Card>
         <Card>
@@ -315,7 +315,7 @@ export default function ArtistInvitesPage() {
             <CardTitle className="text-sm font-medium">Accepted</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
+            <div className="text-2xl font-bold text-ds-success">{stats.accepted}</div>
           </CardContent>
         </Card>
         <Card>
@@ -400,7 +400,7 @@ export default function ArtistInvitesPage() {
                             title="Copy invite link"
                           >
                             {copiedId === invite.id ? (
-                              <Check className="h-4 w-4 text-green-500" />
+                              <Check className="h-4 w-4 text-ds-success" />
                             ) : (
                               <Link2 className="h-4 w-4" />
                             )}

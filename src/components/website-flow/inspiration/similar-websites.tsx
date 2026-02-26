@@ -35,7 +35,7 @@ export function SimilarWebsites({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4 text-green-500" />
+          <Sparkles className="w-4 h-4 text-ds-success" />
           Similar Websites
         </h3>
         <Button
@@ -73,7 +73,7 @@ export function SimilarWebsites({
                 selected={selectedIds.includes(inspiration.id)}
                 onSelect={() => onSelect(inspiration)}
               />
-              <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/90 text-white font-medium">
+              <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded-full bg-ds-success/90 text-white font-medium">
                 {Math.round(score * 100)}% match
               </span>
             </div>

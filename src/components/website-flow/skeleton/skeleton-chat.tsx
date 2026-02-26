@@ -87,8 +87,8 @@ export function SkeletonChat({ messages, onSendMessage, isLoading, className }: 
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {emptyState && (
-          <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3">
-            <p className="text-sm text-green-800 dark:text-green-300">
+          <div className="rounded-lg border border-crafted-green/20 bg-crafted-green/10 p-3">
+            <p className="text-sm text-crafted-forest dark:text-crafted-sage">
               Generating your website skeleton based on your inspirations. This may take a moment...
             </p>
           </div>
@@ -99,8 +99,8 @@ export function SkeletonChat({ messages, onSendMessage, isLoading, className }: 
             className={cn(
               'max-w-[85%] rounded-lg px-3 py-2 text-sm',
               msg.role === 'user'
-                ? 'ml-auto bg-green-600 text-white'
-                : 'bg-gray-100 dark:bg-zinc-800 text-foreground',
+                ? 'ml-auto bg-crafted-green text-white'
+                : 'bg-muted text-foreground',
               msg.isPending && 'opacity-70'
             )}
           >
@@ -153,7 +153,7 @@ export function SkeletonChat({ messages, onSendMessage, isLoading, className }: 
               }
             }}
             placeholder="Describe changes to your website..."
-            className="flex-1 min-h-[40px] max-h-[120px] p-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="flex-1 min-h-[40px] max-h-[120px] p-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-1 focus:ring-crafted-green"
             rows={1}
             disabled={isLoading}
           />
@@ -161,7 +161,7 @@ export function SkeletonChat({ messages, onSendMessage, isLoading, className }: 
             onClick={handleSubmit}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="bg-green-600 hover:bg-green-700 text-white self-end"
+            className="bg-crafted-green hover:bg-crafted-forest text-white self-end"
           >
             <Send className="w-4 h-4" />
           </Button>

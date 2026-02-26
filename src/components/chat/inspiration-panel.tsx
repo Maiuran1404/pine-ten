@@ -139,14 +139,14 @@ const GalleryCard = memo(function GalleryCard({
 
       {/* Hover preview scrim */}
       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        <div className="bg-white/90 dark:bg-zinc-800/90 rounded-full p-2 shadow-sm">
+        <div className="bg-white/90 dark:bg-secondary/90 rounded-full p-2 shadow-sm">
           <Eye className="w-4 h-4 text-foreground" />
         </div>
       </div>
 
       {/* Selected ring */}
       {selected && (
-        <div className="absolute inset-0 ring-2 ring-inset ring-emerald-500 rounded-lg pointer-events-none" />
+        <div className="absolute inset-0 ring-2 ring-inset ring-crafted-green rounded-lg pointer-events-none" />
       )}
     </div>
   )
@@ -274,7 +274,7 @@ function SitePreview({
           className={cn(
             'flex-1 h-9 rounded-md text-sm font-medium transition-colors',
             isSelected
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
+              ? 'bg-crafted-green/10 text-crafted-green border border-crafted-green/20'
               : 'bg-foreground text-background hover:bg-foreground/90'
           )}
         >
@@ -502,7 +502,7 @@ function SimilarResultsGrid({
           </div>
           {/* Selected ring */}
           {selectedIds.includes(result.inspiration.id) && (
-            <div className="absolute inset-0 ring-2 ring-inset ring-emerald-500 rounded-lg pointer-events-none" />
+            <div className="absolute inset-0 ring-2 ring-inset ring-crafted-green rounded-lg pointer-events-none" />
           )}
         </div>
       ))}
@@ -565,7 +565,7 @@ export function InspirationPanel({
       {/* Header */}
       <div className="shrink-0 px-3 py-3 border-b border-border/40">
         <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-emerald-600" />
+          <Globe className="h-4 w-4 text-crafted-green" />
           <span className="text-sm font-semibold text-foreground">Inspiration</span>
           <div className="flex-1" />
           {/* Gallery / Comparison toggle */}
@@ -654,7 +654,7 @@ export function InspirationPanel({
                     <button
                       onClick={onFindSimilar}
                       disabled={isFindingSimilar}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-[11px] font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-crafted-green/10 text-crafted-green px-2.5 py-1 text-[11px] font-medium hover:bg-crafted-green/20 transition-colors disabled:opacity-50"
                     >
                       {isFindingSimilar ? (
                         <Loader2 className="h-3 w-3 animate-spin" />

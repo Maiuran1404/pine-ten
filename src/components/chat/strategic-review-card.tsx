@@ -35,23 +35,23 @@ const FIT_CONFIG = {
   aligned: {
     label: 'Aligned',
     icon: CheckCircle2,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    border: 'border-emerald-200 dark:border-emerald-800/40',
+    color: 'text-ds-success',
+    bg: 'bg-ds-success/10',
+    border: 'border-ds-success/20',
   },
   minor_mismatch: {
     label: 'Minor Mismatch',
     icon: AlertCircle,
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-50 dark:bg-amber-900/20',
-    border: 'border-amber-200 dark:border-amber-800/40',
+    color: 'text-ds-warning',
+    bg: 'bg-ds-warning/10',
+    border: 'border-ds-warning/20',
   },
   significant_mismatch: {
     label: 'Significant Mismatch',
     icon: XCircle,
-    color: 'text-rose-600 dark:text-rose-400',
-    bg: 'bg-rose-50 dark:bg-rose-900/20',
-    border: 'border-rose-200 dark:border-rose-800/40',
+    color: 'text-ds-error',
+    bg: 'bg-ds-error/10',
+    border: 'border-ds-error/20',
   },
 } as const
 
@@ -130,7 +130,7 @@ export function StrategicReviewCard({
           transition={{ duration: 0.2 }}
           className="space-y-1.5"
         >
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+          <div className="flex items-center gap-1.5 text-ds-success">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span className="text-xs font-semibold">Strengths</span>
           </div>
@@ -152,7 +152,7 @@ export function StrategicReviewCard({
           transition={{ duration: 0.2, delay: 0.05 }}
           className="space-y-1.5"
         >
-          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+          <div className="flex items-center gap-1.5 text-ds-warning">
             <AlertTriangle className="h-3.5 w-3.5" />
             <span className="text-xs font-semibold">Risks</span>
           </div>

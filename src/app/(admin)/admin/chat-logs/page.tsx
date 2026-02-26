@@ -97,21 +97,21 @@ export default function ChatLogsPage() {
   const getStatusBadge = (log: ChatLog) => {
     if (log.type === 'draft') {
       if (log.pendingTask) {
-        return <Badge className="bg-yellow-500">Ready to Submit</Badge>
+        return <Badge className="bg-ds-warning">Ready to Submit</Badge>
       }
       return <Badge variant="secondary">Draft</Badge>
     }
 
     const statusColors: Record<string, string> = {
-      PENDING: 'bg-yellow-500',
-      ASSIGNED: 'bg-blue-500',
-      IN_PROGRESS: 'bg-purple-500',
-      IN_REVIEW: 'bg-orange-500',
-      COMPLETED: 'bg-green-500',
+      PENDING: 'bg-ds-warning',
+      ASSIGNED: 'bg-ds-info',
+      IN_PROGRESS: 'bg-ds-status-review',
+      IN_REVIEW: 'bg-ds-status-revision',
+      COMPLETED: 'bg-ds-success',
     }
 
     return (
-      <Badge className={statusColors[log.taskStatus || ''] || 'bg-gray-500'}>
+      <Badge className={statusColors[log.taskStatus || ''] || 'bg-muted'}>
         {log.taskStatus?.replace('_', ' ') || 'Unknown'}
       </Badge>
     )

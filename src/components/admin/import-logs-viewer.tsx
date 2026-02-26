@@ -99,11 +99,11 @@ const SOURCE_LABELS: Record<string, string> = {
 }
 
 const SOURCE_COLORS: Record<string, string> = {
-  bigged: 'bg-purple-500',
-  dribbble: 'bg-pink-500',
-  manual_url: 'bg-blue-500',
-  file_upload: 'bg-green-500',
-  page_scrape: 'bg-orange-500',
+  bigged: 'bg-ds-status-review',
+  dribbble: 'bg-ds-error',
+  manual_url: 'bg-ds-info',
+  file_upload: 'bg-ds-success',
+  page_scrape: 'bg-ds-status-revision',
 }
 
 export function ImportLogsViewer({
@@ -194,7 +194,7 @@ export function ImportLogsViewer({
       return (
         <Badge
           variant="outline"
-          className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 flex items-center gap-1"
+          className="bg-ds-warning/10 text-ds-warning border-ds-warning/30 flex items-center gap-1"
         >
           <AlertCircle className="h-3 w-3" />
           Partial
@@ -202,7 +202,7 @@ export function ImportLogsViewer({
       )
     }
     return (
-      <Badge className="bg-green-500 flex items-center gap-1">
+      <Badge className="bg-ds-success flex items-center gap-1">
         <CheckCircle2 className="h-3 w-3" />
         Success
       </Badge>
@@ -248,15 +248,15 @@ export function ImportLogsViewer({
             <div className="text-xs text-muted-foreground">Total Imports</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.totalImported}</div>
+            <div className="text-2xl font-bold text-ds-success">{stats.totalImported}</div>
             <div className="text-xs text-muted-foreground">Items Imported</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.totalFailed}</div>
+            <div className="text-2xl font-bold text-ds-error">{stats.totalFailed}</div>
             <div className="text-xs text-muted-foreground">Items Failed</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.totalSkipped}</div>
+            <div className="text-2xl font-bold text-ds-warning">{stats.totalSkipped}</div>
             <div className="text-xs text-muted-foreground">Items Skipped</div>
           </div>
         </div>
@@ -303,11 +303,11 @@ export function ImportLogsViewer({
                       <div className="flex items-center gap-4">
                         <div className="text-right text-sm">
                           <div className="flex items-center gap-2">
-                            <span className="text-green-600">{log.totalSuccessful}</span>
+                            <span className="text-ds-success">{log.totalSuccessful}</span>
                             <span className="text-muted-foreground">/</span>
                             <span>{log.totalAttempted}</span>
                             {log.totalFailed > 0 && (
-                              <span className="text-red-500">({log.totalFailed} failed)</span>
+                              <span className="text-ds-error">({log.totalFailed} failed)</span>
                             )}
                           </div>
                         </div>
@@ -350,7 +350,7 @@ export function ImportLogsViewer({
                       {/* Imported items */}
                       {log.importedItems && log.importedItems.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-medium mb-2 text-green-600">
+                          <h4 className="text-sm font-medium mb-2 text-ds-success">
                             Imported ({log.importedItems.length})
                           </h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
@@ -388,14 +388,14 @@ export function ImportLogsViewer({
                       {/* Failed items */}
                       {log.failedItems && log.failedItems.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-medium mb-2 text-red-600">
+                          <h4 className="text-sm font-medium mb-2 text-ds-error">
                             Failed ({log.failedItems.length})
                           </h4>
                           <div className="space-y-1">
                             {log.failedItems.slice(0, 3).map((item, idx) => (
                               <div
                                 key={idx}
-                                className="text-xs flex items-start gap-2 text-red-600"
+                                className="text-xs flex items-start gap-2 text-ds-error"
                               >
                                 <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                 <span className="truncate">{item.error}</span>
@@ -416,7 +416,7 @@ export function ImportLogsViewer({
                       {/* Skipped items */}
                       {log.skippedItems && log.skippedItems.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-medium mb-2 text-yellow-600">
+                          <h4 className="text-sm font-medium mb-2 text-ds-warning">
                             Skipped ({log.skippedItems.length})
                           </h4>
                           <div className="text-xs text-muted-foreground">
@@ -477,17 +477,17 @@ export function ImportLogsViewer({
                     <div className="text-xs text-muted-foreground">Attempted</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-green-600">
+                    <div className="text-xl font-bold text-ds-success">
                       {selectedLog.totalSuccessful}
                     </div>
                     <div className="text-xs text-muted-foreground">Successful</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-red-600">{selectedLog.totalFailed}</div>
+                    <div className="text-xl font-bold text-ds-error">{selectedLog.totalFailed}</div>
                     <div className="text-xs text-muted-foreground">Failed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-yellow-600">
+                    <div className="text-xl font-bold text-ds-warning">
                       {selectedLog.totalSkipped}
                     </div>
                     <div className="text-xs text-muted-foreground">Skipped</div>
@@ -497,7 +497,7 @@ export function ImportLogsViewer({
                 {/* All imported items */}
                 {selectedLog.importedItems && selectedLog.importedItems.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-3 text-green-600">
+                    <h4 className="text-sm font-medium mb-3 text-ds-success">
                       All Imported Items ({selectedLog.importedItems.length})
                     </h4>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto">
@@ -535,18 +535,18 @@ export function ImportLogsViewer({
                 {/* All failed items */}
                 {selectedLog.failedItems && selectedLog.failedItems.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-3 text-red-600">
+                    <h4 className="text-sm font-medium mb-3 text-ds-error">
                       All Failed Items ({selectedLog.failedItems.length})
                     </h4>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
                       {selectedLog.failedItems.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-2 p-2 bg-red-500/5 rounded-lg text-sm"
+                          className="flex items-start gap-2 p-2 bg-ds-error/5 rounded-lg text-sm"
                         >
-                          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                          <XCircle className="h-4 w-4 text-ds-error flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
-                            <p className="text-red-600 font-medium">{item.error}</p>
+                            <p className="text-ds-error font-medium">{item.error}</p>
                             <p className="text-xs text-muted-foreground truncate">{item.url}</p>
                           </div>
                         </div>
@@ -558,18 +558,18 @@ export function ImportLogsViewer({
                 {/* All skipped items */}
                 {selectedLog.skippedItems && selectedLog.skippedItems.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-3 text-yellow-600">
+                    <h4 className="text-sm font-medium mb-3 text-ds-warning">
                       All Skipped Items ({selectedLog.skippedItems.length})
                     </h4>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
                       {selectedLog.skippedItems.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-2 p-2 bg-yellow-500/5 rounded-lg text-sm"
+                          className="flex items-start gap-2 p-2 bg-ds-warning/5 rounded-lg text-sm"
                         >
-                          <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                          <AlertCircle className="h-4 w-4 text-ds-warning flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
-                            <p className="text-yellow-600">{item.reason}</p>
+                            <p className="text-ds-warning">{item.reason}</p>
                             <p className="text-xs text-muted-foreground truncate">{item.url}</p>
                           </div>
                         </div>

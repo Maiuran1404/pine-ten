@@ -204,10 +204,10 @@ export function InlineUploadZone({
         onClick={() => fileInputRef.current?.click()}
         className={cn(
           'relative rounded-xl border-2 border-dashed p-6 cursor-pointer transition-all',
-          'bg-emerald-50/50 dark:bg-emerald-950/20',
+          'bg-crafted-green/5',
           isDragOver
-            ? 'border-emerald-500 bg-emerald-100/60 dark:bg-emerald-900/30 scale-[1.01]'
-            : 'border-emerald-300/60 dark:border-emerald-700/40 hover:border-emerald-400 dark:hover:border-emerald-600'
+            ? 'border-crafted-green bg-crafted-green/10 scale-[1.01]'
+            : 'border-crafted-green/30 hover:border-crafted-green/50'
         )}
       >
         <input
@@ -221,9 +221,9 @@ export function InlineUploadZone({
 
         <div className="flex flex-col items-center text-center gap-2">
           {isUploading ? (
-            <Loader2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400 animate-spin" />
+            <Loader2 className="h-8 w-8 text-crafted-green dark:text-crafted-green-light animate-spin" />
           ) : (
-            <CloudUpload className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <CloudUpload className="h-8 w-8 text-crafted-green dark:text-crafted-green-light" />
           )}
           <p className="text-sm font-medium text-foreground">{assetRequest.prompt}</p>
           <p className="text-xs text-muted-foreground">
@@ -273,7 +273,7 @@ export function InlineUploadZone({
               }}
               onClick={(e) => e.stopPropagation()}
               placeholder="Paste a Google Drive or Dropbox link"
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-crafted-green"
             />
           </div>
           <Button
@@ -283,7 +283,7 @@ export function InlineUploadZone({
               handleLinkSubmit()
             }}
             disabled={!linkInput.trim() || isValidatingLink || !detectExternalLink(linkInput)}
-            className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-9 bg-crafted-green hover:bg-crafted-forest text-white"
           >
             {isValidatingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Add'}
           </Button>

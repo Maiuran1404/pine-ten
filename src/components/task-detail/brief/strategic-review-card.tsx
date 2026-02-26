@@ -19,14 +19,14 @@ export function StrategicReviewCard({ strategicReview: review }: StrategicReview
         {/* Strengths */}
         {review.strengths.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-ds-success">
               Strengths
             </span>
             <ul className="space-y-1.5">
               {review.strengths.map((strength) => (
                 <li key={strength} className="flex items-start gap-2 text-sm">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                  <span className="text-emerald-700 dark:text-emerald-300">{strength}</span>
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ds-success" />
+                  <span className="text-ds-success">{strength}</span>
                 </li>
               ))}
             </ul>
@@ -36,14 +36,14 @@ export function StrategicReviewCard({ strategicReview: review }: StrategicReview
         {/* Risks */}
         {review.risks.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-ds-warning">
               Risks
             </span>
             <ul className="space-y-1.5">
               {review.risks.map((risk) => (
                 <li key={risk} className="flex items-start gap-2 text-sm">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                  <span className="text-amber-700 dark:text-amber-300">{risk}</span>
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ds-warning" />
+                  <span className="text-ds-warning">{risk}</span>
                 </li>
               ))}
             </ul>
@@ -52,12 +52,10 @@ export function StrategicReviewCard({ strategicReview: review }: StrategicReview
 
         {/* Optimization Suggestion */}
         {review.optimizationSuggestion && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="rounded-lg border border-ds-info/30 bg-ds-info/5 p-3 dark:border-ds-info/30 dark:bg-ds-info/10">
             <div className="flex items-start gap-2">
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                {review.optimizationSuggestion}
-              </p>
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-ds-info" />
+              <p className="text-sm text-ds-info">{review.optimizationSuggestion}</p>
             </div>
           </div>
         )}

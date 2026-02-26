@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 // SHARED WIREFRAME SHAPE PRIMITIVES
 // =============================================================================
 
-const STROKE = 'border-slate-300 dark:border-slate-600'
-const FILL = 'bg-slate-100 dark:bg-slate-800'
+const STROKE = 'border-border'
+const FILL = 'bg-muted'
 
 // =============================================================================
 // IMAGE PLACEHOLDER — rect with diagonal X cross
@@ -20,7 +20,7 @@ export function ImagePlaceholder({ className }: ImagePlaceholderProps) {
     <div className={cn('relative border rounded-sm overflow-hidden', STROKE, FILL, className)}>
       {/* Diagonal X cross via SVG */}
       <svg
-        className="absolute inset-0 w-full h-full text-slate-300 dark:text-slate-600"
+        className="absolute inset-0 w-full h-full text-border"
         preserveAspectRatio="none"
         viewBox="0 0 100 100"
       >
@@ -66,17 +66,7 @@ interface ButtonShapeProps {
 }
 
 export function ButtonShape({ width = 'w-20', className }: ButtonShapeProps) {
-  return (
-    <div
-      className={cn(
-        'h-5 rounded-full border',
-        STROKE,
-        'bg-slate-200 dark:bg-slate-700',
-        width,
-        className
-      )}
-    />
-  )
+  return <div className={cn('h-5 rounded-full border', STROKE, 'bg-muted', width, className)} />
 }
 
 // =============================================================================
@@ -163,9 +153,9 @@ export function ChevronBar({ className }: ChevronBarProps) {
         className
       )}
     >
-      <div className="h-1.5 w-2/3 rounded-full bg-slate-200 dark:bg-slate-700" />
+      <div className="h-1.5 w-2/3 rounded-full bg-muted" />
       <svg
-        className="w-3 h-3 text-slate-400 dark:text-slate-500"
+        className="w-3 h-3 text-muted-foreground"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -186,9 +176,5 @@ interface QuoteGlyphProps {
 }
 
 export function QuoteGlyph({ className }: QuoteGlyphProps) {
-  return (
-    <div className={cn('text-slate-300 dark:text-slate-600 font-serif leading-none', className)}>
-      &ldquo;
-    </div>
-  )
+  return <div className={cn('text-border font-serif leading-none', className)}>&ldquo;</div>
 }

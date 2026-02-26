@@ -33,7 +33,7 @@ export function CreationChatAccordion({ chatHistory }: CreationChatAccordionProp
       <AccordionItem value="creation-chat">
         <AccordionTrigger className="hover:no-underline">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <Sparkles className="h-4 w-4 text-ds-status-review" />
             <span className="text-sm font-medium">Creation Chat</span>
             <Badge variant="secondary" className="text-xs">
               {chatHistory.length}
@@ -52,14 +52,14 @@ export function CreationChatAccordion({ chatHistory }: CreationChatAccordionProp
                 >
                   {!isUser && (
                     <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      <Sparkles className="h-3 w-3 text-purple-500" />
+                      <Sparkles className="h-3 w-3 text-ds-status-review" />
                     </div>
                   )}
 
                   <div
                     className={cn(
                       'max-w-[80%] rounded-lg px-3 py-2',
-                      isUser ? 'bg-emerald-500 text-white' : 'bg-muted text-foreground'
+                      isUser ? 'bg-crafted-green text-white' : 'bg-muted text-foreground'
                     )}
                   >
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -73,7 +73,7 @@ export function CreationChatAccordion({ chatHistory }: CreationChatAccordionProp
                             rel="noopener noreferrer"
                             className={cn(
                               'block text-xs underline',
-                              isUser ? 'text-emerald-100' : 'text-muted-foreground'
+                              isUser ? 'text-crafted-mint' : 'text-muted-foreground'
                             )}
                           >
                             {att.fileName}
@@ -84,7 +84,7 @@ export function CreationChatAccordion({ chatHistory }: CreationChatAccordionProp
                     <p
                       className={cn(
                         'mt-1 text-xs',
-                        isUser ? 'text-emerald-200' : 'text-muted-foreground'
+                        isUser ? 'text-crafted-sage' : 'text-muted-foreground'
                       )}
                     >
                       {formatTimestamp(msg.timestamp)}
@@ -92,8 +92,8 @@ export function CreationChatAccordion({ chatHistory }: CreationChatAccordionProp
                   </div>
 
                   {isUser && (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                      <User className="h-3 w-3 text-emerald-700" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-crafted-green/10">
+                      <User className="h-3 w-3 text-crafted-green" />
                     </div>
                   )}
                 </div>

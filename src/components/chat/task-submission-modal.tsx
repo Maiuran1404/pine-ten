@@ -100,9 +100,9 @@ export function TaskSubmissionModal({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 10 }}
-                className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-4"
+                className="w-20 h-20 rounded-full bg-ds-success/10 flex items-center justify-center mb-4"
               >
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
+                <CheckCircle2 className="h-10 w-10 text-ds-success" />
               </motion.div>
               <motion.h3
                 initial={{ opacity: 0, y: 10 }}
@@ -227,13 +227,13 @@ export function TaskSubmissionModal({
                 <div
                   className={cn(
                     'col-span-2 flex items-center gap-3 p-3 rounded-lg',
-                    hasEnoughCredits ? 'bg-green-500/10' : 'bg-destructive/10'
+                    hasEnoughCredits ? 'bg-ds-success/10' : 'bg-destructive/10'
                   )}
                 >
                   <Coins
                     className={cn(
                       'h-5 w-5',
-                      hasEnoughCredits ? 'text-green-500' : 'text-destructive'
+                      hasEnoughCredits ? 'text-ds-success' : 'text-destructive'
                     )}
                   />
                   <div className="flex-1">
@@ -241,7 +241,7 @@ export function TaskSubmissionModal({
                     <p
                       className={cn(
                         'text-sm font-medium',
-                        hasEnoughCredits ? 'text-green-500' : 'text-destructive'
+                        hasEnoughCredits ? 'text-ds-success' : 'text-destructive'
                       )}
                     >
                       {normalizedTask.creditsRequired} credits
@@ -264,12 +264,10 @@ export function TaskSubmissionModal({
 
             {/* Insufficient credits warning */}
             {!hasEnoughCredits && (
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-ds-warning/10 border border-ds-warning/20">
+                <AlertCircle className="h-5 w-5 text-ds-warning shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    Insufficient credits
-                  </p>
+                  <p className="text-sm font-medium text-ds-warning">Insufficient credits</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     You need {normalizedTask.creditsRequired - userCredits} more credits to submit
                     this request.

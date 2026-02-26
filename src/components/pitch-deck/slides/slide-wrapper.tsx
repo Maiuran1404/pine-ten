@@ -1,3 +1,8 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values match design tokens:
+ *   #2B2B2B = foreground, #aaa = muted-foreground, #e0e0e0 = border
+ */
 import type { ReactNode } from 'react'
 
 interface SlideWrapperProps {

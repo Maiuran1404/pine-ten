@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       className="min-h-screen relative"
       style={{
         fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
-        backgroundColor: '#0a0a0a',
+        backgroundColor: 'var(--background)',
       }}
     >
       {children}

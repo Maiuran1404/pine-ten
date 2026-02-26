@@ -255,9 +255,9 @@ function ServiceCard({ service, onSelect, disabled, index }: ServiceCardProps) {
       className={cn(
         'group relative flex items-center gap-4 p-5 rounded-2xl text-left',
         'transition-all duration-300',
-        'bg-white border border-[#E8EDE8]',
-        'hover:border-[#8BAF8E]/40 hover:shadow-lg hover:shadow-[#8BAF8E]/10',
-        'focus:outline-none focus:ring-2 focus:ring-[#8BAF8E]/50 focus:ring-offset-2',
+        'bg-white border border-border',
+        'hover:border-crafted-sage/40 hover:shadow-lg hover:shadow-crafted-sage/10',
+        'focus:outline-none focus:ring-2 focus:ring-crafted-sage/50 focus:ring-offset-2',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
@@ -265,18 +265,18 @@ function ServiceCard({ service, onSelect, disabled, index }: ServiceCardProps) {
       <div
         className={cn(
           'shrink-0 w-14 h-14 rounded-xl flex items-center justify-center',
-          'bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]',
-          'group-hover:from-[#C8E6C9] group-hover:to-[#A5D6A7]',
+          'bg-gradient-to-br from-crafted-mint/30 to-crafted-sage/30',
+          'group-hover:from-crafted-sage/40 group-hover:to-crafted-mint/50',
           'transition-all duration-300'
         )}
       >
-        <Icon className="h-6 w-6 text-[#4A7C4E]" />
+        <Icon className="h-6 w-6 text-crafted-green" />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <span className="font-semibold text-[#1F2937] text-lg block">{service.label}</span>
-        <p className="text-sm text-[#6B7280] mt-1 line-clamp-2">{service.description}</p>
+        <span className="font-semibold text-foreground text-lg block">{service.label}</span>
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
       </div>
     </motion.button>
   )
@@ -325,7 +325,7 @@ function ServiceModal({
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className="fixed inset-x-4 top-[10%] mx-auto max-w-md z-50 sm:inset-x-auto"
       >
-        <div className="bg-white rounded-3xl shadow-2xl shadow-[#8BAF8E]/20 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-2xl shadow-crafted-sage/20 overflow-hidden">
           {/* Header */}
           <div className="p-6 pb-4">
             <div className="flex items-start justify-between">
@@ -333,21 +333,21 @@ function ServiceModal({
                 <div
                   className={cn(
                     'w-14 h-14 rounded-xl flex items-center justify-center',
-                    'bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]'
+                    'bg-gradient-to-br from-crafted-mint/30 to-crafted-sage/30'
                   )}
                 >
-                  <Icon className="h-7 w-7 text-[#4A7C4E]" />
+                  <Icon className="h-7 w-7 text-crafted-green" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#1F2937]">{service.label}</h2>
-                  <p className="text-[#6B7280] text-sm mt-0.5">
+                  <h2 className="text-2xl font-bold text-foreground">{service.label}</h2>
+                  <p className="text-muted-foreground text-sm mt-0.5">
                     Pick one and add some notes, we&apos;ll help you with writing the prompts!
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 -mt-2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+                className="p-2 -mr-2 -mt-2 text-muted-foreground/70 hover:text-muted-foreground transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -355,7 +355,7 @@ function ServiceModal({
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#E8EDE8] to-transparent mx-6" />
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mx-6" />
 
           {/* Sub-options */}
           {subOptions.length > 0 && (
@@ -375,8 +375,8 @@ function ServiceModal({
                       'w-full flex items-center gap-4 p-4 rounded-2xl text-left',
                       'transition-all duration-200',
                       isSelected
-                        ? 'bg-[#E8F5E9] border-2 border-[#8BAF8E]'
-                        : 'hover:bg-[#F9FBF9] border-2 border-transparent'
+                        ? 'bg-crafted-mint/20 border-2 border-crafted-sage'
+                        : 'hover:bg-muted/50 border-2 border-transparent'
                     )}
                   >
                     {/* Option Icon */}
@@ -384,11 +384,16 @@ function ServiceModal({
                       className={cn(
                         'w-14 h-14 rounded-xl flex items-center justify-center shrink-0',
                         'bg-gradient-to-br',
-                        isSelected ? 'from-[#C8E6C9] to-[#A5D6A7]' : 'from-[#F1F8F1] to-[#E8F5E9]'
+                        isSelected
+                          ? 'from-crafted-sage/40 to-crafted-mint/50'
+                          : 'from-crafted-mint/15 to-crafted-mint/25'
                       )}
                     >
                       <OptionIcon
-                        className={cn('h-6 w-6', isSelected ? 'text-[#2E7D32]' : 'text-[#6B9B6E]')}
+                        className={cn(
+                          'h-6 w-6',
+                          isSelected ? 'text-crafted-forest' : 'text-crafted-green-light'
+                        )}
                       />
                     </div>
 
@@ -397,12 +402,12 @@ function ServiceModal({
                       <span
                         className={cn(
                           'font-semibold block',
-                          isSelected ? 'text-[#1F2937]' : 'text-[#374151]'
+                          isSelected ? 'text-foreground' : 'text-foreground/80'
                         )}
                       >
                         {option.label}
                       </span>
-                      <p className="text-sm text-[#6B7280] mt-0.5 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
                         {option.description}
                       </p>
                     </div>
@@ -412,7 +417,7 @@ function ServiceModal({
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="w-5 h-5 rounded-full bg-[#4A7C4E] flex items-center justify-center"
+                        className="w-5 h-5 rounded-full bg-crafted-green flex items-center justify-center"
                       >
                         <svg
                           className="w-3 h-3 text-white"
@@ -432,27 +437,27 @@ function ServiceModal({
           )}
 
           {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#E8EDE8] to-transparent mx-6" />
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mx-6" />
 
           {/* Notes Input & Submit */}
           <div className="p-6 pt-4 space-y-4">
-            <h3 className="font-semibold text-[#1F2937]">Would like to add something?</h3>
-            <div className="flex items-center gap-2 bg-[#F9FBF9] rounded-2xl border border-[#E8EDE8] p-1.5 pl-4 focus-within:border-[#8BAF8E] transition-colors">
+            <h3 className="font-semibold text-foreground">Would like to add something?</h3>
+            <div className="flex items-center gap-2 bg-muted/50 rounded-2xl border border-border p-1.5 pl-4 focus-within:border-crafted-sage transition-colors">
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder="Add some notes"
-                className="flex-1 bg-transparent text-[#374151] placeholder-[#9CA3AF] outline-none text-sm py-2"
+                className="flex-1 bg-transparent text-foreground/80 placeholder-muted-foreground outline-none text-sm py-2"
               />
               <button
                 onClick={onConfirm}
                 className={cn(
                   'px-5 py-2.5 rounded-xl font-semibold text-sm text-white',
-                  'bg-gradient-to-r from-[#6B9B6E] to-[#4A7C4E]',
-                  'hover:from-[#5A8A5D] hover:to-[#3D6B40]',
+                  'bg-gradient-to-r from-crafted-green-light to-crafted-green',
+                  'hover:from-crafted-green hover:to-crafted-forest',
                   'transition-all duration-200',
-                  'shadow-lg shadow-[#4A7C4E]/25'
+                  'shadow-lg shadow-crafted-green/25'
                 )}
               >
                 Create Prompt
@@ -497,16 +502,16 @@ export function CompactServiceSelector({
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl border',
               'text-sm transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-[#8BAF8E]/50 focus:ring-offset-2',
-              'bg-white border-[#E8EDE8]',
-              'hover:border-[#8BAF8E]/40 hover:bg-[#F9FBF9]',
+              'focus:outline-none focus:ring-2 focus:ring-crafted-sage/50 focus:ring-offset-2',
+              'bg-white border-border',
+              'hover:border-crafted-sage/40 hover:bg-muted',
               disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9] flex items-center justify-center">
-              <Icon className="h-3.5 w-3.5 text-[#4A7C4E]" />
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-crafted-mint/30 to-crafted-sage/30 flex items-center justify-center">
+              <Icon className="h-3.5 w-3.5 text-crafted-green" />
             </div>
-            <span className="font-medium text-[#374151]">{service.shortLabel}</span>
+            <span className="font-medium text-foreground/80">{service.shortLabel}</span>
           </motion.button>
         )
       })}

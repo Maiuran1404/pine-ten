@@ -156,32 +156,32 @@ export default function RunDetailsPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PASSED':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+        return <CheckCircle2 className="h-5 w-5 text-ds-success" />
       case 'FAILED':
-        return <XCircle className="h-5 w-5 text-red-600" />
+        return <XCircle className="h-5 w-5 text-ds-error" />
       case 'ERROR':
-        return <AlertCircle className="h-5 w-5 text-orange-600" />
+        return <AlertCircle className="h-5 w-5 text-ds-warning" />
       case 'RUNNING':
-        return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />
+        return <RefreshCw className="h-5 w-5 text-ds-info animate-spin" />
       case 'PENDING':
-        return <Clock className="h-5 w-5 text-gray-400" />
+        return <Clock className="h-5 w-5 text-muted-foreground" />
       default:
-        return <AlertTriangle className="h-5 w-5 text-gray-400" />
+        return <AlertTriangle className="h-5 w-5 text-muted-foreground" />
     }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>
+        return <Badge className="bg-ds-success/10 text-ds-success">Completed</Badge>
       case 'RUNNING':
-        return <Badge className="bg-blue-100 text-blue-800">Running</Badge>
+        return <Badge className="bg-ds-info/10 text-ds-info">Running</Badge>
       case 'PENDING':
-        return <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
+        return <Badge className="bg-muted text-muted-foreground">Pending</Badge>
       case 'FAILED':
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>
+        return <Badge className="bg-ds-error/10 text-ds-error">Failed</Badge>
       case 'CANCELLED':
-        return <Badge className="bg-gray-100 text-gray-600">Cancelled</Badge>
+        return <Badge className="bg-muted text-muted-foreground">Cancelled</Badge>
       default:
         return <Badge>{status}</Badge>
     }
@@ -190,13 +190,13 @@ export default function RunDetailsPage() {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <Badge className="bg-red-100 text-red-800">Critical</Badge>
+        return <Badge className="bg-ds-error/10 text-ds-error">Critical</Badge>
       case 'high':
-        return <Badge className="bg-orange-100 text-orange-800">High</Badge>
+        return <Badge className="bg-ds-warning/10 text-ds-warning">High</Badge>
       case 'medium':
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
+        return <Badge className="bg-ds-warning/10 text-ds-warning">Medium</Badge>
       case 'low':
-        return <Badge className="bg-gray-100 text-gray-800">Low</Badge>
+        return <Badge className="bg-muted text-muted-foreground">Low</Badge>
       default:
         return <Badge>{severity}</Badge>
     }
@@ -215,10 +215,10 @@ export default function RunDetailsPage() {
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600'
-    if (score >= 70) return 'text-yellow-600'
-    if (score >= 50) return 'text-orange-600'
-    return 'text-red-600'
+    if (score >= 90) return 'text-ds-success'
+    if (score >= 70) return 'text-ds-warning'
+    if (score >= 50) return 'text-ds-warning'
+    return 'text-ds-error'
   }
 
   if (isLoading) {
@@ -353,7 +353,7 @@ export default function RunDetailsPage() {
                 href={run.targetUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-blue-600 hover:underline"
+                className="flex items-center gap-1 text-ds-info hover:underline"
               >
                 {run.targetUrl}
                 <ExternalLink className="h-3 w-3" />
@@ -377,50 +377,50 @@ export default function RunDetailsPage() {
 
       {/* Results Summary */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-ds-success/30 bg-ds-success/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-800">Passed</p>
-                <p className="text-2xl font-bold text-green-600">{run.passedTests}</p>
+                <p className="text-sm text-ds-success">Passed</p>
+                <p className="text-2xl font-bold text-ds-success">{run.passedTests}</p>
               </div>
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <CheckCircle2 className="h-8 w-8 text-ds-success" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-ds-error/30 bg-ds-error/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-800">Failed</p>
-                <p className="text-2xl font-bold text-red-600">{run.failedTests}</p>
+                <p className="text-sm text-ds-error">Failed</p>
+                <p className="text-2xl font-bold text-ds-error">{run.failedTests}</p>
               </div>
-              <XCircle className="h-8 w-8 text-red-600" />
+              <XCircle className="h-8 w-8 text-ds-error" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-ds-warning/30 bg-ds-warning/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-800">Errors</p>
-                <p className="text-2xl font-bold text-orange-600">{run.errorTests}</p>
+                <p className="text-sm text-ds-warning">Errors</p>
+                <p className="text-2xl font-bold text-ds-warning">{run.errorTests}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-orange-600" />
+              <AlertCircle className="h-8 w-8 text-ds-warning" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 bg-gray-50">
+        <Card className="border-border bg-muted/50">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-800">Skipped</p>
-                <p className="text-2xl font-bold text-gray-600">{run.skippedTests}</p>
+                <p className="text-sm text-muted-foreground">Skipped</p>
+                <p className="text-2xl font-bold text-muted-foreground">{run.skippedTests}</p>
               </div>
-              <Clock className="h-8 w-8 text-gray-600" />
+              <Clock className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -434,7 +434,7 @@ export default function RunDetailsPage() {
             <CardDescription>Use the Playwright MCP to execute these tests</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+            <div className="bg-background text-foreground p-4 rounded-lg overflow-x-auto border">
               <pre className="text-sm">{JSON.stringify(executionPlan, null, 2)}</pre>
             </div>
             <Button
@@ -493,9 +493,9 @@ export default function RunDetailsPage() {
 
                       {result.errorMessage && (
                         <div>
-                          <p className="text-sm font-medium text-red-600">Error Message</p>
-                          <div className="bg-red-50 p-3 rounded-lg mt-1">
-                            <p className="text-sm text-red-800">{result.errorMessage}</p>
+                          <p className="text-sm font-medium text-ds-error">Error Message</p>
+                          <div className="bg-ds-error/5 p-3 rounded-lg mt-1">
+                            <p className="text-sm text-ds-error">{result.errorMessage}</p>
                           </div>
                         </div>
                       )}
@@ -503,7 +503,7 @@ export default function RunDetailsPage() {
                       {result.stackTrace && (
                         <div>
                           <p className="text-sm font-medium">Stack Trace</p>
-                          <pre className="bg-gray-100 p-3 rounded-lg mt-1 text-xs overflow-x-auto">
+                          <pre className="bg-muted p-3 rounded-lg mt-1 text-xs overflow-x-auto">
                             {result.stackTrace}
                           </pre>
                         </div>
@@ -516,11 +516,11 @@ export default function RunDetailsPage() {
                             {result.findings.map((finding, i) => (
                               <div
                                 key={i}
-                                className="bg-yellow-50 p-3 rounded-lg border border-yellow-200"
+                                className="bg-ds-warning/5 p-3 rounded-lg border border-ds-warning/30"
                               >
                                 <div className="flex items-center gap-2">
-                                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                                  <Badge className="bg-yellow-100 text-yellow-800">
+                                  <AlertTriangle className="h-4 w-4 text-ds-warning" />
+                                  <Badge className="bg-ds-warning/10 text-ds-warning">
                                     {finding.severity}
                                   </Badge>
                                   <span className="text-sm font-medium">{finding.type}</span>
@@ -543,9 +543,9 @@ export default function RunDetailsPage() {
                             <Terminal className="h-4 w-4" />
                             Console Errors ({result.consoleErrors.length})
                           </p>
-                          <div className="bg-gray-900 text-gray-100 p-3 rounded-lg mt-1">
+                          <div className="bg-background text-foreground p-3 rounded-lg mt-1 border">
                             {result.consoleErrors.map((error, i) => (
-                              <p key={i} className="text-xs text-red-400">
+                              <p key={i} className="text-xs text-ds-error">
                                 {error}
                               </p>
                             ))}
@@ -560,8 +560,8 @@ export default function RunDetailsPage() {
                           </p>
                           <div className="space-y-1 mt-1">
                             {result.networkErrors.map((error, i) => (
-                              <div key={i} className="text-xs p-2 bg-red-50 rounded">
-                                <span className="font-mono text-red-600">{error.status}</span>{' '}
+                              <div key={i} className="text-xs p-2 bg-ds-error/5 rounded">
+                                <span className="font-mono text-ds-error">{error.status}</span>{' '}
                                 {error.url}
                               </div>
                             ))}
@@ -588,7 +588,7 @@ export default function RunDetailsPage() {
                                 <img
                                   src={url}
                                   alt={`Screenshot ${i + 1}`}
-                                  className="h-24 rounded border hover:border-blue-500 transition-colors"
+                                  className="h-24 rounded border hover:border-ds-info transition-colors"
                                 />
                               </a>
                             ))}

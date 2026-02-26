@@ -101,10 +101,10 @@ export function MessageList({ messages, deliverables, taskStatus }: MessageListP
         ))}
 
         {showDeliverables && (
-          <div className="mt-6 rounded-lg border-2 border-green-200 bg-green-50/50 p-4">
+          <div className="mt-6 rounded-lg border-2 border-ds-success/30 bg-ds-success/5 p-4">
             <div className="mb-3 flex items-center gap-2">
-              <ImageIcon className="h-4 w-4 text-green-600" />
-              <h4 className="text-sm font-medium text-green-800">
+              <ImageIcon className="h-4 w-4 text-ds-success" />
+              <h4 className="text-sm font-medium text-ds-success">
                 Deliverables ({deliverables.length})
               </h4>
             </div>
@@ -117,7 +117,7 @@ export function MessageList({ messages, deliverables, taskStatus }: MessageListP
                   rel="noopener noreferrer"
                   className={cn(
                     'group relative flex flex-col items-center gap-2 rounded-lg border bg-white p-3',
-                    'transition-colors hover:border-green-300 hover:bg-green-50'
+                    'transition-colors hover:border-ds-success/30 hover:bg-ds-success/5'
                   )}
                 >
                   {isImageFile(file.fileType) ? (
@@ -131,7 +131,7 @@ export function MessageList({ messages, deliverables, taskStatus }: MessageListP
                       />
                     </div>
                   ) : (
-                    <div className="flex h-24 w-full items-center justify-center rounded bg-gray-100">
+                    <div className="flex h-24 w-full items-center justify-center rounded bg-muted">
                       <FileIcon className="text-muted-foreground h-8 w-8" />
                     </div>
                   )}
@@ -139,7 +139,7 @@ export function MessageList({ messages, deliverables, taskStatus }: MessageListP
                     <p className="truncate text-xs font-medium">{file.fileName}</p>
                     <p className="text-muted-foreground text-xs">{formatFileSize(file.fileSize)}</p>
                   </div>
-                  <Download className="absolute top-2 right-2 h-4 w-4 text-green-600 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <Download className="absolute top-2 right-2 h-4 w-4 text-ds-success opacity-0 transition-opacity group-hover:opacity-100" />
                 </a>
               ))}
             </div>

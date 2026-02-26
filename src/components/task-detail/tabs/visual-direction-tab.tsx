@@ -84,7 +84,7 @@ export function VisualDirectionTab({ task }: VisualDirectionTabProps) {
       {hasAvoidElements && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Ban className="h-4 w-4 text-red-500" />
+            <Ban className="h-4 w-4 text-ds-error" />
             <h3 className="text-sm font-medium">Avoid</h3>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -92,7 +92,7 @@ export function VisualDirectionTab({ task }: VisualDirectionTabProps) {
               <Badge
                 key={element}
                 variant="outline"
-                className="border-red-200 bg-red-50 text-red-700"
+                className="border-ds-error/30 bg-ds-error/10 text-ds-error"
               >
                 {element}
               </Badge>

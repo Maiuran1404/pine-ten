@@ -376,8 +376,8 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                   key={img.url}
                   className={cn(
                     'border rounded-lg p-3 space-y-3',
-                    img.status === 'done' && 'bg-green-500/5 border-green-500/20',
-                    img.status === 'error' && 'bg-red-500/5 border-red-500/20'
+                    img.status === 'done' && 'bg-ds-success/5 border-ds-success/20',
+                    img.status === 'error' && 'bg-ds-error/5 border-ds-error/20'
                   )}
                 >
                   <div className="flex gap-3">
@@ -408,7 +408,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                             </Badge>
                           )}
                           {img.status === 'classified' && (
-                            <Badge className="bg-blue-500">
+                            <Badge className="bg-ds-info">
                               <Check className="h-3 w-3 mr-1" />
                               Ready
                             </Badge>
@@ -420,7 +420,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                             </Badge>
                           )}
                           {img.status === 'done' && (
-                            <Badge className="bg-green-500">
+                            <Badge className="bg-ds-success">
                               <Check className="h-3 w-3 mr-1" />
                               Done
                             </Badge>
@@ -443,7 +443,7 @@ export function BrandReferenceScraper({ onUploadComplete }: BrandReferenceScrape
                         </div>
                       </div>
 
-                      {img.error && <p className="text-xs text-red-500 mt-1">{img.error}</p>}
+                      {img.error && <p className="text-xs text-ds-error mt-1">{img.error}</p>}
                     </div>
                   </div>
 

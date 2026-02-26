@@ -210,7 +210,7 @@ export default function CreativeIntakePromptsPage() {
         </div>
         <div className="flex items-center gap-3">
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-amber-600 border-amber-600">
+            <Badge variant="outline" className="text-ds-warning border-ds-warning">
               <AlertCircle className="h-3 w-3 mr-1" />
               Unsaved Changes
             </Badge>

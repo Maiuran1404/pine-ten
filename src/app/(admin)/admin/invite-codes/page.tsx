@@ -225,7 +225,7 @@ export default function InviteCodesPage() {
             <CardTitle className="text-sm font-medium">Active Codes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeCodes.length}</div>
+            <div className="text-2xl font-bold text-ds-success">{activeCodes.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -289,7 +289,7 @@ export default function InviteCodesPage() {
                             onClick={() => copyToClipboard(code.code)}
                           >
                             {copiedCode === code.code ? (
-                              <Check className="h-3 w-3 text-green-500" />
+                              <Check className="h-3 w-3 text-ds-success" />
                             ) : (
                               <Copy className="h-3 w-3" />
                             )}

@@ -46,6 +46,7 @@ import {
 } from '@/components/onboarding/types'
 import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
 import { FreelancerOnboarding } from '@/components/onboarding/freelancer-onboarding'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { BrandReferenceGridSkeleton, ImageWithSkeleton } from '@/components/ui/skeletons'
 import { useSubdomain } from '@/hooks/use-subdomain'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -69,38 +70,51 @@ function Header({ userEmail }: { userEmail?: string }) {
     <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 sm:gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/craftedcombinedwhite.png" alt="Crafted" className="h-6 sm:h-8 w-auto" />
+        <img
+          src="/craftedcombinedwhite.png"
+          alt="Crafted"
+          className="h-6 sm:h-8 w-auto hidden dark:block"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/craftedcombintedblack.png"
+          alt="Crafted"
+          className="h-6 sm:h-8 w-auto block dark:hidden"
+        />
       </div>
 
-      {userEmail && (
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 text-xs sm:text-sm hover:bg-white/10 transition-colors max-w-[140px] sm:max-w-none truncate"
-          >
-            <span className="truncate">{userEmail}</span>
-            <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 py-2 rounded-lg bg-[#1a1a1a] border border-white/10 shadow-xl">
-              <button
-                onClick={() =>
-                  signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        window.location.href = '/login'
+      <div className="flex items-center gap-2 sm:gap-3">
+        <ThemeToggle />
+        {userEmail && (
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-muted border border-border text-muted-foreground text-xs sm:text-sm hover:bg-accent transition-colors max-w-[140px] sm:max-w-none truncate"
+            >
+              <span className="truncate">{userEmail}</span>
+              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 py-2 rounded-lg bg-card border border-border shadow-xl">
+                <button
+                  onClick={() =>
+                    signOut({
+                      fetchOptions: {
+                        onSuccess: () => {
+                          window.location.href = '/login'
+                        },
                       },
-                    },
-                  })
-                }
-                className="w-full px-4 py-2 text-left text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+                    })
+                  }
+                  className="w-full px-4 py-2 text-left text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </header>
   )
 }
@@ -152,7 +166,7 @@ const _fadeInUp = {
 
 function GlowingCard({
   children,
-  glowColor = '#9AA48C',
+  glowColor = 'var(--crafted-olive)',
   className = '',
 }: {
   children: React.ReactNode
@@ -170,7 +184,7 @@ function GlowingCard({
       <div
         className="relative rounded-2xl p-5 sm:p-8 md:p-10 flex flex-col justify-center"
         style={{
-          background: 'rgba(15, 15, 15, 0.9)',
+          background: 'var(--surface-inset)',
           backdropFilter: 'blur(20px)',
           border: `1px solid ${glowColor}30`,
         }}
@@ -184,7 +198,7 @@ function GlowingCard({
 function ProgressIndicator({
   steps,
   currentStep,
-  accentColor = '#9AA48C',
+  accentColor = 'var(--crafted-olive)',
 }: {
   steps: readonly { id: string; label: string }[]
   currentStep: string
@@ -212,7 +226,7 @@ function ProgressIndicator({
             <div
               className="w-4 sm:w-8 h-0.5"
               style={{
-                backgroundColor: index < currentIndex ? accentColor : 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: index < currentIndex ? accentColor : 'var(--border-subtle)',
               }}
             />
           )}
@@ -254,13 +268,13 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           onClick={() => onSelectRoute('existing')}
           className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
-            background: 'rgba(15, 15, 15, 0.9)',
-            border: '1px solid rgba(139, 181, 139, 0.3)',
+            background: 'var(--surface-inset)',
+            border: '1px solid color-mix(in srgb, var(--crafted-sage) 30%, transparent)',
           }}
-          whileHover={{ borderColor: 'rgba(139, 181, 139, 0.6)' }}
+          whileHover={{ borderColor: 'color-mix(in srgb, var(--crafted-sage) 60%, transparent)' }}
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
-            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-crafted-olive/20 flex items-center justify-center mb-3 sm:mb-4">
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-crafted-olive" />
           </div>
           <h2 className="text-base sm:text-lg text-white font-medium mb-1 sm:mb-1.5">
             I already have a brand
@@ -268,7 +282,7 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
             Share your website or upload assets — we&apos;ll extract your brand DNA automatically.
           </p>
-          <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
+          <div className="flex items-center gap-2 text-crafted-olive text-xs sm:text-sm font-medium">
             <span>Get started</span>
             <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
           </div>
@@ -280,13 +294,13 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           onClick={() => onSelectRoute('create')}
           className="group relative p-4 sm:p-6 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02]"
           style={{
-            background: 'rgba(15, 15, 15, 0.9)',
-            border: '1px solid rgba(139, 181, 139, 0.3)',
+            background: 'var(--surface-inset)',
+            border: '1px solid color-mix(in srgb, var(--crafted-sage) 30%, transparent)',
           }}
-          whileHover={{ borderColor: 'rgba(139, 181, 139, 0.6)' }}
+          whileHover={{ borderColor: 'color-mix(in srgb, var(--crafted-sage) 60%, transparent)' }}
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#9AA48C]/20 flex items-center justify-center mb-3 sm:mb-4">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#9AA48C]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-crafted-olive/20 flex items-center justify-center mb-3 sm:mb-4">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-crafted-olive" />
           </div>
           <h2 className="text-base sm:text-lg text-white font-medium mb-1 sm:mb-1.5">
             I want to create a brand
@@ -294,11 +308,11 @@ function WelcomeScreen({ onSelectRoute }: { onSelectRoute: (route: OnboardingRou
           <p className="text-white/50 text-xs sm:text-sm mb-3 sm:mb-4">
             Answer a few questions and we&apos;ll generate brand directions for you to choose from.
           </p>
-          <div className="flex items-center gap-2 text-[#9AA48C] text-xs sm:text-sm font-medium">
+          <div className="flex items-center gap-2 text-crafted-olive text-xs sm:text-sm font-medium">
             <span>Start building</span>
             <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
           </div>
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 py-1 rounded-full bg-[#9AA48C]/20 text-[#9AA48C] text-[10px] sm:text-xs">
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 py-1 rounded-full bg-crafted-olive/20 text-crafted-olive text-[10px] sm:text-xs">
             ~5 min
           </div>
         </motion.button>
@@ -344,8 +358,8 @@ function BrandInputStep({
             <div
               className="relative rounded-xl overflow-hidden"
               style={{
-                background: 'rgba(40, 40, 40, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--surface-input)',
+                border: '1px solid var(--border-subtle)',
               }}
             >
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -369,8 +383,10 @@ function BrandInputStep({
             disabled={!websiteUrl.trim()}
             className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: websiteUrl.trim() ? '#f5f5f0' : 'rgba(245, 245, 240, 0.3)',
-              color: '#1a1a1a',
+              background: websiteUrl.trim()
+                ? 'var(--button-cream)'
+                : 'color-mix(in srgb, var(--button-cream) 30%, transparent)',
+              color: 'var(--button-cream-foreground)',
             }}
           >
             {isLoading ? (
@@ -394,14 +410,14 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
       <div className="text-left">
         <motion.div
           className="w-20 h-20 rounded-full mb-8 flex items-center justify-center"
-          style={{ background: 'rgba(139, 181, 139, 0.2)' }}
+          style={{ background: 'color-mix(in srgb, var(--crafted-sage) 20%, transparent)' }}
           animate={{
             scale: [1, 1.1, 1],
             opacity: [0.8, 1, 0.8],
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Sparkles className="w-10 h-10 text-[#9AA48C]" />
+          <Sparkles className="w-10 h-10 text-crafted-olive" />
         </motion.div>
 
         <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "'Times New Roman', serif" }}>
@@ -412,7 +428,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
         {/* Progress bar */}
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-8">
           <motion.div
-            className="h-full bg-[#9AA48C] rounded-full"
+            className="h-full bg-crafted-olive rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -429,7 +445,7 @@ function ScanningStep({ progress, scanningTexts }: { progress: number; scanningT
               <motion.div
                 key={text}
                 className={`flex items-center gap-3 text-sm transition-all ${
-                  isComplete ? 'text-[#9AA48C]' : isActive ? 'text-white' : 'text-white/30'
+                  isComplete ? 'text-crafted-olive' : isActive ? 'text-white' : 'text-white/30'
                 }`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -479,7 +495,7 @@ function EditorPanel({
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent
           side="bottom"
-          className="bg-[#141414] text-white border-white/10 rounded-t-2xl max-h-[70vh] overflow-y-auto"
+          className="bg-surface-raised text-white border-white/10 rounded-t-2xl max-h-[70vh] overflow-y-auto"
         >
           <SheetHeader>
             <SheetTitle className="text-white text-sm">{title}</SheetTitle>
@@ -519,7 +535,7 @@ function SectionEditButton({
       onClick={() => onToggle(section, isActive)}
       className={`p-1.5 rounded-lg transition-all ${
         isActive
-          ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
+          ? 'bg-crafted-olive/20 text-crafted-olive'
           : 'text-white/30 hover:text-white/60 hover:bg-white/5'
       }`}
       title={isActive ? 'Done' : 'Edit'}
@@ -631,10 +647,10 @@ function BrandDNARevealStep({
 
   // Confidence indicator helper
   const getConfidenceIndicator = (confidence: number) => {
-    if (confidence >= 85) return { label: 'Strong match', color: '#22c55e' }
-    if (confidence >= 70) return { label: 'Good match', color: '#3b82f6' }
-    if (confidence >= 50) return { label: 'Possible match', color: '#eab308' }
-    return { label: 'Suggested', color: '#9ca3af' }
+    if (confidence >= 85) return { label: 'Strong match', color: 'var(--ds-status-completed)' }
+    if (confidence >= 70) return { label: 'Good match', color: 'var(--ds-info)' }
+    if (confidence >= 50) return { label: 'Possible match', color: 'var(--ds-status-pending)' }
+    return { label: 'Suggested', color: 'var(--muted-foreground)' }
   }
 
   // Color getter/setter helpers for one-at-a-time color editing
@@ -746,8 +762,8 @@ function BrandDNARevealStep({
     >
       {/* Celebration header */}
       <motion.div variants={staggerItem} className="flex items-center gap-2.5 mb-5">
-        <div className="w-8 h-8 rounded-xl bg-[#9AA48C]/15 flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-[#9AA48C]" />
+        <div className="w-8 h-8 rounded-xl bg-crafted-olive/15 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-crafted-olive" />
         </div>
         <div>
           <p className="text-white text-sm font-medium">Here&apos;s what we found</p>
@@ -760,10 +776,10 @@ function BrandDNARevealStep({
         variants={staggerItem}
         className="relative rounded-2xl overflow-hidden"
         style={{
-          background: 'rgba(20, 20, 20, 0.7)',
+          background: 'var(--surface-overlay)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
         }}
       >
@@ -825,7 +841,7 @@ function BrandDNARevealStep({
                   type="text"
                   value={brandData.name}
                   onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
-                  className="text-3xl sm:text-4xl text-white font-bold bg-transparent border-b border-white/20 focus:border-[#9AA48C] outline-none w-full"
+                  className="text-3xl sm:text-4xl text-white font-bold bg-transparent border-b border-white/20 focus:border-crafted-olive outline-none w-full"
                   style={{ fontFamily }}
                   placeholder="Brand name"
                   autoFocus
@@ -1015,7 +1031,7 @@ function BrandDNARevealStep({
                                   onClick={() => setColorValue(editingColor, color)}
                                   className={`w-8 h-8 rounded-lg transition-all ${
                                     getColorValue(editingColor) === color
-                                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414]'
+                                      ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-raised'
                                       : 'hover:scale-110'
                                   }`}
                                   style={{ backgroundColor: color }}
@@ -1064,7 +1080,7 @@ function BrandDNARevealStep({
                               }
                               className={`px-3 py-2 rounded-lg text-left transition-all ${
                                 brandData.primaryFont === font.value
-                                  ? 'bg-[#9AA48C]/20 ring-1 ring-[#9AA48C]'
+                                  ? 'bg-crafted-olive/20 ring-1 ring-crafted-olive'
                                   : 'bg-white/5 hover:bg-white/8 border border-white/8'
                               }`}
                             >
@@ -1105,7 +1121,7 @@ function BrandDNARevealStep({
                           }
                           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
-                              ? 'bg-[#9AA48C] text-black'
+                              ? 'bg-crafted-olive text-black'
                               : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8'
                           }`}
                         >
@@ -1139,7 +1155,7 @@ function BrandDNARevealStep({
                           }
                           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             isSelected
-                              ? 'bg-[#9AA48C] text-black'
+                              ? 'bg-crafted-olive text-black'
                               : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-white/8'
                           }`}
                         >
@@ -1162,20 +1178,77 @@ function BrandDNARevealStep({
               {!showAddAudience && (
                 <button
                   onClick={() => setShowAddAudience(true)}
-                  className="text-xs text-[#9AA48C] hover:text-white transition-colors font-medium"
+                  className="text-xs text-crafted-olive hover:text-white transition-colors font-medium"
                 >
                   + Add
                 </button>
               )}
             </div>
 
+            {/* Quick audience suggestions */}
+            {(!brandData.audiences || brandData.audiences.length < 3) && !showAddAudience && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {(() => {
+                  const archetype = (brandData.industryArchetype || '').toLowerCase()
+                  const existingNames = (brandData.audiences || []).map((a) => a.name.toLowerCase())
+                  const suggestions =
+                    archetype.includes('tech') || archetype.includes('saas')
+                      ? [
+                          'Engineering Teams',
+                          'Product Managers',
+                          'CTOs & VPs',
+                          'Developers',
+                          'Startup Founders',
+                        ]
+                      : archetype.includes('e-commerce') || archetype.includes('ecommerce')
+                        ? [
+                            'Online Shoppers',
+                            'Repeat Customers',
+                            'Wholesale Buyers',
+                            'Brand Enthusiasts',
+                          ]
+                        : archetype.includes('hospitality')
+                          ? ['Hotel Guests', 'Corporate Travelers', 'Event Planners', 'Families']
+                          : [
+                              'Small Businesses',
+                              'Enterprise Teams',
+                              'Consumers',
+                              'Founders',
+                              'Creators',
+                            ]
+                  return suggestions
+                    .filter((s) => !existingNames.includes(s.toLowerCase()))
+                    .slice(0, 4)
+                    .map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => {
+                          const newAudience: InferredAudience = {
+                            name: suggestion,
+                            isPrimary: !brandData.audiences?.length,
+                            confidence: 70,
+                          }
+                          setBrandData({
+                            ...brandData,
+                            audiences: [...(brandData.audiences || []), newAudience],
+                          })
+                        }}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 text-white/60 hover:bg-crafted-olive/20 hover:text-crafted-olive border border-white/8 transition-colors"
+                      >
+                        + {suggestion}
+                      </button>
+                    ))
+                })()}
+              </div>
+            )}
+
             {/* Add new audience form */}
             {showAddAudience && (
               <div
                 className="p-3 rounded-xl mb-2"
                 style={{
-                  background: 'rgba(154, 164, 140, 0.1)',
-                  border: '1px solid rgba(154, 164, 140, 0.3)',
+                  background: 'color-mix(in srgb, var(--crafted-olive) 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--crafted-olive) 30%, transparent)',
                 }}
               >
                 <div className="flex gap-2 mb-2">
@@ -1212,12 +1285,12 @@ function BrandDNARevealStep({
                         ? 'e.g., HR Leaders at SMBs'
                         : 'e.g., Job seekers in tech'
                     }
-                    className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] text-white bg-white/5 border border-white/10 focus:border-[#9AA48C] outline-none"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] text-white bg-white/5 border border-white/10 focus:border-crafted-olive outline-none"
                     onKeyDown={(e) => e.key === 'Enter' && handleAddAudience()}
                   />
                   <button
                     onClick={handleAddAudience}
-                    className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-[#9AA48C] text-black/80 hover:bg-white transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-crafted-olive text-black/80 hover:bg-white transition-colors"
                   >
                     Add
                   </button>
@@ -1248,11 +1321,11 @@ function BrandDNARevealStep({
                     className="p-3 rounded-xl flex items-center justify-between group"
                     style={{
                       background: audience.isPrimary
-                        ? 'rgba(99, 102, 241, 0.1)'
+                        ? 'color-mix(in srgb, var(--ds-highlight) 10%, transparent)'
                         : 'rgba(255, 255, 255, 0.04)',
                       border: audience.isPrimary
-                        ? '1px solid rgba(99, 102, 241, 0.25)'
-                        : '1px solid rgba(255, 255, 255, 0.08)',
+                        ? '1px solid color-mix(in srgb, var(--ds-highlight) 25%, transparent)'
+                        : '1px solid var(--border-subtle)',
                     }}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1260,8 +1333,8 @@ function BrandDNARevealStep({
                         className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                         style={{
                           background: audience.isPrimary
-                            ? 'rgba(99, 102, 241, 0.25)'
-                            : 'rgba(255, 255, 255, 0.08)',
+                            ? 'color-mix(in srgb, var(--ds-highlight) 25%, transparent)'
+                            : 'var(--border-subtle)',
                         }}
                       >
                         {audience.firmographics?.jobTitles !== undefined ? (
@@ -1276,7 +1349,7 @@ function BrandDNARevealStep({
                             type="text"
                             defaultValue={audience.name}
                             autoFocus
-                            className="text-white text-sm font-medium bg-transparent border-b border-white/30 focus:border-[#9AA48C] outline-none w-full"
+                            className="text-white text-sm font-medium bg-transparent border-b border-white/30 focus:border-crafted-olive outline-none w-full"
                             onBlur={(e) => handleUpdateAudienceName(index, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter')
@@ -1293,8 +1366,9 @@ function BrandDNARevealStep({
                               <span
                                 className="text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
                                 style={{
-                                  background: 'rgba(99, 102, 241, 0.35)',
-                                  color: '#a5b4fc',
+                                  background:
+                                    'color-mix(in srgb, var(--ds-highlight) 35%, transparent)',
+                                  color: 'var(--ds-highlight-text)',
                                 }}
                               >
                                 Primary
@@ -1333,7 +1407,7 @@ function BrandDNARevealStep({
                       {!audience.isPrimary && (
                         <button
                           onClick={() => handleSetPrimaryAudience(index)}
-                          className="p-1.5 rounded-lg text-white/30 hover:text-[#9AA48C] hover:bg-[#9AA48C]/10 transition-all"
+                          className="p-1.5 rounded-lg text-white/30 hover:text-crafted-olive hover:bg-crafted-olive/10 transition-all"
                           title="Set as primary"
                         >
                           <svg
@@ -1353,7 +1427,7 @@ function BrandDNARevealStep({
                       )}
                       <button
                         onClick={() => handleRemoveAudience(index)}
-                        className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        className="p-1.5 rounded-lg text-white/30 hover:text-ds-error hover:bg-ds-error/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
                         title="Remove"
                       >
                         <svg
@@ -1415,7 +1489,7 @@ function BrandDNARevealStep({
             <button
               onClick={onContinue}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white text-black/90 flex flex-col items-center justify-center"
-              style={{ background: 'rgba(245, 245, 240, 0.95)' }}
+              style={{ background: 'color-mix(in srgb, var(--button-cream) 95%, transparent)' }}
             >
               <span className="flex items-center">
                 Continue
@@ -1988,8 +2062,8 @@ function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="relative rounded-2xl overflow-hidden"
           style={{
-            background: 'rgba(20, 20, 20, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--surface-overlay)',
+            border: '1px solid var(--border-subtle)',
             boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
           }}
         >
@@ -2210,8 +2284,8 @@ function MoodPreviewPanel({ brandData }: { brandData: BrandData }) {
                 <div
                   className="relative h-[420px] overflow-hidden rounded-2xl"
                   style={{
-                    background: 'rgba(15, 15, 15, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'var(--surface-inset)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 >
                   {/* Top fade gradient */}
@@ -2345,7 +2419,7 @@ function BrandSignalSlider({
   slider,
   value,
   onChange,
-  accentColor: _accentColor = '#9AA48C',
+  accentColor: _accentColor = 'var(--crafted-olive)',
 }: {
   slider: (typeof BRAND_SIGNAL_SLIDERS)[0]
   value: number
@@ -2411,10 +2485,10 @@ function BrandSignalSlider({
           key={currentLevel}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-xs font-medium px-2.5 py-1 rounded-full text-[#9AA48C]"
+          className="text-xs font-medium px-2.5 py-1 rounded-full text-crafted-olive"
           style={{
-            background: 'rgba(154, 164, 140, 0.15)',
-            border: '1px solid rgba(154, 164, 140, 0.3)',
+            background: 'color-mix(in srgb, var(--crafted-olive) 15%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--crafted-olive) 30%, transparent)',
           }}
         >
           {currentLevel}
@@ -2441,7 +2515,7 @@ function BrandSignalSlider({
 
         {/* Filled track */}
         <motion.div
-          className="absolute left-0 h-1 rounded-full bg-[#9AA48C]"
+          className="absolute left-0 h-1 rounded-full bg-crafted-olive"
           initial={false}
           animate={{ width: `${value}%` }}
           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
@@ -2459,7 +2533,7 @@ function BrandSignalSlider({
                 className="w-0.5 h-3 rounded-full transition-colors duration-150"
                 style={{
                   backgroundColor: isActive
-                    ? 'rgba(154, 164, 140, 0.8)'
+                    ? 'color-mix(in srgb, var(--crafted-olive) 80%, transparent)'
                     : 'rgba(255, 255, 255, 0.2)',
                 }}
               />
@@ -2475,13 +2549,13 @@ function BrandSignalSlider({
           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         >
           <motion.div
-            className="relative rounded-full -ml-2.5 bg-[#9AA48C]"
+            className="relative rounded-full -ml-2.5 bg-crafted-olive"
             style={{
               width: '20px',
               height: '20px',
               boxShadow: isDragging
-                ? '0 2px 12px rgba(154, 164, 140, 0.5)'
-                : '0 2px 8px rgba(154, 164, 140, 0.3)',
+                ? '0 2px 12px color-mix(in srgb, var(--crafted-olive) 50%, transparent)'
+                : '0 2px 8px color-mix(in srgb, var(--crafted-olive) 30%, transparent)',
             }}
             animate={{
               scale: isDragging ? 1.2 : 1,
@@ -2560,7 +2634,7 @@ function FineTuneStep({
   onBack: () => void
 }) {
   // Use brand primary color or fallback to default
-  const accentColor = brandData.primaryColor || '#9AA48C'
+  const accentColor = brandData.primaryColor || 'var(--crafted-olive)'
 
   // Get the number of levels for a slider by id
   const getNumLevels = (id: string): number => {
@@ -2622,16 +2696,20 @@ function FineTuneStep({
 
   // Compute rgba background from brand primary color
   const rgb = hexToRgb(accentColor)
-  const cardBg = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.06)` : 'rgba(154, 164, 140, 0.06)'
-  const cardBorder = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : 'rgba(154, 164, 140, 0.15)'
+  const cardBg = rgb
+    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.06)`
+    : 'color-mix(in srgb, var(--crafted-olive) 6%, transparent)'
+  const cardBorder = rgb
+    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`
+    : 'color-mix(in srgb, var(--crafted-olive) 15%, transparent)'
 
   return (
-    <GlowingCard glowColor="#9AA48C" className="max-w-lg">
+    <GlowingCard glowColor="var(--crafted-olive)" className="max-w-lg">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         {/* Heading + AI voice summary */}
-        <motion.div variants={staggerItem} className="text-left mb-6">
+        <motion.div variants={staggerItem} className="text-left mb-4">
           <h1
-            className="text-2xl sm:text-3xl text-white mb-3"
+            className="text-2xl sm:text-3xl text-white mb-2"
             style={{ fontFamily: "'Times New Roman', serif" }}
           >
             Your brand voice
@@ -2642,7 +2720,7 @@ function FineTuneStep({
         {/* Archetype assessment card */}
         <motion.div
           variants={staggerItem}
-          className="rounded-xl p-4 mb-6"
+          className="rounded-xl p-3 mb-3"
           style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
         >
           <div className="flex items-center gap-3 flex-wrap">
@@ -2650,26 +2728,26 @@ function FineTuneStep({
               {archetype.name}
             </span>
             <span
-              className="text-xs font-medium px-2.5 py-1 rounded-full text-[#9AA48C]"
+              className="text-xs font-medium px-2.5 py-1 rounded-full text-crafted-olive"
               style={{
-                background: 'rgba(154, 164, 140, 0.15)',
-                border: '1px solid rgba(154, 164, 140, 0.3)',
+                background: 'color-mix(in srgb, var(--crafted-olive) 15%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--crafted-olive) 30%, transparent)',
               }}
             >
               {brandToneLabel}
             </span>
           </div>
-          <p className="text-white/40 text-xs mt-2">Similar to {archetype.brands.join(', ')}</p>
+          <p className="text-white/40 text-xs mt-1.5">Similar to {archetype.brands.join(', ')}</p>
         </motion.div>
 
         {/* Fine-tune label */}
-        <motion.div variants={staggerItem} className="mb-4">
+        <motion.div variants={staggerItem} className="mb-3">
           <span className="text-white/30 text-[11px] uppercase tracking-wider font-medium">
             Fine-tune if needed
           </span>
         </motion.div>
 
-        <div className="space-y-6 mb-8">
+        <div className="space-y-3 mb-4">
           {BRAND_SIGNAL_SLIDERS.map((slider) => (
             <motion.div key={slider.id} variants={staggerItem}>
               <BrandSignalSlider
@@ -2693,7 +2771,7 @@ function FineTuneStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Save & continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -2733,7 +2811,7 @@ function CreativeFocusStep({
   }
 
   return (
-    <GlowingCard glowColor="#9AA48C" className="w-full max-w-2xl">
+    <GlowingCard glowColor="var(--crafted-olive)" className="w-full max-w-2xl">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         <motion.div variants={staggerItem} className="text-left mb-8">
           <h1
@@ -2758,17 +2836,17 @@ function CreativeFocusStep({
                 variants={staggerItem}
                 onClick={() => toggleFocus(option.id)}
                 className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 min-h-[72px] ${
-                  isSelected ? 'bg-[#9AA48C]/20 border-[#9AA48C]/50' : 'hover:bg-white/5'
+                  isSelected ? 'bg-crafted-olive/20 border-crafted-olive/50' : 'hover:bg-white/5'
                 }`}
                 style={{
                   border: isSelected
-                    ? '1px solid rgba(154, 164, 140, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
+                    ? '1px solid color-mix(in srgb, var(--crafted-olive) 50%, transparent)'
+                    : '1px solid var(--border-subtle)',
                 }}
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-[#9AA48C] text-black' : 'bg-white/10 text-white/50'
+                    isSelected ? 'bg-crafted-olive text-black' : 'bg-white/10 text-white/50'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -2777,7 +2855,7 @@ function CreativeFocusStep({
                   <h3 className="text-white font-medium text-sm leading-tight">{option.title}</h3>
                   <p className="text-white/40 text-xs mt-0.5 leading-tight">{option.description}</p>
                 </div>
-                {isSelected && <Check className="w-5 h-5 text-[#9AA48C] shrink-0" />}
+                {isSelected && <Check className="w-5 h-5 text-crafted-olive shrink-0" />}
               </motion.button>
             )
           })}
@@ -2799,7 +2877,7 @@ function CreativeFocusStep({
             onClick={onContinue}
             disabled={isLoading}
             className="flex-1 py-4 rounded-xl font-medium text-sm"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -2826,7 +2904,7 @@ function BrandReadyStep({
   brandData: BrandData
   onComplete: () => void
 }) {
-  const accentColor = brandData.primaryColor || '#9AA48C'
+  const accentColor = brandData.primaryColor || 'var(--crafted-olive)'
 
   return (
     <GlowingCard glowColor={accentColor}>
@@ -2857,7 +2935,7 @@ function BrandReadyStep({
           <motion.div
             variants={staggerItem}
             className="p-4 rounded-xl flex items-center gap-4"
-            style={{ background: 'rgba(40, 40, 40, 0.6)' }}
+            style={{ background: 'var(--surface-input)' }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2877,7 +2955,7 @@ function BrandReadyStep({
             <motion.div
               variants={staggerItem}
               className="p-4 rounded-xl flex items-center gap-4"
-              style={{ background: 'rgba(40, 40, 40, 0.6)' }}
+              style={{ background: 'var(--surface-input)' }}
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2898,7 +2976,7 @@ function BrandReadyStep({
           <motion.div
             variants={staggerItem}
             className="p-4 rounded-xl flex items-center gap-4"
-            style={{ background: 'rgba(40, 40, 40, 0.6)' }}
+            style={{ background: 'var(--surface-input)' }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2917,7 +2995,7 @@ function BrandReadyStep({
           variants={staggerItem}
           onClick={onComplete}
           className="w-full py-4 rounded-xl font-medium text-sm"
-          style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+          style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
         >
           Create your first asset
           <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -2978,8 +3056,8 @@ function BrandIntentStep({
             <div
               className="relative rounded-xl overflow-hidden"
               style={{
-                background: 'rgba(40, 40, 40, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--surface-input)',
+                border: '1px solid var(--border-subtle)',
               }}
             >
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -3004,18 +3082,18 @@ function BrandIntentStep({
                   key={type.id}
                   onClick={() => setBrandData({ ...brandData, productType: type.id })}
                   className={`p-3 rounded-xl text-center transition-all duration-200 ${
-                    brandData.productType === type.id ? 'bg-[#9AA48C]/20' : 'hover:bg-white/5'
+                    brandData.productType === type.id ? 'bg-crafted-olive/20' : 'hover:bg-white/5'
                   }`}
                   style={{
                     border:
                       brandData.productType === type.id
-                        ? '1px solid rgba(154, 164, 140, 0.5)'
-                        : '1px solid rgba(255, 255, 255, 0.08)',
+                        ? '1px solid color-mix(in srgb, var(--crafted-olive) 50%, transparent)'
+                        : '1px solid var(--border-subtle)',
                   }}
                 >
                   <span
                     className={`text-sm font-medium ${
-                      brandData.productType === type.id ? 'text-[#9AA48C]' : 'text-white/80'
+                      brandData.productType === type.id ? 'text-crafted-olive' : 'text-white/80'
                     }`}
                   >
                     {type.label}
@@ -3035,13 +3113,13 @@ function BrandIntentStep({
                   onClick={() => toggleAudience(audience.id)}
                   className={`px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                     selectedAudiences.includes(audience.id)
-                      ? 'bg-[#9AA48C]/20 text-[#9AA48C]'
+                      ? 'bg-crafted-olive/20 text-crafted-olive'
                       : 'text-white/60 hover:bg-white/5 hover:text-white/80'
                   }`}
                   style={{
                     border: selectedAudiences.includes(audience.id)
-                      ? '1px solid rgba(154, 164, 140, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
+                      ? '1px solid color-mix(in srgb, var(--crafted-olive) 50%, transparent)'
+                      : '1px solid var(--border-subtle)',
                   }}
                 >
                   {audience.label}
@@ -3062,7 +3140,7 @@ function BrandIntentStep({
           <button
             onClick={onContinue}
             className="flex-1 py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3126,7 +3204,7 @@ function BrandPersonalityStep({
   }
 
   return (
-    <GlowingCard glowColor="#9AA48C" className="max-w-lg">
+    <GlowingCard glowColor="var(--crafted-olive)" className="max-w-lg">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         <motion.div variants={staggerItem} className="text-left mb-8">
           <h1
@@ -3147,7 +3225,7 @@ function BrandPersonalityStep({
                 slider={slider}
                 value={getSignalValue(slider.id)}
                 onChange={(value) => setBrandData({ ...brandData, [slider.id]: value })}
-                accentColor="#9AA48C"
+                accentColor="var(--crafted-olive)"
               />
             </motion.div>
           ))}
@@ -3164,7 +3242,7 @@ function BrandPersonalityStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3211,28 +3289,28 @@ function VisualInstinctStep({
     switch (visual) {
       case 'light':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-gray-200" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-white to-muted flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-muted" />
           </div>
         )
       case 'dark':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-gray-800" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-foreground to-black flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-muted-foreground" />
           </div>
         )
       case 'text-heavy':
         return (
           <div className="w-full h-28 rounded-xl bg-white p-4 flex flex-col justify-center gap-1.5">
-            <div className="h-2.5 bg-gray-800 rounded w-3/4" />
-            <div className="h-1.5 bg-gray-400 rounded w-full" />
-            <div className="h-1.5 bg-gray-400 rounded w-2/3" />
-            <div className="h-1.5 bg-gray-400 rounded w-5/6" />
+            <div className="h-2.5 bg-foreground rounded w-3/4" />
+            <div className="h-1.5 bg-muted-foreground rounded w-full" />
+            <div className="h-1.5 bg-muted-foreground rounded w-2/3" />
+            <div className="h-1.5 bg-muted-foreground rounded w-5/6" />
           </div>
         )
       case 'visual':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-[#9AA48C] to-[#7A8575] flex items-center justify-center">
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-crafted-olive to-crafted-olive-dark flex items-center justify-center">
             <ImageIcon className="w-10 h-10 text-white/80" />
           </div>
         )
@@ -3240,26 +3318,26 @@ function VisualInstinctStep({
         return (
           <div className="w-full h-28 rounded-xl bg-white p-2.5 grid grid-cols-3 gap-1.5">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-gray-200 rounded" />
+              <div key={i} className="bg-muted rounded" />
             ))}
           </div>
         )
       case 'expressive':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 relative overflow-hidden">
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-ds-status-review via-ds-accent to-ds-warning relative overflow-hidden">
             <div className="absolute top-2 left-4 w-6 h-6 rounded-full bg-white/30 -rotate-12" />
             <div className="absolute bottom-3 right-2 w-10 h-10 rounded-full bg-white/20 rotate-45" />
           </div>
         )
       case 'calm':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-            <div className="w-16 h-1 bg-blue-300 rounded" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-ds-info/20 to-ds-info/30 flex items-center justify-center">
+            <div className="w-16 h-1 bg-ds-info/40 rounded" />
           </div>
         )
       case 'energetic':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center gap-1">
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-ds-warning to-ds-error flex items-center justify-center gap-1">
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
@@ -3272,33 +3350,36 @@ function VisualInstinctStep({
       case 'minimal':
         return (
           <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-gray-900 rounded-full" />
+            <div className="w-6 h-6 border-2 border-foreground rounded-full" />
           </div>
         )
       case 'dense':
         return (
-          <div className="w-full h-28 rounded-xl bg-gray-900 p-2 grid grid-cols-4 gap-1">
+          <div className="w-full h-28 rounded-xl bg-foreground p-2 grid grid-cols-4 gap-1">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="bg-gradient-to-br from-gray-700 to-gray-800 rounded" />
+              <div
+                key={i}
+                className="bg-gradient-to-br from-muted-foreground to-muted-foreground/80 rounded"
+              />
             ))}
           </div>
         )
       case 'geometric':
         return (
           <div className="w-full h-28 rounded-xl bg-white flex items-center justify-center gap-2">
-            <div className="w-8 h-8 bg-gray-900" />
-            <div className="w-8 h-8 bg-gray-900 rotate-45" />
-            <div className="w-0 h-0 border-l-[16px] border-r-[16px] border-b-[28px] border-l-transparent border-r-transparent border-b-gray-900" />
+            <div className="w-8 h-8 bg-foreground" />
+            <div className="w-8 h-8 bg-foreground rotate-45" />
+            <div className="w-0 h-0 border-l-[16px] border-r-[16px] border-b-[28px] border-l-transparent border-r-transparent border-b-foreground" />
           </div>
         )
       case 'organic':
         return (
-          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-            <div className="w-14 h-10 bg-green-400 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]" />
+          <div className="w-full h-28 rounded-xl bg-gradient-to-br from-crafted-mint/30 to-crafted-mint/50 flex items-center justify-center">
+            <div className="w-14 h-10 bg-crafted-sage rounded-[50%_50%_50%_50%/60%_60%_40%_40%]" />
           </div>
         )
       default:
-        return <div className="w-full h-28 rounded-xl bg-gray-200" />
+        return <div className="w-full h-28 rounded-xl bg-muted" />
     }
   }
 
@@ -3322,7 +3403,7 @@ function VisualInstinctStep({
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                 i < currentPairIndex
-                  ? 'bg-[#9AA48C]'
+                  ? 'bg-crafted-olive'
                   : i === currentPairIndex
                     ? 'bg-white/40'
                     : 'bg-white/10'
@@ -3344,8 +3425,8 @@ function VisualInstinctStep({
               onClick={() => handleChoice('A')}
               className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
               style={{
-                background: 'rgba(40, 40, 40, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--surface-input)',
+                border: '1px solid var(--border-subtle)',
               }}
             >
               {getVisualComponent(currentPair.optionA.visual)}
@@ -3359,8 +3440,8 @@ function VisualInstinctStep({
               onClick={() => handleChoice('B')}
               className="group p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
               style={{
-                background: 'rgba(40, 40, 40, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--surface-input)',
+                border: '1px solid var(--border-subtle)',
               }}
             >
               {getVisualComponent(currentPair.optionB.visual)}
@@ -3383,7 +3464,7 @@ function VisualInstinctStep({
           <button
             onClick={onContinue}
             className="flex-1 py-3 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Skip to directions
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3433,8 +3514,8 @@ function _ToneOfVoiceStep({
             variants={staggerItem}
             className="relative rounded-xl overflow-hidden"
             style={{
-              background: 'rgba(40, 40, 40, 0.6)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--surface-input)',
+              border: '1px solid var(--border-subtle)',
             }}
           >
             <textarea
@@ -3453,7 +3534,7 @@ function _ToneOfVoiceStep({
                   key={example}
                   onClick={() => setBrandData({ ...brandData, brandPositioning: example })}
                   className="px-3 py-1.5 rounded-full text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                  style={{ border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                  style={{ border: '1px solid var(--border-subtle)' }}
                 >
                   {example}
                 </button>
@@ -3473,7 +3554,7 @@ function _ToneOfVoiceStep({
           <button
             onClick={onContinue}
             className="flex-1 py-4 rounded-xl font-medium text-sm"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Generate Directions
             <Sparkles className="w-4 h-4 inline ml-2" />
@@ -3515,14 +3596,14 @@ function AIDirectionsStep({
         <div className="text-left">
           <motion.div
             className="w-16 h-16 rounded-full mb-6 flex items-center justify-center"
-            style={{ background: 'rgba(154, 164, 140, 0.2)' }}
+            style={{ background: 'color-mix(in srgb, var(--crafted-olive) 20%, transparent)' }}
             animate={{
               scale: [1, 1.1, 1],
               opacity: [0.8, 1, 0.8],
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Sparkles className="w-8 h-8 text-[#9AA48C]" />
+            <Sparkles className="w-8 h-8 text-crafted-olive" />
           </motion.div>
 
           <h1
@@ -3567,11 +3648,11 @@ function AIDirectionsStep({
                 variants={staggerItem}
                 onClick={() => onSelectDirection(direction)}
                 className={`w-full rounded-2xl text-left transition-all overflow-hidden ${
-                  isSelected ? 'ring-2 ring-[#9AA48C]' : 'hover:ring-1 hover:ring-white/20'
+                  isSelected ? 'ring-2 ring-crafted-olive' : 'hover:ring-1 hover:ring-white/20'
                 }`}
                 style={{
-                  background: 'rgba(20, 20, 20, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'var(--surface-overlay)',
+                  border: '1px solid var(--border-subtle)',
                 }}
               >
                 {/* Header with name and check */}
@@ -3581,8 +3662,8 @@ function AIDirectionsStep({
                     <h3 className="text-white text-lg font-medium">{direction.name}</h3>
                   </div>
                   {isSelected && (
-                    <div className="w-8 h-8 rounded-full bg-[#9AA48C]/20 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-[#9AA48C]" />
+                    <div className="w-8 h-8 rounded-full bg-crafted-olive/20 flex items-center justify-center">
+                      <Check className="w-4 h-4 text-crafted-olive" />
                     </div>
                   )}
                 </div>
@@ -3683,7 +3764,7 @@ function AIDirectionsStep({
             onClick={onContinue}
             disabled={!selectedDirection}
             className="flex-1 py-3 rounded-xl font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            style={{ background: '#f5f5f0', color: '#1a1a1a' }}
+            style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Continue
             <ArrowRight className="w-4 h-4 inline ml-2" />
@@ -3957,13 +4038,12 @@ function OnboardingContent() {
         throw new Error(errorMessage)
       }
 
-      // Set flag before refetching to prevent auto-redirect
+      // Set flag before navigating to prevent auto-redirect
       setShowingCompletionScreen(true)
-      await refetchSession()
-
-      // Clear state and redirect to dashboard
       clearOnboardingState()
       setIsExiting(true)
+      // Refetch session in background — don't block navigation
+      refetchSession().catch(() => {})
       setTimeout(() => {
         router.push('/dashboard')
       }, 500)
@@ -3997,10 +4077,7 @@ function OnboardingContent() {
 
   if (isPending) {
     return (
-      <div
-        className="flex items-center justify-center min-h-screen"
-        style={{ backgroundColor: '#0a0a0a' }}
-      >
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -4030,10 +4107,9 @@ function OnboardingContent() {
 
   return (
     <motion.div
-      className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden"
+      className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-background"
       style={{
         fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
-        backgroundColor: '#0a0a0a',
       }}
       initial={{ opacity: 1 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
@@ -4272,10 +4348,7 @@ export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: '#0a0a0a' }}
-        >
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <LoadingSpinner size="lg" />
         </div>
       }

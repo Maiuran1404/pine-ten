@@ -129,7 +129,7 @@ export function WorkspaceDropdown({
           <div className="rounded-lg bg-sidebar-accent/50 p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Zap className="size-4 text-amber-500" />
+                <Zap className="size-4 text-ds-warning" />
                 <span className="font-medium text-sm">Turn Pro</span>
               </div>
               <Button size="sm" className="h-7 text-xs px-3">
@@ -155,7 +155,7 @@ export function WorkspaceDropdown({
           </div>
           <Progress
             value={creditPercentage}
-            className="h-1.5 bg-primary/20 [&>*]:bg-gradient-to-r [&>*]:from-blue-500 [&>*]:to-purple-500"
+            className="h-1.5 bg-primary/20 [&>*]:bg-gradient-to-r [&>*]:from-crafted-green [&>*]:to-crafted-sage"
           />
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-muted-foreground/50" />

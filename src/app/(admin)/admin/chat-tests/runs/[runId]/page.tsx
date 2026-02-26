@@ -204,10 +204,10 @@ export default function RunDetailPage({ params }: { params: Promise<{ runId: str
 
       {/* Error message */}
       {run.errorMessage && (
-        <Card className="border-red-200">
+        <Card className="border-ds-error/30">
           <CardContent className="p-4 flex items-start gap-2">
-            <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{run.errorMessage}</p>
+            <XCircle className="h-4 w-4 text-ds-error shrink-0 mt-0.5" />
+            <p className="text-sm text-ds-error">{run.errorMessage}</p>
           </CardContent>
         </Card>
       )}

@@ -42,7 +42,7 @@ describe('StatCard', () => {
       <StatCard label="Revenue" value={100} icon={TrendingUp} trend="up" />
     )
 
-    const iconContainer = container.querySelector('.bg-green-500\\/10')
+    const iconContainer = container.querySelector('.bg-ds-success\\/10')
     expect(iconContainer).toBeInTheDocument()
   })
 
@@ -51,7 +51,7 @@ describe('StatCard', () => {
       <StatCard label="Churn" value={5} icon={TrendingUp} trend="down" />
     )
 
-    const iconContainer = container.querySelector('.bg-red-500\\/10')
+    const iconContainer = container.querySelector('.bg-ds-error\\/10')
     expect(iconContainer).toBeInTheDocument()
   })
 
@@ -60,7 +60,7 @@ describe('StatCard', () => {
       <StatCard label="Alerts" value={3} icon={AlertTriangle} trend="warning" />
     )
 
-    const iconContainer = container.querySelector('.bg-yellow-500\\/10')
+    const iconContainer = container.querySelector('.bg-ds-warning\\/10')
     expect(iconContainer).toBeInTheDocument()
   })
 

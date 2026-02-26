@@ -1,3 +1,7 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values: #2B2B2B = foreground, #bbb = muted shades, #e8e8e8 = border
+ */
 import { SlideWrapper, SlideFooter } from './slide-wrapper'
 
 const TOC_ITEMS = [

@@ -74,13 +74,13 @@ const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
 
 const DELIVERY_STATUS_COLORS: Record<DeliveryStatus, string> = {
   PENDING: 'text-muted-foreground',
-  PUSHING: 'text-blue-500',
-  PUSHED: 'text-blue-600',
-  PREVIEWING: 'text-blue-500',
-  PREVIEW_READY: 'text-green-500',
-  DEPLOYING: 'text-blue-500',
-  DEPLOYED: 'text-green-600',
-  FAILED: 'text-red-500',
+  PUSHING: 'text-ds-info',
+  PUSHED: 'text-ds-info',
+  PREVIEWING: 'text-ds-info',
+  PREVIEW_READY: 'text-ds-success',
+  DEPLOYING: 'text-ds-info',
+  DEPLOYED: 'text-crafted-green',
+  FAILED: 'text-ds-error',
 }
 
 function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
@@ -121,7 +121,7 @@ function DeliverySection({
         <button
           onClick={actions.onPushToFramer}
           disabled={actions.isPushing}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ds-info hover:bg-ds-info/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
         >
           {actions.isPushing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -135,13 +135,13 @@ function DeliverySection({
       {/* Failed — allow retry */}
       {status === 'FAILED' && (
         <div className="space-y-2">
-          <p className="text-xs text-red-500">
+          <p className="text-xs text-ds-error">
             Something went wrong during delivery. You can try again.
           </p>
           <button
             onClick={actions.onPushToFramer}
             disabled={actions.isPushing}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ds-error hover:bg-ds-error/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
           >
             {actions.isPushing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -161,7 +161,7 @@ function DeliverySection({
               href={delivery.framerPreviewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="flex items-center gap-2 text-sm text-ds-info hover:text-ds-info/80"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               View current preview
@@ -170,7 +170,7 @@ function DeliverySection({
           <button
             onClick={actions.onPublishPreview}
             disabled={actions.isPublishingPreview}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-crafted-green hover:bg-crafted-forest disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
           >
             {actions.isPublishingPreview ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -187,7 +187,7 @@ function DeliverySection({
         <button
           onClick={actions.onDeploy}
           disabled={actions.isDeploying}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ds-status-review hover:bg-ds-status-review/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
         >
           {actions.isDeploying ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -201,14 +201,12 @@ function DeliverySection({
       {/* Deployed — show live URL */}
       {status === 'DEPLOYED' && delivery.framerDeployedUrl && (
         <div className="space-y-2">
-          <p className="text-xs text-green-600 dark:text-green-400">
-            Your website is live and accessible at:
-          </p>
+          <p className="text-xs text-ds-success">Your website is live and accessible at:</p>
           <a
             href={delivery.framerDeployedUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-sm font-medium text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-ds-success/30 bg-ds-success/10 text-sm font-medium text-ds-success hover:bg-ds-success/15 transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             {delivery.framerDeployedUrl}
@@ -281,7 +279,7 @@ export function ApprovalPhase({
           <p className="text-xs text-muted-foreground">Days</p>
         </div>
         <div className="rounded-lg border border-border p-3 text-center">
-          <p className="text-2xl font-bold text-green-600">{creditsCost}</p>
+          <p className="text-2xl font-bold text-crafted-green">{creditsCost}</p>
           <p className="text-xs text-muted-foreground">Credits</p>
         </div>
       </div>
@@ -296,7 +294,7 @@ export function ApprovalPhase({
         <div className="rounded-lg border border-border">
           <button
             onClick={() => setShowSummary(!showSummary)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors"
           >
             Design Summary
             {showSummary ? (
@@ -336,7 +334,7 @@ export function ApprovalPhase({
             type="checkbox"
             checked={timelineAccepted}
             onChange={(e) => setTimelineAccepted(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-border text-green-600 focus:ring-green-500"
+            className="mt-0.5 h-4 w-4 rounded border-border text-crafted-green focus:ring-crafted-green"
           />
           <span className="text-sm text-muted-foreground">
             I&apos;ve reviewed the timeline and understand the delivery schedule

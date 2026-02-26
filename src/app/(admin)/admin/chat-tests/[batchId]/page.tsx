@@ -163,7 +163,7 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">Batch Analysis</h1>
             {isRunning && (
-              <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-xs text-ds-info bg-ds-info/10 px-2 py-0.5 rounded-full">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Live
               </span>
@@ -204,7 +204,7 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <Target className="h-3 w-3 text-violet-500" />
+                    <Target className="h-3 w-3 text-ds-status-review" />
                     <span className="text-[10px] text-muted-foreground">Avg Score</span>
                   </div>
                   <p
@@ -212,10 +212,10 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                       'text-lg font-semibold',
                       avgScore !== null
                         ? avgScore >= 75
-                          ? 'text-emerald-600'
+                          ? 'text-ds-success'
                           : avgScore >= 50
-                            ? 'text-amber-600'
-                            : 'text-red-600'
+                            ? 'text-ds-warning'
+                            : 'text-ds-error'
                         : ''
                     )}
                   >
@@ -224,28 +224,28 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                    <CheckCircle2 className="h-3 w-3 text-ds-success" />
                     <span className="text-[10px] text-muted-foreground">Passed</span>
                   </div>
-                  <p className="text-lg font-semibold text-emerald-600">{passed}</p>
+                  <p className="text-lg font-semibold text-ds-success">{passed}</p>
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <XCircle className="h-3 w-3 text-red-500" />
+                    <XCircle className="h-3 w-3 text-ds-error" />
                     <span className="text-[10px] text-muted-foreground">Failed</span>
                   </div>
-                  <p className="text-lg font-semibold text-red-500">{failed}</p>
+                  <p className="text-lg font-semibold text-ds-error">{failed}</p>
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <MessageSquare className="h-3 w-3 text-blue-500" />
+                    <MessageSquare className="h-3 w-3 text-ds-info" />
                     <span className="text-[10px] text-muted-foreground">Avg Turns</span>
                   </div>
                   <p className="text-lg font-semibold">{avgTurns}</p>
                 </div>
                 <div className="px-3 py-2 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <Clock className="h-3 w-3 text-amber-500" />
+                    <Clock className="h-3 w-3 text-ds-warning" />
                     <span className="text-[10px] text-muted-foreground">Avg Duration</span>
                   </div>
                   <p className="text-lg font-semibold">{avgDuration ? `${avgDuration}s` : '-'}</p>
@@ -256,7 +256,7 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500 rounded-full transition-all"
+                      className="h-full bg-ds-success rounded-full transition-all"
                       style={{ width: `${passRate}%` }}
                     />
                   </div>
@@ -271,10 +271,10 @@ export default function BatchDetailPage({ params }: { params: Promise<{ batchId:
                         className={cn(
                           'h-full rounded-full transition-all',
                           avgScore >= 75
-                            ? 'bg-emerald-500'
+                            ? 'bg-ds-success'
                             : avgScore >= 50
-                              ? 'bg-amber-500'
-                              : 'bg-red-500'
+                              ? 'bg-ds-warning'
+                              : 'bg-ds-error'
                         )}
                         style={{ width: `${avgScore}%` }}
                       />

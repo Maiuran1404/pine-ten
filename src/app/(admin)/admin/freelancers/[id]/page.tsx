@@ -347,14 +347,15 @@ export default function FreelancerDetailPage({ params }: { params: Promise<{ id:
 
   const getTaskStatusBadge = (status: string) => {
     const config: Record<string, string> = {
-      PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      ASSIGNED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      IN_PROGRESS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      IN_REVIEW: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      COMPLETED: 'bg-green-500/20 text-green-400 border-green-500/30',
-      REVISION_REQUESTED: 'bg-red-500/20 text-red-400 border-red-500/30',
+      PENDING: 'bg-ds-warning/20 text-ds-warning border-ds-warning/30',
+      ASSIGNED: 'bg-ds-info/20 text-ds-info border-ds-info/30',
+      IN_PROGRESS: 'bg-ds-success/20 text-ds-success border-ds-success/30',
+      IN_REVIEW: 'bg-ds-status-review/20 text-ds-status-review border-ds-status-review/30',
+      COMPLETED: 'bg-ds-success/20 text-ds-success border-ds-success/30',
+      REVISION_REQUESTED: 'bg-ds-error/20 text-ds-error border-ds-error/30',
     }
-    const color = config[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    const color =
+      config[status] || 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30'
     const label = status
       .replace(/_/g, ' ')
       .toLowerCase()
@@ -685,14 +686,14 @@ export default function FreelancerDetailPage({ params }: { params: Promise<{ id:
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-center gap-1 text-2xl font-bold">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <CheckCircle2 className="h-5 w-5 text-ds-success" />
                     {freelancer.completedTasks}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Completed</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-center gap-1 text-2xl font-bold">
-                    <Star className="h-5 w-5 text-yellow-500" />
+                    <Star className="h-5 w-5 text-ds-warning" />
                     {isEditing
                       ? editForm.rating || '—'
                       : freelancer.rating
@@ -702,13 +703,13 @@ export default function FreelancerDetailPage({ params }: { params: Promise<{ id:
                   <p className="text-xs text-muted-foreground mt-1">Rating</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-blue-500">
+                  <div className="text-2xl font-bold text-ds-info">
                     {freelancer.taskCounts.inProgress}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">In Progress</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold text-purple-500">
+                  <div className="text-2xl font-bold text-ds-status-review">
                     {freelancer.taskCounts.inReview}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">In Review</p>

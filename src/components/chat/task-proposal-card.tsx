@@ -33,11 +33,11 @@ export function TaskProposalCard({
   const hasEnoughCredits = userCredits >= creditsRequired
 
   return (
-    <Card className="bg-muted/30 border-emerald-500/20">
+    <Card className="bg-muted/30 border-crafted-green/20">
       <CardContent className="p-4">
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="h-4 w-4 text-emerald-500" />
+          <div className="w-8 h-8 rounded-full bg-crafted-green/10 flex items-center justify-center shrink-0 mt-0.5">
+            <Sparkles className="h-4 w-4 text-crafted-green" />
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-base">{proposal.title || 'Task Summary'}</h4>
@@ -59,8 +59,8 @@ export function TaskProposalCard({
               variant="outline"
               className={`flex items-center gap-1 ${
                 hasEnoughCredits
-                  ? 'text-emerald-600 border-emerald-200 bg-emerald-50'
-                  : 'text-rose-600 border-rose-200 bg-rose-50'
+                  ? 'text-crafted-green border-crafted-green/30 bg-crafted-green/10'
+                  : 'text-ds-error border-ds-error/30 bg-ds-error/10'
               }`}
             >
               You have {userCredits} credits
@@ -71,7 +71,7 @@ export function TaskProposalCard({
         {showActions && (
           <div className="ml-11">
             {!hasEnoughCredits && (
-              <div className="mb-3 p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300">
+              <div className="mb-3 p-2 rounded-md bg-ds-warning/10 border border-ds-warning/30 text-sm text-ds-warning">
                 <span className="font-medium">Insufficient credits.</span> You need{' '}
                 {creditsRequired - userCredits} more credits to submit this request.
               </div>
@@ -91,7 +91,7 @@ export function TaskProposalCard({
                 size="sm"
                 onClick={onSubmit}
                 disabled={isLoading}
-                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                className="gap-1.5 bg-crafted-green hover:bg-crafted-forest"
               >
                 {isLoading ? <LoadingSpinner size="sm" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {hasEnoughCredits ? 'Review & Submit' : 'Buy Credits'}

@@ -193,9 +193,9 @@ export default function AdminVerifyDeliverablePage() {
       </div>
 
       {!isPendingReview && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-ds-warning/30 bg-ds-warning/5">
           <CardContent className="py-4">
-            <div className="flex items-center gap-2 text-amber-800">
+            <div className="flex items-center gap-2 text-ds-warning">
               <AlertCircle className="h-5 w-5" />
               <p>This task has already been verified or is not pending review.</p>
             </div>
@@ -308,7 +308,7 @@ export default function AdminVerifyDeliverablePage() {
                   <Button
                     onClick={() => handleVerification('approve')}
                     disabled={isSubmitting}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    className="flex-1 bg-ds-success hover:bg-ds-success/90"
                   >
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -72,7 +72,7 @@ export function AppSidebar() {
     return (
       <Sidebar
         collapsible="icon"
-        className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm"
+        className="border-r border-border/40 bg-background shadow-sm"
         style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
       >
         <SidebarHeader className="p-2 flex items-center justify-center">
@@ -115,7 +115,7 @@ export function AppSidebar() {
                     className={cn(
                       'flex items-center justify-center p-2.5 rounded-lg transition-colors',
                       isActive(item.href)
-                        ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                        ? 'bg-crafted-green/10 dark:bg-crafted-green/20 text-crafted-forest dark:text-crafted-sage'
                         : 'text-foreground hover:bg-muted'
                     )}
                   >
@@ -138,7 +138,7 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-border/40 bg-white dark:bg-zinc-950 shadow-sm w-64"
+      className="border-r border-border/40 bg-background shadow-sm w-64"
       style={{ fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" }}
     >
       {/* Logo and collapse toggle */}
@@ -195,7 +195,7 @@ export function AppSidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive(item.href)
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    ? 'bg-crafted-green/10 dark:bg-crafted-green/20 text-crafted-forest dark:text-crafted-sage'
                     : 'text-foreground hover:bg-muted'
                 )}
               >
@@ -237,29 +237,29 @@ export function AppSidebar() {
           <span className="text-xs font-medium text-muted-foreground">Theme</span>
           <ThemeToggle />
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-950/40 p-4 border border-green-200/50 dark:border-green-800/50 relative overflow-hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-crafted-green/15 to-crafted-green/5 dark:from-crafted-green/30 dark:to-crafted-forest/30 p-4 border border-crafted-green/20 dark:border-crafted-green/30 relative overflow-hidden">
           {/* Decorative elements */}
-          <div className="absolute top-2 right-2 w-16 h-16 bg-green-200/30 dark:bg-green-700/20 rounded-lg transform rotate-12" />
-          <div className="absolute top-6 right-6 w-12 h-12 bg-green-300/30 dark:bg-green-600/20 rounded-lg transform -rotate-6" />
+          <div className="absolute top-2 right-2 w-16 h-16 bg-crafted-mint/30 dark:bg-crafted-green/20 rounded-lg transform rotate-12" />
+          <div className="absolute top-6 right-6 w-12 h-12 bg-crafted-sage/30 dark:bg-crafted-green-light/20 rounded-lg transform -rotate-6" />
 
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-green-800 dark:text-green-300">
+              <span className="text-sm font-semibold text-crafted-forest dark:text-crafted-sage">
                 Starter Plan
               </span>
-              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">
+              <span className="text-xs bg-crafted-green text-white px-2 py-1 rounded-full font-medium">
                 {credits} Credits
               </span>
             </div>
             <Link href="/dashboard/credits">
               <Button
                 size="sm"
-                className="w-full h-10 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium"
+                className="w-full h-10 bg-crafted-green hover:bg-crafted-forest text-white rounded-xl font-medium"
               >
                 Get more Credits!
               </Button>
             </Link>
-            <p className="text-xs text-green-700 dark:text-green-400 mt-3 text-center leading-relaxed">
+            <p className="text-xs text-crafted-forest dark:text-crafted-sage mt-3 text-center leading-relaxed">
               Boost productivity with seamless tasks request and responsive AI, built to assist you.
             </p>
           </div>

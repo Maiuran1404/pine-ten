@@ -1,3 +1,7 @@
+/**
+ * PDF rendering — CSS variables don't work in PDF context.
+ * Hardcoded hex values: #2B2B2B = foreground, #555 = muted-foreground
+ */
 import type { PitchDeckFormData } from '@/lib/validations/pitch-deck-schema'
 import { SlideWrapper, SlideHeader, SlideFooter } from './slide-wrapper'
 

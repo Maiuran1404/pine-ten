@@ -468,7 +468,7 @@ export default function FreelancerSettingsPage() {
           isLoggingOut={isLoggingOut}
           onLogout={handleLogout}
           description="You will need to sign in again to access your portal"
-          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50"
+          className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
         />
       </div>
     </div>

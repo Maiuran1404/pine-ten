@@ -35,24 +35,24 @@ interface BoardCardProps {
 function getUrgencyColor(urgency: string): string {
   switch (urgency) {
     case 'CRITICAL':
-      return 'border-l-red-500'
+      return 'border-l-ds-error'
     case 'URGENT':
-      return 'border-l-orange-500'
+      return 'border-l-ds-status-revision'
     default:
-      return 'border-l-blue-500'
+      return 'border-l-ds-info'
   }
 }
 
 function getDeadlineColor(urgencyLevel: string | null): string {
   switch (urgencyLevel) {
     case 'overdue':
-      return 'text-red-500'
+      return 'text-ds-error'
     case 'urgent':
-      return 'text-orange-500'
+      return 'text-ds-status-revision'
     case 'warning':
-      return 'text-yellow-600'
+      return 'text-ds-warning'
     case 'safe':
-      return 'text-green-600'
+      return 'text-ds-success'
     default:
       return 'text-muted-foreground'
   }

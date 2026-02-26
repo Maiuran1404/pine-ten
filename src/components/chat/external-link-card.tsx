@@ -65,12 +65,12 @@ export function ExternalLinkCard({ file, onRemove }: ExternalLinkCardProps) {
             <>
               <span className="text-muted-foreground/40">·</span>
               {file.isAccessible ? (
-                <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-0.5 text-xs text-ds-success">
                   <Check className="h-3 w-3" />
                   Accessible
                 </span>
               ) : (
-                <span className="flex items-center gap-0.5 text-xs text-amber-600 dark:text-amber-400">
+                <span className="flex items-center gap-0.5 text-xs text-ds-warning">
                   <AlertTriangle className="h-3 w-3" />
                   May require access
                 </span>

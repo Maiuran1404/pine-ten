@@ -427,8 +427,8 @@ export function ChatInterface({
           <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <AlertDialogContent className="bg-card border-border max-w-md">
               <AlertDialogHeader>
-                <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
-                  <Trash2 className="h-6 w-6 text-red-400" />
+                <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+                  <Trash2 className="h-6 w-6 text-destructive" />
                 </div>
                 <AlertDialogTitle className="text-center text-foreground">
                   Delete this chat?
@@ -444,7 +444,7 @@ export function ChatInterface({
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDeleteChat}
-                  className="bg-red-500 text-white hover:bg-red-600 border-0"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
                 >
                   Delete
                 </AlertDialogAction>
@@ -456,8 +456,8 @@ export function ChatInterface({
           <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
             <AlertDialogContent className="bg-card border-border max-w-md">
               <AlertDialogHeader>
-                <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
-                  <RotateCcw className="h-6 w-6 text-amber-400" />
+                <div className="mx-auto w-12 h-12 rounded-full bg-ds-warning/10 flex items-center justify-center mb-2">
+                  <RotateCcw className="h-6 w-6 text-ds-warning" />
                 </div>
                 <AlertDialogTitle className="text-center text-foreground">
                   Start fresh?
@@ -473,7 +473,7 @@ export function ChatInterface({
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleStartOver}
-                  className="bg-amber-500 text-white hover:bg-amber-600 border-0"
+                  className="bg-ds-warning text-white hover:bg-ds-warning/90 border-0"
                 >
                   Start Over
                 </AlertDialogAction>

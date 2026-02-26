@@ -15,25 +15,25 @@ const ERROR_MESSAGES: Record<
     title: 'Session Conflict Detected',
     description:
       'It looks like you may already be signed into a different portal (client or artist) with this Google account. Please sign out of any other sessions and try again.',
-    icon: <UserX className="w-12 h-12 text-amber-500" />,
+    icon: <UserX className="w-12 h-12 text-ds-warning" />,
   },
   oauth_code_verification_failed: {
     title: 'Sign-in Session Expired',
     description:
       "Your sign-in session expired or there was a conflict with another login. This can happen if you're signed into multiple portals. Please try signing in again.",
-    icon: <RefreshCw className="w-12 h-12 text-amber-500" />,
+    icon: <RefreshCw className="w-12 h-12 text-ds-warning" />,
   },
   oAuth_code_missing: {
     title: 'Sign-in Interrupted',
     description:
       'The sign-in process was interrupted. This can happen if you cancelled the sign-in or if there was a browser issue. Please try again.',
-    icon: <AlertCircle className="w-12 h-12 text-amber-500" />,
+    icon: <AlertCircle className="w-12 h-12 text-ds-warning" />,
   },
   default: {
     title: 'Something went wrong',
     description:
       'We encountered an unexpected error during sign-in. Please try again or contact support if the issue persists.',
-    icon: <AlertCircle className="w-12 h-12 text-red-500" />,
+    icon: <AlertCircle className="w-12 h-12 text-ds-error" />,
   },
 }
 
@@ -88,8 +88,8 @@ function AuthErrorContent() {
 
       {/* Tips for state_mismatch */}
       {(errorCode === 'state_mismatch' || errorCode === 'oauth_code_verification_failed') && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-2">
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Quick fix:</p>
+        <div className="bg-ds-warning/10 border border-ds-warning/20 rounded-lg p-4 space-y-2">
+          <p className="text-sm font-medium text-ds-warning">Quick fix:</p>
           <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
             <li>Open an incognito/private browser window</li>
             <li>Go to this portal and try signing in again</li>

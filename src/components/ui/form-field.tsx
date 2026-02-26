@@ -159,7 +159,7 @@ export function TextAreaField({
           <span
             className={cn(
               'absolute bottom-2 right-2 text-xs text-muted-foreground',
-              charCount > maxLength * 0.9 && 'text-amber-500',
+              charCount > maxLength * 0.9 && 'text-ds-warning',
               charCount >= maxLength && 'text-destructive'
             )}
           >
@@ -214,7 +214,7 @@ export function SubmitButton({
         'inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors',
         'hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         'disabled:pointer-events-none disabled:opacity-50',
-        isSuccess && 'bg-green-600 hover:bg-green-600',
+        isSuccess && 'bg-ds-success hover:bg-ds-success',
         className
       )}
       {...props}
@@ -264,9 +264,9 @@ export function FormFeedback({
   className?: string
 }) {
   const styles = {
-    success: 'bg-green-500/10 text-green-600 border-green-500/20',
+    success: 'bg-ds-success/10 text-ds-success border-ds-success/20',
     error: 'bg-destructive/10 text-destructive border-destructive/20',
-    info: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    info: 'bg-ds-info/10 text-ds-info border-ds-info/20',
   }
 
   const icons = {

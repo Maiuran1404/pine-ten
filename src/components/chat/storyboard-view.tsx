@@ -95,26 +95,26 @@ function getSceneGradient(_index: number) {
 
 function HookDataInline({ hookData }: { hookData: NonNullable<StoryboardScene['hookData']> }) {
   return (
-    <div className="mt-2 rounded-md border border-amber-200/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2 space-y-1">
-      <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+    <div className="mt-2 rounded-md border border-ds-role-hook/30 bg-ds-role-hook/5 px-3 py-2 space-y-1">
+      <div className="flex items-center gap-1.5 text-ds-role-hook">
         <Target className="h-3 w-3" />
         <span className="text-[10px] font-semibold uppercase tracking-wide">Hook Strategy</span>
       </div>
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
+          <span className="text-[10px] font-medium text-ds-role-hook uppercase tracking-wider">
             Persona
           </span>
           <p className="text-foreground">{hookData.targetPersona}</p>
         </div>
         <div>
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
+          <span className="text-[10px] font-medium text-ds-role-hook uppercase tracking-wider">
             Pain
           </span>
           <p className="text-foreground">{hookData.painMetric}</p>
         </div>
         <div>
-          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wider">
+          <span className="text-[10px] font-medium text-ds-role-hook uppercase tracking-wider">
             Impact
           </span>
           <p className="text-foreground font-medium">{hookData.quantifiableImpact}</p>
@@ -274,9 +274,9 @@ function DurationControl({
 // =============================================================================
 
 const ROLE_BADGE_COLORS: Record<string, string> = {
-  hook: 'bg-amber-500/70',
-  cta: 'bg-emerald-500/70',
-  transition: 'bg-purple-500/70',
+  hook: 'bg-ds-role-hook/70',
+  cta: 'bg-crafted-green/70',
+  transition: 'bg-ds-role-transition/70',
   feature: 'bg-black/40',
 }
 
@@ -309,7 +309,7 @@ export function StoryboardSummaryCard({
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Film className="h-4 w-4 text-emerald-600" />
+          <Film className="h-4 w-4 text-crafted-green" />
           <span className="text-sm font-semibold text-foreground">Storyboard</span>
           <span className="text-xs text-muted-foreground">
             {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
@@ -334,7 +334,7 @@ export function StoryboardSummaryCard({
             {index === 0 && (
               <Badge
                 variant="outline"
-                className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide shrink-0"
+                className="text-[9px] h-4 px-1.5 border-ds-role-hook/40 bg-ds-role-hook/10 text-ds-role-hook uppercase tracking-wide shrink-0"
               >
                 Hook
               </Badge>
@@ -350,7 +350,7 @@ export function StoryboardSummaryCard({
             variant="ghost"
             size="sm"
             onClick={onViewStoryboard}
-            className="w-full gap-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+            className="w-full gap-2 text-crafted-green hover:text-crafted-forest hover:bg-crafted-green/10 dark:hover:bg-crafted-green/10"
           >
             View Storyboard
             <ArrowRight className="h-3.5 w-3.5" />
@@ -384,8 +384,8 @@ function SceneCard({
     <div
       className={cn(
         'rounded-lg border transition-all',
-        isFirst ? 'border-amber-300/60 dark:border-amber-800/40' : 'border-border/40',
-        isSelected && 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10',
+        isFirst ? 'border-ds-role-hook/30' : 'border-border/40',
+        isSelected && 'border-crafted-green bg-crafted-green/5',
         !isSelected && 'hover:shadow-sm hover:border-border/80'
       )}
     >
@@ -401,8 +401,8 @@ function SceneCard({
             className={cn(
               'w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
               isSelected
-                ? 'bg-emerald-600 border-emerald-600'
-                : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
+                ? 'bg-crafted-green border-crafted-green'
+                : 'border-border hover:border-crafted-green'
             )}
           >
             {isSelected && (
@@ -426,7 +426,7 @@ function SceneCard({
           {isFirst && (
             <Badge
               variant="outline"
-              className="text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide"
+              className="text-[9px] h-4 px-1.5 border-ds-role-hook/40 bg-ds-role-hook/10 text-ds-role-hook uppercase tracking-wide"
             >
               Hook
             </Badge>
@@ -470,7 +470,7 @@ function SceneCard({
                 e.stopPropagation()
                 onClickFeedback()
               }}
-              className="p-1 rounded text-muted-foreground/50 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              className="p-1 rounded text-muted-foreground/50 hover:text-crafted-green hover:bg-crafted-green/10 dark:hover:bg-crafted-green/10 transition-colors"
               title="Give feedback on this scene"
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -532,7 +532,7 @@ export function StoryboardPanel({
       <div className="shrink-0 px-4 py-3 border-b border-border/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Film className="h-4 w-4 text-emerald-600" />
+            <Film className="h-4 w-4 text-crafted-green" />
             <span className="text-sm font-semibold text-foreground">Storyboard</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -687,7 +687,7 @@ function SceneThumbnail({
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-1.5 right-1.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-700/70 text-white/90 backdrop-blur-sm hover:bg-emerald-600/80 transition-colors flex items-center gap-0.5"
+          className="absolute bottom-1.5 right-1.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-crafted-forest/70 text-white/90 backdrop-blur-sm hover:bg-crafted-green/80 transition-colors flex items-center gap-0.5"
         >
           <Video className="h-2.5 w-2.5" />
           {sceneImageData.techniqueRef.name}
@@ -754,7 +754,7 @@ function RichSceneCard({
         'group/card rounded-lg border overflow-hidden transition-all cursor-pointer',
         'border-border/50',
         isSelected && 'ring-2 ring-primary bg-primary/5',
-        isChanged && !isSelected && 'ring-2 ring-emerald-400/60 animate-pulse',
+        isChanged && !isSelected && 'ring-2 ring-crafted-green/60 animate-pulse',
         !isSelected && !isChanged && 'hover:shadow-sm hover:border-border/80',
         isDragging && 'opacity-50 shadow-lg z-50'
       )}
@@ -801,7 +801,7 @@ function RichSceneCard({
           <Badge
             variant="secondary"
             className={cn(
-              'absolute top-2 text-[9px] h-4 px-1.5 bg-emerald-600/80 text-white border-0 backdrop-blur-sm animate-pulse cursor-help',
+              'absolute top-2 text-[9px] h-4 px-1.5 bg-crafted-green/80 text-white border-0 backdrop-blur-sm animate-pulse cursor-help',
               isSelected ? 'left-16' : 'left-9'
             )}
             title={
@@ -874,7 +874,7 @@ function RichSceneCard({
           {isFirst && (
             <Badge
               variant="outline"
-              className="ml-1.5 text-[9px] h-4 px-1.5 border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 uppercase tracking-wide align-middle"
+              className="ml-1.5 text-[9px] h-4 px-1.5 border-ds-role-hook/40 bg-ds-role-hook/10 text-ds-role-hook uppercase tracking-wide align-middle"
             >
               Hook
             </Badge>
@@ -1121,7 +1121,7 @@ export function RichStoryboardPanel({
       <div className="shrink-0 px-4 py-3 border-b border-border/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Film className="h-4 w-4 text-emerald-600" />
+            <Film className="h-4 w-4 text-crafted-green" />
             <span className="text-sm font-semibold text-foreground">Storyboard</span>
             <span className="text-xs text-muted-foreground">
               {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
@@ -1137,7 +1137,7 @@ export function RichStoryboardPanel({
                       <span>{formatTimestamp(totalDuration)}</span>
                       {indicator.color === 'green' && indicator.target && (
                         <span
-                          className="flex items-center gap-0.5 text-emerald-600"
+                          className="flex items-center gap-0.5 text-crafted-green"
                           title={`Within 5s of ${indicator.target}s target`}
                         >
                           <Check className="h-3 w-3" />
@@ -1146,7 +1146,7 @@ export function RichStoryboardPanel({
                       )}
                       {indicator.color === 'amber' && indicator.target && (
                         <span
-                          className="text-amber-500 text-[10px]"
+                          className="text-ds-warning text-[10px]"
                           title={`${Math.abs(totalDuration - indicator.target)}s from ${indicator.target}s target`}
                         >
                           ~{indicator.target}s
@@ -1242,7 +1242,7 @@ export function RichStoryboardPanel({
                 className={cn(
                   'gap-1.5 text-xs h-7',
                   regenConfirm
-                    ? 'text-amber-600 hover:text-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                    ? 'text-ds-warning hover:text-ds-warning/80 bg-ds-warning/10'
                     : 'text-muted-foreground hover:text-primary'
                 )}
               >

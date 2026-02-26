@@ -101,8 +101,8 @@ export function SubmitActionBar({
           'border-2 rounded-2xl overflow-hidden shadow-lg transition-colors duration-200',
           'bg-white dark:bg-card',
           isExpanded
-            ? 'border-emerald-500/40 shadow-emerald-500/10'
-            : 'border-emerald-500/30 shadow-emerald-500/5'
+            ? 'border-crafted-green/40 shadow-crafted-green/10'
+            : 'border-crafted-green/30 shadow-crafted-green/5'
         )}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -156,8 +156,8 @@ export function SubmitActionBar({
                     className={cn(
                       'gap-2 rounded-xl px-6 sm:px-8 font-semibold h-11',
                       hasEnoughCredits
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20'
-                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                        ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-md shadow-crafted-green/20'
+                        : 'bg-ds-warning hover:bg-ds-warning/80 text-white'
                     )}
                   >
                     {isSubmitting ? (
@@ -191,8 +191,8 @@ export function SubmitActionBar({
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold tracking-wider text-emerald-600 uppercase">
+                  <div className="w-2 h-2 rounded-full bg-crafted-green animate-pulse" />
+                  <span className="text-xs font-semibold tracking-wider text-crafted-green uppercase">
                     Ready to Submit
                   </span>
                 </div>
@@ -257,12 +257,12 @@ export function SubmitActionBar({
               {/* Stats cards */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
                 <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">
-                  <Coins className="h-4 w-4 mx-auto mb-1 text-emerald-600" />
+                  <Coins className="h-4 w-4 mx-auto mb-1 text-crafted-green" />
                   <p className="text-base font-bold text-foreground">{creditsRequired}</p>
                   <p className="text-xs text-muted-foreground">credits</p>
                 </div>
                 <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">
-                  <Calendar className="h-4 w-4 mx-auto mb-1 text-blue-600" />
+                  <Calendar className="h-4 w-4 mx-auto mb-1 text-ds-info" />
                   <p className="text-base font-bold text-foreground">{deliveryDate}</p>
                   <p className="text-xs text-muted-foreground">delivery</p>
                 </div>
@@ -270,7 +270,7 @@ export function SubmitActionBar({
                   className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center"
                   title="Includes 2 rounds of revisions with your designer"
                 >
-                  <RotateCcw className="h-4 w-4 mx-auto mb-1 text-purple-600" />
+                  <RotateCcw className="h-4 w-4 mx-auto mb-1 text-ds-role-transition" />
                   <p className="text-base font-bold text-foreground">2</p>
                   <p className="text-xs text-muted-foreground">revisions included</p>
                 </div>
@@ -278,8 +278,8 @@ export function SubmitActionBar({
 
               {/* Credit balance */}
               {!hasEnoughCredits && (
-                <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                <div className="mb-4 p-3 rounded-lg bg-ds-warning/10 border border-ds-warning/30">
+                  <p className="text-sm text-ds-warning">
                     <span className="font-medium">Insufficient credits.</span> You need{' '}
                     {creditsRequired - userCredits} more credits ({creditsRequired} required,{' '}
                     {userCredits} available).
@@ -291,7 +291,7 @@ export function SubmitActionBar({
                 <div className="mb-4 flex items-center gap-2">
                   <Badge
                     variant="outline"
-                    className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30"
+                    className="text-crafted-green border-crafted-green/20 bg-crafted-green/10 dark:bg-crafted-green/10"
                   >
                     {userCredits} credits available
                   </Badge>
@@ -318,8 +318,8 @@ export function SubmitActionBar({
                   className={cn(
                     'gap-2 rounded-xl px-8 font-semibold h-12 sm:h-14 text-base',
                     hasEnoughCredits
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25'
-                      : 'bg-amber-500 hover:bg-amber-600 text-white'
+                      ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-lg shadow-crafted-green/25'
+                      : 'bg-ds-warning hover:bg-ds-warning/90 text-white'
                   )}
                 >
                   {isSubmitting ? (

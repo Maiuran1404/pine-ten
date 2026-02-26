@@ -32,10 +32,10 @@ export function MilestoneCard({
           className={cn(
             'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
             status === 'completed'
-              ? 'bg-green-500 text-white'
+              ? 'bg-ds-success text-white'
               : status === 'in_progress'
-                ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 ring-2 ring-green-500'
-                : 'bg-gray-100 dark:bg-zinc-800 text-muted-foreground'
+                ? 'bg-ds-success/10 text-ds-success ring-2 ring-ds-success'
+                : 'bg-muted text-muted-foreground'
           )}
         >
           {status === 'completed' ? (
@@ -50,7 +50,7 @@ export function MilestoneCard({
           <div
             className={cn(
               'w-0.5 flex-1 min-h-[32px]',
-              status === 'completed' ? 'bg-green-500' : 'bg-gray-200 dark:bg-zinc-700'
+              status === 'completed' ? 'bg-ds-success' : 'bg-muted'
             )}
           />
         )}
@@ -60,7 +60,7 @@ export function MilestoneCard({
       <div className="pb-6">
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 text-muted-foreground">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
             {daysFromStart === 0 ? 'Today' : `Day ${daysFromStart}`}
             {' \u00b7 '}
             {formatEstimatedDate(daysFromStart)}

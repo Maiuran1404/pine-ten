@@ -166,7 +166,7 @@ export function ColorsTab({
               </button>
               <button
                 onClick={() => removeBrandColor(index)}
-                className="p-1 hover:bg-red-500/10 rounded text-red-400 text-sm"
+                className="p-1 hover:bg-destructive/10 rounded text-destructive text-sm"
               >
                 &times;
               </button>

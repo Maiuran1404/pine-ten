@@ -103,7 +103,7 @@ export function TypographyTab({ brand, updateField }: TypographyTabProps) {
                     brand.keywords.filter((_, i) => i !== index)
                   )
                 }
-                className="hover:text-red-400 ml-1"
+                className="hover:text-destructive ml-1"
               >
                 &times;
               </button>

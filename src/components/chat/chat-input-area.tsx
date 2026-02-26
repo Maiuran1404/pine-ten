@@ -488,7 +488,11 @@ export function ChatInputArea({
                 const circumference = 2 * Math.PI * r
                 const offset = circumference - (pct / 100) * circumference
                 const color =
-                  pct >= 100 ? 'text-crafted-green' : pct >= 50 ? 'text-amber-500' : 'text-rose-400'
+                  pct >= 100
+                    ? 'text-crafted-green'
+                    : pct >= 50
+                      ? 'text-ds-warning'
+                      : 'text-ds-error'
 
                 const tooltip =
                   pct >= 100

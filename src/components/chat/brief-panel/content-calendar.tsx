@@ -36,21 +36,21 @@ interface ContentCalendarProps {
 // =============================================================================
 
 const PILLAR_COLORS = [
-  'bg-emerald-500',
-  'bg-blue-500',
-  'bg-purple-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-cyan-500',
+  'bg-ds-pillar-1',
+  'bg-ds-pillar-2',
+  'bg-ds-pillar-3',
+  'bg-ds-pillar-4',
+  'bg-ds-pillar-5',
+  'bg-ds-pillar-6',
 ]
 
-const PILLAR_BG_COLORS = [
-  'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40',
-  'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/40',
-  'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800/40',
-  'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40',
-  'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/40',
-  'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800/40',
+const PILLAR_CSS_VARS = [
+  '--ds-pillar-1',
+  '--ds-pillar-2',
+  '--ds-pillar-3',
+  '--ds-pillar-4',
+  '--ds-pillar-5',
+  '--ds-pillar-6',
 ]
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const
@@ -174,11 +174,17 @@ function PostNote({
       <div
         className={cn(
           'rounded border p-1.5 transition-shadow cursor-default',
-          isPillar
-            ? PILLAR_BG_COLORS[pillarIndex % PILLAR_BG_COLORS.length]
-            : 'bg-muted/40 border-border/30'
+          !isPillar && 'bg-muted/40 border-border/30'
         )}
-        style={{ transform: `rotate(${getPostRotation(noteIndex)})` }}
+        style={{
+          transform: `rotate(${getPostRotation(noteIndex)})`,
+          ...(isPillar
+            ? {
+                backgroundColor: `color-mix(in srgb, var(${PILLAR_CSS_VARS[pillarIndex % PILLAR_CSS_VARS.length]}) 10%, transparent)`,
+                borderColor: `color-mix(in srgb, var(${PILLAR_CSS_VARS[pillarIndex % PILLAR_CSS_VARS.length]}) 25%, transparent)`,
+              }
+            : {}),
+        }}
       >
         <div className="flex items-center gap-1 mb-0.5">
           <FormatIcon format={post.format} className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
@@ -322,25 +328,19 @@ function CTAEscalationFlow({ plan }: { plan: CTAEscalationPlan }) {
       label: 'Awareness',
       icon: Megaphone,
       data: plan.awarenessPhase,
-      color: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-100 dark:bg-blue-900/30',
-      ring: 'ring-blue-200 dark:ring-blue-800/40',
+      cssVar: '--ds-info',
     },
     {
       label: 'Engagement',
       icon: MessageCircle,
       data: plan.engagementPhase,
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-100 dark:bg-amber-900/30',
-      ring: 'ring-amber-200 dark:ring-amber-800/40',
+      cssVar: '--ds-warning',
     },
     {
       label: 'Conversion',
       icon: ShoppingCart,
       data: plan.conversionPhase,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-      ring: 'ring-emerald-200 dark:ring-emerald-800/40',
+      cssVar: '--ds-success',
     },
   ]
 
@@ -353,15 +353,17 @@ function CTAEscalationFlow({ plan }: { plan: CTAEscalationPlan }) {
             {/* Phase circle + label */}
             <div className="flex flex-col items-center gap-1">
               <div
-                className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center ring-2',
-                  phase.bg,
-                  phase.ring
-                )}
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(${phase.cssVar}) 15%, transparent)`,
+                  boxShadow: `inset 0 0 0 2px color-mix(in srgb, var(${phase.cssVar}) 30%, transparent)`,
+                }}
               >
-                <phase.icon className={cn('h-4 w-4', phase.color)} />
+                <phase.icon className="h-4 w-4" style={{ color: `var(${phase.cssVar})` }} />
               </div>
-              <span className={cn('text-[10px] font-semibold', phase.color)}>{phase.label}</span>
+              <span className="text-[10px] font-semibold" style={{ color: `var(${phase.cssVar})` }}>
+                {phase.label}
+              </span>
               <span className="text-[9px] text-muted-foreground text-center max-w-[80px] line-clamp-2">
                 {phase.data.ctaStyle}
               </span>
@@ -414,9 +416,22 @@ export function ContentCalendar({ outline, className }: ContentCalendarProps) {
     >
       <CalendarHeader outline={outline} totalPosts={totalPosts} />
 
-      {outline.weeks.length > 0 && <CalendarGrid outline={outline} pillarNames={pillarNames} />}
+      {/* Blueprint dot-grid wrapper */}
+      <div
+        className="relative rounded-xl border border-dashed border-crafted-sage/20 overflow-hidden"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--crafted-mint) 5%, transparent)',
+          backgroundImage:
+            'linear-gradient(color-mix(in srgb, var(--crafted-sage) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--crafted-sage) 8%, transparent) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        }}
+      >
+        <div className="p-4 space-y-4">
+          {outline.weeks.length > 0 && <CalendarGrid outline={outline} pillarNames={pillarNames} />}
 
-      {outline.ctaEscalation && <CTAEscalationFlow plan={outline.ctaEscalation} />}
+          {outline.ctaEscalation && <CTAEscalationFlow plan={outline.ctaEscalation} />}
+        </div>
+      </div>
     </motion.div>
   )
 }

@@ -74,56 +74,56 @@ const statusConfig: Record<
   { color: string; bgColor: string; label: string; icon: React.ReactNode }
 > = {
   PENDING: {
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50 border-yellow-200',
+    color: 'text-ds-status-pending',
+    bgColor: 'bg-ds-status-pending/10 border-ds-status-pending/30',
     label: 'Queued',
     icon: <Clock className="h-3 w-3" />,
   },
   OFFERED: {
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50 border-cyan-200',
+    color: 'text-ds-info',
+    bgColor: 'bg-ds-info/10 border-ds-info/30',
     label: 'Queued',
     icon: <Clock className="h-3 w-3" />,
   },
   ASSIGNED: {
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-ds-status-assigned',
+    bgColor: 'bg-ds-status-assigned/10 border-ds-status-assigned/30',
     label: 'Assigned',
     icon: <User className="h-3 w-3" />,
   },
   IN_PROGRESS: {
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-ds-status-review',
+    bgColor: 'bg-ds-status-review/10 border-ds-status-review/30',
     label: 'In Progress',
     icon: <RefreshCw className="h-3 w-3" />,
   },
   IN_REVIEW: {
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-ds-status-revision',
+    bgColor: 'bg-ds-status-revision/10 border-ds-status-revision/30',
     label: 'In Review',
     icon: <Eye className="h-3 w-3" />,
   },
   PENDING_ADMIN_REVIEW: {
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-ds-warning',
+    bgColor: 'bg-ds-warning/10 border-ds-warning/30',
     label: 'Admin Review',
     icon: <Clock className="h-3 w-3" />,
   },
   REVISION_REQUESTED: {
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-ds-error',
+    bgColor: 'bg-ds-error/10 border-ds-error/30',
     label: 'Revision',
     icon: <AlertCircle className="h-3 w-3" />,
   },
   COMPLETED: {
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 border-green-200',
+    color: 'text-ds-status-completed',
+    bgColor: 'bg-ds-status-completed/10 border-ds-status-completed/30',
     label: 'Completed',
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
   CANCELLED: {
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 border-red-200',
+    color: 'text-ds-error',
+    bgColor: 'bg-ds-error/10 border-ds-error/30',
     label: 'Cancelled',
     icon: <AlertCircle className="h-3 w-3" />,
   },
@@ -839,17 +839,19 @@ export default function TasksPage() {
             <div className="mb-4 space-y-2">
               {reviewTasks.map((task) => (
                 <Link key={task.id} href={`/dashboard/tasks/${task.id}`}>
-                  <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-800/40 flex items-center justify-center shrink-0 animate-pulse">
-                      <Eye className="h-4 w-4 text-orange-600" />
+                  <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-ds-status-revision bg-ds-status-revision/5 dark:bg-ds-status-revision/10 hover:bg-ds-status-revision/10 dark:hover:bg-ds-status-revision/15 transition-colors cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-ds-status-revision/10 dark:bg-ds-status-revision/20 flex items-center justify-center shrink-0 animate-pulse">
+                      <Eye className="h-4 w-4 text-ds-status-revision" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+                      <span className="text-sm font-semibold text-ds-status-revision">
                         Ready for review:{' '}
                       </span>
                       <span className="text-sm text-foreground">{task.title}</span>
                     </div>
-                    <span className="text-sm font-medium text-orange-600 shrink-0">Review →</span>
+                    <span className="text-sm font-medium text-ds-status-revision shrink-0">
+                      Review →
+                    </span>
                   </div>
                 </Link>
               ))}

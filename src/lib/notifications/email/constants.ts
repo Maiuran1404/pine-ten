@@ -1,38 +1,39 @@
 import { config } from '@/lib/config'
 
-// Brand color tokens
+// Brand color tokens — hardcoded hex required for email rendering (CSS vars unavailable)
+// Each value references a design token from globals.css
 export const colors = {
-  primary: '#4a7c4a', // sage green — buttons, accents, success
-  primaryDark: '#3d6b3d', // darker sage for hover
-  dark: '#2d5a2d', // forest green — admin header
-  subtle: '#e8f5e8', // light green bg
-  bodyBg: '#f4f6f4', // outer email bg
-  cardBg: '#ffffff', // content area
-  offWhite: '#f8faf8', // info card bg
-  textHeading: '#1a1a1a',
-  textBody: '#3d4d3d',
-  textMuted: '#6b7b6b',
-  border: '#e2e8e2',
-  borderLight: '#eef2ee',
-  // Semantic
-  success: '#4a7c4a',
-  successBg: '#e8f5e8',
-  successText: '#2d5a2d',
-  warning: '#b8860b',
-  warningBg: '#fef9ee',
-  warningText: '#7a5a08',
-  warningBorder: '#f0d68a',
-  error: '#c0392b',
-  errorBg: '#fdf2f2',
-  errorText: '#922b21',
-  errorBorder: '#f5c6cb',
-  info: '#3a7ca5',
-  infoBg: '#eef6fb',
-  infoText: '#2c6083',
-  infoBorder: '#a8d4e6',
-  neutral: '#6b7b6b',
-  neutralBg: '#f4f6f4',
-  neutralText: '#3d4d3d',
+  primary: '#4a7c4a' /* --crafted-green */,
+  primaryDark: '#3d6b3d' /* --crafted-green hover variant */,
+  dark: '#2d5a2d' /* --crafted-forest */,
+  subtle: '#e8f5e8' /* --crafted-mint light variant */,
+  bodyBg: '#f4f6f4' /* --background light variant */,
+  cardBg: '#ffffff' /* --card light mode */,
+  offWhite: '#f8faf8' /* --muted light variant */,
+  textHeading: '#1a1a1a' /* --foreground light mode */,
+  textBody: '#3d4d3d' /* --foreground muted */,
+  textMuted: '#6b7b6b' /* --muted-foreground light mode */,
+  border: '#e2e8e2' /* --border light mode */,
+  borderLight: '#eef2ee' /* --border-subtle light variant */,
+  // Semantic status colors
+  success: '#4a7c4a' /* --ds-success / --crafted-green */,
+  successBg: '#e8f5e8' /* --ds-success light bg */,
+  successText: '#2d5a2d' /* --crafted-forest */,
+  warning: '#b8860b' /* --ds-warning */,
+  warningBg: '#fef9ee' /* --ds-warning light bg */,
+  warningText: '#7a5a08' /* --ds-warning dark */,
+  warningBorder: '#f0d68a' /* --ds-warning border */,
+  error: '#c0392b' /* --ds-error */,
+  errorBg: '#fdf2f2' /* --ds-error light bg */,
+  errorText: '#922b21' /* --ds-error dark */,
+  errorBorder: '#f5c6cb' /* --ds-error border */,
+  info: '#3a7ca5' /* --ds-info */,
+  infoBg: '#eef6fb' /* --ds-info light bg */,
+  infoText: '#2c6083' /* --ds-info dark */,
+  infoBorder: '#a8d4e6' /* --ds-info border */,
+  neutral: '#6b7b6b' /* --muted-foreground */,
+  neutralBg: '#f4f6f4' /* --muted */,
+  neutralText: '#3d4d3d' /* --foreground muted */,
 } as const
 
 // Typography

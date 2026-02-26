@@ -374,29 +374,29 @@ export default function SecurityPage() {
 
   // Helper functions
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600'
-    if (score >= 70) return 'text-yellow-600'
-    if (score >= 50) return 'text-orange-600'
-    return 'text-red-600'
+    if (score >= 90) return 'text-ds-success'
+    if (score >= 70) return 'text-ds-warning'
+    if (score >= 50) return 'text-ds-warning'
+    return 'text-ds-error'
   }
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-green-500'
-    if (score >= 70) return 'bg-yellow-500'
-    if (score >= 50) return 'bg-orange-500'
-    return 'bg-red-500'
+    if (score >= 90) return 'bg-ds-success'
+    if (score >= 70) return 'bg-ds-warning'
+    if (score >= 50) return 'bg-ds-warning'
+    return 'bg-ds-error'
   }
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <XCircle className="h-4 w-4 text-red-600" />
+        return <XCircle className="h-4 w-4 text-ds-error" />
       case 'high':
-        return <AlertTriangle className="h-4 w-4 text-orange-600" />
+        return <AlertTriangle className="h-4 w-4 text-ds-warning" />
       case 'medium':
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />
+        return <AlertCircle className="h-4 w-4 text-ds-warning" />
       default:
-        return <Info className="h-4 w-4 text-blue-600" />
+        return <Info className="h-4 w-4 text-ds-info" />
     }
   }
 
@@ -485,10 +485,10 @@ export default function SecurityPage() {
 
       {/* Execution Progress Banner */}
       {executionProgress.isExecuting && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-ds-info/30 bg-ds-info/5">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-ds-info" />
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium">Running Security Scan...</span>
@@ -514,19 +514,19 @@ export default function SecurityPage() {
         <Card
           className={cn(
             'relative overflow-hidden',
-            hasRun ? (score >= 70 ? 'border-green-200' : 'border-red-200') : 'border-gray-200'
+            hasRun ? (score >= 70 ? 'border-ds-success/30' : 'border-ds-error/30') : 'border-border'
           )}
         >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               {hasRun ? (
                 score >= 70 ? (
-                  <ShieldCheck className="h-4 w-4 text-green-600" />
+                  <ShieldCheck className="h-4 w-4 text-ds-success" />
                 ) : (
-                  <ShieldAlert className="h-4 w-4 text-red-600" />
+                  <ShieldAlert className="h-4 w-4 text-ds-error" />
                 )
               ) : (
-                <Shield className="h-4 w-4 text-gray-400" />
+                <Shield className="h-4 w-4 text-muted-foreground" />
               )}
               Security Score
             </CardTitle>
@@ -540,18 +540,20 @@ export default function SecurityPage() {
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Passed</span>
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-ds-success">
                       {latestRun.passedTests} tests
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Failed</span>
-                    <span className="font-medium text-red-600">{latestRun.failedTests} tests</span>
+                    <span className="font-medium text-ds-error">{latestRun.failedTests} tests</span>
                   </div>
                   {skippedTests.length > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Skipped</span>
-                      <span className="font-medium text-gray-500">{skippedTests.length} tests</span>
+                      <span className="font-medium text-muted-foreground">
+                        {skippedTests.length} tests
+                      </span>
                     </div>
                   )}
                 </div>
@@ -576,13 +578,13 @@ export default function SecurityPage() {
                       <div className="flex items-center gap-2 text-sm">
                         {diff > 0 ? (
                           <>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="text-green-600">+{diff.toFixed(0)}%</span>
+                            <TrendingUp className="h-4 w-4 text-ds-success" />
+                            <span className="text-ds-success">+{diff.toFixed(0)}%</span>
                           </>
                         ) : (
                           <>
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                            <span className="text-red-600">{diff.toFixed(0)}%</span>
+                            <TrendingDown className="h-4 w-4 text-ds-error" />
+                            <span className="text-ds-error">{diff.toFixed(0)}%</span>
                           </>
                         )}
                         <span className="text-muted-foreground">vs previous scan</span>
@@ -593,7 +595,7 @@ export default function SecurityPage() {
               </>
             ) : (
               <div className="py-8 text-center">
-                <Shield className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <Shield className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-muted-foreground">No scans yet</p>
                 <Button variant="link" onClick={handleQuickRun} className="mt-2">
                   Run your first scan <ArrowRight className="h-4 w-4 ml-1" />
@@ -613,11 +615,11 @@ export default function SecurityPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   {failedTests.length > 0 ? (
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <AlertTriangle className="h-5 w-5 text-ds-error" />
                   ) : hasRun ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <CheckCircle2 className="h-5 w-5 text-ds-success" />
                   ) : (
-                    <AlertCircle className="h-5 w-5 text-gray-400" />
+                    <AlertCircle className="h-5 w-5 text-muted-foreground" />
                   )}
                   {failedTests.length > 0
                     ? `${failedTests.length} Issues Found`
@@ -638,7 +640,7 @@ export default function SecurityPage() {
           <CardContent>
             {!hasRun ? (
               <div className="py-8 text-center border-2 border-dashed rounded-lg">
-                <ShieldAlert className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <ShieldAlert className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">No security scan results yet</p>
                 <Button onClick={handleQuickRun}>
                   <Play className="h-4 w-4 mr-2" />
@@ -647,8 +649,10 @@ export default function SecurityPage() {
               </div>
             ) : failedTests.length === 0 ? (
               <div className="py-6 text-center">
-                <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                <p className="font-medium text-green-700">Excellent! No security issues detected</p>
+                <CheckCircle2 className="h-10 w-10 text-ds-success mx-auto mb-3" />
+                <p className="font-medium text-ds-success">
+                  Excellent! No security issues detected
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   All {latestRun.totalTests} tests passed successfully
                 </p>
@@ -666,10 +670,10 @@ export default function SecurityPage() {
                         className={cn(
                           'flex items-center gap-3 p-3 rounded-lg border text-left hover:bg-muted/50 transition-colors',
                           test.severity === 'critical'
-                            ? 'border-red-200 bg-red-50/50'
+                            ? 'border-ds-error/30 bg-ds-error/5'
                             : test.severity === 'high'
-                              ? 'border-orange-200 bg-orange-50/50'
-                              : 'border-yellow-200 bg-yellow-50/50'
+                              ? 'border-ds-warning/30 bg-ds-warning/5'
+                              : 'border-ds-warning/30 bg-ds-warning/5'
                         )}
                       >
                         {getSeverityIcon(test.severity)}
@@ -692,7 +696,7 @@ export default function SecurityPage() {
                         {test.errorMessage && (
                           <div>
                             <div className="text-sm font-medium mb-1">Error</div>
-                            <div className="text-sm text-red-600 font-mono bg-red-50 p-2 rounded">
+                            <div className="text-sm text-ds-error font-mono bg-ds-error/5 p-2 rounded">
                               {test.errorMessage}
                             </div>
                           </div>
@@ -726,10 +730,10 @@ export default function SecurityPage() {
                         {test.findings && test.findings[0] && (
                           <div>
                             <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                              <Zap className="h-4 w-4 text-blue-600" />
+                              <Zap className="h-4 w-4 text-ds-info" />
                               How to Fix
                             </div>
-                            <div className="text-sm bg-blue-50 p-3 rounded-lg">
+                            <div className="text-sm bg-ds-info/5 p-3 rounded-lg">
                               {(() => {
                                 const guide =
                                   remediationGuides[test.findings[0].type] ||
@@ -782,7 +786,7 @@ export default function SecurityPage() {
                       <div
                         className={cn(
                           'p-4 rounded-lg border transition-colors hover:bg-muted/50',
-                          hasIssues ? 'border-red-200' : 'border-green-200'
+                          hasIssues ? 'border-ds-error/30' : 'border-ds-success/30'
                         )}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -792,10 +796,10 @@ export default function SecurityPage() {
                               className={cn(
                                 'text-sm font-medium',
                                 passRate >= 90
-                                  ? 'text-green-600'
+                                  ? 'text-ds-success'
                                   : passRate >= 70
-                                    ? 'text-yellow-600'
-                                    : 'text-red-600'
+                                    ? 'text-ds-warning'
+                                    : 'text-ds-error'
                               )}
                             >
                               {passRate.toFixed(0)}%
@@ -812,16 +816,16 @@ export default function SecurityPage() {
                           className={cn(
                             'h-2',
                             passRate >= 90
-                              ? '[&>div]:bg-green-500'
+                              ? '[&>div]:bg-ds-success'
                               : passRate >= 70
-                                ? '[&>div]:bg-yellow-500'
-                                : '[&>div]:bg-red-500'
+                                ? '[&>div]:bg-ds-warning'
+                                : '[&>div]:bg-ds-error'
                           )}
                         />
                         <div className="flex justify-between mt-2 text-xs text-muted-foreground">
                           <span>{cat.passed} passed</span>
                           {hasIssues && (
-                            <span className="text-red-600">{cat.failed + cat.errors} failed</span>
+                            <span className="text-ds-error">{cat.failed + cat.errors} failed</span>
                           )}
                         </div>
                       </div>
@@ -836,18 +840,18 @@ export default function SecurityPage() {
                               className={cn(
                                 'flex items-center gap-2 p-2 rounded text-sm',
                                 result.status === 'PASSED'
-                                  ? 'bg-green-50'
+                                  ? 'bg-ds-success/5'
                                   : result.status === 'FAILED'
-                                    ? 'bg-red-50'
-                                    : 'bg-gray-50'
+                                    ? 'bg-ds-error/5'
+                                    : 'bg-muted/50'
                               )}
                             >
                               {result.status === 'PASSED' ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                <CheckCircle2 className="h-4 w-4 text-ds-success" />
                               ) : result.status === 'FAILED' ? (
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4 text-ds-error" />
                               ) : (
-                                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                <AlertCircle className="h-4 w-4 text-ds-warning" />
                               )}
                               <span className="flex-1 truncate">{result.testName}</span>
                               <Badge
@@ -855,10 +859,10 @@ export default function SecurityPage() {
                                 className={cn(
                                   'text-xs',
                                   result.severity === 'critical'
-                                    ? 'border-red-300 text-red-700'
+                                    ? 'border-ds-error/50 text-ds-error'
                                     : result.severity === 'high'
-                                      ? 'border-orange-300 text-orange-700'
-                                      : 'border-gray-300'
+                                      ? 'border-ds-warning/50 text-ds-warning'
+                                      : 'border-border'
                                 )}
                               >
                                 {result.severity}
@@ -893,14 +897,14 @@ export default function SecurityPage() {
                     <div className="flex items-center gap-3">
                       {run.status === 'COMPLETED' ? (
                         runScore >= 70 ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <CheckCircle2 className="h-5 w-5 text-ds-success" />
                         ) : (
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <AlertTriangle className="h-5 w-5 text-ds-error" />
                         )
                       ) : run.status === 'RUNNING' ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                        <Loader2 className="h-5 w-5 animate-spin text-ds-info" />
                       ) : (
-                        <Clock className="h-5 w-5 text-gray-400" />
+                        <Clock className="h-5 w-5 text-muted-foreground" />
                       )}
                       <div>
                         <div className="font-medium">{run.targetUrl}</div>

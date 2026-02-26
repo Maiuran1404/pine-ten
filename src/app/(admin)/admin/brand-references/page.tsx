@@ -123,8 +123,8 @@ function StatCard({
           <div
             className={cn(
               'p-3 rounded-xl',
-              trend === 'up' && 'bg-green-500/10 text-green-500',
-              trend === 'down' && 'bg-red-500/10 text-red-500',
+              trend === 'up' && 'bg-ds-success/10 text-ds-success',
+              trend === 'down' && 'bg-ds-error/10 text-ds-error',
               (!trend || trend === 'neutral') && 'bg-primary/10 text-primary'
             )}
           >
@@ -151,10 +151,10 @@ function MatrixCell({
   isSelected: boolean
 }) {
   const getColorIntensity = (count: number) => {
-    if (count === 0) return 'bg-red-500/20 border-red-500/30'
-    if (count < 3) return 'bg-yellow-500/20 border-yellow-500/30'
-    if (count < 6) return 'bg-green-500/20 border-green-500/30'
-    return 'bg-green-500/40 border-green-500/50'
+    if (count === 0) return 'bg-ds-error/20 border-ds-error/30'
+    if (count < 3) return 'bg-ds-warning/20 border-ds-warning/30'
+    if (count < 6) return 'bg-ds-success/20 border-ds-success/30'
+    return 'bg-ds-success/40 border-ds-success/50'
   }
 
   return (
@@ -698,19 +698,19 @@ export default function BrandReferencesPage() {
                     {/* Legend */}
                     <div className="flex items-center justify-center gap-6 mt-6 text-sm">
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-red-500/20 border border-red-500/30" />
+                        <div className="w-4 h-4 rounded bg-ds-error/20 border border-ds-error/30" />
                         <span className="text-muted-foreground">Empty</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500/30" />
+                        <div className="w-4 h-4 rounded bg-ds-warning/20 border border-ds-warning/30" />
                         <span className="text-muted-foreground">1-2</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-green-500/20 border border-green-500/30" />
+                        <div className="w-4 h-4 rounded bg-ds-success/20 border border-ds-success/30" />
                         <span className="text-muted-foreground">3-5</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-green-500/40 border border-green-500/50" />
+                        <div className="w-4 h-4 rounded bg-ds-success/40 border border-ds-success/50" />
                         <span className="text-muted-foreground">6+</span>
                       </div>
                     </div>
@@ -736,7 +736,7 @@ export default function BrandReferencesPage() {
                     {stats.gaps > 0 && (
                       <Button
                         variant="outline"
-                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                        className="text-ds-warning border-ds-warning hover:bg-ds-warning/5"
                         onClick={() => {
                           // Find first gap
                           for (const tone of TONE_BUCKETS) {
@@ -787,23 +787,23 @@ export default function BrandReferencesPage() {
               <h3 className="font-medium mb-3">Tips for Great References</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-ds-success mt-0.5" />
                   Use high-quality brand images (logos, ads, packaging, websites)
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-ds-success mt-0.5" />
                   Include diverse styles across all personality categories
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-ds-success mt-0.5" />
                   Aim for 3-6 images per category for good coverage
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-ds-success mt-0.5" />
                   Review AI classifications and adjust if needed
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-ds-success mt-0.5" />
                   Scrape from Dribbble, Behance, or design blogs for inspiration
                 </li>
               </ul>
@@ -856,11 +856,12 @@ export default function BrandReferencesPage() {
                             onClick={() => setSelectedCell({ tone, energy })}
                             className={cn(
                               'w-8 h-8 rounded text-xs font-medium transition-all',
-                              count === 0 && 'bg-red-500/20 text-red-600 hover:bg-red-500/30',
+                              count === 0 && 'bg-ds-error/20 text-ds-error hover:bg-ds-error/30',
                               count > 0 &&
                                 count < 3 &&
-                                'bg-yellow-500/20 text-yellow-600 hover:bg-yellow-500/30',
-                              count >= 3 && 'bg-green-500/20 text-green-600 hover:bg-green-500/30',
+                                'bg-ds-warning/20 text-ds-warning hover:bg-ds-warning/30',
+                              count >= 3 &&
+                                'bg-ds-success/20 text-ds-success hover:bg-ds-success/30',
                               isSelected && 'ring-2 ring-primary ring-offset-1'
                             )}
                             title={`${TONE_BUCKET_LABELS[tone]} × ${ENERGY_BUCKET_LABELS[energy]}`}
@@ -966,7 +967,7 @@ export default function BrandReferencesPage() {
                             }}
                           >
                             {ref.isActive ? (
-                              <ToggleRight className="h-3.5 w-3.5 text-green-500" />
+                              <ToggleRight className="h-3.5 w-3.5 text-ds-success" />
                             ) : (
                               <ToggleLeft className="h-3.5 w-3.5" />
                             )}
@@ -1043,11 +1044,11 @@ export default function BrandReferencesPage() {
                                 <span
                                   className={cn(
                                     'text-xs px-1.5 py-0.5 rounded',
-                                    cellRefs.length === 0 && 'bg-red-500/10 text-red-500',
+                                    cellRefs.length === 0 && 'bg-ds-error/10 text-ds-error',
                                     cellRefs.length > 0 &&
                                       cellRefs.length < 3 &&
-                                      'bg-yellow-500/10 text-yellow-600',
-                                    cellRefs.length >= 3 && 'bg-green-500/10 text-green-600'
+                                      'bg-ds-warning/10 text-ds-warning',
+                                    cellRefs.length >= 3 && 'bg-ds-success/10 text-ds-success'
                                   )}
                                 >
                                   {cellRefs.length}

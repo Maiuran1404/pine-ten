@@ -104,7 +104,7 @@ export function InspirationPhase({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-foreground">Find Your Inspiration</h2>
           {selectedInspirations.length > 0 && (
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400">
+            <span className="text-xs font-medium px-2 py-1 rounded-full bg-ds-success/10 text-ds-success">
               {selectedInspirations.length}/3 selected
             </span>
           )}
@@ -119,7 +119,7 @@ export function InspirationPhase({
         <UrlInput onSubmit={handleUrlSubmit} isLoading={isCapturingScreenshot} />
         <button
           onClick={() => setShowGallery(!showGallery)}
-          className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1"
+          className="text-sm text-crafted-green hover:text-crafted-forest flex items-center gap-1"
         >
           {showGallery ? <Globe className="w-3.5 h-3.5" /> : <Search className="w-3.5 h-3.5" />}
           {showGallery ? 'Hide gallery' : 'Show me inspirations'}
@@ -174,7 +174,7 @@ export function InspirationPhase({
           <Button
             onClick={onAdvance}
             disabled={isAdvancing || selectedInspirations.length === 0}
-            className="w-full bg-green-600 hover:bg-green-700 text-white h-11"
+            className="w-full bg-crafted-green hover:bg-crafted-forest text-white h-11"
           >
             Continue to Design
             <ArrowRight className="w-4 h-4 ml-2" />

@@ -31,10 +31,10 @@ const notificationIcons: Record<string, React.ComponentType<{ className?: string
 }
 
 const notificationColors: Record<string, string> = {
-  task_completed: 'text-green-500',
-  task_update: 'text-blue-500',
+  task_completed: 'text-ds-success',
+  task_update: 'text-ds-info',
   new_message: 'text-primary',
-  task_assigned: 'text-amber-500',
+  task_assigned: 'text-ds-warning',
 }
 
 /**
@@ -161,7 +161,10 @@ export function NotificationBell({ className, basePath = '/dashboard' }: Notific
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <span
-                className={cn('h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-red-500')}
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  isConnected ? 'bg-ds-success' : 'bg-ds-error'
+                )}
               />
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>

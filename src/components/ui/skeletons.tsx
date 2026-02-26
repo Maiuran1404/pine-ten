@@ -63,8 +63,8 @@ export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) 
       style={{
         width: '140px',
         height: '420px',
-        background: 'rgba(15, 15, 15, 0.4)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'var(--surface-inset)',
+        border: '1px solid var(--border-subtle)',
       }}
     >
       {/* Top fade gradient */}
@@ -72,7 +72,7 @@ export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) 
         className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
+            'linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)' /* dark surface fade */,
         }}
       />
       {/* Bottom fade gradient */}
@@ -80,7 +80,7 @@ export function BrandReferenceColumnSkeleton({ index = 0 }: { index?: number }) 
         className="absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{
           background:
-            'linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)',
+            'linear-gradient(0deg, rgba(10, 10, 10, 1) 0%, rgba(10, 10, 10, 0.7) 50%, transparent 100%)' /* dark surface fade */,
         }}
       />
       {/* Scrolling skeleton cards */}

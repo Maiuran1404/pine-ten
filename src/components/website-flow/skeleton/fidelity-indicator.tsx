@@ -10,15 +10,15 @@ interface FidelityIndicatorProps {
 const FIDELITY_MAP = {
   low: {
     label: 'Wireframe',
-    color: 'bg-gray-200 text-gray-700 dark:bg-zinc-700 dark:text-zinc-300',
+    color: 'bg-muted text-muted-foreground',
   },
   mid: {
     label: 'Content',
-    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    color: 'bg-ds-info/10 text-ds-info',
   },
   high: {
     label: 'Styled',
-    color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
+    color: 'bg-ds-success/10 text-ds-success',
   },
 }
 

@@ -73,14 +73,14 @@ export function PreviousDeliverables({ previousWork, companyName }: PreviousDeli
   }
 
   return (
-    <Card className="border-blue-500/20">
+    <Card className="border-ds-info/20">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <FolderOpen className="h-5 w-5 text-blue-500" />
+                <div className="p-2 bg-ds-info/10 rounded-lg">
+                  <FolderOpen className="h-5 w-5 text-ds-info" />
                 </div>
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">

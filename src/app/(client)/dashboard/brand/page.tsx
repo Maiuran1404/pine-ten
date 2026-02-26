@@ -96,10 +96,10 @@ export default function BrandPage() {
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%,
-            rgba(13, 148, 136, 0.08) 0%,
-            rgba(13, 148, 136, 0.04) 20%,
-            rgba(13, 148, 136, 0.02) 40%,
-            rgba(13, 148, 136, 0.01) 60%,
+            color-mix(in srgb, var(--crafted-green) 8%, transparent) 0%,
+            color-mix(in srgb, var(--crafted-green) 4%, transparent) 20%,
+            color-mix(in srgb, var(--crafted-green) 2%, transparent) 40%,
+            color-mix(in srgb, var(--crafted-green) 1%, transparent) 60%,
             transparent 80%
           )`,
           filter: 'blur(40px)',

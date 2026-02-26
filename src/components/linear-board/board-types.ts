@@ -47,17 +47,32 @@ export interface LinearBoardProps {
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'backlog', title: 'Backlog', statuses: ['PENDING', 'OFFERED'], color: '#8b8b8b' },
-  { id: 'todo', title: 'Todo', statuses: ['ASSIGNED'], color: '#3b82f6' },
-  { id: 'in-progress', title: 'In Progress', statuses: ['IN_PROGRESS'], color: '#eab308' },
+  {
+    id: 'backlog',
+    title: 'Backlog',
+    statuses: ['PENDING', 'OFFERED'],
+    color: 'var(--muted-foreground)',
+  },
+  { id: 'todo', title: 'Todo', statuses: ['ASSIGNED'], color: 'var(--ds-status-assigned)' },
+  {
+    id: 'in-progress',
+    title: 'In Progress',
+    statuses: ['IN_PROGRESS'],
+    color: 'var(--ds-status-in-progress)',
+  },
   {
     id: 'review',
     title: 'Review',
     statuses: ['IN_REVIEW', 'PENDING_ADMIN_REVIEW'],
-    color: '#a855f7',
+    color: 'var(--ds-status-review)',
   },
-  { id: 'revision', title: 'Revision', statuses: ['REVISION_REQUESTED'], color: '#f97316' },
-  { id: 'done', title: 'Done', statuses: ['COMPLETED'], color: '#22c55e' },
+  {
+    id: 'revision',
+    title: 'Revision',
+    statuses: ['REVISION_REQUESTED'],
+    color: 'var(--ds-status-revision)',
+  },
+  { id: 'done', title: 'Done', statuses: ['COMPLETED'], color: 'var(--ds-status-completed)' },
 ]
 
 export const HIDDEN_STATUSES = ['CANCELLED', 'UNASSIGNABLE']
@@ -89,14 +104,24 @@ export const STATUS_DISPLAY_NAMES: Record<string, string> = {
 export const ADMIN_COLUMNS = DEFAULT_COLUMNS
 
 export const ARTIST_COLUMNS: ColumnConfig[] = [
-  { id: 'todo', title: 'Todo', statuses: ['ASSIGNED'], color: '#3b82f6' },
-  { id: 'in-progress', title: 'In Progress', statuses: ['IN_PROGRESS'], color: '#eab308' },
+  { id: 'todo', title: 'Todo', statuses: ['ASSIGNED'], color: 'var(--ds-status-assigned)' },
+  {
+    id: 'in-progress',
+    title: 'In Progress',
+    statuses: ['IN_PROGRESS'],
+    color: 'var(--ds-status-in-progress)',
+  },
   {
     id: 'review',
     title: 'Review',
     statuses: ['IN_REVIEW', 'PENDING_ADMIN_REVIEW'],
-    color: '#a855f7',
+    color: 'var(--ds-status-review)',
   },
-  { id: 'revision', title: 'Revision', statuses: ['REVISION_REQUESTED'], color: '#f97316' },
-  { id: 'done', title: 'Done', statuses: ['COMPLETED'], color: '#22c55e' },
+  {
+    id: 'revision',
+    title: 'Revision',
+    statuses: ['REVISION_REQUESTED'],
+    color: 'var(--ds-status-revision)',
+  },
+  { id: 'done', title: 'Done', statuses: ['COMPLETED'], color: 'var(--ds-status-completed)' },
 ]

@@ -557,7 +557,7 @@ export function StoryboardImageGenerator() {
                   status === 'error'
                     ? 'border-destructive/50'
                     : status === 'done'
-                      ? 'border-green-500/30'
+                      ? 'border-ds-success/30'
                       : ''
                 }
               >

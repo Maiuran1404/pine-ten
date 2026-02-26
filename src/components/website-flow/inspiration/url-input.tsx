@@ -44,7 +44,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
         onClick={handleSubmit}
         disabled={!url.trim() || isLoading}
         size="sm"
-        className="bg-green-600 hover:bg-green-700 text-white"
+        className="bg-crafted-green hover:bg-crafted-forest text-white"
       >
         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
       </Button>

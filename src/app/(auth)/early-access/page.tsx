@@ -27,26 +27,30 @@ function FloatingBlobs() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div
         className="absolute -top-32 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] rounded-full opacity-30 blur-3xl"
-        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(ellipse, var(--crafted-green) 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute top-1/4 -left-20 w-[350px] h-[450px] rounded-full opacity-25 blur-3xl"
         style={{
-          background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, var(--crafted-green-light) 0%, transparent 70%)',
           transform: 'rotate(-20deg)',
         }}
       />
       <div
         className="hidden sm:block absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-20 blur-3xl"
-        style={{ background: 'radial-gradient(ellipse, #8bb58b 0%, transparent 70%)' }}
+        style={{
+          background: 'radial-gradient(ellipse, var(--crafted-sage) 0%, transparent 70%)',
+        }}
       />
       <div
         className="absolute bottom-20 left-10 w-[150px] sm:w-[200px] h-[150px] sm:h-[200px] rounded-full opacity-30 blur-2xl"
-        style={{ background: 'radial-gradient(ellipse, #4a7c4a 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(ellipse, var(--crafted-green) 0%, transparent 70%)' }}
       />
       <div
         className="hidden sm:block absolute -bottom-20 right-1/4 w-[250px] h-[200px] rounded-full opacity-25 blur-2xl"
-        style={{ background: 'radial-gradient(ellipse, #6b9b6b 0%, transparent 70%)' }}
+        style={{
+          background: 'radial-gradient(ellipse, var(--crafted-green-light) 0%, transparent 70%)',
+        }}
       />
     </div>
   )
@@ -131,9 +135,9 @@ export default function EarlyAccessPage() {
         <div
           className="rounded-2xl p-6 sm:p-8 md:p-10"
           style={{
-            background: 'rgba(20, 20, 20, 0.8)',
+            background: 'var(--surface-overlay)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid var(--border-subtle)',
           }}
         >
           {/* Logo */}
@@ -157,10 +161,10 @@ export default function EarlyAccessPage() {
               <div
                 className="relative rounded-xl overflow-hidden"
                 style={{
-                  background: 'rgba(40, 40, 40, 0.6)',
+                  background: 'var(--surface-input)',
                   border: errors.code
-                    ? '1px solid rgba(239, 68, 68, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.08)',
+                    ? '1px solid color-mix(in srgb, var(--ds-error) 50%, transparent)'
+                    : '1px solid var(--border-subtle)',
                 }}
               >
                 <label className="absolute left-4 top-2.5 text-xs text-white/40">Invite Code</label>
@@ -172,7 +176,7 @@ export default function EarlyAccessPage() {
                   autoComplete="off"
                 />
               </div>
-              {errors.code && <p className="text-xs text-red-400 px-1">{errors.code.message}</p>}
+              {errors.code && <p className="text-xs text-ds-error px-1">{errors.code.message}</p>}
             </div>
 
             {/* Spacer */}
@@ -184,8 +188,8 @@ export default function EarlyAccessPage() {
               disabled={isLoading}
               className="w-full py-4 rounded-xl font-medium text-sm transition-all duration-200 disabled:opacity-70"
               style={{
-                background: '#f5f5f0',
-                color: '#1a1a1a',
+                background: 'var(--button-cream)',
+                color: 'var(--button-cream-foreground)',
               }}
             >
               {isLoading ? (
@@ -202,11 +206,14 @@ export default function EarlyAccessPage() {
           {/* Sign in link */}
           <div
             className="text-center mt-6 pt-6"
-            style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
+            style={{ borderTop: '1px solid var(--border-subtle)' }}
           >
             <p className="text-white/40 text-sm">
               Already have an account?{' '}
-              <Link href="/login" className="text-[#8bb58b] hover:text-[#a8d4a8] transition-colors">
+              <Link
+                href="/login"
+                className="text-crafted-sage hover:text-crafted-mint transition-colors"
+              >
                 Sign in
               </Link>
             </p>

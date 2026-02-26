@@ -83,8 +83,8 @@ export default function AdminVerifyListPage() {
         </div>
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="h-8 w-8 text-red-500" />
+            <div className="w-16 h-16 rounded-full bg-ds-error/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-ds-error" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Error Loading Tasks</h2>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">{error}</p>
@@ -175,8 +175,8 @@ export default function AdminVerifyListPage() {
         ) : tasks.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 text-center">
-              <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
+              <div className="w-20 h-20 rounded-full bg-ds-success/10 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="h-10 w-10 text-ds-success" />
               </div>
               <h2 className="text-2xl font-semibold mb-2">All Caught Up!</h2>
               <p className="text-muted-foreground max-w-md mx-auto">
@@ -218,7 +218,7 @@ export default function AdminVerifyListPage() {
                             {task.freelancer?.name?.[0]?.toUpperCase() || 'A'}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-1 ring-2 ring-background">
+                        <div className="absolute -bottom-1 -right-1 bg-ds-warning rounded-full p-1 ring-2 ring-background">
                           <Clock className="h-3 w-3 text-white" />
                         </div>
                       </div>

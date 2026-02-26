@@ -26,24 +26,26 @@ export function ApproveButton({
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Project Cost</span>
         <span className="font-semibold flex items-center gap-1">
-          <Coins className="w-4 h-4 text-green-500" />
+          <Coins className="w-4 h-4 text-ds-success" />
           {creditsCost} credits
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Your Balance</span>
-        <span className={`font-semibold ${hasEnoughCredits ? 'text-green-600' : 'text-red-500'}`}>
+        <span
+          className={`font-semibold ${hasEnoughCredits ? 'text-crafted-green' : 'text-ds-error'}`}
+        >
           {userCredits} credits
         </span>
       </div>
       {!hasEnoughCredits && (
         <div className="space-y-1">
-          <p className="text-xs text-red-500">
+          <p className="text-xs text-ds-error">
             You need {creditsCost - userCredits} more credits to approve this project.
           </p>
           <Link
             href="/dashboard/credits"
-            className="text-xs text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 underline"
+            className="text-xs text-crafted-green hover:text-crafted-forest underline"
           >
             Purchase Credits
           </Link>
@@ -52,7 +54,7 @@ export function ApproveButton({
       <Button
         onClick={onApprove}
         disabled={!hasEnoughCredits || isApproving || disabled}
-        className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-base"
+        className="w-full bg-crafted-green hover:bg-crafted-forest text-white h-12 text-base"
       >
         {isApproving ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />

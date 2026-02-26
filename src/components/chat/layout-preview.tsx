@@ -204,13 +204,13 @@ function TestimonialsBlock({ compact }: { compact?: boolean }) {
 function CtaBlock({ compact }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800/50 border-y border-slate-300 dark:border-slate-600 py-2 px-2">
+      <div className="flex items-center justify-center bg-muted border-y border-border py-2 px-2">
         <ButtonShape width="w-16" />
       </div>
     )
   }
   return (
-    <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-800/50 border-y border-slate-300 dark:border-slate-600 py-5 px-4">
+    <div className="flex items-center justify-center bg-muted border-y border-border py-5 px-4">
       <ButtonShape width="w-28" />
     </div>
   )
@@ -258,11 +258,8 @@ function PricingBlock({ compact }: { compact?: boolean }) {
     return (
       <div className="grid grid-cols-3 gap-1 p-2">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border border-slate-300 dark:border-slate-600 rounded-sm overflow-hidden"
-          >
-            <div className="h-2 bg-slate-200 dark:bg-slate-700 border-b border-slate-300 dark:border-slate-600" />
+          <div key={i} className="border border-border rounded-sm overflow-hidden">
+            <div className="h-2 bg-muted border-b border-border" />
             <div className="p-1 space-y-0.5">
               <CheckRow />
               <CheckRow />
@@ -275,11 +272,8 @@ function PricingBlock({ compact }: { compact?: boolean }) {
   return (
     <div className="grid grid-cols-3 gap-2 p-4">
       {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="border border-slate-300 dark:border-slate-600 rounded-sm overflow-hidden"
-        >
-          <div className="h-4 bg-slate-200 dark:bg-slate-700 border-b border-slate-300 dark:border-slate-600" />
+        <div key={i} className="border border-border rounded-sm overflow-hidden">
+          <div className="h-4 bg-muted border-b border-border" />
           <div className="p-2 space-y-1.5">
             <CheckRow />
             <CheckRow />
@@ -333,16 +327,16 @@ function FallbackBlock({ sectionName, compact }: { sectionName: string; compact?
   if (compact) {
     return (
       <div className="relative p-2">
-        <div className="h-8 w-full border rounded-sm border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-          <span className="text-[8px] text-slate-400 dark:text-slate-500">{sectionName}</span>
+        <div className="h-8 w-full border rounded-sm border-border bg-muted flex items-center justify-center">
+          <span className="text-[8px] text-muted-foreground">{sectionName}</span>
         </div>
       </div>
     )
   }
   return (
     <div className="relative p-4">
-      <div className="h-16 w-full border rounded-sm border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-        <span className="text-[9px] text-slate-400 dark:text-slate-500">{sectionName}</span>
+      <div className="h-16 w-full border rounded-sm border-border bg-muted flex items-center justify-center">
+        <span className="text-[9px] text-muted-foreground">{sectionName}</span>
       </div>
     </div>
   )
@@ -397,16 +391,14 @@ function SectionBlock({ section, index }: { section: LayoutSection; index: numbe
       </div>
 
       {/* Divider between sections */}
-      {index > 0 && (
-        <div className="border-t border-dashed border-slate-200 dark:border-slate-700" />
-      )}
+      {index > 0 && <div className="border-t border-dashed border-border/50" />}
 
       {/* Wireframe content */}
       {renderSectionWireframe(type, section.sectionName)}
 
       {/* Elaboration content preview */}
       {(section.headline || section.draftContent || section.ctaText) && (
-        <div className="px-4 pb-2 space-y-1 border-t border-dashed border-slate-200 dark:border-slate-700 mt-1 pt-2">
+        <div className="px-4 pb-2 space-y-1 border-t border-dashed border-border/50 mt-1 pt-2">
           {section.headline && (
             <p className="text-[11px] font-semibold text-foreground truncate">{section.headline}</p>
           )}
@@ -473,7 +465,7 @@ function EditableSectionLabel({
               setIsEditing(false)
             }
           }}
-          className="text-xs font-semibold bg-white dark:bg-slate-800 border border-primary/40 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 w-32 text-foreground"
+          className="text-xs font-semibold bg-white dark:bg-secondary border border-primary/40 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 w-32 text-foreground"
         />
         <button
           onMouseDown={(e) => {
@@ -568,7 +560,7 @@ function SectionNoteInput({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute right-2 top-2 flex items-center gap-0.5 text-emerald-500"
+            className="absolute right-2 top-2 flex items-center gap-0.5 text-ds-success"
           >
             <Check className="h-3 w-3" />
             <span className="text-[10px] font-medium">Saved</span>
@@ -586,7 +578,7 @@ function SectionNoteInput({
 function AddSectionDivider({ onClick }: { onClick: () => void }) {
   return (
     <div className="group/add relative flex items-center justify-center h-5 -my-1 z-10">
-      <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200/0 group-hover/add:border-slate-300 dark:group-hover/add:border-slate-600 transition-colors" />
+      <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-transparent group-hover/add:border-border transition-colors" />
       <button
         onClick={onClick}
         className="relative flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium
@@ -701,7 +693,7 @@ function InteractiveSectionBlock({
               e.stopPropagation()
               onDelete()
             }}
-            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-red-500 transition-colors"
+            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-destructive transition-colors"
             title="Remove section"
           >
             <X className="h-3.5 w-3.5" />

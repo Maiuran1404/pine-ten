@@ -29,12 +29,12 @@ interface DesignSpecViewProps {
 // =============================================================================
 
 const ELEMENT_COLORS = [
-  'bg-blue-400',
-  'bg-emerald-400',
-  'bg-amber-400',
-  'bg-violet-400',
-  'bg-rose-400',
-  'bg-cyan-400',
+  'bg-ds-info',
+  'bg-crafted-green',
+  'bg-ds-warning',
+  'bg-crafted-green-light',
+  'bg-ds-error',
+  'bg-ds-info',
 ]
 
 // =============================================================================
@@ -128,8 +128,8 @@ function ArtboardPreview({
       <div className="flex items-center justify-center">
         <div
           className={cn(
-            'relative border-dashed border-2 border-slate-300 dark:border-slate-600',
-            'rounded-lg overflow-hidden bg-muted/20 border-border/60'
+            'relative border-dashed border-2 border-border',
+            'rounded-lg overflow-hidden bg-muted/20'
           )}
           style={{
             aspectRatio: `${dimension.width} / ${dimension.height}`,
@@ -183,7 +183,7 @@ function DimensionChips({
           className={cn(
             'px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
             i === activeIndex
-              ? 'bg-emerald-600 text-white'
+              ? 'bg-crafted-green text-white'
               : 'bg-transparent text-muted-foreground hover:bg-muted'
           )}
         >
@@ -258,7 +258,7 @@ function PropertiesGrid({
             {exactCopy.map((copy, i) => (
               <li
                 key={i}
-                className="text-xs text-foreground border-l-2 border-blue-400/40 pl-2 py-0.5"
+                className="text-xs text-foreground border-l-2 border-ds-info/40 pl-2 py-0.5"
               >
                 {copy}
               </li>

@@ -241,6 +241,29 @@ export function NarrativePanel({
             </div>
           </div>
 
+          {/* Action buttons — right under the blueprint */}
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              size="lg"
+              className="gap-2 flex-1 bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
+              onClick={onApprove}
+              disabled={isRegenerating}
+            >
+              <Check className="h-4 w-4" />
+              Approve & Build Storyboard
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 rounded-xl shrink-0 border-border/50"
+              onClick={onRegenerate}
+              disabled={isRegenerating}
+              title="Regenerate narrative"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRegenerating && 'animate-spin')} />
+            </Button>
+          </div>
+
           {/* Refine hint */}
           <div className="flex items-center gap-1.5 mt-3 px-1">
             <Sparkles className="h-3 w-3 text-crafted-sage/30" />
@@ -250,29 +273,6 @@ export function NarrativePanel({
           </div>
         </div>
       </ScrollArea>
-
-      {/* Action buttons */}
-      <div className="shrink-0 px-5 py-3 border-t border-border/40 flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs"
-          onClick={onRegenerate}
-          disabled={isRegenerating}
-        >
-          <RefreshCw className={cn('h-3.5 w-3.5', isRegenerating && 'animate-spin')} />
-          Regenerate
-        </Button>
-        <Button
-          size="sm"
-          className="gap-1.5 text-xs ml-auto bg-crafted-green hover:bg-crafted-forest text-white"
-          onClick={onApprove}
-          disabled={isRegenerating}
-        >
-          <Check className="h-3.5 w-3.5" />
-          Approve & Build Storyboard
-        </Button>
-      </div>
     </div>
   )
 }

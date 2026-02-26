@@ -52,7 +52,7 @@ function LowFidelitySection({ type }: { type: string }) {
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-2">
-                <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600" />
+                <div className="w-8 h-8 rounded bg-muted border border-border" />
                 <TextLines lines={2} size="sm" widths={[90, 60]} />
               </div>
             ))}
@@ -65,13 +65,10 @@ function LowFidelitySection({ type }: { type: string }) {
           <TextLines lines={1} size="md" widths={[35]} className="mb-4" />
           <div className="grid grid-cols-2 gap-4">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg space-y-2"
-              >
+              <div key={i} className="p-4 border border-border rounded-lg space-y-2">
                 <TextLines lines={3} size="sm" widths={[100, 90, 60]} />
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700" />
+                  <div className="w-6 h-6 rounded-full bg-muted" />
                   <TextLines lines={1} size="sm" widths={[40]} />
                 </div>
               </div>
@@ -106,10 +103,7 @@ function LowFidelitySection({ type }: { type: string }) {
           <TextLines lines={1} size="md" widths={[30]} className="mb-4 mx-auto text-center" />
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3"
-              >
+              <div key={i} className="p-4 border border-border rounded-lg space-y-3">
                 <TextLines lines={1} size="md" widths={[60]} />
                 <TextLines lines={1} size="lg" widths={[40]} />
                 <TextLines lines={3} size="sm" widths={[90, 80, 70]} />
@@ -126,12 +120,9 @@ function LowFidelitySection({ type }: { type: string }) {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-8 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-                />
+                <div key={i} className="h-8 rounded border border-border bg-muted/50" />
               ))}
-              <div className="h-20 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+              <div className="h-20 rounded border border-border bg-muted/50" />
               <ButtonShape width="w-24" />
             </div>
             <div className="space-y-2">
@@ -142,7 +133,7 @@ function LowFidelitySection({ type }: { type: string }) {
       )
     case 'footer':
       return (
-        <div className="py-6 px-8 bg-slate-50 dark:bg-slate-800/50">
+        <div className="py-6 px-8 bg-muted/50/50">
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i}>
@@ -175,7 +166,7 @@ export function SectionBlock({
   return (
     <div
       className={cn(
-        'group relative border border-border rounded-lg overflow-hidden bg-white dark:bg-zinc-900 transition-shadow hover:shadow-md',
+        'group relative border border-border rounded-lg overflow-hidden bg-card transition-shadow hover:shadow-md',
         className
       )}
     >
@@ -195,7 +186,7 @@ export function SectionBlock({
           <Button
             variant="ghost"
             size="icon"
-            className="w-6 h-6 text-red-500 hover:text-red-600"
+            className="w-6 h-6 text-ds-error hover:text-ds-error"
             onClick={onRemove}
           >
             <Trash2 className="w-3 h-3" />

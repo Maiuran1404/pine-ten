@@ -44,22 +44,22 @@ const CATEGORY_CONFIG = {
     label: 'Social Media',
     icon: Share2,
     color: 'blue',
-    bgColor: 'bg-blue-500/10',
-    textColor: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-ds-info/10',
+    textColor: 'text-ds-info',
   },
   marketing: {
     label: 'Marketing',
     icon: Megaphone,
     color: 'emerald',
-    bgColor: 'bg-emerald-500/10',
-    textColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-crafted-green/10',
+    textColor: 'text-crafted-green dark:text-crafted-sage',
   },
   brand_assets: {
     label: 'Brand Assets',
     icon: PenTool,
     color: 'violet',
-    bgColor: 'bg-violet-500/10',
-    textColor: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-ds-status-review/10',
+    textColor: 'text-ds-status-review',
   },
 }
 
@@ -144,17 +144,17 @@ export default function DesignResultPage() {
       return {
         label: 'Design',
         icon: Wand2,
-        color: 'gray',
-        bgColor: 'bg-gray-500/10',
-        textColor: 'text-gray-600 dark:text-gray-400',
+        color: 'muted',
+        bgColor: 'bg-muted',
+        textColor: 'text-muted-foreground',
       }
     return (
       CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || {
         label: category,
         icon: Wand2,
-        color: 'gray',
-        bgColor: 'bg-gray-500/10',
-        textColor: 'text-gray-600 dark:text-gray-400',
+        color: 'muted',
+        bgColor: 'bg-muted',
+        textColor: 'text-muted-foreground',
       }
     )
   }
@@ -323,14 +323,12 @@ export default function DesignResultPage() {
               </div>
               {design.savedToAssets && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <div className="w-8 h-8 rounded-lg bg-ds-success/10 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-ds-success" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Status</p>
-                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                      Saved to Assets
-                    </p>
+                    <p className="text-sm font-medium text-ds-success">Saved to Assets</p>
                   </div>
                 </div>
               )}
@@ -343,8 +341,8 @@ export default function DesignResultPage() {
             <div className="space-y-4">
               {/* Step 1: Template */}
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                <div className="w-6 h-6 rounded-full bg-ds-success/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-ds-success" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Template Selected</p>
@@ -354,8 +352,8 @@ export default function DesignResultPage() {
 
               {/* Step 2: Brand Applied */}
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                <div className="w-6 h-6 rounded-full bg-ds-success/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-ds-success" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Brand Data Applied</p>
@@ -370,8 +368,8 @@ export default function DesignResultPage() {
               {/* Step 3: Colors */}
               {brandColors.length > 0 && (
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  <div className="w-6 h-6 rounded-full bg-ds-success/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-ds-success" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">Colors Applied</p>
@@ -391,8 +389,8 @@ export default function DesignResultPage() {
 
               {/* Step 4: Generated */}
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                <div className="w-6 h-6 rounded-full bg-ds-success/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-ds-success" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Design Generated</p>

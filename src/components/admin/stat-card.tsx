@@ -27,9 +27,9 @@ export function StatCard({ label, value, subtext, icon: Icon, trend, className }
           <div
             className={cn(
               'p-3 rounded-xl transition-colors',
-              trend === 'up' && 'bg-green-500/10 text-green-600 dark:text-green-400',
-              trend === 'down' && 'bg-red-500/10 text-red-600 dark:text-red-400',
-              trend === 'warning' && 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+              trend === 'up' && 'bg-ds-success/10 text-ds-success',
+              trend === 'down' && 'bg-ds-error/10 text-ds-error',
+              trend === 'warning' && 'bg-ds-warning/10 text-ds-warning',
               (!trend || trend === 'neutral') && 'bg-primary/10 text-primary'
             )}
           >
