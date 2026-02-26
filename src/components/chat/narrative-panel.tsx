@@ -145,7 +145,7 @@ export function NarrativePanel({
                 </div>
               ) : (
                 <h3
-                  className="text-base font-semibold text-foreground tracking-tight leading-snug cursor-pointer group flex items-start gap-2"
+                  className="text-base font-semibold text-crafted-forest dark:text-foreground tracking-tight leading-snug cursor-pointer group flex items-start gap-2"
                   onClick={() => startEditing('concept')}
                 >
                   <span className="flex-1">{renderHighlightedText(narrative.concept)}</span>
@@ -265,7 +265,7 @@ export function NarrativePanel({
         </Button>
         <Button
           size="sm"
-          className="gap-1.5 text-xs ml-auto bg-violet-600 hover:bg-violet-700 text-white"
+          className="gap-1.5 text-xs ml-auto bg-crafted-green hover:bg-crafted-forest text-white"
           onClick={onApprove}
           disabled={isRegenerating}
         >
