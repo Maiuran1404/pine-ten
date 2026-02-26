@@ -216,9 +216,9 @@ function extractNameFromDomain(url: string): string | null {
 // Titles often follow patterns like "Tagline | Brand" or "Page - Brand Name"
 // We check all segments and prefer the shortest non-generic one
 function extractNameFromTitle(title: string): string {
-  // Split by common title separators: | – —
+  // Split by common title separators: | – — and " - " (hyphen with spaces)
   const segments = title
-    .split(/\s*[|–—]\s*/)
+    .split(/\s*[|–—]\s*|\s+-\s+/)
     .map((s) => s.trim())
     .filter(Boolean)
 
@@ -365,7 +365,7 @@ function createDefaultBrandData(
   }
 }
 
-const EXTRACTION_TIMEOUT_MS = 45_000
+const EXTRACTION_TIMEOUT_MS = 60_000
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
@@ -736,16 +736,19 @@ Return ONLY a valid JSON object with this exact structure:
         text: textPrompt,
       })
 
-      const response = await getAnthropic().messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
-        messages: [
-          {
-            role: 'user',
-            content: contentParts,
-          },
-        ],
-      })
+      const response = await getAnthropic().messages.create(
+        {
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 3000,
+          messages: [
+            {
+              role: 'user',
+              content: contentParts,
+            },
+          ],
+        },
+        { timeout: 30_000 }
+      )
 
       // Extract JSON from Claude's response
       const responseText = response.content
@@ -753,19 +756,30 @@ Return ONLY a valid JSON object with this exact structure:
         .map((block) => block.text)
         .join('')
 
-      // Parse the JSON response
+      // Parse the JSON response — sanitize common LLM output issues first
       const jsonMatch = responseText.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error('No JSON found in response')
       }
-      brandData = JSON.parse(jsonMatch[0])
+      let jsonStr = jsonMatch[0]
+      // Replace JS-style `undefined` values with `null`
+      jsonStr = jsonStr.replace(/:\s*undefined\b/g, ': null')
+      // Remove trailing commas before } or ]
+      jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1')
+      brandData = JSON.parse(jsonStr)
       break // Success, exit retry loop
     } catch (error) {
       lastError = error as Error
-      logger.error({ error, attempt: attempt + 1 }, 'Claude analysis attempt failed')
-
-      // Check if it's an image-related error — retry without screenshot
-      const errorMessage = String(error)
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : String(error)
+      logger.error(
+        { err: errorMessage, status: (error as { status?: number }).status, attempt: attempt + 1 },
+        'Claude analysis attempt failed'
+      )
       if (
         useScreenshot &&
         (errorMessage.includes('8000 pixels') ||
@@ -790,7 +804,10 @@ Return ONLY a valid JSON object with this exact structure:
 
   // If Claude analysis failed entirely, use fallback data
   if (!brandData) {
-    logger.error({ error: lastError }, 'All Claude analysis attempts failed, using fallback data')
+    logger.error(
+      { err: lastError instanceof Error ? lastError.message : String(lastError) },
+      'All Claude analysis attempts failed, using fallback data'
+    )
     brandData = createDefaultBrandData(metadata, branding, links, normalizedUrl)
   }
 
