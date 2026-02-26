@@ -273,11 +273,11 @@ describe('evaluateTransitions', () => {
     expect(evaluateTransitions(state, makeInference())).toBe('ELABORATE')
   })
 
-  it('stays at STRUCTURE when structure is null and turns < 3', () => {
+  it('stays at STRUCTURE when structure is null and turns < 2', () => {
     const state = createInitialBriefingState()
     state.stage = 'STRUCTURE'
     state.structure = null
-    state.turnsInCurrentStage = 2
+    state.turnsInCurrentStage = 1
     expect(evaluateTransitions(state, makeInference())).toBe('STRUCTURE')
   })
 
