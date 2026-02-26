@@ -48,10 +48,6 @@ export interface ChatInputAreaProps {
   ghostText: string
   smartCompletion: string | null
   setSmartCompletion: (value: string | null) => void
-  currentSuggestion: string | null
-  quickOptionSuggestion?: string | null
-  suggestionIndex?: number
-  setSuggestionIndex?: React.Dispatch<React.SetStateAction<number>>
 
   // Refs
   fileInputRef: React.RefObject<HTMLInputElement | null>
@@ -126,10 +122,6 @@ export function ChatInputArea({
   ghostText,
   smartCompletion,
   setSmartCompletion,
-  currentSuggestion,
-  quickOptionSuggestion = null,
-  suggestionIndex: _suggestionIndex = 0,
-  setSuggestionIndex,
   fileInputRef,
   inputRef,
   userCredits,
@@ -295,10 +287,15 @@ export function ChatInputArea({
       <div className="border border-border rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-sm shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
         {/* Input field with auto-resize and ghost text */}
         <div className="relative">
-          {/* Ghost text suggestion overlay */}
+          {/* Ghost text suggestion overlay — mirrors textarea rendering exactly */}
           {ghostText && (
-            <div className="absolute inset-0 px-4 py-4 pointer-events-none flex items-start">
-              <span className="text-sm text-transparent">{input}</span>
+            <div
+              className="absolute inset-0 px-4 py-4 pointer-events-none overflow-hidden"
+              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+            >
+              <span className="text-sm text-transparent" style={{ whiteSpace: 'pre-wrap' }}>
+                {input}
+              </span>
               <span className="text-sm text-muted-foreground/40">{ghostText}</span>
             </div>
           )}
@@ -313,27 +310,11 @@ export function ChatInputArea({
               target.style.height = Math.min(target.scrollHeight, 200) + 'px'
             }}
             onKeyDown={(e) => {
-              // Tab to accept suggestion (smart completion or quick option)
-              if (e.key === 'Tab' && ghostText) {
+              // Tab to accept smart completion suggestion
+              if (e.key === 'Tab' && ghostText && smartCompletion) {
                 e.preventDefault()
-                // For smart completions, append the completion
-                if (smartCompletion && input.trim().length >= 3) {
-                  setInput(input.trim() + ' ' + smartCompletion)
-                  setSmartCompletion(null) // Clear so new completions can generate
-                } else if (currentSuggestion) {
-                  // For quick options, use the full suggestion
-                  setInput(currentSuggestion)
-                }
-              }
-              // Arrow down to cycle through quick options (only when empty)
-              else if (e.key === 'ArrowDown' && quickOptionSuggestion && !input.trim()) {
-                e.preventDefault()
-                setSuggestionIndex?.((prev) => prev + 1)
-              }
-              // Arrow up to cycle back through quick options
-              else if (e.key === 'ArrowUp' && quickOptionSuggestion && !input.trim()) {
-                e.preventDefault()
-                setSuggestionIndex?.((prev) => Math.max(0, prev - 1))
+                setInput(input.trim() + ' ' + smartCompletion)
+                setSmartCompletion(null)
               }
               // Escape to clear smart completion
               else if (e.key === 'Escape' && smartCompletion) {
@@ -359,33 +340,14 @@ export function ChatInputArea({
             className="w-full bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground outline-none text-sm resize-none min-h-[52px] max-h-[200px] transition-all relative z-10"
             style={{ height: 'auto', overflow: 'hidden' }}
           />
-          {/* Tab hint - show different hints based on context */}
+          {/* Tab hint */}
           {ghostText && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3 text-xs z-0 pointer-events-none">
-              {/* Show arrow keys only when empty and have quick options */}
-              {!input.trim() && quickOptionSuggestion && (
-                <>
-                  <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                    <div className="flex items-center gap-0.5">
-                      <kbd className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
-                        ↑
-                      </kbd>
-                      <kbd className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
-                        ↓
-                      </kbd>
-                    </div>
-                    <span className="text-[11px]">browse</span>
-                  </div>
-                  <span className="text-muted-foreground/30">•</span>
-                </>
-              )}
               <div className="flex items-center gap-1.5 text-muted-foreground/60">
                 <kbd className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px] font-medium shadow-sm">
                   Tab
                 </kbd>
-                <span className="text-[11px]">
-                  {input.trim() ? 'insert suggestion' : 'use suggestion'}
-                </span>
+                <span className="text-[11px]">insert suggestion</span>
               </div>
             </div>
           )}

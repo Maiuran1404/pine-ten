@@ -63,11 +63,9 @@ import {
   parseBriefMeta,
   parseGlobalStyles,
   parseVideoNarrative,
-  getFormatReinforcement,
-  getStrategicReviewReinforcement,
-  getVideoNarrativeReinforcement,
   type StructureType,
 } from '@/lib/ai/briefing-response-parser'
+import { parseWithRetry } from '@/lib/ai/chat-pipeline/parse-with-retry'
 import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboard-image-search'
 import { searchPexelsForScene } from '@/lib/ai/pexels-image-search'
 import type { InferredAudience } from '@/components/onboarding/types'
@@ -892,6 +890,7 @@ async function handler(request: NextRequest) {
       let strategicReviewData = undefined
       let globalStyles = undefined
       let videoNarrativeData = undefined
+      let retryResult: Awaited<ReturnType<typeof parseWithRetry>> | undefined = undefined
 
       if (clientBriefingState) {
         try {
@@ -1065,274 +1064,34 @@ async function handler(request: NextRequest) {
             ) {
               briefingState.narrativeApproved = true
             }
-
-            // Narrative retry: if no narrative parsed and no storyboard either,
-            // retry with narrative format reinforcement
-            if (!videoNarrativeData && !structureData && !briefingState.narrativeApproved) {
-              logger.debug('VIDEO_NARRATIVE not parsed — attempting retry with reinforcement')
-              try {
-                const reinforcement = getVideoNarrativeReinforcement()
-                const narrativeRetryOverride = {
-                  systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                  stage: briefingState.stage,
-                }
-                const retryResponse = await chat(
-                  [
-                    ...messages,
-                    { role: 'assistant', content: response.content },
-                    { role: 'user', content: reinforcement },
-                  ],
-                  session.user.id,
-                  chatContext,
-                  narrativeRetryOverride
-                )
-                const retryNarrative = parseVideoNarrative(retryResponse.content)
-                if (retryNarrative.success && retryNarrative.data) {
-                  videoNarrativeData = retryNarrative.data
-                  briefingState.videoNarrative = retryNarrative.data
-                  logger.debug('VIDEO_NARRATIVE retry succeeded')
-                } else {
-                  logger.warn('VIDEO_NARRATIVE retry also failed')
-                }
-              } catch (retryErr) {
-                logger.warn({ err: retryErr }, 'VIDEO_NARRATIVE retry failed')
-              }
-            }
           }
 
           // ================================================================
-          // 16. Structure retry with format reinforcement (single attempt)
+          // 16. Unified retry with shared budget (max 1 retry per request)
           // ================================================================
-          if (stageBeforePhaseA === 'STRUCTURE' && !structureData && structureType) {
-            logger.debug(
-              { structureType },
-              'Structure not parsed at STRUCTURE stage — retrying with format reinforcement'
-            )
-            try {
-              const reinforcement = getFormatReinforcement(structureType)
-              // Rebuild system prompt for STRUCTURE stage (stateMachineOverride has stale pre-transition prompt)
-              const structureRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                stage: briefingState.stage,
-              }
-              const retryResponse = await chat(
-                [
-                  ...messages,
-                  { role: 'assistant', content: response.content },
-                  { role: 'user', content: reinforcement },
-                ],
-                session.user.id,
-                chatContext,
-                structureRetryOverride
-              )
-              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
-              if (retryParsed.success && retryParsed.data) {
-                structureData = retryParsed.data
-                briefingState.structure = retryParsed.data
-                logger.debug(
-                  {
-                    structureType,
-                    itemCount:
-                      'scenes' in retryParsed.data
-                        ? retryParsed.data.scenes.length
-                        : 'sections' in retryParsed.data
-                          ? retryParsed.data.sections.length
-                          : undefined,
-                  },
-                  'Structure retry succeeded'
-                )
-                // Stay in STRUCTURE — user should interact with the structure first
-              } else {
-                logger.warn(
-                  { structureType, parseError: retryParsed.parseError },
-                  'Structure retry also failed — no storyboard data'
-                )
-              }
-            } catch (retryErr) {
-              logger.warn({ err: retryErr }, 'Structure format reinforcement retry failed')
-            }
-          }
+          retryResult = await parseWithRetry({
+            briefingState,
+            brandContext,
+            messages,
+            responseContent: response.content,
+            userId: session.user.id,
+            chatContext,
+            stageBeforePhaseA,
+            structureData,
+            strategicReviewData,
+            videoNarrativeData,
+            structureType,
+            isSceneFeedback,
+            isRegenerationRequest,
+            narrativeApproved: briefingState.narrativeApproved ?? false,
+            clientLatestStoryboard:
+              clientLatestStoryboard?.type === 'storyboard' ? clientLatestStoryboard : null,
+          })
 
-          // ================================================================
-          // 16a. ELABORATE retry with format reinforcement (single attempt)
-          // ================================================================
-          if (stageBeforePhaseA === 'ELABORATE' && !structureData && structureType) {
-            logger.debug(
-              { structureType },
-              'Structure not parsed at ELABORATE stage — retrying with format reinforcement'
-            )
-            try {
-              const reinforcement = getFormatReinforcement(structureType)
-              const elaborateRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                stage: briefingState.stage,
-              }
-              const retryResponse = await chat(
-                [
-                  ...messages,
-                  { role: 'assistant', content: response.content },
-                  { role: 'user', content: reinforcement },
-                ],
-                session.user.id,
-                chatContext,
-                elaborateRetryOverride
-              )
-              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
-              if (retryParsed.success && retryParsed.data) {
-                structureData = retryParsed.data
-                briefingState.structure = retryParsed.data
-                logger.debug({ structureType }, 'ELABORATE structure retry succeeded')
-              } else {
-                logger.warn(
-                  { structureType, parseError: retryParsed.parseError },
-                  'ELABORATE structure retry also failed'
-                )
-              }
-            } catch (retryErr) {
-              logger.warn({ err: retryErr }, 'ELABORATE format reinforcement retry failed')
-            }
-          }
-
-          // ================================================================
-          // 16a-2. Scene feedback retry: always retry when scene feedback
-          // was given but no storyboard was returned, regardless of turn count
-          // ================================================================
-          if (isSceneFeedback && !structureData && structureType) {
-            logger.debug(
-              { structureType },
-              'Scene feedback detected but no storyboard returned — retrying with storyboard context'
-            )
-            try {
-              // Build a retry prompt that includes the current storyboard + user feedback
-              // so the AI can apply the changes and return the full updated storyboard
-              const storyboardForRetry =
-                (clientLatestStoryboard?.type === 'storyboard' && clientLatestStoryboard) ||
-                (briefingState.structure?.type === 'storyboard' && briefingState.structure) ||
-                null
-              const retryPrompt = storyboardForRetry
-                ? `The user gave feedback on specific scenes but you didn't include the updated storyboard in your response. ` +
-                  `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
-                  `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
-                : getFormatReinforcement(structureType)
-              const feedbackRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                stage: briefingState.stage,
-              }
-              const retryResponse = await chat(
-                [
-                  ...messages,
-                  { role: 'assistant', content: response.content },
-                  { role: 'user', content: retryPrompt },
-                ],
-                session.user.id,
-                chatContext,
-                feedbackRetryOverride
-              )
-              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
-              if (retryParsed.success && retryParsed.data) {
-                structureData = retryParsed.data
-                briefingState.structure = retryParsed.data
-                logger.debug({ structureType }, 'Scene feedback structure retry succeeded')
-              } else {
-                logger.warn(
-                  { structureType, parseError: retryParsed.parseError },
-                  'Scene feedback structure retry also failed — no storyboard data'
-                )
-              }
-            } catch (retryErr) {
-              logger.warn({ err: retryErr }, 'Scene feedback format reinforcement retry failed')
-            }
-          }
-
-          // ================================================================
-          // 16a-3. Regeneration retry: always retry when user requested
-          // storyboard regeneration but no storyboard was returned
-          // ================================================================
-          if (isRegenerationRequest && !structureData && structureType) {
-            logger.debug(
-              { structureType },
-              'Regeneration request detected but no storyboard returned — retrying with format reinforcement'
-            )
-            try {
-              const reinforcement = getFormatReinforcement(structureType)
-              const regenRetryOverride = {
-                systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                stage: briefingState.stage,
-              }
-              const retryResponse = await chat(
-                [
-                  ...messages,
-                  { role: 'assistant', content: response.content },
-                  { role: 'user', content: reinforcement },
-                ],
-                session.user.id,
-                chatContext,
-                regenRetryOverride
-              )
-              const retryParsed = parseStructuredOutput(retryResponse.content, structureType)
-              if (retryParsed.success && retryParsed.data) {
-                structureData = retryParsed.data
-                briefingState.structure = retryParsed.data
-                logger.debug({ structureType }, 'Regeneration structure retry succeeded')
-              } else {
-                logger.warn(
-                  { structureType, parseError: retryParsed.parseError },
-                  'Regeneration structure retry also failed — no storyboard data'
-                )
-              }
-            } catch (retryErr) {
-              logger.warn({ err: retryErr }, 'Regeneration format reinforcement retry failed')
-            }
-          }
-
-          // ================================================================
-          // 16b. Strategic review retry with format reinforcement (single attempt)
-          // ================================================================
-          if (stageBeforePhaseA === 'STRATEGIC_REVIEW' && !strategicReviewData) {
-            // Check if the AI wrote strategic assessment text without the marker
-            const hasReviewText =
-              response.content.includes('strategic') ||
-              response.content.includes('assessment') ||
-              response.content.includes('strengths') ||
-              response.content.includes('risks')
-            if (hasReviewText) {
-              logger.debug(
-                'Strategic review text found but no marker — retrying with format reinforcement'
-              )
-              try {
-                const reinforcement = getStrategicReviewReinforcement()
-                // Rebuild system prompt for STRATEGIC_REVIEW stage (stateMachineOverride has stale pre-AI prompt)
-                const reviewRetryOverride = {
-                  systemPrompt: buildSystemPrompt(briefingState, brandContext),
-                  stage: briefingState.stage,
-                }
-                const retryResponse = await chat(
-                  [
-                    ...messages,
-                    { role: 'assistant', content: response.content },
-                    { role: 'user', content: reinforcement },
-                  ],
-                  session.user.id,
-                  chatContext,
-                  reviewRetryOverride
-                )
-                const retryParsed = parseStrategicReview(retryResponse.content)
-                if (retryParsed.success && retryParsed.data) {
-                  strategicReviewData = retryParsed.data
-                  briefingState.strategicReview = retryParsed.data
-                  logger.debug('Strategic review retry succeeded')
-                  // Stage advance handled by deriveStage() in Phase B
-                } else {
-                  logger.warn(
-                    { parseError: retryParsed.parseError },
-                    'Strategic review retry also failed — no review data'
-                  )
-                }
-              } catch (retryErr) {
-                logger.warn({ err: retryErr }, 'Strategic review format reinforcement retry failed')
-              }
-            }
-          }
+          // Apply retry results
+          structureData = retryResult.structureData
+          strategicReviewData = retryResult.strategicReviewData
+          videoNarrativeData = retryResult.videoNarrativeData
 
           // ================================================================
           // PHASE B: Derive stage (single call, after ALL parsing + retries)
@@ -1512,6 +1271,7 @@ async function handler(request: NextRequest) {
         sceneImageMatches,
         assetRequest: response.assetRequest,
         briefingState: updatedBriefingState ?? clientBriefingState,
+        ...(retryResult?.failures?.length ? { parseFailures: retryResult.failures } : {}),
       })
     },
     { endpoint: 'POST /api/chat' }

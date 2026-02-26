@@ -53,6 +53,8 @@ export interface ChatApiResponse {
   videoNarrativeData?: VideoNarrative
   assetRequest?: Message['assetRequest']
   sceneImageMatches?: ApiSceneImageMatch[]
+  /** Marker types that failed parsing even after retry (e.g., 'STRUCTURE', 'VIDEO_NARRATIVE') */
+  parseFailures?: string[]
 }
 
 interface UseChatMessagesOptions {

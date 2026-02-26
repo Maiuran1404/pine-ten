@@ -1,20 +1,51 @@
 /**
  * Hook for managing smart autocomplete suggestions in the chat input.
- * Debounces input changes and generates context-aware completions.
+ * Debounces input changes and generates context-aware completions
+ * using briefing stage, AI question context, brand data, and more.
  */
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { generateSmartCompletion } from '@/components/chat/chat-interface.utils'
+import type { SmartCompletionContext } from '@/components/chat/chat-interface.utils'
 
 interface UseSmartCompletionOptions {
   input: string
   isLoading: boolean
+  briefingStage: string | null
+  deliverableCategory: string | null
+  lastAssistantMessage: string | null
+  brandName: string | null
+  platform: string | null
+  intent: string | null
 }
 
-export function useSmartCompletion({ input, isLoading }: UseSmartCompletionOptions) {
+export function useSmartCompletion({
+  input,
+  isLoading,
+  briefingStage,
+  deliverableCategory,
+  lastAssistantMessage,
+  brandName,
+  platform,
+  intent,
+}: UseSmartCompletionOptions) {
   const [smartCompletion, setSmartCompletion] = useState<string | null>(null)
   const smartCompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Stable context ref — updated in an effect to satisfy react-hooks/refs rule.
+  // The debounce timer reads this ref so the effect deps stay minimal (input + isLoading).
+  const contextRef = useRef<SmartCompletionContext>({})
+  useEffect(() => {
+    contextRef.current = {
+      briefingStage,
+      deliverableCategory,
+      lastAssistantMessage,
+      brandName,
+      platform,
+      intent,
+    }
+  }, [briefingStage, deliverableCategory, lastAssistantMessage, brandName, platform, intent])
 
   // Update smart completion when input changes (debounced)
   useEffect(() => {
@@ -28,7 +59,7 @@ export function useSmartCompletion({ input, isLoading }: UseSmartCompletionOptio
     }
 
     smartCompleteTimeoutRef.current = setTimeout(() => {
-      const completion = generateSmartCompletion(input)
+      const completion = generateSmartCompletion(input, contextRef.current)
       setSmartCompletion(completion)
     }, 150)
 
@@ -39,32 +70,15 @@ export function useSmartCompletion({ input, isLoading }: UseSmartCompletionOptio
     }
   }, [input, isLoading])
 
-  // Determine which suggestion to show
-  const currentSuggestion = useMemo(() => {
-    if (isLoading) return null
-
-    if (smartCompletion && input.trim().length >= 3) {
-      return input.trim() + ' ' + smartCompletion
-    }
-
-    return null
-  }, [smartCompletion, input, isLoading])
-
-  // Get the ghost text to display
+  // Ghost text derived directly from smartCompletion
   const ghostText = useMemo(() => {
-    if (!currentSuggestion || isLoading) return ''
-
-    if (smartCompletion && input.trim().length >= 3) {
-      return ' ' + smartCompletion
-    }
-
-    return ''
-  }, [currentSuggestion, smartCompletion, input, isLoading])
+    if (isLoading || !smartCompletion || input.trim().length < 3) return ''
+    return ' ' + smartCompletion
+  }, [smartCompletion, input, isLoading])
 
   return {
     smartCompletion,
     setSmartCompletion,
-    currentSuggestion,
     ghostText,
   }
 }

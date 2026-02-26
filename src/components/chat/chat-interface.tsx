@@ -119,7 +119,6 @@ export function ChatInterface({
     handleRetry,
 
     // Suggestions
-    currentSuggestion,
     ghostText,
     smartCompletion,
     setSmartCompletion,
@@ -558,7 +557,6 @@ export function ChatInterface({
               ghostText={ghostText}
               smartCompletion={smartCompletion}
               setSmartCompletion={setSmartCompletion}
-              currentSuggestion={currentSuggestion}
               fileInputRef={fileInputRef}
               inputRef={inputRef}
               userCredits={userCredits}

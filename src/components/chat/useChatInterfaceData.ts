@@ -294,9 +294,20 @@ export function useChatInterfaceData({
   taskSetPendingRef.current = task.setPendingTask
 
   // ─── Smart completion ───────────────────────────────────────
+  const lastAssistantMsg = useMemo(
+    () => [...chatMessages.messages].reverse().find((m) => m.role === 'assistant'),
+    [chatMessages.messages]
+  )
+
   const smartCompletion = useSmartCompletion({
     input: chatMessages.input,
     isLoading: chatMessages.isLoading,
+    briefingStage: _briefingState?.stage ?? null,
+    deliverableCategory: _briefingState?.deliverableCategory ?? null,
+    lastAssistantMessage: lastAssistantMsg?.content ?? null,
+    brandName: brandData?.name ?? null,
+    platform: _briefingState?.brief?.platform?.value ?? null,
+    intent: _briefingState?.brief?.intent?.value ?? null,
   })
 
   // ─── Draft persistence ──────────────────────────────────────
@@ -647,7 +658,6 @@ export function useChatInterfaceData({
     handleRetry: chatMessages.handleRetry,
 
     // Suggestions
-    currentSuggestion: smartCompletion.currentSuggestion,
     ghostText: smartCompletion.ghostText,
     smartCompletion: smartCompletion.smartCompletion,
     setSmartCompletion: smartCompletion.setSmartCompletion,

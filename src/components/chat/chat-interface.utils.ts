@@ -345,222 +345,369 @@ export function constructTaskFromConversation(
   }
 }
 
-/** The smart autocomplete completion patterns for the chat input. */
-export function generateSmartCompletion(text: string): string | null {
+/** Context available for smart completions from the briefing flow. */
+export interface SmartCompletionContext {
+  briefingStage?: string | null
+  deliverableCategory?: string | null
+  lastAssistantMessage?: string | null
+  brandName?: string | null
+  platform?: string | null
+  intent?: string | null
+}
+
+type CompletionEntry = { pattern: RegExp; completion: string }
+
+// ── AI question-aware completions (highest signal) ──────────────────────
+// Detects what the AI just asked and returns completions relevant to that question.
+function getQuestionAwareCompletions(
+  lastMessage: string | null | undefined
+): CompletionEntry[] | null {
+  if (!lastMessage) return null
+  const msg = lastMessage.toLowerCase()
+
+  // Audience / who questions
+  if (/\b(audience|who|target|demographic|customer)\b/.test(msg)) {
+    return [
+      { pattern: /^(for|targeting)\s*$/i, completion: 'young professionals aged 25-35' },
+      { pattern: /^(mainly|mostly|primarily)\s*$/i, completion: 'business owners and founders' },
+      { pattern: /^(our|my)\s*$/i, completion: 'target audience is tech-savvy professionals' },
+      { pattern: /^(small|medium|large)\s*$/i, completion: 'business owners' },
+      { pattern: /^(young|older)\s*$/i, completion: 'professionals in their 30s' },
+      { pattern: /^(b2b|b2c)\s*$/i, completion: 'customers in the tech space' },
+      { pattern: /^people\s+(who|that)\s*$/i, completion: 'want to grow their business' },
+    ]
+  }
+
+  // Goal / intent questions
+  if (/\b(goal|achieve|objective|get people to|purpose|aim|result)\b/.test(msg)) {
+    return [
+      { pattern: /^(to|we want to)\s+drive\s*$/i, completion: 'signups and conversions' },
+      { pattern: /^(to|we want to)\s+increase\s*$/i, completion: 'brand awareness' },
+      { pattern: /^(to|we want to)\s+build\s*$/i, completion: 'authority in our space' },
+      { pattern: /^(to|we want to)\s+grow\s*$/i, completion: 'our audience' },
+      { pattern: /^(to|we want to)\s+generate\s*$/i, completion: 'leads and sales' },
+      { pattern: /^(to|we want to)\s+attract\s*$/i, completion: 'new customers' },
+      { pattern: /^(to|we want to)\s+boost\s*$/i, completion: 'engagement and awareness' },
+      { pattern: /^(get|drive)\s+(more|people)\s*$/i, completion: 'to sign up' },
+    ]
+  }
+
+  // Scene / quantity / structure questions
+  if (/\b(scene|how many|slides?|section|length|duration)\b/.test(msg)) {
+    return [
+      { pattern: /^(\d+)\s*$/i, completion: 'scenes with transitions' },
+      { pattern: /^(a\s+)?short\s*$/i, completion: '30-second product demo' },
+      { pattern: /^(about|around)\s*$/i, completion: '60 seconds total' },
+      { pattern: /^(i\s+need|we\s+need)\s*$/i, completion: '3 scenes highlighting key features' },
+      {
+        pattern: /^each\s+(scene|slide|section)\s*$/i,
+        completion: 'should focus on a key benefit',
+      },
+    ]
+  }
+
+  // Style / visual preference questions
+  if (/\b(style|look|feel|aesthetic|visual|design|vibe|mood)\b/.test(msg)) {
+    return [
+      { pattern: /^something\s*$/i, completion: 'bold and modern' },
+      { pattern: /^i\s+like\s*$/i, completion: 'the clean minimal look' },
+      { pattern: /^make\s+it\s*$/i, completion: 'feel premium and editorial' },
+      { pattern: /^keep\s+it\s*$/i, completion: 'on brand with our style' },
+      { pattern: /^(i('m| am)\s+)?looking\s+for\s*$/i, completion: 'something sleek and modern' },
+      { pattern: /^(more|very)\s*$/i, completion: 'minimal and refined' },
+    ]
+  }
+
+  // Platform questions
+  if (/\b(platform|where|channel|publish|post)\b/.test(msg)) {
+    return [
+      { pattern: /^(for|on)\s+instagram\s*$/i, completion: 'reels and stories' },
+      { pattern: /^(for|on)\s+linkedin\s*$/i, completion: 'thought leadership posts' },
+      { pattern: /^(for|on)\s+tiktok\s*$/i, completion: 'short-form videos' },
+      { pattern: /^(for|on)\s+youtube\s*$/i, completion: 'video content' },
+      { pattern: /^(for|on)\s+(the\s+)?web\s*$/i, completion: 'our landing page' },
+      { pattern: /^(mainly|primarily)\s*$/i, completion: 'Instagram and LinkedIn' },
+    ]
+  }
+
+  // Timeline / deadline questions
+  if (/\b(timeline|when|deadline|urgency|rush|how soon)\b/.test(msg)) {
+    return [
+      { pattern: /^(by|before)\s+(next|this)\s*$/i, completion: 'week if possible' },
+      { pattern: /^(within|in)\s*$/i, completion: 'the next week' },
+      { pattern: /^as\s+soon\s*$/i, completion: 'as possible' },
+      { pattern: /^(no|not)\s*$/i, completion: 'rush — flexible timeline' },
+      { pattern: /^(we\s+)?launch\s*$/i, completion: 'in 2 weeks' },
+    ]
+  }
+
+  return null
+}
+
+// ── Stage-specific completion pools ─────────────────────────────────────
+function getStageCompletions(
+  stage: string | null | undefined,
+  category: string | null | undefined,
+  brandName: string | null | undefined
+): CompletionEntry[] {
+  const brand = brandName || 'our'
+
+  switch (stage) {
+    case 'EXTRACT':
+    case 'TASK_TYPE':
+      return [
+        {
+          pattern: /^a\s+(tech\s+)?(product|app|platform|tool|software|service)\s+for\s*$/i,
+          completion: 'businesses to streamline their workflows',
+        },
+        {
+          pattern: /^a\s+new\s*$/i,
+          completion: `product ${brand === 'our' ? "we're" : `${brand} is`} launching`,
+        },
+        { pattern: /^an\s+app\s+(that|which|for)\s*$/i, completion: 'helps people save time' },
+        { pattern: /^an\s+ai\s*$/i, completion: 'powered tool for content creation' },
+        { pattern: /^it('s| is)\s+(a|an)\s*$/i, completion: 'SaaS platform for businesses' },
+        {
+          pattern: /^it('s| is)\s+called\s*$/i,
+          completion: `${brandName || 'and it helps businesses'}`,
+        },
+        {
+          pattern: /^we\s+(have|built|created|made)\s+(a|an)\s*$/i,
+          completion: 'platform that helps businesses',
+        },
+        { pattern: /^we('re| are)\s+launching\s*$/i, completion: 'a new product next month' },
+        { pattern: /^we('re| are)\s+building\s*$/i, completion: 'a platform for teams' },
+        {
+          pattern: /^(my|our)\s+(product|app|company|startup|business)\s*$/i,
+          completion: 'helps businesses save time',
+        },
+        { pattern: /^our\s+new\s*$/i, completion: 'product launches next month' },
+        { pattern: /^(a|an)\s+(fitness|health|wellness)\s*$/i, completion: 'tracking app' },
+        {
+          pattern: /^(a|an)\s+(e-?commerce|shopping)\s*$/i,
+          completion: 'platform for small businesses',
+        },
+        { pattern: /^(a|an)\s+(social|community)\s*$/i, completion: 'platform for creators' },
+        {
+          pattern: /that\s+helps\s+(people|users|businesses|teams)\s*$/i,
+          completion: 'save time and money',
+        },
+        { pattern: /that\s+connects\s*$/i, completion: 'businesses with customers' },
+        {
+          pattern: /^i\s+need\s*$/i,
+          completion: `content for ${brand === 'our' ? 'our' : `${brand}'s`} launch`,
+        },
+        {
+          pattern: /^we\s+need\s*$/i,
+          completion: `design assets for ${brand === 'our' ? 'our' : `${brand}'s`} brand`,
+        },
+      ]
+
+    case 'INTENT':
+      return [
+        { pattern: /^(to|we want to)\s+drive\s*$/i, completion: 'signups and conversions' },
+        { pattern: /^(to|we want to)\s+increase\s*$/i, completion: 'brand awareness' },
+        { pattern: /^(to|we want to)\s+build\s*$/i, completion: 'authority in our space' },
+        { pattern: /^(to|we want to)\s+grow\s*$/i, completion: 'our audience' },
+        { pattern: /^(to|we want to)\s+generate\s*$/i, completion: 'leads and sales' },
+        { pattern: /^(to|we want to)\s+launch\s*$/i, completion: 'our new product' },
+        { pattern: /^(to|we want to)\s+promote\s*$/i, completion: 'our upcoming launch' },
+        { pattern: /^(to|we want to)\s+attract\s*$/i, completion: 'new users' },
+        { pattern: /^(to|we want to)\s+get\s*$/i, completion: 'more customers' },
+        { pattern: /^(get|drive)\s+(more|people)\s*$/i, completion: 'to sign up' },
+      ]
+
+    case 'INSPIRATION':
+      return [
+        { pattern: /^something\s*$/i, completion: 'bold and modern' },
+        { pattern: /^i\s+like\s*$/i, completion: 'the clean minimal look' },
+        { pattern: /^make\s+it\s*$/i, completion: 'feel premium and editorial' },
+        { pattern: /^keep\s+it\s*$/i, completion: 'on brand with our style' },
+        { pattern: /^something\s+more\s*$/i, completion: 'minimal and clean' },
+        { pattern: /^something\s+less\s*$/i, completion: 'busy and more focused' },
+        { pattern: /^(i('m| am)\s+)?looking\s+for\s*$/i, completion: 'something sleek and modern' },
+        { pattern: /^i\s+was\s+thinking\s*$/i, completion: 'something more minimal' },
+        { pattern: /^(more|very)\s*$/i, completion: 'minimal and refined' },
+      ]
+
+    case 'STRUCTURE':
+      if (category === 'video') {
+        return [
+          { pattern: /^i\s+need\s*$/i, completion: '3 scenes highlighting key features' },
+          { pattern: /^(a\s+)?short\s*$/i, completion: '30-second product demo' },
+          { pattern: /^something\s*$/i, completion: 'under a minute' },
+          { pattern: /^each\s+scene\s*$/i, completion: 'should focus on a key benefit' },
+          { pattern: /^(start|open)\s+(with|on)\s*$/i, completion: 'a hook that grabs attention' },
+          { pattern: /^(end|close)\s+(with|on)\s*$/i, completion: 'a strong CTA' },
+          { pattern: /^(\d+)\s+(scenes?|shots?)\s*$/i, completion: 'with smooth transitions' },
+        ]
+      }
+      if (category === 'website') {
+        return [
+          { pattern: /^(a\s+)?hero\s*$/i, completion: 'section with our value prop' },
+          { pattern: /^include\s*$/i, completion: 'a features section and pricing' },
+          { pattern: /^start\s+with\s*$/i, completion: 'a strong headline and CTA' },
+          { pattern: /^(i|we)\s+need\s*$/i, completion: 'a landing page with clear sections' },
+          { pattern: /^(add|with)\s+(a\s+)?$/i, completion: 'testimonials section' },
+        ]
+      }
+      if (category === 'content') {
+        return [
+          { pattern: /^(\d+)\s+posts?\s*$/i, completion: 'per week' },
+          { pattern: /^(a\s+)?mix\s*$/i, completion: 'of educational and promotional content' },
+          { pattern: /^include\s*$/i, completion: 'carousel and single posts' },
+          { pattern: /^(a\s+)?series\s+of\s*$/i, completion: 'posts for our launch' },
+          { pattern: /^each\s+(post|piece)\s*$/i, completion: 'should have a clear CTA' },
+        ]
+      }
+      // Design/brand structure
+      return [
+        { pattern: /^i\s+need\s*$/i, completion: 'multiple size variations' },
+        { pattern: /^include\s*$/i, completion: 'our logo and brand colors' },
+        { pattern: /^(the|a)\s+main\s*$/i, completion: 'design should be 1080x1080' },
+        { pattern: /^(a\s+)?series\s+of\s*$/i, completion: 'posts for our launch' },
+      ]
+
+    case 'ELABORATE':
+      return [
+        { pattern: /^the\s+headline\s*$/i, completion: 'should be punchy and action-driven' },
+        { pattern: /^for\s+the\s+CTA\s*$/i, completion: "use 'Get Started' or 'Learn More'" },
+        { pattern: /^the\s+copy\s*$/i, completion: 'should be conversational' },
+        { pattern: /^(the|our)\s+tone\s*$/i, completion: 'should be professional yet friendly' },
+        { pattern: /^(use|include)\s+$/i, completion: 'our brand colors and logo' },
+        { pattern: /^make\s+(sure|it)\s*$/i, completion: 'the CTA stands out' },
+        { pattern: /^(the|a)\s+background\s*$/i, completion: 'should be clean and minimal' },
+      ]
+
+    case 'MOODBOARD':
+    case 'REVIEW':
+    case 'SUBMIT':
+    case 'DEEPEN':
+    case 'STRATEGIC_REVIEW':
+      return [
+        {
+          pattern: /^(yes|yeah|yep|sure|perfect),?\s*$/i,
+          completion: "this looks great, let's proceed",
+        },
+        { pattern: /^looks\s+good\s*$/i, completion: "let's move forward" },
+        { pattern: /^(great|nice|good|love\s+it),?\s*$/i, completion: "let's move forward" },
+        { pattern: /^i('d| would)\s+like\s*$/i, completion: 'to adjust the visual direction' },
+        { pattern: /^can\s+we\s*$/i, completion: 'change the color palette?' },
+        { pattern: /^(no|nope|not\s+quite),?\s*$/i, completion: "I'd like to make some changes" },
+        { pattern: /^(actually|wait),?\s*$/i, completion: 'can we adjust the style?' },
+        { pattern: /^one\s+(more|last)\s*$/i, completion: 'thing before we submit' },
+      ]
+
+    default:
+      return []
+  }
+}
+
+// ── Universal completions (active at all stages) ────────────────────────
+const UNIVERSAL_COMPLETIONS: CompletionEntry[] = [
+  { pattern: /^can\s+you\s*$/i, completion: 'make it more minimal?' },
+  { pattern: /^could\s+(you|we)\s*$/i, completion: 'try a different style?' },
+  { pattern: /^what\s+about\s*$/i, completion: 'a more colorful version?' },
+  { pattern: /^how\s+about\s*$/i, completion: 'we try a different approach?' },
+  { pattern: /^can\s+we\s+(also|add)\s*$/i, completion: 'include our tagline?' },
+  { pattern: /^should\s+(we|i)\s*$/i, completion: 'include the logo?' },
+  { pattern: /^show\s+me\s*$/i, completion: 'more options' },
+  { pattern: /^(for|on)\s+instagram\s*$/i, completion: 'reels and stories' },
+  { pattern: /^(for|on)\s+linkedin\s*$/i, completion: 'thought leadership posts' },
+  { pattern: /^(for|on)\s+tiktok\s*$/i, completion: 'short-form videos' },
+  { pattern: /^(for|on)\s+youtube\s*$/i, completion: 'video content' },
+  { pattern: /^(for|on)\s+(the\s+)?web\s*$/i, completion: 'landing page' },
+  { pattern: /^as\s+soon\s*$/i, completion: 'as possible' },
+  { pattern: /^i\s+want\s*$/i, completion: 'something modern and clean' },
+]
+
+// ── Word-level completions (partial word → complete word) ───────────────
+const WORD_COMPLETIONS: Record<string, string> = {
+  inst: 'agram',
+  link: 'edIn',
+  tikt: 'ok',
+  face: 'book',
+  yout: 'ube',
+  twit: 'ter',
+  mini: 'mal',
+  moder: 'n',
+  cine: 'matic',
+  prof: 'essional',
+  eleg: 'ant',
+  vibr: 'ant',
+  dynam: 'ic',
+  sleek: ' and modern',
+  prod: 'uct',
+  serv: 'ice',
+  plat: 'form',
+  busin: 'esses',
+  enter: 'prise',
+  start: 'up',
+  compan: 'y',
+  anno: 'uncement',
+  awar: 'eness',
+  laun: 'ch',
+  prom: 'otion',
+  conv: 'ersion',
+  sign: 'ups',
+  engag: 'ement',
+  stream: 'line workflows',
+  auto: 'mate tasks',
+  manag: 'e their projects',
+  track: 'ing and analytics',
+  colla: 'borate',
+}
+
+/** Match text against a pool of completions, returning the first match. */
+function matchPool(text: string, pool: CompletionEntry[]): string | null {
+  for (const { pattern, completion } of pool) {
+    if (pattern.test(text)) return completion
+  }
+  return null
+}
+
+/**
+ * Context-aware smart autocomplete completion engine.
+ * Priority: AI question-aware > stage-specific > universal > word completions.
+ */
+export function generateSmartCompletion(
+  text: string,
+  context?: SmartCompletionContext
+): string | null {
   if (!text || text.length < 3) return null
 
   const lowerText = text.toLowerCase().trim()
   const words = lowerText.split(/\s+/)
   const lastWord = words[words.length - 1] || ''
 
-  const completions: Array<{ pattern: RegExp | string; completion: string }> = [
-    {
-      pattern:
-        /^a\s+(tech\s+)?(product|app|platform|tool|software|service)\s*(\/\s*\w+)?\s+for\s*$/i,
-      completion: 'businesses to streamline their workflows',
-    },
-    {
-      pattern: /^a\s+(saas|b2b|b2c)\s+(product|app|platform|tool)\s+for\s*$/i,
-      completion: 'managing team productivity',
-    },
-    { pattern: /^a\s+(mobile|web)\s+app\s+for\s*$/i, completion: 'tracking fitness goals' },
-    { pattern: /^a\s+new\s*$/i, completion: "product we're launching" },
-    { pattern: /^an\s+app\s+(that|which|for)\s*$/i, completion: 'helps people save time' },
-    { pattern: /^an\s+ai\s*$/i, completion: 'powered tool for content creation' },
-    { pattern: /^it('s| is)\s+(a|an)\s*$/i, completion: 'SaaS platform for businesses' },
-    { pattern: /^it('s| is)\s+called\s*$/i, completion: 'and it helps businesses' },
-    {
-      pattern: /^we\s+(have|built|created|made)\s+(a|an)\s*$/i,
-      completion: 'platform that helps businesses',
-    },
-    { pattern: /^we('re| are)\s+(a|an)?\s*$/i, completion: 'launching next month' },
-    { pattern: /^we('re| are)\s+launching\s*$/i, completion: 'a new product next month' },
-    { pattern: /^we('re| are)\s+building\s*$/i, completion: 'a platform for teams' },
-    {
-      pattern: /^my\s+(product|app|company|startup|business)\s*$/i,
-      completion: 'helps businesses save time',
-    },
-    {
-      pattern: /^our\s+(product|app|company|startup|business)\s*$/i,
-      completion: 'is a platform for teams',
-    },
-    { pattern: /^our\s+new\s*$/i, completion: 'product launches next month' },
-    { pattern: /^(a|an)\s+(fitness|health|wellness)\s*$/i, completion: 'tracking app' },
-    { pattern: /^(a|an)\s+(project|task)\s+management\s*$/i, completion: 'tool for remote teams' },
-    {
-      pattern: /^(a|an)\s+(e-?commerce|shopping)\s*$/i,
-      completion: 'platform for small businesses',
-    },
-    { pattern: /^(a|an)\s+(fintech|finance)\s*$/i, completion: 'app for personal budgeting' },
-    { pattern: /^(a|an)\s+(social|community)\s*$/i, completion: 'platform for creators' },
-    { pattern: /^(a|an)\s+(marketing|crm)\s*$/i, completion: 'tool for small businesses' },
-    {
-      pattern: /that\s+helps\s+(people|users|businesses|teams|companies)\s*$/i,
-      completion: 'save time and money',
-    },
-    {
-      pattern: /that\s+lets\s+(people|users|you)\s*$/i,
-      completion: 'manage their projects easily',
-    },
-    {
-      pattern: /that\s+makes\s+(it\s+)?(easy|easier|simple)\s*$/i,
-      completion: 'to collaborate with teams',
-    },
-    { pattern: /that\s+automates\s*$/i, completion: 'repetitive tasks' },
-    { pattern: /that\s+connects\s*$/i, completion: 'businesses with customers' },
-    {
-      pattern: /to\s+help\s+(people|users|businesses|teams)\s*$/i,
-      completion: 'be more productive',
-    },
-    {
-      pattern: /^i('ll| will)?\s*(go|like|choose|pick|want)\s*(with|the)?\s*$/i,
-      completion: 'the first style',
-    },
-    { pattern: /^the\s+first\s*$/i, completion: 'one looks great' },
-    { pattern: /^the\s+second\s*$/i, completion: 'option please' },
-    { pattern: /^the\s+third\s*$/i, completion: 'style works well' },
-    { pattern: /^i\s+like\s+(the\s+)?$/i, completion: 'minimal style' },
-    { pattern: /^let('s|s)?\s*go\s*(with)?\s*$/i, completion: 'the first option' },
-    { pattern: /^show\s+me\s*$/i, completion: 'more options' },
-    { pattern: /^something\s+more\s*$/i, completion: 'minimal and clean' },
-    { pattern: /^something\s+less\s*$/i, completion: 'busy and more focused' },
-    { pattern: /^for\s+(my|our)\s*$/i, completion: 'target audience of professionals' },
-    { pattern: /^targeting\s*$/i, completion: 'young professionals aged 25-40' },
-    { pattern: /^the\s+audience\s+(is|are)?\s*$/i, completion: 'primarily business owners' },
-    { pattern: /^(mainly|mostly|primarily)\s*$/i, completion: 'business professionals' },
-    { pattern: /^(aimed\s+at|for)\s+(small|medium|large)\s*$/i, completion: 'businesses' },
-    { pattern: /^(aimed\s+at|for)\s+(young|older)\s*$/i, completion: 'professionals' },
-    { pattern: /^(for|on)\s+instagram\s*$/i, completion: 'reels and stories' },
-    { pattern: /^(for|on)\s+linkedin\s*$/i, completion: 'thought leadership posts' },
-    { pattern: /^(for|on)\s+tiktok\s*$/i, completion: 'short-form videos' },
-    { pattern: /^(for|on)\s+twitter\s*$/i, completion: 'engagement threads' },
-    { pattern: /^(for|on)\s+youtube\s*$/i, completion: 'video content' },
-    { pattern: /^(for|on)\s+(the\s+)?web\s*$/i, completion: 'landing page' },
-    { pattern: /^(to|we want to)\s+drive\s*$/i, completion: 'signups and conversions' },
-    { pattern: /^(to|we want to)\s+increase\s*$/i, completion: 'brand awareness' },
-    { pattern: /^(to|we want to)\s+launch\s*$/i, completion: 'our new product' },
-    { pattern: /^(to|we want to)\s+promote\s*$/i, completion: 'our upcoming launch' },
-    { pattern: /^(to|we want to)\s+build\s*$/i, completion: 'brand authority' },
-    { pattern: /^(to|we want to)\s+grow\s*$/i, completion: 'our audience' },
-    { pattern: /^(to|we want to)\s+get\s*$/i, completion: 'more customers' },
-    { pattern: /^(to|we want to)\s+attract\s*$/i, completion: 'new users' },
-    { pattern: /^(to|we want to)\s+generate\s*$/i, completion: 'leads and sales' },
-    { pattern: /^launching\s+(in|on|next|this)\s*$/i, completion: '2 weeks' },
-    { pattern: /^we\s+launch\s+(in|on|next|this)\s*$/i, completion: '2 weeks' },
-    { pattern: /^need\s+(this|it)\s+by\s*$/i, completion: 'next week' },
-    { pattern: /^by\s+(next|this)\s*$/i, completion: 'week if possible' },
-    { pattern: /^as\s+soon\s*$/i, completion: 'as possible' },
-    { pattern: /^in\s+(the\s+)?next\s*$/i, completion: 'few days' },
-    { pattern: /^within\s*$/i, completion: 'the next week' },
-    { pattern: /^(\d+)\s+(posts?|videos?|pieces?|assets?)\s*$/i, completion: 'for the campaign' },
-    { pattern: /^a\s+series\s+of\s*$/i, completion: 'posts for our launch' },
-    { pattern: /^multiple\s*$/i, completion: 'versions for A/B testing' },
-    { pattern: /^just\s+(one|1|a\s+single)\s*$/i, completion: 'hero video' },
-    { pattern: /^(yes|yeah|yep|sure|perfect),?\s*$/i, completion: "let's go with that" },
-    { pattern: /^(no|nope|not\s+quite),?\s*$/i, completion: 'show me different options' },
-    { pattern: /^(great|nice|good|love\s+it),?\s*$/i, completion: "let's move forward" },
-    { pattern: /^can\s+you\s*$/i, completion: 'make it more minimal?' },
-    { pattern: /^could\s+(you|we)\s*$/i, completion: 'try a different style?' },
-    { pattern: /^i\s+need\s*$/i, completion: 'something eye-catching' },
-    { pattern: /^make\s+it\s*$/i, completion: 'more bold and vibrant' },
-    { pattern: /^keep\s+it\s*$/i, completion: 'simple and clean' },
-    { pattern: /^something\s+that\s*$/i, completion: 'stands out' },
-    { pattern: /^i\s+want\s*$/i, completion: 'something modern and clean' },
-    { pattern: /^we\s+need\s*$/i, completion: 'this by next week' },
-    { pattern: /^i('m| am)\s+looking\s+for\s*$/i, completion: 'something bold and modern' },
-    { pattern: /^i\s+was\s+thinking\s*$/i, completion: 'something more minimal' },
-    { pattern: /^what\s+about\s*$/i, completion: 'a more colorful version?' },
-    { pattern: /^how\s+about\s*$/i, completion: 'we try a different approach?' },
-    { pattern: /^can\s+we\s+(also|add)\s*$/i, completion: 'include our tagline?' },
-    { pattern: /^should\s+(we|i)\s*$/i, completion: 'include the logo?' },
-  ]
-
-  // Check for pattern matches
-  for (const { pattern, completion } of completions) {
-    if (typeof pattern === 'string') {
-      if (lowerText.endsWith(pattern.toLowerCase())) {
-        return completion
-      }
-    } else if (pattern.test(lowerText)) {
-      return completion
-    }
+  // 1. AI question-aware completions (highest signal)
+  const questionPool = getQuestionAwareCompletions(context?.lastAssistantMessage)
+  if (questionPool) {
+    const match = matchPool(lowerText, questionPool)
+    if (match) return match
   }
 
-  // Word-level completions for partial words
-  const wordCompletions: Record<string, string> = {
-    inst: 'agram',
-    link: 'edIn',
-    tikt: 'ok',
-    face: 'book',
-    yout: 'ube',
-    twit: 'ter',
-    mini: 'mal',
-    moder: 'n',
-    cine: 'matic',
-    prof: 'essional',
-    eleg: 'ant',
-    vibr: 'ant',
-    dynam: 'ic',
-    sleek: ' and modern',
-    prod: 'uct',
-    serv: 'ice',
-    plat: 'form',
-    busin: 'esses',
-    enter: 'prise',
-    start: 'up',
-    compan: 'y',
-    anno: 'uncement',
-    awar: 'eness',
-    laun: 'ch',
-    prom: 'otion',
-    conv: 'ersion',
-    sign: 'ups',
-    engag: 'ement',
-    stream: 'line workflows',
-    auto: 'mate tasks',
-    manag: 'e their projects',
-    track: 'ing and analytics',
-    colla: 'borate',
+  // 2. Stage-specific completions
+  if (context?.briefingStage) {
+    const stagePool = getStageCompletions(
+      context.briefingStage,
+      context.deliverableCategory,
+      context.brandName
+    )
+    const match = matchPool(lowerText, stagePool)
+    if (match) return match
   }
 
+  // 3. Universal completions (active at all stages)
+  const universalMatch = matchPool(lowerText, UNIVERSAL_COMPLETIONS)
+  if (universalMatch) return universalMatch
+
+  // 4. Word-level completions for partial words
   if (lastWord.length >= 3) {
-    for (const [prefix, suffix] of Object.entries(wordCompletions)) {
+    for (const [prefix, suffix] of Object.entries(WORD_COMPLETIONS)) {
       if (lastWord.startsWith(prefix) && !lastWord.includes(suffix.charAt(0).toLowerCase())) {
         return suffix
       }
-    }
-  }
-
-  // Ending-based completions
-  const endingCompletions: Array<{ ending: string; completion: string }> = [
-    { ending: ' for', completion: 'businesses to manage their workflows' },
-    { ending: ' for ', completion: 'businesses to manage their workflows' },
-    { ending: ' that', completion: 'helps teams be more productive' },
-    { ending: ' that ', completion: 'helps teams be more productive' },
-    { ending: ' which', completion: 'helps businesses save time' },
-    { ending: ' to', completion: 'help businesses grow' },
-    { ending: ' to ', completion: 'help businesses grow' },
-    { ending: ' with', completion: 'a modern, clean design' },
-    { ending: ' about', completion: 'our new product launch' },
-    { ending: ' like', completion: 'something bold and eye-catching' },
-    { ending: ' using', completion: 'AI and automation' },
-    { ending: ' helps', completion: 'businesses save time' },
-    { ending: ' lets', completion: 'users manage their projects' },
-    { ending: ' allows', completion: 'teams to collaborate' },
-    { ending: ' enables', completion: 'businesses to scale' },
-    { ending: ' makes', completion: 'it easy to get started' },
-    { ending: ' and', completion: 'increase conversions' },
-    { ending: ' or', completion: 'something similar' },
-    { ending: ' but', completion: 'more minimal' },
-    { ending: ' by', completion: 'next week' },
-    { ending: ' in', completion: 'the next few days' },
-    { ending: ' on', completion: 'social media' },
-    { ending: '?', completion: '' },
-  ]
-
-  for (const { ending, completion } of endingCompletions) {
-    if (lowerText.endsWith(ending) && completion) {
-      return completion
     }
   }
 

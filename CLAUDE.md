@@ -276,6 +276,27 @@ When given a bug report: just fix it. Investigate logs, errors, and failing test
 
 Never mark a task complete without proving it works — run tests, check logs, demonstrate correctness.
 
+### During Plan Design
+
+Every plan must answer these two questions before implementation begins:
+
+1. **"Is this the simplest correct approach?"** — If you're adding layers, abstractions, or config that aren't strictly required, simplify.
+2. **"Am I fighting the architecture?"** — If the plan requires workarounds, monkey-patches, or bypassing existing patterns, the approach is wrong. Redesign to work _with_ the codebase.
+
+If either answer raises a red flag, redesign the approach or dispatch `/first-principles` on the affected scope before proceeding.
+
+## First-Principles Thinking
+
+Apply these 5 mental checks during every plan phase. This is a 30-second discipline, not a full audit — catch problems before they become code:
+
+1. **Complexity check** — Is this the simplest correct solution? If you're reaching for an abstraction, indirection, or config layer, ask whether a direct approach works. Three similar lines > one premature helper.
+2. **Boundary check** — Does the change respect existing module boundaries? If you're importing across route groups, reaching into hook internals, or coupling things that are currently decoupled, reconsider.
+3. **State check** — Am I adding state when I could derive it? New `useState`, new DB columns, new cache entries — each is a future sync bug. Prefer computed values over stored ones.
+4. **Bug magnet check** — Am I creating a new coordination point that will break? Race conditions, ordering dependencies, implicit contracts between components — these are the things that end up in "Known Fragile Areas."
+5. **Fresh-eyes check** — If I were building this subsystem from scratch today, would I choose this design? If no, consider whether the refactor cost is worth paying now vs. accumulating more debt.
+
+**Escape hatch**: If any check raises a red flag on a non-trivial change, dispatch `/first-principles` for a deep audit before proceeding with implementation.
+
 ## Multi-Fix Workflow
 
 When fixing multiple bugs or issues in a session, **always test, commit, and push between each fix**. Never batch unrelated fixes into a single commit. This ensures:
@@ -340,6 +361,11 @@ Use these commands automatically in the appropriate context — don't wait for t
 | Debug console statements spotted in diff              | `/cleanup`                            |
 | Code ready to commit and push                         | `/add-commit-push`                    |
 | After creating/modifying any `.tsx` component or page | `/verify`                             |
+| Touching a Known Fragile Area                         | `/first-principles` on affected scope |
+| Modifying chat hook composition or briefing flow      | `/first-principles` on chat subsystem |
+| Same subsystem has had 2+ bugs in recent sessions     | `/first-principles` on that subsystem |
+| Feature touches 3+ subsystems or route groups         | `/first-principles` before impl       |
+| Major refactor planned (new boundaries or patterns)   | `/first-principles` before impl       |
 
 ## Sub-Agent Dispatch Rules
 

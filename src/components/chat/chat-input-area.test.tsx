@@ -63,7 +63,6 @@ function createDefaultProps(overrides: Partial<ChatInputAreaProps> = {}): ChatIn
     ghostText: '',
     smartCompletion: null,
     setSmartCompletion: vi.fn(),
-    currentSuggestion: null,
     fileInputRef: createRef<HTMLInputElement>(),
     inputRef: createRef<HTMLTextAreaElement>(),
     userCredits: 50,

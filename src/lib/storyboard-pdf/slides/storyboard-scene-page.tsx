@@ -98,14 +98,14 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
         </div>
       </div>
 
-      {/* Two-column: image (~40%) | text content (~60%) */}
-      <div style={{ display: 'flex', gap: 24 }}>
-        {/* Image column */}
-        <div style={{ width: '38%', flexShrink: 0 }}>
+      {/* Vertical layout: image on top, text below */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Image row */}
+        <div style={{ width: '100%' }}>
           <div
             style={{
               width: '100%',
-              height: 260,
+              height: 200,
               borderRadius: 10,
               overflow: 'hidden',
               position: 'relative',
