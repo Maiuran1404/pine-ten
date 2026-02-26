@@ -298,6 +298,73 @@ const STAGE_ORDER: BriefingStage[] = [
 ]
 
 // =============================================================================
+// STAGE PIPELINE — the single source of truth for stage progression
+// =============================================================================
+
+interface StageGate {
+  stage: BriefingStage
+  /** Return true when this stage's work is done and we can move on */
+  exitWhen: (state: BriefingState) => boolean
+}
+
+export const STAGE_PIPELINE: StageGate[] = [
+  {
+    stage: 'EXTRACT',
+    exitWhen: (s) => s.brief.topic.confidence >= 0.4 && s.brief.topic.value !== null,
+  },
+  {
+    stage: 'TASK_TYPE',
+    exitWhen: (s) => s.brief.taskType.confidence >= 0.4 && s.brief.taskType.value !== null,
+  },
+  {
+    stage: 'INTENT',
+    exitWhen: (s) => s.brief.intent.confidence >= 0.4 && s.brief.intent.value !== null,
+  },
+  {
+    stage: 'STRUCTURE',
+    exitWhen: (s) => {
+      if (!s.structure) return false
+      // Video requires narrative approval before advancing
+      if (s.deliverableCategory === 'video' && !s.narrativeApproved) return false
+      return true
+    },
+  },
+  {
+    stage: 'INSPIRATION',
+    exitWhen: (s) => (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0,
+  },
+  {
+    stage: 'ELABORATE',
+    exitWhen: (s) => checkElaborationComplete(s),
+  },
+  // STRATEGIC_REVIEW currently disabled — omit from pipeline to skip
+  {
+    stage: 'MOODBOARD',
+    exitWhen: (s) => s.brief.visualDirection !== null,
+  },
+  {
+    stage: 'REVIEW',
+    exitWhen: () => false, // terminal — only CONFIRM_SUBMIT advances past
+  },
+]
+
+/**
+ * Derive the current stage purely from accumulated state data.
+ * Scans the gate pipeline and returns the first stage whose exit condition isn't met.
+ *
+ * Properties:
+ * - Pure: same state → same stage, always
+ * - Monotonic: stages only advance as data accumulates
+ * - Timing-independent: reads final state, not intermediate pipeline values
+ */
+export function deriveStage(state: BriefingState): BriefingStage {
+  for (const gate of STAGE_PIPELINE) {
+    if (!gate.exitWhen(state)) return gate.stage
+  }
+  return 'SUBMIT'
+}
+
+// =============================================================================
 // LEGAL TRANSITIONS
 // =============================================================================
 
@@ -359,6 +426,8 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
  * Only evaluates FORWARD transitions from EXTRACT.
  * For ongoing transitions (staying/advancing from non-EXTRACT stages),
  * the stage is managed by the message processing pipeline.
+ *
+ * @deprecated Use `deriveStage()` instead — declarative pipeline replaces imperative transitions.
  */
 export function evaluateTransitions(
   state: BriefingState,

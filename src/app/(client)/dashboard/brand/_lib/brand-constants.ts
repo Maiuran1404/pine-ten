@@ -13,7 +13,7 @@ import {
   Facebook,
   Youtube,
 } from 'lucide-react'
-import type { TabId } from './brand-types'
+import type { TabId, TabGroup } from './brand-types'
 
 export const industries = [
   'Technology',
@@ -141,3 +141,24 @@ export const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
   { id: 'voice', label: 'Voice', icon: MessageSquare },
   { id: 'competitors', label: 'Competitors', icon: Swords },
 ]
+
+export const TAB_GROUPS: TabGroup[] = [
+  { id: 'identity', label: 'Identity', tabs: ['company', 'colors', 'typography'] },
+  { id: 'presence', label: 'Presence', tabs: ['social', 'audiences', 'competitors'] },
+  { id: 'strategy', label: 'Strategy', tabs: ['positioning', 'voice'] },
+]
+
+/**
+ * Fields checked to determine completion status per tab.
+ * 'audiences' is special — completion depends on the audiences array, not BrandData fields.
+ */
+export const TAB_COMPLETION_FIELDS: Record<TabId, string[]> = {
+  company: ['name', 'industry', 'description', 'tagline', 'website'],
+  colors: ['primaryColor', 'secondaryColor', 'accentColor'],
+  typography: ['primaryFont', 'secondaryFont', 'keywords'],
+  social: ['contactEmail', 'socialLinks'],
+  audiences: [], // computed from audiences array
+  positioning: ['positioning'],
+  voice: ['brandVoice'],
+  competitors: ['competitors'],
+}

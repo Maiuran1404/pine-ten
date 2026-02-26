@@ -14,6 +14,10 @@ import {
   Youtube,
   Mail,
   Phone,
+  Quote,
+  Check,
+  X,
+  Swords,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BrandData, Audience, TabId } from '../_lib/brand-types'
@@ -22,6 +26,13 @@ interface BrandPreviewProps {
   brand: BrandData
   audiences: Audience[]
   activeTab: TabId
+}
+
+const previewAnimation = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.15 },
 }
 
 function CompanyPreview({ brand }: { brand: BrandData }) {
@@ -38,9 +49,14 @@ function CompanyPreview({ brand }: { brand: BrandData }) {
         ) : (
           <div
             className="w-14 h-14 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: `${brand.primaryColor || '#10b981'}20` }}
+            style={{
+              backgroundColor: `${brand.primaryColor || '#4a7c4a' /* --crafted-green */}20`,
+            }}
           >
-            <span className="text-xl font-bold" style={{ color: brand.primaryColor || '#10b981' }}>
+            <span
+              className="text-xl font-bold"
+              style={{ color: brand.primaryColor || '#4a7c4a' /* --crafted-green */ }}
+            >
               {brand.name?.charAt(0)?.toUpperCase() || 'C'}
             </span>
           </div>
@@ -113,7 +129,7 @@ function ColorsPreview({ brand }: { brand: BrandData }) {
       <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card">
         <div
           className="h-12 flex items-center px-4"
-          style={{ backgroundColor: brand.primaryColor || '#10b981' }}
+          style={{ backgroundColor: brand.primaryColor || '#4a7c4a' /* --crafted-green */ }}
         >
           <span className="text-white text-sm font-medium">{brand.name || 'Preview'}</span>
         </div>
@@ -121,7 +137,7 @@ function ColorsPreview({ brand }: { brand: BrandData }) {
           <div className="flex gap-2">
             <div
               className="h-8 px-4 rounded-lg flex items-center"
-              style={{ backgroundColor: brand.primaryColor || '#10b981' }}
+              style={{ backgroundColor: brand.primaryColor || '#4a7c4a' /* --crafted-green */ }}
             >
               <span className="text-white text-xs">Primary</span>
             </div>
@@ -147,11 +163,11 @@ function ColorsPreview({ brand }: { brand: BrandData }) {
               <div
                 key={i}
                 className="h-16 rounded-lg p-3"
-                style={{ backgroundColor: `${color || '#10b981'}15` }}
+                style={{ backgroundColor: `${color || '#4a7c4a' /* --crafted-green */}15` }}
               >
                 <div
                   className="w-5 h-5 rounded mb-2"
-                  style={{ backgroundColor: color || '#10b981' }}
+                  style={{ backgroundColor: color || '#4a7c4a' /* --crafted-green */ }}
                 />
                 <div className="h-1.5 bg-muted-foreground/20 rounded w-3/4" />
               </div>
@@ -263,7 +279,7 @@ function SocialPreview({ brand }: { brand: BrandData }) {
         <div
           className="h-20 relative"
           style={{
-            background: `linear-gradient(135deg, ${brand.primaryColor || '#10b981'}, ${brand.secondaryColor || '#3b82f6'})`,
+            background: `linear-gradient(135deg, ${brand.primaryColor || '#4a7c4a' /* --crafted-green */}, ${brand.secondaryColor || '#3b82f6'})`,
           }}
         />
         <div className="px-6 -mt-8 pb-4">
@@ -279,7 +295,7 @@ function SocialPreview({ brand }: { brand: BrandData }) {
               <div className="w-16 h-16 rounded-xl bg-card border-4 border-card shadow-sm flex items-center justify-center">
                 <span
                   className="text-xl font-bold"
-                  style={{ color: brand.primaryColor || '#10b981' }}
+                  style={{ color: brand.primaryColor || '#4a7c4a' /* --crafted-green */ }}
                 >
                   {brand.name?.charAt(0)?.toUpperCase() || 'C'}
                 </span>
@@ -380,24 +396,186 @@ function AudiencesPreview({ audiences }: { audiences: Audience[] }) {
   )
 }
 
+function PositioningPreview({ brand }: { brand: BrandData }) {
+  const positioning = brand.positioning
+  if (!positioning?.uvp && !positioning?.differentiators?.length) {
+    return <div className="text-center text-muted-foreground text-sm">No positioning data yet</div>
+  }
+
+  return (
+    <div className="w-full max-w-md space-y-4">
+      {/* UVP Card */}
+      {positioning?.uvp && (
+        <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card p-6">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+            Value Proposition
+          </span>
+          <p className="text-base text-foreground mt-2 leading-relaxed font-medium">
+            {positioning.uvp}
+          </p>
+        </div>
+      )}
+
+      {/* Mission */}
+      {positioning?.missionStatement && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">Mission</span>
+          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+            {positioning.missionStatement}
+          </p>
+        </div>
+      )}
+
+      {/* Differentiator chips */}
+      {positioning?.differentiators && positioning.differentiators.length > 0 && (
+        <div className="flex flex-wrap gap-2 justify-center">
+          {positioning.differentiators.map((d, i) => (
+            <span
+              key={i}
+              className="px-3 py-1.5 rounded-full text-xs border border-primary/20 bg-primary/10 text-primary font-medium"
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function VoicePreview({ brand }: { brand: BrandData }) {
+  const voice = brand.brandVoice
+  if (!voice?.brandPromise && !voice?.toneDoList?.length && !voice?.toneDontList?.length) {
+    return <div className="text-center text-muted-foreground text-sm">No voice guidelines yet</div>
+  }
+
+  return (
+    <div className="w-full max-w-md space-y-4">
+      {/* Brand promise quote */}
+      {voice?.brandPromise && (
+        <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card p-6">
+          <Quote className="w-5 h-5 text-muted-foreground/40 mb-2" />
+          <p className="text-base text-foreground italic leading-relaxed">{voice.brandPromise}</p>
+          <span className="text-xs text-muted-foreground mt-3 block uppercase tracking-wider">
+            Brand Promise
+          </span>
+        </div>
+      )}
+
+      {/* Tone do/don't columns */}
+      {voice?.toneDoList?.length || voice?.toneDontList?.length ? (
+        <div className="grid grid-cols-2 gap-3">
+          {/* Do column */}
+          <div className="rounded-xl border border-border bg-card p-4">
+            <span className="text-xs font-medium text-crafted-green uppercase tracking-wider flex items-center gap-1.5">
+              <Check className="w-3 h-3" />
+              Do
+            </span>
+            <ul className="mt-2 space-y-1.5">
+              {(voice?.toneDoList || []).slice(0, 4).map((item, i) => (
+                <li key={i} className="text-xs text-muted-foreground">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Don't column */}
+          <div className="rounded-xl border border-border bg-card p-4">
+            <span className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
+              <X className="w-3 h-3" />
+              Don&apos;t
+            </span>
+            <ul className="mt-2 space-y-1.5">
+              {(voice?.toneDontList || []).slice(0, 4).map((item, i) => (
+                <li key={i} className="text-xs text-muted-foreground">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Messaging pillars */}
+      {voice?.messagingPillars && voice.messagingPillars.length > 0 && (
+        <div className="flex flex-wrap gap-2 justify-center">
+          {voice.messagingPillars.map((pillar, i) => (
+            <span
+              key={i}
+              className="px-3 py-1 rounded-full text-xs border border-primary/20 bg-primary/10 text-primary"
+            >
+              {pillar}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CompetitorsPreview({ brand }: { brand: BrandData }) {
+  const competitors = brand.competitors || []
+  if (competitors.length === 0) {
+    return <div className="text-center text-muted-foreground text-sm">No competitors added yet</div>
+  }
+
+  return (
+    <div className="w-full max-w-md space-y-3">
+      {competitors.slice(0, 4).map((competitor, i) => (
+        <div key={i} className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Swords className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium text-foreground text-sm truncate">
+              {competitor.name || `Competitor ${i + 1}`}
+            </span>
+          </div>
+          {competitor.positioning && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+              {competitor.positioning}
+            </p>
+          )}
+          <div className="flex gap-4">
+            {competitor.strengths && (
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] text-crafted-green uppercase tracking-wider font-medium">
+                  Strengths
+                </span>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                  {competitor.strengths}
+                </p>
+              </div>
+            )}
+            {competitor.weaknesses && (
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] text-destructive uppercase tracking-wider font-medium">
+                  Weaknesses
+                </span>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                  {competitor.weaknesses}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function BrandPreview({ brand, audiences, activeTab }: BrandPreviewProps) {
   const [mobileExpanded, setMobileExpanded] = useState(false)
 
   const previewContent = (
     <AnimatePresence mode="wait">
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.1 }}
-        className="w-full flex justify-center"
-      >
+      <motion.div key={activeTab} {...previewAnimation} className="w-full flex justify-center">
         {activeTab === 'company' && <CompanyPreview brand={brand} />}
         {activeTab === 'colors' && <ColorsPreview brand={brand} />}
         {activeTab === 'typography' && <TypographyPreview brand={brand} />}
         {activeTab === 'social' && <SocialPreview brand={brand} />}
         {activeTab === 'audiences' && <AudiencesPreview audiences={audiences} />}
+        {activeTab === 'positioning' && <PositioningPreview brand={brand} />}
+        {activeTab === 'voice' && <VoicePreview brand={brand} />}
+        {activeTab === 'competitors' && <CompetitorsPreview brand={brand} />}
       </motion.div>
     </AnimatePresence>
   )
@@ -405,13 +583,13 @@ export function BrandPreview({ brand, audiences, activeTab }: BrandPreviewProps)
   return (
     <>
       {/* Desktop preview */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 bg-muted border-l border-border items-center justify-center p-8 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 bg-accent dark:bg-muted border-l border-border items-center justify-center p-8 relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `radial-gradient(circle at 50% 30%, ${
-              brand.primaryColor || '#10b981'
-            }15 0%, transparent 50%)`,
+              brand.primaryColor || '#4a7c4a' /* --crafted-green */
+            }08 0%, transparent 50%)`,
           }}
         />
         <div className="relative z-10 w-full max-w-md">

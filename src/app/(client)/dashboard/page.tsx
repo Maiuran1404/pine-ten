@@ -1324,7 +1324,7 @@ function DashboardContent() {
                   ) : (
                     <>
                       {/* Options List (non-Social Media categories) */}
-                      <div className="px-5 pb-4 flex flex-col gap-2">
+                      <div className="px-5 pb-3 space-y-1">
                         {category?.options.map((option) => {
                           const isSelected = selectedOption === option.title
                           return (
@@ -1332,56 +1332,45 @@ function DashboardContent() {
                               key={option.title}
                               onClick={() => setSelectedOption(isSelected ? null : option.title)}
                               className={cn(
-                                'group relative flex items-start gap-4 rounded-xl px-4 py-3.5 text-left transition-all duration-150 ring-1 ring-inset',
+                                'group w-full flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-left transition-all duration-150',
                                 isSelected
-                                  ? 'ring-[var(--crafted-green)] bg-[var(--crafted-green)]/[0.06] dark:bg-[var(--crafted-green)]/10 shadow-sm'
-                                  : 'ring-black/[0.06] dark:ring-white/[0.06] hover:ring-[var(--crafted-green)]/40 hover:bg-[var(--crafted-green)]/[0.02]'
+                                  ? 'bg-crafted-green/8 ring-1 ring-crafted-sage/30'
+                                  : 'hover:bg-muted/40'
                               )}
                             >
-                              {/* Radio indicator (left-aligned) */}
-                              <div
-                                className={cn(
-                                  'mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-all duration-150',
-                                  isSelected
-                                    ? 'border-[var(--crafted-green)] bg-[var(--crafted-green)]'
-                                    : 'border-black/15 dark:border-white/20 group-hover:border-[var(--crafted-green)]/50'
-                                )}
-                              >
-                                {isSelected && (
-                                  <div className="w-[6px] h-[6px] rounded-full bg-white" />
-                                )}
-                              </div>
                               {/* Icon */}
                               <div
                                 className={cn(
-                                  'w-10 h-10 rounded-lg shrink-0 flex items-center justify-center transition-colors',
-                                  isSelected
-                                    ? 'bg-[var(--crafted-green)] text-white'
-                                    : 'bg-muted text-muted-foreground'
+                                  'w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-colors duration-150',
+                                  isSelected ? 'bg-crafted-green/15' : 'bg-muted/60'
                                 )}
                               >
-                                <option.icon className="w-5 h-5" />
+                                <option.icon
+                                  className={cn(
+                                    'w-[18px] h-[18px] transition-colors duration-150',
+                                    isSelected ? 'text-crafted-sage' : 'text-muted-foreground'
+                                  )}
+                                />
                               </div>
+
                               {/* Content */}
-                              <div className="flex-1 min-w-0 pt-0.5">
+                              <div className="flex-1 min-w-0">
                                 <h3
                                   className={cn(
-                                    'font-semibold text-sm leading-snug transition-colors',
-                                    isSelected
-                                      ? 'text-[var(--crafted-forest)] dark:text-[var(--crafted-sage)]'
-                                      : 'text-foreground'
+                                    'text-sm font-medium leading-snug transition-colors duration-150',
+                                    isSelected ? 'text-foreground' : 'text-foreground/70'
                                   )}
                                 >
                                   {option.title}
                                 </h3>
-                                <p className="text-[13px] text-muted-foreground leading-relaxed mt-1">
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                                   {option.description}
                                 </p>
                               </div>
 
-                              {/* Thumbnail (#22) */}
+                              {/* Thumbnail */}
                               {templateImageMap.get(option.optionKey) && (
-                                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                                <div className="shrink-0 w-11 h-11 rounded-lg overflow-hidden bg-muted/40">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={templateImageMap.get(option.optionKey)}
@@ -1390,14 +1379,40 @@ function DashboardContent() {
                                   />
                                 </div>
                               )}
+
+                              {/* Selection indicator */}
+                              <div
+                                className={cn(
+                                  'w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-all duration-150',
+                                  isSelected
+                                    ? 'border-crafted-sage bg-crafted-sage'
+                                    : 'border-muted-foreground/25'
+                                )}
+                              >
+                                {isSelected && (
+                                  <svg
+                                    className="w-2.5 h-2.5 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={3}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
                             </button>
                           )
                         })}
                       </div>
 
                       {/* Notes + Continue */}
-                      <div className="px-5 pb-5 pt-1 border-t border-border/20">
-                        <div className="relative mt-3">
+                      <div className="px-5 pb-5 pt-1">
+                        <div className="border-t border-border/50 pt-4">
                           <textarea
                             value={modalNotes}
                             onChange={(e) => setModalNotes(e.target.value)}
@@ -1420,36 +1435,38 @@ function DashboardContent() {
                             }}
                             rows={2}
                             placeholder="Add any specific details or requirements..."
-                            className="w-full min-h-[60px] px-4 py-2.5 pr-28 rounded-lg border border-border/40 bg-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-[var(--crafted-green)]/20 focus:border-[var(--crafted-green)]/40 text-sm transition-all resize-none"
+                            className="w-full bg-muted/30 rounded-lg border border-border/50 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none resize-none focus:border-crafted-sage/40 focus:bg-muted/40 transition-colors duration-150"
                           />
-                          <button
-                            onClick={() => {
-                              if (!selectedOption) {
-                                toast.error('Select an option to continue')
-                                return
-                              }
-                              const option = category?.options.find(
-                                (o) => o.title === selectedOption
-                              )
-                              if (option) {
-                                const fullPrompt = modalNotes
-                                  ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
-                                  : `${option.prompt}. ${option.description}`
-                                handleSubmit(fullPrompt)
-                                setSelectedCategory(null)
-                                setSelectedOption(null)
-                                setModalNotes('')
-                              }
-                            }}
-                            className={cn(
-                              'absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 text-white rounded-md font-medium text-sm transition-all duration-150',
-                              !selectedOption
-                                ? 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                                : 'bg-[var(--crafted-green)] hover:bg-[var(--crafted-forest)]'
-                            )}
-                          >
-                            Continue
-                          </button>
+                          <div className="flex justify-end mt-3">
+                            <button
+                              onClick={() => {
+                                if (!selectedOption) {
+                                  toast.error('Select an option to continue')
+                                  return
+                                }
+                                const option = category?.options.find(
+                                  (o) => o.title === selectedOption
+                                )
+                                if (option) {
+                                  const fullPrompt = modalNotes
+                                    ? `${option.prompt}. ${option.description} Additional notes: ${modalNotes}`
+                                    : `${option.prompt}. ${option.description}`
+                                  handleSubmit(fullPrompt)
+                                  setSelectedCategory(null)
+                                  setSelectedOption(null)
+                                  setModalNotes('')
+                                }
+                              }}
+                              disabled={!selectedOption}
+                              className={cn(
+                                'px-5 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
+                                'disabled:opacity-40 disabled:cursor-not-allowed',
+                                'bg-crafted-green text-white hover:bg-crafted-forest'
+                              )}
+                            >
+                              Continue
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </>

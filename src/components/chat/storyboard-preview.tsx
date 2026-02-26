@@ -176,8 +176,8 @@ function StoryboardPreviewContent({
         {/* Voiceover/script as subtitles */}
         {scene.voiceover && (
           <div className="absolute bottom-16 left-0 right-0 flex justify-center px-8">
-            <p className="text-sm text-white bg-black/70 px-4 py-2 rounded-lg backdrop-blur-sm max-w-2xl text-center leading-relaxed">
-              {scene.voiceover}
+            <p className="text-sm text-white bg-black/70 px-4 py-2 rounded-lg backdrop-blur-sm max-w-2xl text-center leading-relaxed italic">
+              &ldquo;{scene.voiceover}&rdquo;
             </p>
           </div>
         )}

@@ -15,7 +15,7 @@ import { ContentOutlinePanel } from './brief-panel/content-outline'
 import { MoodboardCard } from './moodboard/moodboard-card'
 import { MoodboardSectionHeader } from './moodboard/moodboard-header'
 import { ColorSwatches } from './moodboard/color-swatches'
-import { STAGE_DESCRIPTIONS, getStageHint } from '@/lib/chat-progress'
+import { getStageHint } from '@/lib/chat-progress'
 
 // =============================================================================
 // TYPES
@@ -355,7 +355,7 @@ function MoodboardContent({
 
 export function UnifiedPanel({
   currentStage,
-  completedStages,
+  completedStages: _completedStages,
   brief,
   onBriefUpdate,
   briefCompletion: _briefCompletion,

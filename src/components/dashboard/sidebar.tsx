@@ -22,7 +22,6 @@ import {
   Building2,
   User,
   MessageSquare,
-  Globe,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -52,7 +51,6 @@ export function AppSidebar() {
 
   // Features menu items
   const features = [
-    { icon: Globe, label: 'Website', href: '/dashboard/website-project' },
     { icon: CheckSquare, label: 'Tasks', href: '/dashboard/tasks' },
     { icon: FolderOpen, label: 'Assets', href: '/dashboard/designs' },
     { icon: Building2, label: 'My Brand', href: '/dashboard/brand' },

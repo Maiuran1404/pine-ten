@@ -19,12 +19,14 @@ interface LabeledProgressBarProps {
   currentStage: ChatStage
   completedStages: ChatStage[]
   progressPercentage: number
+  stageDescription?: string
   className?: string
 }
 
 export function LabeledProgressBar({
   currentStage,
   completedStages,
+  stageDescription,
   className,
 }: LabeledProgressBarProps) {
   const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
@@ -66,7 +68,7 @@ export function LabeledProgressBar({
 
         {/* Current step label */}
         <span className="text-[10px] text-muted-foreground/60 font-medium">
-          {STAGE_DESCRIPTIONS[currentStage]}
+          {stageDescription ?? STAGE_DESCRIPTIONS[currentStage]}
         </span>
 
         {/* Mobile dots */}

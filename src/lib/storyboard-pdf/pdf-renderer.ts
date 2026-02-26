@@ -3,10 +3,7 @@ import 'server-only'
 import { createElement } from 'react'
 import fs from 'fs'
 import path from 'path'
-import type {
-  StoryboardPdfInput,
-  StoryboardPdfScene,
-} from '@/lib/validations/storyboard-pdf-schema'
+import type { StoryboardPdfInput } from '@/lib/validations/storyboard-pdf-schema'
 import { StoryboardCover } from './slides/storyboard-cover'
 import { StoryboardScenePage } from './slides/storyboard-scene-page'
 import { StoryboardSummary } from './slides/storyboard-summary'
@@ -33,23 +30,6 @@ function formatTotalDuration(totalSeconds: number): string {
   return sec > 0 ? `${min}m ${sec}s` : `${min}m`
 }
 
-/**
- * Pair scenes into groups of 2 for side-by-side rendering.
- */
-function pairScenes(
-  scenes: StoryboardPdfScene[]
-): Array<[StoryboardPdfScene] | [StoryboardPdfScene, StoryboardPdfScene]> {
-  const pairs: Array<[StoryboardPdfScene] | [StoryboardPdfScene, StoryboardPdfScene]> = []
-  for (let i = 0; i < scenes.length; i += 2) {
-    if (i + 1 < scenes.length) {
-      pairs.push([scenes[i], scenes[i + 1]])
-    } else {
-      pairs.push([scenes[i]])
-    }
-  }
-  return pairs
-}
-
 export async function renderStoryboardHTML(data: StoryboardPdfInput): Promise<string> {
   const { renderToStaticMarkup } = await import('react-dom/server')
   const figureWhiteLogo = readLogoAsBase64('craftedfigurewhite.png')
@@ -63,9 +43,8 @@ export async function renderStoryboardHTML(data: StoryboardPdfInput): Promise<st
     day: 'numeric',
   })
 
-  const scenePairs = pairScenes(data.scenes)
-  // total pages: cover + scene pages + summary
-  const totalPages = 1 + scenePairs.length + 1
+  // total pages: cover + 1 scene per page + summary
+  const totalPages = 1 + data.scenes.length + 1
 
   const slides = [
     // Cover page
@@ -75,11 +54,11 @@ export async function renderStoryboardHTML(data: StoryboardPdfInput): Promise<st
       date,
       figureLogoSrc: figureWhiteLogo,
     }),
-    // Scene pages (2 per page)
-    ...scenePairs.map((pair, i) =>
+    // Scene pages (1 per page, full detail)
+    ...data.scenes.map((scene, i) =>
       createElement(StoryboardScenePage, {
         key: i,
-        scenes: pair,
+        scene,
         pageNumber: i + 2,
         totalPages,
         logoSrc: combinedBlackLogo,

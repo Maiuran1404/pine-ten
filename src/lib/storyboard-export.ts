@@ -26,6 +26,7 @@ export async function exportStoryboardPDF(
       resolvedImageUrl: scene.resolvedImageUrl,
       resolvedImageSource: scene.resolvedImageSource,
       resolvedImageAttribution: scene.resolvedImageAttribution,
+      hookData: scene.hookData,
     })),
   }
 

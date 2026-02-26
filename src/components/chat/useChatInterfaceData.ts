@@ -15,7 +15,11 @@ import { getDraft } from '@/lib/chat-drafts'
 import { useMoodboard } from '@/lib/hooks/use-moodboard'
 import { useBrief } from '@/lib/hooks/use-brief'
 import { useBrandData } from '@/lib/hooks/use-brand-data'
-import { calculateChatStage, calculateChatStageFromBriefing } from '@/lib/chat-progress'
+import {
+  calculateChatStage,
+  calculateChatStageFromBriefing,
+  getContextualStageDescription,
+} from '@/lib/chat-progress'
 import { useBriefingStateMachine } from '@/hooks/use-briefing-state-machine'
 import { useChatMessages } from '@/hooks/use-chat-messages'
 import { useFileUpload } from '@/hooks/use-file-upload'
@@ -329,7 +333,16 @@ export function useChatInterfaceData({
   // ─── Progress calculation ───────────────────────────────────
   const progressState = useMemo(() => {
     if (_briefingState) {
-      return calculateChatStageFromBriefing(_briefingState.stage)
+      const result = calculateChatStageFromBriefing(_briefingState.stage)
+      return {
+        ...result,
+        stageDescription: getContextualStageDescription(_briefingState.stage, {
+          deliverableCategory: _briefingState.deliverableCategory,
+          structure: _briefingState.structure,
+          videoNarrative: _briefingState.videoNarrative,
+          narrativeApproved: _briefingState.narrativeApproved,
+        }),
+      }
     }
     return calculateChatStage({
       messages: chatMessages.messages,
@@ -344,6 +357,10 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     _briefingState?.stage,
+    _briefingState?.deliverableCategory,
+    _briefingState?.structure,
+    _briefingState?.videoNarrative,
+    _briefingState?.narrativeApproved,
     chatMessages.messages,
     styleSelection.selectedStyles,
     styleSelection.selectedDeliverableStyles,

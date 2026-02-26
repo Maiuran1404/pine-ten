@@ -43,10 +43,10 @@ import {
   type SerializedBriefingState,
   deserialize,
   serialize,
-  evaluateTransitions,
-  getLegalTransitions,
+  deriveStage,
+  STAGE_PIPELINE,
+  STALL_CONFIG,
 } from '@/lib/ai/briefing-state-machine'
-import { inferStageFromResponse } from '@/lib/ai/briefing-stage-inferrer'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
 import { deriveToneOfVoice } from '@/lib/ai/brand-utils'
@@ -346,7 +346,6 @@ async function handler(request: NextRequest) {
 
       let updatedBriefingState: SerializedBriefingState | undefined
       let stateMachineOverride: { systemPrompt: string; stage?: string } | undefined
-      let preAiInference: ReturnType<typeof inferFromMessage> | undefined
       let styleHint: string | undefined
 
       if (clientBriefingState) {
@@ -368,8 +367,6 @@ async function handler(request: NextRequest) {
             message: lastUserMessage,
             conversationHistory: messages.slice(0, -1).map((m: { content: string }) => m.content),
           })
-          preAiInference = inference // Store for post-AI fallback
-
           // 2. Apply inference to LiveBrief
           briefingState.brief = applyInferenceToBrief(
             briefingState.brief,
@@ -906,80 +903,18 @@ async function handler(request: NextRequest) {
           }
 
           // ================================================================
-          // 10. Parse [BRIEF_META] from AI response for stage transitions
+          // PHASE A: Parse all data (zero stage changes)
           // ================================================================
-          // Snapshot turn count before BRIEF_META processing increments it,
-          // so retry guards can check whether this was truly the first turn.
-          const turnsBeforeBriefMeta = briefingState.turnsInCurrentStage
-          const stageBeforeBriefMeta = briefingState.stage
           const lastContent = messages[messages.length - 1]?.content || ''
           const isSceneFeedback = /\[Feedback on Scene/.test(lastContent)
           const isRegenerationRequest = /regenerate.*storyboard/i.test(lastContent)
+          const stageBeforePhaseA = briefingState.stage
 
-          let briefMetaResult = parseBriefMeta(response.content)
-
-          // BRIEF_META retry: if missing, attempt a single retry with reinforcement
-          if (!briefMetaResult.success) {
-            logger.debug('BRIEF_META not found — attempting single retry with reinforcement')
-            try {
-              const metaRetryResponse = await chat(
-                [
-                  ...messages,
-                  { role: 'assistant', content: response.content },
-                  {
-                    role: 'user',
-                    content: `You forgot the required [BRIEF_META] block. Reply with ONLY the block. Format: [BRIEF_META]{"stage":"${briefingState.stage}","fieldsExtracted":{}}[/BRIEF_META]`,
-                  },
-                ],
-                session.user.id,
-                chatContext,
-                stateMachineOverride
-              )
-              const retryMetaResult = parseBriefMeta(metaRetryResponse.content)
-              if (retryMetaResult.success) {
-                briefMetaResult = retryMetaResult
-                logger.debug('BRIEF_META retry succeeded')
-              } else {
-                logger.debug('BRIEF_META retry did not produce valid meta — using tiered fallback')
-              }
-            } catch (retryErr) {
-              logger.warn({ err: retryErr }, 'BRIEF_META retry failed')
-            }
-          }
+          // 10. Parse [BRIEF_META] for field extraction only (ignore stage claim)
+          const briefMetaResult = parseBriefMeta(response.content)
 
           if (briefMetaResult.success && briefMetaResult.data) {
-            // 11. Validate declared stage against legal transitions
-            const declaredStage = briefMetaResult.data.stage
-            // STRATEGIC_REVIEW is temporarily disabled — remap to MOODBOARD
-            const effectiveStage =
-              declaredStage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : declaredStage
-            const legal = getLegalTransitions(briefingState.stage)
-            if (legal.includes(effectiveStage)) {
-              // Guard: Don't skip ahead past INSPIRATION on the first turn.
-              const blockingAdvance =
-                briefingState.stage === 'STRUCTURE' &&
-                effectiveStage === 'INSPIRATION' &&
-                briefingState.turnsInCurrentStage === 0
-
-              if (blockingAdvance) {
-                // Stay in current stage — the advance will happen on the next user turn
-                briefingState.turnsInCurrentStage += 1
-              } else if (effectiveStage !== briefingState.stage) {
-                briefingState.stage = effectiveStage
-                briefingState.turnsInCurrentStage = 0
-              } else {
-                briefingState.turnsInCurrentStage += 1
-              }
-            } else {
-              // Illegal transition — log warning, keep current stage
-              logger.warn(
-                { declaredStage, currentStage: briefingState.stage, legal },
-                'AI declared illegal stage transition — keeping current stage'
-              )
-              briefingState.turnsInCurrentStage += 1
-            }
-
-            // 12. Apply AI-extracted fieldsExtracted to boost brief field confidence to 0.9
+            // Apply AI-extracted fieldsExtracted to boost brief field confidence to 0.9
             const fields = briefMetaResult.data.fieldsExtracted
             if (fields.taskType && briefingState.brief.taskType.confidence < 0.9) {
               briefingState.brief.taskType = {
@@ -1024,100 +959,18 @@ async function handler(request: NextRequest) {
               const mapped = catMap[fields.deliverableCategory]
               if (mapped) briefingState.deliverableCategory = mapped
             }
-          } else {
-            // BRIEF_META missing or failed — tiered fallback
-            console.warn(
-              `[chat/route] BRIEF_META missing from AI response at stage=${briefingState.stage}, turn=${briefingState.turnsInCurrentStage}. Using tiered fallback.`
-            )
-            logger.debug(
-              { parseError: briefMetaResult.parseError },
-              'BRIEF_META not found — using tiered fallback'
-            )
-
-            // Tier 1: Content-based stage inference
-            const stageInference = inferStageFromResponse(response.content, briefingState.stage)
-            if (stageInference) {
-              logger.debug(
-                {
-                  inferredStage: stageInference.stage,
-                  confidence: stageInference.confidence,
-                  reason: stageInference.reason,
-                },
-                'Stage inferred from response content (Tier 1)'
-              )
-              if (stageInference.stage !== briefingState.stage) {
-                // STRATEGIC_REVIEW is temporarily disabled — skip it entirely
-                const inferredStage =
-                  stageInference.stage === 'STRATEGIC_REVIEW' ? 'MOODBOARD' : stageInference.stage
-                // Preserve blocking guards for STRUCTURE/INSPIRATION transitions
-                const blockingAdvance =
-                  briefingState.stage === 'STRUCTURE' && inferredStage === 'INSPIRATION'
-                if (blockingAdvance) {
-                  briefingState.turnsInCurrentStage += 1
-                } else if (inferredStage !== briefingState.stage) {
-                  briefingState.stage = inferredStage
-                  briefingState.turnsInCurrentStage = 0
-                } else {
-                  briefingState.turnsInCurrentStage += 1
-                }
-              } else {
-                briefingState.turnsInCurrentStage += 1
-              }
-            } else if (preAiInference) {
-              // Tier 2: Data-driven evaluateTransitions()
-              const nextStage = evaluateTransitions(briefingState, preAiInference)
-              if (nextStage !== briefingState.stage) {
-                briefingState.stage = nextStage
-                briefingState.turnsInCurrentStage = 0
-              } else {
-                briefingState.turnsInCurrentStage += 1
-                // Tier 3: Force-advance if stuck in the same stage for too many turns
-                if (briefingState.turnsInCurrentStage >= 3) {
-                  const forceNext = evaluateTransitions(
-                    { ...briefingState, turnsInCurrentStage: 999 },
-                    preAiInference
-                  )
-                  if (forceNext !== briefingState.stage) {
-                    console.warn(
-                      `[chat/route] Force-advancing from ${briefingState.stage} to ${forceNext} after ${briefingState.turnsInCurrentStage} turns`
-                    )
-                    briefingState.stage = forceNext
-                    briefingState.turnsInCurrentStage = 0
-                  }
-                }
-              }
-            } else {
-              briefingState.turnsInCurrentStage += 1
-            }
-
-            // Detect explicit submit intent as additional fallback
-            const lastMsg = messages[messages.length - 1]?.content || ''
-            const isVideoWithoutStoryboard =
-              briefingState.deliverableCategory === 'video' &&
-              (!briefingState.structure ||
-                briefingState.structure.type !== 'storyboard' ||
-                !('scenes' in briefingState.structure) ||
-                (briefingState.structure as { scenes?: unknown[] }).scenes?.length === 0)
-            if (
-              (briefingState.stage === 'REVIEW' || briefingState.stage === 'DEEPEN') &&
-              /\b(yes|yeah|yep|sure|go ahead|do it|ready|let'?s?\s*(go|submit|do)|submit\s*(this|it|now|the|my)?|send\s*(this|it)|confirm|looks?\s*good)\b/i.test(
-                lastMsg
-              )
-            ) {
-              if (isVideoWithoutStoryboard) {
-                // Don't advance to SUBMIT — force storyboard generation first
-                briefingState.stage = 'STRUCTURE'
-                briefingState.turnsInCurrentStage = 0
-              } else {
-                briefingState.stage = 'SUBMIT'
-                briefingState.turnsInCurrentStage = 0
-              }
-            }
           }
 
           // ================================================================
           // 13. Parse structure/review/task markers from AI response
           // ================================================================
+
+          // Normalize variant markers before parsing — AI sometimes outputs
+          // [VIDEO_STORYBOARD] instead of [STORYBOARD]
+          response.content = response.content
+            .replace(/\[VIDEO_STORYBOARD\]/g, '[STORYBOARD]')
+            .replace(/\[\/VIDEO_STORYBOARD\]/g, '[/STORYBOARD]')
+
           const categoryToStructureType: Record<string, StructureType> = {
             video: 'storyboard',
             website: 'layout',
@@ -1204,14 +1057,9 @@ async function handler(request: NextRequest) {
               briefingState.narrativeApproved = true
             }
 
-            // Narrative retry: if at STRUCTURE stage for video, no narrative parsed,
-            // and no storyboard either, retry with narrative format reinforcement
-            if (
-              briefingState.stage === 'STRUCTURE' &&
-              !videoNarrativeData &&
-              !structureData &&
-              !briefingState.narrativeApproved
-            ) {
+            // Narrative retry: if no narrative parsed and no storyboard either,
+            // retry with narrative format reinforcement
+            if (!videoNarrativeData && !structureData && !briefingState.narrativeApproved) {
               logger.debug('VIDEO_NARRATIVE not parsed — attempting retry with reinforcement')
               try {
                 const reinforcement = getVideoNarrativeReinforcement()
@@ -1244,35 +1092,9 @@ async function handler(request: NextRequest) {
           }
 
           // ================================================================
-          // 14-15. Auto-advance on structure/review parse
-          // ================================================================
-
-          // Auto-advance STRUCTURE -> INSPIRATION when structure data was just parsed
-          // on a non-first turn (first turn stays in STRUCTURE for user interaction)
-          // For video: only auto-advance when narrative is approved AND storyboard is parsed
-          if (briefingState.stage === 'STRUCTURE' && structureData && turnsBeforeBriefMeta > 0) {
-            const isVideo = briefingState.deliverableCategory === 'video'
-            if (!isVideo || briefingState.narrativeApproved) {
-              briefingState.stage = 'INSPIRATION'
-              briefingState.turnsInCurrentStage = 0
-            }
-          }
-
-          // Auto-advance STRATEGIC_REVIEW -> MOODBOARD when review data is parsed
-          if (briefingState.stage === 'STRATEGIC_REVIEW' && strategicReviewData) {
-            briefingState.stage = 'MOODBOARD'
-            briefingState.turnsInCurrentStage = 0
-          }
-
-          // ================================================================
           // 16. Structure retry with format reinforcement (single attempt)
           // ================================================================
-          if (
-            briefingState.stage === 'STRUCTURE' &&
-            stageBeforeBriefMeta === 'STRUCTURE' &&
-            !structureData &&
-            structureType
-          ) {
+          if (stageBeforePhaseA === 'STRUCTURE' && !structureData && structureType) {
             logger.debug(
               { structureType },
               'Structure not parsed at STRUCTURE stage — retrying with format reinforcement'
@@ -1325,12 +1147,7 @@ async function handler(request: NextRequest) {
           // ================================================================
           // 16a. ELABORATE retry with format reinforcement (single attempt)
           // ================================================================
-          if (
-            briefingState.stage === 'ELABORATE' &&
-            !structureData &&
-            structureType &&
-            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'ELABORATE')
-          ) {
+          if (stageBeforePhaseA === 'ELABORATE' && !structureData && structureType) {
             logger.debug(
               { structureType },
               'Structure not parsed at ELABORATE stage — retrying with format reinforcement'
@@ -1462,11 +1279,7 @@ async function handler(request: NextRequest) {
           // ================================================================
           // 16b. Strategic review retry with format reinforcement (single attempt)
           // ================================================================
-          if (
-            briefingState.stage === 'STRATEGIC_REVIEW' &&
-            !strategicReviewData &&
-            (turnsBeforeBriefMeta === 0 || stageBeforeBriefMeta !== 'STRATEGIC_REVIEW')
-          ) {
+          if (stageBeforePhaseA === 'STRATEGIC_REVIEW' && !strategicReviewData) {
             // Check if the AI wrote strategic assessment text without the marker
             const hasReviewText =
               response.content.includes('strategic') ||
@@ -1499,9 +1312,7 @@ async function handler(request: NextRequest) {
                   strategicReviewData = retryParsed.data
                   briefingState.strategicReview = retryParsed.data
                   logger.debug('Strategic review retry succeeded')
-                  // Auto-advance after successful retry
-                  briefingState.stage = 'MOODBOARD'
-                  briefingState.turnsInCurrentStage = 0
+                  // Stage advance handled by deriveStage() in Phase B
                 } else {
                   logger.warn(
                     { parseError: retryParsed.parseError },
@@ -1511,6 +1322,39 @@ async function handler(request: NextRequest) {
               } catch (retryErr) {
                 logger.warn({ err: retryErr }, 'Strategic review format reinforcement retry failed')
               }
+            }
+          }
+
+          // ================================================================
+          // PHASE B: Derive stage (single call, after ALL parsing + retries)
+          // ================================================================
+          // Don't regress past SUBMIT — it's a terminal state set by explicit user action
+          if (briefingState.stage !== 'SUBMIT') {
+            const previousStage = briefingState.stage
+            let derived = deriveStage(briefingState)
+
+            // Stall safety valve: if stuck at the same stage for too many turns,
+            // force-advance past the unsatisfied gate. Keeps deriveStage() pure
+            // while preventing permanent stuck states when extraction fails.
+            if (derived === previousStage && derived !== 'REVIEW') {
+              const stall = STALL_CONFIG[derived]
+              if (
+                stall?.maxTurnsBeforeRecommend &&
+                briefingState.turnsInCurrentStage >= stall.maxTurnsBeforeRecommend
+              ) {
+                const gateIdx = STAGE_PIPELINE.findIndex((g) => g.stage === derived)
+                if (gateIdx >= 0 && gateIdx < STAGE_PIPELINE.length - 1) {
+                  derived = STAGE_PIPELINE[gateIdx + 1].stage
+                }
+              }
+            }
+
+            briefingState.stage = derived
+
+            if (briefingState.stage !== previousStage) {
+              briefingState.turnsInCurrentStage = 0
+            } else {
+              briefingState.turnsInCurrentStage += 1
             }
           }
 
@@ -1568,6 +1412,7 @@ async function handler(request: NextRequest) {
       let cleanContent = response.content.replace(/\[TASK_READY\][\s\S]*?\[\/TASK_READY\]/, '')
       cleanContent = cleanContent
         .replace(/\[STORYBOARD\][\s\S]*?\[\/STORYBOARD\]/g, '')
+        .replace(/\[VIDEO_STORYBOARD\][\s\S]*?\[\/VIDEO_STORYBOARD\]/g, '')
         .replace(/\[LAYOUT\][\s\S]*?\[\/LAYOUT\]/g, '')
         .replace(/\[CALENDAR\][\s\S]*?\[\/CALENDAR\]/g, '')
         .replace(/\[DESIGN_SPEC\][\s\S]*?\[\/DESIGN_SPEC\]/g, '')

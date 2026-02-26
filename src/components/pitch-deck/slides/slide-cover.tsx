@@ -91,13 +91,13 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
         </div>
       </div>
 
-      {/* Large gecko/figure logo - head in focus, bleeds off right and bottom */}
+      {/* Large gecko/figure logo — rendered at ~900px to avoid upscale blur from 632px asset */}
       {figureLogoSrc && (
         <div
           style={{
             position: 'absolute',
-            top: -20,
-            right: -280,
+            top: 80,
+            right: -40,
             zIndex: 1,
           }}
         >
@@ -105,7 +105,12 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
           <img
             src={figureLogoSrc}
             alt="Crafted figure"
-            style={{ height: 1400, objectFit: 'contain', opacity: 0.95 }}
+            style={{
+              height: 900,
+              objectFit: 'contain',
+              opacity: 0.92,
+              imageRendering: 'auto',
+            }}
           />
         </div>
       )}

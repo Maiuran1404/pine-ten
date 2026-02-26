@@ -606,3 +606,24 @@
 .loading-grain-wordmark {
   animation: loading-grain-fade-in 1.2s ease-out forwards;
 }
+
+/* Shimmer skeleton for storyboard regeneration overlay */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    color-mix(in srgb, var(--muted-foreground), transparent 80%) 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}

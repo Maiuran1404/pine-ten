@@ -162,20 +162,6 @@ const DEFAULT_LOADING_MESSAGES = [
 // LOADING INDICATOR
 // =============================================================================
 
-const STAGE_LOADING_CONTEXT: Record<string, string> = {
-  EXTRACT: 'Understanding your project',
-  TASK_TYPE: 'Identifying deliverable type',
-  INTENT: 'Clarifying project goals',
-  STRUCTURE: 'Building your layout',
-  INSPIRATION: 'Finding visual references',
-  ELABORATE: 'Adding detail to sections',
-  STRATEGIC_REVIEW: 'Preparing strategic review',
-  MOODBOARD: 'Curating visual direction',
-  REVIEW: 'Preparing summary',
-  DEEPEN: 'Diving deeper',
-  SUBMIT: 'Finalizing brief',
-}
-
 function LoadingIndicator({
   requestStartTime,
   briefingStage,
@@ -245,12 +231,7 @@ function LoadingIndicator({
               }}
             />
           </motion.div>
-          {/* Stage context + Timer */}
-          {briefingStage && STAGE_LOADING_CONTEXT[briefingStage] && elapsedTime > 2 && (
-            <span className="text-xs text-muted-foreground/40">
-              {STAGE_LOADING_CONTEXT[briefingStage]}
-            </span>
-          )}
+          {/* Timer */}
           {elapsedTime > 0 && (
             <span className="text-xs text-muted-foreground/60 tabular-nums">{elapsedTime}s</span>
           )}
@@ -752,9 +733,33 @@ export function ChatMessageList({
                                       onViewStoryboard={onViewStoryboard}
                                     />
                                   )}
+                                {message.structureData.type === 'storyboard' &&
+                                  structurePanelVisible && (
+                                    <button
+                                      type="button"
+                                      onClick={onViewStoryboard}
+                                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/40 bg-muted/30 hover:bg-muted/50 transition-colors text-sm text-muted-foreground hover:text-foreground group"
+                                    >
+                                      <Film className="h-4 w-4 text-crafted-green" />
+                                      <span>Your storyboard is on the canvas</span>
+                                      <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                  )}
                                 {message.structureData.type === 'layout' &&
                                   !structurePanelVisible && (
                                     <LayoutPreview sections={message.structureData.sections} />
+                                  )}
+                                {message.structureData.type === 'layout' &&
+                                  structurePanelVisible && (
+                                    <button
+                                      type="button"
+                                      onClick={onViewStoryboard}
+                                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/40 bg-muted/30 hover:bg-muted/50 transition-colors text-sm text-muted-foreground hover:text-foreground group"
+                                    >
+                                      <Palette className="h-4 w-4 text-crafted-green" />
+                                      <span>Your page layout is on the canvas</span>
+                                      <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
                                   )}
                                 {message.structureData.type === 'calendar' &&
                                   !structurePanelVisible && (

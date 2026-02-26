@@ -4,7 +4,7 @@ import {
   type TaskProposal,
   type ChatMessage,
 } from '@/components/chat/types'
-import type { BriefingStage } from '@/lib/ai/briefing-state-machine'
+import type { BriefingStage, VideoNarrative } from '@/lib/ai/briefing-state-machine'
 
 interface ProgressState {
   messages: ChatMessage[]
@@ -292,4 +292,47 @@ export function isStageCompleted(stage: ChatStage, completedStages: ChatStage[])
  */
 export function isCurrentStage(stage: ChatStage, currentStage: ChatStage): boolean {
   return stage === currentStage
+}
+
+/**
+ * Generate a context-aware label from BriefingStage + state data.
+ * This replaces static STAGE_DESCRIPTIONS for the active step label.
+ */
+export function getContextualStageDescription(
+  briefingStage: BriefingStage,
+  context?: {
+    deliverableCategory?: string | null
+    structure?: unknown
+    videoNarrative?: VideoNarrative | null
+    narrativeApproved?: boolean
+  }
+): string {
+  switch (briefingStage) {
+    case 'EXTRACT':
+    case 'TASK_TYPE':
+    case 'INTENT':
+      return 'Describe your project'
+    case 'STRUCTURE':
+      if (context?.deliverableCategory === 'video') {
+        if (!context.videoNarrative) return 'Building story concept'
+        if (!context.narrativeApproved) return 'Review story concept'
+        return 'Building storyboard'
+      }
+      return 'Define your structure'
+    case 'INSPIRATION':
+      return 'Choose your visual style'
+    case 'ELABORATE':
+      return 'Refining the details'
+    case 'STRATEGIC_REVIEW':
+      return 'Strategic review'
+    case 'MOODBOARD':
+      return 'Refine your moodboard'
+    case 'REVIEW':
+    case 'DEEPEN':
+      return 'Review your brief'
+    case 'SUBMIT':
+      return 'Ready to submit'
+    default:
+      return 'Building your brief'
+  }
 }

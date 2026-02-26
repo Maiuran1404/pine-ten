@@ -313,53 +313,45 @@ function ServiceModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
         onClick={onClose}
       />
 
       {/* Modal */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed inset-x-4 top-[10%] mx-auto max-w-md z-50 sm:inset-x-auto"
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+        className="fixed inset-x-4 top-[12%] mx-auto max-w-[420px] z-50 sm:inset-x-auto"
       >
-        <div className="bg-white rounded-3xl shadow-2xl shadow-crafted-sage/20 overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="p-6 pb-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className={cn(
-                    'w-14 h-14 rounded-xl flex items-center justify-center',
-                    'bg-gradient-to-br from-crafted-mint/30 to-crafted-sage/30'
-                  )}
-                >
-                  <Icon className="h-7 w-7 text-crafted-green" />
+          <div className="px-6 pt-6 pb-5">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-crafted-green/10 flex items-center justify-center">
+                  <Icon className="h-[18px] w-[18px] text-crafted-sage" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{service.label}</h2>
-                  <p className="text-muted-foreground text-sm mt-0.5">
-                    Pick one and add some notes, we&apos;ll help you with writing the prompts!
-                  </p>
-                </div>
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">
+                  {service.label}
+                </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 -mt-2 text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                className="p-1.5 -mr-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
+            <p className="text-[13px] text-muted-foreground leading-relaxed pl-12">
+              Pick a type and add details — we&apos;ll craft the perfect brief.
+            </p>
           </div>
-
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mx-6" />
 
           {/* Sub-options */}
           {subOptions.length > 0 && (
-            <div className="p-4 space-y-1">
+            <div className="px-4 pb-2 space-y-1">
               {subOptions.map((option, index) => {
                 const OptionIcon = option.icon
                 const isSelected = selectedSubOption === option.id
@@ -367,32 +359,29 @@ function ServiceModal({
                 return (
                   <motion.button
                     key={option.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.04 }}
                     onClick={() => onSubOptionSelect(option.id)}
                     className={cn(
-                      'w-full flex items-center gap-4 p-4 rounded-2xl text-left',
-                      'transition-all duration-200',
+                      'w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-left',
+                      'transition-all duration-150',
                       isSelected
-                        ? 'bg-crafted-mint/20 border-2 border-crafted-sage'
-                        : 'hover:bg-muted/50 border-2 border-transparent'
+                        ? 'bg-crafted-green/8 ring-1 ring-crafted-sage/30'
+                        : 'hover:bg-muted/40'
                     )}
                   >
                     {/* Option Icon */}
                     <div
                       className={cn(
-                        'w-14 h-14 rounded-xl flex items-center justify-center shrink-0',
-                        'bg-gradient-to-br',
-                        isSelected
-                          ? 'from-crafted-sage/40 to-crafted-mint/50'
-                          : 'from-crafted-mint/15 to-crafted-mint/25'
+                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-150',
+                        isSelected ? 'bg-crafted-green/15' : 'bg-muted/60'
                       )}
                     >
                       <OptionIcon
                         className={cn(
-                          'h-6 w-6',
-                          isSelected ? 'text-crafted-forest' : 'text-crafted-green-light'
+                          'h-[18px] w-[18px] transition-colors duration-150',
+                          isSelected ? 'text-crafted-sage' : 'text-muted-foreground'
                         )}
                       />
                     </div>
@@ -401,67 +390,78 @@ function ServiceModal({
                     <div className="flex-1 min-w-0">
                       <span
                         className={cn(
-                          'font-semibold block',
-                          isSelected ? 'text-foreground' : 'text-foreground/80'
+                          'text-sm font-medium block transition-colors duration-150',
+                          isSelected ? 'text-foreground' : 'text-foreground/70'
                         )}
                       >
                         {option.label}
                       </span>
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                         {option.description}
                       </p>
                     </div>
 
                     {/* Selection indicator */}
-                    {isSelected && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-5 h-5 rounded-full bg-crafted-green flex items-center justify-center"
-                      >
-                        <svg
-                          className="w-3 h-3 text-white"
+                    <div
+                      className={cn(
+                        'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150',
+                        isSelected
+                          ? 'border-crafted-sage bg-crafted-sage'
+                          : 'border-muted-foreground/25'
+                      )}
+                    >
+                      {isSelected && (
+                        <motion.svg
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.15 }}
+                          className="w-2.5 h-2.5 text-white"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
                           strokeWidth={3}
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </motion.div>
-                    )}
+                        </motion.svg>
+                      )}
+                    </div>
                   </motion.button>
                 )
               })}
             </div>
           )}
 
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mx-6" />
-
-          {/* Notes Input & Submit */}
-          <div className="p-6 pt-4 space-y-4">
-            <h3 className="font-semibold text-foreground">Would like to add something?</h3>
-            <div className="flex items-center gap-2 bg-muted/50 rounded-2xl border border-border p-1.5 pl-4 focus-within:border-crafted-sage transition-colors">
-              <input
-                type="text"
+          {/* Footer — notes + action */}
+          <div className="px-4 pb-4 pt-1">
+            <div className="border-t border-border/50 pt-4">
+              <textarea
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Add some notes"
-                className="flex-1 bg-transparent text-foreground/80 placeholder-muted-foreground outline-none text-sm py-2"
-              />
-              <button
-                onClick={onConfirm}
+                placeholder="Add any specific details or requirements..."
+                rows={2}
                 className={cn(
-                  'px-5 py-2.5 rounded-xl font-semibold text-sm text-white',
-                  'bg-gradient-to-r from-crafted-green-light to-crafted-green',
-                  'hover:from-crafted-green hover:to-crafted-forest',
-                  'transition-all duration-200',
-                  'shadow-lg shadow-crafted-green/25'
+                  'w-full bg-muted/30 rounded-lg border border-border/50 px-3.5 py-2.5',
+                  'text-sm text-foreground placeholder-muted-foreground/50',
+                  'outline-none resize-none',
+                  'focus:border-crafted-sage/40 focus:bg-muted/40',
+                  'transition-colors duration-150'
                 )}
-              >
-                Create Prompt
-              </button>
+              />
+              <div className="flex justify-end mt-3">
+                <button
+                  onClick={onConfirm}
+                  className={cn(
+                    'px-5 py-2 rounded-lg text-sm font-medium',
+                    'bg-crafted-green text-white',
+                    'hover:bg-crafted-forest',
+                    'transition-colors duration-150',
+                    'disabled:opacity-40 disabled:cursor-not-allowed'
+                  )}
+                  disabled={!selectedSubOption}
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           </div>
         </div>

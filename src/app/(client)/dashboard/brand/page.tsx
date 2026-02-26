@@ -27,9 +27,10 @@ export default function BrandPage() {
     isLoading,
     isSaving,
     isRescanning,
-    isResettingOnboarding,
     copiedColor,
     hasChanges,
+    tabCompletionStatus,
+    overallCompletion,
     updateField,
     addBrandColor,
     removeBrandColor,
@@ -45,11 +46,17 @@ export default function BrandPage() {
     return (
       <div className="min-h-full bg-background">
         <div className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-5">
-            <Skeleton className="h-7 w-32" />
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+            </div>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
           <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>
       </div>
@@ -60,8 +67,8 @@ export default function BrandPage() {
     return (
       <div className="min-h-full bg-background">
         <div className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-5">
-            <h1 className="text-xl font-semibold text-foreground">My Brand</h1>
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <h1 className="text-base font-semibold text-foreground">My Brand</h1>
           </div>
         </div>
         <div className="flex items-center justify-center py-20">
@@ -91,9 +98,9 @@ export default function BrandPage() {
 
   return (
     <div className="min-h-full bg-background relative overflow-hidden">
-      {/* Curtain light effect - only visible in dark mode */}
+      {/* Curtain light effect */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none dark:opacity-100 opacity-0"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[600px] pointer-events-none opacity-60 dark:opacity-100"
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%,
             color-mix(in srgb, var(--crafted-green) 8%, transparent) 0%,
@@ -107,35 +114,46 @@ export default function BrandPage() {
       />
 
       <BrandHeader
-        hasWebsite={!!brand.website}
+        brand={brand}
+        overallCompletion={overallCompletion}
         hasChanges={hasChanges}
         isSaving={isSaving}
         isRescanning={isRescanning}
         onSave={handleSave}
         onRescan={handleRescan}
+        onRedoOnboarding={handleRedoOnboarding}
       />
 
-      <div className="relative z-10 flex flex-col lg:flex-row min-h-full">
-        {/* Left side - Form */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:max-w-2xl">
-          <BrandTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="relative z-10 flex flex-col md:flex-row min-h-full">
+        {/* Left: nav rail */}
+        <div className="hidden md:block px-4 pt-6">
+          <BrandTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabCompletionStatus={tabCompletionStatus}
+          />
+        </div>
 
+        {/* Mobile tabs */}
+        <div className="md:hidden px-4 pt-4">
+          <BrandTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabCompletionStatus={tabCompletionStatus}
+          />
+        </div>
+
+        {/* Center: form content */}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:max-w-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: 0.15 }}
             >
-              {activeTab === 'company' && (
-                <CompanyTab
-                  brand={brand}
-                  isResettingOnboarding={isResettingOnboarding}
-                  updateField={updateField}
-                  onRedoOnboarding={handleRedoOnboarding}
-                />
-              )}
+              {activeTab === 'company' && <CompanyTab brand={brand} updateField={updateField} />}
               {activeTab === 'colors' && (
                 <ColorsTab
                   brand={brand}
@@ -168,7 +186,7 @@ export default function BrandPage() {
           </AnimatePresence>
         </div>
 
-        {/* Right side - Preview */}
+        {/* Right: preview */}
         <BrandPreview brand={brand} audiences={audiences} activeTab={activeTab} />
       </div>
     </div>

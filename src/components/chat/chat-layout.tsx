@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type MutableRefObject, ReactNode } from 'react'
+import { useState, useEffect, useRef, type MutableRefObject, ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ChevronLeft, ChevronRight, Film, Layout, Calendar, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,7 @@ interface ChatLayoutProps {
   currentStage: ChatStage
   completedStages: ChatStage[]
   progressPercentage: number
+  stageDescription?: string
   // Moodboard props
   moodboardItems: MoodboardItem[]
   onRemoveMoodboardItem: (id: string) => void
@@ -119,7 +120,6 @@ interface ChatLayoutProps {
   narrativeApproved?: boolean
   onApproveNarrative?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
-  onRegenerateNarrative?: () => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -142,6 +142,7 @@ export function ChatLayout({
   currentStage,
   completedStages,
   progressPercentage,
+  stageDescription,
   moodboardItems,
   onRemoveMoodboardItem,
   onClearMoodboard,
@@ -194,7 +195,6 @@ export function ChatLayout({
   narrativeApproved,
   onApproveNarrative,
   onNarrativeFieldEdit,
-  onRegenerateNarrative,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -204,6 +204,25 @@ export function ChatLayout({
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false)
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
   const [isMobileStructureOpen, setIsMobileStructureOpen] = useState(false)
+  const [canvasActive, setCanvasActive] = useState(false)
+  const canvasActiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Active panel signal — highlights the right panel when new content appears.
+  // Uses setTimeout(0) to schedule the activation asynchronously and avoid
+  // synchronous setState inside the effect body (react-hooks/set-state-in-effect).
+  const canvasShowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (videoNarrative || structureData) {
+      if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
+      if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
+      canvasShowTimerRef.current = setTimeout(() => setCanvasActive(true), 0)
+      canvasActiveTimerRef.current = setTimeout(() => setCanvasActive(false), 3000)
+    }
+    return () => {
+      if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
+      if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
+    }
+  }, [videoNarrative, structureData])
 
   // Expose imperative handle so children can open the structure view
   useEffect(() => {
@@ -222,15 +241,6 @@ export function ChatLayout({
 
   return (
     <div className={cn('flex flex-col h-full relative', className)}>
-      {/* Top Progress Bar - only shown in structure panel mode (full-width) */}
-      {showProgress && structurePanelVisible && (
-        <LabeledProgressBar
-          currentStage={currentStage}
-          completedStages={completedStages}
-          progressPercentage={progressPercentage}
-        />
-      )}
-
       {/* Main Content Area */}
       <div className="flex-1 flex min-h-0 relative">
         {/* ================================================================
@@ -258,13 +268,31 @@ export function ChatLayout({
             {/* Desktop: Resizable split between chat and structure panel */}
             <ResizablePanelGroup orientation="horizontal" className="hidden lg:flex h-full">
               <ResizablePanel id="chat" defaultSize={55} minSize={35} maxSize={65}>
-                <div className="flex flex-col h-full min-w-0 relative">
+                <div
+                  className={cn(
+                    'flex flex-col h-full min-w-0 relative transition-opacity duration-500',
+                    canvasActive && 'opacity-[0.92]'
+                  )}
+                >
                   <div className="flex-1 min-h-0">{children}</div>
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel id="structure" defaultSize={45} minSize={35} maxSize={65}>
-                <div className="flex flex-col h-full bg-muted/20">
+                <div
+                  className={cn(
+                    'flex flex-col h-full bg-muted/20 transition-all duration-500',
+                    canvasActive && 'ring-1 ring-crafted-sage/30'
+                  )}
+                >
+                  {showProgress && (
+                    <LabeledProgressBar
+                      currentStage={currentStage}
+                      completedStages={completedStages}
+                      progressPercentage={progressPercentage}
+                      stageDescription={stageDescription}
+                    />
+                  )}
                   <StructurePanel
                     structureType={structureType ?? null}
                     structureData={structureData ?? null}
@@ -303,7 +331,6 @@ export function ChatLayout({
                     narrativeApproved={narrativeApproved}
                     onApproveNarrative={onApproveNarrative}
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
-                    onRegenerateNarrative={onRegenerateNarrative}
                   />
                 </div>
               </ResizablePanel>
@@ -346,7 +373,6 @@ export function ChatLayout({
                     narrativeApproved={narrativeApproved}
                     onApproveNarrative={onApproveNarrative}
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
-                    onRegenerateNarrative={onRegenerateNarrative}
                   />
                 </div>
               </SheetContent>
@@ -388,6 +414,7 @@ export function ChatLayout({
                             currentStage={currentStage}
                             completedStages={completedStages}
                             progressPercentage={progressPercentage}
+                            stageDescription={stageDescription}
                           />
                         )}
                         <UnifiedPanel
@@ -446,6 +473,7 @@ export function ChatLayout({
                         currentStage={currentStage}
                         completedStages={completedStages}
                         progressPercentage={progressPercentage}
+                        stageDescription={stageDescription}
                       />
                     )}
 

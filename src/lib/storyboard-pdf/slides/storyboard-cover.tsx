@@ -98,13 +98,13 @@ export function StoryboardCover({
         </div>
       </div>
 
-      {/* Gecko/figure logo */}
+      {/* Gecko/figure logo — rendered at native 632×649 to avoid upscale blur */}
       {figureLogoSrc && (
         <div
           style={{
             position: 'absolute',
-            top: -20,
-            right: -280,
+            top: 80,
+            right: -40,
             zIndex: 1,
           }}
         >
@@ -112,7 +112,12 @@ export function StoryboardCover({
           <img
             src={figureLogoSrc}
             alt="Crafted figure"
-            style={{ height: 1400, objectFit: 'contain', opacity: 0.95 }}
+            style={{
+              height: 900,
+              objectFit: 'contain',
+              opacity: 0.92,
+              imageRendering: 'auto',
+            }}
           />
         </div>
       )}

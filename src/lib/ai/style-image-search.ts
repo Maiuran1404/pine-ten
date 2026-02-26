@@ -2,6 +2,14 @@ import 'server-only'
 import { logger } from '@/lib/logger'
 import { searchDesignReferences, type SerperImageResult } from './serper-image-search'
 import { searchPexelsPhotos, type PexelsPhoto } from './pexels-image-search'
+import { searchUnsplashForScene } from './unsplash-image-search'
+import { searchDribbbleForScene } from './dribbble-image-search'
+import { searchFlimForScene } from './flim-image-search'
+import { searchBehanceForScene } from './behance-image-search'
+import { searchDezeenForScene } from './dezeen-image-search'
+import { searchHouzzForScene } from './houzz-image-search'
+import { searchArenaForScene } from './arena-image-search'
+import type { StoryboardImage } from './storyboard-image-types'
 import {
   buildSearchTermsFromContext,
   buildDifferentSearchTerms,
@@ -20,7 +28,17 @@ export interface ImageSearchQuery {
 }
 
 export interface StyleImageAttribution {
-  source: 'serper' | 'pexels' | 'db'
+  source:
+    | 'serper'
+    | 'pexels'
+    | 'db'
+    | 'unsplash'
+    | 'dribbble'
+    | 'flim-ai'
+    | 'behance'
+    | 'dezeen'
+    | 'houzz'
+    | 'arena'
   domain: string
   sourceUrl: string
 }
@@ -166,7 +184,7 @@ function inferStyleAxis(title: string, domain: string): string {
 }
 
 // =============================================================================
-// SERPER -> DeliverableStyle MAPPER
+// SOURCE MAPPERS
 // =============================================================================
 
 function mapSerperToStyle(
@@ -213,13 +231,154 @@ function mapPexelsToStyle(
   }
 }
 
+function mapStoryboardImageToStyle(
+  img: StoryboardImage,
+  deliverableType: string,
+  styleAxis?: string
+): SearchedDeliverableStyle {
+  return {
+    id: img.id,
+    name: img.alt.slice(0, 80),
+    description: `via ${img.attribution.sourceName}`,
+    imageUrl: img.url,
+    deliverableType,
+    styleAxis: styleAxis || inferStyleAxis(img.alt, img.attribution.sourceName),
+    subStyle: null,
+    semanticTags: extractTagsFromTitle(img.alt),
+    attribution: {
+      source: img.source as StyleImageAttribution['source'],
+      domain: img.attribution.sourceName.toLowerCase().replace(/\s/g, '') + '.com',
+      sourceUrl: img.attribution.sourceUrl,
+    },
+  }
+}
+
+// =============================================================================
+// SOURCE PRIORITY BY DELIVERABLE CATEGORY
+// =============================================================================
+
+type SourceKey =
+  | 'behance'
+  | 'dezeen'
+  | 'houzz'
+  | 'unsplash'
+  | 'arena'
+  | 'dribbble'
+  | 'flim-ai'
+  | 'serper'
+  | 'pexels'
+
+function detectCategory(deliverableType: string): string {
+  const type = deliverableType.toLowerCase()
+
+  if (
+    type.includes('interior') ||
+    type.includes('architect') ||
+    type.includes('room') ||
+    type.includes('space') ||
+    type.includes('home')
+  ) {
+    return 'interior'
+  }
+  if (
+    type.includes('brand') ||
+    type.includes('logo') ||
+    type.includes('identity') ||
+    type.includes('design_asset')
+  ) {
+    return 'design'
+  }
+  if (
+    type.includes('video') ||
+    type.includes('reel') ||
+    type.includes('cinematic') ||
+    type.includes('launch_video')
+  ) {
+    return 'video'
+  }
+  if (
+    type.includes('social') ||
+    type.includes('instagram') ||
+    type.includes('linkedin') ||
+    type.includes('content') ||
+    type.includes('post')
+  ) {
+    return 'social'
+  }
+
+  return 'default'
+}
+
+const SOURCE_PRIORITY: Record<string, SourceKey[]> = {
+  interior: ['dezeen', 'houzz', 'behance', 'unsplash', 'arena', 'dribbble', 'serper', 'pexels'],
+  design: ['behance', 'dribbble', 'arena', 'unsplash', 'serper', 'pexels'],
+  video: ['flim-ai', 'unsplash', 'behance', 'serper', 'pexels'],
+  social: ['behance', 'unsplash', 'dribbble', 'arena', 'serper', 'pexels'],
+  default: ['behance', 'unsplash', 'dribbble', 'arena', 'dezeen', 'serper', 'pexels'],
+}
+
+// Max parallel sources to fire — keeps latency and API usage reasonable
+const MAX_PARALLEL_SOURCES = 5
+
+// =============================================================================
+// SOURCE DISPATCHERS
+// =============================================================================
+
+type SourceFetcher = (
+  terms: string[],
+  query: string,
+  count: number,
+  deliverableType: string,
+  styleAxis?: string
+) => Promise<SearchedDeliverableStyle[]>
+
+const sourceFetchers: Record<SourceKey, SourceFetcher> = {
+  behance: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchBehanceForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  dezeen: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchDezeenForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  houzz: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchHouzzForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  unsplash: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchUnsplashForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  arena: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchArenaForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  dribbble: async (terms, _q, count, dt, sa) => {
+    const imgs = await searchDribbbleForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  'flim-ai': async (terms, _q, count, dt, sa) => {
+    const imgs = await searchFlimForScene(terms, count)
+    return imgs.map((img) => mapStoryboardImageToStyle(img, dt, sa))
+  },
+  serper: async (_terms, query, count, dt, sa) => {
+    const results = await searchDesignReferences(query, count)
+    return results.map((r) => mapSerperToStyle(r, dt, sa))
+  },
+  pexels: async (_terms, query, count, dt) => {
+    const photos = await searchPexelsPhotos(query, count)
+    return photos.map((p, i) => mapPexelsToStyle(p, dt, i))
+  },
+}
+
 // =============================================================================
 // MAIN SEARCH FUNCTION
 // =============================================================================
 
 /**
- * Search for style reference images using Serper.dev (Google Images), with
- * Pexels as fallback. Maps results to the DeliverableStyle interface.
+ * Search for style reference images using a multi-source pipeline.
+ * Sources are prioritized by deliverable type and queried in parallel.
+ * Results are collected in priority order and deduplicated.
  */
 export async function searchStyleImages(
   query: ImageSearchQuery,
@@ -248,43 +407,74 @@ export async function searchStyleImages(
     searchQuery = buildDifferentSearchTerms(searchQuery, excludeTerms)
   }
 
-  // Fetch more than needed to account for offset
-  const fetchCount = count + offset
+  // Build search terms array for sources that take term arrays
+  const searchTerms = searchQuery.split(/\s+/).filter(Boolean)
 
-  // Try Serper first
-  const serperResults = await searchDesignReferences(searchQuery, fetchCount)
+  // Determine source priority based on deliverable type
+  const category = detectCategory(query.deliverableType)
+  const prioritizedSources = SOURCE_PRIORITY[category] || SOURCE_PRIORITY.default
+  const sourcesToQuery = prioritizedSources.slice(0, MAX_PARALLEL_SOURCES)
 
-  if (serperResults.length >= 3) {
-    const styles = serperResults
-      .slice(offset, offset + count)
-      .map((r) => mapSerperToStyle(r, query.deliverableType, query.styleAxis))
+  // Request 3 images per source — we'll collect and trim
+  const perSourceCount = 3
 
-    logger.debug(
-      { query: searchQuery, resultCount: styles.length, source: 'serper' },
-      'Style image search complete'
-    )
-    return styles
+  // Fire all sources in parallel with individual timeouts (handled inside each source)
+  const sourcePromises = sourcesToQuery.map(async (sourceKey) => {
+    const fetcher = sourceFetchers[sourceKey]
+    try {
+      const results = await fetcher(
+        searchTerms,
+        searchQuery,
+        perSourceCount,
+        query.deliverableType,
+        query.styleAxis
+      )
+      return { sourceKey, results }
+    } catch (err) {
+      logger.debug({ err, source: sourceKey }, 'Source search failed in style pipeline')
+      return { sourceKey, results: [] as SearchedDeliverableStyle[] }
+    }
+  })
+
+  const settled = await Promise.allSettled(sourcePromises)
+
+  // Collect results in priority order
+  const resultsBySource = new Map<SourceKey, SearchedDeliverableStyle[]>()
+  for (const result of settled) {
+    if (result.status === 'fulfilled') {
+      resultsBySource.set(result.value.sourceKey, result.value.results)
+    }
   }
 
-  // Fallback to Pexels
+  // Merge in priority order, deduplicating by URL
+  const seenUrls = new Set<string>()
+  const allResults: SearchedDeliverableStyle[] = []
+
+  for (const sourceKey of prioritizedSources) {
+    const sourceResults = resultsBySource.get(sourceKey) || []
+    for (const style of sourceResults) {
+      if (!seenUrls.has(style.imageUrl)) {
+        seenUrls.add(style.imageUrl)
+        allResults.push(style)
+      }
+    }
+  }
+
+  // Apply offset and count
+  const sliced = allResults.slice(offset, offset + count)
+
+  const sourcesUsed = [...new Set(sliced.map((s) => s.attribution?.source).filter(Boolean))]
   logger.debug(
-    { query: searchQuery, serperCount: serperResults.length },
-    'Serper returned insufficient results — falling back to Pexels'
+    {
+      query: searchQuery,
+      category,
+      sourcesQueried: sourcesToQuery,
+      sourcesUsed,
+      totalCollected: allResults.length,
+      resultCount: sliced.length,
+    },
+    'Multi-source style image search complete'
   )
 
-  const pexelsPhotos = await searchPexelsPhotos(searchQuery, fetchCount)
-  if (pexelsPhotos.length > 0) {
-    const styles = pexelsPhotos
-      .slice(offset, offset + count)
-      .map((p, i) => mapPexelsToStyle(p, query.deliverableType, offset + i))
-
-    logger.debug(
-      { query: searchQuery, resultCount: styles.length, source: 'pexels' },
-      'Pexels fallback search complete'
-    )
-    return styles
-  }
-
-  logger.warn({ query: searchQuery }, 'No results from Serper or Pexels')
-  return []
+  return sliced
 }

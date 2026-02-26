@@ -9,6 +9,10 @@ export type ImageSource =
   | 'pexels'
   | 'unsplash'
   | 'dribbble'
+  | 'behance'
+  | 'dezeen'
+  | 'houzz'
+  | 'arena'
 export type ImageMediaType = 'still' | 'gif'
 
 export interface StoryboardImageAttribution {

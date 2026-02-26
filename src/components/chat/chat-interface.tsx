@@ -244,7 +244,7 @@ export function ChatInterface({
     narrativeApproved,
     handleApproveNarrative,
     handleNarrativeFieldEdit,
-    handleRegenerateNarrative,
+    handleRegenerateNarrative: _handleRegenerateNarrative,
 
     // Website inspiration
     websiteInspirations,
@@ -319,6 +319,11 @@ export function ChatInterface({
         currentStage={progressState.currentStage}
         completedStages={progressState.completedStages}
         progressPercentage={progressState.progressPercentage}
+        stageDescription={
+          'stageDescription' in progressState
+            ? (progressState.stageDescription as string)
+            : undefined
+        }
         moodboardItems={moodboardItems}
         onRemoveMoodboardItem={removeMoodboardItem}
         onClearMoodboard={clearMoodboard}
@@ -365,7 +370,6 @@ export function ChatInterface({
         narrativeApproved={narrativeApproved}
         onApproveNarrative={handleApproveNarrative}
         onNarrativeFieldEdit={handleNarrativeFieldEdit}
-        onRegenerateNarrative={handleRegenerateNarrative}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}

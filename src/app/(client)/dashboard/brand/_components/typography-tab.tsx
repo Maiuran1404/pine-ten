@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { SectionCard } from './section-card'
 import type { BrandData } from '../_lib/brand-types'
 
 interface TypographyTabProps {
@@ -49,46 +50,46 @@ export function TypographyTab({ brand, updateField }: TypographyTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label className="text-muted-foreground text-sm">Primary Font (Headings)</Label>
-          <Input
-            value={brand.primaryFont || ''}
-            onChange={(e) => updateField('primaryFont', e.target.value)}
-            placeholder="e.g., Inter, Roboto"
-            className="h-11"
-          />
-          {brand.primaryFont && (
-            <p
-              className="text-lg font-bold text-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
-              style={{ fontFamily: brand.primaryFont }}
-            >
-              The quick brown fox
-            </p>
-          )}
+      <SectionCard title="Typefaces" description="Fonts used across your brand materials">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-sm">Primary Font (Headings)</Label>
+            <Input
+              value={brand.primaryFont || ''}
+              onChange={(e) => updateField('primaryFont', e.target.value)}
+              placeholder="e.g., Inter, Roboto"
+              className="h-11"
+            />
+            {brand.primaryFont && (
+              <p
+                className="text-lg font-bold text-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
+                style={{ fontFamily: brand.primaryFont }}
+              >
+                The quick brown fox
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-sm">Secondary Font (Body)</Label>
+            <Input
+              value={brand.secondaryFont || ''}
+              onChange={(e) => updateField('secondaryFont', e.target.value)}
+              placeholder="e.g., Open Sans, Lato"
+              className="h-11"
+            />
+            {brand.secondaryFont && (
+              <p
+                className="text-base text-muted-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
+                style={{ fontFamily: brand.secondaryFont }}
+              >
+                The quick brown fox
+              </p>
+            )}
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label className="text-muted-foreground text-sm">Secondary Font (Body)</Label>
-          <Input
-            value={brand.secondaryFont || ''}
-            onChange={(e) => updateField('secondaryFont', e.target.value)}
-            placeholder="e.g., Open Sans, Lato"
-            className="h-11"
-          />
-          {brand.secondaryFont && (
-            <p
-              className="text-base text-muted-foreground mt-3 p-3 bg-muted rounded-lg border border-border"
-              style={{ fontFamily: brand.secondaryFont }}
-            >
-              The quick brown fox
-            </p>
-          )}
-        </div>
-      </div>
+      </SectionCard>
 
-      {/* Keywords */}
-      <div className="space-y-3">
-        <Label className="text-muted-foreground text-sm">Brand Keywords</Label>
+      <SectionCard title="Brand Keywords" description="Words that define your brand personality">
         <div className="flex flex-wrap gap-2">
           {brand.keywords.map((keyword, index) => (
             <span
@@ -133,7 +134,7 @@ export function TypographyTab({ brand, updateField }: TypographyTabProps) {
             </Button>
           </div>
         </div>
-      </div>
+      </SectionCard>
     </div>
   )
 }

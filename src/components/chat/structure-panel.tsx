@@ -89,7 +89,6 @@ interface StructurePanelProps {
   narrativeApproved?: boolean
   onApproveNarrative?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
-  onRegenerateNarrative?: () => void
   className?: string
 }
 
@@ -237,7 +236,6 @@ export function StructurePanel({
   narrativeApproved,
   onApproveNarrative,
   onNarrativeFieldEdit,
-  onRegenerateNarrative,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -285,8 +283,6 @@ export function StructurePanel({
           narrative={videoNarrative}
           onApprove={onApproveNarrative}
           onFieldEdit={onNarrativeFieldEdit}
-          onRegenerate={onRegenerateNarrative ?? (() => {})}
-          isRegenerating={isRegenerating}
         />
       </div>
     )

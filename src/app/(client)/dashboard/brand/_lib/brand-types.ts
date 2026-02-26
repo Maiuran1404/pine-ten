@@ -89,3 +89,13 @@ export type TabId =
   | 'positioning'
   | 'voice'
   | 'competitors'
+
+export type TabGroupId = 'identity' | 'presence' | 'strategy'
+
+export interface TabGroup {
+  id: TabGroupId
+  label: string
+  tabs: TabId[]
+}
+
+export type TabCompletionStatus = 'empty' | 'partial' | 'complete'

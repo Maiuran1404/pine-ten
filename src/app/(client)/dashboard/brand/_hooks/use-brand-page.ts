@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useCsrfContext } from '@/providers/csrf-provider'
 import { queryKeys } from '@/hooks/use-queries'
-import type { BrandData, Audience } from '../_lib/brand-types'
+import type { BrandData, Audience, TabId, TabCompletionStatus } from '../_lib/brand-types'
+import { TAB_COMPLETION_FIELDS } from '../_lib/brand-constants'
 
 async function fetchBrandData(): Promise<BrandData | null> {
   const response = await fetch('/api/brand')
@@ -54,7 +55,7 @@ export function useBrandPage() {
 
   // The brand exposed to consumers: local edits take precedence over server data
   const brand = localEdits ?? brandQuery.data ?? null
-  const audiences = audiencesQuery.data ?? []
+  const audiences = useMemo(() => audiencesQuery.data ?? [], [audiencesQuery.data])
   const isLoading = brandQuery.isLoading || audiencesQuery.isLoading
   const hasChanges = localEdits !== null
 
@@ -209,6 +210,85 @@ export function useBrandPage() {
     },
   })
 
+  // ── Completeness calculation ─────────────────────────────────────
+
+  const tabCompletionStatus = useMemo((): Record<TabId, TabCompletionStatus> => {
+    if (!brand) {
+      return {
+        company: 'empty',
+        colors: 'empty',
+        typography: 'empty',
+        social: 'empty',
+        audiences: 'empty',
+        positioning: 'empty',
+        voice: 'empty',
+        competitors: 'empty',
+      }
+    }
+
+    const result = {} as Record<TabId, TabCompletionStatus>
+
+    for (const [tabId, fields] of Object.entries(TAB_COMPLETION_FIELDS) as [TabId, string[]][]) {
+      if (tabId === 'audiences') {
+        result[tabId] = audiences.length > 0 ? 'complete' : 'empty'
+        continue
+      }
+
+      if (fields.length === 0) {
+        result[tabId] = 'empty'
+        continue
+      }
+
+      let filled = 0
+      for (const field of fields) {
+        const value = brand[field as keyof BrandData]
+        if (value == null) continue
+        if (typeof value === 'string' && value.trim()) filled++
+        else if (Array.isArray(value) && value.length > 0) filled++
+        else if (typeof value === 'object' && !Array.isArray(value)) {
+          const hasAny = Object.values(value as Record<string, unknown>).some(
+            (v) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0)
+          )
+          if (hasAny) filled++
+        }
+      }
+
+      if (filled === 0) result[tabId] = 'empty'
+      else if (filled >= fields.length) result[tabId] = 'complete'
+      else result[tabId] = 'partial'
+    }
+
+    return result
+  }, [brand, audiences])
+
+  const overallCompletion = useMemo((): number => {
+    if (!brand) return 0
+
+    const allFields = Object.entries(TAB_COMPLETION_FIELDS)
+      .filter(([tabId]) => tabId !== 'audiences')
+      .flatMap(([, fields]) => fields)
+
+    let filled = 0
+    const total = allFields.length + 1 // +1 for audiences
+
+    for (const field of allFields) {
+      const value = brand[field as keyof BrandData]
+      if (value == null) continue
+      if (typeof value === 'string' && value.trim()) filled++
+      else if (Array.isArray(value) && value.length > 0) filled++
+      else if (typeof value === 'object' && !Array.isArray(value)) {
+        const hasAny = Object.values(value as Record<string, unknown>).some(
+          (v) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0)
+        )
+        if (hasAny) filled++
+      }
+    }
+
+    if (audiences.length > 0) filled++
+
+    return Math.round((filled / total) * 100)
+  }, [brand, audiences])
+
   // ── Handlers (stable references matching old API) ────────────────
 
   const handleSave = useCallback(async () => {
@@ -255,6 +335,8 @@ export function useBrandPage() {
     isResettingOnboarding,
     copiedColor,
     hasChanges,
+    tabCompletionStatus,
+    overallCompletion,
     updateField,
     addBrandColor,
     removeBrandColor,

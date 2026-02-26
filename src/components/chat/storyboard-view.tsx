@@ -630,6 +630,10 @@ function SceneThumbnail({
         eyecannndy: 'Eyecannndy',
         unsplash: 'Unsplash',
         dribbble: 'Dribbble',
+        behance: 'Behance',
+        dezeen: 'Dezeen',
+        houzz: 'Houzz',
+        arena: 'Are.na',
       }[sceneImageData.primarySource]
     : null
 
@@ -886,7 +890,7 @@ function RichSceneCard({
           {scene.voiceover && (
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
               <span className="font-medium text-muted-foreground/80">Script:</span>{' '}
-              {scene.voiceover}
+              <span className="italic">&ldquo;{scene.voiceover}&rdquo;</span>
             </p>
           )}
           {scene.visualNote && (
@@ -1029,7 +1033,7 @@ export function RichStoryboardPanel({
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
   const [regenConfirm, setRegenConfirm] = useState(false)
-  const [_regenLoadingMsg, setRegenLoadingMsg] = useState(0)
+  const [regenLoadingMsg, setRegenLoadingMsg] = useState(0)
   const [detailScene, setDetailScene] = useState<StoryboardScene | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -1259,24 +1263,94 @@ export function RichStoryboardPanel({
         {/* Skeleton loading during regeneration (#3) */}
         {isRegenerating && (
           <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[2px]">
+            {/* Background: shimmer skeleton grid */}
             <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
-              {scenes.map((scene) => (
+              {scenes.map((scene, i) => (
                 <div
                   key={scene.sceneNumber}
-                  className="rounded-lg border border-border/30 overflow-hidden animate-pulse"
+                  className="rounded-lg border border-border/30 overflow-hidden"
                 >
-                  <div className="aspect-video bg-muted/40" />
+                  <div
+                    className="aspect-video skeleton-shimmer"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
                   <div className="p-3 space-y-2">
-                    <div className="h-3 w-20 bg-muted/30 rounded" />
-                    <div className="h-4 w-3/4 bg-muted/30 rounded" />
-                    <div className="h-3 w-full bg-muted/20 rounded" />
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
-                      <RefreshCw className="h-3 w-3 animate-spin" />
-                      <span>Updating Scene {scene.sceneNumber}...</span>
-                    </div>
+                    <div
+                      className="h-3 w-20 skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.15 + 0.05}s` }}
+                    />
+                    <div
+                      className="h-4 w-3/4 skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.15 + 0.1}s` }}
+                    />
+                    <div
+                      className="h-3 w-full skeleton-shimmer rounded"
+                      style={{ animationDelay: `${i * 0.15 + 0.15}s` }}
+                    />
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Foreground: centered glass-morphism status capsule */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="bg-background/90 backdrop-blur-md border border-border/50 shadow-lg rounded-xl px-6 py-5 flex flex-col items-center gap-3 min-w-[240px]"
+              >
+                {/* Layered icon */}
+                <div className="relative h-8 w-8">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <RefreshCw className="h-6 w-6 text-crafted-sage/60" />
+                  </motion.div>
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-crafted-green" />
+                  </motion.div>
+                </div>
+
+                {/* Rotating message text */}
+                <div className="h-5 overflow-hidden relative w-full text-center">
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={regenLoadingMsg}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-sm font-medium text-foreground/80"
+                    >
+                      {REGEN_LOADING_MESSAGES[regenLoadingMsg]}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-1 bg-muted/30 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-crafted-green rounded-full"
+                    initial={{ width: '4%' }}
+                    animate={{
+                      width: `${Math.max(4, ((regenLoadingMsg + 1) / REGEN_LOADING_MESSAGES.length) * 100)}%`,
+                    }}
+                    transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  />
+                </div>
+
+                {/* Step indicator */}
+                <p className="text-[10px] text-muted-foreground/50">
+                  Step {regenLoadingMsg + 1} of {REGEN_LOADING_MESSAGES.length}
+                </p>
+              </motion.div>
             </div>
           </div>
         )}
@@ -1412,6 +1486,24 @@ function SceneDetailDrawer({
         </div>
       )}
 
+      {/* Image attribution */}
+      {(scene.resolvedImageAttribution || sceneImageData?.attribution) && (
+        <div className="px-6 pt-2 pb-0">
+          <p className="text-[11px] text-muted-foreground">
+            {(() => {
+              const attr = scene.resolvedImageAttribution || sceneImageData?.attribution
+              if (!attr) return null
+              const credit = attr.photographer
+                ? `${attr.photographer} · ${attr.sourceName}`
+                : attr.filmTitle
+                  ? `${attr.filmTitle} · ${attr.sourceName}`
+                  : attr.sourceName
+              return credit
+            })()}
+          </p>
+        </div>
+      )}
+
       {/* Editable fields */}
       <div className="flex-1 px-6 py-4 space-y-5">
         {/* Title */}
@@ -1461,10 +1553,34 @@ function SceneDetailDrawer({
             />
           ) : (
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {scene.voiceover || 'No script yet'}
+              {scene.voiceover ? (
+                <span className="italic">&ldquo;{scene.voiceover}&rdquo;</span>
+              ) : (
+                'No script yet'
+              )}
             </p>
           )}
         </div>
+
+        {/* Full Script — only if it differs from voiceover */}
+        {scene.fullScript && scene.fullScript !== scene.voiceover && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Full Script
+            </label>
+            {onSceneEdit ? (
+              <EditableField
+                value={scene.fullScript}
+                field="fullScript"
+                onSave={onSceneEdit}
+                multiline
+                className="text-xs text-muted-foreground leading-relaxed"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground leading-relaxed">{scene.fullScript}</p>
+            )}
+          </div>
+        )}
 
         {/* Visual Note */}
         <div className="space-y-1.5">
@@ -1509,33 +1625,49 @@ function SceneDetailDrawer({
         {/* Hook data — scene 1 only */}
         {scene.hookData && <HookDataInline hookData={scene.hookData} />}
 
-        {/* Director Notes (elaboration) */}
-        {scene.directorNotes && (
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Director Notes
-            </label>
-            <p className="text-xs text-muted-foreground leading-relaxed">{scene.directorNotes}</p>
-          </div>
-        )}
+        {/* Production Notes grouping */}
+        {(scene.cameraNote || scene.transition || scene.directorNotes) && (
+          <div className="space-y-4">
+            {/* Separator */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="flex-1 border-t border-border" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Production Notes
+              </span>
+              <div className="flex-1 border-t border-border" />
+            </div>
 
-        {/* Camera Note */}
-        {scene.cameraNote && (
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Camera
-            </label>
-            <p className="text-xs text-muted-foreground leading-relaxed">{scene.cameraNote}</p>
-          </div>
-        )}
+            {/* Camera Note */}
+            {scene.cameraNote && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Camera
+                </label>
+                <p className="text-xs text-muted-foreground leading-relaxed">{scene.cameraNote}</p>
+              </div>
+            )}
 
-        {/* Transition */}
-        {scene.transition && (
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Transition
-            </label>
-            <p className="text-xs text-muted-foreground leading-relaxed">{scene.transition}</p>
+            {/* Transition */}
+            {scene.transition && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Transition
+                </label>
+                <p className="text-xs text-muted-foreground leading-relaxed">{scene.transition}</p>
+              </div>
+            )}
+
+            {/* Director Notes */}
+            {scene.directorNotes && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Director Notes
+                </label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {scene.directorNotes}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

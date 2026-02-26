@@ -42,6 +42,39 @@ function detectStyleCategory(styleHint?: string): StyleCategory {
 }
 
 // =============================================================================
+// SEARCH TERM ENRICHMENT — bridge abstract concepts to stock photo tags
+// =============================================================================
+
+/**
+ * Combine imageSearchTerms with visualNote/description for more visually
+ * concrete search queries. Stock photos are tagged with what's physically
+ * visible, not abstract concepts.
+ */
+function enrichSearchTerms(scene: SceneSearchInput): string[] {
+  const terms: string[] = []
+
+  // Start with AI-generated terms (already improved via prompt)
+  if (scene.imageSearchTerms) {
+    terms.push(...scene.imageSearchTerms.slice(0, 3))
+  }
+
+  // Add visualNote words — usually the most concrete visual description
+  if (scene.visualNote) {
+    const visualWords = scene.visualNote.replace(/[,;]/g, ' ').split(' ').slice(0, 5).join(' ')
+    if (visualWords && !terms.includes(visualWords)) {
+      terms.push(visualWords)
+    }
+  }
+
+  // Fallback: first sentence of description
+  if (terms.length === 0 && scene.description) {
+    terms.push(scene.description.split('.')[0].trim())
+  }
+
+  return terms.slice(0, 4)
+}
+
+// =============================================================================
 // UNIFIED STORYBOARD IMAGE SEARCH — orchestrates all sources per scene
 // =============================================================================
 
@@ -123,19 +156,21 @@ function buildFlimSource(scene: SceneSearchInput): SourceEntry | null {
 }
 
 function buildPexelsSource(scene: SceneSearchInput): SourceEntry | null {
-  if (scene.imageSearchTerms && scene.imageSearchTerms.length > 0 && process.env.PEXELS_API_KEY) {
+  const hasTerms = scene.imageSearchTerms && scene.imageSearchTerms.length > 0
+  const hasVisualNote = scene.visualNote && scene.visualNote.length > 0
+  if ((hasTerms || hasVisualNote) && process.env.PEXELS_API_KEY) {
     return [withTimeout(searchPexelsForSceneAsStoryboardImages(scene), 5000), 'pexels']
   }
   return null
 }
 
 function buildUnsplashSource(scene: SceneSearchInput): SourceEntry | null {
-  if (
-    scene.imageSearchTerms &&
-    scene.imageSearchTerms.length > 0 &&
-    process.env.UNSPLASH_ACCESS_KEY
-  ) {
-    return [withTimeout(searchUnsplashForScene(scene.imageSearchTerms, 2), 5000), 'unsplash']
+  const hasTerms = scene.imageSearchTerms && scene.imageSearchTerms.length > 0
+  const hasVisualNote = scene.visualNote && scene.visualNote.length > 0
+  if ((hasTerms || hasVisualNote) && process.env.UNSPLASH_ACCESS_KEY) {
+    // Enrich search terms with visualNote for better relevance
+    const enrichedTerms = enrichSearchTerms(scene)
+    return [withTimeout(searchUnsplashForScene(enrichedTerms, 2), 5000), 'unsplash']
   }
   return null
 }
@@ -224,27 +259,55 @@ async function searchForSingleScene(
 
 /**
  * Adapter: convert existing Pexels search results to StoryboardImage format.
+ * Searches with multiple queries (imageSearchTerms + visualNote fallback)
+ * and requests 3 results per query for better coverage.
  */
 async function searchPexelsForSceneAsStoryboardImages(
   scene: SceneSearchInput
 ): Promise<StoryboardImage[]> {
-  const query = scene.imageSearchTerms?.slice(0, 3).join(' ') || ''
-  if (!query) return []
+  // Build multiple search queries for better coverage
+  const queries: string[] = []
 
-  const photos = await searchPexelsForScene(query, 1)
-  return photos.map((photo) => ({
-    id: `pexels_${photo.pexelsId}`,
-    url: photo.url,
-    originalUrl: photo.originalUrl,
-    source: 'pexels' as const,
-    mediaType: 'still' as const,
-    alt: photo.alt || 'Stock photo from Pexels',
-    attribution: {
-      sourceName: 'Pexels',
-      sourceUrl: photo.photographerUrl || 'https://www.pexels.com',
-      photographer: photo.photographer,
-    },
-  }))
+  // Query 1: AI-generated imageSearchTerms (most specific)
+  const terms = scene.imageSearchTerms?.slice(0, 3).join(' ') || ''
+  if (terms) queries.push(terms)
+
+  // Query 2: visualNote (concrete visual description of the scene)
+  if (scene.visualNote) {
+    const visualQuery = scene.visualNote.replace(/[,;]/g, ' ').split(' ').slice(0, 5).join(' ')
+    if (visualQuery && visualQuery !== terms) queries.push(visualQuery)
+  }
+
+  // Query 3: First sentence of description (usually most visual)
+  if (scene.description) {
+    const firstSentence = scene.description.split('.')[0].trim()
+    if (firstSentence && firstSentence.length > 10) {
+      const descQuery = firstSentence.split(' ').slice(0, 5).join(' ')
+      if (!queries.includes(descQuery)) queries.push(descQuery)
+    }
+  }
+
+  // Try each query — return first that yields results
+  for (const query of queries) {
+    const photos = await searchPexelsForScene(query, 3)
+    if (photos.length > 0) {
+      return photos.slice(0, 2).map((photo) => ({
+        id: `pexels_${photo.pexelsId}`,
+        url: photo.url,
+        originalUrl: photo.originalUrl,
+        source: 'pexels' as const,
+        mediaType: 'still' as const,
+        alt: photo.alt || 'Stock photo from Pexels',
+        attribution: {
+          sourceName: 'Pexels',
+          sourceUrl: photo.photographerUrl || 'https://www.pexels.com',
+          photographer: photo.photographer,
+        },
+      }))
+    }
+  }
+
+  return []
 }
 
 /**

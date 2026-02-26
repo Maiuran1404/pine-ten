@@ -21,6 +21,13 @@ const storyboardSceneSchema = z.object({
       photographer: z.string().optional(),
     })
     .optional(),
+  hookData: z
+    .object({
+      targetPersona: z.string(),
+      painMetric: z.string(),
+      quantifiableImpact: z.string(),
+    })
+    .optional(),
 })
 
 export const storyboardPdfSchema = z.object({

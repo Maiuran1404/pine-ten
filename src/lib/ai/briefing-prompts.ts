@@ -440,19 +440,40 @@ If you have an open question about the primary action or audience, ask it before
 
       if (!hasNarrative) {
         // Phase 1: Generate story narrative first
-        return `${clarifyPrefix}MANDATORY: Before building a scene-by-scene storyboard, first create a concise story narrative that summarizes the video idea.
+        return `${clarifyPrefix}MANDATORY: Before building a scene-by-scene storyboard, first create a concise story narrative that captures the video's creative angle.
 
-Generate a story narrative with these fields:
-- concept: One-line creative concept (what is the video about, in a nutshell)
-- narrative: 2-3 sentences covering the story arc, who it's for, and the emotional journey. IMPORTANT: Wrap key phrases in <<double angle brackets>> to highlight them inline (e.g. audience, metrics, emotions, format). Use 3-5 highlights maximum.
-- hook: The opening hook that grabs attention in the first 3 seconds
+Generate a story narrative with these three fields:
+
+CONCEPT (the creative angle):
+Write one punchy line that captures the specific tension or insight the video is built around. Not a generic transformation statement. Think of it as the logline a director pitches: what makes this video worth watching?
+Bad: "Transform data chaos into clarity" (generic, could be any SaaS product)
+Good: "The 6-second identity check that killed a 23-step onboarding flow"
+Good: "What happens when your competitors' checkout takes 4x longer than yours"
+Use the actual product name, a real number, or a specific pain point the user shared. Be concrete.
+
+NARRATIVE (the story arc):
+Write 2-3 sentences that describe the emotional journey of the video, not just what happens on screen. Structure it as: tension, then turning point, then payoff. Name the real audience, use real stakes, and show what changes.
+IMPORTANT: Wrap 3-5 key phrases in <<double angle brackets>> for inline highlights (audience, metrics, emotions, product features).
+Bad: "Open on the problem, show the solution, end with results climbing." (could describe any product video ever made)
+Good: "Open on a <<product manager>> watching sign-ups flatline at the verification step, the one screen that loses <<40% of new users>>. Cut to the moment they flip on Didit: <<one face scan, two seconds, done>>. Close on the dashboard the next morning. The drop-off cliff is gone."
+
+HOOK (the closing CTA):
+Write a single, direct call-to-action telling the viewer exactly what to do next. This is NOT a tagline or headline. It is an action step: a verb + where to go + what they get.
+Bad: "If you're a CTO struggling with verification, this changes everything" (passive, no action)
+Good: "<<Try Didit free>> for 30 days. Two lines of code, live in 10 minutes."
+Good: "<<Book a 15-min demo>> and see your own checkout flow verified in real time."
+Use <<double angle brackets>> on the key action phrase.
 
 You MUST output the narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE]. Without this marker the UI cannot render the narrative panel.
-Example: [VIDEO_NARRATIVE]{"concept":"Transform data chaos into clarity","narrative":"Open on the pain of manual reporting that <<marketing directors>> know too well, then reveal the product as the turning point — <<real-time insights>> that replace guesswork. Close on a team celebrating confident decisions, moving from <<frustration to confidence>>.","hook":"<<73% of marketing budgets>> are wasted on bad data — here's how to fix that in 30 seconds"}[/VIDEO_NARRATIVE]
+Example: [VIDEO_NARRATIVE]{"concept":"The 6-second identity check that killed a 23-step onboarding flow","narrative":"Open on a <<product manager>> staring at a funnel chart where <<40% of sign-ups>> die at the identity verification step. Show the old flow: selfie upload, document scan, manual review, three-day wait. Then the switch: Didit goes live, and a new user verifies with <<one face scan in two seconds>>. Close on the same funnel chart a week later. The drop-off cliff is gone, and <<conversion is up 35%>>.","hook":"<<Try Didit free>> for 30 days. Two lines of code, live in 10 minutes."}[/VIDEO_NARRATIVE]
 
 OUTPUT FORMAT: The [VIDEO_NARRATIVE]{valid JSON}[/VIDEO_NARRATIVE] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas.
 
-After the user reviews and approves the narrative, you will then build the full storyboard based on it.`
+CONVERSATIONAL TEXT:
+After the [VIDEO_NARRATIVE] block, write a brief pointer directing the user to the canvas panel on the right. Example: "I've drafted your video narrative — check it out on the canvas. Edit anything directly, or tell me what to adjust."
+Do NOT ask an unrelated follow-up question about audience, goals, or platform. The only question should be about the narrative itself (e.g. "Does this angle feel right?").
+Your [QUICK_OPTIONS] MUST be narrative-specific: {"question": "How does it feel?", "options": ["Change the concept", "The CTA needs work", "Looks good, let's build scenes"]}
+Do NOT offer options about storyboard, visual style, or submission at this stage.`
       }
 
       if (hasNarrative && !narrativeApproved) {
@@ -464,7 +485,12 @@ ${narrativeContext}
 If the user requests changes, regenerate the [VIDEO_NARRATIVE] with those changes applied.
 You MUST output the updated narrative as [VIDEO_NARRATIVE]{json}[/VIDEO_NARRATIVE].
 
-Do NOT generate a storyboard yet. The user must approve the narrative first before building scenes.`
+Do NOT generate a storyboard yet. The user must approve the narrative first before building scenes.
+
+CONVERSATIONAL TEXT:
+After updating the narrative, write a brief message like "Updated the narrative on the canvas — take a look." Do NOT ask unrelated questions.
+Your [QUICK_OPTIONS] should be: {"question": "How about now?", "options": ["Try a different angle", "Adjust the CTA", "Looks good, let's build scenes"]}
+Do NOT offer options about moving to storyboard, visual style, or submission.`
       }
 
       // Phase 3: Narrative approved, now build the storyboard
@@ -475,14 +501,33 @@ APPROVED NARRATIVE:
 ${narrativeContext}
 
 MANDATORY: Create a scene-by-scene storyboard aligned with the approved narrative.
-- Generate 4-6 scenes. Scene 1 MUST have a hook that matches the narrative's hook strategy.
+- Generate 4-6 scenes. The scenes should follow the narrative's emotional arc: tension, turning point, payoff.
 - DURATION REQUIREMENT: The total video duration must be 30-60 seconds. Distribute scene durations so they sum to at least 30 seconds. Typical scene durations are 5-10 seconds each.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
-- Do NOT include imageSearchTerms yet. Images will be added after the inspiration stage.
-- Ensure the emotional journey from the narrative flows through the scenes.
+
+SCENE QUALITY RULES:
+- Scene 1 must open with a specific, visual hook. Not a question or statistic. Show the pain happening: a person, a screen, a moment the viewer recognizes.
+- Voiceover should sound like a real person talking, not an ad script. Short sentences. Conversational. Use "you" not "they".
+- Each scene description should describe what the CAMERA SEES, not abstract ideas. "A product manager refreshing a dashboard showing 12% conversion" not "The pain of low conversion rates."
+- The final scene should land on a concrete result (a number, a visual change, a reaction) before delivering the CTA from the approved narrative.
+
+- For each scene, include imageSearchTerms: an array of 2-3 search terms that describe what a stock photographer would TAG this scene as. Focus on VISIBLE SUBJECTS and COMPOSITIONS, not abstract concepts.
+  Bad: ["identity verification", "conversion optimization", "user authentication"]
+  Good: ["person scanning face with phone camera", "laptop showing dashboard analytics chart", "hands holding smartphone verification screen"]
+  Bad: ["business impact metrics", "platform scalability"]
+  Good: ["dashboard screen conversion rate chart", "multiple device screens app interface"]
+  These terms are used for Pexels/Unsplash stock photo search — concrete, tag-style visual descriptions work best.
+- Do NOT include filmTitleSuggestions or visualTechniques yet. Those depend on the style chosen later.
+- CRITICAL: Use [STORYBOARD] as the marker, NOT [VIDEO_STORYBOARD]. The UI parser only recognizes [STORYBOARD].
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"Hook","description":"Open on...","duration":"6s","visualNote":"Close-up shot","voiceover":"Did you know that 73% of CTOs lose sleep over...","transition":"cut","cameraNote":"Close-up, handheld","hookData":{"targetPersona":"CTOs","painMetric":"losing 40% pipeline","quantifiableImpact":"2x faster"}}]}[/STORYBOARD]
-OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.`
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"The Drop-Off Cliff","description":"A product manager stares at a funnel chart. The bar at 'Identity Verification' drops to nearly zero.","duration":"6s","visualNote":"Over-the-shoulder shot of a real analytics dashboard","voiceover":"You know that screen. The one where 40% of your sign-ups just disappear.","transition":"cut","cameraNote":"Over-shoulder, tight on screen, then pull back to show the person's reaction","imageSearchTerms":["person looking at analytics dashboard","funnel chart on laptop screen"],"hookData":{"targetPersona":"Product managers","painMetric":"40% sign-up drop-off","quantifiableImpact":"verification in 2 seconds"}}]}[/STORYBOARD]
+OUTPUT FORMAT: The [STORYBOARD]{valid JSON}[/STORYBOARD] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.
+
+CONVERSATIONAL TEXT:
+After the [STORYBOARD] block, write a brief pointer: "Your storyboard is ready on the canvas. Click any scene to edit, or tell me what to adjust."
+Do NOT ask unrelated questions about audience, goals, or platform.
+Your [QUICK_OPTIONS] should be scene-focused: {"question": "Anything to tweak?", "options": ["Scene 1 needs work", "The pacing feels off", "I'm happy with this"]}
+Do NOT offer options about submission, visual style direction, or progressing to the next step. The state machine handles progression.`
     }
     case 'website': {
       const industryLabels = INDUSTRY_OPTIONS.map((o) => o.label)
