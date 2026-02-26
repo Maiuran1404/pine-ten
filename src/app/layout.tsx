@@ -57,14 +57,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Fontshare CDN fallback for components using 'Satoshi' directly */}
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+      <head />
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${satoshi.variable} antialiased bg-background text-foreground`}
       >
