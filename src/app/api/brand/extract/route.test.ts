@@ -257,26 +257,29 @@ describe('POST /api/brand/extract', () => {
     expect(data.data.brandTone).toBe('professional-trustworthy') // default
   })
 
-  it('rejects with 400 when extraction times out after 45 seconds', async () => {
-    setupAuth()
-    // Make scrape hang indefinitely so the timeout fires
-    mockScrape.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 120_000)))
+  it(
+    'rejects with 400 when extraction times out after 60 seconds',
+    { timeout: 15_000 },
+    async () => {
+      vi.useFakeTimers()
+      setupAuth()
+      // Make scrape hang indefinitely so the timeout fires
+      mockScrape.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 120_000)))
 
-    // Use fake timers to advance past the 45s timeout
-    vi.useFakeTimers()
-    const responsePromise = POST(makeRequest({ websiteUrl: 'https://slow-site.com' }) as never)
+      const responsePromise = POST(makeRequest({ websiteUrl: 'https://slow-site.com' }) as never)
 
-    // Advance past the EXTRACTION_TIMEOUT_MS (45_000)
-    await vi.advanceTimersByTimeAsync(46_000)
+      // Advance past the EXTRACTION_TIMEOUT_MS (60_000)
+      await vi.advanceTimersByTimeAsync(61_000)
 
-    const response = await responsePromise
-    const data = await response.json()
+      const response = await responsePromise
+      const data = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(data.error.message).toContain('timed out')
+      expect(response.status).toBe(400)
+      expect(data.error.message).toContain('timed out')
 
-    vi.useRealTimers()
-  })
+      vi.useRealTimers()
+    }
+  )
 
   it('extracts brand name from domain when title is unavailable', async () => {
     setupAuth()
