@@ -50,6 +50,35 @@
   --color-ds-success: var(--ds-success);
   --color-ds-warning: var(--ds-warning);
   --color-ds-error: var(--ds-error);
+  --color-ds-info: var(--ds-info);
+  --color-crafted-olive: var(--crafted-olive);
+  --color-crafted-olive-dark: var(--crafted-olive-dark);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-input: var(--surface-input);
+  --color-surface-inset: var(--surface-inset);
+  --color-border-subtle: var(--border-subtle);
+  --color-button-cream: var(--button-cream);
+  --color-button-cream-foreground: var(--button-cream-foreground);
+  --color-ds-info-muted: var(--ds-info-muted);
+  --color-ds-status-pending: var(--ds-status-pending);
+  --color-ds-status-assigned: var(--ds-status-assigned);
+  --color-ds-status-in-progress: var(--ds-status-in-progress);
+  --color-ds-status-review: var(--ds-status-review);
+  --color-ds-status-completed: var(--ds-status-completed);
+  --color-ds-status-revision: var(--ds-status-revision);
+  --color-ds-status-cancelled: var(--ds-status-cancelled);
+  --color-ds-role-hook: var(--ds-role-hook);
+  --color-ds-role-cta: var(--ds-role-cta);
+  --color-ds-role-transition: var(--ds-role-transition);
+  --color-ds-pillar-1: var(--ds-pillar-1);
+  --color-ds-pillar-2: var(--ds-pillar-2);
+  --color-ds-pillar-3: var(--ds-pillar-3);
+  --color-ds-pillar-4: var(--ds-pillar-4);
+  --color-ds-pillar-5: var(--ds-pillar-5);
+  --color-ds-pillar-6: var(--ds-pillar-6);
+  --color-ds-highlight: var(--ds-highlight);
+  --color-ds-highlight-text: var(--ds-highlight-text);
+  --color-surface-raised: var(--surface-raised);
 }
 
 :root {
@@ -142,6 +171,47 @@
   --ds-warning-muted: rgba(217, 119, 6, 0.1);
   --ds-error: #dc2626;
   --ds-error-muted: rgba(220, 38, 38, 0.1);
+  --ds-info: #3b82f6;
+  --ds-info-muted: rgba(59, 130, 246, 0.1);
+
+  /* Brand Extension - Onboarding Olive Accent */
+  --crafted-olive: #9aa48c;
+  --crafted-olive-dark: #7a8575;
+
+  /* Auth/Dark Surface Tokens */
+  --surface-overlay: rgba(20, 20, 20, 0.8);
+  --surface-input: rgba(40, 40, 40, 0.6);
+  --surface-inset: rgba(15, 15, 15, 0.9);
+  --surface-raised: #141414;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --button-cream: #f5f5f0;
+  --button-cream-foreground: #1a1a1a;
+
+  /* Task Status System */
+  --ds-status-pending: #eab308;
+  --ds-status-assigned: #3b82f6;
+  --ds-status-in-progress: #f59e0b;
+  --ds-status-review: #a855f7;
+  --ds-status-completed: #22c55e;
+  --ds-status-revision: #f97316;
+  --ds-status-cancelled: #6b7280;
+
+  /* Scene Role Tokens (Storyboard) */
+  --ds-role-hook: #f59e0b;
+  --ds-role-cta: var(--ds-success);
+  --ds-role-transition: #a855f7;
+
+  /* Content Pillar Tokens */
+  --ds-pillar-1: #4a7c4a;
+  --ds-pillar-2: #3b82f6;
+  --ds-pillar-3: #a855f7;
+  --ds-pillar-4: #f59e0b;
+  --ds-pillar-5: #e11d48;
+  --ds-pillar-6: #06b6d4;
+
+  /* Highlight Token (Onboarding Indigo) */
+  --ds-highlight: #6366f1;
+  --ds-highlight-text: #a5b4fc;
 }
 
 .dark {
@@ -208,6 +278,47 @@
   --ds-warning-muted: rgba(245, 158, 11, 0.15);
   --ds-error: #ef4444;
   --ds-error-muted: rgba(239, 68, 68, 0.15);
+  --ds-info: #60a5fa;
+  --ds-info-muted: rgba(96, 165, 250, 0.15);
+
+  /* Brand Extension - Onboarding Olive Accent */
+  --crafted-olive: #9aa48c;
+  --crafted-olive-dark: #7a8575;
+
+  /* Auth/Dark Surface Tokens */
+  --surface-overlay: rgba(20, 20, 20, 0.8);
+  --surface-input: rgba(40, 40, 40, 0.6);
+  --surface-inset: rgba(15, 15, 15, 0.9);
+  --surface-raised: #141414;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --button-cream: #f5f5f0;
+  --button-cream-foreground: #1a1a1a;
+
+  /* Task Status System */
+  --ds-status-pending: #fbbf24;
+  --ds-status-assigned: #60a5fa;
+  --ds-status-in-progress: #fbbf24;
+  --ds-status-review: #c084fc;
+  --ds-status-completed: #4ade80;
+  --ds-status-revision: #fb923c;
+  --ds-status-cancelled: #9ca3af;
+
+  /* Scene Role Tokens (Storyboard) */
+  --ds-role-hook: #f59e0b;
+  --ds-role-cta: var(--ds-success);
+  --ds-role-transition: #c084fc;
+
+  /* Content Pillar Tokens */
+  --ds-pillar-1: #6b9b6b;
+  --ds-pillar-2: #60a5fa;
+  --ds-pillar-3: #c084fc;
+  --ds-pillar-4: #fbbf24;
+  --ds-pillar-5: #fb7185;
+  --ds-pillar-6: #22d3ee;
+
+  /* Highlight Token (Onboarding Indigo) */
+  --ds-highlight: #818cf8;
+  --ds-highlight-text: #a5b4fc;
 }
 
 @layer base {

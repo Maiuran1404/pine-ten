@@ -105,9 +105,9 @@ export function NarrativePanel({
           <div
             className="relative rounded-xl border border-dashed border-crafted-sage/20 overflow-hidden"
             style={{
-              backgroundColor: 'rgba(168, 212, 168, 0.05)',
+              backgroundColor: 'color-mix(in srgb, var(--crafted-mint) 5%, transparent)',
               backgroundImage:
-                'linear-gradient(rgba(139, 181, 139, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 181, 139, 0.08) 1px, transparent 1px)',
+                'linear-gradient(color-mix(in srgb, var(--crafted-sage) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--crafted-sage) 8%, transparent) 1px, transparent 1px)',
               backgroundSize: '20px 20px',
             }}
           >
