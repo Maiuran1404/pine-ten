@@ -48,6 +48,7 @@ import {
   generateContentOutline,
 } from '@/lib/ai/brief-generator'
 import { logger } from '@/lib/logger'
+import { useCsrfContext } from '@/providers/csrf-provider'
 
 interface UseChatInterfaceDataOptions {
   draftId: string
@@ -72,6 +73,7 @@ export function useChatInterfaceData({
   onChatStart,
 }: UseChatInterfaceDataOptions) {
   const { data: session } = useSession()
+  const { csrfFetch } = useCsrfContext()
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const chatStartedRef = useRef(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -364,6 +366,7 @@ export function useChatInterfaceData({
     onGlobalStyles: storyboard.setGlobalStyles,
     onVideoNarrative: storyboard.updateVideoNarrative,
     latestStoryboardRef: storyboard.latestStoryboardRef,
+    csrfFetch,
   })
 
   // Wire up the forward ref so storyboard regeneration can call handleSendOption
