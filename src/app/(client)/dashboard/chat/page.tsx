@@ -105,7 +105,7 @@ export default function ChatPage() {
     const newId = generateDraftId()
     setCurrentDraftId(newId)
     setInitialMessage(null)
-    router.push('/dashboard')
+    router.push('/dashboard/chat')
   }
 
   const draftUpdateTimer = useRef<ReturnType<typeof setTimeout>>(undefined)

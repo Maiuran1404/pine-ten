@@ -943,11 +943,11 @@ export function ChatMessageList({
           )}
 
           {/* Inline submit prompt - shown as an AI message when ready to submit */}
-          {/* Hidden when state machine is active (briefingStage is set) */}
+          {/* Hidden during mid-flow stages; visible at REVIEW/SUBMIT or when no state machine */}
           {!isLoading &&
             !pendingTask &&
             !isTaskMode &&
-            !briefingStage &&
+            (!briefingStage || briefingStage === 'REVIEW' || briefingStage === 'SUBMIT') &&
             (() => {
               // Check if the last assistant message asked a question (ends with ?)
               const lastAssistantMsg = messages.filter((m) => m.role === 'assistant').pop()

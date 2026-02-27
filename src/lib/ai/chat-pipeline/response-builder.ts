@@ -41,7 +41,7 @@ export function deduplicateResponse(text: string): string {
       }
     }
 
-    deduped.push(uniqueSentences.join(''))
+    deduped.push(uniqueSentences.map((s) => s.trim()).join(' '))
   }
 
   const finalLines: string[] = []
@@ -84,6 +84,9 @@ export function stripMarkers(
     .replace(/\[\/GLOBAL_STYLES\]/g, '')
     .replace(/\[VIDEO_NARRATIVE\][\s\S]*?\[\/VIDEO_NARRATIVE\]/g, '')
     .replace(/\[\/VIDEO_NARRATIVE\]/g, '')
+    // Clean up unclosed [QUICK_OPTIONS] blocks that span to end of content
+    .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
+    .replace(/\[QUICK_OPTIONS\][\s\S]*$/g, '')
     .trim()
 
   // Strip false "storyboard ready" claims when parse actually failed

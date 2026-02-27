@@ -150,7 +150,7 @@ Let me know what you think.`
     expect(result.success).toBe(true)
     if (result.data?.type === 'storyboard') {
       expect(result.data.scenes).toHaveLength(2)
-      expect(result.data.scenes[0].duration).toBe('')
+      expect(result.data.scenes[0].duration).toBe('5s') // Floor: missing duration defaults to 5s
       expect(result.data.scenes[0].sceneNumber).toBe(1)
     }
   })

@@ -203,7 +203,7 @@ function calculateProgressPercentage(
 
   // Add message-based micro-progress within the current stage
   // This creates smoother progression as user exchanges messages
-  const currentIndex = CHAT_STAGES.indexOf(currentStage)
+  const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
   const completedIndex = completedStages.length - 1
 
   if (currentIndex > completedIndex) {

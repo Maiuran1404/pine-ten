@@ -387,7 +387,7 @@ export function useDraftPersistence({
   const handleDeleteChat = useCallback(() => {
     deleteDraft(draftId)
     onDraftUpdate?.()
-    router.push('/dashboard')
+    router.push('/dashboard/chat')
   }, [draftId, onDraftUpdate, router])
 
   const handleStartOver = useCallback(() => {
@@ -404,7 +404,7 @@ export function useDraftPersistence({
       onDraftUpdate?.()
     }
 
-    router.push('/dashboard')
+    router.push('/dashboard/chat')
   }, [
     draftId,
     onDraftUpdate,

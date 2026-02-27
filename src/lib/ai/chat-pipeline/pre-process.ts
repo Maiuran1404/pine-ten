@@ -207,6 +207,14 @@ export function runPreAiPipeline(
       briefingState.styleKeywords = [...new Set([...briefingState.styleKeywords, 'launch'])]
     }
 
+    // 4b. Extract target video duration from user message
+    if (!briefingState.targetDurationSeconds) {
+      const durationMatch = lastUserMessage.match(/(\d+)\s*[-–]?\s*(?:second|sec|s)\b/i)
+      if (durationMatch) {
+        briefingState.targetDurationSeconds = parseInt(durationMatch[1], 10)
+      }
+    }
+
     // 5. Resolve deliverable category
     if (!briefingState.deliverableCategory || briefingState.deliverableCategory === 'unknown') {
       const category = resolveDeliverableCategory(inference)

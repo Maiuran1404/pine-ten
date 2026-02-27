@@ -239,7 +239,7 @@ export function useChatMessages({
 
   // Send a specific message (for clickable options)
   const handleSendOption = useCallback(
-    async (optionText: string) => {
+    async (optionText: string, stateOverrides?: Partial<SerializedBriefingState>) => {
       if (isLoading || !optionText.trim()) return
 
       const userMessage: Message = {
@@ -255,6 +255,10 @@ export function useChatMessages({
       setLastSendError(null)
 
       try {
+        const mergedBriefingState = stateOverrides
+          ? { ...serializedBriefingState, ...stateOverrides }
+          : serializedBriefingState
+
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -265,7 +269,7 @@ export function useChatMessages({
             })),
             selectedStyles,
             moodboardHasStyles,
-            briefingState: serializedBriefingState,
+            briefingState: mergedBriefingState,
             latestStoryboard: latestStoryboardRef.current,
           }),
         })

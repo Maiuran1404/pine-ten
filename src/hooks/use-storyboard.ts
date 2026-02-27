@@ -14,6 +14,7 @@ import {
 import type {
   LayoutSection,
   BriefingState,
+  SerializedBriefingState,
   WebsiteGlobalStyles,
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
@@ -36,7 +37,7 @@ export interface SceneImageData {
 
 interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
-  handleSendOption: (text: string) => void
+  handleSendOption: (text: string, stateOverrides?: Partial<SerializedBriefingState>) => void
   briefingState?: BriefingState | null
 }
 
@@ -475,7 +476,8 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const handleApproveNarrative = useCallback(() => {
     setNarrativeApproved(true)
     handleSendOption(
-      'The story narrative looks great. Let\u2019s build the storyboard based on this.'
+      'The story narrative looks great. Let\u2019s build the storyboard based on this.',
+      { narrativeApproved: true }
     )
   }, [handleSendOption])
 

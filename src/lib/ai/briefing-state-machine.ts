@@ -245,6 +245,8 @@ export interface BriefingState {
   // Video narrative (story concept before storyboard, video only)
   videoNarrative: VideoNarrative | null
   narrativeApproved: boolean
+  // Target video duration extracted from user messages (e.g. "30 second video")
+  targetDurationSeconds: number | null
   // Website-specific (only populated for website deliverables)
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
@@ -435,6 +437,7 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
     messageCount: 0,
     videoNarrative: null,
     narrativeApproved: false,
+    targetDurationSeconds: null,
   }
 }
 
@@ -628,6 +631,7 @@ export interface SerializedBriefingState {
   messageCount: number
   videoNarrative: VideoNarrative | null
   narrativeApproved: boolean
+  targetDurationSeconds: number | null
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
 }

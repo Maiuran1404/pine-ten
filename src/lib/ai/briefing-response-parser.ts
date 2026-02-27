@@ -581,7 +581,12 @@ function extractSceneFields(s: Record<string, unknown>, index: number) {
     sceneNumber: getNumber(s, 'sceneNumber') ?? getNumber(s, 'scene_number') ?? index + 1,
     title: title ?? `Scene ${index + 1}`,
     description: description ?? '',
-    duration: getString(s, 'duration') ?? '',
+    duration: (() => {
+      const raw = getString(s, 'duration') ?? ''
+      if (!raw) return '5s'
+      const seconds = parseInt(raw.match(/(\d+)/)?.[1] || '0', 10)
+      return seconds >= 1 ? raw : '5s'
+    })(),
     visualNote: visualNote ?? '',
     voiceover,
     transition,

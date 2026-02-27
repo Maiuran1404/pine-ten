@@ -46,7 +46,7 @@ export function AppSidebar() {
   }, [isCollapsed, pathname])
 
   const handleStartNewChat = () => {
-    router.push('/dashboard')
+    router.push('/dashboard/chat')
   }
 
   // Features menu items

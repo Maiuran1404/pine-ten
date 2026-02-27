@@ -541,7 +541,7 @@ ${narrativeContext}
 
 MANDATORY: Create a scene-by-scene storyboard aligned with the approved narrative.
 - Generate 4-6 scenes. The scenes should follow the narrative's emotional arc: tension, turning point, payoff.
-- DURATION REQUIREMENT: The total video duration must be 30-60 seconds. Distribute scene durations so they sum to at least 30 seconds. Typical scene durations are 5-10 seconds each.
+- DURATION REQUIREMENT: The total video duration must be approximately ${state.targetDurationSeconds || 45} seconds. Distribute scene durations so they sum to at least ${Math.max(20, (state.targetDurationSeconds || 45) - 15)} seconds. Typical scene durations are 5-10 seconds each.
 - Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
 
 SCENE QUALITY RULES:

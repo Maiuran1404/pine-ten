@@ -327,11 +327,22 @@ export function useChatInterfaceData({
   // We need a forward ref for handleSendOption, which is created by useChatMessages
   // below. We use a placeholder callback that gets populated after useChatMessages is
   // instantiated.
-  const sendOptionRef = useRef<(text: string) => void>(() => {})
+  const sendOptionRef = useRef<
+    (
+      text: string,
+      stateOverrides?: Partial<import('@/lib/ai/briefing-state-machine').SerializedBriefingState>
+    ) => void
+  >(() => {})
 
   const storyboard = useStoryboard({
     inputRef,
-    handleSendOption: useCallback((text: string) => sendOptionRef.current(text), []),
+    handleSendOption: useCallback(
+      (
+        text: string,
+        overrides?: Partial<import('@/lib/ai/briefing-state-machine').SerializedBriefingState>
+      ) => sendOptionRef.current(text, overrides),
+      []
+    ),
     briefingState: _briefingState,
   })
 

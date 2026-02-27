@@ -330,19 +330,32 @@ export function BriefFieldsContent({ brief, onBriefUpdate }: BriefFieldsContentP
             confidence={brief.audience.confidence}
           />
 
-          {/* Dimension chips inline with metadata */}
-          {brief.dimensions.slice(0, 3).map((dim, idx) => (
-            <Badge
-              key={`${dim.width}x${dim.height}-${idx}`}
-              variant="outline"
-              className="text-[10px] font-normal py-0.5 px-2 text-muted-foreground/70"
-            >
-              {dim.width}&times;{dim.height}
-            </Badge>
-          ))}
-          {brief.dimensions.length > 3 && (
+          {/* Dimension chips inline with metadata (deduplicated) */}
+          {brief.dimensions
+            .filter(
+              (dim, idx, arr) =>
+                arr.findIndex((d) => d.width === dim.width && d.height === dim.height) === idx
+            )
+            .slice(0, 3)
+            .map((dim) => (
+              <Badge
+                key={`${dim.width}x${dim.height}`}
+                variant="outline"
+                className="text-[10px] font-normal py-0.5 px-2 text-muted-foreground/70"
+              >
+                {dim.width}&times;{dim.height}
+              </Badge>
+            ))}
+          {brief.dimensions.filter(
+            (dim, idx, arr) =>
+              arr.findIndex((d) => d.width === dim.width && d.height === dim.height) === idx
+          ).length > 3 && (
             <span className="inline-flex items-center text-[10px] text-muted-foreground/40 px-1">
-              +{brief.dimensions.length - 3}
+              +
+              {brief.dimensions.filter(
+                (dim, idx, arr) =>
+                  arr.findIndex((d) => d.width === dim.width && d.height === dim.height) === idx
+              ).length - 3}
             </span>
           )}
         </div>

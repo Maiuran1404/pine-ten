@@ -204,6 +204,11 @@ export function resolveDeliverableCategory(inference: InferenceResult): Delivera
     return 'video'
   }
 
+  // Video-first platforms: TikTok, YouTube always produce video content
+  if (platform === 'tiktok' || platform === 'youtube') {
+    return 'video'
+  }
+
   // Website detection
   if (platform === 'web' || platform === 'email') {
     if (taskType === 'single_asset' && contentType !== 'banner' && contentType !== 'ad') {
