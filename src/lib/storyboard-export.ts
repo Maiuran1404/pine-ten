@@ -1,4 +1,5 @@
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
+import { parseDurationSeconds } from '@/components/chat/storyboard-view'
 
 /**
  * Storyboard export utilities (#19)
@@ -57,7 +58,7 @@ export function formatStoryboardText(scenes: StoryboardScene[]): string {
   let cumulative = 0
 
   for (const scene of scenes) {
-    const dur = parseInt(scene.duration.match(/(\d+)/)?.[1] || '0', 10)
+    const dur = parseDurationSeconds(scene.duration)
     const startMin = Math.floor(cumulative / 60)
     const startSec = cumulative % 60
     const endMin = Math.floor((cumulative + dur) / 60)
@@ -68,7 +69,10 @@ export function formatStoryboardText(scenes: StoryboardScene[]): string {
     lines.push(`Duration: ${scene.duration} (${ts})`)
     if (scene.voiceover) lines.push(`Script: ${scene.voiceover}`)
     if (scene.visualNote) lines.push(`Visual: ${scene.visualNote}`)
+    if (scene.cameraNote) lines.push(`Camera: ${scene.cameraNote}`)
+    if (scene.transition) lines.push(`Transition: ${scene.transition}`)
     if (scene.description) lines.push(`Description: ${scene.description}`)
+    if (scene.fullScript) lines.push(`Full Script: ${scene.fullScript}`)
     if (scene.directorNotes) lines.push(`Director Notes: ${scene.directorNotes}`)
     lines.push('')
     cumulative += dur

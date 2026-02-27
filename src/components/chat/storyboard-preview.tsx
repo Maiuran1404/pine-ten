@@ -227,7 +227,9 @@ function StoryboardPreviewContent({
               variant="ghost"
               size="icon"
               onClick={togglePlay}
-              className="h-10 w-10 text-white hover:bg-white/10"
+              disabled={totalDuration === 0}
+              className="h-10 w-10 text-white hover:bg-white/10 disabled:opacity-30"
+              title={totalDuration === 0 ? 'Set scene durations to enable preview' : undefined}
             >
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>

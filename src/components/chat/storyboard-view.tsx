@@ -49,8 +49,34 @@ import { useCsrfContext } from '@/providers/csrf-provider'
 // =============================================================================
 
 export function parseDurationSeconds(duration: string): number {
-  const match = duration.match(/(\d+)/)
-  return match ? parseInt(match[1], 10) : 0
+  if (!duration) return 0
+  const trimmed = duration.trim()
+
+  // Handle "M:SS" format (e.g. "1:30")
+  const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/)
+  if (colonMatch) {
+    return Math.max(0, Math.round(parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10)))
+  }
+
+  // Handle compound "XmYs" / "Xm Ys" format (e.g. "1m30s", "2m 15s")
+  let totalSeconds = 0
+  const minuteMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*m/)
+  const secondMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*s/)
+  if (minuteMatch || secondMatch) {
+    if (minuteMatch) totalSeconds += parseFloat(minuteMatch[1]) * 60
+    if (secondMatch) totalSeconds += parseFloat(secondMatch[1])
+    return Math.max(0, Math.round(totalSeconds))
+  }
+
+  // Handle decimal seconds (e.g. "0.5", "2.5s")
+  const decimalMatch = trimmed.match(/^(\d+\.\d+)\s*s?$/)
+  if (decimalMatch) {
+    return Math.max(0, Math.round(parseFloat(decimalMatch[1])))
+  }
+
+  // Plain integer (e.g. "5")
+  const intMatch = trimmed.match(/(\d+)/)
+  return intMatch ? Math.max(0, parseInt(intMatch[1], 10)) : 0
 }
 
 export function formatTimestamp(totalSeconds: number): string {
