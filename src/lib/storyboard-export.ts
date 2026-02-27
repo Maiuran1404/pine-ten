@@ -96,7 +96,17 @@ export function exportStoryboardJSON(scenes: StoryboardScene[]): void {
       directorNotes: scene.directorNotes,
       fullScript: scene.fullScript,
       transition: scene.transition,
+      cameraNote: scene.cameraNote,
       hookData: scene.hookData,
+      resolvedImageUrl: scene.resolvedImageUrl,
+      resolvedImageSource: scene.resolvedImageSource,
+      resolvedImageAttribution: scene.resolvedImageAttribution,
+      styleReferences: scene.styleReferences,
+      imageSearchTerms: scene.imageSearchTerms,
+      visualTechniques: scene.visualTechniques,
+      referenceVideoId: scene.referenceVideoId,
+      referenceImageIds: scene.referenceImageIds,
+      referenceDescription: scene.referenceDescription,
     })),
   }
 

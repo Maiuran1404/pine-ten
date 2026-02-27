@@ -126,7 +126,7 @@ export function useTaskSubmission({
       .filter((file) => file != null && file.fileUrl != null)
 
     try {
-      const response = await fetch('/api/tasks', {
+      const response = await csrfFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -176,7 +176,7 @@ export function useTaskSubmission({
       setPendingTask(null)
 
       try {
-        const taskResponse = await fetch(`/api/tasks/${taskId}`)
+        const taskResponse = await csrfFetch(`/api/tasks/${taskId}`)
         if (taskResponse.ok) {
           const taskResult = await taskResponse.json()
           const fetchedTaskData: TaskData = {
@@ -254,6 +254,7 @@ export function useTaskSubmission({
     setMessages,
     setAnimatingMessageId,
     posthog,
+    csrfFetch,
   ])
 
   const handleOpenSubmissionModal = useCallback(() => {
