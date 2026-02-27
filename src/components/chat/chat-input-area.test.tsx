@@ -194,7 +194,7 @@ describe('ChatInputArea', () => {
   it('displays credit count', () => {
     render(<ChatInputArea {...createDefaultProps({ userCredits: 25 })} />)
 
-    expect(screen.getByText('25 credits available')).toBeInTheDocument()
+    expect(screen.getByText('25 credits')).toBeInTheDocument()
   })
 
   it('displays pending files with remove button', () => {
