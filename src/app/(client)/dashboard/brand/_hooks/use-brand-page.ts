@@ -304,10 +304,20 @@ export function useBrandPage() {
     rescanMutation.mutate(brand.website)
   }, [brand, rescanMutation])
 
-  const handleRedoOnboarding = useCallback(() => {
+  const handleRedoOnboarding = useCallback(async () => {
     setIsResettingOnboarding(true)
-    csrfFetch('/api/brand/reset-onboarding', { method: 'POST' }).catch(() => {})
-    window.location.href = '/onboarding'
+    try {
+      const response = await csrfFetch('/api/brand/reset-onboarding', { method: 'POST' })
+      if (!response.ok) {
+        throw new Error('Failed to reset onboarding')
+      }
+      // Hard navigation (not router.push) to tear down the React tree,
+      // clear all React Query caches, and force a fresh session evaluation.
+      window.location.href = '/onboarding?reset=true'
+    } catch {
+      setIsResettingOnboarding(false)
+      toast.error('Failed to reset onboarding. Please try again.')
+    }
   }, [csrfFetch])
 
   const handleDeleteAudience = useCallback(

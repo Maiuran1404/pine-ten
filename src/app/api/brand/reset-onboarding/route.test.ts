@@ -4,9 +4,9 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
-const mockRequireAuth = vi.fn()
+const mockRequireClient = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
-  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireClient: (...args: unknown[]) => mockRequireClient(...args),
 }))
 
 const mockDbSelect = vi.fn()
@@ -38,14 +38,14 @@ beforeEach(() => {
 describe('POST /api/brand/reset-onboarding', () => {
   it('returns 401 when not authenticated', async () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
-    mockRequireAuth.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
+    mockRequireClient.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
 
     const response = await POST()
     expect(response.status).toBe(401)
   })
 
   it('returns 404 when user not found', async () => {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireClient.mockResolvedValue({
       user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
     })
     mockDbSelect.mockReturnValueOnce({
@@ -64,7 +64,7 @@ describe('POST /api/brand/reset-onboarding', () => {
   })
 
   it('resets onboarding and deletes company', async () => {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireClient.mockResolvedValue({
       user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
     })
     mockDbSelect.mockReturnValueOnce({
@@ -95,7 +95,7 @@ describe('POST /api/brand/reset-onboarding', () => {
   })
 
   it('resets onboarding without company delete when no company', async () => {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireClient.mockResolvedValue({
       user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
     })
     mockDbSelect.mockReturnValueOnce({

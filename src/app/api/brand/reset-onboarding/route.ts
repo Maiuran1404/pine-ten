@@ -1,5 +1,5 @@
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { requireAuth } from '@/lib/require-auth'
+import { requireClient } from '@/lib/require-auth'
 import { db } from '@/db'
 import { users, companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm'
 export async function POST() {
   return withErrorHandling(
     async () => {
-      const { user } = await requireAuth()
+      const { user } = await requireClient()
 
       // Get user with company info
       const [currentUser] = await db

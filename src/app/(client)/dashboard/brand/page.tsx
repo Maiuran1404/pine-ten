@@ -37,6 +37,7 @@ export default function BrandPage() {
     handleSave,
     handleRescan,
     handleRedoOnboarding,
+    isResettingOnboarding,
     handleDeleteAudience,
     handleSetPrimaryAudience,
     copyColor,
@@ -77,18 +78,12 @@ export default function BrandPage() {
             <h3 className="text-lg font-medium text-foreground">No Brand Set Up</h3>
             <p className="text-muted-foreground">Complete onboarding to set up your brand.</p>
             <Button
-              onClick={async () => {
-                try {
-                  await fetch('/api/brand/reset-onboarding', { method: 'POST' })
-                } catch {
-                  // continue to onboarding even if reset fails
-                }
-                window.location.href = '/onboarding?reset=true'
-              }}
+              onClick={handleRedoOnboarding}
+              disabled={isResettingOnboarding}
               className="mt-2"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Set Up Brand
+              {isResettingOnboarding ? 'Resetting...' : 'Set Up Brand'}
             </Button>
           </div>
         </div>

@@ -107,6 +107,18 @@ export function useOnboardingState() {
     return undefined
   }, [step, brandData.primaryColor, brandData.secondaryColor, brandData.accentColor])
 
+  // Force session refresh when arriving from a brand reset so the stale
+  // Better Auth cookie cache (~5min TTL) is replaced with fresh DB state.
+  // Without this, session.user.onboardingCompleted would remain `true` for
+  // up to 5 minutes after the reset API set it to `false`.
+  const isReset = searchParams.get('reset') === 'true'
+  useEffect(() => {
+    if (isReset) {
+      refetchSession().catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, [])
+
   // Handle redirects
   useEffect(() => {
     if (!isPending && !session) {
@@ -120,7 +132,9 @@ export function useOnboardingState() {
     }
 
     // Skip redirect if coming from brand page reset — session cache may be stale
-    if (searchParams.get('reset') === 'true') {
+    // (refetchSession above will correct this, but the first render may still
+    // see the stale value before the refetch completes)
+    if (isReset) {
       return
     }
 
@@ -128,7 +142,7 @@ export function useOnboardingState() {
     if (user?.onboardingCompleted) {
       router.push('/dashboard')
     }
-  }, [session, isPending, router, showingCompletionScreen, searchParams])
+  }, [session, isPending, router, showingCompletionScreen, isReset])
 
   // Brand extraction
   const handleBrandExtraction = async () => {
