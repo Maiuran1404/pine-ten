@@ -434,6 +434,7 @@ export function useChatInterfaceData({
     initialTaskData: initialTaskData || undefined,
     briefingState: _briefingState,
     scrollAreaRef,
+    csrfFetch,
   })
 
   // Wire up task forward-reference ref
