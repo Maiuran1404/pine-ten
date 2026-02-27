@@ -72,15 +72,11 @@ interface UseDraftPersistenceOptions {
   setPendingTask: React.Dispatch<React.SetStateAction<TaskProposal | null>>
   setCompletedTypingIds: React.Dispatch<React.SetStateAction<Set<string>>>
   setCurrentDeliverableType: React.Dispatch<React.SetStateAction<string | null>>
-  setStyleOffset: React.Dispatch<React.SetStateAction<Record<string, number>>>
-  setExcludedStyleAxes: React.Dispatch<React.SetStateAction<string[]>>
   setNeedsAutoContinue: React.Dispatch<React.SetStateAction<boolean>>
   setShowSubmissionModal: React.Dispatch<React.SetStateAction<boolean>>
   // Moodboard operations
   clearMoodboard: () => void
   addMoodboardItem: (item: Omit<MoodboardItem, 'id' | 'order' | 'addedAt'>) => void
-  // Brief processing
-  processBriefMessage: (content: string) => void
   // State for saving
   messages: Message[]
   selectedStyles: string[]
@@ -106,13 +102,10 @@ export function useDraftPersistence({
   setPendingTask,
   setCompletedTypingIds,
   setCurrentDeliverableType,
-  setStyleOffset,
-  setExcludedStyleAxes,
   setNeedsAutoContinue,
   setShowSubmissionModal,
   clearMoodboard,
   addMoodboardItem,
-  processBriefMessage,
   messages,
   selectedStyles,
   moodboardItems,
@@ -186,8 +179,6 @@ export function useDraftPersistence({
       setPendingTask(null)
       setCompletedTypingIds(new Set())
       setCurrentDeliverableType(null)
-      setStyleOffset({})
-      setExcludedStyleAxes([])
       clearMoodboard()
     }
     setIsInitialized(true)
@@ -203,21 +194,8 @@ export function useDraftPersistence({
     setPendingTask,
     setCompletedTypingIds,
     setCurrentDeliverableType,
-    setStyleOffset,
-    setExcludedStyleAxes,
     setNeedsAutoContinue,
   ])
-
-  // Process all user messages for brief inference on load
-  const hasProcessedMessagesForBriefRef = useRef(false)
-  useEffect(() => {
-    if (!isInitialized || messages.length === 0 || hasProcessedMessagesForBriefRef.current) return
-    hasProcessedMessagesForBriefRef.current = true
-    const userMessages = messages.filter((m) => m.role === 'user')
-    userMessages.forEach((msg) => {
-      if (msg.content) processBriefMessage(msg.content)
-    })
-  }, [isInitialized, messages, processBriefMessage])
 
   // Handle initial message from URL param
   useEffect(() => {
@@ -269,10 +247,6 @@ export function useDraftPersistence({
       setMessages((prev) => [...prev, userMessage])
     }
 
-    if (initialMessage) {
-      processBriefMessage(initialMessage)
-    }
-
     const url = new URL(window.location.href)
     url.searchParams.delete('message')
     url.searchParams.set('draft', draftId)
@@ -285,7 +259,6 @@ export function useDraftPersistence({
     isInitialized,
     seamlessTransition,
     draftId,
-    processBriefMessage,
     setMessages,
     setNeedsAutoContinue,
   ])
@@ -423,8 +396,6 @@ export function useDraftPersistence({
     setSelectedStyles([])
     setSelectedDeliverableStyles([])
     setCurrentDeliverableType(null)
-    setStyleOffset({})
-    setExcludedStyleAxes([])
     clearMoodboard()
     setCompletedTypingIds(new Set())
 
@@ -444,8 +415,6 @@ export function useDraftPersistence({
     setSelectedStyles,
     setSelectedDeliverableStyles,
     setCurrentDeliverableType,
-    setStyleOffset,
-    setExcludedStyleAxes,
     setCompletedTypingIds,
   ])
 

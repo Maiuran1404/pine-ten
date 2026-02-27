@@ -607,6 +607,26 @@
   animation: loading-grain-fade-in 1.2s ease-out forwards;
 }
 
+/* Chat decorative watermark */
+.chat-watermark {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 350px;
+  height: 350px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='none'%3E%3Cpath d='M200 50c-82.8 0-150 67.2-150 150s67.2 150 150 150 150-67.2 150-150S282.8 50 200 50zm0 270c-66.3 0-120-53.7-120-120S133.7 80 200 80s120 53.7 120 120-53.7 120-120 120z' fill='%238bb58b'/%3E%3Cpath d='M200 110c-49.7 0-90 40.3-90 90s40.3 90 90 90 90-40.3 90-90-40.3-90-90-90zm0 150c-33.1 0-60-26.9-60-60s26.9-60 60-60 60 26.9 60 60-26.9 60-60 60z' fill='%238bb58b'/%3E%3Cpath d='M200 170c-16.6 0-30 13.4-30 30s13.4 30 30 30 30-13.4 30-30-13.4-30-30-30z' fill='%238bb58b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: contain;
+}
+
+.dark .chat-watermark {
+  opacity: 0.03;
+}
+
 /* Shimmer skeleton for storyboard regeneration overlay */
 @keyframes shimmer {
   0% {

@@ -2,7 +2,11 @@
  * Silent Inference Engine
  * Parses user messages to extract task context without asking questions
  * Only surfaces clarifying questions when confidence is below threshold
+ *
+ * SERVER-ONLY: This module must never be imported from client components.
+ * Brief inference runs server-side in the chat API route.
  */
+import 'server-only'
 
 import type {
   Platform,

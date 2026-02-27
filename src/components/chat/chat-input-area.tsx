@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   Link2,
   Palette,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -144,7 +145,7 @@ export function ChatInputArea({
   hasStoryboard: _hasStoryboard = true,
   handleSend,
   handleFileUpload,
-  handleRequestTaskSummary: _handleRequestTaskSummary,
+  handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
   // Hide quick options when the last assistant message already shows inline style/video references
@@ -333,7 +334,7 @@ export function ChatInputArea({
               ghostText
                 ? '' // Hide placeholder when showing ghost text
                 : messages.length === 0
-                  ? 'What would you like to create today?'
+                  ? 'Describe what you want to craft...'
                   : 'Type your message...'
             }
             rows={1}
@@ -507,10 +508,21 @@ export function ChatInputArea({
 
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0 ml-3">
+            {/* Improve Prompt button */}
+            {messages.length > 0 && !isLoading && (
+              <button
+                onClick={handleRequestTaskSummary}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                title="Improve your prompt with AI suggestions"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Improve Prompt</span>
+              </button>
+            )}
             <Button
               onClick={handleSend}
               disabled={isLoading || (!input.trim() && !hasFiles)}
-              className="h-9 px-5 bg-crafted-green hover:bg-crafted-green-light text-white rounded-full"
+              className="h-9 px-5 bg-crafted-green hover:bg-crafted-green-light text-white rounded-full gap-2"
             >
               {isLoading ? (
                 <>
@@ -518,7 +530,12 @@ export function ChatInputArea({
                   <span className="ml-1.5">Thinking...</span>
                 </>
               ) : (
-                'Submit'
+                <>
+                  Craft it
+                  <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium leading-none">
+                    ↵
+                  </kbd>
+                </>
               )}
             </Button>
           </div>

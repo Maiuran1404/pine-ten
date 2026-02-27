@@ -463,9 +463,11 @@ export function ChatMessageList({
 
   return (
     <>
-      <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 min-h-0 relative" ref={scrollAreaRef}>
+        {/* Decorative watermark */}
+        <div className="chat-watermark" aria-hidden="true" />
         <div
-          className="pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto"
+          className="pb-4 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto relative z-[1]"
           role="log"
           aria-label="Chat messages"
         >
@@ -902,7 +904,7 @@ export function ChatMessageList({
                             !pendingTask && (
                               <button
                                 onClick={handleEditLastMessage}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-crafted-mint/30 dark:hover:bg-crafted-green/20 hover:text-foreground transition-all"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-30 group-hover:opacity-100 hover:bg-crafted-mint/30 dark:hover:bg-crafted-green/20 hover:text-foreground transition-all"
                                 title="Edit this message"
                               >
                                 <Pencil className="h-3.5 w-3.5" />

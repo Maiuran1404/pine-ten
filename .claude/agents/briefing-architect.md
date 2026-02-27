@@ -51,7 +51,7 @@ EXTRACT → TASK_TYPE → INTENT → INSPIRATION → STRUCTURE → STRATEGIC_REV
 **Critical invariants:**
 
 - All functions are pure — no side effects, no API calls
-- `evaluateTransitions` handles EXTRACT landing (skip stages when data available)
+- `deriveStage` walks the gate pipeline to determine current stage, with stall safety for force-advancing stuck stages
 - `goBackTo` clears data produced at and after the target stage
 - `pivotCategory` resets to STRUCTURE stage when category changes
 
@@ -128,7 +128,7 @@ When reviewing changes to the briefing subsystem, check:
 ### 1. Stage Transitions
 
 - [ ] New transitions are added to `getLegalTransitions` if needed
-- [ ] `evaluateTransitions` and `evaluateStageAdvancement` handle the new/changed logic
+- [ ] `deriveStage` gate pipeline and `STALL_CONFIG` handle the new/changed logic
 - [ ] `STAGE_ORDER` array is updated if stages are added/reordered
 - [ ] `goBackTo` correctly clears data for new fields
 - [ ] `STALL_CONFIG` has entries for any new stages

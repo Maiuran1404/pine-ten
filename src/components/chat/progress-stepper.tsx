@@ -35,9 +35,9 @@ export function LabeledProgressBar({
   return (
     <div className={cn('w-full', className)}>
       {/* Thin progress track */}
-      <div className="h-[2px] bg-muted-foreground/10 w-full relative">
+      <div className="h-[3px] bg-muted-foreground/10 w-full relative">
         <motion.div
-          className="h-full bg-primary/60"
+          className="h-full bg-crafted-green"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -69,6 +69,12 @@ export function LabeledProgressBar({
         {/* Current step label */}
         <span className="text-[10px] text-muted-foreground/60 font-medium">
           {stageDescription ?? STAGE_DESCRIPTIONS[currentStage]}
+        </span>
+
+        {/* Step counter */}
+        <span className="text-[10px] text-muted-foreground/50 ml-auto hidden sm:inline">
+          {Math.min(currentIndex + 1, BRIEFING_CHAT_STAGES.length)} of {BRIEFING_CHAT_STAGES.length}{' '}
+          steps
         </span>
 
         {/* Mobile dots */}

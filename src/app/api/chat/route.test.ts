@@ -106,7 +106,7 @@ vi.mock('@/lib/ai/briefing-state-machine', () => ({
     deliverableCategory: null,
   }),
   serialize: vi.fn().mockReturnValue({ stage: 'DISCOVERY' }),
-  evaluateTransitions: vi.fn().mockReturnValue('DISCOVERY'),
+  deriveStage: vi.fn().mockReturnValue('DISCOVERY'),
 }))
 
 vi.mock('@/lib/ai/briefing-tone', () => ({

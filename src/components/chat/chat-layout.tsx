@@ -477,8 +477,11 @@ export function ChatLayout({
                       />
                     )}
 
-                    {/* Collapse button */}
-                    <div className="shrink-0 flex items-center justify-start px-3 py-2">
+                    {/* Context header + collapse button */}
+                    <div className="shrink-0 flex items-center justify-between px-3 py-2">
+                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60 font-medium">
+                        Context
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"

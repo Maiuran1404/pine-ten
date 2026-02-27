@@ -37,6 +37,17 @@ import {
 } from './chat-interface.utils'
 import type { TaskData } from './chat-interface'
 import type { TaskProposal } from './types'
+import type { DeliverableStyle, MoodboardItem } from './types'
+import {
+  calculateBriefCompletion,
+  isBriefReadyForDesigner,
+} from '@/components/chat/brief-panel/types'
+import {
+  generateDesignerBrief,
+  exportBriefAsMarkdown,
+  generateContentOutline,
+} from '@/lib/ai/brief-generator'
+import { logger } from '@/lib/logger'
 
 interface UseChatInterfaceDataOptions {
   draftId: string
@@ -65,11 +76,6 @@ export function useChatInterfaceData({
   const chatStartedRef = useRef(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showStartOverDialog, setShowStartOverDialog] = useState(false)
-
-  // Stable no-op callbacks for draft persistence (styleOffset and excludedAxes
-  // are internal to useStyleSelection — these avoid re-creating () => {} each render)
-  const noopSetStyleOffset = useCallback(() => {}, [])
-  const noopSetExcludedStyleAxes = useCallback(() => {}, [])
 
   // Forward-reference refs for callbacks that target hooks defined later in the
   // composition chain (useTaskSubmission, useStyleSelection).  Without refs the
@@ -107,29 +113,7 @@ export function useChatInterfaceData({
     isLoading: isBrandLoading,
   } = useBrandData()
 
-  // ─── Brief ───────────────────────────────────────────────────
-  const {
-    brief,
-    completion: briefCompletion,
-    isReady: isBriefReady,
-    processMessage: processBriefMessage,
-    updateBrief,
-    addStyleToVisualDirection,
-    syncMoodboardToVisualDirection,
-    generateOutline,
-    exportBrief,
-  } = useBrief({
-    draftId,
-    brandAudiences,
-    brandColors,
-    brandTypography,
-    brandName: brandData?.name || '',
-    brandIndustry: brandData?.industry || '',
-    brandToneOfVoice: toneOfVoice,
-    brandDescription: brandData?.description || '',
-  })
-
-  // ─── Briefing state machine ──────────────────────────────────
+  // ─── Briefing state machine (single source of truth for brief) ─
   const initialBriefingState = useMemo(() => {
     const draft = getDraft(draftId)
     return draft?.briefingState ?? undefined
@@ -139,7 +123,135 @@ export function useChatInterfaceData({
     briefingState: _briefingState,
     serializedState: serializedBriefingState,
     syncFromServer: syncBriefingFromServer,
+    updateBrief: updateBriefInState,
   } = useBriefingStateMachine(initialBriefingState, { draftId })
+
+  // ─── Brief (derived from _briefingState — single source of truth) ─
+  const brief = _briefingState.brief
+  const briefCompletion = useMemo(() => calculateBriefCompletion(brief), [brief])
+  const isBriefReady = useMemo(() => isBriefReadyForDesigner(brief), [brief])
+
+  // Auto-save brief to server
+  useBriefAutoSave(brief, draftId)
+
+  // Apply brand data to brief when brand data becomes available
+  const brandDataAppliedRef = useRef(false)
+  useEffect(() => {
+    if (brandDataAppliedRef.current) return
+    if (!brandColors.length && !brandAudiences.length) return
+
+    brandDataAppliedRef.current = true
+    updateBriefInState((current) => {
+      let updated = { ...current }
+
+      // Apply brand colors
+      if (brandColors.length > 0 && !current.visualDirection?.colorPalette?.length) {
+        updated = {
+          ...updated,
+          visualDirection: {
+            selectedStyles: current.visualDirection?.selectedStyles || [],
+            moodKeywords: current.visualDirection?.moodKeywords || [],
+            colorPalette: brandColors,
+            typography: brandTypography,
+            avoidElements: current.visualDirection?.avoidElements || [],
+          },
+        }
+      }
+
+      // Apply brand audiences
+      if (brandAudiences.length > 0 && !current.audience?.value?.name) {
+        const primaryAudience = brandAudiences.find((a) => a.isPrimary) || brandAudiences[0]
+        updated = {
+          ...updated,
+          audience: {
+            value: {
+              name: primaryAudience.name,
+              demographics: primaryAudience.demographics
+                ? `Ages ${primaryAudience.demographics.ageRange?.min}-${primaryAudience.demographics.ageRange?.max}`
+                : undefined,
+              psychographics: primaryAudience.psychographics?.values?.join(', '),
+              painPoints: primaryAudience.psychographics?.painPoints,
+              goals: primaryAudience.psychographics?.goals,
+              source: 'inferred',
+            },
+            confidence: 0.75,
+            source: 'inferred',
+          },
+        }
+      }
+
+      return updated
+    })
+  }, [brandColors, brandTypography, brandAudiences, updateBriefInState])
+
+  // Convenience wrapper for direct brief replacement
+  const updateBrief = useCallback(
+    (newBrief: typeof brief) => updateBriefInState(() => newBrief),
+    [updateBriefInState]
+  )
+
+  // Add style to visual direction
+  const addStyleToVisualDirection = useCallback(
+    (style: DeliverableStyle) => {
+      updateBriefInState((current) => {
+        const currentDirection = current.visualDirection || {
+          selectedStyles: [],
+          moodKeywords: [],
+          colorPalette: brandColors,
+          typography: brandTypography,
+          avoidElements: [],
+        }
+        if (currentDirection.selectedStyles.some((s) => s.id === style.id)) return current
+        return {
+          ...current,
+          visualDirection: {
+            ...currentDirection,
+            selectedStyles: [...currentDirection.selectedStyles, style],
+          },
+          updatedAt: new Date(),
+        }
+      })
+    },
+    [updateBriefInState, brandColors, brandTypography]
+  )
+
+  // Sync moodboard items to visual direction
+  const syncMoodboardToVisualDirection = useCallback(
+    (items: MoodboardItem[]) => {
+      updateBriefInState((current) => {
+        const styles: DeliverableStyle[] = items
+          .filter((item) => item.type === 'style' && item.metadata?.styleId)
+          .map((item) => ({
+            id: item.metadata!.styleId!,
+            name: item.name,
+            description: null,
+            imageUrl: item.imageUrl,
+            deliverableType: item.metadata?.deliverableType || '',
+            styleAxis: item.metadata?.styleAxis || '',
+            subStyle: null,
+            semanticTags: [],
+          }))
+        const colors: string[] = [
+          ...brandColors,
+          ...items
+            .filter((item) => item.type === 'color')
+            .flatMap((item) => item.metadata?.colorSamples || []),
+        ]
+        return {
+          ...current,
+          visualDirection: {
+            selectedStyles: styles,
+            moodKeywords: current.visualDirection?.moodKeywords || [],
+            colorPalette: [...new Set(colors)],
+            typography: brandTypography,
+            avoidElements: current.visualDirection?.avoidElements || [],
+          },
+          updatedAt: new Date(),
+        }
+      })
+    },
+    [updateBriefInState, brandColors, brandTypography]
+  )
 
   // Sync moodboard changes to visual direction
   useEffect(() => {
@@ -148,47 +260,68 @@ export function useChatInterfaceData({
     }
   }, [moodboardItems, syncMoodboardToVisualDirection])
 
-  // ─── Sync server brief into client brief panel ─────────────
-  // The server state machine extracts richer field values via AI.
-  // Merge those into the client-side brief so the panel shows them.
-  const lastSyncedBriefRef = useRef<string | null>(null)
-  useEffect(() => {
-    const serverBrief = _briefingState?.brief
-    if (!serverBrief) return
+  // Generate content outline
+  const generateOutline = useCallback(
+    async (durationDays: number = 30) => {
+      if (!brief.platform.value || !brief.intent.value) return
+      try {
+        const response = await fetch('/api/brief/generate-outline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: brief.topic.value || 'content',
+            platform: brief.platform.value,
+            contentType: 'post',
+            intent: brief.intent.value,
+            durationDays,
+            audienceName: brief.audience.value?.name,
+            audienceDescription: brief.audience.value?.psychographics,
+            brandName: brandData?.name || '',
+            brandIndustry: brandData?.industry || '',
+            brandTone: toneOfVoice,
+          }),
+        })
+        if (!response.ok) throw new Error('Failed to generate outline')
+        const data = await response.json()
+        updateBriefInState((current) => ({
+          ...current,
+          contentOutline: data.outline,
+          updatedAt: new Date(),
+        }))
+      } catch (error) {
+        logger.error({ err: error }, 'Failed to generate AI outline, falling back to template')
+        const outline = generateContentOutline({
+          topic: brief.topic.value || 'content',
+          platform: brief.platform.value,
+          contentType: 'post',
+          intent: brief.intent.value,
+          durationDays,
+          audienceName: brief.audience.value?.name,
+        })
+        updateBriefInState((current) => ({
+          ...current,
+          contentOutline: outline,
+          updatedAt: new Date(),
+        }))
+      }
+    },
+    [brief, brandData, toneOfVoice, updateBriefInState]
+  )
 
-    // Deduplicate: only sync when the server brief actually changed
-    const syncKey = serverBrief.updatedAt?.toString() ?? ''
-    if (lastSyncedBriefRef.current === syncKey) return
-    lastSyncedBriefRef.current = syncKey
-
-    updateBrief({
-      ...brief,
-      // Only overwrite fields where the server has higher-confidence data
-      ...(serverBrief.taskSummary.value &&
-      serverBrief.taskSummary.confidence > brief.taskSummary.confidence
-        ? { taskSummary: serverBrief.taskSummary }
-        : {}),
-      ...(serverBrief.taskType.value && serverBrief.taskType.confidence > brief.taskType.confidence
-        ? { taskType: serverBrief.taskType }
-        : {}),
-      ...(serverBrief.intent.value && serverBrief.intent.confidence > brief.intent.confidence
-        ? { intent: serverBrief.intent }
-        : {}),
-      ...(serverBrief.platform.value && serverBrief.platform.confidence > brief.platform.confidence
-        ? { platform: serverBrief.platform }
-        : {}),
-      ...(serverBrief.audience.value && serverBrief.audience.confidence > brief.audience.confidence
-        ? { audience: serverBrief.audience }
-        : {}),
-      ...(serverBrief.topic.value && serverBrief.topic.confidence > brief.topic.confidence
-        ? { topic: serverBrief.topic }
-        : {}),
-      ...(serverBrief.dimensions.length > 0 ? { dimensions: serverBrief.dimensions } : {}),
-      ...(serverBrief.contentOutline ? { contentOutline: serverBrief.contentOutline } : {}),
-      updatedAt: new Date(),
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_briefingState?.brief?.updatedAt])
+  // Export brief as markdown
+  const exportBrief = useCallback(() => {
+    const designerBrief = generateDesignerBrief(
+      brief,
+      {
+        name: brandData?.name || 'Brand',
+        industry: brandData?.industry || 'General',
+        toneOfVoice: toneOfVoice || 'Professional',
+        brandDescription: brandData?.description || '',
+      },
+      draftId
+    )
+    return exportBriefAsMarkdown(designerBrief)
+  }, [brief, brandData, toneOfVoice, draftId])
 
   // ─── Storyboard / Structure panel ────────────────────────────
   // We need a forward ref for handleSendOption, which is created by useChatMessages
@@ -213,7 +346,6 @@ export function useChatInterfaceData({
     moodboardHasStyles: moodboardItems.some((i) => i.type === 'style'),
     serializedBriefingState,
     syncBriefingFromServer,
-    processBriefMessage,
     onTaskProposal: stableOnTaskProposal,
     onDeliverableTypeChange: stableOnDeliverableTypeChange,
     onStructureData: storyboard.updateStructureData,
@@ -324,13 +456,10 @@ export function useChatInterfaceData({
     setPendingTask: task.setPendingTask,
     setCompletedTypingIds: chatMessages.setCompletedTypingIds,
     setCurrentDeliverableType: styleSelection.setCurrentDeliverableType,
-    setStyleOffset: noopSetStyleOffset,
-    setExcludedStyleAxes: noopSetExcludedStyleAxes,
     setNeedsAutoContinue: chatMessages.setNeedsAutoContinue,
     setShowSubmissionModal: task.setShowSubmissionModal,
     clearMoodboard,
     addMoodboardItem,
-    processBriefMessage,
     messages: chatMessages.messages,
     selectedStyles: styleSelection.selectedStyles,
     moodboardItems,

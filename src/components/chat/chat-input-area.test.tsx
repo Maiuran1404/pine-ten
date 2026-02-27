@@ -86,7 +86,7 @@ describe('ChatInputArea', () => {
     render(<ChatInputArea {...createDefaultProps()} />)
 
     const textarea = screen.getByRole('textbox')
-    expect(textarea).toHaveAttribute('placeholder', 'What would you like to create today?')
+    expect(textarea).toHaveAttribute('placeholder', 'Describe what you want to craft...')
   })
 
   it('shows typing placeholder when there are messages', () => {
@@ -136,14 +136,14 @@ describe('ChatInputArea', () => {
   it('disables Submit button when input is empty and no files', () => {
     render(<ChatInputArea {...createDefaultProps()} />)
 
-    const submitButton = screen.getByRole('button', { name: 'Submit' })
+    const submitButton = screen.getByRole('button', { name: /Craft it/i })
     expect(submitButton).toBeDisabled()
   })
 
   it('enables Submit button when input has text', () => {
     render(<ChatInputArea {...createDefaultProps({ input: 'Some text' })} />)
 
-    const submitButton = screen.getByRole('button', { name: 'Submit' })
+    const submitButton = screen.getByRole('button', { name: /Craft it/i })
     expect(submitButton).not.toBeDisabled()
   })
 
@@ -173,7 +173,7 @@ describe('ChatInputArea', () => {
       />
     )
 
-    const submitButton = screen.getByRole('button', { name: 'Submit' })
+    const submitButton = screen.getByRole('button', { name: /Craft it/i })
     expect(submitButton).not.toBeDisabled()
   })
 
@@ -181,7 +181,7 @@ describe('ChatInputArea', () => {
     const handleSend = vi.fn()
     render(<ChatInputArea {...createDefaultProps({ input: 'test', handleSend })} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    fireEvent.click(screen.getByRole('button', { name: /Craft it/i }))
     expect(handleSend).toHaveBeenCalledTimes(1)
   })
 

@@ -62,7 +62,6 @@ interface UseChatMessagesOptions {
   moodboardHasStyles: boolean
   serializedBriefingState: SerializedBriefingState | undefined
   syncBriefingFromServer: (state: SerializedBriefingState) => void
-  processBriefMessage: (content: string) => void
   onTaskProposal: (proposal: TaskProposal) => void
   onDeliverableTypeChange: (type: string) => void
   onStructureData: (data: StructureData) => void
@@ -77,7 +76,6 @@ export function useChatMessages({
   moodboardHasStyles,
   serializedBriefingState,
   syncBriefingFromServer,
-  processBriefMessage,
   onTaskProposal,
   onDeliverableTypeChange,
   onStructureData,
@@ -192,8 +190,6 @@ export function useChatMessages({
       setLastSendError(null)
       requestStartTimeRef.current = Date.now()
 
-      if (userMessage.content) processBriefMessage(userMessage.content)
-
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
@@ -235,7 +231,6 @@ export function useChatMessages({
     [
       selectedStyles,
       moodboardHasStyles,
-      processBriefMessage,
       serializedBriefingState,
       processApiResponse,
       latestStoryboardRef,

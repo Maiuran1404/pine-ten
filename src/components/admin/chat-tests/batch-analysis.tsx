@@ -534,7 +534,7 @@ function buildAnalysisPrompt(runs: Run[], batchId: string, funnel: FunnelData[])
   L.push(`### Step 2: Fix`)
   L.push(`For each diagnosed issue, implement a fix. Common fixes include:`)
   L.push(
-    `- **Transition logic**: Stage advancement conditions in \`evaluateTransitions()\` may be too strict`
+    `- **Transition logic**: Stage advancement conditions in \`deriveStage()\` may be too strict`
   )
   L.push(
     `- **Prompt instructions**: The system prompt for a stage may not guide the AI to produce parseable output`

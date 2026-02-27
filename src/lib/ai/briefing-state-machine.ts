@@ -358,14 +358,31 @@ export const STAGE_PIPELINE: StageGate[] = [
  * Derive the current stage purely from accumulated state data.
  * Scans the gate pipeline and returns the first stage whose exit condition isn't met.
  *
+ * Includes stall safety: if stuck at the same stage for too many turns,
+ * force-advances past the unsatisfied gate using STALL_CONFIG thresholds.
+ *
  * Properties:
  * - Pure: same state → same stage, always
- * - Monotonic: stages only advance as data accumulates
+ * - Monotonic: stages only advance as data accumulates (or stall threshold is reached)
  * - Timing-independent: reads final state, not intermediate pipeline values
  */
 export function deriveStage(state: BriefingState): BriefingStage {
   for (const gate of STAGE_PIPELINE) {
-    if (!gate.exitWhen(state)) return gate.stage
+    if (!gate.exitWhen(state)) {
+      // Stall safety: force-advance if stuck at the current stage too long.
+      // Only applies when this gate matches the current stage (not earlier unsatisfied gates)
+      // and the stage is not REVIEW (terminal stage — only CONFIRM_SUBMIT advances past).
+      if (gate.stage === state.stage && gate.stage !== 'REVIEW') {
+        const stall = STALL_CONFIG[gate.stage]
+        if (
+          stall?.maxTurnsBeforeRecommend != null &&
+          state.turnsInCurrentStage >= stall.maxTurnsBeforeRecommend
+        ) {
+          continue // Skip this gate — force-advance to the next stage
+        }
+      }
+      return gate.stage
+    }
   }
   return 'SUBMIT'
 }
@@ -418,157 +435,6 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
     messageCount: 0,
     videoNarrative: null,
     narrativeApproved: false,
-  }
-}
-
-// =============================================================================
-// TRANSITION LOGIC
-// =============================================================================
-
-/**
- * Evaluate what stage the state machine should be in given current state and inference.
- * Pure function — same inputs always produce same output.
- *
- * Only evaluates FORWARD transitions from EXTRACT.
- * For ongoing transitions (staying/advancing from non-EXTRACT stages),
- * the stage is managed by the message processing pipeline.
- *
- * @deprecated Use `deriveStage()` instead — declarative pipeline replaces imperative transitions.
- */
-export function evaluateTransitions(
-  state: BriefingState,
-  inference: InferenceResult
-): BriefingStage {
-  // EXTRACT is the entry point — determine landing stage from first message
-  if (state.stage === 'EXTRACT') {
-    return evaluateExtractLanding(state, inference)
-  }
-
-  // For non-EXTRACT stages, evaluate if we can advance
-  return evaluateStageAdvancement(state)
-}
-
-/**
- * After EXTRACT, determine which stage to land on based on what was inferred.
- * Key principle: skip stages when data is available.
- */
-function evaluateExtractLanding(state: BriefingState, inference: InferenceResult): BriefingStage {
-  // Check both inference AND accumulated state — prevents re-stalling at EXTRACT
-  // when accumulated state has good data but the latest message's inference is weak
-  // Threshold lowered to 0.4: any weak signal from inference is enough to advance
-  const hasTaskType =
-    (inference.taskType.value !== null && inference.taskType.confidence >= 0.4) ||
-    (state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.4)
-  const hasIntent =
-    (inference.intent.value !== null && inference.intent.confidence >= 0.4) ||
-    (state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4)
-
-  // If we don't even know what they're making, go to TASK_TYPE
-  if (!hasTaskType) {
-    return 'TASK_TYPE'
-  }
-
-  // If we know what but not why, go to INTENT
-  if (!hasIntent) {
-    return 'INTENT'
-  }
-
-  // Both task type and intent are known — skip to STRUCTURE
-  return 'STRUCTURE'
-}
-
-/**
- * Evaluate if the current stage can advance to the next one.
- * Returns current stage if requirements not met.
- */
-function evaluateStageAdvancement(state: BriefingState): BriefingStage {
-  switch (state.stage) {
-    case 'TASK_TYPE': {
-      const hasTaskType =
-        state.brief.taskType.value !== null && state.brief.taskType.confidence >= 0.4
-      // Force advance after maxTurnsBeforeRecommend turns — don't gate on value being non-null
-      const forceAdvance =
-        state.turnsInCurrentStage >= (STALL_CONFIG.TASK_TYPE.maxTurnsBeforeRecommend ?? Infinity)
-      if (!hasTaskType && !forceAdvance) return 'TASK_TYPE'
-
-      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
-      return hasIntent ? 'STRUCTURE' : 'INTENT'
-    }
-
-    case 'INTENT': {
-      const hasIntent = state.brief.intent.value !== null && state.brief.intent.confidence >= 0.4
-      const forceAdvance =
-        state.turnsInCurrentStage >= (STALL_CONFIG.INTENT.maxTurnsBeforeRecommend ?? Infinity)
-      return hasIntent || forceAdvance ? 'STRUCTURE' : 'INTENT'
-    }
-
-    case 'STRUCTURE': {
-      // Video projects: two-phase flow (narrative → storyboard)
-      // Must have narrative approved AND structure data before advancing
-      if (state.deliverableCategory === 'video') {
-        const hasNarrativeAndStructure = state.narrativeApproved && state.structure !== null
-        if (hasNarrativeAndStructure || state.turnsInCurrentStage >= 5) {
-          return 'INSPIRATION'
-        }
-        return 'STRUCTURE'
-      }
-      // Non-video: INSPIRATION requires structure !== null, or force-advance after 2 turns
-      // to prevent permanent stuck state when structure markers are missing
-      if (state.structure !== null || state.turnsInCurrentStage >= 2) {
-        return 'INSPIRATION'
-      }
-      return 'STRUCTURE'
-    }
-
-    case 'INSPIRATION': {
-      // ELABORATE requires selectedStyles.length > 0, or force-advance after 3 turns
-      const hasStyles =
-        state.brief.visualDirection !== null &&
-        state.brief.visualDirection.selectedStyles.length > 0
-      const forceAdvance = state.turnsInCurrentStage >= 3
-      return hasStyles || forceAdvance ? 'ELABORATE' : 'INSPIRATION'
-    }
-
-    case 'ELABORATE': {
-      // Advance to MOODBOARD when elaboration is complete or after 3 turns
-      // (STRATEGIC_REVIEW stage is temporarily disabled)
-      if (checkElaborationComplete(state) || state.turnsInCurrentStage >= 3) {
-        return 'MOODBOARD'
-      }
-      return 'ELABORATE'
-    }
-
-    case 'STRATEGIC_REVIEW': {
-      // Advance to MOODBOARD if strategic review data exists, or after 2 turns
-      if (state.strategicReview !== null || state.turnsInCurrentStage >= 2) {
-        return 'MOODBOARD'
-      }
-      return 'STRATEGIC_REVIEW'
-    }
-
-    case 'MOODBOARD': {
-      // REVIEW requires overallMoodboard !== null (visualDirection)
-      return state.brief.visualDirection !== null ? 'REVIEW' : 'MOODBOARD'
-    }
-
-    case 'REVIEW': {
-      // Advance to SUBMIT after 1+ turns (user has reviewed and responded)
-      if (state.turnsInCurrentStage >= 1) {
-        return 'SUBMIT'
-      }
-      return 'REVIEW'
-    }
-
-    case 'DEEPEN': {
-      // Stays until user dispatches CONFIRM_SUBMIT
-      return 'DEEPEN'
-    }
-
-    case 'SUBMIT':
-      return 'SUBMIT'
-
-    default:
-      return state.stage
   }
 }
 

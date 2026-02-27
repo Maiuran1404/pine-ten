@@ -212,6 +212,7 @@ Server actions return: `{ data: T; error: null } | { data: null; error: string }
 - **NEVER** use `db.execute(sql\`...\`)` for queries — always use typed Drizzle query builder (`db.select()`, `db.insert()`, etc.)
 - **NEVER** remove or rename a function, type, or export without first grepping for all references and updating them in the same edit batch — this breaks parallel agents
 - **NEVER** use raw Tailwind palette colors (`emerald-500`, `violet-300`, `amber-600`, etc.) or hardcoded hex/rgb values for styling — all colors must come from design tokens in `globals.css` (see Color System section under Design Language)
+- **NEVER** remove or alter existing functionality, buttons, or interactive elements when making design/frontend changes — design updates must preserve 100% of current behavior unless the user explicitly approves otherwise
 
 ## Database
 
