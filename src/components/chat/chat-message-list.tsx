@@ -11,7 +11,6 @@ import {
   Palette,
   Sparkles,
   Lightbulb,
-  Pencil,
   Film,
   AlertCircle,
   RotateCcw,
@@ -318,9 +317,6 @@ export interface ChatMessageListProps {
   handleRejectTask: () => void
   handleRequestTaskSummary: () => void
 
-  // Edit handlers
-  handleEditLastMessage: () => void
-
   // Strategic review handler
   onStrategicReviewAction?: (response: 'accept' | 'override') => void
 
@@ -398,7 +394,6 @@ export function ChatMessageList({
   handleOpenSubmissionModal: _handleOpenSubmissionModal,
   handleRejectTask: _handleRejectTask,
   handleRequestTaskSummary,
-  handleEditLastMessage,
   onStrategicReviewAction,
   briefingStage,
   onSceneClick: _onSceneClick,
@@ -897,19 +892,6 @@ export function ChatMessageList({
                               </>
                             )
                           })()}
-                          {/* Edit icon - appears on hover for last message */}
-                          {index === lastUserMessageIndex &&
-                            !isLoading &&
-                            !isTaskMode &&
-                            !pendingTask && (
-                              <button
-                                onClick={handleEditLastMessage}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground opacity-30 group-hover:opacity-100 hover:bg-crafted-mint/30 dark:hover:bg-crafted-green/20 hover:text-foreground transition-all"
-                                title="Edit this message"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                            )}
                         </div>
                         {/* User attachments */}
                         {message.attachments && message.attachments.length > 0 && (

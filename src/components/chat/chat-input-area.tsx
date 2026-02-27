@@ -16,7 +16,6 @@ import {
   LayoutGrid,
   Link2,
   Palette,
-  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -355,10 +354,10 @@ export function ChatInputArea({
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20 rounded-b-2xl">
-          {/* Left toolbar */}
-          <div className="flex items-center gap-4 flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 rounded-b-2xl">
+          {/* Left: Attach + Credits */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-1 shrink-0">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -369,29 +368,29 @@ export function ChatInputArea({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Attach files"
               >
                 <Paperclip className="h-4 w-4" />
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 title="Add image"
               >
                 <ImageIcon className="h-4 w-4" />
               </button>
             </div>
             {/* Divider */}
-            <div className="h-4 w-px bg-border" />
-            {/* Credits indicator */}
+            <div className="h-4 w-px bg-border/50 shrink-0" />
+            {/* Credits — compact, left-aligned */}
             <div
-              className="flex items-center gap-1.5 text-sm"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground/60"
               title="Credits are used when you submit a brief to a designer, not during chat."
             >
               <span
                 className={cn(
-                  'w-2 h-2 rounded-full',
+                  'w-1.5 h-1.5 rounded-full shrink-0',
                   userCredits === 0
                     ? 'bg-ds-error'
                     : userCredits < 15
@@ -399,54 +398,56 @@ export function ChatInputArea({
                       : 'bg-ds-success'
                 )}
               />
-              <span className="text-muted-foreground">{userCredits} credits available</span>
+              <span>{userCredits} credits</span>
               {estimatedCredits && !EARLY_STAGES.has(briefingStage ?? '') && (
                 <>
-                  <span className="text-muted-foreground/40">&middot;</span>
-                  <span className="text-muted-foreground">
-                    ~{estimatedCredits} credits for this project
-                  </span>
+                  <span className="text-muted-foreground/30">&middot;</span>
+                  <span>~{estimatedCredits} est.</span>
                 </>
               )}
             </div>
-            {/* Deliverable type detection badge */}
+            {/* Deliverable type badge */}
             {deliverableCategory &&
               !EARLY_STAGES.has(briefingStage ?? '') &&
               briefingStage !== 'STRUCTURE' && (
                 <div
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/50 text-[11px] text-muted-foreground"
+                  className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground/50"
                   title={`We detected this is a ${deliverableCategory} project \u2014 the brief is tailored accordingly`}
                 >
                   {deliverableCategory === 'video' ? (
-                    <Film className="h-3 w-3" />
+                    <Film className="h-2.5 w-2.5" />
                   ) : deliverableCategory === 'website' ? (
-                    <LayoutGrid className="h-3 w-3" />
+                    <LayoutGrid className="h-2.5 w-2.5" />
                   ) : deliverableCategory === 'design' || deliverableCategory === 'brand' ? (
-                    <Palette className="h-3 w-3" />
+                    <Palette className="h-2.5 w-2.5" />
                   ) : (
-                    <Film className="h-3 w-3" />
+                    <Film className="h-2.5 w-2.5" />
                   )}
-                  <span className="capitalize">{deliverableCategory} detected</span>
+                  <span className="capitalize">{deliverableCategory}</span>
                 </div>
               )}
-            {/* Draft save indicator */}
+            {/* Draft saved — very subtle */}
             {lastSavedAt && (
-              <span className="text-[10px] text-muted-foreground/50">Draft saved</span>
+              <span className="text-[10px] leading-none text-muted-foreground/35 self-center">
+                Saved
+              </span>
             )}
-            {/* Word count hint - only show when user starts typing */}
+          </div>
+
+          {/* Right: Word count + CTA */}
+          <div className="flex items-center gap-3 shrink-0 ml-3">
+            {/* Word count ring — only while typing */}
             {input.trim().length > 0 &&
               (() => {
                 const wordCount = input.trim().split(/\s+/).filter(Boolean).length
                 const greatPromptWords = 20
 
-                // Score: word count + specificity (mentions platforms, audience, colors)
                 const specificityPatterns =
                   /instagram|tiktok|youtube|linkedin|facebook|audience|brand|style|color|#[0-9a-f]/gi
                 const specificityBonus = (input.match(specificityPatterns) || []).length * 2
                 const rawScore = Math.min(wordCount + specificityBonus, greatPromptWords)
                 const pct = Math.min((rawScore / greatPromptWords) * 100, 100)
 
-                // SVG ring parameters
                 const r = 10
                 const circumference = 2 * Math.PI * r
                 const offset = circumference - (pct / 100) * circumference
@@ -464,7 +465,7 @@ export function ChatInputArea({
 
                 return (
                   <div className="flex items-center gap-1.5" title={tooltip}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" className={color}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" className={color}>
                       <circle
                         cx="12"
                         cy="12"
@@ -504,21 +505,6 @@ export function ChatInputArea({
                   </div>
                 )
               })()}
-          </div>
-
-          {/* Right actions */}
-          <div className="flex items-center gap-2 shrink-0 ml-3">
-            {/* Improve Prompt button */}
-            {messages.length > 0 && !isLoading && (
-              <button
-                onClick={handleRequestTaskSummary}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                title="Improve your prompt with AI suggestions"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Improve Prompt</span>
-              </button>
-            )}
             <Button
               onClick={handleSend}
               disabled={isLoading || (!input.trim() && !hasFiles)}

@@ -290,7 +290,6 @@ export function ChatInterface({
     handleRequestTaskSummary,
     handleDeleteChat,
     handleStartOver,
-    handleEditLastMessage,
     handleFileUpload,
     handleDragEnter,
     handleDragLeave,
@@ -520,7 +519,6 @@ export function ChatInterface({
             handleOpenSubmissionModal={handleOpenSubmissionModal}
             handleRejectTask={handleRejectTask}
             handleRequestTaskSummary={handleRequestTaskSummary}
-            handleEditLastMessage={handleEditLastMessage}
             onStrategicReviewAction={handleStrategicReviewAction}
             briefingStage={briefingStage}
             onSceneClick={handleSceneClick}
