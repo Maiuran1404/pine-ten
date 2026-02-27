@@ -328,6 +328,7 @@ Visual verification catches layout bugs, responsive issues, render errors, and c
 | `refactor`          | DRY refactoring with project conventions                                     |
 | `perf-analyzer`     | Performance audit — config/infra only, no code                               |
 | `first-principles`  | Fresh-eyes architectural audit — wrong abstractions, complexity, bug magnets |
+| `qa-stress-test`    | Autonomous E2E QA stress testing with Chrome browser automation              |
 
 | Command             | Purpose                                                            |
 | ------------------- | ------------------------------------------------------------------ |
@@ -346,6 +347,7 @@ Visual verification catches layout bugs, responsive issues, render errors, and c
 | `/add-env`          | Scaffold env var across env.ts + .env.example + CI                 |
 | `/verify`           | Visual verification loop (browser screenshots + console)           |
 | `/first-principles` | First-principles architectural audit (dispatches first-principles) |
+| `/qa`               | Run QA stress tests (dispatches qa-stress-test)                    |
 
 ## Proactive Command Usage
 
@@ -367,6 +369,7 @@ Use these commands automatically in the appropriate context — don't wait for t
 | Same subsystem has had 2+ bugs in recent sessions     | `/first-principles` on that subsystem |
 | Feature touches 3+ subsystems or route groups         | `/first-principles` before impl       |
 | Major refactor planned (new boundaries or patterns)   | `/first-principles` before impl       |
+| After major feature complete, before PR               | `/qa` on affected flows               |
 
 ## Sub-Agent Dispatch Rules
 

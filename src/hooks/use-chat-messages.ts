@@ -69,6 +69,7 @@ interface UseChatMessagesOptions {
   onGlobalStyles?: (styles: WebsiteGlobalStyles) => void
   onVideoNarrative?: (data: VideoNarrative) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
+  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useChatMessages({
@@ -83,6 +84,7 @@ export function useChatMessages({
   onGlobalStyles,
   onVideoNarrative,
   latestStoryboardRef,
+  csrfFetch,
 }: UseChatMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -191,7 +193,7 @@ export function useChatMessages({
       requestStartTimeRef.current = Date.now()
 
       try {
-        const response = await fetch('/api/chat', {
+        const response = await csrfFetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -234,6 +236,7 @@ export function useChatMessages({
       serializedBriefingState,
       processApiResponse,
       latestStoryboardRef,
+      csrfFetch,
     ]
   )
 
@@ -259,7 +262,7 @@ export function useChatMessages({
           ? { ...serializedBriefingState, ...stateOverrides }
           : serializedBriefingState
 
-        const response = await fetch('/api/chat', {
+        const response = await csrfFetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -299,6 +302,7 @@ export function useChatMessages({
       serializedBriefingState,
       processApiResponse,
       latestStoryboardRef,
+      csrfFetch,
     ]
   )
 
@@ -321,7 +325,7 @@ export function useChatMessages({
       setLastSendError(null)
 
       try {
-        const response = await fetch('/api/chat', {
+        const response = await csrfFetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -348,7 +352,7 @@ export function useChatMessages({
         setIsLoading(false)
       }
     },
-    [serializedBriefingState, processApiResponse, latestStoryboardRef]
+    [serializedBriefingState, processApiResponse, latestStoryboardRef, csrfFetch]
   )
 
   // Auto-continue conversation if last message was from user
@@ -363,7 +367,7 @@ export function useChatMessages({
     requestStartTimeRef.current = Date.now()
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await csrfFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -393,6 +397,7 @@ export function useChatMessages({
     serializedBriefingState,
     processApiResponse,
     latestStoryboardRef,
+    csrfFetch,
   ])
 
   const handleCopyMessage = useCallback(async (content: string, messageId: string) => {
@@ -413,7 +418,7 @@ export function useChatMessages({
       setMessageFeedback((prev) => ({ ...prev, [messageId]: newFeedback }))
 
       if (newFeedback) {
-        fetch('/api/feedback', {
+        csrfFetch('/api/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messageId, feedback: newFeedback, context: 'chat' }),
@@ -425,7 +430,7 @@ export function useChatMessages({
         )
       }
     },
-    [messageFeedback]
+    [messageFeedback, csrfFetch]
   )
 
   const handleRetry = useCallback(() => {

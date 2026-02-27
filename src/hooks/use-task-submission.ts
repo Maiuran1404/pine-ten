@@ -40,6 +40,7 @@ interface UseTaskSubmissionOptions {
   initialTaskData?: TaskData | null
   briefingState?: { stage?: string; brief?: LiveBrief } | null
   scrollAreaRef: React.RefObject<HTMLDivElement | null>
+  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useTaskSubmission({
@@ -56,6 +57,7 @@ export function useTaskSubmission({
   initialTaskData,
   briefingState,
   scrollAreaRef,
+  csrfFetch,
 }: UseTaskSubmissionOptions) {
   const router = useRouter()
   const posthog = usePostHog()
