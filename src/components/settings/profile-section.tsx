@@ -41,23 +41,26 @@ export function ProfileSection({
         title="Profile Information"
         description="Update your personal details"
       />
-      <div className="px-7 pb-7 pt-5 space-y-6">
+      <div className="p-5 space-y-6">
         <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={session?.user?.image || undefined} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-crafted-green/20 to-crafted-mint/20" />
+            <Avatar className="relative h-20 w-20">
+              <AvatarImage src={session?.user?.image || undefined} />
+              <AvatarFallback className="bg-crafted-green/10 text-crafted-forest text-lg">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div>
             <p className="text-lg font-semibold text-foreground">{session?.user?.name}</p>
             <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
           </div>
         </div>
 
-        <div className="h-px bg-border/50" />
+        <div className="h-px bg-border/60" />
 
-        <div className="grid gap-5 max-w-lg">
+        <div className="grid gap-5 max-w-md">
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -65,7 +68,6 @@ export function ProfileSection({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Your name"
-              className="rounded-lg"
             />
           </div>
 
@@ -78,7 +80,7 @@ export function ProfileSection({
               id="email"
               value={emailValue}
               disabled
-              className="bg-muted text-muted-foreground rounded-lg"
+              className="bg-muted text-muted-foreground"
             />
             <p className="text-xs text-muted-foreground">Email cannot be changed</p>
           </div>
@@ -93,13 +95,16 @@ export function ProfileSection({
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder={phonePlaceholder}
-              className="rounded-lg"
             />
             {phoneHint && <p className="text-xs text-muted-foreground">{phoneHint}</p>}
           </div>
         </div>
 
-        <Button onClick={onSave} disabled={isSaving} className="rounded-full px-6">
+        <Button
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-crafted-green hover:bg-crafted-forest text-white"
+        >
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

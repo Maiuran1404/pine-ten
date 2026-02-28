@@ -10,14 +10,14 @@ export function SettingsCard({
   className?: string
 }) {
   return (
-    <div className={cn('rounded-2xl border border-border/60 bg-card shadow-sm', className)}>
+    <div className={cn('rounded-xl border border-border bg-card shadow-sm', className)}>
       {children}
     </div>
   )
 }
 
 export function SettingsCardHeader({
-  icon: _Icon,
+  icon: Icon,
   title,
   description,
 }: {
@@ -26,9 +26,14 @@ export function SettingsCardHeader({
   description: string
 }) {
   return (
-    <div className="px-7 pt-7 pb-0">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    <div className="p-5 border-b border-border">
+      <div className="flex items-center gap-3">
+        <div className="h-7 w-7 rounded-lg bg-crafted-green/10 dark:bg-crafted-green/20 flex items-center justify-center">
+          <Icon className="h-3.5 w-3.5 text-crafted-forest dark:text-crafted-sage" />
+        </div>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1 ml-10">{description}</p>
     </div>
   )
 }
