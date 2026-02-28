@@ -672,7 +672,7 @@ export function useChatInterfaceData({
     if (!selectedStyles || selectedStyles.length === 0) return
 
     const styleContext = selectedStyles
-      .map((s) => `${s.name}${s.description ? `: ${s.description}` : ''}`)
+      .map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)
       .join('; ')
 
     const briefId = _briefingState?.brief?.id || draftId
@@ -693,7 +693,7 @@ export function useChatInterfaceData({
       const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles
       const styleCtx =
         selectedStylesList
-          ?.map((s) => `${s.name}${s.description ? `: ${s.description}` : ''}`)
+          ?.map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)
           .join('; ') || ''
       const bId = _briefingState?.brief?.id || draftId
       storyboard.regenerateSceneImage(scene, styleCtx, bId)

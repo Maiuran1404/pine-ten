@@ -607,6 +607,7 @@ export function createMockDeliverableStyleReference(
     name: 'Minimalist Clean',
     description: 'A clean minimalist style',
     imageUrl: 'https://storage.example.com/styles/minimalist.jpg',
+    promptGuide: null,
     deliverableType: 'instagram_post',
     styleAxis: 'minimal',
     subStyle: null,

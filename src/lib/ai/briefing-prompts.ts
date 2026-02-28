@@ -561,8 +561,15 @@ function buildStyleContext(state: BriefingState): string {
 
   const selectedStyles = state.brief.visualDirection?.selectedStyles
   if (selectedStyles && selectedStyles.length > 0) {
-    const styleNames = selectedStyles.map((s) => s.name).join(', ')
-    parts.push(`The user selected these visual styles: ${styleNames}.`)
+    // Use prompt guides when available for richer style context
+    const stylesWithGuides = selectedStyles.filter((s) => s.promptGuide)
+    if (stylesWithGuides.length > 0) {
+      const guideContext = stylesWithGuides.map((s) => `${s.name}: ${s.promptGuide}`).join('\n')
+      parts.push(`The user selected these visual styles with detailed direction:\n${guideContext}`)
+    } else {
+      const styleNames = selectedStyles.map((s) => s.name).join(', ')
+      parts.push(`The user selected these visual styles: ${styleNames}.`)
+    }
   }
 
   if (state.styleKeywords.length > 0) {

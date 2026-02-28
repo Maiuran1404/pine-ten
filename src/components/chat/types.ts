@@ -80,6 +80,7 @@ export interface DeliverableStyle {
   styleAxis: string
   subStyle: string | null
   semanticTags: string[]
+  promptGuide?: string // DALL-E prompt template for storyboard image generation
   // Brand-aware scoring fields
   brandMatchScore?: number
   matchReason?: string

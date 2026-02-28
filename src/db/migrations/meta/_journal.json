@@ -253,6 +253,13 @@
       "when": 1772244394663,
       "tag": "0035_clumsy_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1772261719523,
+      "tag": "0036_sparkling_salo",
+      "breakpoints": true
     }
   ]
 }
