@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, useRef } from 'react'
+import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
@@ -30,14 +30,10 @@ import { getImageVariantUrls } from '@/lib/image/utils'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
+import { useTasks, useStyleReferencesMatch, useTemplateImages } from '@/hooks/use-queries'
 import { TEMPLATE_CATEGORIES } from './_constants/template-categories'
 import { SOCIAL_MEDIA_PLATFORMS, FREQUENCY_OPTIONS } from './_constants/social-media'
-import type {
-  TemplateImageData,
-  UploadedFile,
-  StyleReference,
-  PlatformSelection,
-} from './_types/dashboard-types'
+import type { UploadedFile, StyleReference, PlatformSelection } from './_types/dashboard-types'
 
 function DashboardContent() {
   const router = useRouter()
@@ -50,8 +46,6 @@ function DashboardContent() {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [styleReferences, setStyleReferences] = useState<StyleReference[]>([])
-  const [isLoadingStyles, setIsLoadingStyles] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [modalNotes, setModalNotes] = useState('')
@@ -59,15 +53,38 @@ function DashboardContent() {
     {}
   )
   const [quickMode, setQuickMode] = useState(false)
-  const [tasksForReview, setTasksForReview] = useState<
-    { id: string; title: string; description: string }[]
-  >([])
+  const [dismissedError, setDismissedError] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
   const prefersReduced = useReducedMotion()
-  const [fetchError, setFetchError] = useState<string | null>(null)
-  const [templateImageMap, setTemplateImageMap] = useState<Map<string, string>>(new Map())
+
+  // React Query hooks — deduplicate across StrictMode remounts
+  const { data: tasksData, error: tasksError } = useTasks({ limit: 10, view: 'client' })
+  const { data: styleRefsData, isLoading: isLoadingStyles } = useStyleReferencesMatch(150)
+  const { data: templateImagesData } = useTemplateImages()
+
+  // Derive values from query data
+  const tasksForReview = useMemo(() => {
+    const allTasks = tasksData?.tasks || []
+    return allTasks.filter((t) => t.status === 'IN_REVIEW')
+  }, [tasksData])
+
+  const styleReferences = styleRefsData?.data ?? []
+
+  const templateImageMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (templateImagesData?.images) {
+      for (const img of templateImagesData.images) {
+        const key = img.optionKey ? `${img.categoryKey}:${img.optionKey}` : img.categoryKey
+        map.set(key, img.imageUrl)
+      }
+    }
+    return map
+  }, [templateImagesData])
+
+  const fetchError =
+    !dismissedError && tasksError ? tasksError.message || 'Failed to load tasks' : null
 
   const userName = session?.user?.name?.split(' ')[0] || 'there'
 
@@ -82,47 +99,6 @@ function DashboardContent() {
       toast.info('Payment was cancelled')
     }
   }, [searchParams])
-
-  // Fetch tasks and style references on mount only
-  useEffect(() => {
-    // Fetch tasks needing client review
-    fetch('/api/tasks?limit=10&view=client')
-      .then((res) => res.json())
-      .then((data) => {
-        const allTasks = data.data?.tasks || data.tasks || []
-        setTasksForReview(allTasks.filter((t: { status: string }) => t.status === 'IN_REVIEW'))
-      })
-      .catch(() => setFetchError('Failed to load tasks'))
-
-    // Fetch brand-matched style references (increased limit for all categories)
-    setIsLoadingStyles(true)
-    fetch('/api/style-references/match?limit=150')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && data?.data) {
-          setStyleReferences(data.data.data ?? data.data)
-        }
-      })
-      .catch(() => setFetchError('Failed to load style references'))
-      .finally(() => setIsLoadingStyles(false))
-
-    // Fetch template preview images
-    fetch('/api/template-images')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && data?.data?.images) {
-          const map = new Map<string, string>()
-          for (const img of data.data.images as TemplateImageData[]) {
-            const key = img.optionKey ? `${img.categoryKey}:${img.optionKey}` : img.categoryKey
-            map.set(key, img.imageUrl)
-          }
-          setTemplateImageMap(map)
-        }
-      })
-      .catch(() => {
-        // Non-critical — fallback to icons
-      })
-  }, [])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -434,7 +410,7 @@ function DashboardContent() {
               <p className="text-xs text-muted-foreground mt-0.5">Try refreshing the page</p>
             </div>
             <button
-              onClick={() => setFetchError(null)}
+              onClick={() => setDismissedError(true)}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Dismiss error"
             >

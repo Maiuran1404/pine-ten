@@ -213,6 +213,42 @@ export function useAvailableTasks() {
   })
 }
 
+// Style reference hooks
+interface StyleReference {
+  id: string
+  name: string
+  imageUrl: string
+  deliverableType: string | null
+  styleAxis: string | null
+  contentCategory?: string
+  colorTemperature?: string
+}
+
+export function useStyleReferencesMatch(limit = 20) {
+  return useQuery({
+    queryKey: queryKeys.styleReferences.match(limit),
+    queryFn: () =>
+      fetcher<{ data: StyleReference[]; matchMethod: string }>(
+        `/api/style-references/match?limit=${limit}`
+      ),
+  })
+}
+
+// Template image hooks
+interface TemplateImageData {
+  id: string
+  categoryKey: string
+  optionKey: string | null
+  imageUrl: string
+}
+
+export function useTemplateImages() {
+  return useQuery({
+    queryKey: queryKeys.templateImages.list(),
+    queryFn: () => fetcher<{ images: TemplateImageData[] }>('/api/template-images'),
+  })
+}
+
 // Brand hooks
 export function useBrand() {
   return useQuery({
