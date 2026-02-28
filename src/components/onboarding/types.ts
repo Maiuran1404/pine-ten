@@ -390,6 +390,11 @@ export const CREATIVE_FOCUS_OPTIONS: CreativeFocusOption[] = [
     title: 'Brand guidelines',
     description: "So things don't fall apart as you grow.",
   },
+  {
+    id: 'launch-videos',
+    title: 'Launch videos',
+    description: 'Promos, demos, and reels that ship fast.',
+  },
 ]
 
 // Visual Style Options

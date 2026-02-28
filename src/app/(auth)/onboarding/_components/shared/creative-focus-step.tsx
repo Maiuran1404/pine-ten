@@ -10,12 +10,22 @@ import {
   Share2,
   Presentation,
   BookOpen,
+  Video,
   Zap,
 } from 'lucide-react'
 import { type BrandData, CREATIVE_FOCUS_OPTIONS } from '@/components/onboarding/types'
 import { staggerContainer, staggerItem } from '@/app/(auth)/onboarding/_constants/animations'
 import { GlowingCard } from '@/app/(auth)/onboarding/_components/shared/glowing-card'
 import { LoadingSpinner } from '@/components/shared/loading'
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  ads: Target,
+  'landing-pages': Layout,
+  social: Share2,
+  'pitch-decks': Presentation,
+  'brand-guidelines': BookOpen,
+  'launch-videos': Video,
+}
 
 export function CreativeFocusStep({
   brandData,
@@ -35,14 +45,6 @@ export function CreativeFocusStep({
       ? brandData.creativeFocus.filter((f) => f !== id)
       : [...brandData.creativeFocus, id]
     setBrandData({ ...brandData, creativeFocus: newFocus })
-  }
-
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    ads: Target,
-    'landing-pages': Layout,
-    social: Share2,
-    'pitch-decks': Presentation,
-    'brand-guidelines': BookOpen,
   }
 
   return (

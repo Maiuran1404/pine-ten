@@ -1,8 +1,10 @@
-# Add, Commit & Push
+# Add, Commit, Push & Merge
 
-Stage ALL changes, run pre-push validation (lint + typecheck + affected tests), write a detailed conventional commit message, commit, and push to the remote. NEVER leave dirty state behind.
+Stage ALL changes, run pre-push validation (lint + typecheck + affected tests), write a detailed conventional commit message, commit, push to the remote, and merge the current branch into main. NEVER leave dirty state behind.
 
 ## Steps
+
+### Phase 1: Add, Commit & Push
 
 1. Run `git status` to see all untracked and modified files
 2. Run `git diff` to see unstaged changes and `git diff --cached` to see already-staged changes
@@ -39,18 +41,47 @@ Stage ALL changes, run pre-push validation (lint + typecheck + affected tests), 
     - Note: the Husky pre-push hook will also run typecheck + changed tests as a safety net
 11. Run `git status` one final time to confirm clean working tree. If it is NOT clean, go back to step 9.
 
-## CRITICAL RULE
+### Phase 2: Merge into Main
 
-The working tree MUST be clean after this command finishes. No modified files, no untracked files (except intentionally gitignored ones). If lint-staged, prettier, or any pre-commit hook modifies files during the commit, those modifications MUST be committed in a follow-up commit before pushing.
+12. Determine the current branch name with `git branch --show-current`
+    - If already on `main`, skip the merge phase entirely and report "Already on main, nothing to merge"
+13. Fetch latest main: `git fetch origin main`
+14. Switch to main: `git checkout main` and pull latest: `git pull origin main`
+15. Merge the feature branch into main: `git merge <branch-name> --no-ff`
+    - The `--no-ff` flag ensures a merge commit is created for clean history
+16. **Handle merge conflicts** — if the merge produces conflicts:
+    - Run `git diff --name-only --diff-filter=U` to list ALL conflicted files
+    - For EACH conflicted file, show the user the conflict markers and surrounding context
+    - **ASK the user** how they want to resolve each conflict — present clear options:
+      - Keep the version from main ("theirs")
+      - Keep the version from the feature branch ("ours")
+      - Manually specify the resolution (user provides the content)
+    - Apply the user's chosen resolution for each file
+    - Stage resolved files with `git add <file>`
+    - After ALL conflicts are resolved, run `npm run typecheck` and `npm run lint -- --max-warnings 0` to verify the merge is clean
+    - Complete the merge with `git commit` (the merge commit message is auto-generated)
+17. If the merge succeeds cleanly (no conflicts), push main: `git push origin main`
+18. Switch back to the feature branch: `git checkout <branch-name>`
+19. Run `git status` to confirm clean state
+
+## CRITICAL RULES
+
+- The working tree MUST be clean after this command finishes. No modified files, no untracked files (except intentionally gitignored ones). If lint-staged, prettier, or any pre-commit hook modifies files during the commit, those modifications MUST be committed in a follow-up commit before pushing.
+- NEVER force-push to main. If the push to main fails due to remote changes, ask the user before proceeding.
+- NEVER auto-resolve merge conflicts. ALWAYS show the conflicts to the user and ask for their decision.
+- If ANY validation fails after conflict resolution, report the errors and ask the user how to proceed.
 
 ## Output
 
 Report:
 
 - **Validation**: lint PASS/FAIL, typecheck PASS/FAIL, affected tests PASS/FAIL (N passed, N failed)
-- **Branch**: name
+- **Branch**: feature branch name
 - **Commit**: hash(es) (short)
 - **Message**: commit message(s) used
 - **Files**: count and list
-- **Push**: success/failure
+- **Push (branch)**: success/failure
+- **Merge into main**: success/failure/conflicts resolved
+- **Push (main)**: success/failure
+- **Final branch**: which branch you're on at the end
 - **Working tree**: must be clean
