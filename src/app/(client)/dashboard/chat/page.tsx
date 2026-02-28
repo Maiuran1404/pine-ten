@@ -1,39 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, startTransition } from 'react'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { ChatInterface } from '@/components/chat/chat-interface'
 import { getDrafts, generateDraftId, type ChatDraft } from '@/lib/chat-drafts'
 import { Button } from '@/components/ui/button'
-import {
-  Plus,
-  Sparkles,
-  CheckSquare,
-  FolderOpen,
-  Coins,
-  Building2,
-  PanelLeftClose,
-  PanelLeft,
-  ArrowLeft,
-  Moon,
-  Sun,
-  User,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Sparkles, User } from 'lucide-react'
 import { useSession } from '@/lib/auth-client'
-import { useTheme } from 'next-themes'
 import Link from 'next/link'
-import Image from 'next/image'
-import { useCredits } from '@/providers/credit-provider'
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const pathname = usePathname()
   const initializedRef = useRef(false)
   const { data: session } = useSession()
-  const { theme, setTheme } = useTheme()
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // Collapsed by default in chat
 
   // Get current URL params
   const draftParam = searchParams.get('draft')
@@ -101,13 +81,6 @@ export default function ChatPage() {
     }
   }, [draftParam, messageParam, hasUrlParams, initialMessage])
 
-  const handleStartNew = () => {
-    const newId = generateDraftId()
-    setCurrentDraftId(newId)
-    setInitialMessage(null)
-    router.push('/dashboard/chat')
-  }
-
   const draftUpdateTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const handleDraftUpdate = useCallback(() => {
     clearTimeout(draftUpdateTimer.current)
@@ -125,232 +98,76 @@ export default function ChatPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUrlParams])
 
-  // Get user credits from context
-  const { credits: userCredits } = useCredits()
-
-  // Features menu items - matching main sidebar
-  const features = [
-    { icon: CheckSquare, label: 'Tasks', href: '/dashboard/tasks' },
-    { icon: FolderOpen, label: 'Library', href: '/dashboard/designs' },
-    { icon: Building2, label: 'My Brand', href: '/dashboard/brand' },
-    { icon: Coins, label: 'Credits', href: '/dashboard/credits' },
-  ]
-
   // Don't render anything if we're about to redirect
   if (!draftParam && !messageParam && !paymentParam) {
     return null
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-background">
-      {/* Left sidebar */}
+    <div className="h-full flex flex-col min-h-0 relative overflow-hidden">
+      {/* Soft gradient crafted-green/mint background at top */}
       <div
-        className={cn(
-          'shrink-0 border-r border-border bg-card flex flex-col transition-all duration-300',
-          sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-64'
-        )}
-      >
-        {/* Logo and collapse toggle */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <button
-            onClick={() => setSidebarCollapsed(true)}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <Image
-              src="/craftedfigureblack.png"
-              alt="Crafted"
-              width={28}
-              height={28}
-              className="dark:hidden"
-            />
-            <Image
-              src="/craftedfigurewhite.png"
-              alt="Crafted"
-              width={28}
-              height={28}
-              className="hidden dark:block"
-            />
-            <span className="font-semibold text-lg text-foreground">Crafted</span>
-          </button>
-          <button
-            onClick={() => setSidebarCollapsed(true)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose className="h-4 w-4" />
-          </button>
-        </div>
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg,
+            color-mix(in srgb, var(--crafted-mint) 40%, transparent) 0%,
+            color-mix(in srgb, var(--crafted-mint) 20%, transparent) 15%,
+            transparent 30%
+          )`,
+        }}
+      />
+      {/* Dark mode overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
+        style={{
+          background: `linear-gradient(180deg,
+            color-mix(in srgb, var(--crafted-forest) 15%, transparent) 0%,
+            rgba(10, 10, 10, 0.5) 15%,
+            rgba(10, 10, 10, 1) 30%
+          )`,
+        }}
+      />
 
-        {/* Back to Dashboard */}
-        <div className="px-4 pt-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+      {/* Top bar */}
+      <div className="relative z-20 shrink-0 flex items-center justify-end px-6 py-4">
+        {/* Right side - actions */}
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/credits">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-4 rounded-xl border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Upgrade
+            </Button>
           </Link>
-        </div>
-
-        {/* New Chat button */}
-        <div className="p-4">
-          <Button
-            onClick={handleStartNew}
-            variant="outline"
-            className="w-full justify-start gap-2 h-11 border-border hover:bg-muted text-foreground"
-          >
-            <Plus className="h-4 w-4" />
-            New Chat
-          </Button>
-        </div>
-
-        {/* Features section */}
-        <div className="px-4 pb-2 flex-1">
-          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-            Features
-          </p>
-          <nav className="space-y-1">
-            {features.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'bg-crafted-green/10 dark:bg-crafted-green/20 text-crafted-forest dark:text-crafted-sage'
-                    : 'text-foreground hover:bg-muted'
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* Credits card at bottom */}
-        <div className="p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-crafted-green/15 to-crafted-green/5 dark:from-crafted-green/30 dark:to-crafted-forest/30 p-4 border border-crafted-green/20 dark:border-crafted-green/30 relative overflow-hidden">
-            {/* Decorative elements */}
-            <div className="absolute top-2 right-2 w-16 h-16 bg-crafted-mint/30 dark:bg-crafted-green/20 rounded-lg transform rotate-12" />
-            <div className="absolute top-6 right-6 w-12 h-12 bg-crafted-sage/30 dark:bg-crafted-green-light/20 rounded-lg transform -rotate-6" />
-
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-crafted-forest dark:text-crafted-sage">
-                  Starter Plan
-                </span>
-                <span className="text-xs bg-crafted-green text-white px-2 py-1 rounded-full font-medium">
-                  {userCredits} Credits
-                </span>
-              </div>
-              <Link href="/dashboard/credits">
-                <Button
-                  size="sm"
-                  className="w-full h-10 bg-crafted-green hover:bg-crafted-forest text-white rounded-xl font-medium"
-                >
-                  Get more Credits!
-                </Button>
-              </Link>
-              <p className="text-xs text-crafted-forest dark:text-crafted-sage mt-3 text-center leading-relaxed">
-                Boost productivity with seamless tasks request and responsive AI, built to assist
-                you.
-              </p>
-            </div>
+          {/* User avatar */}
+          <div className="w-10 h-10 rounded-full border border-border bg-white dark:bg-card overflow-hidden flex items-center justify-center">
+            {session?.user?.image ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={session.user.image}
+                alt={session.user.name || 'User'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="h-5 w-5 text-muted-foreground" />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-        {/* Soft gradient crafted-green/mint background at top */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `linear-gradient(180deg,
-              color-mix(in srgb, var(--crafted-mint) 40%, transparent) 0%,
-              color-mix(in srgb, var(--crafted-mint) 20%, transparent) 15%,
-              transparent 30%
-            )`,
-          }}
+      {/* Chat content */}
+      <div className="relative z-10 flex-1 flex flex-col min-h-0">
+        <ChatInterface
+          draftId={currentDraftId}
+          onDraftUpdate={handleDraftUpdate}
+          initialMessage={initialMessage}
+          seamlessTransition={true}
+          showRightPanel={true}
+          onChatStart={() => {}}
         />
-        {/* Dark mode overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none dark:opacity-100 opacity-0 transition-opacity"
-          style={{
-            background: `linear-gradient(180deg,
-              color-mix(in srgb, var(--crafted-forest) 15%, transparent) 0%,
-              rgba(10, 10, 10, 0.5) 15%,
-              rgba(10, 10, 10, 1) 30%
-            )`,
-          }}
-        />
-
-        {/* Top bar */}
-        <div className="relative z-20 shrink-0 flex items-center justify-between px-6 py-4">
-          {/* Left side - sidebar toggle and model selector */}
-          <div className="flex items-center gap-4">
-            {sidebarCollapsed && (
-              <button
-                onClick={() => setSidebarCollapsed(false)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-muted transition-colors"
-                title="Expand sidebar"
-              >
-                <PanelLeft className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-
-          {/* Right side - actions */}
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard/credits">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 px-4 rounded-xl border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                Upgrade
-              </Button>
-            </Link>
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-xl border border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-card transition-colors"
-              title="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </button>
-            {/* User avatar */}
-            <div className="w-10 h-10 rounded-full border border-border bg-white dark:bg-card overflow-hidden flex items-center justify-center">
-              {session?.user?.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={session.user.image}
-                  alt={session.user.name || 'User'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Chat content */}
-        <div className="relative z-10 flex-1 flex flex-col min-h-0">
-          <ChatInterface
-            draftId={currentDraftId}
-            onDraftUpdate={handleDraftUpdate}
-            initialMessage={initialMessage}
-            seamlessTransition={true}
-            showRightPanel={true}
-            onChatStart={() => {}}
-          />
-        </div>
       </div>
     </div>
   )
