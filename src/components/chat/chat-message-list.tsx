@@ -640,6 +640,7 @@ export function ChatMessageList({
                           {/* Deliverable Style References - only on last assistant message when stage CTA is styleSelection.
                               Hidden when video references are present (they already serve as the visual direction picker). */}
                           {isLastAssistant &&
+                            !structurePanelVisible &&
                             (!briefingStage || stageCTA === 'styleSelection') &&
                             message.deliverableStyles &&
                             message.deliverableStyles.length > 0 &&
@@ -706,6 +707,7 @@ export function ChatMessageList({
 
                           {/* Video References - only on last assistant message when stage CTA is styleSelection */}
                           {isLastAssistant &&
+                            !structurePanelVisible &&
                             (!briefingStage || stageCTA === 'styleSelection') &&
                             message.videoReferences &&
                             message.videoReferences.length > 0 &&

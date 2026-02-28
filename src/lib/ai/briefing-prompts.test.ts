@@ -307,7 +307,7 @@ describe('buildSystemPrompt', () => {
   it('includes legal transitions in closing instruction', () => {
     const state = makeState({ stage: 'STRUCTURE' })
     const prompt = buildSystemPrompt(state)
-    expect(prompt).toContain('Legal stages from STRUCTURE: STRUCTURE, INSPIRATION')
+    expect(prompt).toContain('Legal stages from STRUCTURE: STRUCTURE, ELABORATE')
   })
 
   it('includes per-stage BRIEF_META reminder for STRUCTURE', () => {

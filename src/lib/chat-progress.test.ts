@@ -21,9 +21,8 @@ describe('CHAT_STAGES', () => {
 })
 
 describe('BRIEFING_CHAT_STAGES', () => {
-  it('contains extended stages including strategic_review and moodboard', () => {
-    expect(BRIEFING_CHAT_STAGES).toContain('strategic_review')
-    expect(BRIEFING_CHAT_STAGES).toContain('moodboard')
+  it('contains the 5 briefing stages in order', () => {
+    expect(BRIEFING_CHAT_STAGES).toEqual(['brief', 'style', 'details', 'review', 'submit'])
   })
 })
 
@@ -48,12 +47,12 @@ describe('mapBriefingStageToChat', () => {
     expect(mapBriefingStageToChat('STRUCTURE')).toBe('details')
   })
 
-  it('maps STRATEGIC_REVIEW to strategic_review', () => {
-    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('strategic_review')
+  it('maps STRATEGIC_REVIEW to details', () => {
+    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('details')
   })
 
-  it('maps MOODBOARD to moodboard', () => {
-    expect(mapBriefingStageToChat('MOODBOARD')).toBe('moodboard')
+  it('maps MOODBOARD to details', () => {
+    expect(mapBriefingStageToChat('MOODBOARD')).toBe('details')
   })
 
   it('maps REVIEW to review', () => {

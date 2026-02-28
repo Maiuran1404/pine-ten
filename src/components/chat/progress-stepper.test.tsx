@@ -34,10 +34,8 @@ describe('ProgressStepper', () => {
     render(<ProgressStepper currentStage="brief" completedStages={[]} progressPercentage={10} />)
 
     expect(screen.getByText('Describe your project')).toBeInTheDocument()
-    expect(screen.getByText('Define your structure')).toBeInTheDocument()
     expect(screen.getByText('Choose your visual style')).toBeInTheDocument()
-    expect(screen.getByText('Strategic review')).toBeInTheDocument()
-    expect(screen.getByText('Refine your moodboard')).toBeInTheDocument()
+    expect(screen.getByText('Define your structure')).toBeInTheDocument()
     expect(screen.getByText('Review your request')).toBeInTheDocument()
     expect(screen.getByText('Submit for creation')).toBeInTheDocument()
   })
@@ -51,15 +49,7 @@ describe('ProgressStepper', () => {
   })
 
   it('shows "Ready to create!" when progress is 100%', () => {
-    const allStages: ChatStage[] = [
-      'brief',
-      'details',
-      'style',
-      'strategic_review',
-      'moodboard',
-      'review',
-      'submit',
-    ]
+    const allStages: ChatStage[] = ['brief', 'style', 'details', 'review', 'submit']
     render(
       <ProgressStepper currentStage="submit" completedStages={allStages} progressPercentage={100} />
     )
@@ -111,9 +101,9 @@ describe('CompactProgress', () => {
       <CompactProgress currentStage="style" completedStages={['brief']} progressPercentage={25} />
     )
 
-    // Should have dots for each stage in BRIEFING_CHAT_STAGES (7 stages)
+    // Should have dots for each stage in BRIEFING_CHAT_STAGES (5 stages)
     const dots = container.querySelectorAll('.rounded-full.w-2.h-2')
-    expect(dots.length).toBe(7)
+    expect(dots.length).toBe(5)
   })
 
   it('applies custom className', () => {
@@ -154,7 +144,7 @@ describe('TopProgressBar', () => {
 
     // Each stage is represented by a small dot
     const dots = container.querySelectorAll('.rounded-full.w-1\\.5.h-1\\.5')
-    expect(dots.length).toBe(7)
+    expect(dots.length).toBe(5)
   })
 
   it('applies custom className', () => {

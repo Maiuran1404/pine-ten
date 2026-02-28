@@ -97,9 +97,11 @@ export function useStoryboard({
     return map[cat] ?? null
   }, [briefingState?.deliverableCategory])
 
-  // Structure panel visible when we have structure data, video narrative, OR for website projects
+  // Structure panel visible when we have structure data, video narrative,
+  // at INSPIRATION stage (for style selection panel), OR for website projects
   // (websites show the InspirationPanel before structure data exists)
   const structurePanelVisible =
+    briefingState?.stage === 'INSPIRATION' ||
     storyboardScenes !== null ||
     videoNarrative !== null ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')

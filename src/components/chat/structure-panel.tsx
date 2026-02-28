@@ -14,12 +14,14 @@ import type {
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
+import type { DeliverableStyle } from './types'
 import { RichStoryboardPanel } from './storyboard-view'
 import { LayoutPreview } from './layout-preview'
 import { ContentCalendar } from './brief-panel/content-calendar'
 import { DesignSpecView } from './design-spec-view'
 import { WebsiteStructurePanel } from './website-structure-panel'
 import { NarrativePanel } from './narrative-panel'
+import { StyleSelectionPanel } from './style-selection-panel'
 
 // =============================================================================
 // TYPES
@@ -97,6 +99,11 @@ interface StructurePanelProps {
   // DALL-E image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
   onRegenerateImage?: (scene: StoryboardScene) => void
+  // Style selection props (shown during INSPIRATION stage)
+  styleSelectionStyles?: DeliverableStyle[]
+  onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
+  onStyleShowMore?: (styleAxis: string) => void
+  onStyleShowDifferent?: () => void
   className?: string
 }
 
@@ -249,8 +256,26 @@ export function StructurePanel({
   onEditNarrative,
   imageGenerationProgress,
   onRegenerateImage,
+  styleSelectionStyles,
+  onStyleConfirmSelection,
+  onStyleShowMore,
+  onStyleShowDifferent,
   className,
 }: StructurePanelProps) {
+  // INSPIRATION stage: show StyleSelectionPanel instead of structure
+  if (briefingStage === 'INSPIRATION') {
+    return (
+      <StyleSelectionPanel
+        styles={styleSelectionStyles ?? []}
+        onConfirmSelection={onStyleConfirmSelection}
+        onShowMore={onStyleShowMore}
+        onShowDifferent={onStyleShowDifferent}
+        isLoading={isRegenerating}
+        className={className}
+      />
+    )
+  }
+
   // No type known — shouldn't render, but handle gracefully
   if (!structureType) return null
 

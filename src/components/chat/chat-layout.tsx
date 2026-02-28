@@ -21,6 +21,7 @@ import type {
   WebsiteInspiration,
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
+import type { DeliverableStyle } from './types'
 import type { SceneImageData } from '@/hooks/use-storyboard'
 
 interface ChatLayoutProps {
@@ -129,6 +130,11 @@ interface ChatLayoutProps {
   onRegenerateImage?: (scene: StoryboardScene) => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
+  // Style selection props (shown during INSPIRATION stage in right panel)
+  styleSelectionStyles?: DeliverableStyle[]
+  onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
+  onStyleShowMore?: (styleAxis: string) => void
+  onStyleShowDifferent?: () => void
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -208,6 +214,10 @@ export function ChatLayout({
   imageGenerationProgress,
   onRegenerateImage,
   briefingStage,
+  styleSelectionStyles,
+  onStyleConfirmSelection,
+  onStyleShowMore,
+  onStyleShowDifferent,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -348,6 +358,10 @@ export function ChatLayout({
                     onEditNarrative={onEditNarrative}
                     imageGenerationProgress={imageGenerationProgress}
                     onRegenerateImage={onRegenerateImage}
+                    styleSelectionStyles={styleSelectionStyles}
+                    onStyleConfirmSelection={onStyleConfirmSelection}
+                    onStyleShowMore={onStyleShowMore}
+                    onStyleShowDifferent={onStyleShowDifferent}
                   />
                 </div>
               </ResizablePanel>
@@ -395,6 +409,10 @@ export function ChatLayout({
                     onEditNarrative={onEditNarrative}
                     imageGenerationProgress={imageGenerationProgress}
                     onRegenerateImage={onRegenerateImage}
+                    styleSelectionStyles={styleSelectionStyles}
+                    onStyleConfirmSelection={onStyleConfirmSelection}
+                    onStyleShowMore={onStyleShowMore}
+                    onStyleShowDifferent={onStyleShowDifferent}
                   />
                 </div>
               </SheetContent>

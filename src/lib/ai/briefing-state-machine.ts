@@ -289,8 +289,8 @@ const STAGE_ORDER: BriefingStage[] = [
   'EXTRACT',
   'TASK_TYPE',
   'INTENT',
-  'STRUCTURE',
   'INSPIRATION',
+  'STRUCTURE',
   'ELABORATE',
   'STRATEGIC_REVIEW',
   'MOODBOARD',
@@ -323,6 +323,14 @@ export const STAGE_PIPELINE: StageGate[] = [
     exitWhen: (s) => s.brief.intent.confidence >= 0.4 && s.brief.intent.value !== null,
   },
   {
+    stage: 'INSPIRATION',
+    exitWhen: (s) => {
+      // All categories require style selection before building structure.
+      // Video needs it for DALL-E image generation style context.
+      return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
+    },
+  },
+  {
     stage: 'STRUCTURE',
     exitWhen: (s) => {
       if (!s.structure) return false
@@ -332,22 +340,10 @@ export const STAGE_PIPELINE: StageGate[] = [
     },
   },
   {
-    stage: 'INSPIRATION',
-    exitWhen: (s) => {
-      // All categories (including video) require style selection.
-      // Video needs it for DALL-E image generation style context.
-      return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
-    },
-  },
-  {
     stage: 'ELABORATE',
     exitWhen: (s) => checkElaborationComplete(s),
   },
-  // STRATEGIC_REVIEW currently disabled — omit from pipeline to skip
-  {
-    stage: 'MOODBOARD',
-    exitWhen: (s) => s.brief.visualDirection !== null,
-  },
+  // STRATEGIC_REVIEW and MOODBOARD removed from pipeline
   {
     stage: 'REVIEW',
     exitWhen: () => false, // terminal — only CONFIRM_SUBMIT advances past
@@ -397,13 +393,13 @@ export function deriveStage(state: BriefingState): BriefingStage {
  */
 export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
   const LEGAL: Record<BriefingStage, BriefingStage[]> = {
-    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE'],
-    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
-    INTENT: ['INTENT', 'STRUCTURE'],
-    STRUCTURE: ['STRUCTURE', 'INSPIRATION'],
-    INSPIRATION: ['INSPIRATION', 'ELABORATE'],
-    ELABORATE: ['ELABORATE', 'MOODBOARD'],
-    STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'MOODBOARD'],
+    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'],
+    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'INSPIRATION'],
+    INTENT: ['INTENT', 'INSPIRATION'],
+    INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
+    STRUCTURE: ['STRUCTURE', 'ELABORATE'],
+    ELABORATE: ['ELABORATE', 'REVIEW'],
+    STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'REVIEW'],
     MOODBOARD: ['MOODBOARD', 'REVIEW'],
     REVIEW: ['REVIEW', 'DEEPEN', 'SUBMIT'],
     DEEPEN: ['DEEPEN', 'REVIEW', 'SUBMIT'],
@@ -557,19 +553,10 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
     newState.deepenSelections = null
   }
 
-  // Clear moodboard stuff for MOODBOARD or earlier
-  if (
-    targetIndex <= STAGE_ORDER.indexOf('MOODBOARD') &&
-    targetIndex > STAGE_ORDER.indexOf('STRATEGIC_REVIEW')
-  ) {
-    newState.sectionMoodboards = {}
-    newState.deepenSelections = null
-  }
-
   // Clear deepen selections for REVIEW or earlier
   if (
     targetIndex <= STAGE_ORDER.indexOf('REVIEW') &&
-    targetIndex > STAGE_ORDER.indexOf('MOODBOARD')
+    targetIndex > STAGE_ORDER.indexOf('STRATEGIC_REVIEW')
   ) {
     newState.deepenSelections = null
   }

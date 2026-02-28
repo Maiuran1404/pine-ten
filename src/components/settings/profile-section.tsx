@@ -41,7 +41,7 @@ export function ProfileSection({
         title="Profile Information"
         description="Update your personal details"
       />
-      <div className="p-5 space-y-6">
+      <div className="px-7 pb-7 pt-5 space-y-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={session?.user?.image || undefined} />
@@ -50,14 +50,14 @@ export function ProfileSection({
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-foreground">{session?.user?.name}</p>
+            <p className="text-lg font-semibold text-foreground">{session?.user?.name}</p>
             <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
           </div>
         </div>
 
-        <div className="h-px bg-border" />
+        <div className="h-px bg-border/50" />
 
-        <div className="grid gap-4 max-w-md">
+        <div className="grid gap-5 max-w-lg">
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -65,6 +65,7 @@ export function ProfileSection({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Your name"
+              className="rounded-lg"
             />
           </div>
 
@@ -77,7 +78,7 @@ export function ProfileSection({
               id="email"
               value={emailValue}
               disabled
-              className="bg-muted text-muted-foreground"
+              className="bg-muted text-muted-foreground rounded-lg"
             />
             <p className="text-xs text-muted-foreground">Email cannot be changed</p>
           </div>
@@ -92,6 +93,7 @@ export function ProfileSection({
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder={phonePlaceholder}
+              className="rounded-lg"
             />
             {phoneHint && <p className="text-xs text-muted-foreground">{phoneHint}</p>}
           </div>

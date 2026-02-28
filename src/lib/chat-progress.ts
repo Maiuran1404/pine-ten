@@ -41,15 +41,7 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
  * Stages used when the briefing state machine is enabled.
  * Adds strategic_review and deepen between details and review.
  */
-export const BRIEFING_CHAT_STAGES: ChatStage[] = [
-  'brief',
-  'style',
-  'details',
-  'strategic_review',
-  'moodboard',
-  'review',
-  'submit',
-]
+export const BRIEFING_CHAT_STAGES: ChatStage[] = ['brief', 'style', 'details', 'review', 'submit']
 
 /**
  * Map a BriefingStage (state machine) to a ChatStage (progress UI).
@@ -68,9 +60,9 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
     case 'ELABORATE':
       return 'details'
     case 'STRATEGIC_REVIEW':
-      return 'strategic_review'
+      return 'details'
     case 'MOODBOARD':
-      return 'moodboard'
+      return 'details'
     case 'REVIEW':
     case 'DEEPEN':
       return 'review'
@@ -326,7 +318,7 @@ export function getContextualStageDescription(
     case 'STRATEGIC_REVIEW':
       return 'Strategic review'
     case 'MOODBOARD':
-      return 'Refine your moodboard'
+      return 'Building your brief'
     case 'REVIEW':
     case 'DEEPEN':
       return 'Review your brief'

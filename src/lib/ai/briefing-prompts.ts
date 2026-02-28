@@ -383,15 +383,7 @@ function buildIntentTask(state: BriefingState): string {
 
 function buildInspirationTask(state: BriefingState): string {
   const deliverableType = resolveDeliverableTypeForMarker(state)
-  const hasStructure = state.structure !== null
-  const structureNote = hasStructure
-    ? `\n- The structure has already been created. Show style references that would complement the ${state.structure?.type || 'deliverable'}'s visual direction.`
-    : ''
-  const dalleNote =
-    state.deliverableCategory === 'video' && hasStructure
-      ? '\n- IMPORTANT: The visual style you choose will directly shape how the storyboard frames are generated. Pick a direction that brings the scenes to life.'
-      : ''
-  return `Show visual style references that match the context.${structureNote}${dalleNote}
+  return `Show visual style references that match the context.
 - Frame the creative direction based on what you know about audience, industry, and intent.
 - The system will display style cards. Your job is to introduce them with context.
 - IMPORTANT: Include the marker with search context so the system can find relevant design references:

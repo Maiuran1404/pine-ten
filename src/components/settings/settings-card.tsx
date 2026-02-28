@@ -9,7 +9,11 @@ export function SettingsCard({
   children: React.ReactNode
   className?: string
 }) {
-  return <div className={cn('rounded-xl border border-border bg-card', className)}>{children}</div>
+  return (
+    <div className={cn('rounded-2xl border border-border/60 bg-card shadow-sm', className)}>
+      {children}
+    </div>
+  )
 }
 
 export function SettingsCardHeader({
@@ -22,12 +26,9 @@ export function SettingsCardHeader({
   description: string
 }) {
   return (
-    <div className="p-5 border-b border-border">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-sm font-medium text-foreground">{title}</h2>
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">{description}</p>
+    <div className="px-7 pt-7 pb-0">
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
     </div>
   )
 }

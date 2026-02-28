@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -321,6 +321,14 @@ export function ChatInterface({
     onChatStart,
   })
 
+  // Extract latest deliverable styles from messages for the style selection panel
+  const latestDeliverableStyles = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].deliverableStyles?.length) return messages[i].deliverableStyles!
+    }
+    return []
+  }, [messages])
+
   return (
     <MotionConfig reducedMotion="user">
       <ChatLayout
@@ -406,6 +414,10 @@ export function ChatInterface({
         canFindSimilar={canFindSimilar}
         onUpdateInspirationNotes={updateInspirationNotes}
         briefingStage={briefingStage}
+        styleSelectionStyles={latestDeliverableStyles}
+        onStyleConfirmSelection={handleConfirmStyleSelection}
+        onStyleShowMore={handleShowMoreStyles}
+        onStyleShowDifferent={handleShowDifferentStyles}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
         <div
