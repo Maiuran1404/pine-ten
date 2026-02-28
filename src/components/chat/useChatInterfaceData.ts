@@ -19,6 +19,7 @@ import {
   calculateChatStage,
   calculateChatStageFromBriefing,
   getContextualStageDescription,
+  BRIEFING_CHAT_STAGES,
 } from '@/lib/chat-progress'
 import { useBriefingStateMachine } from '@/hooks/use-briefing-state-machine'
 import { useChatMessages } from '@/hooks/use-chat-messages'
@@ -490,9 +491,42 @@ export function useChatInterfaceData({
   })
 
   // ─── Progress calculation ───────────────────────────────────
+  // High-water mark prevents progress bar from going backwards during transient
+  // state-machine regressions (e.g. re-visiting an earlier stage briefly).
+  const progressHighWaterRef = useRef(0)
+
   const progressState = useMemo(() => {
     if (_briefingState) {
       const result = calculateChatStageFromBriefing(_briefingState.stage)
+      const stageIndex = BRIEFING_CHAT_STAGES.indexOf(result.currentStage)
+
+      // Clamp: never go below the high-water mark
+      if (stageIndex >= 0 && stageIndex < progressHighWaterRef.current) {
+        const hwStage = BRIEFING_CHAT_STAGES[progressHighWaterRef.current]
+        const hwResult = calculateChatStageFromBriefing(
+          // Map chat stage back — use the high-water stage for progress display
+          _briefingState.stage
+        )
+        const hwPercentage = Math.round(
+          (progressHighWaterRef.current / (BRIEFING_CHAT_STAGES.length - 1)) * 100
+        )
+        return {
+          ...hwResult,
+          currentStage: hwStage,
+          progressPercentage: Math.min(100, hwPercentage),
+          stageDescription: getContextualStageDescription(_briefingState.stage, {
+            deliverableCategory: _briefingState.deliverableCategory,
+            structure: _briefingState.structure,
+            videoNarrative: _briefingState.videoNarrative,
+            narrativeApproved: _briefingState.narrativeApproved,
+          }),
+        }
+      }
+
+      if (stageIndex >= 0) {
+        progressHighWaterRef.current = Math.max(progressHighWaterRef.current, stageIndex)
+      }
+
       return {
         ...result,
         stageDescription: getContextualStageDescription(_briefingState.stage, {

@@ -274,7 +274,7 @@ export function ChatLayout({
                   <span className="text-xs">Structure</span>
                 </Button>
               </div>
-              <div className="flex-1 min-h-0">{children}</div>
+              <div className="flex-1 min-h-0 pb-14 lg:pb-0">{children}</div>
             </div>
 
             {/* Desktop: Resizable split between chat and structure panel */}
@@ -399,18 +399,6 @@ export function ChatLayout({
                 </div>
               </SheetContent>
             </Sheet>
-
-            {/* Mobile FAB for structure panel */}
-            <div className="lg:hidden fixed bottom-4 right-4 z-50">
-              <Button
-                size="lg"
-                className="rounded-full shadow-lg gap-2"
-                onClick={() => setIsMobileStructureOpen(true)}
-              >
-                <StructureIcon className="h-5 w-5" />
-                Structure
-              </Button>
-            </div>
           </>
         ) : (
           <>

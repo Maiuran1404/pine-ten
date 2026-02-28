@@ -5,15 +5,12 @@ import 'server-only'
 
 import type { ChatContext } from '@/lib/ai/chat'
 import type {
-  BriefingState,
   SerializedBriefingState,
   StructureData,
-  DeliverableCategory,
   VideoNarrative,
   StrategicReviewData,
 } from '@/lib/ai/briefing-state-machine'
 import type { BrandContext } from '@/lib/ai/briefing-prompts'
-import type { StructureType } from '@/lib/ai/briefing-response-parser'
 import type { StyleContext } from '@/lib/ai/brand-style-scoring'
 import type { InferredAudience } from '@/components/onboarding/types'
 import type { SceneImageMatch } from '@/lib/ai/storyboard-image-search'

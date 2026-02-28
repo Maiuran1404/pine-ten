@@ -10,13 +10,7 @@ import {
   type BriefingState,
   type BriefingStage,
 } from './briefing-state-machine'
-import type {
-  InferredField,
-  TaskType,
-  Intent,
-  Platform,
-  ContentType,
-} from '@/components/chat/brief-panel/types'
+import type { InferredField, TaskType } from '@/components/chat/brief-panel/types'
 
 // =============================================================================
 // HELPERS

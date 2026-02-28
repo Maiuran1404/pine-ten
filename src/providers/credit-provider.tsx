@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  ReactNode,
+} from 'react'
 import { useSession } from '@/lib/auth-client'
 
 interface CreditContextType {
@@ -17,6 +25,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession()
   const [credits, setCredits] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(true)
+  const hasFetchedRef = useRef(false)
 
   // Fetch credits from API
   const refreshCredits = useCallback(async () => {
@@ -33,7 +42,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Initialize credits from session first, then fetch from API
+  // Initialize credits from session first, then fetch from API (once)
   useEffect(() => {
     if (session?.user) {
       // Set initial value from session
@@ -42,8 +51,11 @@ export function CreditProvider({ children }: { children: ReactNode }) {
         setCredits(sessionCredits)
         setIsLoading(false)
       }
-      // Then fetch fresh value from API
-      refreshCredits()
+      // Fetch fresh value from API only once (prevents StrictMode double-fetch)
+      if (!hasFetchedRef.current) {
+        hasFetchedRef.current = true
+        refreshCredits()
+      }
     }
   }, [session, refreshCredits])
 

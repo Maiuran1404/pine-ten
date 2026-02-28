@@ -1250,7 +1250,7 @@ export function RichStoryboardPanel({
                           className="text-ds-warning text-[10px]"
                           title={`${Math.abs(totalDuration - indicator.target)}s from ${indicator.target}s target`}
                         >
-                          ~{indicator.target}s
+                          target: {indicator.target}s
                         </span>
                       )}
                     </div>

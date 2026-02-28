@@ -11,7 +11,6 @@ import type {
   InferredField,
   VisualDirection,
   Dimension,
-  InferenceResult,
 } from '@/components/chat/brief-panel/types'
 import { createEmptyBrief } from '@/components/chat/brief-panel/types'
 

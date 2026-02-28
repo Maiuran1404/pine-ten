@@ -43,6 +43,16 @@ export const queryKeys = {
     all: ['audiences'] as const,
     list: () => ['audiences', 'list'] as const,
   },
+  // Style reference queries
+  styleReferences: {
+    all: ['styleReferences'] as const,
+    match: (limit?: number) => ['styleReferences', 'match', limit] as const,
+  },
+  // Template image queries
+  templateImages: {
+    all: ['templateImages'] as const,
+    list: () => ['templateImages', 'list'] as const,
+  },
   // Draft queries
   drafts: {
     all: ['drafts'] as const,

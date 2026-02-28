@@ -553,9 +553,6 @@ export function ChatInterface({
             onAddExternalLink={addExternalLink}
             lastSendError={lastSendError}
             onRetry={handleRetry}
-            needsAutoContinueConfirmation={needsAutoContinueConfirmation}
-            onConfirmAutoContinue={handleConfirmAutoContinue}
-            onDismissAutoContinue={handleDismissAutoContinue}
           />
 
           {/* Input area / Submit action bar — hidden after successful submission */}
@@ -608,6 +605,9 @@ export function ChatInterface({
                   storyboardScenes.scenes.length > 0
                 )
               }
+              needsAutoContinueConfirmation={needsAutoContinueConfirmation}
+              onConfirmAutoContinue={handleConfirmAutoContinue}
+              onDismissAutoContinue={handleDismissAutoContinue}
             />
           )}
 

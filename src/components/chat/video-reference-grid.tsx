@@ -245,13 +245,13 @@ function VideoCard({
         )}
       </motion.div>
 
-      {/* Tags below thumbnail — compact, single line */}
+      {/* Tags below thumbnail — compact, single line with truncation */}
       {video.videoTags && video.videoTags.length > 0 && (
-        <div className="flex gap-1 px-0.5 overflow-hidden">
+        <div className="flex gap-1 px-0.5 overflow-hidden max-w-full">
           {video.videoTags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="inline-block shrink-0 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] leading-tight"
+              className="inline-block truncate min-w-0 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] leading-tight"
             >
               {tag}
             </span>

@@ -6,7 +6,7 @@ import 'server-only'
 
 import { logger } from '@/lib/logger'
 import { searchPexelsForScene } from '@/lib/ai/pexels-image-search'
-import type { StructureData, SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
+import type { StructureData } from '@/lib/ai/briefing-state-machine'
 
 /** Remove consecutive duplicate sentences and phrases from AI response */
 export function deduplicateResponse(text: string): string {

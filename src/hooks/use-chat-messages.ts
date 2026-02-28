@@ -78,6 +78,17 @@ export function useChatMessages({
   const messagesRef = useRef(messages)
   messagesRef.current = messages
 
+  // Refs for values read inside handleSendOption to avoid stale closures —
+  // quick-option clicks can fire before the render tree propagates the new
+  // isLoading / selectedStyles values, so we read from refs instead.
+  const isLoadingRef = useRef(false)
+  const selectedStylesRef = useRef(selectedStyles)
+  const moodboardHasStylesRef = useRef(moodboardHasStyles)
+  const serializedBriefingStateRef = useRef(serializedBriefingState)
+  selectedStylesRef.current = selectedStyles
+  moodboardHasStylesRef.current = moodboardHasStyles
+  serializedBriefingStateRef.current = serializedBriefingState
+
   // Process API response into assistant message
   const processApiResponse = useCallback(
     (data: ChatApiResponse, resolvedStructureDataOverride?: StructureData) => {
@@ -167,6 +178,7 @@ export function useChatMessages({
       }
 
       setIsLoading(true)
+      isLoadingRef.current = true
       setMessages((prev) => [...prev, userMessage])
       setInput('')
       setLastSendError(null)
@@ -208,6 +220,7 @@ export function useChatMessages({
         toast.error('Failed to send message. Please try again.')
       } finally {
         setIsLoading(false)
+        isLoadingRef.current = false
         requestStartTimeRef.current = null
       }
     },
@@ -222,9 +235,11 @@ export function useChatMessages({
   )
 
   // Send a specific message (for clickable options)
+  // Uses refs instead of closure values for isLoading / selectedStyles / etc.
+  // to avoid stale closures when quick-option clicks fire before re-render.
   const handleSendOption = useCallback(
     async (optionText: string, stateOverrides?: Partial<SerializedBriefingState>) => {
-      if (isLoading || !optionText.trim()) return
+      if (isLoadingRef.current || !optionText.trim()) return
 
       const userMessage: Message = {
         id: crypto.randomUUID(),
@@ -234,14 +249,16 @@ export function useChatMessages({
       }
 
       setIsLoading(true)
+      isLoadingRef.current = true
       setMessages((prev) => [...prev, userMessage])
       setInput('')
       setLastSendError(null)
 
       try {
+        const currentBriefingState = serializedBriefingStateRef.current
         const mergedBriefingState = stateOverrides
-          ? { ...serializedBriefingState, ...stateOverrides }
-          : serializedBriefingState
+          ? { ...currentBriefingState, ...stateOverrides }
+          : currentBriefingState
 
         const response = await csrfFetch('/api/chat', {
           method: 'POST',
@@ -251,8 +268,8 @@ export function useChatMessages({
               role: m.role,
               content: m.content,
             })),
-            selectedStyles,
-            moodboardHasStyles,
+            selectedStyles: selectedStylesRef.current,
+            moodboardHasStyles: moodboardHasStylesRef.current,
             briefingState: mergedBriefingState,
             latestStoryboard: latestStoryboardRef.current,
           }),
@@ -274,17 +291,10 @@ export function useChatMessages({
         toast.error('Failed to send message. Please try again.')
       } finally {
         setIsLoading(false)
+        isLoadingRef.current = false
       }
     },
-    [
-      isLoading,
-      selectedStyles,
-      moodboardHasStyles,
-      serializedBriefingState,
-      processApiResponse,
-      latestStoryboardRef,
-      csrfFetch,
-    ]
+    [processApiResponse, latestStoryboardRef, csrfFetch]
   )
 
   // Helper to send chat and receive assistant response (used by style/video selection handlers)
@@ -303,6 +313,7 @@ export function useChatMessages({
       })
 
       setIsLoading(true)
+      isLoadingRef.current = true
       setLastSendError(null)
 
       try {
@@ -331,6 +342,7 @@ export function useChatMessages({
         return null
       } finally {
         setIsLoading(false)
+        isLoadingRef.current = false
       }
     },
     [serializedBriefingState, processApiResponse, latestStoryboardRef, csrfFetch]
@@ -339,11 +351,12 @@ export function useChatMessages({
   // Auto-continue conversation if last message was from user
   const runAutoContinue = useCallback(async () => {
     const currentMessages = messagesRef.current
-    if (isLoading || currentMessages.length === 0) return
+    if (isLoadingRef.current || currentMessages.length === 0) return
     const lastMessage = currentMessages[currentMessages.length - 1]
     if (lastMessage.role !== 'user') return
 
     setIsLoading(true)
+    isLoadingRef.current = true
     setLastSendError(null)
     requestStartTimeRef.current = Date.now()
 
@@ -353,9 +366,9 @@ export function useChatMessages({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: currentMessages.map((m) => ({ role: m.role, content: m.content })),
-          selectedStyles,
-          moodboardHasStyles,
-          briefingState: serializedBriefingState,
+          selectedStyles: selectedStylesRef.current,
+          moodboardHasStyles: moodboardHasStylesRef.current,
+          briefingState: serializedBriefingStateRef.current,
           latestStoryboard: latestStoryboardRef.current,
         }),
       })
@@ -369,17 +382,10 @@ export function useChatMessages({
       toast.error('Failed to continue conversation. Please try again.')
     } finally {
       setIsLoading(false)
+      isLoadingRef.current = false
       requestStartTimeRef.current = null
     }
-  }, [
-    isLoading,
-    selectedStyles,
-    moodboardHasStyles,
-    serializedBriefingState,
-    processApiResponse,
-    latestStoryboardRef,
-    csrfFetch,
-  ])
+  }, [processApiResponse, latestStoryboardRef, csrfFetch])
 
   const handleCopyMessage = useCallback(async (content: string, messageId: string) => {
     try {

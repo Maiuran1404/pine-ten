@@ -16,6 +16,8 @@ import {
   LayoutGrid,
   Link2,
   Palette,
+  RotateCcw,
+  ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -95,10 +97,15 @@ export interface ChatInputAreaProps {
   // Whether a storyboard exists (for video submission guard)
   hasStoryboard?: boolean
 
+  // Auto-continue confirmation (crash recovery) — rendered above input, outside scroll area
+  needsAutoContinueConfirmation?: boolean
+  onConfirmAutoContinue?: () => void
+  onDismissAutoContinue?: () => void
+
   // Handlers
   handleSend: () => void
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleRequestTaskSummary: () => void
+  handleRequestTaskSummary?: () => void
   removeFile: (idOrUrl: string) => void
 }
 
@@ -142,9 +149,12 @@ export function ChatInputArea({
   estimatedCredits,
   lastSavedAt,
   hasStoryboard: _hasStoryboard = true,
+  needsAutoContinueConfirmation,
+  onConfirmAutoContinue,
+  onDismissAutoContinue,
   handleSend,
   handleFileUpload,
-  handleRequestTaskSummary,
+  handleRequestTaskSummary: _handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
   // Hide quick options when the last assistant message already shows inline style/video references
@@ -170,6 +180,40 @@ export function ChatInputArea({
 
   return (
     <div className="shrink-0 mt-auto pt-4 pb-6 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
+      {/* Resume banner for crash recovery — outside scroll container for reliable click handling */}
+      <AnimatePresence mode="popLayout">
+        {needsAutoContinueConfirmation && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-3 px-4 py-3 mb-3 rounded-2xl border border-border/40 bg-muted/30"
+          >
+            <RotateCcw className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-sm text-foreground flex-1">Pick up where you left off?</span>
+            <div className="flex gap-2 shrink-0">
+              {onDismissAutoContinue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDismissAutoContinue}
+                  className="text-muted-foreground"
+                >
+                  Dismiss
+                </Button>
+              )}
+              {onConfirmAutoContinue && (
+                <Button size="sm" onClick={onConfirmAutoContinue} className="gap-1.5">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  Resume
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* State machine quick option chips + "I'm ready to submit" grouped */}
       <AnimatePresence mode="popLayout">
         {stateMachineQuickOptions &&

@@ -27,13 +27,16 @@ function useDebounce<T>(value: T, delay: number): T {
  */
 export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
   const lastSavedRef = useRef<string>('')
+  const isSavingRef = useRef(false)
   const debouncedBrief = useDebounce(brief, 500)
 
   useEffect(() => {
     const briefJson = JSON.stringify(debouncedBrief)
     if (briefJson === lastSavedRef.current) return
+    if (isSavingRef.current) return // Prevent StrictMode double-fire
 
     const saveBrief = async () => {
+      isSavingRef.current = true
       try {
         const response = await fetch('/api/briefs', {
           method: 'POST',
@@ -49,6 +52,8 @@ export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
         }
       } catch (error) {
         logger.error({ err: error }, 'Failed to auto-save brief')
+      } finally {
+        isSavingRef.current = false
       }
     }
 

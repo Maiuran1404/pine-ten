@@ -353,11 +353,6 @@ export interface ChatMessageListProps {
   // Error state
   lastSendError?: string | null
   onRetry?: () => void
-
-  // Auto-continue confirmation (crash recovery)
-  needsAutoContinueConfirmation?: boolean
-  onConfirmAutoContinue?: () => void
-  onDismissAutoContinue?: () => void
 }
 
 // =============================================================================
@@ -413,9 +408,6 @@ export function ChatMessageList({
   onAddExternalLink,
   lastSendError,
   onRetry,
-  needsAutoContinueConfirmation,
-  onConfirmAutoContinue,
-  onDismissAutoContinue,
 }: ChatMessageListProps) {
   // Screen reader announcement for new messages
   const [announcement, setAnnouncement] = useState('')
@@ -924,37 +916,6 @@ export function ChatMessageList({
             />
           )}
           {/* eslint-enable react-hooks/refs */}
-
-          {/* Resume banner for crash recovery */}
-          {needsAutoContinueConfirmation && !isLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-border/40 bg-muted/30"
-            >
-              <RotateCcw className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm text-foreground flex-1">Pick up where you left off?</span>
-              <div className="flex gap-2 shrink-0">
-                {onDismissAutoContinue && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onDismissAutoContinue}
-                    className="text-muted-foreground"
-                  >
-                    Dismiss
-                  </Button>
-                )}
-                {onConfirmAutoContinue && (
-                  <Button size="sm" onClick={onConfirmAutoContinue} className="gap-1.5">
-                    <ArrowRight className="h-3.5 w-3.5" />
-                    Resume
-                  </Button>
-                )}
-              </div>
-            </motion.div>
-          )}
 
           {/* Inline error banner for failed sends */}
           {lastSendError && !isLoading && (

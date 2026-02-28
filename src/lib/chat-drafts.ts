@@ -310,11 +310,11 @@ export function generateDraftTitle(
     'story',
     'reel',
     'carousel',
+    'video',
     'ad',
     'banner',
     'logo',
     'brand',
-    'video',
   ]
 
   const purposeWords = [
