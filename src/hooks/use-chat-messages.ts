@@ -18,26 +18,6 @@ import type {
   WebsiteGlobalStyles,
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
-import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
-
-/** Shape of a scene image match from the multi-source orchestrator */
-export interface ApiSceneImageMatch {
-  sceneNumber: number
-  images: Array<{
-    url: string
-    source: ImageSource
-    mediaType: ImageMediaType
-    attribution: {
-      sourceName: string
-      sourceUrl: string
-      filmTitle?: string
-      photographer?: string
-      techniqueName?: string
-    }
-  }>
-  primaryIndex: number
-}
-
 export interface ChatApiResponse {
   content: string
   briefingState?: SerializedBriefingState
@@ -52,7 +32,6 @@ export interface ChatApiResponse {
   globalStyles?: WebsiteGlobalStyles
   videoNarrativeData?: VideoNarrative
   assetRequest?: Message['assetRequest']
-  sceneImageMatches?: ApiSceneImageMatch[]
   /** Marker types that failed parsing even after retry (e.g., 'STRUCTURE', 'VIDEO_NARRATIVE') */
   parseFailures?: string[]
 }
@@ -65,7 +44,6 @@ interface UseChatMessagesOptions {
   onTaskProposal: (proposal: TaskProposal) => void
   onDeliverableTypeChange: (type: string) => void
   onStructureData: (data: StructureData) => void
-  onSceneImageMatches: (matches?: ApiSceneImageMatch[]) => void
   onGlobalStyles?: (styles: WebsiteGlobalStyles) => void
   onVideoNarrative?: (data: VideoNarrative) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
@@ -80,7 +58,6 @@ export function useChatMessages({
   onTaskProposal,
   onDeliverableTypeChange,
   onStructureData,
-  onSceneImageMatches,
   onGlobalStyles,
   onVideoNarrative,
   latestStoryboardRef,
@@ -122,8 +99,7 @@ export function useChatMessages({
         onStructureData(resolvedStructureData)
       }
 
-      // Process Pexels scene image matches
-      onSceneImageMatches(data.sceneImageMatches)
+      // Scene image matches no longer come from API — DALL-E generation is triggered client-side
 
       // Process global styles (website flow)
       if (data.globalStyles && onGlobalStyles) {
@@ -164,7 +140,6 @@ export function useChatMessages({
     [
       syncBriefingFromServer,
       onStructureData,
-      onSceneImageMatches,
       onGlobalStyles,
       onVideoNarrative,
       onTaskProposal,

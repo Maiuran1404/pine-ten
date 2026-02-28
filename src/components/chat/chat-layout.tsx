@@ -124,6 +124,9 @@ interface ChatLayoutProps {
   lastSendError?: string | null
   onRetryGeneration?: () => void
   onEditNarrative?: () => void
+  // DALL-E image generation
+  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  onRegenerateImage?: (scene: StoryboardScene) => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -202,6 +205,8 @@ export function ChatLayout({
   lastSendError,
   onRetryGeneration,
   onEditNarrative,
+  imageGenerationProgress,
+  onRegenerateImage,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -341,6 +346,8 @@ export function ChatLayout({
                     lastSendError={lastSendError}
                     onRetryGeneration={onRetryGeneration}
                     onEditNarrative={onEditNarrative}
+                    imageGenerationProgress={imageGenerationProgress}
+                    onRegenerateImage={onRegenerateImage}
                   />
                 </div>
               </ResizablePanel>
@@ -386,6 +393,8 @@ export function ChatLayout({
                     lastSendError={lastSendError}
                     onRetryGeneration={onRetryGeneration}
                     onEditNarrative={onEditNarrative}
+                    imageGenerationProgress={imageGenerationProgress}
+                    onRegenerateImage={onRegenerateImage}
                   />
                 </div>
               </SheetContent>

@@ -94,21 +94,19 @@ async function enrichSingleCompetitor(
       },
     })
 
-    // Extract the best result
-    const webResults = searchResult?.data as
-      | Array<{
-          url?: string
-          title?: string
-          description?: string
-          branding?: {
-            colors?: { primary?: string }
-            images?: { logo?: string }
-          }
-        }>
-      | undefined
+    // Extract the best result — search returns .web array with SearchResultWeb | Document items
+    const webResults = searchResult?.web
 
     if (webResults && webResults.length > 0) {
-      const topResult = webResults[0]
+      const topResult = webResults[0] as {
+        url?: string
+        title?: string
+        description?: string
+        branding?: {
+          colors?: { primary?: string }
+          images?: { logo?: string }
+        }
+      }
       result.website = topResult.url || null
       result.description = topResult.description || null
       result.primaryColor = topResult.branding?.colors?.primary || null

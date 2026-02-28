@@ -634,11 +634,15 @@ function SceneThumbnail({
   index,
   sceneImageData,
   getImageUrl,
+  generationStatus,
+  onRegenerateImage,
 }: {
   scene: StoryboardScene
   index: number
   sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
+  generationStatus?: 'pending' | 'generating' | 'done' | 'error'
+  onRegenerateImage?: () => void
 }) {
   const imageId = scene.referenceImageIds?.[0]
   const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
@@ -646,6 +650,8 @@ function SceneThumbnail({
   const imageUrl = sceneImageData?.primaryUrl || scene.resolvedImageUrl || refImageUrl
   const isGif = sceneImageData?.primaryMediaType === 'gif'
   const gradient = getSceneGradient(index)
+  const isGenerating = generationStatus === 'generating' || generationStatus === 'pending'
+  const hasError = generationStatus === 'error'
 
   // Source display name for badge
   const sourceLabel = sceneImageData
@@ -661,6 +667,7 @@ function SceneThumbnail({
         houzz: 'Houzz',
         arena: 'Are.na',
         serper: 'Web',
+        dalle: 'AI Generated',
       }[sceneImageData.primarySource]
     : null
 
@@ -668,10 +675,45 @@ function SceneThumbnail({
     <div
       className={cn(
         'relative aspect-video w-full rounded-t-lg overflow-hidden',
-        !imageUrl && `bg-gradient-to-br ${gradient.bg}`
+        !imageUrl && !isGenerating && `bg-gradient-to-br ${gradient.bg}`,
+        isGenerating && 'bg-gradient-to-br from-muted/50 to-muted'
       )}
     >
-      {imageUrl ? (
+      {/* DALL-E generating state */}
+      {isGenerating && !imageUrl && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+          <div className="relative">
+            <Sparkles className="h-6 w-6 text-crafted-sage animate-pulse" />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground mt-2 animate-pulse">
+            Generating...
+          </span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {hasError && !imageUrl && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+          <span className="text-xs text-muted-foreground mb-1.5">Failed to generate</span>
+          {onRegenerateImage && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={(e) => {
+                e.stopPropagation()
+                onRegenerateImage()
+              }}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Image display */}
+      {imageUrl && !isGenerating ? (
         isGif ? (
           // Native <img> for GIFs — Next.js Image strips animation
           // eslint-disable-next-line @next/next/no-img-element
@@ -693,7 +735,7 @@ function SceneThumbnail({
             }}
           />
         )
-      ) : (
+      ) : !isGenerating && !hasError ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
           <Film className={cn('h-6 w-6 mb-1.5', gradient.icon)} />
           <span
@@ -705,10 +747,24 @@ function SceneThumbnail({
             {scene.title || `Scene ${scene.sceneNumber}`}
           </span>
         </div>
+      ) : null}
+
+      {/* Regenerate image button — shown on hover when image exists */}
+      {imageUrl && !isGenerating && onRegenerateImage && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onRegenerateImage()
+          }}
+          className="absolute top-1.5 right-1.5 p-1 rounded bg-black/50 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all"
+          title="Regenerate image"
+        >
+          <Sparkles className="h-3 w-3" />
+        </button>
       )}
 
       {/* Source badge — bottom-left */}
-      {imageUrl && sourceLabel && (
+      {imageUrl && sourceLabel && !isGenerating && (
         <span className="absolute bottom-1.5 left-1.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-black/50 text-white/80 backdrop-blur-sm">
           {sourceLabel}
         </span>
@@ -750,6 +806,8 @@ function RichSceneCard({
   onOpenDetail,
   sceneImageData,
   getImageUrl,
+  generationStatus,
+  onRegenerateImage,
 }: {
   scene: StoryboardScene
   index: number
@@ -765,6 +823,8 @@ function RichSceneCard({
   onOpenDetail?: () => void
   sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
+  generationStatus?: 'pending' | 'generating' | 'done' | 'error'
+  onRegenerateImage?: () => void
 }) {
   // Drag-and-drop via @dnd-kit/sortable (#6)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -800,6 +860,8 @@ function RichSceneCard({
           index={index}
           sceneImageData={sceneImageData}
           getImageUrl={getImageUrl}
+          generationStatus={generationStatus}
+          onRegenerateImage={onRegenerateImage}
         />
 
         {/* Drag handle — top-left corner, hover-reveal (#6) */}
@@ -1015,6 +1077,9 @@ interface RichStoryboardPanelProps {
   onRedo?: () => void
   canUndo?: boolean
   canRedo?: boolean
+  // DALL-E image generation
+  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  onRegenerateImage?: (scene: StoryboardScene) => void
 }
 
 // Duration targets (common video ad lengths in seconds)
@@ -1060,6 +1125,8 @@ export function RichStoryboardPanel({
   onRedo,
   canUndo,
   canRedo,
+  imageGenerationProgress,
+  onRegenerateImage,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
   const [regenConfirm, setRegenConfirm] = useState(false)
@@ -1395,6 +1462,10 @@ export function RichStoryboardPanel({
                     onOpenDetail={() => setDetailScene(scene)}
                     sceneImageData={sceneImageData?.get(scene.sceneNumber)}
                     getImageUrl={getImageUrl}
+                    generationStatus={imageGenerationProgress?.get(scene.sceneNumber)}
+                    onRegenerateImage={
+                      onRegenerateImage ? () => onRegenerateImage(scene) : undefined
+                    }
                   />
                 </motion.div>
               ))}

@@ -251,6 +251,9 @@ export function ChatInterface({
     handleRegenerateNarrative: _handleRegenerateNarrative,
     handleRetryGeneration,
     handleEditNarrative,
+    // DALL-E image generation
+    imageGenerationProgress,
+    handleRegenerateImage,
 
     // Website inspiration
     websiteInspirations,
@@ -378,6 +381,8 @@ export function ChatInterface({
         lastSendError={lastSendError}
         onRetryGeneration={handleRetryGeneration}
         onEditNarrative={handleEditNarrative}
+        imageGenerationProgress={imageGenerationProgress}
+        onRegenerateImage={handleRegenerateImage}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}

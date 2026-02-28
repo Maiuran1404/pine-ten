@@ -365,7 +365,6 @@ export function useChatInterfaceData({
     onTaskProposal: stableOnTaskProposal,
     onDeliverableTypeChange: stableOnDeliverableTypeChange,
     onStructureData: storyboard.updateStructureData,
-    onSceneImageMatches: storyboard.processSceneImageMatches,
     onGlobalStyles: storyboard.setGlobalStyles,
     onVideoNarrative: storyboard.updateVideoNarrative,
     latestStoryboardRef: storyboard.latestStoryboardRef,
@@ -613,6 +612,60 @@ export function useChatInterfaceData({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
+
+  // ─── DALL-E generation trigger: after INSPIRATION → ELABORATE for video ──
+  const dalleTriggeredRef = useRef(false)
+  useEffect(() => {
+    const stage = _briefingState?.stage
+    const category = _briefingState?.deliverableCategory
+    const structure = storyboard.storyboardScenes
+
+    // Only trigger for video projects that just entered ELABORATE with a storyboard
+    if (stage !== 'ELABORATE' || category !== 'video') {
+      dalleTriggeredRef.current = false
+      return
+    }
+    if (!structure || structure.type !== 'storyboard') return
+    if (dalleTriggeredRef.current) return
+    if (storyboard.isGeneratingImages) return
+
+    // Check if scenes already have images (e.g. from draft restore)
+    const scenesNeedingImages = structure.scenes.filter((s) => !s.resolvedImageUrl)
+    if (scenesNeedingImages.length === 0) return
+
+    // Extract style context from visual direction
+    const selectedStyles = _briefingState?.brief?.visualDirection?.selectedStyles
+    if (!selectedStyles || selectedStyles.length === 0) return
+
+    const styleContext = selectedStyles
+      .map((s) => `${s.name}${s.description ? `: ${s.description}` : ''}`)
+      .join('; ')
+
+    const briefId = _briefingState?.brief?.id || draftId
+    dalleTriggeredRef.current = true
+    storyboard.generateDalleImages(structure.scenes, styleContext, briefId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    _briefingState?.stage,
+    _briefingState?.deliverableCategory,
+    _briefingState?.brief?.visualDirection?.selectedStyles,
+    storyboard.storyboardScenes,
+    storyboard.isGeneratingImages,
+  ])
+
+  // Wrapped callback for single-scene DALL-E regeneration (auto-supplies style context + briefId)
+  const handleRegenerateImage = useCallback(
+    (scene: import('@/lib/ai/briefing-state-machine').StoryboardScene) => {
+      const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles
+      const styleCtx =
+        selectedStylesList
+          ?.map((s) => `${s.name}${s.description ? `: ${s.description}` : ''}`)
+          .join('; ') || ''
+      const bId = _briefingState?.brief?.id || draftId
+      storyboard.regenerateSceneImage(scene, styleCtx, bId)
+    },
+    [_briefingState, draftId, storyboard]
+  )
 
   // ─── Sync storyboard edits to briefing state for draft persistence ──
   const structureSyncRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -955,6 +1008,10 @@ export function useChatInterfaceData({
     sceneImageData: storyboard.sceneImageData,
     websiteGlobalStyles: storyboard.globalStyles,
     websiteFidelity: storyboard.websiteFidelity,
+    // DALL-E image generation
+    isGeneratingImages: storyboard.isGeneratingImages,
+    imageGenerationProgress: storyboard.imageGenerationProgress,
+    handleRegenerateImage,
 
     // Website inspiration
     websiteInspirations: websiteInspiration.selectedInspirations,

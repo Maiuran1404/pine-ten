@@ -94,6 +94,9 @@ interface StructurePanelProps {
   lastSendError?: string | null
   onRetryGeneration?: () => void
   onEditNarrative?: () => void
+  // DALL-E image generation
+  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  onRegenerateImage?: (scene: StoryboardScene) => void
   className?: string
 }
 
@@ -244,6 +247,8 @@ export function StructurePanel({
   lastSendError,
   onRetryGeneration,
   onEditNarrative,
+  imageGenerationProgress,
+  onRegenerateImage,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -400,6 +405,8 @@ export function StructurePanel({
           onRedo={onRedo}
           canUndo={canUndo}
           canRedo={canRedo}
+          imageGenerationProgress={imageGenerationProgress}
+          onRegenerateImage={onRegenerateImage}
         />
       )}
       {structureData.type === 'layout' && (

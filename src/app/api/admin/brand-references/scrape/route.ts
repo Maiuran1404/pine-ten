@@ -382,8 +382,10 @@ export async function POST(request: NextRequest) {
             scrollActions.push({ type: 'wait', milliseconds: 1200 })
           }
 
+          // Firecrawl v2.5+ natively resolves lazy-loaded images, CSS background-images,
+          // and JS-rendered content in the HTML it returns
           const scrapeResult = await firecrawl.scrape(url, {
-            formats: ['html', 'rawHtml'],
+            formats: ['html', 'rawHtml', 'links'],
             waitFor: 8000, // Wait 8 seconds for initial JS to render
             actions: scrollActions,
           })
@@ -394,8 +396,24 @@ export async function POST(request: NextRequest) {
             logger.debug({ url, htmlLength: htmlContent.length }, 'Firecrawl returned HTML')
             images = extractImagesFromHtml(htmlContent, baseUrl)
             logger.debug({ url, imageCount: images.length }, 'Firecrawl extracted raw images')
-          } else {
-            logger.debug({ url }, 'Firecrawl returned no HTML content')
+          }
+
+          // Also check Firecrawl's links for direct image URLs not in the HTML
+          const fcLinks = scrapeResult.links as string[] | undefined
+          if (fcLinks) {
+            for (const link of fcLinks) {
+              const lower = link.toLowerCase()
+              if (/\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/.test(lower)) {
+                const seenUrls = new Set(images.map((img) => img.url))
+                if (!seenUrls.has(link)) {
+                  images.push({ url: link, source: 'img' })
+                }
+              }
+            }
+          }
+
+          if (!htmlContent && !fcLinks?.length) {
+            logger.debug({ url }, 'Firecrawl returned no HTML content or links')
           }
         } catch (error: unknown) {
           logger.error({ error }, 'Firecrawl error')

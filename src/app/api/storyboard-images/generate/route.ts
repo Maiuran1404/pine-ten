@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
 
       // Upload to Supabase
       const buffer = Buffer.from(result.base64, 'base64')
-      const path = `storyboard-images/${body.briefId}/scene-${scene.sceneNumber}-${Date.now()}.webp`
-      const imageUrl = await uploadToStorage('task-files', path, buffer, {
+      const path = `${body.briefId}/scene-${scene.sceneNumber}-${Date.now()}.webp`
+      const imageUrl = await uploadToStorage('storyboard-images', path, buffer, {
         contentType: 'image/webp',
         upsert: true,
       })

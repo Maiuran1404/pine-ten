@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/require-auth'
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { withErrorHandling, successResponse } from '@/lib/errors'
 import { z } from 'zod'
+import { generateSceneImage } from '@/lib/ai/dalle-image-generation'
 
 export const maxDuration = 120
 
@@ -17,49 +18,14 @@ export async function POST(request: NextRequest) {
 
     const body = generateSchema.parse(await request.json())
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw Errors.badRequest('OPENAI_API_KEY not configured on server')
-    }
-
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: body.prompt,
-        size: body.size,
-        quality: body.quality,
-        n: 1,
-      }),
+    const result = await generateSceneImage(body.prompt, {
+      size: body.size,
+      quality: body.quality,
     })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null)
-      const msg = errorData?.error?.message || `OpenAI API error: ${response.status}`
-      throw Errors.badRequest(msg)
-    }
-
-    const data = await response.json()
-    const imageData = data.data?.[0]
-
-    if (imageData?.b64_json) {
-      return successResponse({
-        imageUrl: `data:image/png;base64,${imageData.b64_json}`,
-        format: 'base64' as const,
-      })
-    }
-
-    if (imageData?.url) {
-      return successResponse({
-        imageUrl: imageData.url,
-        format: 'url' as const,
-      })
-    }
-
-    throw Errors.badRequest('Unexpected response format from OpenAI')
+    return successResponse({
+      imageUrl: `data:image/png;base64,${result.base64}`,
+      format: 'base64' as const,
+    })
   })
 }
