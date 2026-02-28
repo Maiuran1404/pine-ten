@@ -28,6 +28,7 @@ async function handler(request: NextRequest) {
         .select({
           role: users.role,
           onboardingCompleted: users.onboardingCompleted,
+          onboardingData: users.onboardingData,
         })
         .from(users)
         .where(eq(users.id, user.id))
@@ -147,43 +148,55 @@ async function handler(request: NextRequest) {
           })
           .where(eq(users.id, user.id))
 
-        // Fire-and-forget: Send notifications without blocking the response
+        // Only send welcome notifications on first-time onboarding, not redo.
+        // The reset-onboarding route sets onboardingData.isRedo = true before
+        // allowing re-onboarding. On completion, onboardingData is overwritten
+        // with { hasWebsite, completedAt }, so the flag is consumed.
+        const isRedo =
+          currentUser.onboardingData &&
+          typeof currentUser.onboardingData === 'object' &&
+          'isRedo' in currentUser.onboardingData &&
+          (currentUser.onboardingData as Record<string, unknown>).isRedo === true
+
         const userName = user.name || 'Unknown'
         const userEmail = user.email || ''
-        const companyInfo = {
-          name: company.name,
-          industry: company.industry || undefined,
-        }
-        Promise.resolve().then(async () => {
-          try {
-            await adminNotifications.newClientSignup({
-              name: userName,
-              email: userEmail,
-              userId: user.id,
-              company: companyInfo,
-            })
-            const welcomeEmail = emailTemplates.welcomeClient(
-              userName,
-              `${config.app.url}/dashboard`
-            )
-            await sendEmail({
-              to: userEmail,
-              subject: welcomeEmail.subject,
-              html: welcomeEmail.html,
-            })
-
-            // Send WhatsApp notification to admin
-            const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
-              name: userName,
-              email: userEmail,
-              role: 'CLIENT',
-              signupUrl: `${config.app.url}/admin/clients`,
-            })
-            await notifyAdminWhatsApp(whatsappMessage)
-          } catch (error) {
-            logger.error({ error }, 'Failed to send client onboarding notifications')
+        if (!isRedo) {
+          const companyInfo = {
+            name: company.name,
+            industry: company.industry || undefined,
           }
-        })
+          // Fire-and-forget: Send notifications without blocking the response
+          Promise.resolve().then(async () => {
+            try {
+              await adminNotifications.newClientSignup({
+                name: userName,
+                email: userEmail,
+                userId: user.id,
+                company: companyInfo,
+              })
+              const welcomeEmail = emailTemplates.welcomeClient(
+                userName,
+                `${config.app.url}/dashboard`
+              )
+              await sendEmail({
+                to: userEmail,
+                subject: welcomeEmail.subject,
+                html: welcomeEmail.html,
+              })
+
+              // Send WhatsApp notification to admin
+              const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
+                name: userName,
+                email: userEmail,
+                role: 'CLIENT',
+                signupUrl: `${config.app.url}/admin/clients`,
+              })
+              await notifyAdminWhatsApp(whatsappMessage)
+            } catch (error) {
+              logger.error({ error }, 'Failed to send client onboarding notifications')
+            }
+          })
+        }
 
         return successResponse({ success: true, companyId: company.id })
       }

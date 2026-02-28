@@ -416,6 +416,7 @@ export function useChatInterfaceData({
     setMessages: chatMessages.setMessages,
     setAnimatingMessageId: chatMessages.setAnimatingMessageId,
     selectedStyles: [], // self-reference resolved below
+    csrfFetch,
   })
 
   // ─── Task submission ─────────────────────────────────────────

@@ -34,7 +34,7 @@ export async function POST() {
         .set({
           companyId: null,
           onboardingCompleted: false,
-          onboardingData: null,
+          onboardingData: { isRedo: true, resetAt: new Date().toISOString() },
           role: 'CLIENT',
           updatedAt: new Date(),
         })

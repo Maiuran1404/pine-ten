@@ -29,6 +29,7 @@ interface UseStyleSelectionOptions {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
   setAnimatingMessageId: (id: string | null) => void
   selectedStyles: string[]
+  csrfFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 }
 
 export function useStyleSelection({
@@ -46,6 +47,7 @@ export function useStyleSelection({
   setMessages,
   setAnimatingMessageId,
   selectedStyles: selectedStylesProp,
+  csrfFetch,
 }: UseStyleSelectionOptions) {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
   const [hoveredStyleName, setHoveredStyleName] = useState<string | null>(null)
@@ -84,7 +86,7 @@ export function useStyleSelection({
         addStyleToVisualDirection(style)
         toast.success(`Added "${style.name}" to collection`)
 
-        fetch('/api/style-history', {
+        csrfFetch('/api/style-history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -97,7 +99,7 @@ export function useStyleSelection({
         }).catch((err) => console.error('Failed to record style selection:', err))
       }
     },
-    [hasMoodboardItem, addFromStyle, addStyleToVisualDirection]
+    [hasMoodboardItem, addFromStyle, addStyleToVisualDirection, csrfFetch]
   )
 
   const handleRemoveFromCollection = useCallback(
@@ -147,7 +149,7 @@ export function useStyleSelection({
         : `Styles selected: ${selectedStyles.join(', ')}`
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'user',
       content: styleMessage,
       timestamp: new Date(),
@@ -166,7 +168,7 @@ export function useStyleSelection({
         selectedStyleMatches.length === 1 ? selectedStyleMatches[0] : undefined
 
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
         content: 'Please implement this.',
         timestamp: new Date(),
@@ -187,7 +189,7 @@ export function useStyleSelection({
 
       const style = selectedStylesList[0]
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
         content: `Style selected: ${style.name}`,
         timestamp: new Date(),
@@ -216,7 +218,7 @@ export function useStyleSelection({
       if (isLoading) return
 
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
         content: `Video style selected: ${video.name}`,
         timestamp: new Date(),
@@ -306,7 +308,7 @@ export function useStyleSelection({
 
         if (data.videoReferences && data.videoReferences.length > 0) {
           const assistantMessage: Message = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             role: 'assistant',
             content: `Here are more video style options:`,
             timestamp: new Date(),
@@ -330,7 +332,7 @@ export function useStyleSelection({
           }))
 
           const assistantMessage: Message = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             role: 'assistant',
             content: isCycled
               ? `Here are some recommended ${styleAxis} styles:`
@@ -417,7 +419,7 @@ export function useStyleSelection({
 
       if (data.videoReferences && data.videoReferences.length > 0) {
         const assistantMessage: Message = {
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           role: 'assistant',
           content: 'Here are some different video style directions:',
           timestamp: new Date(),
@@ -431,7 +433,7 @@ export function useStyleSelection({
         setExcludedStyleAxes(newExcludedAxes)
 
         const assistantMessage: Message = {
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           role: 'assistant',
           content: 'Here are some different style directions:',
           timestamp: new Date(),
