@@ -16,13 +16,13 @@ import {
 
 describe('CHAT_STAGES', () => {
   it('contains all expected stages in order', () => {
-    expect(CHAT_STAGES).toEqual(['brief', 'details', 'style', 'review', 'submit'])
+    expect(CHAT_STAGES).toEqual(['brief', 'narrative', 'style', 'storyboard', 'review'])
   })
 })
 
 describe('BRIEFING_CHAT_STAGES', () => {
   it('contains the 5 briefing stages in order', () => {
-    expect(BRIEFING_CHAT_STAGES).toEqual(['brief', 'style', 'details', 'review', 'submit'])
+    expect(BRIEFING_CHAT_STAGES).toEqual(['brief', 'narrative', 'style', 'storyboard', 'review'])
   })
 })
 
@@ -39,20 +39,24 @@ describe('mapBriefingStageToChat', () => {
     expect(mapBriefingStageToChat('INTENT')).toBe('brief')
   })
 
+  it('maps STRUCTURE to narrative', () => {
+    expect(mapBriefingStageToChat('STRUCTURE')).toBe('narrative')
+  })
+
   it('maps INSPIRATION to style', () => {
     expect(mapBriefingStageToChat('INSPIRATION')).toBe('style')
   })
 
-  it('maps STRUCTURE to details', () => {
-    expect(mapBriefingStageToChat('STRUCTURE')).toBe('details')
+  it('maps ELABORATE to storyboard', () => {
+    expect(mapBriefingStageToChat('ELABORATE')).toBe('storyboard')
   })
 
-  it('maps STRATEGIC_REVIEW to details', () => {
-    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('details')
+  it('maps STRATEGIC_REVIEW to review', () => {
+    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('review')
   })
 
-  it('maps MOODBOARD to details', () => {
-    expect(mapBriefingStageToChat('MOODBOARD')).toBe('details')
+  it('maps MOODBOARD to review', () => {
+    expect(mapBriefingStageToChat('MOODBOARD')).toBe('review')
   })
 
   it('maps REVIEW to review', () => {
@@ -63,8 +67,8 @@ describe('mapBriefingStageToChat', () => {
     expect(mapBriefingStageToChat('DEEPEN')).toBe('review')
   })
 
-  it('maps SUBMIT to submit', () => {
-    expect(mapBriefingStageToChat('SUBMIT')).toBe('submit')
+  it('maps SUBMIT to review', () => {
+    expect(mapBriefingStageToChat('SUBMIT')).toBe('review')
   })
 
   it('defaults to brief for unknown stage', () => {
@@ -86,9 +90,9 @@ describe('calculateChatStageFromBriefing', () => {
     expect(result.progressPercentage).toBeGreaterThan(0)
   })
 
-  it('returns 100% for SUBMIT', () => {
+  it('returns high progress for SUBMIT', () => {
     const result = calculateChatStageFromBriefing('SUBMIT')
-    expect(result.currentStage).toBe('submit')
+    expect(result.currentStage).toBe('review')
     expect(result.progressPercentage).toBe(100)
   })
 
@@ -181,16 +185,16 @@ describe('calculateChatStage', () => {
 })
 
 describe('getNextStage', () => {
-  it('returns details after brief', () => {
-    expect(getNextStage('brief')).toBe('details')
+  it('returns narrative after brief', () => {
+    expect(getNextStage('brief')).toBe('narrative')
   })
 
-  it('returns style after details', () => {
-    expect(getNextStage('details')).toBe('style')
+  it('returns style after narrative', () => {
+    expect(getNextStage('narrative')).toBe('style')
   })
 
   it('returns null for last stage', () => {
-    expect(getNextStage('submit')).toBeNull()
+    expect(getNextStage('review')).toBeNull()
   })
 })
 

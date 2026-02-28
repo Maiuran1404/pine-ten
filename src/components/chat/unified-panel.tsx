@@ -114,6 +114,21 @@ function getSectionsForStage(
       sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }]
       break
 
+    case 'narrative':
+      // Narrative stage: brief is focus, visual if populated
+      sections = [{ key: 'brief', label: 'Brief', defaultOpen: true }, ...visualIfPopulated]
+      break
+
+    case 'storyboard':
+      // Storyboard stage: brief + visual + moodboard if populated
+      sections = [
+        { key: 'brief', label: 'Brief', defaultOpen: true },
+        ...visualIfPopulated,
+        ...moodboardIfPopulated,
+        ...outlineIfPopulated,
+      ]
+      break
+
     case 'details':
       // Brief is the focus — open by default. Other sections only if they have content.
       sections = [

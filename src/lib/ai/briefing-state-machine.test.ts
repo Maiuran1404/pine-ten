@@ -50,41 +50,35 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('INTENT')
     })
 
-    it('returns INSPIRATION when topic + taskType + intent all satisfied', () => {
+    it('returns STRUCTURE when topic + taskType + intent all satisfied', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
       state.brief.intent = makeInferredField('announcement', 0.85)
-      expect(deriveStage(state)).toBe('INSPIRATION')
-    })
-
-    it('returns STRUCTURE when styles selected but no structure', () => {
-      const state = createInitialBriefingState()
-      state.brief.topic = makeInferredField('SaaS product launch', 0.8)
-      state.brief.taskType = makeInferredField('single_asset', 0.85)
-      state.brief.intent = makeInferredField('announcement', 0.85)
-      state.brief.visualDirection = {
-        selectedStyles: [
-          {
-            id: '1',
-            name: 'Dark Tech',
-            description: null,
-            imageUrl: '',
-            deliverableType: 'video',
-            styleAxis: 'tech',
-            subStyle: null,
-            semanticTags: [],
-          },
-        ],
-        moodKeywords: [],
-        colorPalette: [],
-        typography: { primary: '', secondary: '' },
-        avoidElements: [],
-      }
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
-    it('returns ELABORATE when styles selected and structure exists', () => {
+    it('returns INSPIRATION when structure exists but no styles selected', () => {
+      const state = createInitialBriefingState()
+      state.brief.topic = makeInferredField('SaaS product launch', 0.8)
+      state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.brief.intent = makeInferredField('announcement', 0.85)
+      state.structure = {
+        type: 'storyboard',
+        scenes: [
+          {
+            sceneNumber: 1,
+            title: 'Hook',
+            description: 'Desc',
+            duration: '5s',
+            visualNote: 'Note',
+          },
+        ],
+      }
+      expect(deriveStage(state)).toBe('INSPIRATION')
+    })
+
+    it('returns ELABORATE when structure exists and styles selected', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
@@ -193,7 +187,7 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('INTENT')
 
       state.brief.intent = makeInferredField('announcement', 0.4)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('requires non-null value for topic even at high confidence', () => {
@@ -213,12 +207,12 @@ describe('deriveStage', () => {
   // ---- Plan examples (rewritten for deriveStage) ----
 
   describe('plan examples', () => {
-    it('example #2: Stripe launch video with full context → INSPIRATION', () => {
+    it('example #2: Stripe launch video with full context → STRUCTURE', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Stripe launch video for B2B SaaS', 0.9)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
       state.brief.intent = makeInferredField('announcement', 0.85)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('example #3: content plan with taskType but no intent → INTENT', () => {
@@ -236,28 +230,28 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('TASK_TYPE')
     })
 
-    it('example #5: website landing page with known intent → INSPIRATION', () => {
+    it('example #5: website landing page with known intent → STRUCTURE', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Website landing page', 0.85)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
       state.brief.intent = makeInferredField('signups', 0.75)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
-    it('example #6: logo for yoga studio → INSPIRATION', () => {
+    it('example #6: logo for yoga studio → STRUCTURE', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Logo for yoga studio', 0.85)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
       state.brief.intent = makeInferredField('awareness', 0.75)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
-    it('example #7: Instagram reels with known intent → INSPIRATION', () => {
+    it('example #7: Instagram reels with known intent → STRUCTURE', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Fitness app Instagram reels', 0.9)
       state.brief.taskType = makeInferredField('multi_asset_plan', 0.9)
       state.brief.intent = makeInferredField('signups', 0.9)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('example #8: pitch deck with no intent → INTENT', () => {
@@ -267,12 +261,12 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('INTENT')
     })
 
-    it('example #9: LinkedIn thought leadership → INSPIRATION', () => {
+    it('example #9: LinkedIn thought leadership → STRUCTURE', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('LinkedIn thought leadership', 0.9)
       state.brief.taskType = makeInferredField('multi_asset_plan', 0.85)
       state.brief.intent = makeInferredField('authority', 0.95)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('example #10: vague message → EXTRACT', () => {
@@ -299,75 +293,61 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('INTENT')
     })
 
-    it('advances from TASK_TYPE to INSPIRATION when both taskType and intent at 0.4+', () => {
+    it('advances from TASK_TYPE to STRUCTURE when both taskType and intent at 0.4+', () => {
       const state = createInitialBriefingState()
       state.stage = 'TASK_TYPE'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.4)
       state.brief.intent = makeInferredField('signups', 0.4)
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
-    it('advances from INTENT to INSPIRATION when intent at 0.4+', () => {
+    it('advances from INTENT to STRUCTURE when intent at 0.4+', () => {
       const state = createInitialBriefingState()
       state.stage = 'INTENT'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('awareness', 0.4)
-      expect(deriveStage(state)).toBe('INSPIRATION')
-    })
-
-    it('advances from INSPIRATION to STRUCTURE when styles selected', () => {
-      const state = createInitialBriefingState()
-      state.stage = 'INSPIRATION'
-      state.brief.topic = makeInferredField('SaaS', 0.8)
-      state.brief.taskType = makeInferredField('single_asset', 0.8)
-      state.brief.intent = makeInferredField('announcement', 0.8)
-      state.brief.visualDirection = {
-        selectedStyles: [
-          {
-            id: '1',
-            name: 'Dark Tech',
-            description: null,
-            imageUrl: '',
-            deliverableType: 'video',
-            styleAxis: 'tech',
-            subStyle: null,
-            semanticTags: [],
-          },
-        ],
-        moodKeywords: [],
-        colorPalette: [],
-        typography: { primary: '', secondary: '' },
-        avoidElements: [],
-      }
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
-    it('advances from STRUCTURE to ELABORATE when structure set', () => {
+    it('advances from STRUCTURE to INSPIRATION when structure set (non-video)', () => {
       const state = createInitialBriefingState()
       state.stage = 'STRUCTURE'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
-      state.brief.visualDirection = {
-        selectedStyles: [
+      state.structure = {
+        type: 'layout',
+        sections: [
           {
-            id: '1',
-            name: 'Dark Tech',
-            description: null,
-            imageUrl: '',
-            deliverableType: 'video',
-            styleAxis: 'tech',
-            subStyle: null,
-            semanticTags: [],
+            sectionName: 'Hero',
+            purpose: 'Primary',
+            contentGuidance: 'Lead with value',
+            order: 1,
           },
         ],
-        moodKeywords: [],
-        colorPalette: [],
-        typography: { primary: '', secondary: '' },
-        avoidElements: [],
       }
+      expect(deriveStage(state)).toBe('INSPIRATION')
+    })
+
+    it('advances from STRUCTURE to INSPIRATION when narrativeApproved (video)', () => {
+      const state = createInitialBriefingState()
+      state.stage = 'STRUCTURE'
+      state.deliverableCategory = 'video'
+      state.brief.topic = makeInferredField('SaaS', 0.8)
+      state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.brief.intent = makeInferredField('announcement', 0.8)
+      state.narrativeApproved = true
+      expect(deriveStage(state)).toBe('INSPIRATION')
+    })
+
+    it('advances from INSPIRATION to ELABORATE when styles selected', () => {
+      const state = createInitialBriefingState()
+      state.stage = 'INSPIRATION'
+      state.brief.topic = makeInferredField('SaaS', 0.8)
+      state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.brief.intent = makeInferredField('announcement', 0.8)
       state.structure = {
         type: 'storyboard',
         scenes: [
@@ -380,15 +360,6 @@ describe('deriveStage', () => {
           },
         ],
       }
-      expect(deriveStage(state)).toBe('ELABORATE')
-    })
-
-    it('stays at STRUCTURE when structure is null', () => {
-      const state = createInitialBriefingState()
-      state.stage = 'STRUCTURE'
-      state.brief.topic = makeInferredField('SaaS', 0.8)
-      state.brief.taskType = makeInferredField('single_asset', 0.8)
-      state.brief.intent = makeInferredField('announcement', 0.8)
       state.brief.visualDirection = {
         selectedStyles: [
           {
@@ -407,6 +378,15 @@ describe('deriveStage', () => {
         typography: { primary: '', secondary: '' },
         avoidElements: [],
       }
+      expect(deriveStage(state)).toBe('ELABORATE')
+    })
+
+    it('stays at STRUCTURE when structure is null (non-video)', () => {
+      const state = createInitialBriefingState()
+      state.stage = 'STRUCTURE'
+      state.brief.topic = makeInferredField('SaaS', 0.8)
+      state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.brief.intent = makeInferredField('announcement', 0.8)
       state.structure = null
       state.turnsInCurrentStage = 1
       expect(deriveStage(state)).toBe('STRUCTURE')
@@ -489,7 +469,7 @@ describe('deriveStage', () => {
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.turnsInCurrentStage = 2
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('force-advances from INTENT after 2 turns with low confidence', () => {
@@ -499,7 +479,7 @@ describe('deriveStage', () => {
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('awareness', 0.15) // Below threshold
       state.turnsInCurrentStage = 2
-      expect(deriveStage(state)).toBe('INSPIRATION')
+      expect(deriveStage(state)).toBe('STRUCTURE')
     })
 
     it('does not force-advance from STRUCTURE (maxTurnsBeforeRecommend is null)', () => {
@@ -508,19 +488,6 @@ describe('deriveStage', () => {
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
-      state.brief.visualDirection = {
-        selectedStyles: [
-          {
-            id: '1',
-            name: 'Style',
-            description: null,
-            imageUrl: '',
-            deliverableType: 'video',
-            styleAxis: 'tech',
-            subStyle: null,
-          },
-        ],
-      }
       state.structure = null
       state.turnsInCurrentStage = 10
       expect(deriveStage(state)).toBe('STRUCTURE')
@@ -588,48 +555,19 @@ describe('deriveStage', () => {
   // ---- Video-specific gates ----
 
   describe('video-specific gates', () => {
-    it('requires narrative approval for video at STRUCTURE gate', () => {
+    it('video STRUCTURE exits on narrativeApproved only (not structure)', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS video', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
       state.deliverableCategory = 'video'
-      state.brief.visualDirection = {
-        selectedStyles: [
-          {
-            id: '1',
-            name: 'Dark Tech',
-            description: null,
-            imageUrl: '',
-            deliverableType: 'video',
-            styleAxis: 'tech',
-            subStyle: null,
-            semanticTags: [],
-          },
-        ],
-        moodKeywords: [],
-        colorPalette: [],
-        typography: { primary: '', secondary: '' },
-        avoidElements: [],
-      }
-      state.structure = {
-        type: 'storyboard',
-        scenes: [
-          {
-            sceneNumber: 1,
-            title: 'Hook',
-            description: 'Desc',
-            duration: '5s',
-            visualNote: 'Note',
-          },
-        ],
-      }
+      // No structure, no narrative approval — stays at STRUCTURE
       state.narrativeApproved = false
       expect(deriveStage(state)).toBe('STRUCTURE')
 
-      // With narrative approved, advances to ELABORATE
+      // With narrative approved (even without structure), advances to INSPIRATION
       state.narrativeApproved = true
-      expect(deriveStage(state)).toBe('ELABORATE')
+      expect(deriveStage(state)).toBe('INSPIRATION')
     })
 
     it('video projects require style selection at INSPIRATION gate', () => {
@@ -638,6 +576,7 @@ describe('deriveStage', () => {
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
       state.deliverableCategory = 'video'
+      state.narrativeApproved = true
       // No styles selected — stays at INSPIRATION
       expect(deriveStage(state)).toBe('INSPIRATION')
     })
@@ -694,15 +633,15 @@ describe('goBackTo', () => {
     expect(result.stage).toBe('STRUCTURE')
   })
 
-  it('clears visualDirection and structure when going back to INSPIRATION', () => {
+  it('clears visualDirection when going back to INSPIRATION, preserves structure', () => {
     const state = makeAdvancedState()
     const result = goBackTo(state, 'INSPIRATION')
     expect(result.stage).toBe('INSPIRATION')
     expect(result.brief.visualDirection).toBeNull()
     // Preserves intent/topic/audience
     expect(result.brief.intent.value).toBe('announcement')
-    // Clears structure (STRUCTURE is after INSPIRATION in pipeline)
-    expect(result.structure).toBeNull()
+    // Structure preserved (STRUCTURE is before INSPIRATION in pipeline)
+    expect(result.structure).not.toBeNull()
     // Clears downstream
     expect(result.strategicReview).toBeNull()
     expect(result.deepenSelections).toBeNull()
@@ -728,7 +667,7 @@ describe('goBackTo', () => {
     expect(result.structure).toBeNull()
   })
 
-  it('clears structure and downstream when going back to STRUCTURE, preserves visualDirection', () => {
+  it('clears structure, visualDirection, and downstream when going back to STRUCTURE', () => {
     const state = makeAdvancedState()
     const result = goBackTo(state, 'STRUCTURE')
     expect(result.stage).toBe('STRUCTURE')
@@ -737,8 +676,8 @@ describe('goBackTo', () => {
     expect(result.strategicReview).toBeNull()
     expect(result.sectionMoodboards).toEqual({})
     expect(result.deepenSelections).toBeNull()
-    // Visual direction preserved (INSPIRATION is before STRUCTURE in pipeline)
-    expect(result.brief.visualDirection).not.toBeNull()
+    // Visual direction also cleared (INSPIRATION is after STRUCTURE in pipeline)
+    expect(result.brief.visualDirection).toBeNull()
   })
 
   it('resets turnsInCurrentStage to 0', () => {

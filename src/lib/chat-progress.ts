@@ -24,24 +24,32 @@ interface ProgressResult {
 /**
  * Stage definitions with descriptions
  */
-export const CHAT_STAGES: ChatStage[] = ['brief', 'details', 'style', 'review', 'submit']
+export const CHAT_STAGES: ChatStage[] = ['brief', 'narrative', 'style', 'storyboard', 'review']
 
 export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   brief: 'Describe your project',
-  style: 'Choose your visual style',
+  narrative: 'Story concept',
+  style: 'Visual style',
+  storyboard: 'Storyboard',
+  review: 'Review & submit',
+  // Legacy entries (kept for backward compat, weight 0)
   details: 'Define your structure',
   strategic_review: 'Strategic review',
   moodboard: 'Refine your moodboard',
-  review: 'Review your request',
   deepen: 'Deepen your brief',
   submit: 'Submit for creation',
 }
 
 /**
  * Stages used when the briefing state machine is enabled.
- * Adds strategic_review and deepen between details and review.
  */
-export const BRIEFING_CHAT_STAGES: ChatStage[] = ['brief', 'style', 'details', 'review', 'submit']
+export const BRIEFING_CHAT_STAGES: ChatStage[] = [
+  'brief',
+  'narrative',
+  'style',
+  'storyboard',
+  'review',
+]
 
 /**
  * Map a BriefingStage (state machine) to a ChatStage (progress UI).
@@ -54,20 +62,20 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
     case 'TASK_TYPE':
     case 'INTENT':
       return 'brief'
+    case 'STRUCTURE':
+      return 'narrative'
     case 'INSPIRATION':
       return 'style'
-    case 'STRUCTURE':
     case 'ELABORATE':
-      return 'details'
+      return 'storyboard'
     case 'STRATEGIC_REVIEW':
-      return 'details'
     case 'MOODBOARD':
-      return 'details'
+      return 'review'
     case 'REVIEW':
     case 'DEEPEN':
       return 'review'
     case 'SUBMIT':
-      return 'submit'
+      return 'review'
     default:
       return 'brief'
   }
@@ -181,13 +189,16 @@ function calculateProgressPercentage(
 ): number {
   const stageWeights: Record<ChatStage, number> = {
     brief: 10,
+    narrative: 20,
     style: 15,
-    details: 20,
-    strategic_review: 10,
-    moodboard: 10,
-    review: 20,
-    deepen: 0, // DEEPEN maps to 'review' in state machine path
-    submit: 15,
+    storyboard: 30,
+    review: 25,
+    // Legacy stages (weight 0)
+    details: 0,
+    strategic_review: 0,
+    moodboard: 0,
+    deepen: 0,
+    submit: 0,
   }
 
   // Sum weights of completed stages
@@ -210,28 +221,27 @@ function calculateProgressPercentage(
         microProgress = userMessageCount > 0 ? currentWeight * 0.5 : 0
         break
 
+      case 'narrative':
+        // Narrative stage: progress based on messages exchanged
+        microProgress = currentWeight * Math.min(0.8, 0.2 + Math.min(userMessageCount, 4) * 0.15)
+        break
+
       case 'style':
         // Style stage: small progress while browsing styles
         microProgress = currentWeight * 0.3
         break
 
-      case 'details':
-        // Details stage: progress based on number of messages exchanged
-        // Each message adds ~5% up to 80% of the stage weight
-        const messageProgress = Math.min(userMessageCount - 1, 4) * 0.2
-        // Moodboard items add a small bonus
+      case 'storyboard': {
+        // Storyboard stage: progress based on messages exchanged
+        const messageProgress = Math.min(userMessageCount - 1, 4) * 0.15
         const moodboardBonus = Math.min(moodboardItemCount, 3) * 0.05
         microProgress = currentWeight * Math.min(0.8, 0.2 + messageProgress + moodboardBonus)
         break
+      }
 
       case 'review':
         // Review stage: progress when task is ready for review
         microProgress = currentWeight * 0.5
-        break
-
-      case 'submit':
-        // Submit stage: nearly complete
-        microProgress = currentWeight * 0.9
         break
 
       default:
@@ -261,11 +271,14 @@ export function getNextStage(currentStage: ChatStage): ChatStage | null {
 export function getStageHint(currentStage: ChatStage): string {
   const hints: Record<ChatStage, string> = {
     brief: 'Tell me about your design project',
+    narrative: 'Building your story concept',
     style: 'Select styles that match your vision',
+    storyboard: 'Building your storyboard',
+    review: 'Review and confirm your request',
+    // Legacy
     details: 'Let me refine the requirements',
     strategic_review: 'Reviewing your creative strategy',
     moodboard: 'Refine your moodboard selections',
-    review: 'Review and confirm your request',
     deepen: 'Add more detail to your brief',
     submit: 'Ready to submit!',
   }
@@ -308,13 +321,16 @@ export function getContextualStageDescription(
       if (context?.deliverableCategory === 'video') {
         if (!context.videoNarrative) return 'Building story concept'
         if (!context.narrativeApproved) return 'Review story concept'
-        return 'Building storyboard'
+        return 'Story concept approved'
       }
+      if (context?.deliverableCategory === 'website') return 'Page layout'
+      if (context?.deliverableCategory === 'content') return 'Content plan'
       return 'Define your structure'
     case 'INSPIRATION':
       return 'Choose your visual style'
     case 'ELABORATE':
-      return 'Refining the details'
+      if (context?.deliverableCategory === 'video') return 'Building storyboard'
+      return 'Refine details'
     case 'STRATEGIC_REVIEW':
       return 'Strategic review'
     case 'MOODBOARD':

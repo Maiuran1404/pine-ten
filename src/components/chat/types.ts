@@ -43,7 +43,9 @@ export interface MoodboardItem {
  */
 export type ChatStage =
   | 'brief'
+  | 'narrative'
   | 'style'
+  | 'storyboard'
   | 'details'
   | 'strategic_review'
   | 'moodboard'

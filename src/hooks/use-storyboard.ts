@@ -102,6 +102,7 @@ export function useStoryboard({
   // (websites show the InspirationPanel before structure data exists)
   const structurePanelVisible =
     briefingState?.stage === 'INSPIRATION' ||
+    briefingState?.stage === 'ELABORATE' ||
     storyboardScenes !== null ||
     videoNarrative !== null ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')

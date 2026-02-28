@@ -34,10 +34,10 @@ describe('ProgressStepper', () => {
     render(<ProgressStepper currentStage="brief" completedStages={[]} progressPercentage={10} />)
 
     expect(screen.getByText('Describe your project')).toBeInTheDocument()
-    expect(screen.getByText('Choose your visual style')).toBeInTheDocument()
-    expect(screen.getByText('Define your structure')).toBeInTheDocument()
-    expect(screen.getByText('Review your request')).toBeInTheDocument()
-    expect(screen.getByText('Submit for creation')).toBeInTheDocument()
+    expect(screen.getByText('Story concept')).toBeInTheDocument()
+    expect(screen.getByText('Visual style')).toBeInTheDocument()
+    expect(screen.getByText('Storyboard')).toBeInTheDocument()
+    expect(screen.getByText('Review & submit')).toBeInTheDocument()
   })
 
   it('marks the current stage with "Current step" label', () => {
@@ -49,9 +49,9 @@ describe('ProgressStepper', () => {
   })
 
   it('shows "Ready to create!" when progress is 100%', () => {
-    const allStages: ChatStage[] = ['brief', 'style', 'details', 'review', 'submit']
+    const allStages: ChatStage[] = ['brief', 'narrative', 'style', 'storyboard', 'review']
     render(
-      <ProgressStepper currentStage="submit" completedStages={allStages} progressPercentage={100} />
+      <ProgressStepper currentStage="review" completedStages={allStages} progressPercentage={100} />
     )
 
     expect(screen.getByText('Ready to create!')).toBeInTheDocument()
@@ -126,12 +126,16 @@ describe('TopProgressBar', () => {
       <TopProgressBar currentStage="style" completedStages={['brief']} progressPercentage={25} />
     )
 
-    expect(screen.getByText('Choose your visual style')).toBeInTheDocument()
+    expect(screen.getByText('Visual style')).toBeInTheDocument()
   })
 
   it('shows progress percentage', () => {
     render(
-      <TopProgressBar currentStage="details" completedStages={['brief']} progressPercentage={50} />
+      <TopProgressBar
+        currentStage="narrative"
+        completedStages={['brief']}
+        progressPercentage={50}
+      />
     )
 
     expect(screen.getByText('50%')).toBeInTheDocument()

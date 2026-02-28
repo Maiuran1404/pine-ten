@@ -325,9 +325,11 @@ export const STAGE_PIPELINE: StageGate[] = [
   {
     stage: 'STRUCTURE',
     exitWhen: (s) => {
+      if (s.deliverableCategory === 'video') {
+        // Video: exit after narrative approval only (storyboard moves to ELABORATE)
+        return s.narrativeApproved === true
+      }
       if (!s.structure) return false
-      // Video requires narrative approval before advancing
-      if (s.deliverableCategory === 'video' && !s.narrativeApproved) return false
       return true
     },
   },
@@ -393,11 +395,11 @@ export function deriveStage(state: BriefingState): BriefingStage {
  */
 export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
   const LEGAL: Record<BriefingStage, BriefingStage[]> = {
-    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'],
-    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'INSPIRATION'],
-    INTENT: ['INTENT', 'INSPIRATION'],
-    INSPIRATION: ['INSPIRATION', 'STRUCTURE'],
-    STRUCTURE: ['STRUCTURE', 'ELABORATE'],
+    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE'],
+    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
+    INTENT: ['INTENT', 'STRUCTURE'],
+    STRUCTURE: ['STRUCTURE', 'INSPIRATION'],
+    INSPIRATION: ['INSPIRATION', 'ELABORATE'],
     ELABORATE: ['ELABORATE', 'REVIEW'],
     STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'REVIEW'],
     MOODBOARD: ['MOODBOARD', 'REVIEW'],

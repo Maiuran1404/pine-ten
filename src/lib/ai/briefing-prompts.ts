@@ -502,65 +502,22 @@ Your [QUICK_OPTIONS] should be: {"question": "How about now?", "options": ["Try 
 Do NOT offer options about moving to storyboard, visual style, or submission.`
       }
 
-      // Phase 3: Narrative approved, now build the storyboard
-      const narrativeContext = JSON.stringify(state.videoNarrative)
+      // Phase 3: Narrative approved — acknowledge and let state machine advance to INSPIRATION (style)
+      // Storyboard building has moved to ELABORATE stage where styles are already selected
+      const narrativeContext3 = JSON.stringify(state.videoNarrative)
 
-      // Check if crucial info is missing before building storyboard
-      const missingCritical: string[] = []
-      if (!state.brief.topic.value)
-        missingCritical.push('the specific topic or feature this video is about')
-      if (!state.brief.audience.value) missingCritical.push('who the target audience is')
-
-      if (missingCritical.length > 0) {
-        // Ask clarifying questions before building storyboard
-        return `The user has approved the story narrative direction. Good — keep the momentum going.
+      return `The user has approved the story narrative. The state machine will now advance to visual style selection.
 
 APPROVED NARRATIVE:
-${narrativeContext}
+${narrativeContext3}
 
-Before building the storyboard scenes, you need to clarify: ${missingCritical.join(' and ')}.
-
-Ask 1-2 quick, specific questions to fill these gaps. Frame it naturally as part of the creative process — something like "Just to make sure the storyboard nails this — [question]" or "Before I start building out the scenes, quick question — [question]". Keep it forward-moving and excited.
-
-IMPORTANT:
-- Do NOT output [STORYBOARD] markers. You don't have enough info yet.
-- Do NOT say "we skipped a step", "we missed something", "we haven't done X yet", or anything that sounds like a correction or dead-end. Instead, frame clarifying questions as a natural part of building the storyboard — you're gathering the last details to make it great.
-- DO output an updated [VIDEO_NARRATIVE] block (same as current, or refined if user gave new info).
-- Your [QUICK_OPTIONS] should help the user answer quickly: offer concrete choices for what's missing.
-- Once the user answers, the NEXT turn will build the storyboard.`
-      }
-
-      return `${clarifyPrefix}The user has approved the story narrative. Now build a scene-by-scene storyboard that brings it to life.
-
-APPROVED NARRATIVE:
-${narrativeContext}
-
-MANDATORY: Create a scene-by-scene storyboard aligned with the approved narrative.
-- Generate 4-6 scenes. The scenes should follow the narrative's emotional arc: tension, turning point, payoff.
-- DURATION REQUIREMENT: The total video duration must be approximately ${state.targetDurationSeconds || 45} seconds. Distribute scene durations so they sum to at least ${Math.max(20, (state.targetDurationSeconds || 45) - 15)} seconds. Typical scene durations are 5-10 seconds each.
-- Each scene: title, description, duration, visualNote, voiceover (narration text), transition (cut/fade/dissolve/whip pan), cameraNote (camera direction like close-up, wide, handheld).
-
-SCENE QUALITY RULES:
-- Scene 1 must open with a specific, visual hook. Not a question or statistic. Show the pain happening: a person, a screen, a moment the viewer recognizes.
-- Voiceover should sound like a real person talking, not an ad script. Short sentences. Conversational. Use "you" not "they".
-- Each scene description should describe what the CAMERA SEES, not abstract ideas. "A product manager refreshing a dashboard showing 12% conversion" not "The pain of low conversion rates."
-- The final scene should land on a concrete result (a number, a visual change, a reaction) before delivering the CTA from the approved narrative.
-
-- For each scene, include imageGenerationPrompt: a 2-3 sentence visual description for AI image generation. Describe what the camera sees — subjects, setting, lighting, mood, and composition. Be concrete and cinematic. This prompt will be fed to an AI image generator later (after the user picks a visual style), so focus on WHAT is in the frame, not HOW it should be styled.
-  Bad: "A person uses the app" (too vague, no visual detail)
-  Good: "Over-the-shoulder shot of a product manager at a standing desk, staring at a laptop screen showing a funnel chart with a sharp drop-off at the verification step. Dim office lighting, single monitor glow on their face. The dashboard shows red warning indicators."
-  Bad: "The problem of low conversion" (abstract concept, not visual)
-  Good: "Close-up of a smartphone screen showing a loading spinner stuck at 'Verifying Identity...', the user's thumb hovering impatiently. Shallow depth of field, warm indoor lighting."
-- CRITICAL: Use [STORYBOARD] as the marker, NOT [VIDEO_STORYBOARD]. The UI parser only recognizes [STORYBOARD].
-- You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"The Drop-Off Cliff","description":"A product manager stares at a funnel chart. The bar at 'Identity Verification' drops to nearly zero.","duration":"6s","visualNote":"Over-the-shoulder shot of a real analytics dashboard","voiceover":"You know that screen. The one where 40% of your sign-ups just disappear.","transition":"cut","cameraNote":"Over-shoulder, tight on screen, then pull back to show the person's reaction","imageGenerationPrompt":"Over-the-shoulder shot of a product manager at a standing desk, staring at a laptop screen showing a funnel chart with a sharp drop-off at the verification step. Dim office lighting, single monitor glow on their face, dashboard shows red warning indicators.","hookData":{"targetPersona":"Product managers","painMetric":"40% sign-up drop-off","quantifiableImpact":"verification in 2 seconds"}}]}[/STORYBOARD]
-OUTPUT FORMAT: Start with the [STORYBOARD]{valid JSON}[/STORYBOARD] block FIRST, before any conversational text. This is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.
+MANDATORY: Output the narrative as [VIDEO_NARRATIVE]${narrativeContext3}[/VIDEO_NARRATIVE] — keep the approved narrative intact.
 
 CONVERSATIONAL TEXT:
-After the [STORYBOARD] block, write a brief pointer: "Your storyboard is ready on the canvas. Click any scene to edit, or tell me what to adjust."
-Do NOT ask unrelated questions about audience, goals, or platform.
-Your [QUICK_OPTIONS] should be scene-focused: {"question": "Anything to tweak?", "options": ["Scene 1 needs work", "The pacing feels off", "I'm happy with this"]}
-Do NOT offer options about submission, visual style direction, or progressing to the next step. The state machine handles progression.`
+Write a short, excited acknowledgment: "Great story direction locked in! Now let's pick a visual style that brings this to life."
+Do NOT build a storyboard. Do NOT output [STORYBOARD] markers. The storyboard will be built after the user picks a visual style.
+Your [QUICK_OPTIONS] should be forward-looking about style: {"question": "Ready for visual direction?", "options": ["Show me style options", "I have a style in mind"]}
+Do NOT offer options about storyboard, scenes, or submission.`
     }
     case 'website': {
       const industryLabels = INDUSTRY_OPTIONS.map((o) => o.label)
@@ -633,7 +590,47 @@ function buildElaborateTask(state: BriefingState): string {
   if (isFirstTurn) {
     // First turn: auto-elaborate ALL sections immediately
     switch (category) {
-      case 'video':
+      case 'video': {
+        const hasStoryboard = state.structure?.type === 'storyboard'
+        const narrativeCtx = state.videoNarrative ? JSON.stringify(state.videoNarrative) : ''
+
+        if (!hasStoryboard && narrativeCtx) {
+          // No storyboard yet — build it from scratch using approved narrative + style context
+          return `MANDATORY: Build a complete scene-by-scene storyboard from the approved narrative, with full creative detail and style-aligned imagery.
+${styleContext}
+APPROVED NARRATIVE:
+${narrativeCtx}
+
+Create 4-6 scenes following the narrative's emotional arc: tension, turning point, payoff.
+- DURATION REQUIREMENT: Total video duration ~${state.targetDurationSeconds || 45} seconds. Each scene 5-10 seconds.
+- Each scene MUST include ALL of these fields:
+  - sceneNumber, title, description, duration, visualNote
+  - voiceover: narration text (conversational, use "you" not "they")
+  - transition: cut/fade/dissolve/whip pan
+  - cameraNote: camera direction (close-up, wide, handheld, etc.)
+  - fullScript: Complete narration/dialogue script
+  - directorNotes: Shooting direction, pacing, talent direction, mood cues
+  - referenceDescription: Description of what the reference visual should look like
+  - imageGenerationPrompt: 2-3 sentence visual description for DALL-E. Describe what the camera sees — subjects, setting, lighting, mood, composition. Be concrete and cinematic. Incorporate the selected visual style.
+  - imageSearchTerms: Array of 3-5 specific Pexels search keywords
+  - filmTitleSuggestions: Array of 1-3 film titles matching the scene's visual mood
+  - visualTechniques: Array of 1-2 camera/editing techniques
+
+SCENE QUALITY RULES:
+- Scene 1 must open with a specific, visual hook. Show the pain happening: a person, a screen, a moment.
+- Voiceover: real person talking, not an ad script. Short sentences. Conversational.
+- Each description: what the CAMERA SEES, not abstract ideas.
+- Final scene: concrete result (number, visual change, reaction) before CTA.
+
+- CRITICAL: Use [STORYBOARD] as the marker. You MUST output [STORYBOARD]{json}[/STORYBOARD].
+OUTPUT FORMAT: Start with the [STORYBOARD] block FIRST. Ensure valid JSON.
+
+CONVERSATIONAL TEXT:
+After the [STORYBOARD] block: "Your storyboard is ready on the canvas. Click any scene to edit, or tell me what to adjust."
+Your [QUICK_OPTIONS] should be scene-focused: {"question": "Anything to tweak?", "options": ["Scene 1 needs work", "The pacing feels off", "I'm happy with this"]}
+Do NOT ask questions. Generate the creative content now.`
+        }
+
         return `MANDATORY: Elaborate ALL scenes in the storyboard with full creative detail.
 ${styleContext}
 For each scene, add:
@@ -646,6 +643,7 @@ For each scene, add:
 
 Output the complete elaborated storyboard using [STORYBOARD]{json}[/STORYBOARD] with all existing fields PLUS the new detail fields.
 Do NOT ask questions. Generate the creative content now based on everything we know about the project.`
+      }
       case 'website':
         return `MANDATORY: Elaborate ALL sections in the layout with real content.
 For each section, add:
