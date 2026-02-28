@@ -51,6 +51,10 @@ export interface UseBriefingStateMachineReturn {
   syncFromServer: (serverState: SerializedBriefingState) => void
   /** Update the brief within the briefing state (single source of truth) */
   updateBrief: (updater: (brief: LiveBrief) => LiveBrief) => void
+  /** Update the structure data within the briefing state (for edit persistence) */
+  updateStructure: (
+    structure: import('@/lib/ai/briefing-state-machine').StructureData | null
+  ) => void
 }
 
 // =============================================================================
@@ -189,6 +193,22 @@ export function useBriefingStateMachine(
   )
 
   // ==========================================================================
+  // updateStructure — persist storyboard edits to briefing state for draft restore
+  // ==========================================================================
+
+  const updateStructure = useCallback(
+    (structure: import('@/lib/ai/briefing-state-machine').StructureData | null) => {
+      setState((prev) => {
+        if (prev.structure === structure) return prev
+        const newState = { ...prev, structure }
+        persistState(newState)
+        return newState
+      })
+    },
+    [persistState]
+  )
+
+  // ==========================================================================
   // Derived values
   // ==========================================================================
 
@@ -223,5 +243,6 @@ export function useBriefingStateMachine(
     dispatch,
     syncFromServer,
     updateBrief,
+    updateStructure,
   }
 }

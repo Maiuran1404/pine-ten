@@ -73,6 +73,7 @@ interface UseDraftPersistenceOptions {
   setCompletedTypingIds: React.Dispatch<React.SetStateAction<Set<string>>>
   setCurrentDeliverableType: React.Dispatch<React.SetStateAction<string | null>>
   setNeedsAutoContinue: React.Dispatch<React.SetStateAction<boolean>>
+  setNeedsAutoContinueConfirmation: React.Dispatch<React.SetStateAction<boolean>>
   setShowSubmissionModal: React.Dispatch<React.SetStateAction<boolean>>
   // Moodboard operations
   clearMoodboard: () => void
@@ -103,6 +104,7 @@ export function useDraftPersistence({
   setCompletedTypingIds,
   setCurrentDeliverableType,
   setNeedsAutoContinue,
+  setNeedsAutoContinueConfirmation,
   setShowSubmissionModal,
   clearMoodboard,
   addMoodboardItem,
@@ -170,7 +172,7 @@ export function useDraftPersistence({
 
       const lastMessage = loadedMessages[loadedMessages.length - 1]
       if (lastMessage && lastMessage.role === 'user') {
-        setNeedsAutoContinue(true)
+        setNeedsAutoContinueConfirmation(true)
       }
     } else {
       setMessages([])
@@ -194,7 +196,7 @@ export function useDraftPersistence({
     setPendingTask,
     setCompletedTypingIds,
     setCurrentDeliverableType,
-    setNeedsAutoContinue,
+    setNeedsAutoContinueConfirmation,
   ])
 
   // Handle initial message from URL param
@@ -234,7 +236,7 @@ export function useDraftPersistence({
     }
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'user',
       content: initialMessage,
       timestamp: new Date(),

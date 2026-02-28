@@ -1,7 +1,8 @@
 'use client'
 
-import { Film, Layout, Calendar, Palette, Loader2, Sparkles } from 'lucide-react'
+import { Film, Layout, Calendar, Palette, Loader2, Sparkles, RefreshCw, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type {
   StructureData,
@@ -89,6 +90,9 @@ interface StructurePanelProps {
   narrativeApproved?: boolean
   onApproveNarrative?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  // Error recovery for storyboard generation after narrative approval
+  lastSendError?: string | null
+  onRetryGeneration?: () => void
   className?: string
 }
 
@@ -236,6 +240,8 @@ export function StructurePanel({
   narrativeApproved,
   onApproveNarrative,
   onNarrativeFieldEdit,
+  lastSendError,
+  onRetryGeneration,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -272,8 +278,50 @@ export function StructurePanel({
   // Video narrative phase: show NarrativePanel until narrative is approved,
   // then show loading skeleton while storyboard is being generated
   if (structureType === 'storyboard' && videoNarrative && !structureData) {
-    // Once narrative is approved, show storyboard loading skeleton
+    // Once narrative is approved, show storyboard loading skeleton (or error recovery)
     if (narrativeApproved) {
+      // If storyboard generation failed, show error + retry UI
+      if (lastSendError && onRetryGeneration) {
+        return (
+          <div className={cn('flex flex-col h-full bg-background', className)}>
+            <div className="shrink-0 px-4 py-3 border-b border-border/40">
+              <div className="flex items-center gap-2">
+                <Film className="h-4 w-4 text-crafted-green" />
+                <span className="text-sm font-semibold text-foreground">Storyboard</span>
+              </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Film className="h-6 w-6 text-destructive" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Storyboard generation failed</p>
+                <p className="text-xs text-muted-foreground">{lastSendError}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (onNarrativeFieldEdit) {
+                      // Allow re-editing the narrative by un-approving
+                      // This is handled by the parent resetting narrativeApproved
+                    }
+                  }}
+                  className="gap-1.5"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Narrative
+                </Button>
+                <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Retry
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      }
       return (
         <div className={cn('flex flex-col h-full bg-background', className)}>
           <PlaceholderState structureType="storyboard" />

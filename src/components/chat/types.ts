@@ -141,6 +141,7 @@ export interface ChatMessage {
   structureData?: StructureData // Structured output (storyboard, layout, calendar, design spec)
   strategicReviewData?: StrategicReviewData // Strategic review card data
   assetRequest?: AssetRequest // Inline upload zone prompt from AI
+  isSceneFeedback?: boolean // Metadata flag for scene feedback messages
 }
 
 /**

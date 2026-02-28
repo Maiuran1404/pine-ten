@@ -120,6 +120,9 @@ interface ChatLayoutProps {
   narrativeApproved?: boolean
   onApproveNarrative?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  // Error recovery for storyboard generation
+  lastSendError?: string | null
+  onRetryGeneration?: () => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -195,6 +198,8 @@ export function ChatLayout({
   narrativeApproved,
   onApproveNarrative,
   onNarrativeFieldEdit,
+  lastSendError,
+  onRetryGeneration,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -331,6 +336,8 @@ export function ChatLayout({
                     narrativeApproved={narrativeApproved}
                     onApproveNarrative={onApproveNarrative}
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
+                    lastSendError={lastSendError}
+                    onRetryGeneration={onRetryGeneration}
                   />
                 </div>
               </ResizablePanel>
@@ -373,6 +380,8 @@ export function ChatLayout({
                     narrativeApproved={narrativeApproved}
                     onApproveNarrative={onApproveNarrative}
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
+                    lastSendError={lastSendError}
+                    onRetryGeneration={onRetryGeneration}
                   />
                 </div>
               </SheetContent>

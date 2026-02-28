@@ -118,6 +118,11 @@ export function ChatInterface({
     lastSendError,
     handleRetry,
 
+    // Auto-continue confirmation
+    needsAutoContinueConfirmation,
+    handleConfirmAutoContinue,
+    handleDismissAutoContinue,
+
     // Suggestions
     ghostText,
     smartCompletion,
@@ -244,6 +249,7 @@ export function ChatInterface({
     handleApproveNarrative,
     handleNarrativeFieldEdit,
     handleRegenerateNarrative: _handleRegenerateNarrative,
+    handleRetryGeneration,
 
     // Website inspiration
     websiteInspirations,
@@ -368,6 +374,8 @@ export function ChatInterface({
         narrativeApproved={narrativeApproved}
         onApproveNarrative={handleApproveNarrative}
         onNarrativeFieldEdit={handleNarrativeFieldEdit}
+        lastSendError={lastSendError}
+        onRetryGeneration={handleRetryGeneration}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}
@@ -538,6 +546,9 @@ export function ChatInterface({
             onAddExternalLink={addExternalLink}
             lastSendError={lastSendError}
             onRetry={handleRetry}
+            needsAutoContinueConfirmation={needsAutoContinueConfirmation}
+            onConfirmAutoContinue={handleConfirmAutoContinue}
+            onDismissAutoContinue={handleDismissAutoContinue}
           />
 
           {/* Input area / Submit action bar — hidden after successful submission */}

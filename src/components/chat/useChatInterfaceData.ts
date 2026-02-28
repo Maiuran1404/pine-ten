@@ -78,6 +78,7 @@ export function useChatInterfaceData({
   const chatStartedRef = useRef(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showStartOverDialog, setShowStartOverDialog] = useState(false)
+  const [needsAutoContinueConfirmation, setNeedsAutoContinueConfirmation] = useState(false)
 
   // Forward-reference refs for callbacks that target hooks defined later in the
   // composition chain (useTaskSubmission, useStyleSelection).  Without refs the
@@ -126,6 +127,7 @@ export function useChatInterfaceData({
     serializedState: serializedBriefingState,
     syncFromServer: syncBriefingFromServer,
     updateBrief: updateBriefInState,
+    updateStructure,
   } = useBriefingStateMachine(initialBriefingState, { draftId })
 
   // ─── Brief (derived from _briefingState — single source of truth) ─
@@ -472,6 +474,7 @@ export function useChatInterfaceData({
     setCompletedTypingIds: chatMessages.setCompletedTypingIds,
     setCurrentDeliverableType: styleSelection.setCurrentDeliverableType,
     setNeedsAutoContinue: chatMessages.setNeedsAutoContinue,
+    setNeedsAutoContinueConfirmation,
     setShowSubmissionModal: task.setShowSubmissionModal,
     clearMoodboard,
     addMoodboardItem,
@@ -609,6 +612,17 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
 
+  // ─── Sync storyboard edits to briefing state for draft persistence ──
+  const structureSyncRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => {
+    if (!storyboard.storyboardScenes) return
+    clearTimeout(structureSyncRef.current)
+    structureSyncRef.current = setTimeout(() => {
+      updateStructure(storyboard.storyboardScenes)
+    }, 500)
+    return () => clearTimeout(structureSyncRef.current)
+  }, [storyboard.storyboardScenes, updateStructure])
+
   // ─── Detect "ready to execute" patterns ─────────────────────
   useEffect(() => {
     const lastMessage = messagesRef.current[messagesRef.current.length - 1]
@@ -715,11 +729,12 @@ export function useChatInterfaceData({
     // Snapshot files and clear UI chips immediately.
     // allUploadsPromise resolves when in-flight uploads finish.
     const { alreadyDone, allUploadsPromise, hasInFlight } = fileUpload.collectAndClear()
+    const hasSceneRefs = storyboard.sceneReferences.length > 0
     storyboard.setSceneReferences([])
 
     if (!hasInFlight) {
       // All files already uploaded — send directly
-      await chatMessages.handleSend(processedContent, alreadyDone)
+      await chatMessages.handleSend(processedContent, alreadyDone, hasSceneRefs || undefined)
       return
     }
 
@@ -727,7 +742,7 @@ export function useChatInterfaceData({
     // chatMessages.handleSend shows the user message + "Thinking..."
     // so the upload wait is hidden behind the loading indicator.
     const allFiles = await allUploadsPromise
-    await chatMessages.handleSend(processedContent, allFiles)
+    await chatMessages.handleSend(processedContent, allFiles, hasSceneRefs || undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     chatMessages.input,
@@ -776,6 +791,24 @@ export function useChatInterfaceData({
     [storyboard.handleStrategicReviewAction, chatMessages.setMessages]
   )
 
+  // Retry storyboard generation after narrative approval failure
+  const handleRetryGeneration = useCallback(() => {
+    chatMessages.setLastSendError(null)
+    storyboard.handleApproveNarrative()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyboard.handleApproveNarrative, chatMessages.setLastSendError])
+
+  // Auto-continue confirmation handlers (crash recovery)
+  const handleConfirmAutoContinue = useCallback(() => {
+    setNeedsAutoContinueConfirmation(false)
+    chatMessages.setNeedsAutoContinue(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatMessages.setNeedsAutoContinue])
+
+  const handleDismissAutoContinue = useCallback(() => {
+    setNeedsAutoContinueConfirmation(false)
+  }, [])
+
   // ─── Return the full interface (backward compatible) ────────
   return {
     // Router/session
@@ -800,6 +833,11 @@ export function useChatInterfaceData({
     // Error state
     lastSendError: chatMessages.lastSendError,
     handleRetry: chatMessages.handleRetry,
+
+    // Auto-continue confirmation (crash recovery)
+    needsAutoContinueConfirmation,
+    handleConfirmAutoContinue,
+    handleDismissAutoContinue,
 
     // Suggestions
     ghostText: smartCompletion.ghostText,
@@ -948,6 +986,7 @@ export function useChatInterfaceData({
     handleApproveNarrative: storyboard.handleApproveNarrative,
     handleNarrativeFieldEdit: storyboard.handleNarrativeFieldEdit,
     handleRegenerateNarrative: storyboard.handleRegenerateNarrative,
+    handleRetryGeneration,
 
     // Handlers
     handleSend,

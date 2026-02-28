@@ -136,7 +136,7 @@ export function useChatMessages({
       }
 
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         role: 'assistant',
         content: data.content,
         timestamp: new Date(),
@@ -175,15 +175,20 @@ export function useChatMessages({
 
   // Send message handler
   const handleSend = useCallback(
-    async (processedContent: string, currentFiles: Message['attachments']) => {
+    async (
+      processedContent: string,
+      currentFiles: Message['attachments'],
+      isSceneFeedbackFlag?: boolean
+    ) => {
       if (!processedContent && (!currentFiles || currentFiles.length === 0)) return
 
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
         content: processedContent,
         timestamp: new Date(),
         attachments: currentFiles && currentFiles.length > 0 ? currentFiles : undefined,
+        isSceneFeedback: isSceneFeedbackFlag || undefined,
       }
 
       setIsLoading(true)
@@ -215,7 +220,8 @@ export function useChatMessages({
         const data: ChatApiResponse = await response.json()
 
         // Re-attach storyboard when AI responds to scene feedback without new storyboard
-        const isSceneFeedback = processedContent.startsWith('[Feedback on Scene')
+        const isSceneFeedback =
+          isSceneFeedbackFlag || processedContent.startsWith('[Feedback on Scene')
         let resolvedStructureOverride: StructureData | undefined
         if (isSceneFeedback && !data.structureData && latestStoryboardRef.current) {
           resolvedStructureOverride = latestStoryboardRef.current
@@ -246,7 +252,7 @@ export function useChatMessages({
       if (isLoading || !optionText.trim()) return
 
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
         content: optionText,
         timestamp: new Date(),

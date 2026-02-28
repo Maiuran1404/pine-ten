@@ -166,7 +166,7 @@ export function useTaskSubmission({
       onDraftUpdate?.()
 
       const successMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'assistant',
         content: `**Your task has been submitted!** You'll receive updates as your design progresses.`,
         timestamp: new Date(),
@@ -282,7 +282,7 @@ export function useTaskSubmission({
   const handleRejectTask = useCallback(() => {
     setPendingTask(null)
     const clarifyMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'assistant',
       content:
         'No problem! What would you like to change? I can adjust the scope, timeline, or any other details.',
@@ -301,7 +301,7 @@ export function useTaskSubmission({
     const constructedTask = constructTaskFromConversation(messages, briefingState?.brief)
 
     const summaryMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'assistant',
       content:
         "Here's a summary of your design brief. Review the details below and submit when you're ready!",

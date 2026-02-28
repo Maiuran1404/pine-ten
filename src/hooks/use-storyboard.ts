@@ -315,6 +315,13 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const handleSceneReorder = useCallback(
     (reorderedScenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[]) => {
       pushHistory(storyboardScenes)
+
+      // Build old→new scene number mapping for image data remap
+      const renumbered = reorderedScenes.map((scene, i) => ({
+        oldNumber: scene.sceneNumber,
+        newNumber: i + 1,
+      }))
+
       setStoryboardScenes((prev) => {
         if (!prev || prev.type !== 'storyboard') return prev
         const updated = {
@@ -326,6 +333,17 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
         }
         latestStoryboardRef.current = updated
         return updated
+      })
+
+      // Remap scene image data to match new scene numbers
+      setSceneImageData((prev) => {
+        if (prev.size === 0) return prev
+        const remapped = new Map<number, SceneImageData>()
+        for (const { oldNumber, newNumber } of renumbered) {
+          const data = prev.get(oldNumber)
+          if (data) remapped.set(newNumber, data)
+        }
+        return remapped
       })
     },
     [pushHistory, storyboardScenes]
